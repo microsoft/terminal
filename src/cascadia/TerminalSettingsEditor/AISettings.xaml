@@ -27,7 +27,10 @@
                 <TextBlock Margin="0,0,0,8"
                            Style="{StaticResource DisclaimerStyle}"
                            TextWrapping="WrapWholeWords">
-                    <Run x:Name="AISettings_DisclaimerPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2253545" TextDecorations="None"><Run x:Name="AISettings_DisclaimerLinkText" /></Hyperlink><Run x:Name="AISettings_DisclaimerPart2" />
+                    <Run x:Name="AISettings_DisclaimerPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2253545"
+                               TextDecorations="None">
+                        <Run x:Name="AISettings_DisclaimerLinkText" />
+                    </Hyperlink><Run x:Name="AISettings_DisclaimerPart2" />
                 </TextBlock>
             </Border>
             <StackPanel Style="{StaticResource PivotStackStyle}">
@@ -93,7 +96,10 @@
                                         <Run>
                                             &#x2022;
                                         </Run>
-                                        <Run x:Name="AISettings_AzureOpenAIPrerequisite1Part1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252895" TextDecorations="None"><Run x:Name="AISettings_AzureOpenAIPrerequisite1LinkText" /></Hyperlink><Run x:Name="AISettings_AzureOpenAIPrerequisite1Part2" />
+                                        <Run x:Name="AISettings_AzureOpenAIPrerequisite1Part1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252895"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_AzureOpenAIPrerequisite1LinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_AzureOpenAIPrerequisite1Part2" />
                                         <LineBreak />
                                         <Run>
                                             &#x2022;
@@ -103,10 +109,16 @@
                                         <Run>
                                             &#x2022;
                                         </Run>
-                                        <Run x:Name="AISettings_AzureOpenAIPrerequisite3Part1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252896" TextDecorations="None"><Run x:Name="AISettings_AzureOpenAIPrerequisite3LinkText" /></Hyperlink><Run x:Name="AISettings_AzureOpenAIPrerequisite3Part2" />
+                                        <Run x:Name="AISettings_AzureOpenAIPrerequisite3Part1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252896"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_AzureOpenAIPrerequisite3LinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_AzureOpenAIPrerequisite3Part2" />
                                         <LineBreak />
                                         <LineBreak />
-                                        <Run x:Name="AISettings_AzureOpenAIProductTermsPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251913" TextDecorations="None"><Run x:Name="AISettings_AzureOpenAIProductTermsLinkText" /></Hyperlink><Run x:Name="AISettings_AzureOpenAIProductTermsPart2" />
+                                        <Run x:Name="AISettings_AzureOpenAIProductTermsPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251913"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_AzureOpenAIProductTermsLinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_AzureOpenAIProductTermsPart2" />
                                     </Paragraph>
                                 </RichTextBlock>
                             </StackPanel>
