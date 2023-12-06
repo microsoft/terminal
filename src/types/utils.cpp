@@ -546,7 +546,7 @@ std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstrin
         // Obtain the relevant string from the map
         // The reason we need to use a map here is because different languages might end up ordering
         // the placeholders differently (for example, a string of the form "cc{0}cc{1}cc" might end up as
-        // "c{1}ccc{0}" in another language)
+        // "c{1}cc{0}" in another language)
         // The map ensures that the correct placeholder is mapped to the correct final string
         result.push_back(placeholderToStringMap.at(placeholderNumber));
 
