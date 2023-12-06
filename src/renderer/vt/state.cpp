@@ -167,6 +167,7 @@ void VtEngine::_flushImpl() noexcept
 void VtEngine::Cork(bool corked) noexcept
 {
     _corked = corked;
+    _Flush();
 }
 
 // Method Description:
