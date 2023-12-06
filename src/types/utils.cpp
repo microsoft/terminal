@@ -522,6 +522,44 @@ catch (...)
 }
 
 // Routine Description:
+// - Splits a resource string that contains placeholders (i.e. a string of the form "cc{0}cc...cc{n}cc")
+// - Allocates values to the placeholders according to the given map
+// Arguments:
+// - resourceString - the string that contains placeholders
+// - placeholderToStringMap - the map which contains the strings the placeholders should map to
+// Return Value:
+// - a vector containing the result parts, with the placeholders being replaced by the relevant values according to the provided map
+std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstring resourceString, std::unordered_map<size_t, std::wstring> placeholderToStringMap)
+{
+    std::vector<std::wstring> result;
+    size_t pos;
+    while ((pos = resourceString.find(L"{")) != std::string::npos)
+    {
+        // We have found the first placeholder
+        // Get the substring of everything up until this point and append it to result
+        result.push_back(resourceString.substr(0, pos));
+
+        // Get the placeholder number (this code assumes that the placeholder is just 1 digit,
+        // i.e. a number between 0-9)
+        const auto placeholderNumber = std::stoi(resourceString.substr(pos + 1, 1));
+
+        // Obtain the relevant string from the map
+        // The reason we need to use a map here is because different languages might end up ordering
+        // the placeholders differently (for example, a string of the form "cc{0}cc{1}cc" might end up as
+        // "c{1}ccc{0}" in another language)
+        // The map ensures that the correct placeholder is mapped to the correct final string
+        result.push_back(placeholderToStringMap.at(placeholderNumber));
+
+        // Repeat for the rest of the string
+        resourceString = resourceString.substr(pos + 3, resourceString.size() - pos - 3);
+    }
+
+    // Append what's remaining of the string
+    result.push_back(resourceString);
+    return result;
+}
+
+// Routine Description:
 // - Pre-process text pasted (presumably from the clipboard) with provided option.
 // Arguments:
 // - wstr - String to process.

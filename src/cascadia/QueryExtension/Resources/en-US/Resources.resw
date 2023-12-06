@@ -153,17 +153,13 @@
     <value>Take command of your Terminal. Ask Terminal Chat for assistance right in your terminal.</value>
     <comment>Subheader of the AI chat box control.</comment>
   </data>
-  <data name="AIContentDisclaimerPartOne.Text" xml:space="preserve">
-    <value>AI can make mistakes —</value>
-    <comment>Part one of the disclaimer presented to the user within the chat UI element.</comment>
+  <data name="AIContentDisclaimer" xml:space="preserve">
+    <value>AI can make mistakes — {0} to help us improve.</value>
+    <comment>The disclaimer presented to the user within the chat UI element. {0} will be replaced by AIContentDisclaimerLinkText.</comment>
   </data>
-  <data name="AIContentDisclaimerHyperlink.Text" xml:space="preserve">
+  <data name="AIContentDisclaimerLinkText" xml:space="preserve">
     <value>send feedback</value>
     <comment>The portion of the disclaimer presented to the user as a hyperlink within the chat UI element.</comment>
-  </data>
-  <data name="AIContentDisclaimerPartTwo.Text" xml:space="preserve">
-    <value>to help us improve.</value>
-    <comment>Part two of the disclaimer presented to the user within the chat UI element.</comment>
   </data>
   <data name="LearnMoreLink.Text" xml:space="preserve">
     <value>Learn more</value>

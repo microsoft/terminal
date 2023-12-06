@@ -35,6 +35,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         ControlName(RS_(L"ControlName"));
         QueryBoxPlaceholderText(RS_(L"CurrentShell"));
 
+        std::unordered_map<size_t, std::wstring> disclaimerPlaceholderToStringMap;
+        disclaimerPlaceholderToStringMap.insert(std::pair<size_t, std::wstring>(0, RS_(L"AIContentDisclaimerLinkText")));
+        const auto disclaimerParts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AIContentDisclaimer").c_str(), disclaimerPlaceholderToStringMap);
+
+        AIContentDisclaimerPart1().Text(disclaimerParts.at(0));
+        AIContentDisclaimerLinkText().Text(disclaimerParts.at(1));
+        AIContentDisclaimerPart2().Text(disclaimerParts.at(2));
+
         _loadedRevoker = Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // We have to add this in (on top of the visibility change handler below) because
             // the first time the palette is invoked, we get a loaded event not a visibility event.

@@ -374,12 +374,7 @@
             <TextBlock Grid.Row="2"
                        Margin="20,0,0,16"
                        FontSize="10">
-                <Run x:Uid="AIContentDisclaimerPartOne" />
-                <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2204904"
-                           TextDecorations="None">
-                    <Run x:Uid="AIContentDisclaimerHyperlink" />
-                </Hyperlink>
-                <Run x:Uid="AIContentDisclaimerPartTwo" />
+                <Run x:Name="AIContentDisclaimerPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2204904" TextDecorations="None"><Run x:Name="AIContentDisclaimerLinkText" /></Hyperlink><Run x:Name="AIContentDisclaimerPart2" />
             </TextBlock>
         </Grid>
     </Grid>
