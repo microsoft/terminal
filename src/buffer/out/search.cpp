@@ -149,6 +149,7 @@ bool Search::SelectCurrent() const
         return true;
     }
 
+    _renderData->ClearSelection();
     return false;
 }
 

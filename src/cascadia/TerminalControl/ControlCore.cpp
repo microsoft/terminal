@@ -1621,7 +1621,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // DO NOT call _updateSelectionUI() here.
             // We don't want to show the markers so manually tell it to clear it.
             _terminal->SetBlockSelection(false);
-            _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
 
             foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
@@ -1629,6 +1628,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->AlwaysNotifyOnBufferRotation(true);
         }
+        _renderer->TriggerSelection();
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
