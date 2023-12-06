@@ -217,7 +217,7 @@ void Renderer::TriggerSystemRedraw(const til::rect* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    auto view = _viewport;
+    auto view = _pData->GetViewport();
     auto srUpdateRegion = region.ToExclusive();
 
     // If the dirty region has double width lines, we need to double the size of

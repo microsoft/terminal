@@ -1,3 +1,4 @@
+aci
 admins
 allcolors
 Apc
@@ -8,6 +9,7 @@ breadcrumbs
 bsd
 calt
 ccmp
+ccon
 changelog
 clickable
 clig
@@ -91,6 +93,7 @@ reserialize
 reserializes
 rlig
 runtimes
+servicebus
 shcha
 slnt
 Sos
@@ -116,6 +119,7 @@ vsdevcmd
 walkthrough
 walkthroughs
 We'd
+westus
 wildcards
 XBox
 YBox
