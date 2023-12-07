@@ -316,7 +316,6 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    std::vector<std::wstring> RetrieveSelectedTextFromBufferRows(const bool singleLine) const;
     TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html = false, const bool rtf = false) const;
 #pragma endregion
 
