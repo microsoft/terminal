@@ -27,7 +27,6 @@ SOURCES = \
     TextBufferTests.cpp \
     ClipboardTests.cpp \
     SelectionTests.cpp \
-    Utf8ToWideCharParserTests.cpp \
     OutputCellIteratorTests.cpp \
     InitTests.cpp \
     TitleTests.cpp \

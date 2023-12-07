@@ -217,7 +217,7 @@ void AtlasEngine::_recreateBackend()
     if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING)
     {
         // This might happen if you don't have "Graphics debugger and GPU
-        // profiler for DirectX" installed in VS. We shouln't just explode if
+        // profiler for DirectX" installed in VS. We shouldn't just explode if
         // you don't though - instead, disable debugging and try again.
         WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_DEBUG);
 

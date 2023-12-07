@@ -669,7 +669,16 @@ using namespace Microsoft::Console::Types;
 
     case CM_UPDATE_SCROLL_BARS:
     {
-        ScreenInfo.InternalUpdateScrollBars();
+        const auto state = ScreenInfo.FetchScrollBarState();
+
+        // EnableScrollbar() and especially SetScrollInfo() are prohibitively expensive functions nowadays.
+        // Unlocking early here improves throughput of good old `type` in cmd.exe by ~10x.
+        UnlockConsole();
+        Unlock = FALSE;
+
+        _resizingWindow++;
+        UpdateScrollBars(state);
+        _resizingWindow--;
         break;
     }
 
@@ -780,7 +789,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     // CONSOLE_IS_ICONIC bit appropriately. doing so in the WM_SIZE handler is incorrect because the WM_SIZE
     // comes after the WM_ERASEBKGND during SetWindowPos() processing, and the WM_ERASEBKGND needs to know if
     // the console window is iconic or not.
-    if (!ScreenInfo.ResizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
+    if (!_resizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
     {
         // calculate the dimensions for the newly proposed window rectangle
         til::rect rcNew;
