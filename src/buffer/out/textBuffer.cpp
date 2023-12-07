@@ -1473,12 +1473,6 @@ til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, cons
 
         // Special case: we tried to move one past the end of the buffer
         // Manually increment onto the EndExclusive point.
-        //// but iter prevented that (because that pos doesn't exist).
-        //// Manually increment onto the EndExclusive point.
-        //// but iter prevented that (because that pos doesn't exist).
-        //// Manually increment onto the EndExclusive point.
-        //// but iter prevented that (because that pos doesn't exist).
-        //// Manually increment onto the EndExclusive point.
         if (result == bufferSize.BottomRightInclusive())
         {
             bufferSize.IncrementInBounds(result, true);
@@ -1504,7 +1498,7 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
     const bool isControlChar = initialDelimiter == DelimiterClass::ControlChar;
 
     // expand right until we hit the right boundary as a ControlChar or a different delimiter class
-    while ((result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
+    while (result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
         if (isControlChar && result.x == bufferSize.RightInclusive())
         {
