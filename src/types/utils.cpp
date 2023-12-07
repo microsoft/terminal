@@ -529,7 +529,7 @@ catch (...)
 // - placeholderToStringMap - the map which contains the strings the placeholders should map to
 // Return Value:
 // - a vector containing the result parts, with the placeholders being replaced by the relevant values according to the provided map
-std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstring resourceString, std::unordered_map<size_t, std::wstring> placeholderToStringMap)
+std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstring resourceString, std::span<std::wstring> placeholderStringsSpan)
 {
     std::vector<std::wstring> result;
     size_t pos;
@@ -543,12 +543,12 @@ std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstrin
         // i.e. a number between 0-9)
         const auto placeholderNumber = std::stoi(resourceString.substr(pos + 1, 1));
 
-        // Obtain the relevant string from the map
-        // The reason we need to use a map here is because different languages might end up ordering
+        // Obtain the correct string from the span
+        // The reason we need to obtain the correct index here is because different languages might end up ordering
         // the placeholders differently (for example, a string of the form "cc{0}cc{1}cc" might end up as
         // "c{1}cc{0}" in another language)
-        // The map ensures that the correct placeholder is mapped to the correct final string
-        result.push_back(placeholderToStringMap.at(placeholderNumber));
+        // The span ensures that the correct placeholder is placed in the correct place in the final string
+        result.push_back(placeholderStringsSpan[placeholderNumber]);
 
         // Repeat for the rest of the string
         resourceString = resourceString.substr(pos + 3, resourceString.size() - pos - 3);
