@@ -1881,14 +1881,11 @@ uielem
 UIELEMENTENABLEDONLY
 UINTs
 ul
-ulc
 ulcch
 uld
 uldb
 uldash
 ulwave
-umul
-umulh
 Unadvise
 unattend
 UNCPRIORITY
@@ -2112,7 +2109,6 @@ WPrep
 WPresent
 wprp
 wprpi
-Wrapness
 wregex
 writeback
 WRITECONSOLE
