@@ -551,7 +551,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         std::vector<POINT> points;
         points.reserve(cPoints);
 
-        const auto end = x + cCurlyLines * curlyLineWidth;
+        const auto end = x + gsl::narrow_cast<til::CoordType>(cCurlyLines * curlyLineWidth);
         auto start = x;
         while (start < end)
         {
