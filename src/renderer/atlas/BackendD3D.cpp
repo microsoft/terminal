@@ -306,36 +306,30 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
 {
     const auto& font = *p.s->font;
 
-    // The max height of Curly line peak in `em` units.
-    const auto maxCurlyLinePeakHeightEm = 0.075f;
-    // We aim for atleast 1px height, but since we draw 1px smaller curly line,
-    // we aim for 2px height as a result.
-    const auto minCurlyLinePeakHeight = 2.0f;
-
     // Curlyline uses the gap between cell bottom and singly underline position
     // as the height of the wave's peak. The baseline for curly-line is at the
     // middle of singly underline. The gap could be too big, so we also apply
     // a limit on the peak height.
-    const auto strokeHalfWidth = font.underline.height / 2.0f;
-    const auto underlineMidY = font.underline.position + strokeHalfWidth;
-    const auto cellBottomGap = font.cellSize.y - underlineMidY - strokeHalfWidth;
-    const auto maxCurlyLinePeakHeight = maxCurlyLinePeakHeightEm * font.fontSize;
-    auto curlyLinePeakHeight = std::min(cellBottomGap, maxCurlyLinePeakHeight);
-
-    // When it's too small to be curly, make it straight.
-    if (curlyLinePeakHeight < minCurlyLinePeakHeight)
     {
-        curlyLinePeakHeight = 0;
+        const auto strokeHalfWidth = font.underline.height / 2.0f;
+        const auto underlineMidY = font.underline.position + strokeHalfWidth;
+        const auto cellBottomGap = font.cellSize.y - underlineMidY - strokeHalfWidth;
+
+        // The max height of Curly line peak in `em` units.
+        constexpr auto maxCurlyLinePeakHeightEm = 0.075f;
+        const auto maxCurlyLinePeakHeight = maxCurlyLinePeakHeightEm * font.fontSize;
+
+        auto curlyLinePeakHeight = std::min(cellBottomGap, maxCurlyLinePeakHeight);
+
+        // We draw a smaller curly line (-1px) to avoid clipping due to the rounding.
+        _curlyLineDrawPeakHeight = std::max(0.0f, curlyLinePeakHeight - 1.0f);
+
+        const auto curlyUnderlinePos = font.underline.position - curlyLinePeakHeight;
+        const auto curlyUnderlineWidth = 2.0f * (curlyLinePeakHeight + strokeHalfWidth);
+        const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
+        const auto curlyUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
+        _curlyUnderline = { curlyUnderlinePosU16, curlyUnderlineWidthU16 };
     }
-
-    // We draw a smaller curly line (-1px) to avoid clipping due to the rounding.
-    _curlyLineDrawPeakHeight = std::max(0.0f, curlyLinePeakHeight - 1.0f);
-
-    const auto curlyUnderlinePos = font.underline.position - curlyLinePeakHeight;
-    const auto curlyUnderlineWidth = 2.0f * (curlyLinePeakHeight + strokeHalfWidth);
-    const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
-    const auto curlyUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
-    _curlyUnderline = { curlyUnderlinePosU16, curlyUnderlineWidthU16 };
 
     DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
     // Clearing the atlas requires BeginDraw(), which is expensive. Defer this until we need Direct2D anyways.
