@@ -263,12 +263,6 @@ bool VtIo::IsUsingVt() const
         CATCH_RETURN();
     }
 
-    // GH#4999 - Send a sequence to the connected terminal to request
-    // win32-input-mode from them. This will enable the connected terminal to
-    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
-    // this sequence, it'll just ignore it.
-    LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
-
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
     //  we're going to emit a VT sequence to ask for the cursor position, then
@@ -286,6 +280,12 @@ bool VtIo::IsUsingVt() const
         {
         }
     }
+
+    // GH#4999 - Send a sequence to the connected terminal to request
+    // win32-input-mode from them. This will enable the connected terminal to
+    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+    // this sequence, it'll just ignore it.
+    LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
 
     if (_pVtInputThread)
     {
