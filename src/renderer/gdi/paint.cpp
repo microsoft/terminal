@@ -543,20 +543,24 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     };
     const auto DrawCurlyLine = [&](const auto x, const auto y, const auto cCurlyLines) {
         const auto curlyLineWidth = fontWidth;
-        const auto curlyLineHalfWidth = lrintf(curlyLineWidth / 2.0f);
-        const auto controlPointHeight = gsl::narrow_cast<long>(std::floor(3.5f * _lineMetrics.curlylinePeakHeight));
+        const auto curlyLineHalfWidth = std::lround(curlyLineWidth / 2.0f);
+        const auto controlPointHeight = std::lround(3.5f * _lineMetrics.curlylinePeakHeight);
+
         // Each curlyLine requires 3 `POINT`s
         const auto cPoints = gsl::narrow<DWORD>(3 * cCurlyLines);
         std::vector<POINT> points;
         points.reserve(cPoints);
+
+        const auto end = x + cCurlyLines * curlyLineWidth;
         auto start = x;
-        for (auto i = 0u; i < cCurlyLines; i++)
+        while (start < end)
         {
             points.emplace_back(start + curlyLineHalfWidth, y - controlPointHeight);
             points.emplace_back(start + curlyLineHalfWidth, y + controlPointHeight);
             points.emplace_back(start + curlyLineWidth, y);
             start += curlyLineWidth;
         }
+
         RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
         RETURN_HR_IF(E_FAIL, !PolyBezierTo(_hdcMemoryContext, points.data(), cPoints));
         return S_OK;
@@ -619,28 +623,26 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     const auto prevPen = wil::SelectObject(_hdcMemoryContext, hpen.get());
     RETURN_HR_IF_NULL(E_FAIL, prevPen.get());
 
-    const auto underlineMidY = std::lround(ptTarget.y + _lineMetrics.underlineOffset + _lineMetrics.underlineWidth / 2.0f);
     if (lines.test(GridLines::Underline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
     }
     else if (lines.test(GridLines::DoubleUnderline))
     {
-        const auto doubleUnderlineBottomLineMidY = std::lround(ptTarget.y + _lineMetrics.underlineOffset2 + _lineMetrics.underlineWidth / 2.0f);
-        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells));
-        return DrawStrokedLine(ptTarget.x, doubleUnderlineBottomLineMidY, widthOfAllCells);
+        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells));
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset2, widthOfAllCells);
     }
     else if (lines.test(GridLines::CurlyUnderline))
     {
-        return DrawCurlyLine(ptTarget.x, underlineMidY, cchLine);
+        return DrawCurlyLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, cchLine);
     }
     else if (lines.test(GridLines::DottedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
     }
     else if (lines.test(GridLines::DashedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
     }
 
     return S_OK;

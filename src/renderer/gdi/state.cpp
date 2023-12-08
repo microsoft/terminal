@@ -11,15 +11,6 @@
 
 using namespace Microsoft::Console::Render;
 
-namespace
-{
-    // The max height of Curly line peak in `em` units.
-    constexpr auto MaxCurlyLinePeakHeightEm = 0.075f;
-
-    // The min height of Curly line peak.
-    constexpr auto MinCurlyLinePeakHeight = 2.0f;
-}
-
 // Routine Description:
 // - Creates a new GDI-based rendering engine
 // - NOTE: Will throw if initialization failure. Caller must catch.
@@ -406,29 +397,30 @@ GdiEngine::~GdiEngine()
         _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
     }
 
-    // Curly line doesn't render properly below 1px stroke width. Make it a straight line.
-    if (_lineMetrics.underlineWidth < 1)
-    {
-        _lineMetrics.curlylinePeakHeight = 0;
-    }
-    else
-    {
-        // Curlyline uses the gap between cell bottom and singly underline
-        // position as the height of the wave's peak. The baseline for curly
-        // line is at the middle of singly underline. The gap could be too big,
-        // so we also apply a limit on the peak height.
-        const auto strokeHalfWidth = _lineMetrics.underlineWidth / 2.0f;
-        const auto underlineMidY = _lineMetrics.underlineOffset + strokeHalfWidth;
-        const auto cellBottomGap = Font.GetSize().height - underlineMidY - strokeHalfWidth;
-        const auto maxCurlyLinePeakHeight = MaxCurlyLinePeakHeightEm * fontSize;
-        auto curlyLinePeakHeight = std::min(cellBottomGap, maxCurlyLinePeakHeight);
+    const int strokeHalfWidth = std::lround(_lineMetrics.underlineWidth / 2.0);
 
-        // When it's too small to be curly, make it a straight line.
-        if (curlyLinePeakHeight < MinCurlyLinePeakHeight)
-        {
-            curlyLinePeakHeight = 0.0f;
-        }
-        _lineMetrics.curlylinePeakHeight = gsl::narrow_cast<int>(std::floor(curlyLinePeakHeight));
+    // Since we use GDI pen for drawing, the underline offset should point to
+    // the center of the underline.
+    _lineMetrics.underlineOffset += strokeHalfWidth;
+    _lineMetrics.underlineOffset2 += strokeHalfWidth;
+
+    // We want the underline to always be visible and remain within the cell
+    // bottom, so we clamp the offset to fit just inside.
+    _lineMetrics.underlineOffset = std::min(_lineMetrics.underlineOffset, maxUnderlineOffset);
+    _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
+
+    // Curlyline uses the gap between cell bottom and singly underline position
+    // as the height of the wave's peak. The baseline for curly line is at the
+    // middle of singly underline. The gap could be too big, so we also apply a
+    // limit on the peak height.
+    {
+        const auto cellBottomGap = std::lround(Font.GetSize().height - _lineMetrics.underlineOffset - strokeHalfWidth);
+
+        // get the max height for curly line peak. Max height is in `em` units.
+        constexpr auto maxCurlyLinePeakHeightEm = 0.075f;
+        const auto maxCurlyLinePeakHeight = std::lround(maxCurlyLinePeakHeightEm * fontSize);
+
+        _lineMetrics.curlylinePeakHeight = std::clamp(cellBottomGap, 0L, maxCurlyLinePeakHeight);
     }
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
