@@ -397,7 +397,7 @@ GdiEngine::~GdiEngine()
         _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
     }
 
-    const int strokeHalfWidth = std::lround(_lineMetrics.underlineWidth / 2.0);
+    const int strokeHalfWidth = std::lround(_lineMetrics.underlineWidth / 2.0f);
 
     // Since we use GDI pen for drawing, the underline offset should point to
     // the center of the underline.

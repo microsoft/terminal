@@ -541,7 +541,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF(E_FAIL, !LineTo(_hdcMemoryContext, x + w, y));
         return S_OK;
     };
-    const auto DrawCurlyLine = [&](const auto x, const auto y, const auto cCurlyLines) {
+    const auto DrawCurlyLine = [&](const til::CoordType x, const til::CoordType y, const size_t cCurlyLines) {
         const auto curlyLineWidth = fontWidth;
         const auto curlyLineHalfWidth = std::lround(curlyLineWidth / 2.0f);
         const auto controlPointHeight = std::lround(3.5f * _lineMetrics.curlylinePeakHeight);
@@ -551,9 +551,8 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         std::vector<POINT> points;
         points.reserve(cPoints);
 
-        const auto end = x + gsl::narrow_cast<til::CoordType>(cCurlyLines * curlyLineWidth);
         auto start = x;
-        while (start < end)
+        for (size_t i = 0; i < cCurlyLines; i++)
         {
             points.emplace_back(start + curlyLineHalfWidth, y - controlPointHeight);
             points.emplace_back(start + curlyLineHalfWidth, y + controlPointHeight);
