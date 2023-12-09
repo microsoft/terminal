@@ -297,15 +297,15 @@ Please file new issues, feature requests and suggestions, but **DO search for
 similar open/closed preexisting issues before creating a new issue.**
 
 If you would like to ask a question that you feel doesn't warrant an issue
-(yet), please reach out to us via Twitter:
+(yet), please reach out to us via X (Twitter):
 
 * Christopher Nguyen, Product Manager:
-  [@nguyen_dows](https://twitter.com/nguyen_dows)
-* Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
+  [@nguyen_dows](https://x.com/nguyen_dows)
+* Dustin Howett, Engineering Lead: [@dhowett](https://x.com/DHowett)
 * Mike Griese, Senior Developer: [@zadjii@mastodon.social](https://mastodon.social/@zadjii)
-* Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
+* Carlos Zamora, Developer: [@cazamor_msft](https://x.com/cazamor_msft)
 * Pankaj Bhojwani, Developer
-* Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)
+* Leonard Hecker, Developer: [@LeonardHecker](https://x.com/LeonardHecker)
 
 ## Developer Guidance
 
