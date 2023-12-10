@@ -397,30 +397,24 @@ GdiEngine::~GdiEngine()
         _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
     }
 
-    const int strokeHalfWidth = std::lround(_lineMetrics.underlineWidth / 2.0f);
-
     // Since we use GDI pen for drawing, the underline offset should point to
     // the center of the underline.
-    _lineMetrics.underlineOffset += strokeHalfWidth;
-    _lineMetrics.underlineOffset2 += strokeHalfWidth;
-
-    // We want the underline to always be visible and remain within the cell
-    // bottom, so we clamp the offset to fit just inside.
-    _lineMetrics.underlineOffset = std::min(_lineMetrics.underlineOffset, maxUnderlineOffset);
-    _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
+    const auto underlineHalfWidth = gsl::narrow_cast<int>(std::floor(_lineMetrics.underlineWidth / 2.0f));
+    _lineMetrics.underlineOffset += underlineHalfWidth;
+    _lineMetrics.underlineOffset2 += underlineHalfWidth;
 
     // Curlyline uses the gap between cell bottom and singly underline position
     // as the height of the wave's peak. The baseline for curly line is at the
     // middle of singly underline. The gap could be too big, so we also apply a
     // limit on the peak height.
     {
-        const auto cellBottomGap = std::lround(Font.GetSize().height - _lineMetrics.underlineOffset - strokeHalfWidth);
+        const auto cellBottomGap = std::max(0, Font.GetSize().height - _lineMetrics.underlineOffset - _lineMetrics.underlineWidth);
 
         // get the max height for curly line peak. Max height is in `em` units.
         constexpr auto maxCurlyLinePeakHeightEm = 0.075f;
-        const auto maxCurlyLinePeakHeight = std::lround(maxCurlyLinePeakHeightEm * fontSize);
+        const auto maxCurlyLinePeakHeight = gsl::narrow_cast<int>(std::lround(maxCurlyLinePeakHeightEm * fontSize));
 
-        _lineMetrics.curlylinePeakHeight = std::clamp(cellBottomGap, 0L, maxCurlyLinePeakHeight);
+        _lineMetrics.curlylinePeakHeight = std::min(cellBottomGap, maxCurlyLinePeakHeight);
     }
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
