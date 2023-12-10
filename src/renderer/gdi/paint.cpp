@@ -536,9 +536,9 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     const auto DrawLine = [=](const auto x, const auto y, const auto w, const auto h) {
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
     };
-    const auto DrawStrokedLine = [&](const auto x, const auto y, const auto w) {
+    const auto DrawStrokedLine = [&](const til::CoordType x, const til::CoordType y, const unsigned w) {
         RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
-        RETURN_HR_IF(E_FAIL, !LineTo(_hdcMemoryContext, x + w, y));
+        RETURN_HR_IF(E_FAIL, !LineTo(_hdcMemoryContext, gsl::narrow_cast<int>(x + w), y));
         return S_OK;
     };
     const auto DrawCurlyLine = [&](const til::CoordType x, const til::CoordType y, const size_t cCurlyLines) {
