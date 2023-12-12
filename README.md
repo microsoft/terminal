@@ -21,7 +21,7 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> **Note**\
+> [!NOTE]
 > Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
@@ -53,7 +53,7 @@ fails for any reason, you can try the following command at a PowerShell prompt:
 Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 ```
 
-> **Note**\
+> [!NOTE]
 > If you install Terminal manually:
 >
 > * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).
@@ -72,7 +72,7 @@ package:
 winget install --id Microsoft.WindowsTerminal -e
 ```
 
-> **Note**\
+> [!NOTE]
 > Dependency support is available in WinGet version [1.6.2631 or later](https://github.com/microsoft/winget-cli/releases). To install the Terminal stable release 1.18 or later, please make sure you have the updated version of the WinGet client.
 
 #### Via Chocolatey (unofficial)
@@ -262,7 +262,7 @@ Cause: You're launching the incorrect solution in Visual Studio.
 Solution: Make sure you're building & deploying the `CascadiaPackage` project in
 Visual Studio.
 
-> **Note**\
+> [!NOTE]
 > `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
 > Windows Console that hosts Windows' command-line infrastructure. OpenConsole
 > is used by Windows Terminal to connect to and communicate with command-line
