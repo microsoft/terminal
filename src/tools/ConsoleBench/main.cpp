@@ -7,11 +7,15 @@
 #include "conhost.h"
 #include "utils.h"
 
+using Measurements = std::span<int32_t>;
+using MeasurementsPerBenchmark = std::span<Measurements>;
+
 struct BenchmarkContext
 {
     HWND hwnd;
     HANDLE input;
     HANDLE output;
+    int64_t time_limit;
     mem::Arena& arena;
     std::string_view utf8_4Ki;
     std::string_view utf8_128Ki;
@@ -22,62 +26,94 @@ struct BenchmarkContext
 struct Benchmark
 {
     const char* title;
-    void (*exec)(const BenchmarkContext& ctx, std::span<int32_t> measurements);
+    void (*exec)(const BenchmarkContext& ctx, Measurements measurements);
 };
 
-static int32_t perf_delta(int64_t beg)
+struct AccumulatedResults
 {
-    return static_cast<int32_t>(query_perf_counter() - beg);
+    size_t trace_count;
+    // These are arrays of size trace_count
+    std::string_view* trace_names;
+    MeasurementsPerBenchmark* measurments;
+};
+
+constexpr int32_t perf_delta(int64_t beg, int64_t end)
+{
+    return static_cast<int32_t>(end - beg);
 }
 
 static constexpr Benchmark s_benchmarks[]{
     Benchmark{
         .title = "WriteConsoleA 4Ki",
-        .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
+        .exec = [](const BenchmarkContext& ctx, Measurements measurements) {
             for (auto& d : measurements)
             {
                 const auto beg = query_perf_counter();
                 WriteConsoleA(ctx.output, ctx.utf8_4Ki.data(), static_cast<DWORD>(ctx.utf8_4Ki.size()), nullptr, nullptr);
-                d = perf_delta(beg);
+                const auto end = query_perf_counter();
+                d = perf_delta(beg, end);
+
+                if (end >= ctx.time_limit)
+                {
+                    break;
+                }
             }
         },
     },
     Benchmark{
         .title = "WriteConsoleW 4Ki",
-        .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
+        .exec = [](const BenchmarkContext& ctx, Measurements measurements) {
             for (auto& d : measurements)
             {
                 const auto beg = query_perf_counter();
                 WriteConsoleW(ctx.output, ctx.utf16_4Ki.data(), static_cast<DWORD>(ctx.utf16_4Ki.size()), nullptr, nullptr);
-                d = perf_delta(beg);
+                const auto end = query_perf_counter();
+                d = perf_delta(beg, end);
+
+                if (end >= ctx.time_limit)
+                {
+                    break;
+                }
             }
         },
     },
     Benchmark{
         .title = "WriteConsoleA 128Ki",
-        .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
+        .exec = [](const BenchmarkContext& ctx, Measurements measurements) {
             for (auto& d : measurements)
             {
                 const auto beg = query_perf_counter();
                 WriteConsoleA(ctx.output, ctx.utf8_128Ki.data(), static_cast<DWORD>(ctx.utf8_128Ki.size()), nullptr, nullptr);
-                d = perf_delta(beg);
+                const auto end = query_perf_counter();
+                d = perf_delta(beg, end);
+
+                if (end >= ctx.time_limit)
+                {
+                    break;
+                }
             }
         },
     },
     Benchmark{
         .title = "WriteConsoleW 128Ki",
-        .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
+        .exec = [](const BenchmarkContext& ctx, Measurements measurements) {
             for (auto& d : measurements)
             {
                 const auto beg = query_perf_counter();
                 WriteConsoleW(ctx.output, ctx.utf16_128Ki.data(), static_cast<DWORD>(ctx.utf16_128Ki.size()), nullptr, nullptr);
-                d = perf_delta(beg);
+                const auto end = query_perf_counter();
+                d = perf_delta(beg, end);
+
+                if (end >= ctx.time_limit)
+                {
+                    break;
+                }
             }
         },
     },
     Benchmark{
         .title = "Copy to clipboard 4Ki",
-        .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
+        .exec = [](const BenchmarkContext& ctx, Measurements measurements) {
             WriteConsoleW(ctx.output, ctx.utf16_4Ki.data(), static_cast<DWORD>(ctx.utf8_4Ki.size()), nullptr, nullptr);
 
             for (auto& d : measurements)
@@ -86,13 +122,19 @@ static constexpr Benchmark s_benchmarks[]{
 
                 const auto beg = query_perf_counter();
                 SendMessageW(ctx.hwnd, WM_SYSCOMMAND, 0xFFF0 /* ID_CONSOLE_COPY */, 0);
-                d = perf_delta(beg);
+                const auto end = query_perf_counter();
+                d = perf_delta(beg, end);
+
+                if (end >= ctx.time_limit)
+                {
+                    break;
+                }
             }
         },
     },
     Benchmark{
         .title = "Paste from clipboard 4Ki",
-        .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
+        .exec = [](const BenchmarkContext& ctx, Measurements measurements) {
             set_clipboard(ctx.hwnd, ctx.utf16_4Ki);
             FlushConsoleInputBuffer(ctx.input);
 
@@ -100,15 +142,21 @@ static constexpr Benchmark s_benchmarks[]{
             {
                 const auto beg = query_perf_counter();
                 SendMessageW(ctx.hwnd, WM_SYSCOMMAND, 0xFFF1 /* ID_CONSOLE_PASTE */, 0);
-                d = perf_delta(beg);
+                const auto end = query_perf_counter();
+                d = perf_delta(beg, end);
 
                 FlushConsoleInputBuffer(ctx.input);
+
+                if (end >= ctx.time_limit)
+                {
+                    break;
+                }
             }
         },
     },
     Benchmark{
         .title = "ReadConsoleInputW clipboard 4Ki",
-        .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
+        .exec = [](const BenchmarkContext& ctx, Measurements measurements) {
             static constexpr DWORD cap = 16 * 1024;
 
             const auto scratch = mem::get_scratch_arena(ctx.arena);
@@ -125,28 +173,18 @@ static constexpr Benchmark s_benchmarks[]{
                 const auto beg = query_perf_counter();
                 ReadConsoleInputW(ctx.input, buf, cap, &read);
                 debugAssert(read >= 1024 && read < cap);
-                d = perf_delta(beg);
+                const auto end = query_perf_counter();
+                d = perf_delta(beg, end);
+
+                if (end >= ctx.time_limit)
+                {
+                    break;
+                }
             }
         },
     },
 };
-
-// This is effectively a table where we form the product of traces (executable paths) vs. charts (struct Benchmark).
-struct AccumulatedResults
-{
-    // The Y-axis/columns: These members have trace_count-many items.
-    size_t trace_count;
-    std::string_view* trace_names;
-    const wchar_t** trace_paths;
-
-    // The X-axis/rows: These members have chart_count-many items.
-    size_t chart_count;
-    const char** chart_names;
-
-    // The product of the above with a layout of [trace_count][chart_count].
-    // = trace_count*chart_count items each.
-    std::span<int32_t>* measurements;
-};
+static constexpr size_t s_benchmarks_count = _countof(s_benchmarks);
 
 // Each of these strings is 128 columns.
 static constexpr std::string_view payload_utf8{ "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labor眠い子猫はマグロ狩りの夢を見る" };
@@ -154,7 +192,7 @@ static constexpr std::wstring_view payload_utf16{ L"Lorem ipsum dolor sit amet, 
 
 static bool print_warning();
 static AccumulatedResults* prepare_results(mem::Arena& arena, std::span<const wchar_t*> paths);
-static void run_benchmarks_for_trace(mem::Arena& arena, const AccumulatedResults* results, size_t trace_index);
+static std::span<Measurements> run_benchmarks_for_path(mem::Arena& arena, const wchar_t* path);
 static void generate_html(mem::Arena& arena, const AccumulatedResults* results);
 
 int wmain(int argc, const wchar_t* argv[])
@@ -167,7 +205,7 @@ int wmain(int argc, const wchar_t* argv[])
 
     const auto cp = GetConsoleCP();
     const auto output_cp = GetConsoleOutputCP();
-    const auto restoreOldCP = wil::scope_exit([&]() {
+    const auto restore_cp = wil::scope_exit([&]() {
         SetConsoleCP(cp);
         SetConsoleOutputCP(output_cp);
     });
@@ -176,7 +214,8 @@ int wmain(int argc, const wchar_t* argv[])
 
     const auto scratch = mem::get_scratch_arena();
 
-    const auto results = prepare_results(scratch.arena, { &argv[1], static_cast<size_t>(argc) - 1 });
+    const std::span paths{ &argv[1], static_cast<size_t>(argc) - 1 };
+    const auto results = prepare_results(scratch.arena, paths);
     if (!results)
     {
         return 1;
@@ -187,9 +226,11 @@ int wmain(int argc, const wchar_t* argv[])
         return 0;
     }
 
-    for (size_t i = 0; i < results->trace_count; ++i)
+    for (size_t trace_idx = 0; trace_idx < results->trace_count; ++trace_idx)
     {
-        run_benchmarks_for_trace(scratch.arena, results, i);
+        const auto title = results->trace_names[trace_idx];
+        print_format(scratch.arena, "\r\n# %.*s\r\n", title.size(), title.data());
+        results->measurments[trace_idx] = run_benchmarks_for_path(scratch.arena, paths[trace_idx]);
     }
 
     generate_html(scratch.arena, results);
@@ -249,22 +290,15 @@ static AccumulatedResults* prepare_results(mem::Arena& arena, std::span<const wc
     }
 
     const auto trace_count = paths.size();
-    const auto chart_count = std::size(s_benchmarks);
-    const auto product_count = trace_count * chart_count;
     const auto results = arena.push_zeroed<AccumulatedResults>();
 
     results->trace_count = trace_count;
     results->trace_names = arena.push_zeroed<std::string_view>(trace_count);
-    results->trace_paths = arena.push_uninitialized<const wchar_t*>(trace_count);
+    results->measurments = arena.push_zeroed<MeasurementsPerBenchmark>(trace_count);
 
-    results->chart_count = chart_count;
-    results->chart_names = arena.push_uninitialized<const char*>(chart_count);
-
-    results->measurements = arena.push_zeroed<std::span<int32_t>>(product_count);
-
-    for (size_t i = 0; i < trace_count; ++i)
+    for (size_t trace_idx = 0; trace_idx < trace_count; ++trace_idx)
     {
-        const auto path = paths[i];
+        const auto path = paths[trace_idx];
         auto trace_name = get_file_version(arena, path);
 
         if (trace_name.empty())
@@ -277,13 +311,7 @@ static AccumulatedResults* prepare_results(mem::Arena& arena, std::span<const wc
             trace_name = u16u8(arena, filename, end - filename);
         }
 
-        results->trace_paths[i] = path;
-        results->trace_names[i] = trace_name;
-    }
-
-    for (size_t i = 0; i < chart_count; ++i)
-    {
-        results->chart_names[i] = s_benchmarks[i].title;
+        results->trace_names[trace_idx] = trace_name;
     }
 
     return results;
@@ -329,51 +357,14 @@ static void prepare_conhost(const BenchmarkContext& ctx, HWND parent_hwnd)
     WriteFile(ctx.output, buf, 9001, nullptr, nullptr);
 }
 
-static size_t estimate_iterations(const BenchmarkContext& ctx, const Benchmark& bench)
-{
-    static constexpr size_t iterations[2]{ 10, 20 };
-    int64_t durations[2];
-
-    for (size_t i = 0; i < 2; ++i)
-    {
-        int32_t measurements[iterations[1]];
-        measurements[0] = 0;
-
-        const auto beg = query_perf_counter();
-        bench.exec(ctx, { &measurements[0], iterations[i] });
-        durations[i] = query_perf_counter() - beg;
-
-        if (measurements[0] == 0)
-        {
-            return 0;
-        }
-    }
-
-    const auto ticks_per_iter = std::max<int64_t>(1, (durations[1] - durations[0]) / (iterations[1] - iterations[0]));
-    const auto base_cost = std::max<int64_t>(0, durations[0] - ticks_per_iter * iterations[0]);
-    return std::max<int64_t>(1, (query_perf_freq() - base_cost) / ticks_per_iter);
-}
-
-static size_t run_benchmark(const BenchmarkContext& ctx, const Benchmark& bench, std::span<int32_t> measurements)
-{
-    const auto beg = query_perf_counter();
-    bench.exec(ctx, measurements);
-    const auto dur = query_perf_counter() - beg;
-
-    const auto ticks_per_iter = std::max<int64_t>(1, dur / measurements.size());
-    return (query_perf_freq() + ticks_per_iter / 2) / ticks_per_iter;
-}
-
-static void run_benchmarks_for_trace(mem::Arena& arena, const AccumulatedResults* results, size_t trace_index)
+static std::span<Measurements> run_benchmarks_for_path(mem::Arena& arena, const wchar_t* path)
 {
     const auto scratch = mem::get_scratch_arena(arena);
     const auto parent_connection = get_active_connection();
     const auto parent_hwnd = GetConsoleWindow();
+    const auto freq = query_perf_freq();
 
-    const auto trace_name = results->trace_names[trace_index];
-    print_format(scratch.arena, "\r\n# %.*s\r\n", trace_name.size(), trace_name.data());
-
-    const auto handle = spawn_conhost(scratch.arena, results->trace_paths[trace_index]);
+    const auto handle = spawn_conhost(scratch.arena, path);
     set_active_connection(handle.connection.get());
 
     const auto print_with_parent_connection = [&](auto&&... args) {
@@ -394,36 +385,43 @@ static void run_benchmarks_for_trace(mem::Arena& arena, const AccumulatedResults
     };
 
     prepare_conhost(ctx, parent_hwnd);
-    Sleep(500);
+    Sleep(1000);
 
-    for (size_t chart_index = 0; chart_index < results->chart_count; ++chart_index)
+    const auto results = arena.push_uninitialized_span<Measurements>(s_benchmarks_count);
+    for (auto& measurements : results)
     {
-        const auto measurement_idx = trace_index * results->trace_count + chart_index;
-        const auto& bench = s_benchmarks[chart_index];
+        measurements = arena.push_zeroed_span<int32_t>(2048);
+    }
 
-        print_with_parent_connection("- %s", results->chart_names[chart_index]);
+    for (size_t bench_idx = 0; bench_idx < s_benchmarks_count; ++bench_idx)
+    {
+        const auto& bench = s_benchmarks[bench_idx];
+        auto& measurements = results[bench_idx];
+
+        print_with_parent_connection("- %s", bench.title);
+
+        // Warmup for 0.1s.
         WriteConsoleW(ctx.output, L"\033c", 2, nullptr, nullptr);
+        ctx.time_limit = query_perf_counter() + freq / 10;
+        bench.exec(ctx, measurements);
 
-        const auto iter_per_sec = estimate_iterations(ctx, bench);
-        if (iter_per_sec == 0)
+        // Actual run for 1s.
+        WriteConsoleW(ctx.output, L"\033c", 2, nullptr, nullptr);
+        ctx.time_limit = query_perf_counter() + freq;
+        bench.exec(ctx, measurements);
+
+        // Trim off trailing 0s that resulted from the time_limit.
+        size_t len = measurements.size();
+        for (; len > 0 && measurements[len - 1] == 0; --len)
         {
-            print_with_parent_connection(", failed\r\n");
-            continue;
         }
+        measurements = measurements.subspan(0, len);
 
-        const auto iterations = std::clamp<size_t>(iter_per_sec, 100, 1000);
-        const auto measurements = arena.push_uninitialized_span<int32_t>(iterations);
-
-        results->measurements[measurement_idx] = measurements;
-
-        print_with_parent_connection(", estimated %zu/s, running %zu times", iter_per_sec, iterations);
-        WriteConsoleW(ctx.output, L"\033c", 2, nullptr, nullptr);
-
-        const auto iter_per_sec_actual = run_benchmark(ctx, bench, measurements);
-        print_with_parent_connection(", %zu/s, done\r\n", iter_per_sec_actual);
+        print_with_parent_connection(", done\r\n");
     }
 
     set_active_connection(parent_connection);
+    return results;
 }
 
 static void generate_html(mem::Arena& arena, const AccumulatedResults* results)
@@ -472,21 +470,21 @@ static void generate_html(mem::Arena& arena, const AccumulatedResults* results)
     {
         writer.write("        const results = [");
 
-        for (size_t chart_index = 0; chart_index < results->chart_count; ++chart_index)
+        for (size_t bench_idx = 0; bench_idx < s_benchmarks_count; ++bench_idx)
         {
+            const auto& bench = s_benchmarks[bench_idx];
+
             writer.write("{title:'");
-            writer.write(results->chart_names[chart_index]);
+            writer.write(bench.title);
             writer.write("',results:[");
 
-            for (size_t trace_index = 0; trace_index < results->trace_count; ++trace_index)
+            for (size_t trace_idx = 0; trace_idx < results->trace_count; ++trace_idx)
             {
-                const auto measurement_idx = trace_index * results->trace_count + chart_index;
-                const auto measurements = results->measurements[measurement_idx];
-
                 writer.write("{basename:'");
-                writer.write(results->trace_names[trace_index]);
+                writer.write(results->trace_names[trace_idx]);
                 writer.write("',measurements:[");
 
+                const auto measurements = results->measurments[trace_idx][bench_idx];
                 if (!measurements.empty())
                 {
                     std::sort(measurements.begin(), measurements.end());
