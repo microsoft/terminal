@@ -30,7 +30,7 @@ static int32_t perf_delta(int64_t beg)
     return static_cast<int32_t>(query_perf_counter() - beg);
 }
 
-static Benchmark s_benchmarks[]{
+static constexpr Benchmark s_benchmarks[]{
     Benchmark{
         .title = "WriteConsoleA 4Ki",
         .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
@@ -109,7 +109,7 @@ static Benchmark s_benchmarks[]{
     Benchmark{
         .title = "ReadConsoleInputW clipboard 4Ki",
         .exec = [](const BenchmarkContext& ctx, std::span<int32_t> measurements) {
-            static constexpr DWORD cap = 8 * 1024;
+            static constexpr DWORD cap = 16 * 1024;
 
             const auto scratch = mem::get_scratch_arena(ctx.arena);
             const auto buf = scratch.arena.push_uninitialized<INPUT_RECORD>(cap);
@@ -137,7 +137,7 @@ struct AccumulatedResults
     // The Y-axis/columns: These members have trace_count-many items.
     size_t trace_count;
     std::string_view* trace_names;
-    const wchar_t** paths;
+    const wchar_t** trace_paths;
 
     // The X-axis/rows: These members have chart_count-many items.
     size_t chart_count;
@@ -255,7 +255,7 @@ static AccumulatedResults* prepare_results(mem::Arena& arena, std::span<const wc
 
     results->trace_count = trace_count;
     results->trace_names = arena.push_zeroed<std::string_view>(trace_count);
-    results->paths = arena.push_uninitialized<const wchar_t*>(trace_count);
+    results->trace_paths = arena.push_uninitialized<const wchar_t*>(trace_count);
 
     results->chart_count = chart_count;
     results->chart_names = arena.push_uninitialized<const char*>(chart_count);
@@ -277,7 +277,7 @@ static AccumulatedResults* prepare_results(mem::Arena& arena, std::span<const wc
             trace_name = u16u8(arena, filename, end - filename);
         }
 
-        results->paths[i] = path;
+        results->trace_paths[i] = path;
         results->trace_names[i] = trace_name;
     }
 
@@ -289,9 +289,11 @@ static AccumulatedResults* prepare_results(mem::Arena& arena, std::span<const wc
     return results;
 }
 
-static void prepare_conhost(const BenchmarkContext& ctx)
+static void prepare_conhost(const BenchmarkContext& ctx, HWND parent_hwnd)
 {
     const auto scratch = mem::get_scratch_arena(ctx.arena);
+
+    SetForegroundWindow(parent_hwnd);
 
     // Ensure conhost is in a consistent state with identical fonts and window sizes,
     SetConsoleCP(CP_UTF8);
@@ -329,39 +331,56 @@ static void prepare_conhost(const BenchmarkContext& ctx)
 
 static size_t estimate_iterations(const BenchmarkContext& ctx, const Benchmark& bench)
 {
-    int32_t measurements_buffer[10];
-    int64_t beg = 0;
+    static constexpr size_t iterations[2]{ 10, 20 };
+    int64_t durations[2];
 
-    beg = query_perf_counter();
-    bench.exec(ctx, { &measurements_buffer[0], 1 });
-    const auto dur1 = query_perf_counter() - beg;
+    for (size_t i = 0; i < 2; ++i)
+    {
+        int32_t measurements[iterations[1]];
+        measurements[0] = 0;
 
-    beg = query_perf_counter();
-    bench.exec(ctx, { &measurements_buffer[0], 9 });
-    const auto dur9 = query_perf_counter() - beg;
+        const auto beg = query_perf_counter();
+        bench.exec(ctx, { &measurements[0], iterations[i] });
+        durations[i] = query_perf_counter() - beg;
 
-    const auto ticks_per_iter = std::max<int64_t>(1, (dur9 - dur1) / 8);
-    const auto base_cost = std::max<int64_t>(0, dur1 - ticks_per_iter);
-    return (query_perf_freq() - base_cost) / ticks_per_iter;
+        if (measurements[0] == 0)
+        {
+            return 0;
+        }
+    }
+
+    const auto ticks_per_iter = std::max<int64_t>(1, (durations[1] - durations[0]) / (iterations[1] - iterations[0]));
+    const auto base_cost = std::max<int64_t>(0, durations[0] - ticks_per_iter * iterations[0]);
+    return std::max<int64_t>(1, (query_perf_freq() - base_cost) / ticks_per_iter);
 }
 
-static std::span<int32_t> run_benchmark(mem::Arena& arena, const BenchmarkContext& ctx, const Benchmark& bench, size_t iterations)
+static size_t run_benchmark(const BenchmarkContext& ctx, const Benchmark& bench, std::span<int32_t> measurements)
 {
-    const auto measurements = arena.push_uninitialized_span<int32_t>(iterations);
+    const auto beg = query_perf_counter();
     bench.exec(ctx, measurements);
-    return measurements;
+    const auto dur = query_perf_counter() - beg;
+
+    const auto ticks_per_iter = std::max<int64_t>(1, dur / measurements.size());
+    return (query_perf_freq() + ticks_per_iter / 2) / ticks_per_iter;
 }
 
 static void run_benchmarks_for_trace(mem::Arena& arena, const AccumulatedResults* results, size_t trace_index)
 {
     const auto scratch = mem::get_scratch_arena(arena);
     const auto parent_connection = get_active_connection();
+    const auto parent_hwnd = GetConsoleWindow();
 
     const auto trace_name = results->trace_names[trace_index];
-    print_format(scratch.arena, "# %.*s\r\n", trace_name.size(), trace_name.data());
+    print_format(scratch.arena, "\r\n# %.*s\r\n", trace_name.size(), trace_name.data());
 
-    const auto handle = spawn_conhost(scratch.arena, results->paths[trace_index]);
+    const auto handle = spawn_conhost(scratch.arena, results->trace_paths[trace_index]);
     set_active_connection(handle.connection.get());
+
+    const auto print_with_parent_connection = [&](auto&&... args) {
+        set_active_connection(parent_connection);
+        mem::print_format(scratch.arena, args...);
+        set_active_connection(handle.connection.get());
+    };
 
     BenchmarkContext ctx{
         .hwnd = GetConsoleWindow(),
@@ -374,36 +393,37 @@ static void run_benchmarks_for_trace(mem::Arena& arena, const AccumulatedResults
         .utf16_128Ki = mem::repeat_string(scratch.arena, payload_utf16, 128 * 1024 / 128),
     };
 
-    prepare_conhost(ctx);
+    prepare_conhost(ctx, parent_hwnd);
     Sleep(500);
 
     for (size_t chart_index = 0; chart_index < results->chart_count; ++chart_index)
     {
+        const auto measurement_idx = trace_index * results->trace_count + chart_index;
         const auto& bench = s_benchmarks[chart_index];
 
-        set_active_connection(parent_connection);
-        mem::print_format(scratch.arena, "- %s", results->chart_names[chart_index]);
-        set_active_connection(handle.connection.get());
-
+        print_with_parent_connection("- %s", results->chart_names[chart_index]);
         WriteConsoleW(ctx.output, L"\033c", 2, nullptr, nullptr);
 
         const auto iter_per_sec = estimate_iterations(ctx, bench);
+        if (iter_per_sec == 0)
+        {
+            print_with_parent_connection(", failed\r\n");
+            continue;
+        }
+
         const auto iterations = std::clamp<size_t>(iter_per_sec, 100, 1000);
+        const auto measurements = arena.push_uninitialized_span<int32_t>(iterations);
 
-        set_active_connection(parent_connection);
-        print_format(arena, ", estimated %zu/s, running %zu times", iter_per_sec, iterations);
-        set_active_connection(handle.connection.get());
+        results->measurements[measurement_idx] = measurements;
 
-        const auto product_index = trace_index * results->trace_count + chart_index;
-        results->measurements[product_index] = run_benchmark(arena, ctx, bench, iterations);
+        print_with_parent_connection(", estimated %zu/s, running %zu times", iter_per_sec, iterations);
+        WriteConsoleW(ctx.output, L"\033c", 2, nullptr, nullptr);
 
-        set_active_connection(parent_connection);
-        mem::print_literal(", done\r\n");
-        set_active_connection(handle.connection.get());
+        const auto iter_per_sec_actual = run_benchmark(ctx, bench, measurements);
+        print_with_parent_connection(", %zu/s, done\r\n", iter_per_sec_actual);
     }
 
     set_active_connection(parent_connection);
-    mem::print_literal("\r\n");
 }
 
 static void generate_html(mem::Arena& arena, const AccumulatedResults* results)
@@ -460,35 +480,38 @@ static void generate_html(mem::Arena& arena, const AccumulatedResults* results)
 
             for (size_t trace_index = 0; trace_index < results->trace_count; ++trace_index)
             {
-                const auto product_index = trace_index * results->trace_count + chart_index;
-                const auto measurements = results->measurements[product_index];
+                const auto measurement_idx = trace_index * results->trace_count + chart_index;
+                const auto measurements = results->measurements[measurement_idx];
 
                 writer.write("{basename:'");
                 writer.write(results->trace_names[trace_index]);
                 writer.write("',measurements:[");
 
-                std::sort(measurements.begin(), measurements.end());
-
-                // Console calls have a high tail latency. Whatever the reason is (it's probably scheduling latency)
-                // it's not particularly interesting at the moment when the median latency is intolerable high anyway.
-                const auto p25 = measurements[(measurements.size() * 25 + 50) / 100];
-                const auto p75 = measurements[(measurements.size() * 75 + 50) / 100];
-                const auto iqr3 = (p75 - p25) * 3;
-                const auto outlier_max = p75 + iqr3;
-
-                const auto beg = measurements.data();
-                auto end = beg + measurements.size();
-
-                for (; end[-1] > outlier_max; --end)
+                if (!measurements.empty())
                 {
-                }
+                    std::sort(measurements.begin(), measurements.end());
 
-                for (auto it = beg; it < end; ++it)
-                {
-                    char buffer[32];
-                    const auto res = std::to_chars(&buffer[0], &buffer[64], *it * sec_per_tick, std::chars_format::scientific, 3);
-                    writer.write({ &buffer[0], res.ptr });
-                    writer.write(",");
+                    // Console calls have a high tail latency. Whatever the reason is (it's probably scheduling latency)
+                    // it's not particularly interesting at the moment when the median latency is intolerable high anyway.
+                    const auto p25 = measurements[(measurements.size() * 25 + 50) / 100];
+                    const auto p75 = measurements[(measurements.size() * 75 + 50) / 100];
+                    const auto iqr3 = (p75 - p25) * 3;
+                    const auto outlier_max = p75 + iqr3;
+
+                    const auto beg = measurements.data();
+                    auto end = beg + measurements.size();
+
+                    for (; end[-1] > outlier_max; --end)
+                    {
+                    }
+
+                    for (auto it = beg; it < end; ++it)
+                    {
+                        char buffer[32];
+                        const auto res = std::to_chars(&buffer[0], &buffer[64], *it * sec_per_tick, std::chars_format::scientific, 3);
+                        writer.write({ &buffer[0], res.ptr });
+                        writer.write(",");
+                    }
                 }
 
                 writer.write("]},");

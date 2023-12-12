@@ -57,8 +57,6 @@ ConhostHandle spawn_conhost(mem::Arena& arena, const wchar_t* path)
 
         STARTUPINFOEXW siEx{};
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-        siEx.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
-        siEx.StartupInfo.wShowWindow = SW_SHOWNOACTIVATE;
         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(&attrListBuffer[0]);
 
         HANDLE inheritedHandles[1];

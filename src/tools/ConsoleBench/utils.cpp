@@ -79,13 +79,29 @@ std::string_view get_file_version(mem::Arena& arena, const wchar_t* path)
 void set_clipboard(HWND hwnd, std::wstring_view contents)
 {
     const auto global = GlobalAlloc(GMEM_MOVEABLE, (contents.size() + 1) * sizeof(wchar_t));
+    {
+        const auto ptr = static_cast<wchar_t*>(GlobalLock(global));
 
-    const auto global_ptr = static_cast<wchar_t*>(GlobalLock(global));
-    mem::copy(global_ptr, contents.data(), contents.size());
-    global_ptr[contents.size()] = 0;
-    GlobalUnlock(global);
+        mem::copy(ptr, contents.data(), contents.size());
+        ptr[contents.size()] = 0;
 
-    OpenClipboard(hwnd);
+        GlobalUnlock(global);
+    }
+
+    for (DWORD sleep = 10;; sleep *= 2)
+    {
+        if (OpenClipboard(hwnd))
+        {
+            break;
+        }
+        // 10 iterations
+        if (sleep > 10000)
+        {
+            THROW_LAST_ERROR();
+        }
+        Sleep(sleep);
+    }
+
     EmptyClipboard();
     SetClipboardData(CF_UNICODETEXT, global);
     CloseClipboard();
