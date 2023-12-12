@@ -403,18 +403,25 @@ GdiEngine::~GdiEngine()
     _lineMetrics.underlineOffset += underlineHalfWidth;
     _lineMetrics.underlineOffset2 += underlineHalfWidth;
 
-    // Curlyline uses the gap between cell bottom and singly underline position
-    // as the height of the wave's peak. The baseline for curly line is at the
-    // middle of singly underline. The gap could be too big, so we also apply a
-    // limit on the peak height.
+    // Curlyline is drawn with a desired height relative to the font size. The
+    // baseline of curlyline is at the middle of singly underline. When there's
+    // limited space to draw a curlyline, we apply a limit on the peak height.
     {
-        const auto cellBottomGap = std::max(0, Font.GetSize().height - _lineMetrics.underlineOffset - _lineMetrics.underlineWidth);
+        // initialize curlyline peak height to a desired value. Clamp it to at
+        // least 1.
+        constexpr auto curlyLinePeakHeightEm = 0.075f;
+        _lineMetrics.curlylinePeakHeight = gsl::narrow_cast<int>(std::max(1L, std::lround(curlyLinePeakHeightEm * fontSize)));
 
-        // get the max height for curly line peak. Max height is in `em` units.
-        constexpr auto maxCurlyLinePeakHeightEm = 0.075f;
-        const auto maxCurlyLinePeakHeight = gsl::narrow_cast<int>(std::lround(maxCurlyLinePeakHeightEm * fontSize));
+        // calc the limit we need to apply
+        const auto maxDrawableCurlyLinePeakHeight = Font.GetSize().height - _lineMetrics.underlineOffset - _lineMetrics.underlineWidth;
 
-        _lineMetrics.curlylinePeakHeight = std::min(cellBottomGap, maxCurlyLinePeakHeight);
+        // if the limit is <= 0 (no height at all), stick with the desired height.
+        // This is how we force a curlyline even when there's no space, though it
+        // might be clipped at the bottom.
+        if (maxDrawableCurlyLinePeakHeight > 0.0f)
+        {
+            _lineMetrics.curlylinePeakHeight = std::min(_lineMetrics.curlylinePeakHeight, maxDrawableCurlyLinePeakHeight);
+        }
     }
 
     // Now find the size of a 0 in this current font and save it for conversions done later.

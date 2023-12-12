@@ -306,26 +306,30 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
 {
     const auto& font = *p.s->font;
 
-    // Curlyline uses the gap between cell bottom and singly underline position
-    // as the height of the wave's peak. The baseline for curly-line is at the
-    // middle of singly underline. The gap could be too big, so we also apply
-    // a limit on the peak height.
+    // Curlyline is drawn with a desired height relative to the font size. The
+    // baseline of curlyline is at the middle of singly underline. When there's
+    // limited space to draw a curlyline, we apply a limit on the peak height.
     {
-        const auto strokeHalfWidth = font.underline.height / 2.0f;
+        // initialize curlyline peak height to a desired value. Clamp it to at
+        // least 1.
+        constexpr auto curlyLinePeakHeightEm = 0.075f;
+        _curlyLinePeakHeight = std::max(1.0f, std::roundf(curlyLinePeakHeightEm * font.fontSize));
+
+        // calc the limit we need to apply
+        const auto strokeHalfWidth = std::floor(font.underline.height / 2.0f);
         const auto underlineMidY = font.underline.position + strokeHalfWidth;
-        const auto cellBottomGap = font.cellSize.y - underlineMidY - strokeHalfWidth;
+        const auto maxDrawableCurlyLinePeakHeight = font.cellSize.y - underlineMidY - font.underline.height;
 
-        // The max height of Curly line peak in `em` units.
-        constexpr auto maxCurlyLinePeakHeightEm = 0.075f;
-        const auto maxCurlyLinePeakHeight = maxCurlyLinePeakHeightEm * font.fontSize;
+        // if the limit is <= 0 (no height at all), stick with the desired height.
+        // This is how we force a curlyline even when there's no space, though it
+        // might be clipped at the bottom.
+        if (maxDrawableCurlyLinePeakHeight > 0.0f)
+        {
+            _curlyLinePeakHeight = std::min(_curlyLinePeakHeight, maxDrawableCurlyLinePeakHeight);
+        }
 
-        auto curlyLinePeakHeight = std::min(cellBottomGap, maxCurlyLinePeakHeight);
-
-        // We draw a smaller curly line (-1px) to avoid clipping due to the rounding.
-        _curlyLineDrawPeakHeight = std::max(0.0f, curlyLinePeakHeight - 1.0f);
-
-        const auto curlyUnderlinePos = font.underline.position - curlyLinePeakHeight;
-        const auto curlyUnderlineWidth = 2.0f * (curlyLinePeakHeight + strokeHalfWidth);
+        const auto curlyUnderlinePos = underlineMidY - _curlyLinePeakHeight - font.underline.height;
+        const auto curlyUnderlineWidth = 2.0f * (_curlyLinePeakHeight + font.underline.height);
         const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
         const auto curlyUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
         _curlyUnderline = { curlyUnderlinePosU16, curlyUnderlineWidthU16 };
@@ -570,7 +574,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
         data.curlyLineWaveFreq = 2.0f * 3.14f / p.s->font->cellSize.x;
-        data.curlyLinePeakHeight = _curlyLineDrawPeakHeight;
+        data.curlyLinePeakHeight = _curlyLinePeakHeight;
         data.curlyLineCellOffset = p.s->font->underline.position + p.s->font->underline.height / 2.0f;
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
