@@ -24,15 +24,22 @@
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
                     <Color x:Key="BackdropBackground">#202020</Color>
+                    <SolidColorBrush x:Key="MessageBorderBrush">Transparent</SolidColorBrush>
+                    <Thickness x:Key="MessageBorderThickness">0</Thickness>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Light">
                     <Color x:Key="BackdropBackground">#F9F9F9</Color>
+                    <SolidColorBrush x:Key="MessageBorderBrush">Transparent</SolidColorBrush>
+                    <Thickness x:Key="MessageBorderThickness">0</Thickness>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="HighContrast">
                     <StaticResource x:Key="BackdropBackground"
                                     ResourceKey="SystemFillColorNeutralBackgroundBrush" />
+                    <StaticResource x:Key="MessageBorderBrush"
+                                    ResourceKey="ButtonBorderThemeBrush" />
+                    <Thickness x:Key="MessageBorderThickness">1</Thickness>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
             <mux:StackLayout x:Name="VerticalStackLayout"
@@ -51,6 +58,8 @@
                                 MaxWidth="400"
                                 Padding="16,8,16,8"
                                 Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource MessageBorderBrush}"
+                                BorderThickness="{ThemeResource MessageBorderThickness}"
                                 CornerRadius="8">
                         <TextBlock FontSize="14"
                                    Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
@@ -72,6 +81,8 @@
                                 MaxWidth="400"
                                 Padding="16,8,16,8"
                                 Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
+                                BorderBrush="{ThemeResource MessageBorderBrush}"
+                                BorderThickness="{ThemeResource MessageBorderThickness}"
                                 CornerRadius="8">
                         <TextBlock FontSize="14"
                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
@@ -93,6 +104,8 @@
                     <StackPanel Grid.Row="1"
                                 Padding="16,8,16,8"
                                 Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
+                                BorderBrush="{ThemeResource MessageBorderBrush}"
+                                BorderThickness="{ThemeResource MessageBorderThickness}"
                                 CornerRadius="8">
                         <Border Padding="8,4,8,4"
                                 Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
