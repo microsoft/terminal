@@ -142,19 +142,17 @@ spawned, we propose the inclusion of a new API, `AllocConsoleEx(PCONSOLE_ALLOCAT
 #### `AllocConsoleEx`
 
 ```c++
-typedef
-enum _CONSOLE_ALLOCATE_MODE
-{
-    CONSOLE_ALLOCATE_DEFAULT = 0,
-    CONSOLE_ALLOCATE_HIDDEN,
-    CONSOLE_ALLOCATE_MINIMIZED
-} CONSOLE_ALLOCATE_MODE;
+#define CONSOLE_ALLOCATE_NORMAL         0x00000001
+#define CONSOLE_ALLOCATE_HIDDEN         0x00000002
+#define CONSOLE_ALLOCATE_USE_SHOWWINDOW 0x00000004
 
 typedef
 struct _CONSOLE_ALLOCATE_INFO
 {
     DWORD cbSize;
-    CONSOLE_ALLOCATE_MODE mode;
+    DWORD dwFlags;
+    WORD  wShowWindow;
+    COORD dwWindowSize;
 } CONSOLE_ALLOCATE_INFO, *PCONSOLE_ALLOCATE_INFO;
 
 WINBASEAPI
@@ -165,12 +163,53 @@ AllocConsoleEx(PCONSOLE_ALLOCATE_INFO pAllocateInfo);
 
 **AllocConsoleEx** affords an application control over how its console windows are allocated.
 
-Modes:
+> [!NOTE]
+> Unlike `AllocConsole`, which always results in a console window being created, `AllocConsoleEx` without flags will
+> only allocate a console if one was requested during `CreateProcess`.
+>
+> To override this behavior, pass one of `CONSOLE_ALLOCATE_NORMAL` (which is equivalent to being spawned with
+> `CREATE_NEW_WINDOW`) or `CONSOLE_ALLOCATE_HIDDEN` (which is equivalent to being spawned with `CREATE_NO_WINDOW`.)
 
-* `CONSOLE_ALLOCATE_DEFAULT`: Equivalent to `AllocConsole()` or `AllocConsoleEx(NULL)`. The console window is configured
-  based on the fields in the `STARTUPINFO` used to spawn the current process.
-* `CONSOLE_ALLOCATE_HIDDEN`: Allocates a console with no visible window. The window can be displayed at a later time.
-* `CONSOLE_ALLOCATE_MINIMIZED`: Allocates a console with a window that is minimized to the taskbar.
+##### Parameters
+
+**pAllocateInfo**: A pointer to a `CONSOLE_ALLOCATE_INFO`.
+
+##### `CONSOLE_ALLOCATE_INFO`
+
+###### Members
+
+**cbSize**: Must be set to `sizeof(CONSOLE_ALLOCATE_INFO)`.
+
+**dwFlags**: See the table below for the descriptions of the available flags.
+
+**wShowWindow**: If `CONSOLE_ALLOCATE_USE_SHOWWINDOW` is set, specifies the ["show command"] used to display your
+console window.
+
+**dwWindowSize**: Specifies the viewport size of your newly-allocated console window. If you do not specify a size (e.g.
+you leave it set to `COORD{ 0, 0 }`), your process' console window will be created with a size in accordance with system
+configuration and/or the values in the `STARTUPINFO` structure used during your process' creation.
+
+###### Return Value
+
+`AllocConsoleEx` will return `S_OK` if a console was allocated, and `S_FALSE` if one was not allocated.
+
+`AllocConsoleEx` may return `S_FALSE` without having allocated a console if your process was spawned with
+`DETACHED_PROCESS`.
+
+`AllocConsoleEx` will return an appropriate failing `HRESULT` if you pass it invalid parameters or the system is unable
+to allocate a new console, including in circumstances where your process is already attached to a console.
+
+###### Flags
+
+|               Flag                | Description                                                                                                                                 |
+|:---------------------------------:| ------------------------------------------------------------------------------------------------------------------------------------------- |
+|     `CONSOLE_ALLOCATE_NORMAL`     | Allocate a console session with a window, even if this process was created with `CREATE_NO_WINDOW` or `DETACHED_PROCESS`.                   |
+|     `CONSOLE_ALLOCATE_HIDDEN`     | Allocate a console session _without_ a window, even if this process was created with `CREATE_NEW_WINDOW` or `DETACHED_CONSOLE`              |
+| `CONSOLE_ALLOCATE_USE_SHOWWINDOW` | If specified, the value of `CONSOLE_ALLOCATE_INFO::wShowWindow` will be used to control the visibility of the newly-created console window. |
+
+`CONSOLE_ALLOCATE_NORMAL` and `CONSOLE_ALLOCATE_HIDDEN` are mutually exclusive.
+
+###### Notes
 
 Applications seeking backwards compatibility are encouraged to delay-load `AllocConsoleEx` or check for its presence in
 the `api-ms-win-core-console-l1` APISet.
@@ -353,3 +392,4 @@ application to interact with the console window via `GetConsoleWindow()` and exp
 [`AllocConsole`]: https://docs.microsoft.com/windows/console/allocconsole
 [`CreateProcess`]: https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw
 [process creation flags]: https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
+["show command"]: https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-showwindow
