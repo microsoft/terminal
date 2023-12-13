@@ -231,16 +231,9 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
     const auto& renderSettings = gci.GetRenderSettings();
-    const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
-    const auto& fontName = fontData.GetFaceName();
-    const auto fontSizePt = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
-    const auto bgColor = renderSettings.GetAttributeColors({}).second;
-    const auto isIntenseBold = renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
 
     const auto GetAttributeColors = [&](const auto& attr) {
         const auto [fg, bg] = renderSettings.GetAttributeColors(attr);
-        // TODO: GetAttributeUnderlineColor calls GetAttributeColors
-        // internally, which is redundant.
         const auto ul = renderSettings.GetAttributeUnderlineColor(attr);
         return std::tuple{ fg, bg, ul };
     };
@@ -256,8 +249,15 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 
     const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selectionStart, selectionEnd, singleLine, !selection.IsLineSelection(), false);
     text = buffer.GetPlainText(req);
+
     if (copyFormatting)
     {
+        const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
+        const auto& fontName = fontData.GetFaceName();
+        const auto fontSizePt = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
+        const auto bgColor = renderSettings.GetAttributeColors({}).second;
+        const auto isIntenseBold = renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
+
         htmlData = buffer.GenHTML(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
         rtfData = buffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
     }

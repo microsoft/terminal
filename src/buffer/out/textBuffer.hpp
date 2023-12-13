@@ -268,7 +268,36 @@ public:
                                       const bool singleLine,
                                       const bool blockSelection,
                                       const bool trimBlockSelection,
-                                      const bool bufferCoordinates = false) noexcept;
+                                      const bool bufferCoordinates = false) noexcept
+        {
+            return {
+                buffer,
+                beg,
+                end,
+                blockSelection,
+
+                /* includeLineBreak */
+                // - SingleLine mode collapses all rows into one line, unless we're in
+                //   block selection mode.
+                // - Block selection should preserve the visual structure by including
+                //   line breaks on all rows (together with `formatWrappedRows`).
+                //   (Selects like a box, pastes like a box)
+                !singleLine || blockSelection,
+
+                /* trimTrailingWhitespace */
+                // Trim trailing whitespace if we're not in single line mode and — either
+                // we're not in block selection mode or, we're in block selection mode and
+                // trimming is allowed.
+                !singleLine && (!blockSelection || trimBlockSelection),
+
+                /* formatWrappedRows */
+                // In block selection, we should apply formatting to wrapped rows as well.
+                // (Otherwise, they're only applied to non-wrapped rows.)
+                blockSelection,
+
+                bufferCoordinates
+            };
+        }
     };
 
     std::wstring GetPlainText(const CopyRequest& req) const;

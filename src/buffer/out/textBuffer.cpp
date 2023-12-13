@@ -1956,37 +1956,6 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
     return text;
 }
 
-TextBuffer::CopyRequest TextBuffer::CopyRequest::FromConfig(const TextBuffer& buffer, const til::point& beg, const til::point& end, const bool singleLine, const bool blockSelection, const bool trimBlockSelection, const bool bufferCoordinates) noexcept
-{
-    return {
-        buffer,
-        beg,
-        end,
-        blockSelection,
-
-        /* includeLineBreak */
-        // - SingleLine mode collapses all rows into one line, unless we're in
-        //   block selection mode.
-        // - Block selection should preserve the visual structure by including
-        //   line breaks on all rows (together with `formatWrappedRows`).
-        //   (Selects like a box, pastes like a box)
-        !singleLine || blockSelection,
-
-        /* trimTrailingWhitespace */
-        // Trim trailing whitespace if we're not in single line mode and — either
-        // we're not in block selection mode or, we're in block selection mode and
-        // trimming is allowed.
-        !singleLine && (!blockSelection || trimBlockSelection),
-
-        /* formatWrappedRows */
-        // In block selection, we should apply formatting to wrapped rows as well.
-        // (Otherwise, they're only applied to non-wrapped rows.)
-        blockSelection,
-
-        bufferCoordinates
-    };
-}
-
 // Routine Description:
 // - Given a copy request and a row, retrieves the row bounds [begin, end) and
 //   a boolean indicating whether a line break should be added to this row.
@@ -2119,7 +2088,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
             fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("background-color:{};"), Utils::ColorToHexString(backgroundColor));
 
             // even with different font, add monospace as fallback
-            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-family:'{}',monospace;"), ConvertToA(CP_UTF8, fontFaceName));
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-family:'{}',monospace;"), til::u16u8(fontFaceName));
 
             fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-size:{}pt;"), fontHeightPoints);
 
@@ -2185,9 +2154,6 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
                     switch (ulStyle)
                     {
                     case UnderlineStyle::NoUnderline:
-                        break;
-                    case UnderlineStyle::SinglyUnderlined:
-                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline {};"), ulHex);
                         break;
                     case UnderlineStyle::DoublyUnderlined:
                         fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline double {};"), ulHex);
@@ -2334,7 +2300,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
 
         // font table
         // Brace escape: add an extra brace (of same kind) after a brace to escape it within the format string.
-        fmt::format_to(std::back_inserter(rtfBuilder), FMT_COMPILE("{{\\fonttbl{{\\f0\\fmodern\\fcharset0 {};}}}}"), ConvertToA(CP_UTF8, fontFaceName));
+        fmt::format_to(std::back_inserter(rtfBuilder), FMT_COMPILE("{{\\fonttbl{{\\f0\\fmodern\\fcharset0 {};}}}}"), til::u16u8(fontFaceName));
 
         // map to keep track of colors:
         // keys are colors represented by COLORREF
@@ -2426,9 +2392,6 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
                 {
                 case UnderlineStyle::NoUnderline:
                     break;
-                case UnderlineStyle::SinglyUnderlined:
-                    fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\ul\\ulc{}"), ulIdx);
-                    break;
                 case UnderlineStyle::DoublyUnderlined:
                     fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\uldb\\ulc{}"), ulIdx);
                     break;
@@ -2493,8 +2456,8 @@ void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_
             case L'\\':
             case L'{':
             case L'}':
-                fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\{}"), gsl::narrow_cast<char>(codeUnit));
-                break;
+                contentBuilder += "\\";
+                [[fallthrough]];
             default:
                 contentBuilder += gsl::narrow_cast<char>(codeUnit);
             }

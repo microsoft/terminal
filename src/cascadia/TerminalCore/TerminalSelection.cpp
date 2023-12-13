@@ -849,29 +849,32 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
         return data;
     }
 
-    const auto bgColor = _renderSettings.GetAttributeColors({}).second;
-    const auto isIntenseBold = _renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
-    const auto fontSizePt = _fontInfo.GetUnscaledSize().height; // already in points
-    const auto& fontName = _fontInfo.GetFaceName();
-    const auto& textBuffer = _activeBuffer();
-
     const auto GetAttributeColors = [&](const auto& attr) {
         const auto [fg, bg] = _renderSettings.GetAttributeColors(attr);
-        // TODO: GetAttributeUnderlineColor calls GetAttributeColors
-        // internally, which is redundant.
         const auto ul = _renderSettings.GetAttributeUnderlineColor(attr);
         return std::tuple{ fg, bg, ul };
     };
 
+    const auto& textBuffer = _activeBuffer();
+
     const auto req = TextBuffer::CopyRequest::FromConfig(textBuffer, _selection->start, _selection->end, singleLine, _blockSelection, _trimBlockSelection);
     data.plainText = textBuffer.GetPlainText(req);
-    if (html)
+
+    if (html || rtf)
     {
-        data.html = textBuffer.GenHTML(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
-    }
-    if (rtf)
-    {
-        data.rtf = textBuffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
+        const auto bgColor = _renderSettings.GetAttributeColors({}).second;
+        const auto isIntenseBold = _renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
+        const auto fontSizePt = _fontInfo.GetUnscaledSize().height; // already in points
+        const auto& fontName = _fontInfo.GetFaceName();
+
+        if (html)
+        {
+            data.html = textBuffer.GenHTML(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
+        }
+        if (rtf)
+        {
+            data.rtf = textBuffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
+        }
     }
 
     return data;

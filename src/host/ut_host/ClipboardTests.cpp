@@ -107,7 +107,7 @@ class ClipboardTests
 
         // All rows:
         // First 15 columns selected -> 7 characters (9 columns) + 6 spaces
-        // Add CL/RF (except the last row)
+        // Add CR/LF (except the last row)
 
         // row 0
         expectedText += L"AB\u304bC\u304dDE      ";
@@ -122,7 +122,7 @@ class ClipboardTests
         expectedText += L"\r\n";
 
         // row 3
-        // last row -> no CL/RF
+        // last row -> no CR/LF
         expectedText += L"AB\u304bC\u304dDE      ";
 
         VERIFY_ARE_EQUAL(expectedText, text);
@@ -141,25 +141,25 @@ class ClipboardTests
         // - Trim trailing whitespace on non-wrapped rows.
 
         // row 0
-        // no wrap -> trim trailing whitespace, add CL/RF
+        // no wrap -> trim trailing whitespace, add CR/LF
         // All columns selected -> 7 characters, trimmed trailing spaces
         expectedText += L"AB\u304bC\u304dDE";
         expectedText += L"\r\n";
 
         // row 1
-        // wrap -> no trimming of trailing whitespace, no CL/RF
+        // wrap -> no trimming of trailing whitespace, no CR/LF
         // All columns selected -> 7 characters (9 columns) + (bufferWidth - 9) spaces
         const auto [bufferWidth, bufferHeight] = GetBufferSize();
         expectedText += L"AB\u304bC\u304dDE" + std::wstring(bufferWidth - 9, L' ');
 
         // row 2
-        // no wrap -> trim trailing whitespace, add CL/RF
+        // no wrap -> trim trailing whitespace, add CR/LF
         // All columns selected -> 7 characters (9 columns), trimmed trailing spaces
         expectedText += L"AB\u304bC\u304dDE";
         expectedText += L"\r\n";
 
         // row 3
-        // wrap -> no trimming of trailing whitespace, no CL/RF
+        // wrap -> no trimming of trailing whitespace, no CR/LF
         // First 15 columns selected -> 7 characters (9 columns) + 6 spaces
         expectedText += L"AB\u304bC\u304dDE      ";
 

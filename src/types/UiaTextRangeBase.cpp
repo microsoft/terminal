@@ -987,10 +987,13 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 
         const auto req = TextBuffer::CopyRequest{ buffer, _start, inclusiveEnd, _blockRange, true, false, false, true };
         auto plainText = buffer.GetPlainText(req);
-        if (plainText.size() <= maxLengthAsSize)
+
+        if (plainText.size() > maxLengthAsSize)
         {
-            textData = std::move(plainText);
+            plainText.resize(maxLengthAsSize);
         }
+
+        textData = std::move(plainText);
     }
 
     return textData;
