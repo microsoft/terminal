@@ -170,6 +170,16 @@ AllocConsoleEx(PCONSOLE_ALLOCATE_INFO pAllocateInfo);
 > To override this behavior, pass one of `CONSOLE_ALLOCATE_NORMAL` (which is equivalent to being spawned with
 > `CREATE_NEW_WINDOW`) or `CONSOLE_ALLOCATE_HIDDEN` (which is equivalent to being spawned with `CREATE_NO_WINDOW`.)
 
+> [!IMPORTANT]
+> _Why does this API seem so complicated?_
+>
+> Imagine PowerShell switches to `consoleAllocationPolicy` `detached`. Because this new policy
+> [overrides `CREATE_NEW_WINDOW`](#interaction-with-existing-apis), PowerShell has no way of knowing whether the
+> application that launched it truly desired a console window (either visible or hidden.)
+>
+> If PowerShell calls `AllocConsole()`, it will receive a new console window _even if it was spawned with
+> `DETACHED_PROCESS`_. This would result in a significant user experience regression.
+
 ##### Parameters
 
 **pAllocateInfo**: A pointer to a `CONSOLE_ALLOCATE_INFO`.
