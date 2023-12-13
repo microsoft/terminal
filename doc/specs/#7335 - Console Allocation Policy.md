@@ -142,14 +142,19 @@ spawned, we propose the inclusion of a new API, `AllocConsoleEx(PCONSOLE_ALLOCAT
 #### `AllocConsoleEx`
 
 ```c++
-#define CONSOLE_ALLOCATE_NORMAL         0x00000001
-#define CONSOLE_ALLOCATE_HIDDEN         0x00000002
-#define CONSOLE_ALLOCATE_USE_SHOWWINDOW 0x00000004
+// Console Allocation Modes
+#define ACX_MODE_DEFAULT             0x00000000
+#define ACX_MODE_WINDOW              0x00000001
+#define ACX_MODE_HEADLESS            0x00000002
+
+// Console Allocation Flags
+#define ACX_FLAG_USE_SHOWWINDOW 0x00000001
 
 typedef
 struct _CONSOLE_ALLOCATE_INFO
 {
     DWORD cbSize;
+    DWORD dwMode;
     DWORD dwFlags;
     WORD  wShowWindow;
     COORD dwWindowSize;
@@ -164,21 +169,11 @@ AllocConsoleEx(PCONSOLE_ALLOCATE_INFO pAllocateInfo);
 **AllocConsoleEx** affords an application control over how its console windows are allocated.
 
 > [!NOTE]
-> Unlike `AllocConsole`, which always results in a console window being created, `AllocConsoleEx` without flags will
-> only allocate a console if one was requested during `CreateProcess`.
+> Unlike `AllocConsole`, `AllocConsoleEx` without flags (`ACX_MODE_DEFAULT`) will only allocate a console if one was
+> requested during `CreateProcess`.
 >
-> To override this behavior, pass one of `CONSOLE_ALLOCATE_NORMAL` (which is equivalent to being spawned with
-> `CREATE_NEW_WINDOW`) or `CONSOLE_ALLOCATE_HIDDEN` (which is equivalent to being spawned with `CREATE_NO_WINDOW`.)
-
-> [!IMPORTANT]
-> _Why does this API seem so complicated?_
->
-> Imagine PowerShell switches to `consoleAllocationPolicy` `detached`. Because this new policy
-> [overrides `CREATE_NEW_WINDOW`](#interaction-with-existing-apis), PowerShell has no way of knowing whether the
-> application that launched it truly desired a console window (either visible or hidden.)
->
-> If PowerShell calls `AllocConsole()`, it will receive a new console window _even if it was spawned with
-> `DETACHED_PROCESS`_. This would result in a significant user experience regression.
+> To override this behavior, pass one of `ACX_MODE_WINDOW` (which is equivalent to being spawned with
+> `CREATE_NEW_WINDOW`) or `ACX_MODE_HEADLESS` (which is equivalent to being spawned with `CREATE_NO_WINDOW`.)
 
 ##### Parameters
 
@@ -190,9 +185,11 @@ AllocConsoleEx(PCONSOLE_ALLOCATE_INFO pAllocateInfo);
 
 **cbSize**: Must be set to `sizeof(CONSOLE_ALLOCATE_INFO)`.
 
+**dwMode**: See the table below for the descriptions of the available modes.
+
 **dwFlags**: See the table below for the descriptions of the available flags.
 
-**wShowWindow**: If `CONSOLE_ALLOCATE_USE_SHOWWINDOW` is set, specifies the ["show command"] used to display your
+**wShowWindow**: If `ACX_FLAG_USE_SHOWWINDOW` is set, specifies the ["show command"] used to display your
 console window.
 
 **dwWindowSize**: Specifies the viewport size of your newly-allocated console window. If you do not specify a size (e.g.
@@ -209,15 +206,19 @@ configuration and/or the values in the `STARTUPINFO` structure used during your 
 `AllocConsoleEx` will return an appropriate failing `HRESULT` if you pass it invalid parameters or the system is unable
 to allocate a new console, including in circumstances where your process is already attached to a console.
 
+###### Modes
+
+|        Mode         | Description                                                                                                                    |
+|:-------------------:| ------------------------------------------------------------------------------------------------------------------------------ |
+| `ACX_MODE_DEFAULT`  | Allocate a console session if (and how) one was requested by the parent process.                                               |
+|  `ACX_MODE_WINDOW`  | Allocate a console session with a window, even if this process was created with `CREATE_NO_WINDOW` or `DETACHED_PROCESS`.      |
+| `ACX_MODE_HEADLESS` | Allocate a console session _without_ a window, even if this process was created with `CREATE_NEW_WINDOW` or `DETACHED_CONSOLE` |
+
 ###### Flags
 
-|               Flag                | Description                                                                                                                                 |
-|:---------------------------------:| ------------------------------------------------------------------------------------------------------------------------------------------- |
-|     `CONSOLE_ALLOCATE_NORMAL`     | Allocate a console session with a window, even if this process was created with `CREATE_NO_WINDOW` or `DETACHED_PROCESS`.                   |
-|     `CONSOLE_ALLOCATE_HIDDEN`     | Allocate a console session _without_ a window, even if this process was created with `CREATE_NEW_WINDOW` or `DETACHED_CONSOLE`              |
-| `CONSOLE_ALLOCATE_USE_SHOWWINDOW` | If specified, the value of `CONSOLE_ALLOCATE_INFO::wShowWindow` will be used to control the visibility of the newly-created console window. |
-
-`CONSOLE_ALLOCATE_NORMAL` and `CONSOLE_ALLOCATE_HIDDEN` are mutually exclusive.
+|           Flag            | Description                                                                                                                                 |
+|:-------------------------:| ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ACX_FLAG_USE_SHOWWINDOW` | If specified, the value of `CONSOLE_ALLOCATE_INFO::wShowWindow` will be used to control the visibility of the newly-created console window. |
 
 ###### Notes
 
@@ -318,7 +319,7 @@ PowerShell, and any other shell that wishes to maintain interactive launch from 
    * Either of these APIs will present a console window (or not) based on the flags passed through `STARTUPINFO` during
      [`CreateProcess`].
 * If `-WindowStyle Hidden` is present, it can:
-   * `AllocConsoleEx(&alloc)` where `alloc.mode` specifies `CONSOLE_ALLOCATE_HIDDEN`
+   * `AllocConsoleEx(&alloc)` where `alloc.dwMode` specifies `ACX_MODE_HIDDEN`
 
 ## Future considerations
 
