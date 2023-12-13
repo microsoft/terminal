@@ -209,7 +209,8 @@ std::pair<til::point, til::point> Selection::GetSelectionAnchors(const bool orde
 {
     if (!_fSelectionVisible)
     {
-        return {};
+        // return anchors that represent an empty selection
+        return { { 0, 0 }, { -1, -1 } };
     }
 
     auto startSelectionAnchor = _coordSelectionAnchor;
