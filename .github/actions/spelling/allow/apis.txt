@@ -4,6 +4,7 @@ acl
 aclapi
 alignas
 alignof
+allocconsoleex
 APPLYTOSUBMENUS
 appxrecipe
 bitfield
