@@ -235,8 +235,10 @@ public:
 
     struct CopyRequest
     {
+        // beg and end coordinates are inclusive
         til::point beg;
         til::point end;
+
         til::CoordType minX;
         til::CoordType maxX;
         bool blockSelection = false;
@@ -251,7 +253,7 @@ public:
 
         constexpr CopyRequest(const TextBuffer& buffer, const til::point& beg, const til::point& end, const bool blockSelection, const bool includeLineBreak, const bool trimTrailingWhitespace, const bool formatWrappedRows, const bool bufferCoordinates = false) noexcept :
             beg{ std::max(beg, til::point{ 0, 0 }) },
-            end{ std::min(end, til::point{ buffer._width, buffer._height }) },
+            end{ std::min(end, til::point{ buffer._width - 1, buffer._height - 1 }) },
             minX{ std::min(this->beg.x, this->end.x) },
             maxX{ std::max(this->beg.x, this->end.x) },
             blockSelection{ blockSelection },
