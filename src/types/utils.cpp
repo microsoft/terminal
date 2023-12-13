@@ -523,39 +523,53 @@ catch (...)
 
 // Routine Description:
 // - Splits a resource string that contains placeholders (i.e. a string of the form "cc{0}cc...cc{n}cc")
-// - Allocates values to the placeholders according to the given map
+// - Allocates values to the placeholders according to the given span
 // Arguments:
 // - resourceString - the string that contains placeholders
-// - placeholderToStringMap - the map which contains the strings the placeholders should map to
+// - placeholderStringsSpan - the span which contains the placeholder strings
 // Return Value:
 // - a vector containing the result parts, with the placeholders being replaced by the relevant values according to the provided map
-std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstring resourceString, std::span<std::wstring> placeholderStringsSpan)
+std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstring_view resourceString, std::span<std::wstring> placeholderStringsSpan)
 {
     std::vector<std::wstring> result;
-    size_t pos;
-    while ((pos = resourceString.find(L"{")) != std::string::npos)
+    size_t current = 0;
+    while (current < resourceString.size())
     {
-        // We have found the first placeholder
-        // Get the substring of everything up until this point and append it to result
-        result.push_back(resourceString.substr(0, pos));
+        const auto nextPlaceholder = resourceString.find(L"{", current);
+        if (nextPlaceholder == std::wstring::npos)
+        {
+            result.push_back(std::wstring{ resourceString.substr(current) });
+            break;
+        }
+        else
+        {
+            const auto length = nextPlaceholder - current;
+            result.push_back(std::wstring{ resourceString.substr(current, length) });
 
-        // Get the placeholder number (this code assumes that the placeholder is just 1 digit,
-        // i.e. a number between 0-9)
-        const auto placeholderNumber = std::stoi(resourceString.substr(pos + 1, 1));
+            // Get the placeholder number (this code assumes that the placeholder is just 1 digit,
+            // i.e. a number between 0-9)
+            const auto placeholderNumber = std::stoi(std::wstring{ resourceString.substr(nextPlaceholder + 1, 1) });
 
-        // Obtain the correct string from the span
-        // The reason we need to obtain the correct index here is because different languages might end up ordering
-        // the placeholders differently (for example, a string of the form "cc{0}cc{1}cc" might end up as
-        // "c{1}cc{0}" in another language)
-        // The span ensures that the correct placeholder is placed in the correct place in the final string
-        result.push_back(placeholderStringsSpan[placeholderNumber]);
+            // Obtain the correct string from the span
+            // The reason we need to obtain the correct index here is because different languages might end up ordering
+            // the placeholders differently (for example, a string of the form "cc{0}cc{1}cc" might end up as
+            // "c{1}cc{0}" in another language)
+            // The span ensures that the correct placeholder is placed in the correct place in the final string
+            result.push_back(placeholderStringsSpan[placeholderNumber]);
 
-        // Repeat for the rest of the string
-        resourceString = resourceString.substr(pos + 3, resourceString.size() - pos - 3);
+            // Search for the next one, so increment by the length of 3 (i.e. the length of "{n}")
+            current += length + 3;
+
+            // The next index is larger than string size, which means the string
+            // is in the format of "part1{0}part2{1}"
+            // Add the last part which is an empty string
+            if (current >= resourceString.size())
+            {
+                result.push_back(L"");
+            }
+        }
     }
 
-    // Append what's remaining of the string
-    result.push_back(resourceString);
     return result;
 }
 

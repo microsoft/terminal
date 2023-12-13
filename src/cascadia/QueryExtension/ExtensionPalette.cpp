@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         std::array<std::wstring, 1> disclaimerPlaceholders{ RS_(L"AIContentDisclaimerLinkText").c_str() };
         std::span<std::wstring> disclaimerPlaceholdersSpan{ disclaimerPlaceholders };
-        const auto disclaimerParts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AIContentDisclaimer").c_str(), disclaimerPlaceholdersSpan);
+        const auto disclaimerParts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AIContentDisclaimer"), disclaimerPlaceholdersSpan);
 
         AIContentDisclaimerPart1().Text(disclaimerParts.at(0));
         AIContentDisclaimerLinkText().Text(disclaimerParts.at(1));
