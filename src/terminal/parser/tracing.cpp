@@ -15,6 +15,13 @@ TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider,
                              // {c9ba2a84-d3ca-5e19-2bd6-776a0910cb9d}
                              (0xc9ba2a84, 0xd3ca, 0x5e19, 0x2b, 0xd6, 0x77, 0x6a, 0x09, 0x10, 0xcb, 0x9d));
 
+static const auto cleanup = []() {
+    TraceLoggingRegister(g_hConsoleVirtTermParserEventTraceProvider);
+    return wil::scope_exit([]() {
+        TraceLoggingUnregister(g_hConsoleVirtTermParserEventTraceProvider);
+    });
+}();
+
 void ParserTracing::TraceStateChange(_In_z_ const wchar_t* name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
