@@ -2167,6 +2167,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
                     case UnderlineStyle::DashedUnderlined:
                         fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline dashed {};"), ulHex);
                         break;
+                    case UnderlineStyle::SinglyUnderlined:
                     default:
                         fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline {};"), ulHex);
                         break;
@@ -2404,6 +2405,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
                 case UnderlineStyle::DashedUnderlined:
                     fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\uldash\\ulc{}"), ulIdx);
                     break;
+                case UnderlineStyle::SinglyUnderlined:
                 default:
                     fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\ul\\ulc{}"), ulIdx);
                     break;
