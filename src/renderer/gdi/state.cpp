@@ -344,85 +344,101 @@ GdiEngine::~GdiEngine()
 
     // There is no font metric for the grid line width, so we use a small
     // multiple of the font size, which typically rounds to a pixel.
-    const auto fontSize = _tmFontMetrics.tmHeight - _tmFontMetrics.tmInternalLeading;
-    _lineMetrics.gridlineWidth = std::lround(fontSize * 0.025);
+    const auto cellHeight = static_cast<float>(Font.GetSize().height);
+    const auto fontSize = static_cast<float>(_tmFontMetrics.tmHeight - _tmFontMetrics.tmInternalLeading);
+    const auto baseline = static_cast<float>(_tmFontMetrics.tmAscent);
+    float idealGridlineWidth = std::max(1.0f, fontSize * 0.025f);
+    float idealUnderlineOffset = 0;
+    float idealUnderlineWidth = 0;
+    float idealStrikethroughOffset = 0;
+    float idealStrikethroughWidth = 0;
 
     OUTLINETEXTMETRICW outlineMetrics;
     if (GetOutlineTextMetricsW(_hdcMemoryContext, sizeof(outlineMetrics), &outlineMetrics))
     {
         // For TrueType fonts, the other line metrics can be obtained from
         // the font's outline text metric structure.
-        _lineMetrics.underlineOffset = outlineMetrics.otmsUnderscorePosition;
-        _lineMetrics.underlineWidth = outlineMetrics.otmsUnderscoreSize;
-        _lineMetrics.strikethroughOffset = outlineMetrics.otmsStrikeoutPosition;
-        _lineMetrics.strikethroughWidth = outlineMetrics.otmsStrikeoutSize;
+        idealUnderlineOffset = static_cast<float>(baseline - outlineMetrics.otmsUnderscorePosition);
+        idealUnderlineWidth = static_cast<float>(outlineMetrics.otmsUnderscoreSize);
+        idealStrikethroughOffset = static_cast<float>(baseline - outlineMetrics.otmsStrikeoutPosition);
+        idealStrikethroughWidth = static_cast<float>(outlineMetrics.otmsStrikeoutSize);
     }
     else
     {
-        // If we can't obtain the outline metrics for the font, we just pick
-        // some reasonable values for the offsets and widths.
-        _lineMetrics.underlineOffset = -std::lround(fontSize * 0.05);
-        _lineMetrics.underlineWidth = _lineMetrics.gridlineWidth;
-        _lineMetrics.strikethroughOffset = std::lround(_tmFontMetrics.tmAscent / 3.0);
-        _lineMetrics.strikethroughWidth = _lineMetrics.gridlineWidth;
+        // If we can't obtain the outline metrics for the font, we just pick some reasonable values for the offsets and widths.
+        idealUnderlineOffset = std::max(1.0f, roundf(baseline - fontSize * 0.05f));
+        idealUnderlineWidth = idealGridlineWidth;
+        idealStrikethroughOffset = std::max(1.0f, roundf(baseline * (2.0f / 3.0f)));
+        idealStrikethroughWidth = idealGridlineWidth;
     }
 
-    // We always want the lines to be visible, so if a stroke width ends
-    // up being zero, we need to make it at least 1 pixel.
-    _lineMetrics.gridlineWidth = std::max(_lineMetrics.gridlineWidth, 1);
-    _lineMetrics.underlineWidth = std::max(_lineMetrics.underlineWidth, 1);
-    _lineMetrics.strikethroughWidth = std::max(_lineMetrics.strikethroughWidth, 1);
+    const auto underlineOffset = std::roundf(idealUnderlineOffset);
+    const auto underlineWidth = std::max(1.0f, std::roundf(idealUnderlineWidth));
+    const auto strikethroughOffset = std::roundf(idealStrikethroughOffset);
+    const auto strikethroughWidth = std::max(1.0f, std::roundf(idealStrikethroughWidth));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(idealUnderlineWidth / 2.0f));
 
-    // Offsets are relative to the base line of the font, so we subtract
-    // from the ascent to get an offset relative to the top of the cell.
-    const auto ascent = _tmFontMetrics.tmAscent;
-    _lineMetrics.underlineOffset = ascent - _lineMetrics.underlineOffset;
-    _lineMetrics.strikethroughOffset = ascent - _lineMetrics.strikethroughOffset;
+    // For double underlines we loosely follow what Word does:
+    // 1. The lines are half the width of an underline (= thinLineWidth)
+    // 2. Ideally the bottom line is aligned with the bottom of the underline
+    // 3. The top underline is vertically in the middle between baseline and ideal bottom underline
+    // 4. If the top line gets too close to the baseline the underlines are shifted downwards
+    // 5. The minimum gap between the two lines appears to be similar to Tex (1.2pt)
+    // (Additional notes below.)
 
-    // For double underlines we need a second offset, just below the first,
-    // but with a bit of a gap (about double the grid line width).
-    _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset +
-                                    _lineMetrics.underlineWidth +
-                                    std::lround(fontSize * 0.05);
+    // 2.
+    auto doubleUnderlinePosBottom = underlineOffset + underlineWidth - thinLineWidth;
+    // 3. Since we don't align the center of our two lines, but rather the top borders
+    //    we need to subtract half a line width from our center point.
+    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f);
+    // 4.
+    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + thinLineWidth);
+    // 5. The gap is only the distance _between_ the lines, but we need the distance from the
+    //    top border of the top and bottom lines, which includes an additional line width.
+    const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * _iCurrentDpi));
+    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
+    // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
+    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, cellHeight - thinLineWidth);
 
-    // However, we don't want the underline to extend past the bottom of the
-    // cell, so we clamp the offset to fit just inside.
-    const auto maxUnderlineOffset = Font.GetSize().height - _lineMetrics.underlineWidth;
-    _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
+    // The wave line is drawn using a cubic Bézier curve (PolyBezier), because that happens to be cheap with GDI.
+    // We use a Bézier curve where, if the start (a) and end (c) points are at (0,0) and (1,0), the control points are
+    // at (0.5,0.5) (b) and (0.5,-0.5) (d) respectively. Like this but a/b/c/d are square and the lines are round:
+    //
+    //       b
+    //
+    //     ^
+    //    / \                here's some text so the compiler ignores the trailing \ character
+    //   a   \   c
+    //        \ /
+    //         v
+    //
+    //       c
+    //
+    // If you punch x=0.25 into the cubic bezier formula you get y=0.140625. This constant is
+    // important to us because it (plus the line width) tells us the magnitude of the wave.
+    //
+    // We can use the inverse of the constant to figure out how many px one period of the wave has to be to end up being 1px tall.
+    // In our case we want the magnitude of the wave to be the thinLineWidth, which is equal to its width.
+    // Since GDI can't deal with fractional pixels, we first calculate the control point offsets (0.5 and -0.5) by multiplying by 0.5.
+    // Only then we calculate the period from that which is always a multiple of 2.
+    const auto curlyLineControlPointOffset = roundf(thinLineWidth * (1.0f / 0.140625f) * 0.5f);
+    const auto curlyLinePeriod = curlyLineControlPointOffset * 2.0f;
+    // We can reverse the above to get back the actual magnitude of our Bézier curve. The line
+    // will be drawn with a width of thinLineWidth in the center of the curve (= 0.5x padding).
+    const auto curlyLineMagnitude = 0.140625f * curlyLinePeriod + 0.5f * thinLineWidth;
+    const auto curlyLineOffset = std::min(underlineOffset, floorf(cellHeight - curlyLineMagnitude));
 
-    // But if the resulting gap isn't big enough even to register as a thicker
-    // line, it's better to place the second line slightly above the first.
-    if (_lineMetrics.underlineOffset2 < _lineMetrics.underlineOffset + _lineMetrics.gridlineWidth)
-    {
-        _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
-    }
-
-    // Since we use GDI pen for drawing, the underline offset should point to
-    // the center of the underline.
-    const auto underlineHalfWidth = gsl::narrow_cast<int>(std::floor(_lineMetrics.underlineWidth / 2.0f));
-    _lineMetrics.underlineOffset += underlineHalfWidth;
-    _lineMetrics.underlineOffset2 += underlineHalfWidth;
-
-    // Curlyline is drawn with a desired height relative to the font size. The
-    // baseline of curlyline is at the middle of singly underline. When there's
-    // limited space to draw a curlyline, we apply a limit on the peak height.
-    {
-        // initialize curlyline peak height to a desired value. Clamp it to at
-        // least 1.
-        constexpr auto curlyLinePeakHeightEm = 0.075f;
-        _lineMetrics.curlylinePeakHeight = gsl::narrow_cast<int>(std::max(1L, std::lround(curlyLinePeakHeightEm * fontSize)));
-
-        // calc the limit we need to apply
-        const auto maxDrawableCurlyLinePeakHeight = Font.GetSize().height - _lineMetrics.underlineOffset - _lineMetrics.underlineWidth;
-
-        // if the limit is <= 0 (no height at all), stick with the desired height.
-        // This is how we force a curlyline even when there's no space, though it
-        // might be clipped at the bottom.
-        if (maxDrawableCurlyLinePeakHeight > 0.0f)
-        {
-            _lineMetrics.curlylinePeakHeight = std::min(_lineMetrics.curlylinePeakHeight, maxDrawableCurlyLinePeakHeight);
-        }
-    }
+    _lineMetrics.gridlineWidth = lroundf(idealGridlineWidth);
+    _lineMetrics.thinLineWidth = lroundf(thinLineWidth);
+    _lineMetrics.underlineOffset = lroundf(underlineOffset);
+    _lineMetrics.underlineWidth = lroundf(underlineWidth);
+    _lineMetrics.doubleUnderlinePosTop = lroundf(doubleUnderlinePosTop);
+    _lineMetrics.doubleUnderlinePosBottom = lroundf(doubleUnderlinePosBottom);
+    _lineMetrics.strikethroughOffset = lroundf(strikethroughOffset);
+    _lineMetrics.strikethroughWidth = lroundf(strikethroughWidth);
+    _lineMetrics.curlyLineOffset = lroundf(curlyLineOffset);
+    _lineMetrics.curlyLinePeriod = lroundf(curlyLinePeriod);
+    _lineMetrics.curlyLineControlPointOffset = lroundf(curlyLineControlPointOffset);
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
