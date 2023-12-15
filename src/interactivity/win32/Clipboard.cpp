@@ -52,10 +52,6 @@ contents and writing them to the console's input buffer
 --*/
 void Clipboard::Paste()
 {
-    // WIP auditing if user is enrolled
-    static auto DestinationName = _LoadString(ID_CONSOLE_WIP_DESTINATIONNAME);
-    Microsoft::Console::Internal::EdpPolicy::AuditClipboard(DestinationName);
-
     const auto clipboard = _openClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
     if (!clipboard)
     {
