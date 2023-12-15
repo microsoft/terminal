@@ -562,17 +562,13 @@
     <value>Service Providers</value>
     <comment>Header for a group of settings related to the AI service providers.</comment>
   </data>
-  <data name="AISettings_Disclaimer1.Text" xml:space="preserve">
-    <value>An AI key and endpoint are required for accessing AI services within Windows Terminal. Credentials are securely stored by</value>
-    <comment>Header for the AI settings page, where the user stores their AI key and endpoint for AI services within Windows Terminal.</comment>
+  <data name="AISettings_Disclaimer" xml:space="preserve">
+    <value>An AI key and endpoint are required for accessing AI services within Windows Terminal. Credentials are securely stored by {0} and not in the JSON file.</value>
+    <comment>Header for the AI settings page, where the user stores their AI key and endpoint for AI services within Windows Terminal. {0} will be replaced by AISettings_DisclaimerLink.</comment>
   </data>
-  <data name="AISettings_DisclaimerLink" xml:space="preserve">
+  <data name="AISettings_DisclaimerLinkText" xml:space="preserve">
     <value>Windows Credential Manager</value>
-    <comment>Header for the AI settings page, where the user stores their AI key and endpoint for AI services within Windows Terminal.</comment>
-  </data>
-  <data name="AISettings_Disclaimer2.Text" xml:space="preserve">
-    <value>and not in the JSON file.</value>
-    <comment>Header for the AI settings page, where the user stores their AI key and endpoint for AI services within Windows Terminal.</comment>
+    <comment>The text of the hyperlink that directs the user to the Windows Credential Manager.</comment>
   </data>
   <data name="AISettings_AzureOpenAIKeyAndEndpoint.Header" xml:space="preserve">
     <value>Azure OpenAI</value>
@@ -606,31 +602,31 @@
     <value>Prerequisites:</value>
     <comment>Header for the list of prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIPrerequisite1.Text" xml:space="preserve">
-    <value>An Azure subscription.</value>
-    <comment>First of the prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
+  <data name="AISettings_AzureOpenAIPrerequisite1" xml:space="preserve">
+    <value>An Azure subscription. {0}.</value>
+    <comment>First of the prerequisites the user needs to use Azure OpenAI within Terminal. {0} will be replaced by AISettings_AzureOpenAIPrerequisite1Hyperlink.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIPrerequisite1Hyperlink" xml:space="preserve">
-    <value>Create one for free.</value>
+  <data name="AISettings_AzureOpenAIPrerequisite1LinkText" xml:space="preserve">
+    <value>Create one for free</value>
     <comment>Text of the hyperlink that will direct the user to where they can create an Azure OpenAI subscription.</comment>
   </data>
   <data name="AISettings_AzureOpenAIPrerequisite2.Text" xml:space="preserve">
     <value>Access granted to Azure OpenAI in the desired Azure subscription.</value>
     <comment>Second of the prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIPrerequisite3.Text" xml:space="preserve">
-    <value>Access permissions to</value>
-    <comment>Third of the prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
+  <data name="AISettings_AzureOpenAIPrerequisite3" xml:space="preserve">
+    <value>Access permissions to {0}.</value>
+    <comment>Third of the prerequisites the user needs to use Azure OpenAI within Terminal. {0} will be replaced by AISettings_AzureOpenAIPrerequisite3Hyperlink.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIPrerequisite3Hyperlink" xml:space="preserve">
-    <value>create Azure OpenAI resources and to deploy models.</value>
+  <data name="AISettings_AzureOpenAIPrerequisite3LinkText" xml:space="preserve">
+    <value>create Azure OpenAI resources and to deploy models</value>
     <comment>Text of the hyperlink that will direct the user to where they can create Azure OpenAI resources.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIProductTerms.Text" xml:space="preserve">
-    <value>Your use of Azure OpenAI is subject to applicable</value>
-    <comment>Disclaimer about the usage of Azure OpenAI.</comment>
+  <data name="AISettings_AzureOpenAIProductTerms" xml:space="preserve">
+    <value>Your use of Azure OpenAI is subject to applicable {0}</value>
+    <comment>Disclaimer about the usage of Azure OpenAI. {0} will be replaced by AISettings_AzureOpenAIProductTermsHyperlink.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIProductTermsHyperlink" xml:space="preserve">
+  <data name="AISettings_AzureOpenAIProductTermsLinkText" xml:space="preserve">
     <value>Product Terms</value>
     <comment>The text of the hyperlink that directs the user to the Product Terms.</comment>
   </data>
