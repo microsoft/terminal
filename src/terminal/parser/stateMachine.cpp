@@ -2144,9 +2144,15 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // which breaks up many of our longer sequences, like our Win32InputMode ones.
         //
         // As a heuristic, this code specifically checks for a trailing Esc or Alt+key.
+        // If we encountered a win32-input-mode sequence before, we know that our \x1b[?9001h
+        // request to enable them was successful. While a client may still send \x1b{some char}
+        // intentionally, it's far more likely now that we're looking at a broken up sequence.
+        // The most common win32-input-mode is ConPTY itself after all, and we never emit
+        // \x1b{some char} once it's enabled.
         if (_isEngineForInput)
         {
-            if (run.size() <= 2 && run.front() == L'\x1b')
+            const auto win32 = _engine->EncounteredWin32InputModeSequence();
+            if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
             {
                 _EnterGround();
                 if (run.size() == 1)

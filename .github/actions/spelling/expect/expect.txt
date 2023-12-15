@@ -188,8 +188,10 @@ changelist
 chaof
 charinfo
 CHARSETINFO
+chcbpat
 chh
 chk
+chshdng
 CHT
 Cic
 cielab
