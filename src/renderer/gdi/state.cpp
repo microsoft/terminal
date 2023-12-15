@@ -348,9 +348,9 @@ GdiEngine::~GdiEngine()
     const auto fontSize = static_cast<float>(_tmFontMetrics.tmHeight - _tmFontMetrics.tmInternalLeading);
     const auto baseline = static_cast<float>(_tmFontMetrics.tmAscent);
     float idealGridlineWidth = std::max(1.0f, fontSize * 0.025f);
-    float idealUnderlineOffset = 0;
+    float idealUnderlineTop = 0;
     float idealUnderlineWidth = 0;
-    float idealStrikethroughOffset = 0;
+    float idealStrikethroughTop = 0;
     float idealStrikethroughWidth = 0;
 
     OUTLINETEXTMETRICW outlineMetrics;
@@ -358,44 +358,48 @@ GdiEngine::~GdiEngine()
     {
         // For TrueType fonts, the other line metrics can be obtained from
         // the font's outline text metric structure.
-        idealUnderlineOffset = static_cast<float>(baseline - outlineMetrics.otmsUnderscorePosition);
+        idealUnderlineTop = static_cast<float>(baseline - outlineMetrics.otmsUnderscorePosition);
         idealUnderlineWidth = static_cast<float>(outlineMetrics.otmsUnderscoreSize);
-        idealStrikethroughOffset = static_cast<float>(baseline - outlineMetrics.otmsStrikeoutPosition);
         idealStrikethroughWidth = static_cast<float>(outlineMetrics.otmsStrikeoutSize);
+        idealStrikethroughTop = static_cast<float>(baseline - outlineMetrics.otmsStrikeoutPosition);
     }
     else
     {
         // If we can't obtain the outline metrics for the font, we just pick some reasonable values for the offsets and widths.
-        idealUnderlineOffset = std::max(1.0f, roundf(baseline - fontSize * 0.05f));
+        idealUnderlineTop = std::max(1.0f, roundf(baseline - fontSize * 0.05f));
         idealUnderlineWidth = idealGridlineWidth;
-        idealStrikethroughOffset = std::max(1.0f, roundf(baseline * (2.0f / 3.0f)));
+        idealStrikethroughTop = std::max(1.0f, roundf(baseline * (2.0f / 3.0f)));
         idealStrikethroughWidth = idealGridlineWidth;
     }
 
-    const auto underlineWidth = std::max(1.0f, std::roundf(idealUnderlineWidth));
-    const auto underlineOffset = std::min(cellHeight - underlineWidth, std::roundf(idealUnderlineOffset));
-    const auto strikethroughWidth = std::max(1.0f, std::roundf(idealStrikethroughWidth));
-    const auto strikethroughOffset = std::min(cellHeight - strikethroughWidth, std::roundf(idealStrikethroughOffset));
-    const auto thinLineWidth = std::max(1.0f, std::roundf(idealUnderlineWidth / 2.0f));
+    // GdiEngine::PaintBufferGridLines paints underlines using HPEN and LineTo, etc., which draws lines centered on the given coordinates.
+    // This means we need to shift the limit (cellHeight - underlineWidth) and offset (idealUnderlineTop) by half the width.
+    const auto underlineWidth = std::max(1.0f, roundf(idealUnderlineWidth));
+    const auto underlineCenter = std::min(floorf(cellHeight - underlineWidth / 2.0f), roundf(idealUnderlineTop + underlineWidth / 2.0f));
+
+    const auto strikethroughWidth = std::max(1.0f, roundf(idealStrikethroughWidth));
+    const auto strikethroughOffset = std::min(cellHeight - strikethroughWidth, roundf(idealStrikethroughTop));
 
     // For double underlines we loosely follow what Word does:
-    // 1. The lines are half the width of an underline (= thinLineWidth)
+    // 1. The lines are half the width of an underline
     // 2. Ideally the bottom line is aligned with the bottom of the underline
     // 3. The top underline is vertically in the middle between baseline and ideal bottom underline
     // 4. If the top line gets too close to the baseline the underlines are shifted downwards
     // 5. The minimum gap between the two lines appears to be similar to Tex (1.2pt)
     // (Additional notes below.)
 
+    // 1.
+    const auto thinLineWidth = std::max(1.0f, roundf(idealUnderlineWidth / 2.0f));
     // 2.
-    auto doubleUnderlinePosBottom = underlineOffset + underlineWidth - thinLineWidth;
+    auto doubleUnderlinePosBottom = underlineCenter + underlineWidth - thinLineWidth;
     // 3. Since we don't align the center of our two lines, but rather the top borders
     //    we need to subtract half a line width from our center point.
-    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f);
+    auto doubleUnderlinePosTop = roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f);
     // 4.
     doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + thinLineWidth);
     // 5. The gap is only the distance _between_ the lines, but we need the distance from the
     //    top border of the top and bottom lines, which includes an additional line width.
-    const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * _iCurrentDpi));
+    const auto doubleUnderlineGap = std::max(1.0f, roundf(1.2f / 72.0f * _iCurrentDpi));
     doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, cellHeight - thinLineWidth);
@@ -434,13 +438,13 @@ GdiEngine::~GdiEngine()
 
     _lineMetrics.gridlineWidth = lroundf(idealGridlineWidth);
     _lineMetrics.thinLineWidth = lroundf(thinLineWidth);
-    _lineMetrics.underlineOffset = lroundf(underlineOffset);
+    _lineMetrics.underlineCenter = lroundf(underlineCenter);
     _lineMetrics.underlineWidth = lroundf(underlineWidth);
     _lineMetrics.doubleUnderlinePosTop = lroundf(doubleUnderlinePosTop);
     _lineMetrics.doubleUnderlinePosBottom = lroundf(doubleUnderlinePosBottom);
     _lineMetrics.strikethroughOffset = lroundf(strikethroughOffset);
     _lineMetrics.strikethroughWidth = lroundf(strikethroughWidth);
-    _lineMetrics.curlyLineOffset = lroundf(curlyLineOffset);
+    _lineMetrics.curlyLineCenter = lroundf(curlyLineOffset);
     _lineMetrics.curlyLinePeriod = lroundf(curlyLinePeriod);
     _lineMetrics.curlyLineControlPointOffset = lroundf(curlyLineControlPointOffset);
 

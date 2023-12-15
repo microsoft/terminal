@@ -117,13 +117,13 @@ namespace Microsoft::Console::Render
         {
             int gridlineWidth;
             int thinLineWidth;
-            int underlineOffset;
+            int underlineCenter;
             int underlineWidth;
             int doubleUnderlinePosTop;
             int doubleUnderlinePosBottom;
             int strikethroughOffset;
             int strikethroughWidth;
-            int curlyLineOffset;
+            int curlyLineCenter;
             int curlyLinePeriod;
             int curlyLineControlPointOffset;
         };

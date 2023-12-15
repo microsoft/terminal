@@ -644,7 +644,7 @@ try
 
     if (lines.test(GridLines::Underline))
     {
-        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
     }
     else if (lines.test(GridLines::DoubleUnderline))
     {
@@ -653,15 +653,15 @@ try
     }
     else if (lines.test(GridLines::CurlyUnderline))
     {
-        return DrawCurlyLine(ptTarget.x, ptTarget.y + _lineMetrics.curlyLineOffset, widthOfAllCells);
+        return DrawCurlyLine(ptTarget.x, ptTarget.y + _lineMetrics.curlyLineCenter, widthOfAllCells);
     }
     else if (lines.test(GridLines::DottedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
     }
     else if (lines.test(GridLines::DashedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
     }
 
     return S_OK;
