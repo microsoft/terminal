@@ -99,8 +99,14 @@ public:
     bool HasAccessibilityEventing() const noexcept;
     void NotifyAccessibilityEventing(const til::CoordType sStartX, const til::CoordType sStartY, const til::CoordType sEndX, const til::CoordType sEndY);
 
+    struct ScrollBarState
+    {
+        til::size maxSize;
+        til::rect viewport;
+        bool isAltBuffer = false;
+    };
     void UpdateScrollBars();
-    void InternalUpdateScrollBars();
+    ScrollBarState FetchScrollBarState();
 
     bool IsMaximizedBoth() const;
     bool IsMaximizedX() const;
@@ -158,7 +164,6 @@ public:
     bool CursorIsDoubleWidth() const;
 
     DWORD OutputMode;
-    WORD ResizingWindow; // > 0 if we should ignore WM_SIZE messages
 
     short WheelDelta;
     short HWheelDelta;

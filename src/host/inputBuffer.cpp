@@ -602,6 +602,27 @@ size_t InputBuffer::Write(const std::span<const INPUT_RECORD>& inEvents)
     }
 }
 
+void InputBuffer::WriteString(const std::wstring_view& text)
+try
+{
+    if (text.empty())
+    {
+        return;
+    }
+
+    const auto initiallyEmptyQueue = _storage.empty();
+
+    _writeString(text);
+
+    if (initiallyEmptyQueue && !_storage.empty())
+    {
+        ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+    }
+
+    WakeUpReadersWaitingForData();
+}
+CATCH_LOG()
+
 // This can be considered a "privileged" variant of Write() which allows FOCUS_EVENTs to generate focus VT sequences.
 // If we didn't do this, someone could write a FOCUS_EVENT_RECORD with WriteConsoleInput, exit without flushing the
 // input buffer and the next application will suddenly get a "\x1b[I" sequence in their input. See GH#13238.
@@ -828,10 +849,7 @@ void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& 
             return;
         }
 
-        for (const auto& wch : text)
-        {
-            _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-        }
+        _writeString(text);
 
         if (!_vtInputShouldSuppress)
         {
@@ -842,6 +860,25 @@ void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& 
     catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
+    }
+}
+
+void InputBuffer::_writeString(const std::wstring_view& text)
+{
+    for (const auto& wch : text)
+    {
+        if (wch == UNICODE_NULL)
+        {
+            // Convert null byte back to input event with proper control state
+            const auto zeroKey = OneCoreSafeVkKeyScanW(0);
+            uint32_t ctrlState = 0;
+            WI_SetFlagIf(ctrlState, SHIFT_PRESSED, WI_IsFlagSet(zeroKey, 0x100));
+            WI_SetFlagIf(ctrlState, LEFT_CTRL_PRESSED, WI_IsFlagSet(zeroKey, 0x200));
+            WI_SetFlagIf(ctrlState, LEFT_ALT_PRESSED, WI_IsFlagSet(zeroKey, 0x400));
+            _storage.push_back(SynthesizeKeyEvent(true, 1, LOBYTE(zeroKey), 0, wch, ctrlState));
+            continue;
+        }
+        _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
     }
 }
 

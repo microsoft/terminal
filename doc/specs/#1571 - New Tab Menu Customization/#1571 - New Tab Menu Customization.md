@@ -435,7 +435,7 @@ ultimately deemed it to be out of scope for the initial spec review.
 
 <!-- Footnotes -->
 [#2046]: https://github.com/microsoft/terminal/issues/2046
-[Command Palette, Addendum 1]: https://github.com/microsoft/terminal/blob/main/doc/specs/%232046%20-%20Unified%20keybindings%20and%20commands%2C%20and%20synthesized%20action%20names.md
+[Command Palette, Addendum 1]: ../%232046%20-%20Unified%20keybindings%20and%20commands%2C%20and%20synthesized%20action%20names.md
 
 [#3337]: https://github.com/microsoft/terminal/issues/3337
 [#6899]: https://github.com/microsoft/terminal/issues/6899

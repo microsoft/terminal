@@ -148,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, IEnvironmentVariableMap, EnvironmentVariables);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, true);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 

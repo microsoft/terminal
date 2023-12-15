@@ -398,10 +398,6 @@ CreateBoldFont:
     /*
      * Store the font info
      */
-    if (FontInfo[nFont].hFont != nullptr)
-    {
-        DeleteObject(FontInfo[nFont].hFont);
-    }
     FontInfo[nFont].hFont = hFont;
     FontInfo[nFont].Family = tmFamily;
     FontInfo[nFont].Size = SizeActual;
