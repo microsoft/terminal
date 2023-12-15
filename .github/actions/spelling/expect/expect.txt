@@ -313,7 +313,6 @@ CPPCORECHECK
 cppcorecheckrules
 cpprestsdk
 cppwinrt
-CProc
 cpx
 CREATESCREENBUFFER
 CREATESTRUCT
@@ -579,6 +578,7 @@ elems
 emacs
 EMPTYBOX
 enabledelayedexpansion
+ENDCAP
 endptr
 endregion
 ENTIREBUFFER
@@ -605,7 +605,6 @@ EXETYPE
 exeuwp
 exewin
 exitwin
-expectedinput
 EXPUNGECOMMANDHISTORY
 EXSTYLE
 EXTENDEDEDITKEY
@@ -827,7 +826,7 @@ hostlib
 HPA
 hpcon
 HPCON
-hpj
+hpen
 HPR
 HProvider
 HREDRAW
@@ -1011,6 +1010,7 @@ LOBYTE
 localappdata
 locsrc
 Loewen
+LOGBRUSH
 LOGFONT
 LOGFONTA
 LOGFONTW
@@ -1018,7 +1018,6 @@ logissue
 losslessly
 loword
 lparam
-LPCCH
 lpch
 LPCPLINFO
 LPCREATESTRUCT
@@ -1217,7 +1216,6 @@ NOMOVE
 NONALERT
 nonbreaking
 nonclient
-NONCONST
 NONINFRINGEMENT
 NONPREROTATED
 nonspace
@@ -1578,7 +1576,6 @@ rgbs
 rgci
 rgfae
 rgfte
-rgi
 rgn
 rgp
 rgpwsz
@@ -1747,7 +1744,6 @@ SOLIDBOX
 Solutiondir
 somefile
 sourced
-spammy
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -1910,7 +1906,6 @@ tprivapi
 tput
 tracelog
 tracelogging
-traceloggingprovider
 traceviewpp
 trackbar
 TRACKCOMPOSITION
@@ -2003,7 +1998,6 @@ USEFILLATTRIBUTE
 USEGLYPHCHARS
 USEHICON
 USEPOSITION
-userbase
 USERDATA
 userdpiapi
 Userp
@@ -2046,8 +2040,6 @@ VKKEYSCAN
 VMs
 VPA
 VPR
-VProc
-VRaw
 VREDRAW
 vsc
 vsconfig
@@ -2089,7 +2081,6 @@ WCIA
 WCIW
 WCSHELPER
 wcsicmp
-wcsnicmp
 wcsrev
 wddm
 wddmcon

@@ -90,7 +90,8 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
     {
         static constexpr D3D11_INPUT_ELEMENT_DESC layout[]{
             { "SV_Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "shadingType", 0, DXGI_FORMAT_R32_UINT, 1, offsetof(QuadInstance, shadingType), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "shadingType", 0, DXGI_FORMAT_R16_UINT, 1, offsetof(QuadInstance, shadingType), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "renditionScale", 0, DXGI_FORMAT_R8G8_UINT, 1, offsetof(QuadInstance, renditionScale), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "position", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, position), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "size", 0, DXGI_FORMAT_R16G16_UINT, 1, offsetof(QuadInstance, size), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "texcoord", 0, DXGI_FORMAT_R16G16_UINT, 1, offsetof(QuadInstance, texcoord), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
@@ -304,6 +305,35 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 void BackendD3D::_updateFontDependents(const RenderingPayload& p)
 {
     const auto& font = *p.s->font;
+
+    // Curlyline is drawn with a desired height relative to the font size. The
+    // baseline of curlyline is at the middle of singly underline. When there's
+    // limited space to draw a curlyline, we apply a limit on the peak height.
+    {
+        // initialize curlyline peak height to a desired value. Clamp it to at
+        // least 1.
+        constexpr auto curlyLinePeakHeightEm = 0.075f;
+        _curlyLinePeakHeight = std::max(1.0f, std::roundf(curlyLinePeakHeightEm * font.fontSize));
+
+        // calc the limit we need to apply
+        const auto strokeHalfWidth = std::floor(font.underline.height / 2.0f);
+        const auto underlineMidY = font.underline.position + strokeHalfWidth;
+        const auto maxDrawableCurlyLinePeakHeight = font.cellSize.y - underlineMidY - font.underline.height;
+
+        // if the limit is <= 0 (no height at all), stick with the desired height.
+        // This is how we force a curlyline even when there's no space, though it
+        // might be clipped at the bottom.
+        if (maxDrawableCurlyLinePeakHeight > 0.0f)
+        {
+            _curlyLinePeakHeight = std::min(_curlyLinePeakHeight, maxDrawableCurlyLinePeakHeight);
+        }
+
+        const auto curlyUnderlinePos = underlineMidY - _curlyLinePeakHeight - font.underline.height;
+        const auto curlyUnderlineWidth = 2.0f * (_curlyLinePeakHeight + font.underline.height);
+        const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
+        const auto curlyUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
+        _curlyUnderline = { curlyUnderlinePosU16, curlyUnderlineWidthU16 };
+    }
 
     DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
     // Clearing the atlas requires BeginDraw(), which is expensive. Defer this until we need Direct2D anyways.
@@ -543,6 +573,9 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
+        data.curlyLineWaveFreq = 2.0f * 3.14f / p.s->font->cellSize.x;
+        data.curlyLinePeakHeight = _curlyLinePeakHeight;
+        data.curlyLineCellOffset = p.s->font->underline.position + p.s->font->underline.height / 2.0f;
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
@@ -1024,7 +1057,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
                     goto drawGlyphRetry;
                 }
 
-                if (glyphEntry.data.GetShadingType() != ShadingType::Default)
+                if (glyphEntry.data.shadingType != ShadingType::Default)
                 {
                     auto l = static_cast<til::CoordType>(lrintf((baselineX + row->glyphOffsets[x].advanceOffset) * scaleX));
                     auto t = static_cast<til::CoordType>(lrintf((baselineY - row->glyphOffsets[x].ascenderOffset) * scaleY));
@@ -1036,7 +1069,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
                     row->dirtyBottom = std::max(row->dirtyBottom, t + glyphEntry.data.size.y);
 
                     _appendQuad() = {
-                        .shadingType = glyphEntry.data.GetShadingType(),
+                        .shadingType = glyphEntry.data.shadingType,
                         .position = { static_cast<i16>(l), static_cast<i16>(t) },
                         .size = glyphEntry.data.size,
                         .texcoord = glyphEntry.data.texcoord,
@@ -1458,7 +1491,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
     const auto triggerRight = _ligatureOverhangTriggerRight * horizontalScale;
     const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= triggerLeft || br >= triggerRight);
 
-    glyphEntry.data.shadingType = static_cast<u16>(isColorGlyph ? ShadingType::TextPassthrough : _textShadingType);
+    glyphEntry.data.shadingType = isColorGlyph ? ShadingType::TextPassthrough : _textShadingType;
     glyphEntry.data.overlapSplit = overlapSplit;
     glyphEntry.data.offset.x = bl;
     glyphEntry.data.offset.y = bt;
@@ -1527,7 +1560,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     _drawSoftFontGlyphInBitmap(p, glyphEntry);
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
 
-    glyphEntry.data.shadingType = static_cast<u16>(ShadingType::TextGrayscale);
+    glyphEntry.data.shadingType = ShadingType::TextGrayscale;
     glyphEntry.data.overlapSplit = 0;
     glyphEntry.data.offset.x = 0;
     glyphEntry.data.offset.y = -baseline;
@@ -1631,11 +1664,11 @@ void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasF
     // double-height row. This effectively turns the other (unneeded) side into whitespace.
     if (!top.data.size.y)
     {
-        top.data.shadingType = static_cast<u16>(ShadingType::Default);
+        top.data.shadingType = ShadingType::Default;
     }
     if (!bottom.data.size.y)
     {
-        bottom.data.shadingType = static_cast<u16>(ShadingType::Default);
+        bottom.data.shadingType = ShadingType::Default;
     }
 }
 
@@ -1647,8 +1680,6 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
     const auto verticalShift = static_cast<u8>(row->lineRendition >= LineRendition::DoubleHeightTop);
 
     const auto cellSize = p.s->font->cellSize;
-    const auto dottedLineType = horizontalShift ? ShadingType::DottedLineWide : ShadingType::DottedLine;
-
     const auto rowTop = static_cast<i16>(cellSize.y * y);
     const auto rowBottom = static_cast<i16>(rowTop + cellSize.y);
 
@@ -1675,11 +1706,11 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
                 .shadingType = ShadingType::SolidLine,
                 .position = { static_cast<i16>(posX), rowTop },
                 .size = { width, p.s->font->cellSize.y },
-                .color = r.color,
+                .color = r.gridlineColor,
             };
         }
     };
-    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ShadingType shadingType) {
+    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ShadingType shadingType, const u32 color) {
         const auto offset = pos.position << verticalShift;
         const auto height = static_cast<u16>(pos.height << verticalShift);
 
@@ -1695,9 +1726,10 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         {
             _appendQuad() = {
                 .shadingType = shadingType,
+                .renditionScale = { static_cast<u8>(1 << horizontalShift), static_cast<u8>(1 << verticalShift) },
                 .position = { left, static_cast<i16>(rt) },
                 .size = { width, static_cast<u16>(rb - rt) },
-                .color = r.color,
+                .color = color,
             };
         }
     };
@@ -1717,31 +1749,39 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         }
         if (r.lines.test(GridLines::Top))
         {
-            appendHorizontalLine(r, p.s->font->gridTop, ShadingType::SolidLine);
+            appendHorizontalLine(r, p.s->font->gridTop, ShadingType::SolidLine, r.gridlineColor);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidLine);
+            appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidLine, r.gridlineColor);
+        }
+        if (r.lines.test(GridLines::Strikethrough))
+        {
+            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine, r.gridlineColor);
         }
 
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidLine);
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidLine, r.underlineColor);
         }
-        if (r.lines.test(GridLines::HyperlinkUnderline))
+        else if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
-            appendHorizontalLine(r, p.s->font->underline, dottedLineType);
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::DottedLine, r.underlineColor);
         }
-        if (r.lines.test(GridLines::DoubleUnderline))
+        else if (r.lines.test(GridLines::DashedUnderline))
+        {
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::DashedLine, r.underlineColor);
+        }
+        else if (r.lines.test(GridLines::CurlyUnderline))
+        {
+            appendHorizontalLine(r, _curlyUnderline, ShadingType::CurlyLine, r.underlineColor);
+        }
+        else if (r.lines.test(GridLines::DoubleUnderline))
         {
             for (const auto pos : p.s->font->doubleUnderline)
             {
-                appendHorizontalLine(r, pos, ShadingType::SolidLine);
+                appendHorizontalLine(r, pos, ShadingType::SolidLine, r.underlineColor);
             }
-        }
-        if (r.lines.test(GridLines::Strikethrough))
-        {
-            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine);
         }
     }
 }
@@ -2042,6 +2082,8 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
         auto& target = _instances[offset + i];
 
         target.shadingType = it.shadingType;
+        target.renditionScale.x = it.renditionScale.x;
+        target.renditionScale.y = it.renditionScale.y;
         target.position.x = static_cast<i16>(cutout.left);
         target.position.y = static_cast<i16>(cutout.top);
         target.size.x = static_cast<u16>(cutout.right - cutout.left);
@@ -2059,6 +2101,8 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     auto& target = cutoutCount ? _appendQuad() : _instances[offset];
 
     target.shadingType = it.shadingType;
+    target.renditionScale.x = it.renditionScale.x;
+    target.renditionScale.y = it.renditionScale.y;
     target.position.x = static_cast<i16>(intersectionL);
     target.position.y = static_cast<i16>(intersectionT);
     target.size.x = static_cast<u16>(intersectionR - intersectionL);
