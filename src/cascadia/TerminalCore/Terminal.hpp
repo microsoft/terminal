@@ -60,6 +60,10 @@ class Microsoft::Terminal::Core::Terminal final :
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
 public:
+    struct TestDummyMarker
+    {
+    };
+
     static constexpr bool IsInputKey(WORD vkey)
     {
         return vkey != VK_CONTROL &&
@@ -77,6 +81,7 @@ public:
     }
 
     Terminal();
+    Terminal(TestDummyMarker);
 
     void Create(til::size viewportSize,
                 til::CoordType scrollbackLines,
@@ -98,9 +103,8 @@ public:
     // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
 
-    // WritePastedText comes from our input and goes back to the PTY's input channel
-    void WritePastedText(std::wstring_view stringView);
-
+    void _assertLocked() const noexcept;
+    void _assertUnlocked() const noexcept;
     [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForReading() const noexcept;
     [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting() noexcept;
     til::recursive_ticket_lock_suspension SuspendLock() noexcept;
@@ -167,9 +171,10 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
-    bool SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
-    bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType FocusChanged(const bool focused) override;
 
     [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
@@ -178,8 +183,6 @@ public:
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
     bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const noexcept;
-
-    void FocusChanged(const bool focused) override;
 
     std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
     std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);
@@ -311,6 +314,10 @@ public:
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
 
+#ifndef NDEBUG
+    bool _suppressLockChecks = false;
+#endif
+
 private:
     std::function<void(std::wstring_view)> _pfnWriteInput;
     std::function<void()> _pfnWarningBell;
@@ -434,11 +441,9 @@ private:
     static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
-    [[maybe_unused]] bool _handleTerminalInputResult(::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType&& out) const;
     void _StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept;
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
-    void _assertLocked() const noexcept;
     Console::VirtualTerminal::TerminalInput& _getTerminalInput() noexcept;
     const Console::VirtualTerminal::TerminalInput& _getTerminalInput() const noexcept;
 

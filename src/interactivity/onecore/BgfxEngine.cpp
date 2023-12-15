@@ -147,9 +147,10 @@ CATCH_RETURN()
     CATCH_RETURN()
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                       COLORREF const /*color*/,
-                                                       size_t const /*cchLine*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                       const COLORREF /*gridlineColor*/,
+                                                       const COLORREF /*underlineColor*/,
+                                                       const size_t /*cchLine*/,
                                                        const til::point /*coordTarget*/) noexcept
 {
     return S_OK;

@@ -7,13 +7,15 @@
 #define SHADING_TYPE_TEXT_CLEARTYPE     2
 #define SHADING_TYPE_TEXT_PASSTHROUGH   3
 #define SHADING_TYPE_DOTTED_LINE        4
-#define SHADING_TYPE_DOTTED_LINE_WIDE   5
+#define SHADING_TYPE_DASHED_LINE        5
+#define SHADING_TYPE_CURLY_LINE         6
 // clang-format on
 
 struct VSData
 {
     float2 vertex : SV_Position;
     uint shadingType : shadingType;
+    uint2 renditionScale : renditionScale;
     int2 position : position;
     uint2 size : size;
     uint2 texcoord : texcoord;
@@ -25,6 +27,7 @@ struct PSData
     float4 position : SV_Position;
     float2 texcoord : texcoord;
     nointerpolation uint shadingType : shadingType;
+    nointerpolation uint2 renditionScale : renditionScale;
     nointerpolation float4 color : color;
 };
 

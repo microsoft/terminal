@@ -436,14 +436,17 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
 
     if (_ctrlWakeupMask != 0 && wch < L' ' && (_ctrlWakeupMask & (1 << wch)))
     {
-        _flushBuffer();
-
         // The old implementation (all the way since the 90s) overwrote the character at the current cursor position with the given wch.
         // But simultaneously it incremented the buffer length, which would have only worked if it was written at the end of the buffer.
         // Press tab past the "f" in the string "foo" and you'd get "f\to " (a trailing whitespace; the initial contents of the buffer back then).
         // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
         // I went with insert mode.
+        //
+        // It is important that we don't actually print that character out though, as it's only for the calling application to see.
+        // That's why we flush the contents before the insertion and then ensure that the _flushBuffer() call in Read() exits early.
+        _flushBuffer();
         _buffer.Replace(_buffer.GetCursorPosition(), 0, &wch, 1);
+        _buffer.MarkAsClean();
 
         _controlKeyState = modifiers;
         _transitionState(State::DoneWithWakeupMask);
@@ -935,22 +938,31 @@ ptrdiff_t COOKED_READ_DATA::_writeCharsImpl(const std::wstring_view& text, const
         const auto wch = *it;
         if (wch == UNICODE_TAB)
         {
-            const auto col = _getColumnAtRelativeCursorPosition(distance + cursorOffset);
-            const auto remaining = width - col;
-            distance += std::min(remaining, 8 - (col & 7));
             buf[0] = L'\t';
             len = 1;
         }
         else
         {
             // In the interactive mode we replace C0 control characters (0x00-0x1f) with ASCII representations like ^C (= 0x03).
-            distance += 2;
             buf[0] = L'^';
             buf[1] = gsl::narrow_cast<wchar_t>(wch + L'@');
             len = 2;
         }
 
-        if (!measureOnly)
+        if (measureOnly)
+        {
+            if (wch == UNICODE_TAB)
+            {
+                const auto col = _getColumnAtRelativeCursorPosition(distance + cursorOffset);
+                const auto remaining = width - col;
+                distance += std::min(remaining, 8 - (col & 7));
+            }
+            else
+            {
+                distance += 2;
+            }
+        }
+        else
         {
             distance += _writeCharsUnprocessed({ &buf[0], len });
         }

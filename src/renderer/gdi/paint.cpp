@@ -509,27 +509,24 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - Draws up to one line worth of grid lines on top of characters.
 // Arguments:
 // - lines - Enum defining which edges of the rectangle to draw
-// - color - The color to use for drawing the edges.
+// - gridlineColor - The color to use for drawing the gridlines.
+// - underlineColor - The color to use for drawing the underlines.
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
     const auto ptTarget = coordTarget * _GetFontSize();
-    // Set the brush color as requested and save the previous brush to restore at the end.
-    wil::unique_hbrush hbr(CreateSolidBrush(color));
+
+    // Create a brush with the gridline color, and apply it.
+    wil::unique_hbrush hbr(CreateSolidBrush(gridlineColor));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
-
-    wil::unique_hbrush hbrPrev(SelectBrush(_hdcMemoryContext, hbr.get()));
-    RETURN_HR_IF_NULL(E_FAIL, hbrPrev.get());
-    hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
-
-    // On exit, be sure we try to put the brush back how it was originally.
-    auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
+    const auto prevBrush = wil::SelectObject(_hdcMemoryContext, hbr.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevBrush.get());
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
     const auto fontWidth = _GetFontSize().width;
@@ -538,6 +535,34 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     const auto DrawLine = [=](const auto x, const auto y, const auto w, const auto h) {
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
+    };
+    const auto DrawStrokedLine = [&](const til::CoordType x, const til::CoordType y, const unsigned w) {
+        RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
+        RETURN_HR_IF(E_FAIL, !LineTo(_hdcMemoryContext, gsl::narrow_cast<int>(x + w), y));
+        return S_OK;
+    };
+    const auto DrawCurlyLine = [&](const til::CoordType x, const til::CoordType y, const size_t cCurlyLines) {
+        const auto curlyLineWidth = fontWidth;
+        const auto curlyLineHalfWidth = std::lround(curlyLineWidth / 2.0f);
+        const auto controlPointHeight = std::lround(3.5f * _lineMetrics.curlylinePeakHeight);
+
+        // Each curlyLine requires 3 `POINT`s
+        const auto cPoints = gsl::narrow<DWORD>(3 * cCurlyLines);
+        std::vector<POINT> points;
+        points.reserve(cPoints);
+
+        auto start = x;
+        for (size_t i = 0; i < cCurlyLines; i++)
+        {
+            points.emplace_back(start + curlyLineHalfWidth, y - controlPointHeight);
+            points.emplace_back(start + curlyLineHalfWidth, y + controlPointHeight);
+            points.emplace_back(start + curlyLineWidth, y);
+            start += curlyLineWidth;
+        }
+
+        RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
+        RETURN_HR_IF(E_FAIL, !PolyBezierTo(_hdcMemoryContext, points.data(), cPoints));
+        return S_OK;
     };
 
     if (lines.test(GridLines::Left))
@@ -574,22 +599,49 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
-    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline))
-    {
-        const auto y = ptTarget.y + _lineMetrics.underlineOffset;
-        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.underlineWidth));
-
-        if (lines.test(GridLines::DoubleUnderline))
-        {
-            const auto y2 = ptTarget.y + _lineMetrics.underlineOffset2;
-            RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y2, widthOfAllCells, _lineMetrics.underlineWidth));
-        }
-    }
-
     if (lines.test(GridLines::Strikethrough))
     {
         const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
+    }
+
+    // Create a pen matching the underline style.
+    DWORD underlinePenType = PS_SOLID;
+    if (lines.test(GridLines::DottedUnderline))
+    {
+        underlinePenType = PS_DOT;
+    }
+    else if (lines.test(GridLines::DashedUnderline))
+    {
+        underlinePenType = PS_DASH;
+    }
+    const LOGBRUSH brushProp{ .lbStyle = BS_SOLID, .lbColor = underlineColor };
+    wil::unique_hpen hpen(ExtCreatePen(underlinePenType | PS_GEOMETRIC | PS_ENDCAP_FLAT, _lineMetrics.underlineWidth, &brushProp, 0, nullptr));
+
+    // Apply the pen.
+    const auto prevPen = wil::SelectObject(_hdcMemoryContext, hpen.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevPen.get());
+
+    if (lines.test(GridLines::Underline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DoubleUnderline))
+    {
+        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells));
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset2, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::CurlyUnderline))
+    {
+        return DrawCurlyLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, cchLine);
+    }
+    else if (lines.test(GridLines::DottedUnderline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DashedUnderline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineOffset, widthOfAllCells);
     }
 
     return S_OK;

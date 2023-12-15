@@ -284,9 +284,10 @@ CATCH_RETURN()
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                          COLORREF const /*color*/,
-                                                          size_t const /*cchLine*/,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                          const COLORREF /*gridlineColor*/,
+                                                          const COLORREF /*underlineColor*/,
+                                                          const size_t /*cchLine*/,
                                                           const til::point /*coordTarget*/) noexcept
 {
     return S_OK;

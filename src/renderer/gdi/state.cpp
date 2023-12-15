@@ -397,6 +397,33 @@ GdiEngine::~GdiEngine()
         _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
     }
 
+    // Since we use GDI pen for drawing, the underline offset should point to
+    // the center of the underline.
+    const auto underlineHalfWidth = gsl::narrow_cast<int>(std::floor(_lineMetrics.underlineWidth / 2.0f));
+    _lineMetrics.underlineOffset += underlineHalfWidth;
+    _lineMetrics.underlineOffset2 += underlineHalfWidth;
+
+    // Curlyline is drawn with a desired height relative to the font size. The
+    // baseline of curlyline is at the middle of singly underline. When there's
+    // limited space to draw a curlyline, we apply a limit on the peak height.
+    {
+        // initialize curlyline peak height to a desired value. Clamp it to at
+        // least 1.
+        constexpr auto curlyLinePeakHeightEm = 0.075f;
+        _lineMetrics.curlylinePeakHeight = gsl::narrow_cast<int>(std::max(1L, std::lround(curlyLinePeakHeightEm * fontSize)));
+
+        // calc the limit we need to apply
+        const auto maxDrawableCurlyLinePeakHeight = Font.GetSize().height - _lineMetrics.underlineOffset - _lineMetrics.underlineWidth;
+
+        // if the limit is <= 0 (no height at all), stick with the desired height.
+        // This is how we force a curlyline even when there's no space, though it
+        // might be clipped at the bottom.
+        if (maxDrawableCurlyLinePeakHeight > 0.0f)
+        {
+            _lineMetrics.curlylinePeakHeight = std::min(_lineMetrics.curlylinePeakHeight, maxDrawableCurlyLinePeakHeight);
+        }
+    }
+
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
 

@@ -52,7 +52,8 @@ namespace Microsoft::Console::Render
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines,
-                                                   const COLORREF color,
+                                                   const COLORREF gridlineColor,
+                                                   const COLORREF underlineColor,
                                                    const size_t cchLine,
                                                    const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
@@ -121,6 +122,7 @@ namespace Microsoft::Console::Render
             int underlineWidth;
             int strikethroughOffset;
             int strikethroughWidth;
+            int curlylinePeakHeight;
         };
 
         LineMetrics _lineMetrics;
