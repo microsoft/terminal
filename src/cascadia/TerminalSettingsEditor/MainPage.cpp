@@ -703,11 +703,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return;
         }
-
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-        const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
+        const auto& requestedTheme = (theme.Settings() != nullptr) ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
 
         RequestedTheme(requestedTheme);
+
+        if (!isMicaAvailable)
+        {
+            return;
+        }
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
                                L"SettingsPageMicaBackground" :
