@@ -6,7 +6,6 @@
 #include "stateMachine.hpp"
 
 #include "ascii.hpp"
-#include "InputStateMachineEngine.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -2152,8 +2151,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // \x1b{some char} once it's enabled.
         if (_isEngineForInput)
         {
-            const auto engine = static_cast<InputStateMachineEngine*>(_engine.get());
-            const auto win32 = engine->EncounteredWin32InputModeSequence();
+            const auto win32 = _engine->EncounteredWin32InputModeSequence();
             if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
             {
                 _EnterGround();
