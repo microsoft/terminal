@@ -89,6 +89,7 @@ powerline
 ptys
 qof
 qps
+quarternary
 rclt
 reimplementation
 reserialization

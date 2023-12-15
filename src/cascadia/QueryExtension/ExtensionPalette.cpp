@@ -90,9 +90,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 _close();
             }
         });
-
-        // We do not have a color ramp to support light mode... so, force dark.
-        RequestedTheme(ElementTheme::Dark);
     }
 
     void ExtensionPalette::AIKeyAndEndpoint(const winrt::hstring& endpoint, const winrt::hstring& key)
@@ -129,145 +126,104 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // request the latest LLM key and endpoint
         _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
-        // if the AI key and endpoint is still empty, tell the user to fill them out in settings
+        // Use a flag for whether the response the user receives is an error message
+        // we pass this flag to _splitResponseAndAddToChatHelper so it can send the relevant telemetry event
+        // there is only one case downstream from here that sets this flag to false, so start with it being true
+        bool isError{ true };
+        hstring result{};
+
+        // If the AI key and endpoint is still empty, tell the user to fill them out in settings
         if (_AIKey.empty() || _AIEndpoint.empty())
         {
-            _splitResponseAndAddToChatHelper(RS_(L"CouldNotFindKeyErrorMessage"));
-
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AIResponseReceived",
-                TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-            co_return;
+            result = RS_(L"CouldNotFindKeyErrorMessage");
         }
         else if (!std::regex_search(_AIEndpoint.c_str(), azureOpenAIEndpointRegex))
         {
-            _splitResponseAndAddToChatHelper(RS_(L"InvalidEndpointMessage"));
-
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AIResponseReceived",
-                TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-            co_return;
+            result = RS_(L"InvalidEndpointMessage");
         }
-        // Make a copy of the prompt because we are switching threads
-        const auto promptCopy{ prompt };
 
-        // Start the progress ring
-        IsProgressRingActive(true);
-
-        // Make sure we are on the background thread for the http request
-        co_await winrt::resume_background();
-
-        WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _AIEndpoint } };
-        request.Headers().Accept().TryParseAdd(L"application/json");
-
-        WDJ::JsonObject jsonContent;
-        WDJ::JsonObject messageObject;
-
-        // _ActiveCommandline should be set already, we request for it the moment we become visible
-        winrt::hstring engineeredPrompt{ promptCopy + L". The shell I am running is " + _ActiveCommandline };
-        messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
-        messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
-        _jsonMessages.Append(messageObject);
-        jsonContent.SetNamedValue(L"messages", _jsonMessages);
-        jsonContent.SetNamedValue(L"max_tokens", WDJ::JsonValue::CreateNumberValue(800));
-        jsonContent.SetNamedValue(L"temperature", WDJ::JsonValue::CreateNumberValue(0.7));
-        jsonContent.SetNamedValue(L"frequency_penalty", WDJ::JsonValue::CreateNumberValue(0));
-        jsonContent.SetNamedValue(L"presence_penalty", WDJ::JsonValue::CreateNumberValue(0));
-        jsonContent.SetNamedValue(L"top_p", WDJ::JsonValue::CreateNumberValue(0.95));
-        jsonContent.SetNamedValue(L"stop", WDJ::JsonValue::CreateStringValue(L"None"));
-        const auto stringContent = jsonContent.ToString();
-        WWH::HttpStringContent requestContent{
-            stringContent,
-            WSS::UnicodeEncoding::Utf8,
-            L"application/json"
-        };
-
-        request.Content(requestContent);
-
-        hstring result{};
-
-        // Send the request
-        try
+        // If we don't have a result string, that means the endpoint exists and matches the regex
+        // that we allow - now we can actually make the http request
+        if (result.empty())
         {
-            const auto response = _httpClient.SendRequestAsync(request).get();
-            // Parse out the suggestion from the response
-            const auto string{ response.Content().ReadAsStringAsync().get() };
-            const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-            if (jsonResult.HasKey(L"error"))
-            {
-                const auto errorObject = jsonResult.GetNamedObject(L"error");
-                result = errorObject.GetNamedString(L"message");
+            // Make a copy of the prompt because we are switching threads
+            const auto promptCopy{ prompt };
 
-                TraceLoggingWrite(
-                    g_hQueryExtensionProvider,
-                    "AIResponseReceived",
-                    TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                    TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-            else
+            // Start the progress ring
+            IsProgressRingActive(true);
+
+            // Make sure we are on the background thread for the http request
+            co_await winrt::resume_background();
+
+            WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _AIEndpoint } };
+            request.Headers().Accept().TryParseAdd(L"application/json");
+
+            WDJ::JsonObject jsonContent;
+            WDJ::JsonObject messageObject;
+
+            // _ActiveCommandline should be set already, we request for it the moment we become visible
+            winrt::hstring engineeredPrompt{ promptCopy + L". The shell I am running is " + _ActiveCommandline };
+            messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
+            messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
+            _jsonMessages.Append(messageObject);
+            jsonContent.SetNamedValue(L"messages", _jsonMessages);
+            jsonContent.SetNamedValue(L"max_tokens", WDJ::JsonValue::CreateNumberValue(800));
+            jsonContent.SetNamedValue(L"temperature", WDJ::JsonValue::CreateNumberValue(0.7));
+            jsonContent.SetNamedValue(L"frequency_penalty", WDJ::JsonValue::CreateNumberValue(0));
+            jsonContent.SetNamedValue(L"presence_penalty", WDJ::JsonValue::CreateNumberValue(0));
+            jsonContent.SetNamedValue(L"top_p", WDJ::JsonValue::CreateNumberValue(0.95));
+            jsonContent.SetNamedValue(L"stop", WDJ::JsonValue::CreateStringValue(L"None"));
+            const auto stringContent = jsonContent.ToString();
+            WWH::HttpStringContent requestContent{
+                stringContent,
+                WSS::UnicodeEncoding::Utf8,
+                L"application/json"
+            };
+
+            request.Content(requestContent);
+
+            // Send the request
+            try
             {
-                if (_verifyModelIsValidHelper(jsonResult))
+                const auto response = _httpClient.SendRequestAsync(request).get();
+                // Parse out the suggestion from the response
+                const auto string{ response.Content().ReadAsStringAsync().get() };
+                const auto jsonResult{ WDJ::JsonObject::Parse(string) };
+                if (jsonResult.HasKey(L"error"))
                 {
-                    const auto choices = jsonResult.GetNamedArray(L"choices");
-                    const auto firstChoice = choices.GetAt(0).GetObject();
-                    const auto messageObject = firstChoice.GetNamedObject(L"message");
-                    result = messageObject.GetNamedString(L"content");
-
-                    TraceLoggingWrite(
-                        g_hQueryExtensionProvider,
-                        "AIResponseReceived",
-                        TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                        TraceLoggingBoolean(true, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                        TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                    const auto errorObject = jsonResult.GetNamedObject(L"error");
+                    result = errorObject.GetNamedString(L"message");
                 }
                 else
                 {
-                    result = RS_(L"InvalidModelMessage");
-
-                    TraceLoggingWrite(
-                        g_hQueryExtensionProvider,
-                        "AIResponseReceived",
-                        TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                        TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                        TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                    if (_verifyModelIsValidHelper(jsonResult))
+                    {
+                        const auto choices = jsonResult.GetNamedArray(L"choices");
+                        const auto firstChoice = choices.GetAt(0).GetObject();
+                        const auto messageObject = firstChoice.GetNamedObject(L"message");
+                        result = messageObject.GetNamedString(L"content");
+                        isError = false;
+                    }
+                    else
+                    {
+                        result = RS_(L"InvalidModelMessage");
+                    }
                 }
             }
-        }
-        catch (...)
-        {
-            result = RS_(L"UnknownErrorMessage");
+            catch (...)
+            {
+                result = RS_(L"UnknownErrorMessage");
+            }
 
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AIResponseReceived",
-                TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            // Switch back to the foreground thread because we are changing the UI now
+            co_await winrt::resume_foreground(Dispatcher());
+
+            // Stop the progress ring
+            IsProgressRingActive(false);
         }
 
-        // Switch back to the foreground thread because we are changing the UI now
-        co_await winrt::resume_foreground(Dispatcher());
-
-        // Stop the progress ring
-        IsProgressRingActive(false);
-
-        // Append the suggestion to our list, clear the query box
-        _splitResponseAndAddToChatHelper(result);
+        // Append the result to our list, clear the query box
+        _splitResponseAndAddToChatHelper(result, isError);
 
         // Also make a new entry in our jsonMessages list, so the AI knows the full conversation so far
         WDJ::JsonObject responseMessageObject;
@@ -292,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         return winrt::to_hstring(time_str);
     }
 
-    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response)
+    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError)
     {
         // this function is dependent on the AI response separating code blocks with
         // newlines and "```". OpenAI seems to naturally conform to this, though
@@ -339,6 +295,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, _ProfileName, winrt::single_threaded_vector(std::move(messageParts)));
         _messages.Append(responseGroupedMessages);
+
+        TraceLoggingWrite(
+            g_hQueryExtensionProvider,
+            "AIResponseReceived",
+            TraceLoggingDescription("Event emitted when the user receives a response to their query"),
+            TraceLoggingBoolean(!isError, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void ExtensionPalette::_setFocusAndPlaceholderTextHelper()
@@ -517,15 +481,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         if (key == VirtualKey::Escape)
         {
-            // Dismiss the palette if the text is empty, otherwise clear the
-            // text box.
+            // Dismiss the palette if the text is empty
             if (_queryBox().Text().empty())
             {
                 _close();
-            }
-            else
-            {
-                _queryBox().Text(L"");
             }
 
             e.Handled(true);

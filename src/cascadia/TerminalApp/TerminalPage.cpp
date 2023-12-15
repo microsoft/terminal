@@ -5319,7 +5319,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
         _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
-        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {
                 ExtensionPresenter().Visibility(Visibility::Collapsed);
@@ -5332,17 +5332,15 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto profileName = activeControl.Settings().ProfileName();
                 const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
-                const auto lastSlashPos = fullCommandline.find_last_of(L"\\");
-                if (lastSlashPos != std::wstring::npos)
-                {
-                    const auto end = fullCommandline.find_last_of(L"\"");
-                    const auto s = fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1);
-                    _extensionPalette.ActiveCommandline(fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1));
-                }
-                else
-                {
-                    _extensionPalette.ActiveCommandline(fullCommandline);
-                }
+
+                // We just need the executable
+                // Code here uses the same logic as in utils.cpp, Utils::MangleStartingDirectoryForWSL
+                const auto terminator{ fullCommandline.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+                const auto start{ til::at(fullCommandline, 0) == L'"' ? 1 : 0 };
+                const std::filesystem::path executablePath{ fullCommandline.substr(start, terminator - start) };
+                const auto executableFilename{ executablePath.filename() };
+                winrt::hstring executableString{ executableFilename.c_str() };
+                _extensionPalette.ActiveCommandline(executableString);
                 _extensionPalette.ProfileName(profileName);
 
                 // Unfortunately IControlSettings doesn't contain the icon, we need to search our
