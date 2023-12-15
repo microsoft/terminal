@@ -1042,8 +1042,8 @@ til::point COOKED_READ_DATA::_offsetPosition(til::point pos, ptrdiff_t distance)
     };
 }
 
-// This moves the cursor `distance`-many cells back up in the buffer.
-// It's intended to be used in combination with _writeChars.
+// See _offsetCursorPositionAlways(). This wrapper is just here to avoid doing
+// expensive cursor movements when there's nothing to move. A no-op wrapper.
 void COOKED_READ_DATA::_offsetCursorPosition(ptrdiff_t distance) const
 {
     if (distance != 0)
@@ -1052,6 +1052,9 @@ void COOKED_READ_DATA::_offsetCursorPosition(ptrdiff_t distance) const
     }
 }
 
+// This moves the cursor `distance`-many cells around in the buffer.
+// It's intended to be used in combination with _writeChars.
+// Usually you should use _offsetCursorPosition() to no-op distance==0.
 void COOKED_READ_DATA::_offsetCursorPositionAlways(ptrdiff_t distance) const
 {
     const auto& textBuffer = _screenInfo.GetTextBuffer();
