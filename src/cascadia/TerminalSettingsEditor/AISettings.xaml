@@ -27,11 +27,10 @@
                 <TextBlock Margin="0,0,0,8"
                            Style="{StaticResource DisclaimerStyle}"
                            TextWrapping="WrapWholeWords">
-                    <Run x:Uid="AISettings_Disclaimer1" />
-                    <Hyperlink x:Name="DisclaimerLink"
-                               NavigateUri="https://support.microsoft.com/en-us/windows/accessing-credential-manager-1b5c916a-6a16-889f-8581-fc16e8165ac0"
-                               TextDecorations="None" />
-                    <Run x:Uid="AISettings_Disclaimer2" />
+                    <Run x:Name="AISettings_DisclaimerPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2253545"
+                               TextDecorations="None">
+                        <Run x:Name="AISettings_DisclaimerLinkText" />
+                    </Hyperlink><Run x:Name="AISettings_DisclaimerPart2" />
                 </TextBlock>
             </Border>
             <StackPanel Style="{StaticResource PivotStackStyle}">
@@ -97,10 +96,10 @@
                                         <Run>
                                             &#x2022;
                                         </Run>
-                                        <Run x:Uid="AISettings_AzureOpenAIPrerequisite1" />
-                                        <Hyperlink x:Name="Prerequisite1Hyperlink"
-                                                   NavigateUri="https://azure.microsoft.com/en-us/free/ai-services/"
-                                                   TextDecorations="None" />
+                                        <Run x:Name="AISettings_AzureOpenAIPrerequisite1Part1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252895"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_AzureOpenAIPrerequisite1LinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_AzureOpenAIPrerequisite1Part2" />
                                         <LineBreak />
                                         <Run>
                                             &#x2022;
@@ -110,17 +109,16 @@
                                         <Run>
                                             &#x2022;
                                         </Run>
-                                        <Run x:Uid="AISettings_AzureOpenAIPrerequisite3" />
-                                        <Hyperlink x:Name="Prerequisite3Hyperlink"
-                                                   NavigateUri="https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
-                                                   TextDecorations="None" />
+                                        <Run x:Name="AISettings_AzureOpenAIPrerequisite3Part1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252896"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_AzureOpenAIPrerequisite3LinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_AzureOpenAIPrerequisite3Part2" />
                                         <LineBreak />
                                         <LineBreak />
-                                        <Run x:Uid="AISettings_AzureOpenAIProductTerms" />
-                                        <Hyperlink x:Name="ProductTermsHyperlink"
-                                                   NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251913"
-                                                   TextDecorations="None" />
-                                        <Run Text="." />
+                                        <Run x:Name="AISettings_AzureOpenAIProductTermsPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251913"
+                                                   TextDecorations="None">
+                                            <Run x:Name="AISettings_AzureOpenAIProductTermsLinkText" />
+                                        </Hyperlink><Run x:Name="AISettings_AzureOpenAIProductTermsPart2" />
                                     </Paragraph>
                                 </RichTextBlock>
                             </StackPanel>

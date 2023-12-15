@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AISettings.h"
 #include "AISettings.g.cpp"
+#include "..\types\inc\utils.hpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -21,21 +22,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        auto disclaimerLinkText = Windows::UI::Xaml::Documents::Run();
-        disclaimerLinkText.Text(RS_(L"AISettings_DisclaimerLink"));
-        DisclaimerLink().Inlines().Append(disclaimerLinkText);
+        std::array<std::wstring, 1> disclaimerPlaceholders{ RS_(L"AISettings_DisclaimerLinkText").c_str() };
+        std::span<std::wstring> disclaimerPlaceholdersSpan{ disclaimerPlaceholders };
+        const auto disclaimerParts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AISettings_Disclaimer"), disclaimerPlaceholdersSpan);
 
-        auto prerequisite1LinkText = Windows::UI::Xaml::Documents::Run();
-        prerequisite1LinkText.Text(RS_(L"AISettings_AzureOpenAIPrerequisite1Hyperlink"));
-        Prerequisite1Hyperlink().Inlines().Append(prerequisite1LinkText);
+        AISettings_DisclaimerPart1().Text(disclaimerParts.at(0));
+        AISettings_DisclaimerLinkText().Text(disclaimerParts.at(1));
+        AISettings_DisclaimerPart2().Text(disclaimerParts.at(2));
 
-        auto prerequisite3LinkText = Windows::UI::Xaml::Documents::Run();
-        prerequisite3LinkText.Text(RS_(L"AISettings_AzureOpenAIPrerequisite3Hyperlink"));
-        Prerequisite3Hyperlink().Inlines().Append(prerequisite3LinkText);
+        std::array<std::wstring, 1> prerequisite1Placeholders{ RS_(L"AISettings_AzureOpenAIPrerequisite1LinkText").c_str() };
+        std::span<std::wstring> prerequisite1PlaceholdersSpan{ prerequisite1Placeholders };
+        const auto prerequisite1Parts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AISettings_AzureOpenAIPrerequisite1"), prerequisite1PlaceholdersSpan);
 
-        auto productTermsLinkText = Windows::UI::Xaml::Documents::Run();
-        productTermsLinkText.Text(RS_(L"AISettings_AzureOpenAIProductTermsHyperlink"));
-        ProductTermsHyperlink().Inlines().Append(productTermsLinkText);
+        AISettings_AzureOpenAIPrerequisite1Part1().Text(prerequisite1Parts.at(0));
+        AISettings_AzureOpenAIPrerequisite1LinkText().Text(prerequisite1Parts.at(1));
+        AISettings_AzureOpenAIPrerequisite1Part2().Text(prerequisite1Parts.at(2));
+
+        std::array<std::wstring, 1> prerequisite3Placeholders{ RS_(L"AISettings_AzureOpenAIPrerequisite3LinkText").c_str() };
+        std::span<std::wstring> prerequisite3PlaceholdersSpan{ prerequisite3Placeholders };
+        const auto prerequisite3Parts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AISettings_AzureOpenAIPrerequisite3"), prerequisite3PlaceholdersSpan);
+
+        AISettings_AzureOpenAIPrerequisite3Part1().Text(prerequisite3Parts.at(0));
+        AISettings_AzureOpenAIPrerequisite3LinkText().Text(prerequisite3Parts.at(1));
+        AISettings_AzureOpenAIPrerequisite3Part2().Text(prerequisite3Parts.at(2));
+
+        std::array<std::wstring, 1> productTermsPlaceholders{ RS_(L"AISettings_AzureOpenAIProductTermsLinkText").c_str() };
+        std::span<std::wstring> productTermsPlaceholdersSpan{ productTermsPlaceholders };
+        const auto productTermsParts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AISettings_AzureOpenAIProductTerms"), productTermsPlaceholdersSpan);
+
+        AISettings_AzureOpenAIProductTermsPart1().Text(productTermsParts.at(0));
+        AISettings_AzureOpenAIProductTermsLinkText().Text(productTermsParts.at(1));
+        AISettings_AzureOpenAIProductTermsPart2().Text(productTermsParts.at(2));
     }
 
     void AISettings::OnNavigatedTo(const NavigationEventArgs& e)

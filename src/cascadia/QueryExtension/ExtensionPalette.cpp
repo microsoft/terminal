@@ -35,13 +35,13 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         ControlName(RS_(L"ControlName"));
         QueryBoxPlaceholderText(RS_(L"CurrentShell"));
 
-        auto disclaimerLinkText = Windows::UI::Xaml::Documents::Run();
-        disclaimerLinkText.Text(RS_(L"AIContentDisclaimerHyperlink"));
-        AIContentDisclaimerHyperlink().Inlines().Append(disclaimerLinkText);
+        std::array<std::wstring, 1> disclaimerPlaceholders{ RS_(L"AIContentDisclaimerLinkText").c_str() };
+        std::span<std::wstring> disclaimerPlaceholdersSpan{ disclaimerPlaceholders };
+        const auto disclaimerParts = ::Microsoft::Console::Utils::SplitResourceStringWithPlaceholders(RS_(L"AIContentDisclaimer"), disclaimerPlaceholdersSpan);
 
-        auto learnMoreLinkText = Windows::UI::Xaml::Documents::Run();
-        learnMoreLinkText.Text(RS_(L"LearnMoreLink"));
-        LearnMoreLink().Inlines().Append(learnMoreLinkText);
+        AIContentDisclaimerPart1().Text(disclaimerParts.at(0));
+        AIContentDisclaimerLinkText().Text(disclaimerParts.at(1));
+        AIContentDisclaimerPart2().Text(disclaimerParts.at(2));
 
         _loadedRevoker = Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // We have to add this in (on top of the visibility change handler below) because
