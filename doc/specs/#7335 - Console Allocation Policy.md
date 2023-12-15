@@ -156,8 +156,8 @@ struct _CONSOLE_ALLOCATE_INFO
     DWORD cbSize;
     DWORD dwMode;
     DWORD dwFlags;
-    WORD  wShowWindow;
     COORD dwWindowSize;
+    WORD  wShowWindow;
 } CONSOLE_ALLOCATE_INFO, *PCONSOLE_ALLOCATE_INFO;
 
 WINBASEAPI
@@ -166,7 +166,7 @@ WINAPI
 AllocConsoleEx(PCONSOLE_ALLOCATE_INFO pAllocateInfo);
 ```
 
-**AllocConsoleEx** affords an application control over how its console windows are allocated.
+**AllocConsoleEx** affords an application control over how and when it begins a console session.
 
 > [!NOTE]
 > Unlike `AllocConsole`, `AllocConsoleEx` without flags (`ACX_MODE_DEFAULT`) will only allocate a console if one was
