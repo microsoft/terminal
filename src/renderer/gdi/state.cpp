@@ -419,7 +419,9 @@ GdiEngine::~GdiEngine()
     //
     // We can use the inverse of the constant to figure out how many px one period of the wave has to be to end up being 1px tall.
     // In our case we want the amplitude of the wave to have a peak-to-peak amplitude that matches our double-underline.
-    const auto curlyLineIdealAmplitude = std::max(1.0f, 0.5f * (doubleUnderlinePosBottom - doubleUnderlinePosTop));
+    const auto doubleUnderlineHalfDistance = 0.5f * (doubleUnderlinePosBottom - doubleUnderlinePosTop);
+    const auto doubleUnderlineCenter = doubleUnderlinePosTop + doubleUnderlineHalfDistance;
+    const auto curlyLineIdealAmplitude = std::max(1.0f, doubleUnderlineHalfDistance);
     // Since GDI can't deal with fractional pixels, we first calculate the control point offsets (0.5 and -0.5) by multiplying by 0.5 and
     // then undo that by multiplying by 2.0 for the period. This ensures that our control points can be at curlyLinePeriod/2, an integer.
     const auto curlyLineControlPointOffset = roundf(curlyLineIdealAmplitude * (1.0f / 0.140625f) * 0.5f);
@@ -427,7 +429,8 @@ GdiEngine::~GdiEngine()
     // We can reverse the above to get back the actual amplitude of our Bézier curve. The line
     // will be drawn with a width of thinLineWidth in the center of the curve (= 0.5x padding).
     const auto curlyLineAmplitude = 0.140625f * curlyLinePeriod + 0.5f * thinLineWidth;
-    const auto curlyLineOffset = std::min(underlineOffset, floorf(cellHeight - curlyLineAmplitude));
+    // To make the wavy line with its double-underline amplitude look consistent with the double-underline we position it at its center.
+    const auto curlyLineOffset = std::min(roundf(doubleUnderlineCenter), floorf(cellHeight - curlyLineAmplitude));
 
     _lineMetrics.gridlineWidth = lroundf(idealGridlineWidth);
     _lineMetrics.thinLineWidth = lroundf(thinLineWidth);
