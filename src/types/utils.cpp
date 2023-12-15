@@ -555,7 +555,7 @@ std::vector<std::wstring> Utils::SplitResourceStringWithPlaceholders(std::wstrin
             // the placeholders differently (for example, a string of the form "cc{0}cc{1}cc" might end up as
             // "c{1}cc{0}" in another language)
             // The span ensures that the correct placeholder is placed in the correct place in the final string
-            result.push_back(placeholderStringsSpan[placeholderNumber]);
+            result.push_back(gsl::at(placeholderStringsSpan, placeholderNumber));
 
             // Search for the next one, so increment by the length of 3 (i.e. the length of "{n}")
             current += length + 3;
