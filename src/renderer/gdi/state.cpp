@@ -372,10 +372,10 @@ GdiEngine::~GdiEngine()
         idealStrikethroughWidth = idealGridlineWidth;
     }
 
-    const auto underlineOffset = std::roundf(idealUnderlineOffset);
     const auto underlineWidth = std::max(1.0f, std::roundf(idealUnderlineWidth));
-    const auto strikethroughOffset = std::roundf(idealStrikethroughOffset);
+    const auto underlineOffset = std::min(cellHeight - underlineWidth, std::roundf(idealUnderlineOffset));
     const auto strikethroughWidth = std::max(1.0f, std::roundf(idealStrikethroughWidth));
+    const auto strikethroughOffset = std::min(cellHeight - strikethroughWidth, std::roundf(idealStrikethroughOffset));
     const auto thinLineWidth = std::max(1.0f, std::roundf(idealUnderlineWidth / 2.0f));
 
     // For double underlines we loosely follow what Word does:
@@ -412,7 +412,7 @@ GdiEngine::~GdiEngine()
     //        \ /
     //         v
     //
-    //       c
+    //       d
     //
     // If you punch x=0.25 into the cubic bezier formula you get y=0.140625. This constant is
     // important to us because it (plus the line width) tells us the amplitude of the wave.
