@@ -415,18 +415,19 @@ GdiEngine::~GdiEngine()
     //       c
     //
     // If you punch x=0.25 into the cubic bezier formula you get y=0.140625. This constant is
-    // important to us because it (plus the line width) tells us the magnitude of the wave.
+    // important to us because it (plus the line width) tells us the amplitude of the wave.
     //
     // We can use the inverse of the constant to figure out how many px one period of the wave has to be to end up being 1px tall.
-    // In our case we want the magnitude of the wave to be the thinLineWidth, which is equal to its width.
-    // Since GDI can't deal with fractional pixels, we first calculate the control point offsets (0.5 and -0.5) by multiplying by 0.5.
-    // Only then we calculate the period from that which is always a multiple of 2.
-    const auto curlyLineControlPointOffset = roundf(thinLineWidth * (1.0f / 0.140625f) * 0.5f);
+    // In our case we want the amplitude of the wave to have a peak-to-peak amplitude that matches our double-underline.
+    const auto curlyLineIdealAmplitude = std::max(1.0f, 0.5f * (doubleUnderlinePosBottom - doubleUnderlinePosTop));
+    // Since GDI can't deal with fractional pixels, we first calculate the control point offsets (0.5 and -0.5) by multiplying by 0.5 and
+    // then undo that by multiplying by 2.0 for the period. This ensures that our control points can be at curlyLinePeriod/2, an integer.
+    const auto curlyLineControlPointOffset = roundf(curlyLineIdealAmplitude * (1.0f / 0.140625f) * 0.5f);
     const auto curlyLinePeriod = curlyLineControlPointOffset * 2.0f;
-    // We can reverse the above to get back the actual magnitude of our Bézier curve. The line
+    // We can reverse the above to get back the actual amplitude of our Bézier curve. The line
     // will be drawn with a width of thinLineWidth in the center of the curve (= 0.5x padding).
-    const auto curlyLineMagnitude = 0.140625f * curlyLinePeriod + 0.5f * thinLineWidth;
-    const auto curlyLineOffset = std::min(underlineOffset, floorf(cellHeight - curlyLineMagnitude));
+    const auto curlyLineAmplitude = 0.140625f * curlyLinePeriod + 0.5f * thinLineWidth;
+    const auto curlyLineOffset = std::min(underlineOffset, floorf(cellHeight - curlyLineAmplitude));
 
     _lineMetrics.gridlineWidth = lroundf(idealGridlineWidth);
     _lineMetrics.thinLineWidth = lroundf(thinLineWidth);

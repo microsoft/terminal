@@ -544,13 +544,16 @@ try
         return S_OK;
     };
     const auto DrawCurlyLine = [&](const til::CoordType begX, const til::CoordType y, const til::CoordType width) {
-        const auto curlyLinePeriod = _lineMetrics.curlyLinePeriod;
-        const auto curlyLineControlPointOffset = _lineMetrics.curlyLineControlPointOffset;
+        const auto period = _lineMetrics.curlyLinePeriod;
+        const auto halfPeriod = period / 2;
+        const auto controlPointOffset = _lineMetrics.curlyLineControlPointOffset;
 
         // To ensure proper continuity of the wavy line between cells of different line color
         // this code starts/ends the line earlier/later than it should and then clips it.
         // Clipping in GDI is expensive, but it was the easiest approach.
-        const auto lineStart = (begX / curlyLinePeriod) * curlyLinePeriod;
+        // I've noticed that subtracting -1px prevents missing pixels when GDI draws. They still
+        // occur at certain (small) font sizes, but I couldn't figure out how to prevent those.
+        const auto lineStart = ((begX - 1) / period) * period;
         const auto lineEnd = begX + width;
 
         IntersectClipRect(_hdcMemoryContext, begX, ptTarget.y, begX + width, ptTarget.y + fontHeight);
@@ -565,11 +568,11 @@ try
         // This is the start point of the Bézier curve.
         points.emplace_back(lineStart, y);
 
-        for (auto x = lineStart; x < lineEnd; x += curlyLinePeriod)
+        for (auto x = lineStart; x < lineEnd; x += period)
         {
-            points.emplace_back(x + curlyLineControlPointOffset, y - curlyLineControlPointOffset);
-            points.emplace_back(x + curlyLineControlPointOffset, y + curlyLineControlPointOffset);
-            points.emplace_back(x + curlyLinePeriod, y);
+            points.emplace_back(x + halfPeriod, y - controlPointOffset);
+            points.emplace_back(x + halfPeriod, y + controlPointOffset);
+            points.emplace_back(x + period, y);
         }
 
         const auto cpt = gsl::narrow_cast<DWORD>(points.size());
