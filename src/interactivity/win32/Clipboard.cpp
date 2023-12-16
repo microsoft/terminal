@@ -215,7 +215,7 @@ InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* co
 void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 {
     std::wstring text;
-    std::optional<std::string> htmlData, rtfData;
+    std::string htmlData, rtfData;
 
     const auto& selection = Selection::Instance();
 
@@ -262,7 +262,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
         rtfData = buffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
     }
 
-    CopyTextToSystemClipboard(text, std::move(htmlData), std::move(rtfData));
+    CopyTextToSystemClipboard(text, htmlData, rtfData);
 }
 
 // Routine Description:
@@ -271,7 +271,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 // - text - plain-text data
 // - htmlData - HTML copy data
 // - rtfData - RTF copy data
-void Clipboard::CopyTextToSystemClipboard(const std::wstring_view text, const std::optional<std::string> htmlData, const std::optional<std::string> rtfData) const
+void Clipboard::CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const
 {
     // allocate the final clipboard data
     const auto cchNeeded = text.size() + 1;
@@ -299,13 +299,13 @@ void Clipboard::CopyTextToSystemClipboard(const std::wstring_view text, const st
         THROW_LAST_ERROR_IF(!EmptyClipboard());
         THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
 
-        if (htmlData)
+        if (!htmlData.empty())
         {
-            CopyToSystemClipboard(htmlData.value(), L"HTML Format");
+            CopyToSystemClipboard(htmlData, L"HTML Format");
         }
-        if (rtfData)
+        if (!rtfData.empty())
         {
-            CopyToSystemClipboard(rtfData.value(), L"Rich Text Format");
+            CopyToSystemClipboard(rtfData, L"Rich Text Format");
         }
     }
 
@@ -320,7 +320,7 @@ void Clipboard::CopyTextToSystemClipboard(const std::wstring_view text, const st
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-void Clipboard::CopyToSystemClipboard(const std::string_view stringToCopy, LPCWSTR lpszFormat) const
+void Clipboard::CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)

@@ -2015,7 +2015,7 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
 // Arguments:
 // - req - the copy request having the bounds of the selected region and other related configuration flags.
 // Return Value:
-// - The text data from the selected region of the text buffer.
+// - The text data from the selected region of the text buffer. Empty if the copy request is invalid.
 std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
 {
     if (req.beg > req.end)
@@ -2052,7 +2052,7 @@ std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
 // - isIntenseBold - true if being intense is treated as being bold
 // - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
-// - string containing the generated HTML
+// - string containing the generated HTML. Empty if the copy request is invalid.
 std::string TextBuffer::GenHTML(const CopyRequest& req,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
@@ -2263,7 +2263,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
 // - isIntenseBold - true if being intense is treated as being bold
 // - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
-// - string containing the generated RTF
+// - string containing the generated RTF. Empty if the copy request is invalid.
 std::string TextBuffer::GenRTF(const CopyRequest& req,
                                const int fontHeightPoints,
                                const std::wstring_view fontFaceName,

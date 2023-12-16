@@ -1255,11 +1255,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // extract text from buffer
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine, copyHtml, copyRtf);
-
-        const auto& textData = bufferData.plainText;
-        const auto& htmlData = bufferData.html ? bufferData.html.value() : "";
-        const auto& rtfData = bufferData.rtf ? bufferData.rtf.value() : "";
+        const auto& [textData, htmlData, rtfData] = _terminal->RetrieveSelectedTextFromBuffer(singleLine, copyHtml, copyRtf);
 
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,

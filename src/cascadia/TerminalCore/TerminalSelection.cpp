@@ -839,7 +839,8 @@ void Terminal::ClearSelection()
 // - html: also get text in HTML format
 // - rtf: also get text in RTF format
 // Return Value:
-// - Plain and formatted selected text from buffer. If extended to multiple lines, each line is separated by \r\n
+// - Plain and formatted selected text from buffer. Empty string represents no data for that format.
+// - If extended to multiple lines, each line is separated by \r\n
 Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html, const bool rtf) const
 {
     TextCopyData data;

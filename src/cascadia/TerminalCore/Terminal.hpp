@@ -294,8 +294,8 @@ public:
     struct TextCopyData
     {
         std::wstring plainText;
-        std::optional<std::string> html;
-        std::optional<std::string> rtf;
+        std::string html;
+        std::string rtf;
     };
 
     void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
