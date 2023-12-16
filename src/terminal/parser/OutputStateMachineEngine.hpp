@@ -29,6 +29,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
 
+        bool EncounteredWin32InputModeSequence() const noexcept override;
+
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
 

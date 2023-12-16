@@ -102,6 +102,11 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
+bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
+{
+    return _encounteredWin32InputModeSequence;
+}
+
 void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
 {
     _lookingForDSR = looking;
@@ -448,6 +453,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // Ctrl+C, Ctrl+Break are handled correctly.
         const auto key = _GenerateWin32Key(parameters);
         success = _pDispatch->WriteCtrlKey(key);
+        _encounteredWin32InputModeSequence = true;
         break;
     }
     default:

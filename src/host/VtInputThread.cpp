@@ -69,7 +69,7 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 // - true if you should continue reading
 bool VtInputThread::DoReadInput()
 {
-    char buffer[256];
+    char buffer[4096];
     DWORD dwRead = 0;
     const auto ok = ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
@@ -89,6 +89,12 @@ bool VtInputThread::DoReadInput()
         return false;
     }
 
+    // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
+    if (FAILED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(dwRead) }, _wstr, _u8State)))
+    {
+        return true;
+    }
+
     try
     {
         // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
@@ -99,12 +105,7 @@ bool VtInputThread::DoReadInput()
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        std::wstring wstr;
-        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-        if (SUCCEEDED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(dwRead) }, wstr, _u8State)))
-        {
-            _pInputStateMachine->ProcessString(wstr);
-        }
+        _pInputStateMachine->ProcessString(_wstr);
     }
     CATCH_LOG();
 
