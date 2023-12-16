@@ -3,6 +3,7 @@
 
 import "IKeyBindings.idl";
 import "IControlAppearance.idl";
+import "EventArgs.idl";
 
 namespace Microsoft.Terminal.Control
 {
@@ -48,6 +49,7 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Control.IKeyBindings KeyBindings { get; };
 
         Boolean CopyOnSelect { get; };
+        Microsoft.Terminal.Control.CopyFormat CopyFormatting { get; };
         Boolean FocusFollowMouse { get; };
 
         String Commandline { get; };
