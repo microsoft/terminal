@@ -1252,7 +1252,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // use action's copyFormatting if it's present, else fallback to globally
         // set copyFormatting.
-        const auto selectionFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
+        const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
 
         // extract text from buffer
         // RetrieveSelectedTextFromBuffer will lock while it's reading
@@ -1271,7 +1271,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
         // content, which is unexpected.
-        const auto htmlData = WI_IsFlagSet(selectionFormats, CopyFormat::HTML) ?
+        const auto htmlData = WI_IsFlagSet(copyFormats, CopyFormat::HTML) ?
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().height,
                                                       _actualFont.GetFaceName(),
@@ -1279,7 +1279,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   "";
 
         // convert to RTF format
-        const auto rtfData = WI_IsFlagSet(selectionFormats, CopyFormat::RTF) ?
+        const auto rtfData = WI_IsFlagSet(copyFormats, CopyFormat::RTF) ?
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().height,
                                                     _actualFont.GetFaceName(),
@@ -1291,7 +1291,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
                                                                        winrt::to_hstring(htmlData),
                                                                        winrt::to_hstring(rtfData),
-                                                                       selectionFormats));
+                                                                       copyFormats));
         return true;
     }
 
