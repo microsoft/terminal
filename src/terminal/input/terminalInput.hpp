@@ -46,6 +46,7 @@ namespace Microsoft::Console::VirtualTerminal
             AlternateScroll
         };
 
+        TerminalInput() noexcept;
         void SetInputMode(const Mode mode, const bool enabled) noexcept;
         bool GetInputMode(const Mode mode) const noexcept;
         void ResetInputModes() noexcept;
@@ -69,14 +70,26 @@ namespace Microsoft::Console::VirtualTerminal
         std::optional<wchar_t> _leadingSurrogate;
 
         std::optional<WORD> _lastVirtualKeyCode;
+        DWORD _lastControlKeyState = 0;
+        uint64_t _lastLeftCtrlTime = 0;
+        uint64_t _lastRightAltTime = 0;
+        std::unordered_map<int, std::wstring> _keyMap;
 
         til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat };
         bool _forceDisableWin32InputMode{ false };
 
-        [[nodiscard]] OutputType _makeCharOutput(wchar_t ch);
-        [[nodiscard]] static OutputType _makeEscapedOutput(wchar_t wch);
-        [[nodiscard]] static OutputType _makeWin32Output(const KEY_EVENT_RECORD& key);
-        [[nodiscard]] static OutputType _searchWithModifier(const KEY_EVENT_RECORD& keyEvent);
+        // In the future, if we add support for "8-bit" input mode, these prefixes
+        // will sometimes be replaced with equivalent C1 control characters.
+        static constexpr auto CSI = L"\x1B[";
+        static constexpr auto SS3 = L"\x1BO";
+
+        void _initKeyboardMap() noexcept;
+        DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key);
+        std::array<byte, 256> _getKeyboardState(const WORD virtualKeyCode, const DWORD controlKeyState) const;
+        [[nodiscard]] static wchar_t _makeCtrlChar(const wchar_t ch);
+        [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
+        [[nodiscard]] StringType _makeEscapedOutput(const StringType& charSequence) const;
+        [[nodiscard]] OutputType _makeWin32Output(const KEY_EVENT_RECORD& key) const;
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
