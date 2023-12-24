@@ -135,7 +135,15 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         {
             _lastVirtualKeyCode = std::nullopt;
         }
-        return MakeUnhandled();
+        // If NumLock is on, and this is an Alt release with a unicode char,
+        // it must be the generated character from an Alt-Numpad composition.
+        if (WI_IsFlagSet(controlKeyState, NUMLOCK_ON) && virtualKeyCode == VK_MENU && unicodeChar != 0)
+        {
+            return MakeOutput({ &unicodeChar, 1 });
+        }
+        // Otherwise we should return an empty string here to prevent unwanted
+        // characters being transmitted by the release event.
+        return MakeOutput({});
     }
 
     // If this is a VK_PACKET or 0 virtual key, it's likely a synthesized
@@ -182,6 +190,14 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     const auto shiftIsPressed = WI_IsFlagSet(controlKeyState, SHIFT_PRESSED);
     const auto altIsPressed = WI_IsAnyFlagSet(controlKeyState, ALT_PRESSED);
     const auto altGrIsPressed = altIsPressed && ctrlIsPressed;
+
+    // If it's a numeric keypad key, and Alt is pressed (but not Ctrl), then
+    // this is an Alt-Numpad composition and we should ignore these keys. The
+    // generated character will be transmitted when the Alt is released.
+    if (virtualKeyCode >= VK_NUMPAD0 && virtualKeyCode <= VK_NUMPAD9 && altIsPressed && !ctrlIsPressed)
+    {
+        return MakeOutput({});
+    }
 
     // The only enhanced key we care about is the Return key, because that
     // indicates that it's the key on the numeric keypad, which will transmit
