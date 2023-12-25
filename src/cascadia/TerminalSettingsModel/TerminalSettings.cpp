@@ -193,7 +193,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             if (newTerminalArgs.KeepWindowOpen())
             {
-                defaultSettings.
+                defaultSettings.CloseOnExit = CloseOnExitMode::Never;
             }
         }
 
@@ -346,6 +346,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
 
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
+
+        _CloseOnExit = profile.CloseOnExit();
     }
 
     // Method Description:

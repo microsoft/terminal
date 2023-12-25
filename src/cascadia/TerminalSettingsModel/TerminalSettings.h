@@ -169,6 +169,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ReloadEnvironmentVariables, true);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Automatic);
+
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
