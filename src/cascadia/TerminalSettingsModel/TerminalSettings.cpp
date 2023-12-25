@@ -346,8 +346,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
 
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
-
-        _CloseOnExit = profile.CloseOnExit();
     }
 
     // Method Description:
