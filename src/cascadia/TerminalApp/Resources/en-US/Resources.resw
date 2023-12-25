@@ -906,6 +906,6 @@
     <value>Restart the active pane connection</value>
   </data>
   <data name="CmdKeepOpenDesc" xml:space="preserve">
-    <value>If set, the window/tab/pane will stay open after the command has exitted. (It is he same as setting the profile termination behavior to never.)</value>
+    <value>If set, the window/tab/pane will stay open after the command has exited. (It is he same as setting the profile termination behavior to never.)</value>
   </data>
 </root>
