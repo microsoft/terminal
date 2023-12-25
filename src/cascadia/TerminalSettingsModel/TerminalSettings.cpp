@@ -190,6 +190,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 defaultSettings.ReloadEnvironmentVariables(newTerminalArgs.ReloadEnvironmentVariables().Value());
             }
+
+            if (newTerminalArgs.KeepWindowOpen())
+            {
+                defaultSettings.
+            }
         }
 
         return settingsPair;
@@ -341,6 +346,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
 
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
+
+        _CloseOnExit = profile.CloseOnExit();
     }
 
     // Method Description:

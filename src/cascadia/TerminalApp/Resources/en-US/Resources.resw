@@ -905,4 +905,7 @@
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Restart the active pane connection</value>
   </data>
+  <data name="CmdKeepWindowOpenDesc" xml:space="preserve">
+    <value>If set, the window will stay open after the command has exitted. (It is he same as setting the profile termination behavior to never.)</value>
+  </data>
 </root>

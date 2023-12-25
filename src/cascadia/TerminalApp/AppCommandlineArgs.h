@@ -69,6 +69,7 @@ private:
         CLI::Option* colorSchemeOption;
         CLI::Option* appendCommandLineOption;
         CLI::Option* inheritEnvOption;
+        CLI::Option* keepWindowOpenOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -109,6 +110,8 @@ private:
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
     bool _appendCommandLineOption{ false };
+
+    bool _keepWindowOpenOption{ false };
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
