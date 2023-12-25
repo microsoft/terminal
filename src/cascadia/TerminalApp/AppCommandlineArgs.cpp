@@ -677,6 +677,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     }
     args.ReloadEnvironmentVariables(!inheritEnv);
 
+    if (*subcommand.keepOpenOption)
+    {
+        args.KeepOpen(_keepOpenOption);
+    }
+
     return args;
 }
 
@@ -722,6 +727,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _commandline.clear();
     _suppressApplicationTitle = false;
     _appendCommandLineOption = false;
+    _keepOpenOption = false;
 
     _splitVertical = false;
     _splitHorizontal = false;
