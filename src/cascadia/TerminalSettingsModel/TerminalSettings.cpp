@@ -191,7 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 defaultSettings.ReloadEnvironmentVariables(newTerminalArgs.ReloadEnvironmentVariables().Value());
             }
 
-            if (newTerminalArgs.KeepWindowOpen())
+            if (newTerminalArgs.KeepOpen())
             {
                 // defaultSettings.CloseOnExit = CloseOnExitMode::Never;
             }

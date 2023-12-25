@@ -576,7 +576,7 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
         _inheritEnvironment,
         RS_A(L"CmdInheritEnvDesc"));
 
-    subcommand.keepWindowOpenOption = subcommand.subcommand->add_flag("--ko,--keepWindowOpen", _keepWindowOpenOption, RS_A(L"CmdKeepWindowOpenDesc"));
+    subcommand.keepOpenOption = subcommand.subcommand->add_flag("--ko,--keepOpen", _keepOpenOption, RS_A(L"CmdKeepOpenDesc"));
 
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.

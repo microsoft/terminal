@@ -69,7 +69,7 @@ private:
         CLI::Option* colorSchemeOption;
         CLI::Option* appendCommandLineOption;
         CLI::Option* inheritEnvOption;
-        CLI::Option* keepWindowOpenOption;
+        CLI::Option* keepOpenOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -111,7 +111,7 @@ private:
     std::vector<std::string> _commandline;
     bool _appendCommandLineOption{ false };
 
-    bool _keepWindowOpenOption{ false };
+    bool _keepOpenOption{ false };
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
