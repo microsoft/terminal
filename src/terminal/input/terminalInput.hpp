@@ -74,6 +74,8 @@ namespace Microsoft::Console::VirtualTerminal
         uint64_t _lastLeftCtrlTime = 0;
         uint64_t _lastRightAltTime = 0;
         std::unordered_map<int, std::wstring> _keyMap;
+        std::wstring _focusInSequence;
+        std::wstring _focusOutSequence;
 
         til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat };
         bool _forceDisableWin32InputMode{ false };

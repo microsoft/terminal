@@ -313,7 +313,7 @@ TerminalInput::OutputType TerminalInput::HandleFocus(const bool focused) const
         return MakeUnhandled();
     }
 
-    return MakeOutput(focused ? L"\x1b[I" : L"\x1b[O");
+    return MakeOutput(focused ? _focusInSequence : _focusOutSequence);
 }
 
 void TerminalInput::_initKeyboardMap() noexcept
@@ -512,6 +512,9 @@ try
             defineKeyWithUnusedModifiers(Enhanced + VK_RETURN, L"\033?M"s);
         }
     }
+
+    _focusInSequence = CSI + L"I"s;
+    _focusOutSequence = CSI + L"O"s;
 }
 CATCH_LOG()
 
