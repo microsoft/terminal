@@ -46,5 +46,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean Elevate;
         Boolean ReloadEnvironmentVariables;
+        CloseOnExitMode CloseOnExit;
     };
 }

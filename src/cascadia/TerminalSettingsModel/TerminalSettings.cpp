@@ -193,7 +193,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             if (newTerminalArgs.KeepOpen())
             {
-                // defaultSettings.CloseOnExit = CloseOnExitMode::Never;
+                defaultSettings.CloseOnExit(CloseOnExitMode::Never);
             }
         }
 
