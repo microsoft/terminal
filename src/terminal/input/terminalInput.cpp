@@ -346,7 +346,7 @@ try
     _keyMap.clear();
 
     // PAUSE doesn't have a VT mapping, but traditionally we've mapped it to ^Z,
-    // regardless of modifiers. This key is only supported in conhost.
+    // regardless of modifiers.
     defineKeyWithUnusedModifiers(VK_PAUSE, L"\x1A"s);
 
     // BACKSPACE maps to either DEL or BS, depending on the Backarrow Key mode.
@@ -435,8 +435,8 @@ try
 
         // Keypad keys depend on the Keypad mode. When reset, they transmit
         // the ASCII character assigned by the keyboard layout, but when set
-        // they transmit SS3 escape sequences. When used with a modifier they,
-        // the modifier is embedded as a parameter value (not standard).
+        // they transmit SS3 escape sequences. When used with a modifier, the
+        // modifier is embedded as a parameter value (not standard).
         if (_inputMode.test(Mode::Keypad))
         {
             defineNumericKey(VK_MULTIPLY, L'j');
