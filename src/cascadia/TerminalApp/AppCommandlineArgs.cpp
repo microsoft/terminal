@@ -540,10 +540,12 @@ void AppCommandlineArgs::_buildFocusPaneParser()
 
 void AppCommandlineArgs::_buildSaveParser()
 {
-    _saveCommand = _app.add_subcommand("save", "TODO Desc");
+    _saveCommand = _app.add_subcommand("save", RS_A(L"SaveActionDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        subcommand->add_option("command", _commandline, RS_A(L"CmdCommandArgDesc"));
+        subcommand->add_option("--name,-n", _saveInputName, RS_A(L"SaveActionArgDesc"));
+        subcommand->add_option("--keychord,-k", _keyChordOption, RS_A(L"KeyChordArgDesc"));
+        subcommand->add_option("command,", _commandline, RS_A(L"CmdCommandArgDesc"));
         subcommand->positionals_at_end(true);
 
         // When ParseCommand is called, if this subcommand was provided, this
@@ -557,6 +559,16 @@ void AppCommandlineArgs::_buildSaveParser()
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
             SaveTaskArgs args{};
+
+            if (!_saveInputName.empty())
+            {
+                winrt::hstring hString = winrt::to_hstring(_saveInputName);
+                args.Name(hString);
+            }
+            else
+            {
+                args.Name(args.GenerateName());
+            }
 
             if (!_commandline.empty())
             {
@@ -581,6 +593,11 @@ void AppCommandlineArgs::_buildSaveParser()
                 }
 
                 args.Commandline(winrt::to_hstring(cmdlineBuffer.str()));
+            }
+
+            if (!_keyChordOption.empty())
+            {
+                args.KeyChord(winrt::to_hstring(_keyChordOption));
             }
 
             saveAction.Args(args);

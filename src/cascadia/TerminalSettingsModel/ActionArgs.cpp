@@ -943,7 +943,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring SaveTaskArgs::GenerateName() const
     {
         return winrt::hstring{
-            fmt::format(L"Save Task commandline:{}, name: {}, description: {}", Commandline(), Name(), Description())
+            fmt::format(L"Save Task commandline:{}, name: {}, keyChord {}", Commandline(), Name(), KeyChord())
         };
     }
 

@@ -857,7 +857,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         AddAction(*cmd);
     }
 
-    void ActionMap::AddSendInputAction(winrt::hstring name, winrt::hstring input)
+    void ActionMap::AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys)
     {
         auto newAction = winrt::make<ActionAndArgs>();
         newAction.Action(ShortcutAction::SendInput);
@@ -866,6 +866,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto cmd{ make_self<Command>() };
         cmd->ActionAndArgs(newAction);
         cmd->Name(name);
+        cmd->RegisterKey(keys);
         AddAction(*cmd);
     }
 

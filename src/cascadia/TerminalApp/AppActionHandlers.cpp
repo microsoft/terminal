@@ -1249,15 +1249,22 @@ namespace winrt::TerminalApp::implementation
                         if (termControl.HasSelection())
                         {
                             const auto selections{ termControl.SelectedText(true) };
-                            auto input = std::accumulate(selections.begin(), selections.end(), std::wstring());
-                            realArgs.Commandline(input);
+                            auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                            realArgs.Commandline(selection);
                         }
                     }
                 }
 
-                _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.GenerateName(), realArgs.Commandline());
+                winrt::Microsoft::Terminal::Control::KeyChord keyChord = nullptr;
+                if (!realArgs.KeyChord().empty())
+                {
+                    keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                }
+
+                _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
+
                 _settings.WriteSettingsToDisk();
-                ActionSaved(realArgs.Commandline());
+                ActionSaved(realArgs.Commandline(), realArgs.Name(), KeyChordSerialization::ToString(keyChord));
                 args.Handled(true);
             }
         }

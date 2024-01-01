@@ -222,12 +222,15 @@
 
         <mux:TeachingTip x:Name="ActionSavedToast"
                          x:Uid="ActionSavedToast"
-                         Title="ActionSaved"
+                         Title="Action Saved"
                          x:Load="False"
                          IsLightDismissEnabled="True">
             <mux:TeachingTip.Content>
-                <TextBox x:Name="ActionSavedTextBox"
-                         Text="Test Toast Content" />
+                <StackPanel Orientation="Vertical">
+                    <TextBox x:Name="ActionSavedNameText" Text="" />
+                    <TextBox x:Name="ActionSavedKeyChordText" Text="" />
+                    <TextBox x:Name="ActionSavedCommandLineText" Text="" />
+                </StackPanel>
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
     </Grid>

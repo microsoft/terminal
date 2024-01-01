@@ -4205,7 +4205,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::ActionSaved(winrt::hstring input)
+    winrt::fire_and_forget TerminalPage::ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -4224,7 +4224,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
             _UpdateTeachingTipTheme(ActionSavedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
-            ActionSavedTextBox().Text(input);
+            ActionSavedNameText().Text(L"Name: " + name);
+            ActionSavedKeyChordText().Text(L"Key Chord: " + keyChord);
+            ActionSavedCommandLineText().Text(L"Input: " + input);
 
             if (page->_actionSavedToast != nullptr)
             {

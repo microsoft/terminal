@@ -149,7 +149,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
-        winrt::fire_and_forget ActionSaved(winrt::hstring input);
+        winrt::fire_and_forget ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord);
         winrt::fire_and_forget RenameFailed();
         winrt::fire_and_forget ShowTerminalWorkingDirectory();
 

@@ -122,6 +122,8 @@ private:
     bool _focusPrevTab{ false };
 
     int _focusPaneTarget{ -1 };
+    std::string _saveInputName;
+    std::string _keyChordOption;
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     const Commandline* _currentCommandline{ nullptr };

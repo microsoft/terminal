@@ -219,7 +219,7 @@ private:                                                                    \
 #define SAVE_TASK_ARGS(X)                                                           \
     X(winrt::hstring, Name, "name", false, L"")                                     \
     X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), L"") \
-    X(winrt::hstring, Description, "description", false, L"")
+    X(winrt::hstring, KeyChord, "keyChord", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SUGGESTIONS_ARGS(X)                                                 \
