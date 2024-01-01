@@ -857,6 +857,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         AddAction(*cmd);
     }
 
+    void ActionMap::AddSendInputAction(winrt::hstring name, winrt::hstring input)
+    {
+        auto newAction = winrt::make<ActionAndArgs>();
+        newAction.Action(ShortcutAction::SendInput);
+        auto sendInputArgs = winrt::make<SendInputArgs>(input);
+        newAction.Args(sendInputArgs);
+        auto cmd{ make_self<Command>() };
+        cmd->ActionAndArgs(newAction);
+        cmd->Name(name);
+        AddAction(*cmd);
+    }
+
     void ActionMap::_recursiveUpdateCommandKeybindingLabels()
     {
         const auto& commands{ _ExpandedCommandsCache };

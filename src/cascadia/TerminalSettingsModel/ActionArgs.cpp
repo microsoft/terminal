@@ -32,6 +32,7 @@
 #include "ScrollToMarkArgs.g.cpp"
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
+#include "SaveTaskArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
@@ -937,6 +938,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             Opacity())
             };
         }
+    }
+
+    winrt::hstring SaveTaskArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(L"Save Task commandline:{}, name: {}, description: {}", Commandline(), Name(), Description())
+        };
     }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)

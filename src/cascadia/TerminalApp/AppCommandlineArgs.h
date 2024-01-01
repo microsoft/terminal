@@ -92,6 +92,7 @@ private:
     CLI::App* _swapPaneCommand;
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
+    CLI::App* _saveCommand;
 
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
@@ -139,6 +140,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
+    void _buildSaveParser();
     void _buildNewTabParser();
     void _buildSplitPaneParser();
     void _buildFocusTabParser();

@@ -32,5 +32,6 @@ namespace Microsoft.Terminal.Settings.Model
         void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);
 
         void RegisterKeyBinding(Microsoft.Terminal.Control.KeyChord keys, ActionAndArgs action);
+        void AddSendInputAction(String name, String input);
     }
 }

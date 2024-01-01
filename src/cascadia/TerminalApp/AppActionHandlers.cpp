@@ -1234,6 +1234,34 @@ namespace winrt::TerminalApp::implementation
             args.Handled(true);
         }
     }
+    
+    void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
+            {
+                if (realArgs.Commandline().empty())
+                {
+                    if (const auto termControl{ _GetActiveControl() })
+                    {
+                        if (termControl.HasSelection())
+                        {
+                            const auto selections{ termControl.SelectedText(true) };
+                            auto input = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                            realArgs.Commandline(input);
+                        }
+                    }
+                }
+
+                _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.GenerateName(), realArgs.Commandline());
+                _settings.WriteSettingsToDisk();
+                ActionSaved(realArgs.Commandline());
+                args.Handled(true);
+            }
+        }
+    }
 
     void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)

@@ -219,5 +219,16 @@
                          Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
                          x:Load="False"
                          IsLightDismissEnabled="True" />
+
+        <mux:TeachingTip x:Name="ActionSavedToast"
+                         x:Uid="ActionSavedToast"
+                         Title="ActionSaved"
+                         x:Load="False"
+                         IsLightDismissEnabled="True">
+            <mux:TeachingTip.Content>
+                <TextBox x:Name="ActionSavedTextBox"
+                         Text="Test Toast Content" />
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 </Page>
