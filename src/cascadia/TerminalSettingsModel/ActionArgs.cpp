@@ -945,7 +945,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{
             fmt::format(L"Save Task commandline:{}, name: {}, keyChord {}", Commandline(), Name(), KeyChord())
         };
-    }
+     }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)
     {

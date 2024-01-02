@@ -233,5 +233,14 @@
                 </StackPanel>
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
+        <mux:TeachingTip x:Name="ActionSaveFailedToast"
+                         x:Uid="ActionSaveFailedToast"
+                         Title="Action Save Failed"
+                         x:Load="False"
+                         IsLightDismissEnabled="True">
+            <mux:TeachingTip.Content>
+                <TextBox x:Name="ActionSaveFailedMessage" Text="" />
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 </Page>

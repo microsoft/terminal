@@ -1258,13 +1258,27 @@ namespace winrt::TerminalApp::implementation
                 winrt::Microsoft::Terminal::Control::KeyChord keyChord = nullptr;
                 if (!realArgs.KeyChord().empty())
                 {
-                    keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                    try
+                    {
+                        keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                        _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
+                        _settings.WriteSettingsToDisk();
+                        ActionSaved(realArgs.Commandline(), realArgs.Name(), KeyChordSerialization::ToString(keyChord));
+                    }
+                    catch (const winrt::hresult_error& ex)
+                    {
+                        auto code = ex.code();
+                        auto message = ex.message();
+                        ActionSaveFailed(message);
+                        args.Handled(true);
+                        return;
+                    }
                 }
 
                 _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
-
                 _settings.WriteSettingsToDisk();
                 ActionSaved(realArgs.Commandline(), realArgs.Name(), KeyChordSerialization::ToString(keyChord));
+
                 args.Handled(true);
             }
         }

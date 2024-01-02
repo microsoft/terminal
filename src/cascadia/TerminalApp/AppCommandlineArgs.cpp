@@ -560,16 +560,6 @@ void AppCommandlineArgs::_buildSaveParser()
             // as it might clear those options while finding the commandline
             SaveTaskArgs args{};
 
-            if (!_saveInputName.empty())
-            {
-                winrt::hstring hString = winrt::to_hstring(_saveInputName);
-                args.Name(hString);
-            }
-            else
-            {
-                args.Name(args.GenerateName());
-            }
-
             if (!_commandline.empty())
             {
                 std::ostringstream cmdlineBuffer;
@@ -598,6 +588,16 @@ void AppCommandlineArgs::_buildSaveParser()
             if (!_keyChordOption.empty())
             {
                 args.KeyChord(winrt::to_hstring(_keyChordOption));
+            }
+            
+            if (!_saveInputName.empty())
+            {
+                winrt::hstring hString = winrt::to_hstring(_saveInputName);
+                args.Name(hString);
+            }
+            else
+            {
+                args.Name(args.GenerateName());
             }
 
             saveAction.Args(args);
