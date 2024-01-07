@@ -509,7 +509,7 @@ void InputTest::TerminalInputModifierKeyTests()
             {
                 continue;
             }
-            __fallthrough;
+            [[fallthrough]];
         default:
             if (ControlPressed(uiKeystate) && (vkey >= '1' && vkey <= '9'))
             {
