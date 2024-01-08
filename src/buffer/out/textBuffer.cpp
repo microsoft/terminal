@@ -416,6 +416,88 @@ size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position)
     return til::utf16_iterate_prev(chars, position);
 }
 
+// Ever wondered how much space a piece of text needs before inserting it? This function will tell you!
+// It fundamentally behaves identical to the various ROW functions around `RowWriteState`.
+//
+// Set `columnLimit` to the amount of space that's available (e.g. `buffer_width - cursor_position.x`)
+// and it'll return the amount of characters that fit into this space. The out parameter `columns`
+// will contain the amount of columns this piece of text has actually used.
+//
+// Just like with `RowWriteState` one special case is when not all text fits into the given space:
+// In that case, this function always returns exactly `columnLimit`. This distinction is important when "inserting"
+// a wide glyph but there's only 1 column left. That 1 remaining column is supposed to be padded with whitespace.
+size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::CoordType columnLimit, til::CoordType& columns) noexcept
+{
+    columnLimit = std::max(0, columnLimit);
+
+    const auto beg = chars.begin();
+    const auto end = chars.end();
+    auto it = beg;
+    const auto asciiEnd = beg + std::min(chars.size(), gsl::narrow_cast<size_t>(columnLimit));
+
+    // ASCII fast-path: 1 char always corresponds to 1 column.
+    for (; it != asciiEnd && *it < 0x80; ++it)
+    {
+    }
+
+    const auto dist = gsl::narrow_cast<size_t>(it - beg);
+    auto col = gsl::narrow_cast<til::CoordType>(dist);
+
+    if (it == asciiEnd) [[likely]]
+    {
+        columns = col;
+        return dist;
+    }
+
+    // Unicode slow-path where we need to count text and columns separately.
+    for (;;)
+    {
+        auto ptr = &*it;
+        const auto wch = *ptr;
+        size_t len = 1;
+
+        col++;
+
+        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
+        // It also allows us to skip the surrogate pair decoding at the same time.
+        if (wch >= 0x80)
+        {
+            if (til::is_surrogate(wch))
+            {
+                const auto it2 = it + 1;
+                if (til::is_leading_surrogate(wch) && it2 != end && til::is_trailing_surrogate(*it2))
+                {
+                    len = 2;
+                }
+                else
+                {
+                    ptr = &UNICODE_REPLACEMENT;
+                }
+            }
+
+            col += IsGlyphFullWidth({ ptr, len });
+        }
+
+        // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
+        // because if we tried inserting a wide glyph into just 1 remaining column it will
+        // fail to fit, but that remaining column still has been used up. When the caller sees
+        // `columns == columnLimit` they will line-wrap and continue inserting into the next row.
+        if (col > columnLimit)
+        {
+            columns = columnLimit;
+            return gsl::narrow_cast<size_t>(it - beg);
+        }
+
+        // But if we simply ran out of text we just need to return the actual number of columns.
+        it += len;
+        if (it == end)
+        {
+            columns = col;
+            return chars.size();
+        }
+    }
+}
+
 // Pretend as if `position` is a regular cursor in the TextBuffer.
 // This function will then pretend as if you pressed the left/right arrow
 // keys `distance` amount of times (negative = left, positive = right).
@@ -1247,36 +1329,32 @@ til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, co
 {
     auto result = target;
     const auto bufferSize = GetSize();
-    auto stayAtOrigin = false;
 
     // ignore left boundary. Continue until readable text found
     while (_GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
     {
-        if (!bufferSize.DecrementInBounds(result))
+        if (result == bufferSize.Origin())
         {
-            // first char in buffer is a DelimiterChar or ControlChar
-            // we can't move any further back
-            stayAtOrigin = true;
-            break;
+            //looped around and hit origin (no word between origin and target)
+            return result;
         }
+        bufferSize.DecrementInBounds(result);
     }
 
     // make sure we expand to the left boundary or the beginning of the word
     while (_GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
     {
-        if (!bufferSize.DecrementInBounds(result))
+        if (result == bufferSize.Origin())
         {
             // first char in buffer is a RegularChar
             // we can't move any further back
-            break;
+            return result;
         }
+        bufferSize.DecrementInBounds(result);
     }
 
-    // move off of delimiter and onto word start
-    if (!stayAtOrigin && _GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
-    {
-        bufferSize.IncrementInBounds(result);
-    }
+    // move off of delimiter
+    bufferSize.IncrementInBounds(result);
 
     return result;
 }
@@ -1294,10 +1372,16 @@ til::point TextBuffer::_GetWordStartForSelection(const til::point target, const 
     const auto bufferSize = GetSize();
 
     const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
+    const bool isControlChar = initialDelimiter == DelimiterClass::ControlChar;
 
     // expand left until we hit the left boundary or a different delimiter class
-    while (result.x > bufferSize.Left() && (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
+    while (result != bufferSize.Origin() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
+        //prevent selection wrapping on whitespace selection
+        if (isControlChar && result.x == bufferSize.Left())
+        {
+            break;
+        }
         bufferSize.DecrementInBounds(result);
     }
 
@@ -1375,25 +1459,21 @@ til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, cons
     }
     else
     {
-        auto iter{ GetCellDataAt(result, bufferSize) };
-        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) == DelimiterClass::RegularChar)
+        while (result != limit && result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
         {
             // Iterate through readable text
-            ++iter;
+            bufferSize.IncrementInBounds(result);
         }
 
-        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) != DelimiterClass::RegularChar)
+        while (result != limit && result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
         {
             // expand to the beginning of the NEXT word
-            ++iter;
+            bufferSize.IncrementInBounds(result);
         }
 
-        result = iter.Pos();
-
-        // Special case: we tried to move one past the end of the buffer,
-        // but iter prevented that (because that pos doesn't exist).
+        // Special case: we tried to move one past the end of the buffer
         // Manually increment onto the EndExclusive point.
-        if (!iter)
+        if (result == bufferSize.BottomRightInclusive())
         {
             bufferSize.IncrementInBounds(result, true);
         }
@@ -1413,19 +1493,18 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
 {
     const auto bufferSize = GetSize();
 
-    // can't expand right
-    if (target.x == bufferSize.RightInclusive())
-    {
-        return target;
-    }
-
     auto result = target;
     const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
+    const bool isControlChar = initialDelimiter == DelimiterClass::ControlChar;
 
-    // expand right until we hit the right boundary or a different delimiter class
-    while (result.x < bufferSize.RightInclusive() && (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
+    // expand right until we hit the right boundary as a ControlChar or a different delimiter class
+    while (result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        bufferSize.IncrementInBounds(result);
+        if (isControlChar && result.x == bufferSize.RightInclusive())
+        {
+            break;
+        }
+        bufferSize.IncrementInBoundsCircular(result);
     }
 
     if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)

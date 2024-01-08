@@ -263,12 +263,6 @@ bool VtIo::IsUsingVt() const
         CATCH_RETURN();
     }
 
-    // GH#4999 - Send a sequence to the connected terminal to request
-    // win32-input-mode from them. This will enable the connected terminal to
-    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
-    // this sequence, it'll just ignore it.
-    LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
-
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
     //  we're going to emit a VT sequence to ask for the cursor position, then
@@ -282,11 +276,16 @@ bool VtIo::IsUsingVt() const
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while (_lookingForCursorPosition)
+        while (_lookingForCursorPosition && _pVtInputThread->DoReadInput())
         {
-            _pVtInputThread->DoReadInput(false);
         }
     }
+
+    // GH#4999 - Send a sequence to the connected terminal to request
+    // win32-input-mode from them. This will enable the connected terminal to
+    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+    // this sequence, it'll just ignore it.
+    LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
 
     if (_pVtInputThread)
     {
@@ -468,10 +467,6 @@ void VtIo::SendCloseEvent()
 void VtIo::CorkRenderer(bool corked) const noexcept
 {
     _pVtRenderEngine->Cork(corked);
-    if (!corked)
-    {
-        LOG_IF_FAILED(ServiceLocator::LocateGlobals().pRender->PaintFrame());
-    }
 }
 
 #ifdef UNIT_TESTING

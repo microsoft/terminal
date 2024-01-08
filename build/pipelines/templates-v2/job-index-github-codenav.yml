@@ -1,6 +1,6 @@
 jobs:
 - job: CodeNavIndexer
-  displayName: Run Github CodeNav Indexer
+  displayName: Run GitHub CodeNav Indexer
   pool: { vmImage: windows-2022 }
 
   steps:

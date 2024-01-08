@@ -248,7 +248,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
                                      trimTrailingWhitespace,
                                      selectionRects,
                                      GetAttributeColors,
-                                     selection.IsKeyboardMarkSelection());
+                                     !selection.IsLineSelection());
 
     CopyTextToSystemClipboard(text, copyFormatting);
 }

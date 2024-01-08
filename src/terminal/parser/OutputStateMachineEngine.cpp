@@ -23,6 +23,11 @@ OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch
     THROW_HR_IF_NULL(E_INVALIDARG, _dispatch.get());
 }
 
+bool OutputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
+{
+    return false;
+}
+
 const ITermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
 {
     return *_dispatch;

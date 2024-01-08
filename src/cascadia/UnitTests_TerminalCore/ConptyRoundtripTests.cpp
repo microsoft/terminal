@@ -87,7 +87,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD_SETUP(MethodSetup)
     {
         // STEP 1: Set up the Terminal
-        term = std::make_unique<Terminal>();
+        term = std::make_unique<Terminal>(Terminal::TestDummyMarker{});
         emptyRenderer = std::make_unique<DummyRenderer>(term.get());
         term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, *emptyRenderer);
 
@@ -1201,7 +1201,7 @@ void ConptyRoundtripTests::PassthroughHardReset()
     // Write a Hard Reset VT sequence to the host, it should come through to the Terminal
     // along with a DECSET sequence to re-enable win32 input and focus events.
     expectedOutput.push_back("\033c");
-    expectedOutput.push_back("\033[?9001;1004h");
+    expectedOutput.push_back("\033[?9001h\033[?1004h");
     hostSm.ProcessString(L"\033c");
 
     const auto termSecondView = term->GetViewport();
@@ -3243,7 +3243,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            WriteCharsLegacy(si, str, false, nullptr);
+            WriteCharsLegacy(si, str, nullptr);
         }
     };
 
@@ -3401,7 +3401,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            WriteCharsLegacy(si, str, false, nullptr);
+            WriteCharsLegacy(si, str, nullptr);
         }
     };
 

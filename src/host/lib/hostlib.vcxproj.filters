@@ -111,9 +111,6 @@
     <ClCompile Include="..\conimeinfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utf8ToWideCharParser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\ntprivapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -264,9 +261,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\outputStream.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\utf8ToWideCharParser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ApiRoutines.h">

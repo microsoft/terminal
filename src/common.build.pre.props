@@ -131,9 +131,13 @@
         C26456: Operator 'A' hides a non-virtual operator 'B' (c.128)
           I think these rules are for when you fully bought into OOP?
           We didn't and it breaks WRL and large parts of conhost code.
+        C26478: Don't use std::move on constant variables. (es.56).
+          This diagnostic is broken in VS 17.7 which our CI currently uses. It's fixed in 17.8.
+        C26494: Variable 'index' is uninitialized. Always initialize an object (type. 5).
+          This diagnostic is broken in VS 17.7 which our CI currently uses. It's fixed in 17.8.
       -->
-      <DisableSpecificWarnings>4201;4312;4467;5105;26434;26445;26456;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4201;4312;4467;5105;26434;26445;26456;26478;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>

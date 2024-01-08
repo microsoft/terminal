@@ -39,9 +39,6 @@
     <ClCompile Include="..\precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utf8ToWideCharParserTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="InitTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
