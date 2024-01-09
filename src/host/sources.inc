@@ -72,7 +72,6 @@ SOURCES = \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \
-    ..\telemetry.cpp \
     ..\tracing.cpp   \
     ..\registry.cpp  \
     ..\settings.cpp  \
