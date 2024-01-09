@@ -334,11 +334,6 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
         _mouseInputState.accumulatedDelta = 0;
     }
 
-    if (ShouldSendAlternateScroll(button, delta))
-    {
-        return _makeAlternateScrollOutput(delta);
-    }
-
     if (IsTrackingMouseInput())
     {
         // isHover is only true for WM_MOUSEMOVE events
@@ -390,6 +385,11 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
                 return _GenerateDefaultSequence(position, realButton, isHover, modifierKeyState, delta);
             }
         }
+    }
+
+    if (ShouldSendAlternateScroll(button, delta))
+    {
+        return _makeAlternateScrollOutput(delta);
     }
 
     return {};
