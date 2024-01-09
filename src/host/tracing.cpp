@@ -12,13 +12,6 @@ TRACELOGGING_DEFINE_PROVIDER(g_hConhostV2EventTraceProvider,
                              (0xfe1ff234, 0x1f09, 0x50a8, 0xd3, 0x8d, 0xc4, 0x4f, 0xab, 0x43, 0xe8, 0x18),
                              TraceLoggingOptionMicrosoftTelemetry());
 
-static const auto cleanup = []() {
-    TraceLoggingRegister(g_hConhostV2EventTraceProvider);
-    return wil::scope_exit([]() {
-        TraceLoggingUnregister(g_hConhostV2EventTraceProvider);
-    });
-}();
-
 using namespace Microsoft::Console::Types;
 
 // NOTE: See `til.h` for which keyword flags are reserved

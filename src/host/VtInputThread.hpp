@@ -39,5 +39,6 @@ namespace Microsoft::Console
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
         til::u8state _u8State;
+        std::wstring _wstr;
     };
 }
