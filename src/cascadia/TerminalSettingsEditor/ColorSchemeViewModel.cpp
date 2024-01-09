@@ -191,5 +191,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PropertyChanged({ get_weak(), &ColorTableEntry::_PropertyChangedHandler });
     }
 
-
 }
