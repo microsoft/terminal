@@ -3014,57 +3014,57 @@ public:
         Log::Comment(L"DECAUPSS: DEC Supplemental");
         assignCharset(DispatchTypes::CharsetSize::Size94, L"%5");
         VERIFY_ARE_EQUAL(VTID("%5"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(94, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: DEC Greek");
         assignCharset(DispatchTypes::CharsetSize::Size94, L"\"?");
         VERIFY_ARE_EQUAL(VTID("\"?"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(94, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: DEC Hebrew");
         assignCharset(DispatchTypes::CharsetSize::Size94, L"\"4");
         VERIFY_ARE_EQUAL(VTID("\"4"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(94, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: DEC Turkish");
         assignCharset(DispatchTypes::CharsetSize::Size94, L"%0");
         VERIFY_ARE_EQUAL(VTID("%0"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(94, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: DEC Cyrillic");
         assignCharset(DispatchTypes::CharsetSize::Size94, L"&4");
         VERIFY_ARE_EQUAL(VTID("&4"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(94, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: ISO Latin-1");
         assignCharset(DispatchTypes::CharsetSize::Size96, L"A");
         VERIFY_ARE_EQUAL(VTID("A"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(96, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: ISO Latin-2");
         assignCharset(DispatchTypes::CharsetSize::Size96, L"B");
         VERIFY_ARE_EQUAL(VTID("B"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(96, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: ISO Latin-Greek");
         assignCharset(DispatchTypes::CharsetSize::Size96, L"F");
         VERIFY_ARE_EQUAL(VTID("F"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(96, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: ISO Latin-Hebrew");
         assignCharset(DispatchTypes::CharsetSize::Size96, L"H");
         VERIFY_ARE_EQUAL(VTID("H"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(96, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: ISO Latin-Cyrillic");
         assignCharset(DispatchTypes::CharsetSize::Size96, L"L");
         VERIFY_ARE_EQUAL(VTID("L"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(96, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
 
         Log::Comment(L"DECAUPSS: ISO Latin-5");
         assignCharset(DispatchTypes::CharsetSize::Size96, L"M");
         VERIFY_ARE_EQUAL(VTID("M"), termOutput.GetUserPreferenceCharsetId());
-        VERIFY_ARE_EQUAL(96, termOutput.GetUserPreferenceCharsetSize());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
     }
 
     TEST_METHOD(RequestUserPreferenceCharsets)
