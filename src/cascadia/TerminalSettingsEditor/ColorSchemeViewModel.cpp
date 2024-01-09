@@ -191,4 +191,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PropertyChanged({ get_weak(), &ColorTableEntry::_PropertyChangedHandler });
     }
 
+    void ColorTableEntry::_PropertyChangedHandler(const IInspectable& /*sender*/, const PropertyChangedEventArgs& args)
+    {
+        const auto propertyName{ args.PropertyName() };
+        if (propertyName == L"Color" || propertyName == L"Name")
+        {
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AccessibleName" });
+        }
+    }
+
 }

@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         hstring AccessibleName() const
         {
-            return hstring{ fmt::format(L"{} RGB({}, {}, {})", _Name, _Color.R, _Color.G, _Color.B) };
+            return hstring{ fmt::format(FMT_COMPILE(L"{} RGB({}, {}, {})"), _Name, _Color.R, _Color.G, _Color.B) };
         }
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -76,13 +76,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Windows::UI::Color _color;
 
-        void _PropertyChangedHandler(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
-        {
-            const auto propertyName{ args.PropertyName() };
-            if (propertyName == L"Color")
-            {
-                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"AccessibleName" });
-            }
-        }
+        void _PropertyChangedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
     };
 };
