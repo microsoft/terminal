@@ -70,7 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::optional<WORD> _lastVirtualKeyCode;
 
-        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat };
+        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
         bool _forceDisableWin32InputMode{ false };
 
         [[nodiscard]] OutputType _makeCharOutput(wchar_t ch);

@@ -19,7 +19,4 @@ Abstract:
 
 #include <sal.h>
 
-#include "telemetry.hpp"
-#include "tracing.hpp"
-
 #include "../../inc/conattrs.hpp"

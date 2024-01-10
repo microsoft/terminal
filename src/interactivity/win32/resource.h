@@ -25,7 +25,6 @@ Author(s):
 #define ID_CONSOLE_MSGMARKMODE           0x100C
 #define ID_CONSOLE_MSGSCROLLMODE         0x100D
 #define ID_CONSOLE_FMT_WINDOWTITLE       0x100E
-#define ID_CONSOLE_WIP_DESTINATIONNAME   0x100F
 
 // Menu Item strings
 #define ID_CONSOLE_COPY         0xFFF0

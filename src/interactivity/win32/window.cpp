@@ -20,7 +20,6 @@
 #include "../../host/scrolling.hpp"
 #include "../../host/srvinit.h"
 #include "../../host/stream.h"
-#include "../../host/telemetry.hpp"
 #include "../../host/tracing.hpp"
 
 #include "../../renderer/base/renderer.hpp"
