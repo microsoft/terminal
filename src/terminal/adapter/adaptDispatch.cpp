@@ -1644,7 +1644,7 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 // - parameters - One or more parameter values representing the status
 // Return Value:
 // - <none>
-void AdaptDispatch::_DeviceStatusReport(const std::wstring_view parameters) const
+void AdaptDispatch::_DeviceStatusReport(const wchar_t* parameters) const
 {
     _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{}n"), parameters));
 }
