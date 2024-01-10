@@ -271,7 +271,7 @@ namespace Microsoft::Console::VirtualTerminal
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
 
-        std::vector<bool> _tabStopColumns;
+        std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
         ITerminalApi& _api;

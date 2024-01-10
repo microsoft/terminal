@@ -2802,7 +2802,8 @@ void AdaptDispatch::_ClearAllTabStops() noexcept
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::TabSet(const VTParameter setType) noexcept
 {
-    if (setType == DispatchTypes::TabSetType::SetEvery8Columns || !setType.has_value())
+    constexpr auto SetEvery8Columns = DispatchTypes::TabSetType::SetEvery8Columns;
+    if (setType.value_or(SetEvery8Columns) == SetEvery8Columns)
     {
         _tabStopColumns.clear();
         _initDefaultTabStops = true;
