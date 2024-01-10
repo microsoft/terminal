@@ -69,14 +69,19 @@ void Clipboard::Paste()
     Selection::Instance().ClearSelection();
     Scrolling::s_ClearScroll();
 
-    const auto str = static_cast<const wchar_t*>(GlobalLock(handle));
-    const auto maxLen = GlobalSize(handle) / sizeof(WCHAR);
+    const wil::unique_hglobal_locked lock{ handle };
+    const auto str = static_cast<const wchar_t*>(lock.get());
+    if (!str)
+    {
+        return;
+    }
+
     // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
     //   CF_UNICODETEXT: [...] A null character signals the end of the data.
     // --> Use wcsnlen() to determine the actual length.
     // NOTE: Some applications don't add a trailing null character. This includes past conhost versions.
+    const auto maxLen = GlobalSize(handle) / sizeof(WCHAR);
     StringPaste(str, wcsnlen(str, maxLen));
-    GlobalUnlock(handle);
 }
 
 Clipboard& Clipboard::Instance()
