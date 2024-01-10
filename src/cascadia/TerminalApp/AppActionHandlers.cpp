@@ -1277,7 +1277,7 @@ namespace winrt::TerminalApp::implementation
 
                 _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
                 _settings.WriteSettingsToDisk();
-                ActionSaved(realArgs.Commandline(), realArgs.Name(), KeyChordSerialization::ToString(keyChord));
+                ActionSaved(realArgs.Commandline(), realArgs.Name(), L"None");
 
                 args.Handled(true);
             }
