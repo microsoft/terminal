@@ -294,7 +294,6 @@ CPPCORECHECK
 cppcorecheckrules
 cpprestsdk
 cppwinrt
-CProc
 cpx
 CREATESCREENBUFFER
 CREATESTRUCT
@@ -324,7 +323,6 @@ CTRLVOLUME
 Ctxt
 CUF
 cupxy
-curlyline
 CURRENTFONT
 currentmode
 CURRENTPAGE
@@ -546,7 +544,6 @@ Edgium
 EDITKEYS
 EDITTEXT
 EDITUPDATE
-edputil
 Efast
 efghijklmn
 EHsc
@@ -583,7 +580,6 @@ EXETYPE
 exeuwp
 exewin
 exitwin
-expectedinput
 EXPUNGECOMMANDHISTORY
 EXSTYLE
 EXTENDEDEDITKEY
@@ -795,7 +791,6 @@ HPA
 hpcon
 HPCON
 hpen
-hpj
 HPR
 HProvider
 HREDRAW
@@ -978,7 +973,6 @@ logissue
 losslessly
 loword
 lparam
-LPCCH
 lpch
 LPCPLINFO
 LPCREATESTRUCT
@@ -1177,7 +1171,6 @@ NOMOVE
 NONALERT
 nonbreaking
 nonclient
-NONCONST
 NONINFRINGEMENT
 NONPREROTATED
 nonspace
@@ -1525,17 +1518,14 @@ rgbs
 rgci
 rgfae
 rgfte
-rgi
 rgn
 rgp
 rgpwsz
 rgrc
-rgui
 rgw
 RIGHTALIGN
 RIGHTBUTTON
 riid
-Rike
 RIS
 roadmap
 robomac
@@ -1685,7 +1675,6 @@ SOLIDBOX
 Solutiondir
 somefile
 sourced
-spammy
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -1831,7 +1820,6 @@ Tpp
 Tpqrst
 tracelog
 tracelogging
-traceloggingprovider
 traceviewpp
 trackbar
 TRACKCOMPOSITION
@@ -1915,7 +1903,6 @@ USEFILLATTRIBUTE
 USEGLYPHCHARS
 USEHICON
 USEPOSITION
-userbase
 USERDATA
 userdpiapi
 Userp
@@ -1956,8 +1943,6 @@ vpack
 vpackdirectory
 VPACKMANIFESTDIRECTORY
 VPR
-VProc
-VRaw
 VREDRAW
 vsc
 vsconfig
@@ -2001,7 +1986,6 @@ WCIA
 WCIW
 WCSHELPER
 wcsicmp
-wcsnicmp
 wcsrev
 wddm
 wddmcon

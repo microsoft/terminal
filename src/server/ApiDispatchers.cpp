@@ -9,7 +9,6 @@
 #include "../host/getset.h"
 #include "../host/stream.h"
 #include "../host/srvinit.h"
-#include "../host/telemetry.hpp"
 #include "../host/cmdline.h"
 
 // Assumes that it will find <m> in the calling environment.
