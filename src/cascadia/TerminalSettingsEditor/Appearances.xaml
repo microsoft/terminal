@@ -310,8 +310,11 @@
                                     </Grid.ColumnDefinitions>
                                     <ComboBox Grid.Column="0"
                                               IsEditable="True"
+                                              IsSynchronizedWithCurrentItem="False"
                                               ItemsSource="{Binding Source={StaticResource CommonFontAxesListCVS}}"
-                                              Text="{x:Bind AxisKey, Mode=TwoWay}" />
+                                              Text="{x:Bind AxisKey, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                              TextSubmitted="AxisKeyComboBox_TextSubmitted">
+                                    </ComboBox>
                                     <muxc:NumberBox Grid.Column="1"
                                                     Value="{x:Bind AxisValue, Mode=TwoWay}" />
                                     <Button Grid.Column="2"

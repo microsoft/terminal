@@ -236,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (_FontAxesVector.GetAt(i).AxisKey() == key)
             {
-                _FontAxesVector.RemoveAt(i);
+                FontAxesVector().RemoveAt(i);
                 _appearance.SourceProfile().FontInfo().FontAxes().Remove(key);
                 break;
             }
@@ -526,6 +526,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Appearances::AddNewAxisKeyValuePair_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         Appearance().AddNewAxisKeyValuePair();
+    }
+
+    void Appearances::AxisKeyComboBox_TextSubmitted(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ComboBoxTextSubmittedEventArgs& e)
+    {
+        if (const auto axisKeyComboBox = sender.try_as<ComboBox>())
+        {
+            const auto oldKey = axisKeyComboBox.SelectedValue().as<winrt::hstring>();
+            const auto newKey = e.Text();
+            // todo: add an actual validator here
+            if (newKey.empty())
+                {}
+        }
     }
 
     void Appearances::_InitializeCommonFontAxesListCVS()
