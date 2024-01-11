@@ -82,15 +82,15 @@ namespace Microsoft::Console::VirtualTerminal
 
         // In the future, if we add support for "8-bit" input mode, these prefixes
         // will sometimes be replaced with equivalent C1 control characters.
-        static constexpr auto CSI = L"\x1B[";
-        static constexpr auto SS3 = L"\x1BO";
+        static constexpr auto _csi = L"\x1B[";
+        static constexpr auto _ss3 = L"\x1BO";
 
         void _initKeyboardMap() noexcept;
         DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key);
         std::array<byte, 256> _getKeyboardState(const WORD virtualKeyCode, const DWORD controlKeyState) const;
         [[nodiscard]] static wchar_t _makeCtrlChar(const wchar_t ch);
         [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
-        [[nodiscard]] StringType _makeEscapedOutput(const StringType& charSequence) const;
+        [[nodiscard]] void _escapeOutput(StringType& charSequence, const bool altIsPressed) const;
         [[nodiscard]] OutputType _makeWin32Output(const KEY_EVENT_RECORD& key) const;
 
 #pragma region MouseInputState Management

@@ -53,7 +53,7 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
 
     // If we've changed one of the modes that alter the VT input sequences,
     // we'll need to regenerate our keyboard map.
-    constexpr auto keyMapModes = til::enumset<Mode>{ Mode::LineFeed, Mode::Ansi, Mode::Keypad, Mode::CursorKey, Mode::BackarrowKey };
+    static constexpr auto keyMapModes = til::enumset<Mode>{ Mode::LineFeed, Mode::Ansi, Mode::Keypad, Mode::CursorKey, Mode::BackarrowKey };
     if (keyMapModes.test(mode))
     {
         _initKeyboardMap();
@@ -208,14 +208,14 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     // virtual key code, we've got a unique identifier for the key combination
     // that we can lookup in our map of predefined key sequences.
     auto keyCombo = virtualKeyCode;
-    keyCombo += (ctrlIsReallyPressed ? Ctrl : Unmodified);
-    keyCombo += (altIsPressed ? Alt : Unmodified);
-    keyCombo += (shiftIsPressed ? Shift : Unmodified);
-    keyCombo += (enhancedReturnKey ? Enhanced : Unmodified);
-    auto keySequence = _keyMap[keyCombo];
-    if (!keySequence.empty())
+    WI_SetFlagIf(keyCombo, Ctrl, ctrlIsReallyPressed);
+    WI_SetFlagIf(keyCombo, Alt, altIsPressed);
+    WI_SetFlagIf(keyCombo, Shift, shiftIsPressed);
+    WI_SetFlagIf(keyCombo, Enhanced, enhancedReturnKey);
+    const auto keyMatch = _keyMap.find(keyCombo);
+    if (keyMatch != _keyMap.end())
     {
-        return keySequence;
+        return keyMatch->second;
     }
 
     // If it's not in the key map, we'll use the UnicodeChar, if provided.
@@ -236,10 +236,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
             // We may also need to apply an Alt prefix to the char sequence, but
             // if this is an AltGr key, we only do so if both Alts are pressed.
             const auto bothAltsArePressed = WI_AreAllFlagsSet(controlKeyState, ALT_PRESSED);
-            if (altGrIsPressed ? bothAltsArePressed : altIsPressed)
-            {
-                charSequence = _makeEscapedOutput(charSequence);
-            }
+            _escapeOutput(charSequence, altGrIsPressed ? bothAltsArePressed : altIsPressed);
         }
         return charSequence;
     }
@@ -277,33 +274,31 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     keyState.at(VK_CONTROL) = keyState.at(VK_LCONTROL) = keyState.at(VK_RCONTROL) = 0;
     keyState.at(VK_MENU) = keyState.at(VK_LMENU) = keyState.at(VK_RMENU) = 0;
     length = ToUnicodeEx(virtualKeyCode, 0, keyState.data(), buffer.data(), bufferSize, flags, hkl);
-    if (length > 0)
+    if (length <= 0)
     {
-        auto charSequence = StringType{ buffer.data(), gsl::narrow_cast<size_t>(length) };
-        // Once we've got the base character, we can apply the Ctrl modifier.
-        if (ctrlIsReallyPressed && charSequence.length() == 1)
-        {
-            charSequence.at(0) = _makeCtrlChar(charSequence.at(0));
-            // If we haven't found a Ctrl mapping for the key, and it's one of
-            // the alphanumeric keys, we try again using the virtual key code.
-            // On keyboard layouts where the alphanumeric keys are not mapped to
-            // their typical ASCII values, this provides a simple fallback.
-            if (charSequence.at(0) >= L' ' && virtualKeyCode >= '2' && virtualKeyCode <= 'Z')
-            {
-                charSequence.at(0) = _makeCtrlChar(virtualKeyCode);
-            }
-        }
-        // If Alt is pressed, that also needs to be applied to the sequence.
-        if (altIsPressed)
-        {
-            charSequence = _makeEscapedOutput(charSequence);
-        }
-        return charSequence;
+        // If we've got nothing usable, we'll just return an empty string. The event
+        // has technically still been handled, even if it's an unmapped key.
+        return MakeOutput({});
     }
 
-    // If we've got nothing usable, we'll just return an empty string. The event
-    // has technically still been handled, even if it's an unmapped key.
-    return MakeOutput({});
+    auto charSequence = StringType{ buffer.data(), gsl::narrow_cast<size_t>(length) };
+    // Once we've got the base character, we can apply the Ctrl modifier.
+    if (ctrlIsReallyPressed && charSequence.length() == 1)
+    {
+        auto ch = _makeCtrlChar(charSequence.at(0));
+        // If we haven't found a Ctrl mapping for the key, and it's one of
+        // the alphanumeric keys, we try again using the virtual key code.
+        // On keyboard layouts where the alphanumeric keys are not mapped to
+        // their typical ASCII values, this provides a simple fallback.
+        if (ch >= L' ' && virtualKeyCode >= '2' && virtualKeyCode <= 'Z')
+        {
+            ch = _makeCtrlChar(virtualKeyCode);
+        }
+        charSequence.at(0) = ch;
+    }
+    // If Alt is pressed, that also needs to be applied to the sequence.
+    _escapeOutput(charSequence, altIsPressed);
+    return charSequence;
 }
 
 TerminalInput::OutputType TerminalInput::HandleFocus(const bool focused) const
@@ -319,28 +314,28 @@ TerminalInput::OutputType TerminalInput::HandleFocus(const bool focused) const
 void TerminalInput::_initKeyboardMap() noexcept
 try
 {
-    auto defineKeyWithUnusedModifiers = [this](const auto keyCode, const auto sequence) {
+    auto defineKeyWithUnusedModifiers = [this](const int keyCode, const std::wstring& sequence) {
         for (auto m = 0; m < 8; m++)
             _keyMap[VTModifier(m) + keyCode] = sequence;
     };
-    auto defineKeyWithAltModifier = [this](const auto keyCode, const auto sequence) {
+    auto defineKeyWithAltModifier = [this](const int keyCode, const std::wstring& sequence) {
         _keyMap[keyCode] = sequence;
         _keyMap[Alt + keyCode] = L"\x1B" + sequence;
     };
-    auto defineKeypadKey = [this](const auto keyCode, const auto prefix, const auto finalChar) {
+    auto defineKeypadKey = [this](const int keyCode, const wchar_t* prefix, const wchar_t finalChar) {
         _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}"), prefix, finalChar);
         for (auto m = 1; m < 8; m++)
-            _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}1;{}{}"), CSI, m + 1, finalChar);
+            _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}1;{}{}"), _csi, m + 1, finalChar);
     };
-    auto defineEditingKey = [this](const auto keyCode, const auto parm) {
-        _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}~"), CSI, parm);
+    auto defineEditingKey = [this](const int keyCode, const int parm) {
+        _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}~"), _csi, parm);
         for (auto m = 1; m < 8; m++)
-            _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}{};{}~"), CSI, parm, m + 1);
+            _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}{};{}~"), _csi, parm, m + 1);
     };
-    auto defineNumericKey = [this](const auto keyCode, const auto f) {
-        _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}"), SS3, f);
+    auto defineNumericKey = [this](const int keyCode, const wchar_t finalChar) {
+        _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}"), _ss3, finalChar);
         for (auto m = 1; m < 8; m++)
-            _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}{}{}"), SS3, m + 1, f);
+            _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}{}{}"), _ss3, m + 1, finalChar);
     };
 
     _keyMap.clear();
@@ -363,7 +358,7 @@ try
     // TAB maps to HT, and Shift+TAB to CBT. The Ctrl modifier has no effect.
     // The Alt modifier adds an ESC prefix, although in practice all the Alt
     // mappings are likely to be system hotkeys.
-    const auto shiftTabSequence = fmt::format(FMT_COMPILE(L"{}Z"), CSI);
+    const auto shiftTabSequence = fmt::format(FMT_COMPILE(L"{}Z"), _csi);
     defineKeyWithAltModifier(VK_TAB, L"\t"s);
     defineKeyWithAltModifier(Ctrl + VK_TAB, L"\t"s);
     defineKeyWithAltModifier(Shift + VK_TAB, shiftTabSequence);
@@ -397,10 +392,10 @@ try
         // F1 to F4 map to the VT keypad function keys, which are SS3 sequences.
         // When combined with a modifier, we use CSI sequences with the modifier
         // embedded as a parameter (not standard - a modern terminal extension).
-        defineKeypadKey(VK_F1, SS3, L'P');
-        defineKeypadKey(VK_F2, SS3, L'Q');
-        defineKeypadKey(VK_F3, SS3, L'R');
-        defineKeypadKey(VK_F4, SS3, L'S');
+        defineKeypadKey(VK_F1, _ss3, L'P');
+        defineKeypadKey(VK_F2, _ss3, L'Q');
+        defineKeypadKey(VK_F3, _ss3, L'R');
+        defineKeypadKey(VK_F4, _ss3, L'S');
 
         // F5 through F20 map to the top row VT function keys. They use standard
         // DECFNK sequences with the modifier embedded as a parameter. The first
@@ -417,7 +412,7 @@ try
         // although they only use an SS3 prefix when the Cursor Key mode is set.
         // When combined with a modifier, they'll use CSI sequences with the
         // modifier embedded as a parameter (again not standard).
-        const auto ckIntroducer = _inputMode.test(Mode::CursorKey) ? SS3 : CSI;
+        const auto ckIntroducer = _inputMode.test(Mode::CursorKey) ? _ss3 : _csi;
         defineKeypadKey(VK_UP, ckIntroducer, L'A');
         defineKeypadKey(VK_DOWN, ckIntroducer, L'B');
         defineKeypadKey(VK_RIGHT, ckIntroducer, L'C');
@@ -513,8 +508,8 @@ try
         }
     }
 
-    _focusInSequence = CSI + L"I"s;
-    _focusOutSequence = CSI + L"O"s;
+    _focusInSequence = _csi + L"I"s;
+    _focusOutSequence = _csi + L"O"s;
 }
 CATCH_LOG()
 
@@ -625,19 +620,12 @@ TerminalInput::StringType TerminalInput::_makeCharOutput(const wchar_t ch)
 }
 
 // Sends the given char as a sequence representing Alt+char, also the same as Meta+char.
-TerminalInput::StringType TerminalInput::_makeEscapedOutput(const StringType& charSequence) const
+void TerminalInput::_escapeOutput(StringType& charSequence, const bool altIsPressed) const
 {
     // Alt+char combinations are only applicable in ANSI mode.
-    if (_inputMode.test(Mode::Ansi))
+    if (altIsPressed && _inputMode.test(Mode::Ansi))
     {
-        StringType str;
-        str.push_back(L'\x1b');
-        str.append(charSequence);
-        return str;
-    }
-    else
-    {
-        return charSequence;
+        charSequence.insert(0, 1, L'\x1b');
     }
 }
 
@@ -665,5 +653,5 @@ TerminalInput::OutputType TerminalInput::_makeWin32Output(const KEY_EVENT_RECORD
     //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
     //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
-    return fmt::format(FMT_COMPILE(L"{}{};{};{};{};{};{}_"), CSI, vk, sc, uc, kd, cs, rc);
+    return fmt::format(FMT_COMPILE(L"{}{};{};{};{};{};{}_"), _csi, vk, sc, uc, kd, cs, rc);
 }

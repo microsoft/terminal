@@ -411,7 +411,7 @@ TerminalInput::OutputType TerminalInput::_GenerateDefaultSequence(const til::poi
         const auto encodedY = _encodeDefaultCoordinate(vtCoords.y);
         const auto encodedButton = _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta);
 
-        return fmt::format(FMT_COMPILE(L"{}M{}{}{}"), CSI, encodedButton, encodedX, encodedY);
+        return fmt::format(FMT_COMPILE(L"{}M{}{}{}"), _csi, encodedButton, encodedX, encodedY);
     }
 
     return {};
@@ -451,7 +451,7 @@ TerminalInput::OutputType TerminalInput::_GenerateUtf8Sequence(const til::point 
         const auto encodedY = _encodeDefaultCoordinate(vtCoords.y);
         const auto encodedButton = _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta);
 
-        return fmt::format(FMT_COMPILE(L"{}M{}{}{}"), CSI, encodedButton, encodedX, encodedY);
+        return fmt::format(FMT_COMPILE(L"{}M{}{}{}"), _csi, encodedButton, encodedX, encodedY);
     }
 
     return {};
@@ -474,7 +474,7 @@ TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point p
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
     const auto xbutton = _windowsButtonToSGREncoding(button, isHover, modifierKeyState, delta);
-    return fmt::format(FMT_COMPILE(L"{}<{};{};{}{}"), CSI, xbutton, position.x + 1, position.y + 1, isDown ? L'M' : L'm');
+    return fmt::format(FMT_COMPILE(L"{}<{};{};{}{}"), _csi, xbutton, position.x + 1, position.y + 1, isDown ? L'M' : L'm');
 }
 
 // Routine Description:
