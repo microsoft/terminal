@@ -137,92 +137,77 @@ if the application does not currently have a console handle.
 ### New APIs
 
 Because a console-subsystem application may still want fine-grained control over when and how its console window is
-spawned, we propose the inclusion of a new API, `AllocConsoleEx(PCONSOLE_ALLOCATE_INFO)`.
+spawned, we propose the inclusion of a new API, `AllocConsoleWithOptions(PALLOC_CONSOLE_OPTIONS)`.
 
-#### `AllocConsoleEx`
+#### `AllocConsoleWithOptions`
 
 ```c++
 // Console Allocation Modes
-#define ACX_MODE_DEFAULT             0x00000000
-#define ACX_MODE_WINDOW              0x00000001
-#define ACX_MODE_HEADLESS            0x00000002
-
-// Console Allocation Flags
-#define ACX_FLAG_USE_SHOWWINDOW 0x00000001
+typedef enum ALLOC_CONSOLE_MODE {
+    ALLOC_CONSOLE_MODE_DEFAULT  = 0,
+    ALLOC_CONSOLE_MODE_WINDOW   = 1,
+    ALLOC_CONSOLE_MODE_HEADLESS = 2
+} ALLOC_CONSOLE_MODE;
 
 typedef
-struct _CONSOLE_ALLOCATE_INFO
+struct ALLOC_CONSOLE_OPTIONS
 {
-    DWORD cbSize;
-    DWORD dwMode;
-    DWORD dwFlags;
-    COORD dwWindowSize;
-    WORD  wShowWindow;
-} CONSOLE_ALLOCATE_INFO, *PCONSOLE_ALLOCATE_INFO;
+    ALLOC_CONSOLE_MODE mode;
+    BOOL  useShowWindow;
+    WORD  showWindow;
+} ALLOC_CONSOLE_OPTIONS, *PALLOC_CONSOLE_OPTIONS;
 
 WINBASEAPI
 HRESULT
 WINAPI
-AllocConsoleEx(PCONSOLE_ALLOCATE_INFO pAllocateInfo);
+AllocConsoleWithOptions(PALLOC_CONSOLE_OPTIONS allocOptions);
 ```
 
-**AllocConsoleEx** affords an application control over how and when it begins a console session.
+**AllocConsoleWithOptions** affords an application control over how and when it begins a console session.
 
 > [!NOTE]
-> Unlike `AllocConsole`, `AllocConsoleEx` without flags (`ACX_MODE_DEFAULT`) will only allocate a console if one was
+> Unlike `AllocConsole`, `AllocConsoleWithOptions` without a mode (`ALLOC_CONSOLE_MODE_DEFAULT`) will only allocate a console if one was
 > requested during `CreateProcess`.
 >
-> To override this behavior, pass one of `ACX_MODE_WINDOW` (which is equivalent to being spawned with
-> `CREATE_NEW_WINDOW`) or `ACX_MODE_HEADLESS` (which is equivalent to being spawned with `CREATE_NO_WINDOW`.)
+> To override this behavior, pass one of `ALLOC_CONSOLE_MODE_WINDOW` (which is equivalent to being spawned with
+> `CREATE_NEW_WINDOW`) or `ALLOC_CONSOLE_MODE_HEADLESS` (which is equivalent to being spawned with `CREATE_NO_WINDOW`.)
 
 ##### Parameters
 
-**pAllocateInfo**: A pointer to a `CONSOLE_ALLOCATE_INFO`.
+**allocOptions**: A pointer to a `ALLOC_CONSOLE_OPTIONS`.
 
-##### `CONSOLE_ALLOCATE_INFO`
+##### `ALLOC_CONSOLE_OPTIONS`
 
 ###### Members
 
-**cbSize**: Must be set to `sizeof(CONSOLE_ALLOCATE_INFO)`.
+**mode**: See the table below for the descriptions of the available modes.
 
-**dwMode**: See the table below for the descriptions of the available modes.
+**useShowWindow**: Specifies whether the value in `showWindow` should be used.
 
-**dwFlags**: See the table below for the descriptions of the available flags.
-
-**wShowWindow**: If `ACX_FLAG_USE_SHOWWINDOW` is set, specifies the ["show command"] used to display your
+**showWindow**: If `useShowWindow` is set, specifies the ["show command"] used to display your
 console window.
-
-**dwWindowSize**: Specifies the viewport size of your newly-allocated console window. If you do not specify a size (e.g.
-you leave it set to `COORD{ 0, 0 }`), your process' console window will be created with a size in accordance with system
-configuration and/or the values in the `STARTUPINFO` structure used during your process' creation.
 
 ###### Return Value
 
-`AllocConsoleEx` will return `S_OK` if a console was allocated, and `S_FALSE` if one was not allocated.
+`AllocConsoleWithOptions` will return `S_OK` if a console was allocated, and `S_FALSE` if one was not allocated.
 
-`AllocConsoleEx` may return `S_FALSE` without having allocated a console if your process was spawned with
+`AllocConsoleWithOptions` may return `S_FALSE` without having allocated a console if your process was spawned with
 `DETACHED_PROCESS`.
 
-`AllocConsoleEx` will return an appropriate failing `HRESULT` if you pass it invalid parameters or the system is unable
+`AllocConsoleWithOptions` will return an appropriate failing `HRESULT` if you pass it invalid parameters or the system is unable
 to allocate a new console, including in circumstances where your process is already attached to a console.
 
 ###### Modes
 
-|        Mode         | Description                                                                                                                    |
-|:-------------------:| ------------------------------------------------------------------------------------------------------------------------------ |
-| `ACX_MODE_DEFAULT`  | Allocate a console session if (and how) one was requested by the parent process.                                               |
-|  `ACX_MODE_WINDOW`  | Allocate a console session with a window, even if this process was created with `CREATE_NO_WINDOW` or `DETACHED_PROCESS`.      |
-| `ACX_MODE_HEADLESS` | Allocate a console session _without_ a window, even if this process was created with `CREATE_NEW_WINDOW` or `DETACHED_CONSOLE` |
-
-###### Flags
-
-|           Flag            | Description                                                                                                                                 |
-|:-------------------------:| ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ACX_FLAG_USE_SHOWWINDOW` | If specified, the value of `CONSOLE_ALLOCATE_INFO::wShowWindow` will be used to control the visibility of the newly-created console window. |
+|             Mode              | Description                                                                                                                    |
+|:-----------------------------:| ------------------------------------------------------------------------------------------------------------------------------ |
+| `ALLOC_CONSOLE_MODE_DEFAULT`  | Allocate a console session if (and how) one was requested by the parent process.                                               |
+|  `ALLOC_CONSOLE_MODE_WINDOW`  | Allocate a console session with a window, even if this process was created with `CREATE_NO_WINDOW` or `DETACHED_PROCESS`.      |
+| `ALLOC_CONSOLE_MODE_HEADLESS` | Allocate a console session _without_ a window, even if this process was created with `CREATE_NEW_WINDOW` or `DETACHED_CONSOLE` |
 
 ###### Notes
 
-Applications seeking backwards compatibility are encouraged to delay-load `AllocConsoleEx` or check for its presence in
+Applications seeking backwards compatibility are encouraged to delay-load `AllocConsoleWithOptions` or check for its presence in
 the `api-ms-win-core-console-l1` APISet.
 
 ## Inspiration
@@ -267,8 +252,8 @@ All behavioral changes are opt-in.
 >
 > In addition, if python.exe specifies **detached**, Console APIs will fail until a console is allocated.
 
-Python could work around this by calling [`AllocConsole`] or [new API `AllocConsoleEx`](#allocconsoleex) if it can be
-detected that console I/O is required.
+Python could work around this by calling [`AllocConsole`] or [new API `AllocConsoleWithOptions`](#allocconsolewithoptions)
+if it can be detected that console I/O is required.
 
 #### Downlevel
 
@@ -307,7 +292,7 @@ Such applications can use `AllocConsole()` early in their startup.
 
 At the same time, PowerShell wants `-WindowStyle Hidden` to suppress the console _before it's created_.
 
-Applications in this category can use `AllocConsoleEx()` to specify additional information about the new console window.
+Applications in this category can use `AllocConsoleWithOptions()` to specify additional information about the new console window.
 
 PowerShell, and any other shell that wishes to maintain interactive launch from the graphical shell, can start in
 **detached** mode and then allocate a console as necessary. Therefore:
@@ -315,11 +300,11 @@ PowerShell, and any other shell that wishes to maintain interactive launch from 
 * PowerShell will set `<consoleAllocationPolicy>detached</consoleAllocationPolicy>`
 * On startup, it will process its commandline arguments.
 * If `-WindowStyle Hidden` is **not** present (the default case), it can:
-   * `AllocConsole()` or `AllocConsoleEx(NULL)`
+   * `AllocConsole()` or `AllocConsoleWithOptions(NULL)`
    * Either of these APIs will present a console window (or not) based on the flags passed through `STARTUPINFO` during
      [`CreateProcess`].
 * If `-WindowStyle Hidden` is present, it can:
-   * `AllocConsoleEx(&alloc)` where `alloc.dwMode` specifies `ACX_MODE_HIDDEN`
+   * `AllocConsoleWithOptions(&alloc)` where `alloc.mode` specifies `ALLOC_CONSOLE_MODE_HIDDEN`
 
 ## Future considerations
 
