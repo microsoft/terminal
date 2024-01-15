@@ -865,14 +865,14 @@ void Window::_HandleDrop(const WPARAM wParam) const
         fAddQuotes = (wcschr(szPath, L' ') != nullptr);
         if (fAddQuotes)
         {
-            Clipboard::Instance().StringPaste(L"\"", 1);
+            Clipboard::Instance().StringPaste(L"\"");
         }
 
-        Clipboard::Instance().StringPaste(szPath, wcslen(szPath));
+        Clipboard::Instance().StringPaste(szPath);
 
         if (fAddQuotes)
         {
-            Clipboard::Instance().StringPaste(L"\"", 1);
+            Clipboard::Instance().StringPaste(L"\"");
         }
     }
 }

@@ -245,14 +245,7 @@ bool InputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
-    short vkey = 0;
-    DWORD modifierState = 0;
-    auto success = _GenerateKeyFromChar(wch, vkey, modifierState);
-    if (success)
-    {
-        success = _WriteSingleKey(wch, vkey, modifierState);
-    }
-    return success;
+    return _pDispatch->WriteString({ &wch, 1 });
 }
 
 // Method Description:
@@ -282,17 +275,7 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 {
     if (_pDispatch->IsVtInputEnabled())
     {
-        // Synthesize string into key events that we'll write to the buffer
-        // similar to TerminalInput::_SendInputSequence
-        if (!string.empty())
-        {
-            InputEventQueue inputEvents;
-            for (const auto& wch : string)
-            {
-                inputEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-            }
-            return _pDispatch->WriteInput(inputEvents);
-        }
+        return _pDispatch->WriteInput(string);
     }
     return ActionPrintString(string);
 }
@@ -330,8 +313,7 @@ bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
         if (success)
         {
             // Alt is definitely pressed in the esc+key case.
-            modifierState = WI_SetFlag(modifierState, LEFT_ALT_PRESSED);
-
+            WI_SetFlag(modifierState, LEFT_ALT_PRESSED);
             success = _WriteSingleKey(wch, vk, modifierState);
         }
     }

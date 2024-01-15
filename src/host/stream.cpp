@@ -106,148 +106,6 @@ static bool IsCommandLineEditingKey(const KEY_EVENT_RECORD& event)
 }
 
 // Routine Description:
-// - This routine is used in stream input.  It gets input and filters it for unicode characters.
-// Arguments:
-// - pInputBuffer - The InputBuffer to read from
-// - pwchOut - On a successful read, the char data read
-// - Wait - true if a waited read should be performed
-// - pCommandLineEditingKeys - if present, arrow keys will be
-// returned. on output, if true, pwchOut contains virtual key code for
-// arrow key.
-// - pPopupKeys - if present, arrow keys will be
-// returned. on output, if true, pwchOut contains virtual key code for
-// arrow key.
-// Return Value:
-// - STATUS_SUCCESS on success or a relevant error code on failure.
-[[nodiscard]] NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
-                               _Out_ wchar_t* const pwchOut,
-                               const bool Wait,
-                               _Out_opt_ bool* const pCommandLineEditingKeys,
-                               _Out_opt_ bool* const pPopupKeys,
-                               _Out_opt_ DWORD* const pdwKeyState) noexcept
-{
-    if (nullptr != pCommandLineEditingKeys)
-    {
-        *pCommandLineEditingKeys = false;
-    }
-
-    if (nullptr != pPopupKeys)
-    {
-        *pPopupKeys = false;
-    }
-
-    if (nullptr != pdwKeyState)
-    {
-        *pdwKeyState = 0;
-    }
-
-    for (;;)
-    {
-        InputEventQueue events;
-        const auto Status = pInputBuffer->Read(events, 1, false, Wait, true, true);
-        if (FAILED_NTSTATUS(Status))
-        {
-            return Status;
-        }
-        if (events.empty())
-        {
-            assert(!Wait);
-            return STATUS_UNSUCCESSFUL;
-        }
-
-        const auto& Event = events[0];
-        if (Event.EventType == KEY_EVENT)
-        {
-            auto commandLineEditKey = false;
-            if (pCommandLineEditingKeys)
-            {
-                commandLineEditKey = IsCommandLineEditingKey(Event.Event.KeyEvent);
-            }
-            else if (pPopupKeys)
-            {
-                commandLineEditKey = IsCommandLinePopupKey(Event.Event.KeyEvent);
-            }
-
-            if (pdwKeyState)
-            {
-                *pdwKeyState = Event.Event.KeyEvent.dwControlKeyState;
-            }
-
-            if (Event.Event.KeyEvent.uChar.UnicodeChar != 0 && !commandLineEditKey)
-            {
-                // chars that are generated using alt + numpad
-                if (!Event.Event.KeyEvent.bKeyDown && Event.Event.KeyEvent.wVirtualKeyCode == VK_MENU)
-                {
-                    if (WI_IsFlagSet(Event.Event.KeyEvent.dwControlKeyState, ALTNUMPAD_BIT))
-                    {
-                        if (HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar))
-                        {
-                            const char chT[2] = {
-                                static_cast<char>(HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
-                                static_cast<char>(LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
-                            };
-                            *pwchOut = CharToWchar(chT, 2);
-                        }
-                        else
-                        {
-                            // Because USER doesn't know our codepage,
-                            // it gives us the raw OEM char and we
-                            // convert it to a Unicode character.
-                            char chT = LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar);
-                            *pwchOut = CharToWchar(&chT, 1);
-                        }
-                    }
-                    else
-                    {
-                        *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
-                    }
-                    return STATUS_SUCCESS;
-                }
-
-                // Ignore Escape and Newline chars
-                if (Event.Event.KeyEvent.bKeyDown &&
-                    (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                     (Event.Event.KeyEvent.wVirtualKeyCode != VK_ESCAPE &&
-                      Event.Event.KeyEvent.uChar.UnicodeChar != UNICODE_LINEFEED)))
-                {
-                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
-                    return STATUS_SUCCESS;
-                }
-            }
-
-            if (Event.Event.KeyEvent.bKeyDown)
-            {
-                if (pCommandLineEditingKeys && commandLineEditKey)
-                {
-                    *pCommandLineEditingKeys = true;
-                    *pwchOut = static_cast<wchar_t>(Event.Event.KeyEvent.wVirtualKeyCode);
-                    return STATUS_SUCCESS;
-                }
-
-                if (pPopupKeys && commandLineEditKey)
-                {
-                    *pPopupKeys = true;
-                    *pwchOut = static_cast<char>(Event.Event.KeyEvent.wVirtualKeyCode);
-                    return STATUS_SUCCESS;
-                }
-
-                const auto zeroKey = OneCoreSafeVkKeyScanW(0);
-
-                if (LOBYTE(zeroKey) == Event.Event.KeyEvent.wVirtualKeyCode &&
-                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, ALT_PRESSED) == WI_IsFlagSet(zeroKey, 0x400) &&
-                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, CTRL_PRESSED) == WI_IsFlagSet(zeroKey, 0x200) &&
-                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, SHIFT_PRESSED) == WI_IsFlagSet(zeroKey, 0x100))
-                {
-                    // This really is the character 0x0000
-                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
-                    return STATUS_SUCCESS;
-                }
-            }
-        }
-    }
-}
-
-// Routine Description:
 // - if we have leftover input, copy as much fits into the user's
 // buffer and return.  we may have multi line input, if a macro
 // has been defined that contains the $T character.
@@ -404,43 +262,13 @@ NT_CATCH_RETURN()
 try
 {
     UNREFERENCED_PARAMETER(readHandleState);
-
     bytesRead = 0;
 
-    const auto charSize = unicode ? sizeof(wchar_t) : sizeof(char);
-    std::span writer{ buffer };
-
-    if (writer.size() < charSize)
-    {
-        return STATUS_BUFFER_TOO_SMALL;
-    }
-
-    inputBuffer.ConsumeCached(unicode, writer);
-
-    auto noDataReadYet = writer.size() == buffer.size();
-    auto status = STATUS_SUCCESS;
-
-    while (writer.size() >= charSize)
-    {
-        wchar_t wch;
-        // We don't need to wait for input if `ConsumeCached` read something already, which is
-        // indicated by the writer having been advanced (= it's shorter than the original buffer).
-        status = GetChar(&inputBuffer, &wch, noDataReadYet, nullptr, nullptr, nullptr);
-        if (FAILED_NTSTATUS(status))
-        {
-            break;
-        }
-
-        std::wstring_view wchView{ &wch, 1 };
-        inputBuffer.Consume(unicode, wchView, writer);
-
-        noDataReadYet = false;
-    }
-
-    bytesRead = buffer.size() - writer.size();
-    // Once we read some data off the InputBuffer it can't be read again, so we
-    // need to make sure to return a success status to the client in that case.
-    return noDataReadYet ? status : STATUS_SUCCESS;
+    const InputBuffer::ReadDescriptor readDesc{
+        .wide = unicode,
+    };
+    bytesRead = inputBuffer.Read(readDesc, buffer.data(), buffer.size());
+    return bytesRead == 0 ? CONSOLE_STATUS_WAIT : STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
 

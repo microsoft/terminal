@@ -33,11 +33,7 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
 {
-    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
-    // to make sure that "response" input is spooled directly into the application.
-    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
-    // could collide with each other.
-    _io.GetActiveInputBuffer()->WriteString(response);
+    _io.GetActiveInputBuffer()->Write(response);
 }
 
 // Routine Description:

@@ -67,8 +67,8 @@ public:
                                                                     ULONG& events) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleInputImpl(IConsoleInputObject& context,
-                                                      InputEventQueue& outEvents,
-                                                      const size_t eventReadCount,
+                                                      INPUT_RECORD* outEvents,
+                                                      size_t* eventReadCount,
                                                       INPUT_READ_HANDLE_DATA& readHandleState,
                                                       const bool IsUnicode,
                                                       const bool IsPeek,

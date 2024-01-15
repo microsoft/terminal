@@ -93,34 +93,17 @@ try
         return true;
     }
 
-    // if we get to here, this routine was called either by the input
-    // thread or a write routine.  both of these callers grab the
-    // current console lock.
-
-    size_t amountToRead;
-    if (FAILED(SizeTSub(_eventReadCount, _outEvents.size(), &amountToRead)))
-    {
-        *pReplyStatus = STATUS_INTEGER_OVERFLOW;
-        return true;
-    }
-
-    *pReplyStatus = _pInputBuffer->Read(_outEvents,
-                                        amountToRead,
-                                        false,
-                                        false,
-                                        fIsUnicode,
-                                        false);
-
-    if (*pReplyStatus == CONSOLE_STATUS_WAIT)
+    const InputBuffer::ReadDescriptor readDesc{
+        .wide = fIsUnicode,
+        .records = true,
+    };
+    const auto count = _pInputBuffer->Read(readDesc, pOutputData, _eventReadCount * sizeof(INPUT_RECORD));
+    if (!count)
     {
         return false;
     }
 
-    // move events to pOutputData
-    const auto pOutputDeque = static_cast<InputEventQueue* const>(pOutputData);
-    *pNumBytes = _outEvents.size() * sizeof(INPUT_RECORD);
-    *pOutputDeque = std::move(_outEvents);
-
+    *pNumBytes = count;
     return true;
 }
 catch (...)

@@ -215,8 +215,7 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 
 // Routine Description:
 // - This routine closes an input handle.  It decrements the input buffer's
-//   reference count.  If it goes to zero, the buffer is reinitialized.
-//   Otherwise, the handle is removed from sharing.
+//   reference count.
 // Arguments:
 // - <none>
 // Return Value:
@@ -243,11 +242,6 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 
     // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
     LOG_IF_FAILED(pInputBuffer->FreeIoHandle(this));
-
-    if (!pInputBuffer->HasAnyOpenHandles())
-    {
-        pInputBuffer->ReinitializeInputBuffer();
-    }
 
     return S_OK;
 }

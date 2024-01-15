@@ -12,7 +12,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/GlyphWidth.hpp"
 
-#define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
+#pragma warning(disable : 4100)
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::TerminalInput;
@@ -24,8 +24,7 @@ using namespace Microsoft::Console;
 // - None
 // Return Value:
 // - A new instance of InputBuffer
-InputBuffer::InputBuffer() :
-    InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE }
+InputBuffer::InputBuffer()
 {
     // initialize buffer header
     fInComposition = false;
@@ -168,18 +167,7 @@ void InputBuffer::Cache(std::wstring_view source)
 // Moves up to `count`, previously cached events into `target`.
 size_t InputBuffer::ConsumeCached(bool isUnicode, size_t count, InputEventQueue& target)
 {
-    _switchReadingMode(isUnicode ? ReadingMode::InputEventsW : ReadingMode::InputEventsA);
-
-    size_t i = 0;
-
-    while (i < count && !_cachedInputEvents.empty())
-    {
-        target.push_back(std::move(_cachedInputEvents.front()));
-        _cachedInputEvents.pop_front();
-        i++;
-    }
-
-    return i;
+    return 0;
 }
 
 // Copies up to `count`, previously cached events into `target`.
@@ -211,10 +199,6 @@ void InputBuffer::Cache(bool isUnicode, InputEventQueue& source, size_t expected
 
     if (source.size() > expectedSourceSize)
     {
-        _cachedInputEvents.insert(
-            _cachedInputEvents.end(),
-            std::make_move_iterator(source.begin() + expectedSourceSize),
-            std::make_move_iterator(source.end()));
         source.resize(expectedSourceSize);
     }
 }
@@ -234,8 +218,6 @@ void InputBuffer::_switchReadingModeSlowPath(ReadingMode mode)
 
     _cachedTextW = std::wstring{};
     _cachedTextReaderW = {};
-
-    _cachedInputEvents = std::deque<INPUT_RECORD>{};
 
     _readingMode = mode;
 }
@@ -278,19 +260,6 @@ void InputBuffer::StoreWritePartialByteSequence(const INPUT_RECORD& event) noexc
 }
 
 // Routine Description:
-// - This routine resets the input buffer information fields to their initial values.
-// Arguments:
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-void InputBuffer::ReinitializeInputBuffer()
-{
-    ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
-    InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
-    _storage.clear();
-}
-
-// Routine Description:
 // - Wakes up readers waiting for data to read.
 // Arguments:
 // - None
@@ -322,7 +291,7 @@ void InputBuffer::TerminateRead(_In_ WaitTerminationReason Flag)
 // - The console lock must be held when calling this routine.
 size_t InputBuffer::GetNumberOfReadyEvents() const noexcept
 {
-    return _storage.size();
+    return 0;
 }
 
 // Routine Description:
@@ -349,260 +318,197 @@ void InputBuffer::Flush()
 // - The console lock must be held when calling this routine.
 void InputBuffer::FlushAllButKeys()
 {
-    auto newEnd = std::remove_if(_storage.begin(), _storage.end(), [](const INPUT_RECORD& event) {
-        return event.EventType != KEY_EVENT;
-    });
-    _storage.erase(newEnd, _storage.end());
 }
 
-// Routine Description:
-// - This routine reads from the input buffer.
-// - It can convert returned data to through the currently set Input CP, it can optionally return a wait condition
-//   if there isn't enough data in the buffer, and it can be set to not remove records as it reads them out.
-// Note:
-// - The console lock must be held when calling this routine.
-// Arguments:
-// - OutEvents - deque to store the read events
-// - AmountToRead - the amount of events to try to read
-// - Peek - If true, copy events to pInputRecord but don't remove them from the input buffer.
-// - WaitForData - if true, wait until an event is input (if there aren't enough to fill client buffer). if false, return immediately
-// - Unicode - true if the data in key events should be treated as unicode. false if they should be converted by the current input CP.
-// - Stream - true if read should unpack KeyEvents that have a >1 repeat count. AmountToRead must be 1 if Stream is true.
-// Return Value:
-// - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
-// - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
-// - otherwise a suitable memory/math/string error in NTSTATUS form.
-[[nodiscard]] NTSTATUS InputBuffer::Read(_Out_ InputEventQueue& OutEvents,
-                                         const size_t AmountToRead,
-                                         const bool Peek,
-                                         const bool WaitForData,
-                                         const bool Unicode,
-                                         const bool Stream)
-try
+static void transfer(InputBuffer::RecordVec& in, std::span<INPUT_RECORD> out)
 {
-    assert(OutEvents.empty());
-
-    const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
-
-    if (Peek)
+    const auto count = std::min(in.size(), out.size());
+    std::copy_n(in.begin(), count, out.begin());
+    if (count == out.size())
     {
-        PeekCached(Unicode, AmountToRead, OutEvents);
+        in.clear();
     }
     else
     {
-        ConsumeCached(Unicode, AmountToRead, OutEvents);
+        in.erase(in.begin(), in.begin() + count);
     }
+}
 
+static void transfer(InputBuffer::RecordVec& in, std::span<wchar_t> out)
+{
+    size_t inUsed = 0;
+    size_t outUsed = 0;
+
+    for (auto& r : in)
+    {
+        if (outUsed == out.size())
+        {
+            break;
+        }
+
+        if (r.EventType == KEY_EVENT && r.Event.KeyEvent.uChar.UnicodeChar != 0)
+        {
+            out[outUsed++] = r.Event.KeyEvent.uChar.UnicodeChar;
+        }
+
+        inUsed++;
+    }
+}
+
+static void transfer(InputBuffer::TextVec& in, std::span<INPUT_RECORD> out)
+{
+    // TODO: MSFT 14150722 - can these const values be generated at
+    // runtime without breaking compatibility?
+    static constexpr WORD altScanCode = 0x38;
+    static constexpr WORD leftShiftScanCode = 0x2A;
+
+    size_t inUsed = 0;
+    size_t outUsed = 0;
+
+    for (const auto wch : in)
+    {
+        if (outUsed + 4 > out.size())
+        {
+            break;
+        }
+
+        const auto keyState = OneCoreSafeVkKeyScanW(wch);
+        const auto vk = LOBYTE(keyState);
+        const auto sc = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+        // The caller provides us with the result of VkKeyScanW() in keyState.
+        // The magic constants below are the expected (documented) return values from VkKeyScanW().
+        const auto modifierState = HIBYTE(keyState);
+        const auto shiftSet = WI_IsFlagSet(modifierState, 1);
+        const auto ctrlSet = WI_IsFlagSet(modifierState, 2);
+        const auto altSet = WI_IsFlagSet(modifierState, 4);
+        const auto altGrSet = WI_AreAllFlagsSet(modifierState, 4 | 2);
+
+        if (altGrSet)
+        {
+            out[outUsed++] = SynthesizeKeyEvent(true, 1, VK_MENU, altScanCode, 0, ENHANCED_KEY | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED);
+        }
+        else if (shiftSet)
+        {
+            out[outUsed++] = SynthesizeKeyEvent(true, 1, VK_SHIFT, leftShiftScanCode, 0, SHIFT_PRESSED);
+        }
+
+        auto keyEvent = SynthesizeKeyEvent(true, 1, vk, sc, wch, 0);
+        WI_SetFlagIf(keyEvent.Event.KeyEvent.dwControlKeyState, SHIFT_PRESSED, shiftSet);
+        WI_SetFlagIf(keyEvent.Event.KeyEvent.dwControlKeyState, LEFT_CTRL_PRESSED, ctrlSet);
+        WI_SetFlagIf(keyEvent.Event.KeyEvent.dwControlKeyState, RIGHT_ALT_PRESSED, altSet);
+
+        out[outUsed++] = keyEvent;
+        keyEvent.Event.KeyEvent.bKeyDown = FALSE;
+        out[outUsed++] = keyEvent;
+
+        // handle yucky alt-gr keys
+        if (altGrSet)
+        {
+            out[outUsed++] = SynthesizeKeyEvent(false, 1, VK_MENU, altScanCode, 0, ENHANCED_KEY);
+        }
+        else if (shiftSet)
+        {
+            out[outUsed++] = SynthesizeKeyEvent(false, 1, VK_SHIFT, leftShiftScanCode, 0, 0);
+        }
+
+        inUsed++;
+    }
+}
+
+static void transfer(InputBuffer::TextVec& in, std::span<wchar_t> out)
+{
+    const auto count = std::min(in.size(), out.size());
+    std::copy_n(in.begin(), count, out.begin());
+    if (count == out.size())
+    {
+        in.clear();
+    }
+    else
+    {
+        in.erase(in.begin(), in.begin() + count);
+    }
+}
+
+size_t InputBuffer::Read(ReadDescriptor desc, void* data, size_t capacityInBytes)
+{
+    auto remaining = capacityInBytes;
     auto it = _storage.begin();
     const auto end = _storage.end();
 
-    while (it != end && OutEvents.size() < AmountToRead)
+    for (; it != end; ++it)
     {
-        if (it->EventType == KEY_EVENT)
-        {
-            auto event = *it;
-            WORD repeat = 1;
-
-            // for stream reads we need to split any key events that have been coalesced
-            if (Stream)
-            {
-                repeat = std::max<WORD>(1, event.Event.KeyEvent.wRepeatCount);
-                event.Event.KeyEvent.wRepeatCount = 1;
-            }
-
-            if (Unicode)
-            {
-                do
+        std::visit(
+            [&]<typename T>(T& arg) {
+                if constexpr (std::is_same_v<T, RecordVec>)
                 {
-                    OutEvents.push_back(event);
-                    repeat--;
-                } while (repeat > 0 && OutEvents.size() < AmountToRead);
-            }
-            else
-            {
-                const auto wch = event.Event.KeyEvent.uChar.UnicodeChar;
-
-                char buffer[8];
-                const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
-                THROW_LAST_ERROR_IF(length <= 0);
-
-                const std::string_view str{ &buffer[0], gsl::narrow_cast<size_t>(length) };
-
-                do
-                {
-                    for (const auto& ch : str)
+                    if (desc.records)
                     {
-                        // char is signed and assigning it to UnicodeChar would cause sign-extension.
-                        // unsigned char doesn't have this problem.
-                        event.Event.KeyEvent.uChar.UnicodeChar = til::bit_cast<uint8_t>(ch);
-                        OutEvents.push_back(event);
+                        transfer(arg, { static_cast<INPUT_RECORD*>(data), capacityInBytes / sizeof(INPUT_RECORD) });
                     }
-                    repeat--;
-                } while (repeat > 0 && OutEvents.size() < AmountToRead);
-            }
-
-            if (repeat && !Peek)
-            {
-                it->Event.KeyEvent.wRepeatCount = repeat;
-                break;
-            }
-        }
-        else
-        {
-            OutEvents.push_back(*it);
-        }
-
-        ++it;
+                    else
+                    {
+                        transfer(arg, { static_cast<wchar_t*>(data), capacityInBytes / sizeof(wchar_t) });
+                    }
+                }
+                else if constexpr (std::is_same_v<T, TextVec>)
+                {
+                    if (desc.records)
+                    {
+                        transfer(arg, { static_cast<INPUT_RECORD*>(data), capacityInBytes / sizeof(INPUT_RECORD) });
+                    }
+                    else
+                    {
+                        transfer(arg, { static_cast<wchar_t*>(data), capacityInBytes / sizeof(wchar_t) });
+                    }
+                }
+                else
+                {
+                    static_assert(sizeof(arg) == 0, "non-exhaustive visitor!");
+                }
+            },
+            *it);
     }
 
-    if (!Peek)
+    if (!desc.peek)
     {
         _storage.erase(_storage.begin(), it);
     }
 
-    Cache(Unicode, OutEvents, AmountToRead);
-
-    if (OutEvents.empty())
-    {
-        return WaitForData ? CONSOLE_STATUS_WAIT : STATUS_SUCCESS;
-    }
-    if (_storage.empty())
-    {
-        ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
-    }
-    return STATUS_SUCCESS;
+    return capacityInBytes - remaining;
 }
-catch (...)
+
+void InputBuffer::Write(const INPUT_RECORD& record)
 {
-    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    Write(std::span{ &record, 1 });
 }
 
-// Routine Description:
-// -  Writes events to the beginning of the input buffer.
-// Arguments:
-// - inEvents - events to write to buffer.
-// - eventsWritten - The number of events written to the buffer on exit.
-// Return Value:
-// S_OK if successful.
-// Note:
-// - The console lock must be held when calling this routine.
-size_t InputBuffer::Prepend(const std::span<const INPUT_RECORD>& inEvents)
+void InputBuffer::Write(const std::span<const INPUT_RECORD>& records)
+try
 {
-    try
+    if (records.empty())
     {
-        if (inEvents.empty())
-        {
-            return STATUS_SUCCESS;
-        }
-
-        _vtInputShouldSuppress = true;
-        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
-
-        // read all of the records out of the buffer, then write the
-        // prepend ones, then write the original set. We need to do it
-        // this way to handle any coalescing that might occur.
-
-        // get all of the existing records, "emptying" the buffer
-        std::deque<INPUT_RECORD> existingStorage;
-        existingStorage.swap(_storage);
-
-        // We will need this variable to pass to _WriteBuffer so it can attempt to determine wait status.
-        // However, because we swapped the storage out from under it with an empty deque, it will always
-        // return true after the first one (as it is filling the newly emptied backing deque.)
-        // Then after the second one, because we've inserted some input, it will always say false.
-        auto unusedWaitStatus = false;
-
-        // write the prepend records
-        size_t prependEventsWritten;
-        _WriteBuffer(inEvents, prependEventsWritten, unusedWaitStatus);
-        FAIL_FAST_IF(!(unusedWaitStatus));
-
-        for (const auto& event : existingStorage)
-        {
-            _storage.push_back(event);
-        }
-
-        // We need to set the wait event if there were 0 events in the
-        // input queue when we started.
-        // Because we did interesting manipulation of the wait queue
-        // in order to prepend, we can't trust what _WriteBuffer said
-        // and instead need to set the event if the original backing
-        // buffer (the one we swapped out at the top) was empty
-        // when this whole thing started.
-        if (existingStorage.empty())
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-        }
-        WakeUpReadersWaitingForData();
-
-        return prependEventsWritten;
+        return;
     }
-    catch (...)
+
+    const auto initiallyEmpty = _storage.empty();
+
+    if (initiallyEmpty || _storage.back().index() != 0)
     {
-        LOG_HR(wil::ResultFromCaughtException());
-        return 0;
+        _storage.emplace_back(RecordVec{});
     }
+
+    auto& v = *std::get_if<RecordVec>(&_storage.back());
+    v.insert(v.end(), records.begin(), records.end());
+
+    if (initiallyEmpty)
+    {
+        ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+    }
+    WakeUpReadersWaitingForData();
 }
+CATCH_LOG()
 
-// Routine Description:
-// - Writes event to the input buffer. Wakes up any readers that are
-// waiting for additional input events.
-// Arguments:
-// - inEvent - input event to store in the buffer.
-// Return Value:
-// - The number of events that were written to input buffer.
-// Note:
-// - The console lock must be held when calling this routine.
-// - any outside references to inEvent will ben invalidated after
-// calling this method.
-size_t InputBuffer::Write(const INPUT_RECORD& inEvent)
-{
-    return Write(std::span{ &inEvent, 1 });
-}
-
-// Routine Description:
-// - Writes events to the input buffer. Wakes up any readers that are
-// waiting for additional input events.
-// Arguments:
-// - inEvents - input events to store in the buffer.
-// Return Value:
-// - The number of events that were written to input buffer.
-// Note:
-// - The console lock must be held when calling this routine.
-size_t InputBuffer::Write(const std::span<const INPUT_RECORD>& inEvents)
-{
-    try
-    {
-        if (inEvents.empty())
-        {
-            return 0;
-        }
-
-        _vtInputShouldSuppress = true;
-        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
-
-        // Write to buffer.
-        size_t EventsWritten;
-        bool SetWaitEvent;
-        _WriteBuffer(inEvents, EventsWritten, SetWaitEvent);
-
-        if (SetWaitEvent)
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-        }
-
-        // Alert any writers waiting for space.
-        WakeUpReadersWaitingForData();
-        return EventsWritten;
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-        return 0;
-    }
-}
-
-void InputBuffer::WriteString(const std::wstring_view& text)
+void InputBuffer::Write(const std::wstring_view& text)
 try
 {
     if (text.empty())
@@ -610,15 +516,20 @@ try
         return;
     }
 
-    const auto initiallyEmptyQueue = _storage.empty();
+    const auto initiallyEmpty = _storage.empty();
 
-    _writeString(text);
+    if (initiallyEmpty || _storage.back().index() != 1)
+    {
+        _storage.emplace_back(TextVec{});
+    }
 
-    if (initiallyEmptyQueue && !_storage.empty())
+    auto& v = *std::get_if<TextVec>(&_storage.back());
+    v.insert(v.end(), text.begin(), text.end());
+
+    if (initiallyEmpty)
     {
         ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
     }
-
     WakeUpReadersWaitingForData();
 }
 CATCH_LOG()
@@ -628,55 +539,12 @@ CATCH_LOG()
 // input buffer and the next application will suddenly get a "\x1b[I" sequence in their input. See GH#13238.
 void InputBuffer::WriteFocusEvent(bool focused) noexcept
 {
-    if (IsInVirtualTerminalInputMode())
-    {
-        if (const auto out = _termInput.HandleFocus(focused))
-        {
-            _HandleTerminalInputCallback(*out);
-        }
-    }
-    else
-    {
-        // This is a mini-version of Write().
-        const auto wasEmpty = _storage.empty();
-        _storage.push_back(SynthesizeFocusEvent(focused));
-        if (wasEmpty)
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-        }
-        WakeUpReadersWaitingForData();
-    }
+    //Write(SynthesizeFocusEvent(focused));
 }
 
 // Returns true when mouse input started. You should then capture the mouse and produce further events.
 bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button, const short keyState, const short wheelDelta)
 {
-    if (IsInVirtualTerminalInputMode())
-    {
-        // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
-        // "If the high-order bit is 1, the key is down; otherwise, it is up."
-        static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
-
-        const TerminalInput::MouseButtonState state{
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
-        };
-
-        // GH#6401: VT applications should be able to receive mouse events from outside the
-        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
-        // We shouldn't throw away perfectly good events when they're offscreen, so we just
-        // clamp them to be within the range [(0, 0), (W, H)].
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.GetActiveOutputBuffer().GetViewport().ToOrigin().Clamp(position);
-
-        if (const auto out = _termInput.HandleMouse(position, button, keyState, wheelDelta, state))
-        {
-            _HandleTerminalInputCallback(*out);
-            return true;
-        }
-    }
-
     return false;
 }
 
@@ -694,135 +562,6 @@ static bool IsPauseKey(const KEY_EVENT_RECORD& event)
 }
 
 // Routine Description:
-// - Coalesces input events and transfers them to storage queue.
-// Arguments:
-// - inRecords - The events to store.
-// - eventsWritten - The number of events written since this function
-// was called.
-// - setWaitEvent - on exit, true if buffer became non-empty.
-// Return Value:
-// - None
-// Note:
-// - The console lock must be held when calling this routine.
-// - will throw on failure
-void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _Out_ size_t& eventsWritten, _Out_ bool& setWaitEvent)
-{
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    eventsWritten = 0;
-    setWaitEvent = false;
-    const auto initiallyEmptyQueue = _storage.empty();
-    const auto initialInEventsSize = inEvents.size();
-    const auto vtInputMode = IsInVirtualTerminalInputMode();
-
-    for (const auto& inEvent : inEvents)
-    {
-        if (inEvent.EventType == KEY_EVENT && inEvent.Event.KeyEvent.bKeyDown)
-        {
-            // if output is suspended, any keyboard input releases it.
-            if (WI_IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) && !IsSystemKey(inEvent.Event.KeyEvent.wVirtualKeyCode))
-            {
-                UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
-                continue;
-            }
-            // intercept control-s
-            if (WI_IsFlagSet(InputMode, ENABLE_LINE_INPUT) && IsPauseKey(inEvent.Event.KeyEvent))
-            {
-                WI_SetFlag(gci.Flags, CONSOLE_SUSPENDED);
-                continue;
-            }
-        }
-
-        // If we're in vt mode, try and handle it with the vt input module.
-        // If it was handled, do nothing else for it.
-        // If there was one event passed in, try coalescing it with the previous event currently in the buffer.
-        // If it's not coalesced, append it to the buffer.
-        if (vtInputMode)
-        {
-            // GH#11682: TerminalInput::HandleKey can handle both KeyEvents and Focus events seamlessly
-            if (const auto out = _termInput.HandleKey(inEvent))
-            {
-                _HandleTerminalInputCallback(*out);
-                eventsWritten++;
-                continue;
-            }
-        }
-
-        // we only check for possible coalescing when storing one
-        // record at a time because this is the original behavior of
-        // the input buffer. Changing this behavior may break stuff
-        // that was depending on it.
-        if (initialInEventsSize == 1 && !_storage.empty() && _CoalesceEvent(inEvents[0]))
-        {
-            eventsWritten++;
-            return;
-        }
-
-        // At this point, the event was neither coalesced, nor processed by VT.
-        _storage.push_back(inEvent);
-        ++eventsWritten;
-    }
-    if (initiallyEmptyQueue && !_storage.empty())
-    {
-        setWaitEvent = true;
-    }
-}
-
-// Routine Description::
-// - If the last input event saved and the first input event in inRecords
-// are both a keypress down event for the same key, update the repeat
-// count of the saved event and drop the first from inRecords.
-// Arguments:
-// - inRecords - The incoming records to process.
-// Return Value:
-// true if events were coalesced, false if they were not.
-// Note:
-// - The size of inRecords must be 1.
-// - Coalescing here means updating a record that already exists in
-// the buffer with updated values from an incoming event, instead of
-// storing the incoming event (which would make the original one
-// redundant/out of date with the most current state).
-bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
-{
-    auto& lastEvent = _storage.back();
-
-    if (lastEvent.EventType == MOUSE_EVENT && inEvent.EventType == MOUSE_EVENT)
-    {
-        const auto& inMouse = inEvent.Event.MouseEvent;
-        auto& lastMouse = lastEvent.Event.MouseEvent;
-
-        if (lastMouse.dwEventFlags == MOUSE_MOVED && inMouse.dwEventFlags == MOUSE_MOVED)
-        {
-            lastMouse.dwMousePosition = inMouse.dwMousePosition;
-            return true;
-        }
-    }
-    else if (lastEvent.EventType == KEY_EVENT && inEvent.EventType == KEY_EVENT)
-    {
-        const auto& inKey = inEvent.Event.KeyEvent;
-        auto& lastKey = lastEvent.Event.KeyEvent;
-
-        if (lastKey.bKeyDown && inKey.bKeyDown &&
-            (lastKey.wVirtualScanCode == inKey.wVirtualScanCode || WI_IsFlagSet(inKey.dwControlKeyState, NLS_IME_CONVERSION)) &&
-            lastKey.uChar.UnicodeChar == inKey.uChar.UnicodeChar &&
-            lastKey.dwControlKeyState == inKey.dwControlKeyState &&
-            // TODO:GH#8000 This behavior is an import from old conhost v1 and has been broken for decades.
-            // This is probably the outdated idea that any wide glyph is being represented by 2 characters (DBCS) and likely
-            // resulted from conhost originally being split into a ASCII/OEM and a DBCS variant with preprocessor flags.
-            // You can't update the repeat count of such a A,B pair, because they're stored as A,A,B,B (down-down, up-up).
-            // I believe the proper approach is to store pairs of characters as pairs, update their combined
-            // repeat count and only when they're being read de-coalesce them into their alternating form.
-            !IsGlyphFullWidth(inKey.uChar.UnicodeChar))
-        {
-            lastKey.wRepeatCount += inKey.wRepeatCount;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-// Routine Description:
 // - Returns true if this input buffer is in VT Input mode.
 // Arguments:
 // <none>
@@ -831,55 +570,6 @@ bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
 bool InputBuffer::IsInVirtualTerminalInputMode() const
 {
     return WI_IsFlagSet(InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
-}
-
-// Routine Description:
-// - Handler for inserting key sequences into the buffer when the terminal emulation layer
-//   has determined a key can be converted appropriately into a sequence of inputs
-// Arguments:
-// - inEvents - Series of input records to insert into the buffer
-// Return Value:
-// - <none>
-void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& text)
-{
-    try
-    {
-        if (text.empty())
-        {
-            return;
-        }
-
-        _writeString(text);
-
-        if (!_vtInputShouldSuppress)
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
-            WakeUpReadersWaitingForData();
-        }
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
-}
-
-void InputBuffer::_writeString(const std::wstring_view& text)
-{
-    for (const auto& wch : text)
-    {
-        if (wch == UNICODE_NULL)
-        {
-            // Convert null byte back to input event with proper control state
-            const auto zeroKey = OneCoreSafeVkKeyScanW(0);
-            uint32_t ctrlState = 0;
-            WI_SetFlagIf(ctrlState, SHIFT_PRESSED, WI_IsFlagSet(zeroKey, 0x100));
-            WI_SetFlagIf(ctrlState, LEFT_CTRL_PRESSED, WI_IsFlagSet(zeroKey, 0x200));
-            WI_SetFlagIf(ctrlState, LEFT_ALT_PRESSED, WI_IsFlagSet(zeroKey, 0x400));
-            _storage.push_back(SynthesizeKeyEvent(true, 1, LOBYTE(zeroKey), 0, wch, ctrlState));
-            continue;
-        }
-        _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-    }
 }
 
 TerminalInput& InputBuffer::GetTerminalInput()

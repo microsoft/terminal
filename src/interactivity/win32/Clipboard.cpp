@@ -71,8 +71,9 @@ void Clipboard::Paste()
         return;
     }
 
-    auto pwstr = (PWCHAR)GlobalLock(ClipboardDataHandle);
-    StringPaste(pwstr, (ULONG)GlobalSize(ClipboardDataHandle) / sizeof(WCHAR));
+    const auto pwstr = (PWCHAR)GlobalLock(ClipboardDataHandle);
+    const auto len = wcsnlen(pwstr, GlobalSize(ClipboardDataHandle) / sizeof(WCHAR));
+    StringPaste({ pwstr, len });
 
     // WIP auditing if user is enrolled
 
@@ -94,22 +95,24 @@ Clipboard& Clipboard::Instance()
 // - cchData - Size of the Unicode String in characters
 // Return Value:
 // - None
-void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
-                            const size_t cchData)
+void Clipboard::StringPaste(const std::wstring_view& data)
 {
-    if (pData == nullptr)
-    {
-        return;
-    }
-
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
         const auto vtInputMode = gci.pInputBuffer->IsInVirtualTerminalInputMode();
-        const auto bracketedPasteMode = gci.GetBracketedPasteMode();
-        auto inEvents = TextToKeyEvents(pData, cchData, vtInputMode && bracketedPasteMode);
-        gci.pInputBuffer->Write(inEvents);
+        const auto bracketedPasteMode = vtInputMode && gci.GetBracketedPasteMode();
+
+        if (bracketedPasteMode)
+        {
+            gci.pInputBuffer->Write(L"\x1b[200~");
+        }
+        gci.pInputBuffer->Write(data);
+        if (bracketedPasteMode)
+        {
+            gci.pInputBuffer->Write(L"\x1b[201~");
+        }
     }
     catch (...)
     {
@@ -120,88 +123,6 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 #pragma endregion
 
 #pragma region Private Methods
-
-// Routine Description:
-// - converts a wchar_t* into a series of KeyEvents as if it was typed
-// from the keyboard
-// Arguments:
-// - pData - the text to convert
-// - cchData - the size of pData, in wchars
-// - bracketedPaste - should this be bracketed with paste control sequences
-// Return Value:
-// - deque of KeyEvents that represent the string passed in
-// Note:
-// - will throw exception on error
-InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                           const size_t cchData,
-                                           const bool bracketedPaste)
-{
-    THROW_HR_IF_NULL(E_INVALIDARG, pData);
-
-    InputEventQueue keyEvents;
-    const auto pushControlSequence = [&](const std::wstring_view sequence) {
-        std::for_each(sequence.begin(), sequence.end(), [&](const auto wch) {
-            keyEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-            keyEvents.push_back(SynthesizeKeyEvent(false, 1, 0, 0, wch, 0));
-        });
-    };
-
-    // When a bracketed paste is requested, we need to wrap the text with
-    // control sequences which indicate that the content has been pasted.
-    if (bracketedPaste)
-    {
-        pushControlSequence(L"\x1b[200~");
-    }
-
-    for (size_t i = 0; i < cchData; ++i)
-    {
-        auto currentChar = pData[i];
-
-        const auto charAllowed = FilterCharacterOnPaste(&currentChar);
-        // filter out linefeed if it's not the first char and preceded
-        // by a carriage return
-        const auto skipLinefeed = (i != 0 &&
-                                   currentChar == UNICODE_LINEFEED &&
-                                   pData[i - 1] == UNICODE_CARRIAGERETURN);
-        // filter out escape if bracketed paste mode is enabled
-        const auto skipEscape = (bracketedPaste && currentChar == UNICODE_ESC);
-
-        if (!charAllowed || skipLinefeed || skipEscape)
-        {
-            continue;
-        }
-
-        if (currentChar == 0)
-        {
-            break;
-        }
-
-        // MSFT:12123975 / WSL GH#2006
-        // If you paste text with ONLY linefeed line endings (unix style) in wsl,
-        //      then we faithfully pass those along, which the underlying terminal
-        //      interprets as C-j. In nano, C-j is mapped to "Justify text", which
-        //      causes the pasted text to get broken at the width of the terminal.
-        // This behavior doesn't occur in gnome-terminal, and nothing like it occurs
-        //      in vi or emacs.
-        // This change doesn't break pasting text into any of those applications
-        //      with CR/LF (Windows) line endings either. That apparently always
-        //      worked right.
-        if (IsInVirtualTerminalInputMode() && currentChar == UNICODE_LINEFEED)
-        {
-            currentChar = UNICODE_CARRIAGERETURN;
-        }
-
-        const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-        CharToKeyEvents(currentChar, codepage, keyEvents);
-    }
-
-    if (bracketedPaste)
-    {
-        pushControlSequence(L"\x1b[201~");
-    }
-
-    return keyEvents;
-}
 
 // Routine Description:
 // - Copies the selected area onto the global system clipboard.

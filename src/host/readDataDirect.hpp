@@ -47,5 +47,4 @@ public:
 
 private:
     const size_t _eventReadCount;
-    InputEventQueue _outEvents;
 };

@@ -30,15 +30,10 @@ namespace Microsoft::Console::Interactivity::Win32
         static Clipboard& Instance();
 
         void Copy(_In_ const bool fAlsoCopyFormatting = false);
-        void StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
-                         const size_t cchData);
+        void StringPaste(const std::wstring_view& data);
         void Paste();
 
     private:
-        InputEventQueue TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                        const size_t cchData,
-                                        const bool bracketedPaste = false);
-
         void StoreSelectionToClipboard(_In_ const bool fAlsoCopyFormatting);
 
         void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ const bool copyFormatting);

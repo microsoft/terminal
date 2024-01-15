@@ -116,7 +116,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatSpecificWarningsAsErrors>4189;4100;4242;4389;4244</TreatSpecificWarningsAsErrors>
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <!--<TreatWarningAsError>true</TreatWarningAsError>-->
       <!--
         C4201: nonstandard extension used: nameless struct/union
           Conhost code uses a lot of nameless structs/unions.

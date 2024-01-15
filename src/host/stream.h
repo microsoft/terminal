@@ -17,15 +17,6 @@ Revision History:
 #pragma once
 
 #include "cmdline.h"
-#include "../server/IWaitRoutine.h"
-#include "readData.hpp"
-
-[[nodiscard]] NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
-                               _Out_ wchar_t* const pwchOut,
-                               const bool Wait,
-                               _Out_opt_ bool* const pCommandLineEditingKeys,
-                               _Out_opt_ bool* const pPopupKeys,
-                               _Out_opt_ DWORD* const pdwKeyState) noexcept;
 
 [[nodiscard]] NTSTATUS ReadCharacterInput(InputBuffer& inputBuffer,
                                           std::span<char> buffer,

@@ -3,14 +3,10 @@
 
 #pragma once
 
-#include "readData.hpp"
 #include "../types/inc/IInputEvent.hpp"
-
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"
 #include "../terminal/input/terminalInput.hpp"
-
-#include <deque>
 
 namespace Microsoft::Console::Render
 {
@@ -21,7 +17,6 @@ namespace Microsoft::Console::Render
 class InputBuffer final : public ConsoleObjectHeader
 {
 public:
-    DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     bool fInComposition; // specifies if there's an ongoing text composition
 
@@ -41,29 +36,36 @@ public:
     const INPUT_RECORD& FetchWritePartialByteSequence() noexcept;
     void StoreWritePartialByteSequence(const INPUT_RECORD& event) noexcept;
 
-    void ReinitializeInputBuffer();
     void WakeUpReadersWaitingForData();
     void TerminateRead(_In_ WaitTerminationReason Flag);
     size_t GetNumberOfReadyEvents() const noexcept;
     void Flush();
     void FlushAllButKeys();
 
-    [[nodiscard]] NTSTATUS Read(_Out_ InputEventQueue& OutEvents,
-                                const size_t AmountToRead,
-                                const bool Peek,
-                                const bool WaitForData,
-                                const bool Unicode,
-                                const bool Stream);
+    struct ReadDescriptor
+    {
+        bool wide;
+        bool records;
+        bool peek;
+    };
+    size_t Read(ReadDescriptor desc, void* data, size_t capacityInBytes);
 
-    size_t Prepend(const std::span<const INPUT_RECORD>& inEvents);
-    size_t Write(const INPUT_RECORD& inEvent);
-    size_t Write(const std::span<const INPUT_RECORD>& inEvents);
-    void WriteString(const std::wstring_view& text);
+    void Write(const INPUT_RECORD& record);
+    void Write(const std::span<const INPUT_RECORD>& records);
+    void Write(const std::wstring_view& text);
     void WriteFocusEvent(bool focused) noexcept;
     bool WriteMouseEvent(til::point position, unsigned int button, short keyState, short wheelDelta);
 
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
+    
+    // 1 INPUT_RECORD = 20 bytes = 10 wchar_t
+    // On 64-Bit architectures this results in std::list nodes of 1008 bytes (heap alloc headers are 16 bytes).
+    // Optimally this should use a single ring buffer and not a bunch of glued together container classes.
+    using RecordVec = til::small_vector<INPUT_RECORD, 48>;
+    using TextVec = til::small_vector<wchar_t, 480>;
+    using VecVariant = std::variant<RecordVec, TextVec>;
+    std::list<VecVariant> _storage;
 
 private:
     enum class ReadingMode : uint8_t
@@ -81,23 +83,14 @@ private:
     std::deque<INPUT_RECORD> _cachedInputEvents;
     ReadingMode _readingMode = ReadingMode::StringA;
 
-    std::deque<INPUT_RECORD> _storage;
     INPUT_RECORD _writePartialByteSequence{};
     bool _writePartialByteSequenceAvailable = false;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
-
-    // This flag is used in _HandleTerminalInputCallback
-    // If the InputBuffer leads to a _HandleTerminalInputCallback call,
-    //    we should suppress the wakeup functions.
-    // Otherwise, we should be calling them.
-    bool _vtInputShouldSuppress{ false };
 
     void _switchReadingMode(ReadingMode mode);
     void _switchReadingModeSlowPath(ReadingMode mode);
     void _WriteBuffer(const std::span<const INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten, _Out_ bool& setWaitEvent);
     bool _CoalesceEvent(const INPUT_RECORD& inEvent) noexcept;
-    void _HandleTerminalInputCallback(const Microsoft::Console::VirtualTerminal::TerminalInput::StringType& text);
-    void _writeString(const std::wstring_view& text);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;
