@@ -1754,6 +1754,66 @@ bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 }
 
 // Routine Description:
+// - NP - Moves the active position one or more pages ahead, and moves the
+//   cursor to home.
+// Arguments:
+// - pageCount - Number of pages to move
+// Return Value:
+// - True.
+bool AdaptDispatch::NextPage(const VTInt /*pageCount*/)
+{
+    return true;
+}
+
+// Routine Description:
+// - PP - Moves the active position one or more pages back, and moves the
+//   cursor to home.
+// Arguments:
+// - pageCount - Number of pages to move
+// Return Value:
+// - True.
+bool AdaptDispatch::PrecedingPage(const VTInt /*pageCount*/)
+{
+    return true;
+}
+
+// Routine Description:
+// - PPA - Moves the active position to the specified page number, without
+//   altering the cursor coordinates.
+// Arguments:
+// - page - Destination page
+// Return Value:
+// - True.
+bool AdaptDispatch::PagePositionAbsolute(const VTInt /*page*/)
+{
+    return true;
+}
+
+// Routine Description:
+// - PPR - Moves the active position one or more pages ahead, without altering
+//   the cursor coordinates.
+// Arguments:
+// - pageCount - Number of pages to move
+// Return Value:
+// - True.
+bool AdaptDispatch::PagePositionRelative(const VTInt /*pageCount*/)
+{
+    return true;
+}
+
+// Routine Description:
+// - PPB - Moves the active position one or more pages back, without altering
+//   the cursor coordinates.
+// Arguments:
+// - pageCount - Number of pages to move
+// Return Value:
+// - True.
+bool AdaptDispatch::PagePositionBack(const VTInt /*pageCount*/)
+{
+    return true;
+}
+
+// Routine Description:
 // - DECCOLM not only sets the number of columns, but also clears the screen buffer,
 //    resets the page margins and origin mode, and places the cursor at 1,1
 // Arguments:

@@ -81,6 +81,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) override; // DECREQTPARM
         bool ScrollUp(const VTInt distance) override; // SU
         bool ScrollDown(const VTInt distance) override; // SD
+        bool NextPage(const VTInt pageCount) override; // NP
+        bool PrecedingPage(const VTInt pageCount) override; // PP
+        bool PagePositionAbsolute(const VTInt page) override; // PPA
+        bool PagePositionRelative(const VTInt pageCount) override; // PPR
+        bool PagePositionBack(const VTInt pageCount) override; // PPB
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
         bool InsertColumn(const VTInt distance) override; // DECIC
