@@ -56,8 +56,10 @@ WindowEmperor::WindowEmperor() noexcept :
 
 WindowEmperor::~WindowEmperor()
 {
-    _app.Close();
-    _app = nullptr;
+    // _app.Close();
+    // _app = nullptr;
+    // TerminateProcess(GetCurrentProcess(), 0);
+    std::exit(0);
 }
 
 void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
