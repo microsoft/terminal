@@ -146,6 +146,18 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         return MakeOutput({});
     }
 
+    // Unpaired surrogates are no good -> early return.
+    if (til::is_leading_surrogate(unicodeChar))
+    {
+        _leadingSurrogate = unicodeChar;
+        return MakeOutput({});
+    }
+    // Using a scope_exit ensures that a previous leading surrogate is forgotten
+    // even if the KEY_EVENT that followed didn't end up calling _makeCharOutput.
+    const auto leadingSurrogateReset = wil::scope_exit([&]() {
+        _leadingSurrogate = 0;
+    });
+
     // If this is a VK_PACKET or 0 virtual key, it's likely a synthesized
     // keyboard event, so the UnicodeChar is transmitted as is. This must be
     // handled before the Auto Repeat test, other we'll end up dropping chars.
@@ -231,13 +243,10 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
             unicodeChar = _makeCtrlChar(unicodeChar);
         }
         auto charSequence = _makeCharOutput(unicodeChar);
-        if (!charSequence.empty())
-        {
-            // We may also need to apply an Alt prefix to the char sequence, but
-            // if this is an AltGr key, we only do so if both Alts are pressed.
-            const auto bothAltsArePressed = WI_AreAllFlagsSet(controlKeyState, ALT_PRESSED);
-            _escapeOutput(charSequence, altGrIsPressed ? bothAltsArePressed : altIsPressed);
-        }
+        // We may also need to apply an Alt prefix to the char sequence, but
+        // if this is an AltGr key, we only do so if both Alts are pressed.
+        const auto bothAltsArePressed = WI_AreAllFlagsSet(controlKeyState, ALT_PRESSED);
+        _escapeOutput(charSequence, altGrIsPressed ? bothAltsArePressed : altIsPressed);
         return charSequence;
     }
 
@@ -596,26 +605,12 @@ TerminalInput::StringType TerminalInput::_makeCharOutput(const wchar_t ch)
 {
     StringType str;
 
-    if (til::is_leading_surrogate(ch))
+    if (_leadingSurrogate && til::is_trailing_surrogate(ch))
     {
-        _leadingSurrogate.emplace(ch);
-    }
-    else if (_leadingSurrogate)
-    {
-        const auto lead = *_leadingSurrogate;
-        _leadingSurrogate.reset();
-
-        if (til::is_trailing_surrogate(ch))
-        {
-            str.push_back(lead);
-            str.push_back(ch);
-        }
-    }
-    else
-    {
-        str.push_back(ch);
+        str.push_back(_leadingSurrogate);
     }
 
+    str.push_back(ch);
     return str;
 }
 

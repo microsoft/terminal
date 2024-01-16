@@ -67,7 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         // storage location for the leading surrogate of a utf-16 surrogate pair
-        std::optional<wchar_t> _leadingSurrogate;
+        wchar_t _leadingSurrogate = 0;
 
         std::optional<WORD> _lastVirtualKeyCode;
         DWORD _lastControlKeyState = 0;
