@@ -50,7 +50,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleInputImpl(IConsoleInputObject& inputBuffer,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleInputImpl(InputBuffer& inputBuffer,
                                                        InputEventQueue& outEvents,
                                                        const size_t eventReadCount,
                                                        INPUT_READ_HANDLE_DATA& readHandleState,
@@ -93,14 +93,14 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Writes events to the input buffer
 // Arguments:
-// - context - the input buffer to write to
+// - inputBuffer - the input buffer to write to
 // - events - the events to written
 // - written  - on output, the number of events written
 // - append - true if events should be written to the end of the input
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]] static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
+[[nodiscard]] static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& inputBuffer,
                                                            const std::span<const INPUT_RECORD>& events,
                                                            size_t& written,
                                                            const bool append) noexcept
@@ -112,11 +112,11 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         // add to InputBuffer
         if (append)
         {
-            written = context.Write(events);
+            written = inputBuffer.Write(events);
         }
         else
         {
-            written = context.Prepend(events);
+            written = inputBuffer.Prepend(events);
         }
 
         return S_OK;
@@ -127,14 +127,14 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Writes events to the input buffer, translating from codepage to unicode first
 // Arguments:
-// - context - the input buffer to write to
+// - inputBuffer - the input buffer to write to
 // - buffer - the events to written
 // - written  - on output, the number of events written
 // - append - true if events should be written to the end of the input
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& inputBuffer,
                                                           const std::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
@@ -158,9 +158,9 @@ try
 
     // Check out the loop below. When a previous call ended on a leading DBCS we store it for
     // the next call to WriteConsoleInputAImpl to join it with the now available trailing DBCS.
-    if (context.IsWritePartialByteSequenceAvailable())
+    if (inputBuffer.IsWritePartialByteSequenceAvailable())
     {
-        auto lead = context.FetchWritePartialByteSequence();
+        auto lead = inputBuffer.FetchWritePartialByteSequence();
         const auto& trail = *it;
 
         if (trail.EventType == KEY_EVENT)
@@ -200,7 +200,7 @@ try
             if (it == end)
             {
                 // Missing trailing DBCS -> Store the lead for the next call to WriteConsoleInputAImpl.
-                context.StoreWritePartialByteSequence(lead);
+                inputBuffer.StoreWritePartialByteSequence(lead);
                 break;
             }
 
@@ -225,21 +225,21 @@ try
         }
     }
 
-    return _WriteConsoleInputWImplHelper(context, events, written, append);
+    return _WriteConsoleInputWImplHelper(inputBuffer, events, written, append);
 }
 CATCH_RETURN();
 
 // Routine Description:
 // - Writes events to the input buffer
 // Arguments:
-// - context - the input buffer to write to
+// - inputBuffer - the input buffer to write to
 // - buffer - the events to written
 // - written  - on output, the number of events written
 // - append - true if events should be written to the end of the input
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& inputBuffer,
                                                           const std::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
@@ -251,7 +251,7 @@ CATCH_RETURN();
 
     try
     {
-        return _WriteConsoleInputWImplHelper(context, buffer, written, append);
+        return _WriteConsoleInputWImplHelper(inputBuffer, buffer, written, append);
     }
     CATCH_RETURN();
 }
@@ -463,7 +463,7 @@ CATCH_RETURN();
     return result;
 }
 
-[[nodiscard]] static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
+[[nodiscard]] static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& screenInfo,
                                                            std::span<CHAR_INFO> targetBuffer,
                                                            const Microsoft::Console::Types::Viewport& requestRectangle,
                                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
@@ -471,7 +471,7 @@ CATCH_RETURN();
     try
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto& storageBuffer = context.GetActiveBuffer().GetTextBuffer();
+        const auto& storageBuffer = screenInfo.GetActiveBuffer().GetTextBuffer();
         const auto storageSize = storageBuffer.GetSize().Dimensions();
 
         const auto targetSize = requestRectangle.Dimensions();
@@ -553,7 +553,7 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& screenInfo,
                                                           std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
@@ -566,7 +566,7 @@ CATCH_RETURN();
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto codepage = gci.OutputCP;
 
-        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
+        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(screenInfo, buffer, sourceRectangle, readRectangle));
 
         LOG_IF_FAILED(_ConvertCellsToAInplace(codepage, buffer, readRectangle));
 
@@ -575,7 +575,7 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& screenInfo,
                                                           std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
@@ -585,9 +585,9 @@ CATCH_RETURN();
 
     try
     {
-        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
+        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(screenInfo, buffer, sourceRectangle, readRectangle));
 
-        if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
+        if (!screenInfo.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -599,14 +599,14 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
+[[nodiscard]] static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& screenInfo,
                                                             std::span<CHAR_INFO> buffer,
                                                             const Viewport& requestRectangle,
                                                             Viewport& writtenRectangle) noexcept
 {
     try
     {
-        auto& storageBuffer = context.GetActiveBuffer();
+        auto& storageBuffer = screenInfo.GetActiveBuffer();
         const auto storageRectangle = storageBuffer.GetBufferSize();
         const auto storageSize = storageRectangle.Dimensions();
 
@@ -699,7 +699,7 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& screenInfo,
                                                            std::span<CHAR_INFO> buffer,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
@@ -713,14 +713,14 @@ CATCH_RETURN();
         const auto codepage = gci.OutputCP;
         LOG_IF_FAILED(_ConvertCellsToWInplace(codepage, buffer, requestRectangle));
 
-        RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
+        RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(screenInfo, buffer, requestRectangle, writtenRectangle));
 
         return S_OK;
     }
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& screenInfo,
                                                            std::span<CHAR_INFO> buffer,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
@@ -730,16 +730,16 @@ CATCH_RETURN();
 
     try
     {
-        if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
+        if (!screenInfo.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
             auto translated = _ConvertCellsToMungedW(buffer, requestRectangle);
-            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, translated, requestRectangle, writtenRectangle));
+            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(screenInfo, translated, requestRectangle, writtenRectangle));
         }
         else
         {
-            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
+            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(screenInfo, buffer, requestRectangle, writtenRectangle));
         }
 
         return S_OK;
@@ -747,7 +747,7 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& screenInfo,
                                                                   const til::point origin,
                                                                   std::span<WORD> buffer,
                                                                   size_t& written) noexcept
@@ -759,7 +759,7 @@ CATCH_RETURN();
 
     try
     {
-        const auto attrs = ReadOutputAttributes(context.GetActiveBuffer(), origin, buffer.size());
+        const auto attrs = ReadOutputAttributes(screenInfo.GetActiveBuffer(), origin, buffer.size());
         std::copy(attrs.cbegin(), attrs.cend(), buffer.begin());
         written = attrs.size();
 
@@ -768,7 +768,7 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& screenInfo,
                                                                    const til::point origin,
                                                                    std::span<char> buffer,
                                                                    size_t& written) noexcept
@@ -780,7 +780,7 @@ CATCH_RETURN();
 
     try
     {
-        const auto chars = ReadOutputStringA(context.GetActiveBuffer(),
+        const auto chars = ReadOutputStringA(screenInfo.GetActiveBuffer(),
                                              origin,
                                              buffer.size());
 
@@ -797,7 +797,7 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& screenInfo,
                                                                    const til::point origin,
                                                                    std::span<wchar_t> buffer,
                                                                    size_t& written) noexcept
@@ -809,7 +809,7 @@ CATCH_RETURN();
 
     try
     {
-        const auto chars = ReadOutputStringW(context.GetActiveBuffer(),
+        const auto chars = ReadOutputStringW(screenInfo.GetActiveBuffer(),
                                              origin,
                                              buffer.size());
 

@@ -58,38 +58,38 @@ void VtApiRoutines::GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept
     return;
 }
 
-void VtApiRoutines::GetConsoleInputModeImpl(InputBuffer& context,
+void VtApiRoutines::GetConsoleInputModeImpl(InputBuffer& inputBuffer,
                                             ULONG& mode) noexcept
 {
     mode = m_inputMode;
     return;
 }
 
-void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
+void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& screenInfo,
                                              ULONG& mode) noexcept
 {
     mode = m_outputMode;
     return;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleInputModeImpl(InputBuffer& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleInputModeImpl(InputBuffer& inputBuffer,
                                                              const ULONG mode) noexcept
 {
     m_inputMode = mode;
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& screenInfo,
                                                               const ULONG Mode) noexcept
 {
     m_outputMode = Mode;
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& context,
+[[nodiscard]] HRESULT VtApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& inputBuffer,
                                                                        ULONG& events) noexcept
 {
-    return m_pUsualRoutines->GetNumberOfConsoleInputEventsImpl(context, events);
+    return m_pUsualRoutines->GetNumberOfConsoleInputEventsImpl(inputBuffer, events);
 }
 
 void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) noexcept
@@ -106,7 +106,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::GetConsoleInputImpl(
-    IConsoleInputObject& context,
+    InputBuffer& inputBuffer,
     InputEventQueue& outEvents,
     const size_t eventReadCount,
     INPUT_READ_HANDLE_DATA& readHandleState,
@@ -114,12 +114,12 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     const bool IsPeek,
     std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    const auto hr = m_pUsualRoutines->GetConsoleInputImpl(context, outEvents, eventReadCount, readHandleState, IsUnicode, IsPeek, waiter);
+    const auto hr = m_pUsualRoutines->GetConsoleInputImpl(inputBuffer, outEvents, eventReadCount, readHandleState, IsUnicode, IsPeek, waiter);
     _SynchronizeCursor(waiter);
     return hr;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleImpl(IConsoleInputObject& context,
+[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleImpl(InputBuffer& inputBuffer,
                                                      std::span<char> buffer,
                                                      size_t& written,
                                                      std::unique_ptr<IWaitRoutine>& waiter,
@@ -131,7 +131,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
                                                      const DWORD controlWakeupMask,
                                                      DWORD& controlKeyState) noexcept
 {
-    const auto hr = m_pUsualRoutines->ReadConsoleImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, IsUnicode, clientHandle, controlWakeupMask, controlKeyState);
+    const auto hr = m_pUsualRoutines->ReadConsoleImpl(inputBuffer, buffer, written, waiter, initialData, exeName, readHandleState, IsUnicode, clientHandle, controlWakeupMask, controlKeyState);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
     // TODO GH10001: we only need to do this in cooked read mode.
@@ -144,7 +144,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     return hr;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleAImpl(SCREEN_INFORMATION& screenInfo,
                                                        const std::string_view buffer,
                                                        size_t& read,
                                                        bool requiresVtQuirk,
@@ -164,7 +164,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleWImpl(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleWImpl(SCREEN_INFORMATION& screenInfo,
                                                        const std::wstring_view buffer,
                                                        size_t& read,
                                                        bool requiresVtQuirk,
@@ -181,7 +181,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     return m_pUsualRoutines->GetConsoleLangIdImpl(langId);
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+[[nodiscard]] HRESULT VtApiRoutines::FillConsoleOutputAttributeImpl(SCREEN_INFORMATION& OutContext,
                                                                     const WORD attribute,
                                                                     const size_t lengthToWrite,
                                                                     const til::point startingCoordinate,
@@ -196,7 +196,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+[[nodiscard]] HRESULT VtApiRoutines::FillConsoleOutputCharacterAImpl(SCREEN_INFORMATION& OutContext,
                                                                      const char character,
                                                                      const size_t lengthToWrite,
                                                                      const til::point startingCoordinate,
@@ -219,7 +219,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     }
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+[[nodiscard]] HRESULT VtApiRoutines::FillConsoleOutputCharacterWImpl(SCREEN_INFORMATION& OutContext,
                                                                      const wchar_t character,
                                                                      const size_t lengthToWrite,
                                                                      const til::point startingCoordinate,
@@ -250,9 +250,9 @@ void VtApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newCont
     return;
 }
 
-void VtApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
+void VtApiRoutines::FlushConsoleInputBuffer(InputBuffer& inputBuffer) noexcept
 {
-    m_pUsualRoutines->FlushConsoleInputBuffer(context);
+    m_pUsualRoutines->FlushConsoleInputBuffer(inputBuffer);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
@@ -267,7 +267,7 @@ void VtApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
     return S_OK;
 }
 
-void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
+void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& screenInfo,
                                              ULONG& size,
                                              bool& isVisible) noexcept
 {
@@ -276,7 +276,7 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
     return;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& screenInfo,
                                                               const ULONG size,
                                                               const bool isVisible) noexcept
 {
@@ -286,14 +286,14 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
 }
 
 //// driver will pare down for non-Ex method
-void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
+void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& screenInfo,
                                                      CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
     // TODO GH10001: this is technically full of potentially incorrect data. do we care? should we store it in here with set?
-    return m_pUsualRoutines->GetConsoleScreenBufferInfoExImpl(context, data);
+    return m_pUsualRoutines->GetConsoleScreenBufferInfoExImpl(screenInfo, data);
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& screenInfo,
                                                                       const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
     (void)m_pVtEngine->_ResizeWindow(data.srWindow.Right - data.srWindow.Left, data.srWindow.Bottom - data.srWindow.Top);
@@ -307,19 +307,19 @@ void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& c
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& screenInfo,
                                                                     const til::size size) noexcept
 {
     // Don't transmit. The terminal figures out its own buffer size.
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& screenInfo,
                                                                   const til::point position) noexcept
 {
     if (m_listeningForDSR)
     {
-        context.GetActiveBuffer().GetTextBuffer().GetCursor().SetPosition(position);
+        screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetPosition(position);
         m_pVtEngine->SetTerminalCursorTextPosition(position);
     }
     else
@@ -330,14 +330,14 @@ void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& c
     return S_OK;
 }
 
-void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
+void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& screenInfo,
                                                     til::size& size) noexcept
 {
-    m_pUsualRoutines->GetLargestConsoleWindowSizeImpl(context, size); // This is likely super weird but not weirder than existing ConPTY answers.
+    m_pUsualRoutines->GetLargestConsoleWindowSizeImpl(screenInfo, size); // This is likely super weird but not weirder than existing ConPTY answers.
     return;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& screenInfo,
                                                                     const til::inclusive_rect& source,
                                                                     const til::point target,
                                                                     std::optional<til::inclusive_rect> clip,
@@ -348,7 +348,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& screenInfo,
                                                                     const til::inclusive_rect& source,
                                                                     const til::point target,
                                                                     std::optional<til::inclusive_rect> clip,
@@ -360,7 +360,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& screenInfo,
                                                                  const WORD attribute) noexcept
 {
     (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attribute), true);
@@ -369,7 +369,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& screenInfo,
                                                               const bool isAbsolute,
                                                               const til::inclusive_rect& windowRect) noexcept
 {
@@ -378,7 +378,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& screenInfo,
                                                                     const til::point origin,
                                                                     std::span<WORD> buffer,
                                                                     size_t& written) noexcept
@@ -388,7 +388,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& screenInfo,
                                                                      const til::point origin,
                                                                      std::span<char> buffer,
                                                                      size_t& written) noexcept
@@ -398,7 +398,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& screenInfo,
                                                                      const til::point origin,
                                                                      std::span<wchar_t> buffer,
                                                                      size_t& written) noexcept
@@ -408,27 +408,27 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleInputAImpl(InputBuffer& inputBuffer,
                                                             const std::span<const INPUT_RECORD> buffer,
                                                             size_t& written,
                                                             const bool append) noexcept
 {
-    return m_pUsualRoutines->WriteConsoleInputAImpl(context, buffer, written, append);
+    return m_pUsualRoutines->WriteConsoleInputAImpl(inputBuffer, buffer, written, append);
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleInputWImpl(InputBuffer& inputBuffer,
                                                             const std::span<const INPUT_RECORD> buffer,
                                                             size_t& written,
                                                             const bool append) noexcept
 {
-    return m_pUsualRoutines->WriteConsoleInputWImpl(context, buffer, written, append);
+    return m_pUsualRoutines->WriteConsoleInputWImpl(inputBuffer, buffer, written, append);
 }
 
 extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
                                        std::span<CHAR_INFO> buffer,
                                        const Viewport& rectangle) noexcept;
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& screenInfo,
                                                              std::span<CHAR_INFO> buffer,
                                                              const Microsoft::Console::Types::Viewport& requestRectangle,
                                                              Microsoft::Console::Types::Viewport& writtenRectangle) noexcept
@@ -437,10 +437,10 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     // with up to 4 bytes per cell...or more!
 
     RETURN_IF_FAILED(_ConvertCellsToWInplace(m_outputCodepage, buffer, requestRectangle));
-    return WriteConsoleOutputWImpl(context, buffer, requestRectangle, writtenRectangle);
+    return WriteConsoleOutputWImpl(screenInfo, buffer, requestRectangle, writtenRectangle);
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& screenInfo,
                                                              std::span<CHAR_INFO> buffer,
                                                              const Microsoft::Console::Types::Viewport& requestRectangle,
                                                              Microsoft::Console::Types::Viewport& writtenRectangle) noexcept
@@ -474,7 +474,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAttributeImpl(SCREEN_INFORMATION& OutContext,
                                                                      const std::span<const WORD> attrs,
                                                                      const til::point target,
                                                                      size_t& used) noexcept
@@ -494,7 +494,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputCharacterAImpl(SCREEN_INFORMATION& OutContext,
                                                                       const std::string_view text,
                                                                       const til::point target,
                                                                       size_t& used) noexcept
@@ -512,7 +512,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     }
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+[[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputCharacterWImpl(SCREEN_INFORMATION& OutContext,
                                                                       const std::wstring_view text,
                                                                       const til::point target,
                                                                       size_t& used) noexcept
@@ -523,7 +523,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& screenInfo,
                                                             std::span<CHAR_INFO> buffer,
                                                             const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
@@ -533,7 +533,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& screenInfo,
                                                             std::span<CHAR_INFO> buffer,
                                                             const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
@@ -621,7 +621,7 @@ void VtApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
     return;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& screenInfo,
                                                             const DWORD index,
                                                             til::size& size) noexcept
 {
@@ -631,14 +631,14 @@ void VtApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 }
 
 //// driver will pare down for non-Ex method
-[[nodiscard]] HRESULT VtApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& screenInfo,
                                                                  const bool isForMaximumWindowSize,
                                                                  CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& screenInfo,
                                                                const ULONG flags,
                                                                til::size& newSize) noexcept
 {
@@ -800,7 +800,7 @@ void VtApiRoutines::GetConsoleHistoryInfoImpl(CONSOLE_HISTORY_INFO& consoleHisto
     return m_pUsualRoutines->SetConsoleHistoryInfoImpl(consoleHistoryInfo);
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT VtApiRoutines::SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& screenInfo,
                                                                  const bool isForMaximumWindowSize,
                                                                  const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
 {

@@ -337,7 +337,7 @@ NT_CATCH_RETURN()
 // - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
-[[nodiscard]] HRESULT WriteConsoleWImplHelper(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT WriteConsoleWImplHelper(SCREEN_INFORMATION& screenInfo,
                                               const std::wstring_view buffer,
                                               size_t& read,
                                               bool requiresVtQuirk,
@@ -353,7 +353,7 @@ NT_CATCH_RETURN()
         size_t cbTextBufferLength;
         RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
 
-        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
+        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, screenInfo, requiresVtQuirk, waiter);
 
         // Convert back from bytes to characters for the resulting string length written.
         read = cbTextBufferLength / sizeof(wchar_t);
@@ -375,7 +375,7 @@ NT_CATCH_RETURN()
 //   It uses the current Output Codepage for conversions (set via SetConsoleOutputCP).
 // - NOTE: This may be blocked for various console states and will return a wait context pointer if necessary.
 // Arguments:
-// - context - the console output object to write the new text into
+// - screenInfo - the console output object to write the new text into
 // - buffer - char/byte text buffer provided by client application to insert
 // - read - character count of the number of characters (also bytes because A version) we were able to insert before returning
 // - waiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
@@ -383,7 +383,7 @@ NT_CATCH_RETURN()
 // - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
-[[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(SCREEN_INFORMATION& screenInfo,
                                                      const std::string_view buffer,
                                                      size_t& read,
                                                      bool requiresVtQuirk,
@@ -403,7 +403,7 @@ NT_CATCH_RETURN()
         LockConsole();
         auto unlock{ wil::scope_exit([&] { UnlockConsole(); }) };
 
-        auto& screenInfo{ context.GetActiveBuffer() };
+        auto& activeScreenInfo{ screenInfo.GetActiveBuffer() };
         const auto& consoleInfo{ ServiceLocator::LocateGlobals().getConsoleInformation() };
         const auto codepage{ consoleInfo.OutputCP };
         auto leadByteCaptured{ false };
@@ -434,17 +434,17 @@ NT_CATCH_RETURN()
             auto wcPtr{ wstr.data() };
             auto mbPtr{ buffer.data() };
             size_t dbcsLength{};
-            if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && gsl::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })
+            if (activeScreenInfo.WriteConsoleDbcsLeadByte[0] != 0 && gsl::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })
             {
                 // there was a portion of a dbcs character stored from a previous
                 // call so we take the 2nd half from mbPtr[0], put them together
                 // and write the wide char to wcPtr[0]
-                screenInfo.WriteConsoleDbcsLeadByte[1] = gsl::narrow_cast<byte>(*mbPtr);
+                activeScreenInfo.WriteConsoleDbcsLeadByte[1] = gsl::narrow_cast<byte>(*mbPtr);
 
                 try
                 {
                     const auto wFromComplemented{
-                        ConvertToW(codepage, { reinterpret_cast<const char*>(screenInfo.WriteConsoleDbcsLeadByte), ARRAYSIZE(screenInfo.WriteConsoleDbcsLeadByte) })
+                        ConvertToW(codepage, { reinterpret_cast<const char*>(activeScreenInfo.WriteConsoleDbcsLeadByte), ARRAYSIZE(activeScreenInfo.WriteConsoleDbcsLeadByte) })
                     };
 
                     FAIL_FAST_IF(wFromComplemented.size() != 1);
@@ -468,14 +468,14 @@ NT_CATCH_RETURN()
                 leadByteConsumed = true;
             }
 
-            screenInfo.WriteConsoleDbcsLeadByte[0] = 0;
+            activeScreenInfo.WriteConsoleDbcsLeadByte[0] = 0;
 
             // if the last byte in mbPtr is a lead byte for the current code page,
             // save it for the next time this function is called and we can piece it
             // back together then
             if (mbPtrLength != 0 && CheckBisectStringA(const_cast<char*>(mbPtr), mbPtrLength, &consoleInfo.OutputCPInfo))
             {
-                screenInfo.WriteConsoleDbcsLeadByte[0] = gsl::narrow_cast<byte>(mbPtr[mbPtrLength - 1]);
+                activeScreenInfo.WriteConsoleDbcsLeadByte[0] = gsl::narrow_cast<byte>(mbPtr[mbPtrLength - 1]);
                 mbPtrLength--;
 
                 // Note that we captured a lead byte during this call, but won't actually draw it until later.
@@ -498,7 +498,7 @@ NT_CATCH_RETURN()
 
         // Make the W version of the call
         size_t wcBufferWritten{};
-        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, requiresVtQuirk, writeDataWaiter) };
+        const auto hr{ WriteConsoleWImplHelper(activeScreenInfo, wstr, wcBufferWritten, requiresVtQuirk, writeDataWaiter) };
 
         // If there is no waiter, process the byte count now.
         if (nullptr == writeDataWaiter.get())
@@ -573,7 +573,7 @@ NT_CATCH_RETURN()
 // - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
-[[nodiscard]] HRESULT ApiRoutines::WriteConsoleWImpl(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleWImpl(SCREEN_INFORMATION& screenInfo,
                                                      const std::wstring_view buffer,
                                                      size_t& read,
                                                      bool requiresVtQuirk,
@@ -585,7 +585,7 @@ NT_CATCH_RETURN()
         auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         std::unique_ptr<WriteData> writeDataWaiter;
-        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));
+        RETURN_IF_FAILED(WriteConsoleWImplHelper(screenInfo.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));
 
         // Transfer specific waiter pointer into the generic interface wrapper.
         waiter.reset(writeDataWaiter.release());

@@ -35,9 +35,9 @@ using namespace Microsoft::Console::Interactivity;
 // Routine Description:
 // - Retrieves the console input mode (settings that apply when manipulating the input buffer)
 // Arguments:
-// - context - The input buffer concerned
+// - inputBuffer - The input buffer concerned
 // - mode - Receives the mode flags set
-void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noexcept
+void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& inputBuffer, ULONG& mode) noexcept
 {
     try
     {
@@ -45,7 +45,7 @@ void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noe
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        mode = context.InputMode;
+        mode = inputBuffer.InputMode;
 
         if (WI_IsFlagSet(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS))
         {
@@ -61,16 +61,16 @@ void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noe
 // Routine Description:
 // - Retrieves the console output mode (settings that apply when manipulating the output buffer)
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - mode - Receives the mode flags set
-void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& mode) noexcept
+void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& screenInfo, ULONG& mode) noexcept
 {
     try
     {
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        mode = context.GetActiveBuffer().OutputMode;
+        mode = screenInfo.GetActiveBuffer().OutputMode;
     }
     CATCH_LOG();
 }
@@ -78,18 +78,18 @@ void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& m
 // Routine Description:
 // - Retrieves the number of console event items in the input queue right now
 // Arguments:
-// - context - The input buffer concerned
+// - inputBuffer - The input buffer concerned
 // - event - The count of events in the queue
 // Return Value:
 //  - S_OK or math failure.
-[[nodiscard]] HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& context, ULONG& events) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& inputBuffer, ULONG& events) noexcept
 {
     try
     {
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        const auto readyEventCount = context.GetNumberOfReadyEvents();
+        const auto readyEventCount = inputBuffer.GetNumberOfReadyEvents();
         RETURN_IF_FAILED(SizeTToULong(readyEventCount, &events));
 
         return S_OK;
@@ -100,9 +100,9 @@ void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& m
 // Routine Description:
 // - Retrieves metadata associated with the output buffer (size, default colors, etc.)
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - data - Receives structure filled with metadata about the output buffer
-void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
+void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& screenInfo,
                                                    CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
     try
@@ -124,7 +124,7 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
         til::inclusive_rect srWindow;
         til::size dwMaximumWindowSize;
 
-        context.GetActiveBuffer().GetScreenBufferInformation(&dwSize,
+        screenInfo.GetActiveBuffer().GetScreenBufferInformation(&dwSize,
                                                              &dwCursorPosition,
                                                              &srWindow,
                                                              &data.wAttributes,
@@ -152,10 +152,10 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
 // Routine Description:
 // - Retrieves information about the console cursor's display state
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - size - The size as a percentage of the total possible height (0-100 for percentages).
 // - isVisible - Whether the cursor is displayed or hidden
-void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
+void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& screenInfo,
                                            ULONG& size,
                                            bool& isVisible) noexcept
 {
@@ -164,8 +164,8 @@ void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        size = context.GetActiveBuffer().GetTextBuffer().GetCursor().GetSize();
-        isVisible = context.GetTextBuffer().GetCursor().IsVisible();
+        size = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().GetSize();
+        isVisible = screenInfo.GetTextBuffer().GetCursor().IsVisible();
     }
     CATCH_LOG();
 }
@@ -218,12 +218,12 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // Routine Description:
 // - Retrieves information about a known font based on index
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - index - We only accept 0 now as we don't keep a list of fonts in memory.
 // - size - The X by Y pixel size of the font
 // Return Value:
 // - S_OK, E_INVALIDARG or code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& screenInfo,
                                                           const DWORD index,
                                                           til::size& size) noexcept
 {
@@ -235,7 +235,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         if (index == 0)
         {
             // As of the November 2015 renderer system, we only have a single font at index 0.
-            size = context.GetActiveBuffer().GetCurrentFont().GetUnscaledSize();
+            size = screenInfo.GetActiveBuffer().GetCurrentFont().GetUnscaledSize();
             return S_OK;
         }
         else
@@ -251,12 +251,12 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // Routine Description:
 // - Retrieves information about the console cursor's display state
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - isForMaximumWindowSize - Returns the maximum number of characters in the largest window size if true. Otherwise, it's the size of the font.
 // - consoleFontInfoEx - structure containing font information like size, family, weight, etc.
 // Return Value:
 // - S_OK, string copy failure code or code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& screenInfo,
                                                                const bool isForMaximumWindowSize,
                                                                CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
 {
@@ -265,7 +265,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        const auto& activeScreenInfo = context.GetActiveBuffer();
+        const auto& activeScreenInfo = screenInfo.GetActiveBuffer();
 
         til::size WindowSize;
         if (isForMaximumWindowSize)
@@ -293,12 +293,12 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // Routine Description:
 // - Sets the current font to be used for drawing
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - isForMaximumWindowSize - Obsolete.
 // - consoleFontInfoEx - structure containing font information like size, family, weight, etc.
 // Return Value:
 // - S_OK, string copy failure code or code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
+[[nodiscard]] HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& screenInfo,
                                                                const bool /*isForMaximumWindowSize*/,
                                                                const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
 {
@@ -308,7 +308,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& activeScreenInfo = context.GetActiveBuffer();
+        auto& activeScreenInfo = screenInfo.GetActiveBuffer();
 
         WCHAR FaceName[ARRAYSIZE(consoleFontInfoEx.FaceName)];
         RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), consoleFontInfoEx.FaceName));
@@ -330,11 +330,11 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // Routine Description:
 // - Sets the input mode for the console
 // Arguments:
-// - context - The input buffer concerned
+// - inputBuffer - The input buffer concerned
 // - mode - flags that change behavior of the buffer
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG mode) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& inputBuffer, const ULONG mode) noexcept
 {
     try
     {
@@ -373,7 +373,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             // (for more information regarding the quirks of mouse mode and why/how it relates
             //  to quick edit mode, see GH#9970)
             const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
-            const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
+            const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(inputBuffer.InputMode, ENABLE_MOUSE_INPUT) };
             const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
 
             if (oldMouseMode != newMouseMode)
@@ -382,8 +382,8 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             }
         }
 
-        context.InputMode = mode;
-        WI_ClearAllFlags(context.InputMode, PRIVATE_MODES);
+        inputBuffer.InputMode = mode;
+        WI_ClearAllFlags(inputBuffer.InputMode, PRIVATE_MODES);
 
         // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
         //       as might be expected.
@@ -408,11 +408,11 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // Routine Description:
 // - Sets the output mode for the console
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - mode - flags that change behavior of the buffer
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const ULONG mode) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& screenInfo, const ULONG mode) noexcept
 {
     try
     {
@@ -423,18 +423,18 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         // Flags we don't understand are invalid.
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(mode, ~OUTPUT_MODES));
 
-        auto& screenInfo = context.GetActiveBuffer();
-        const auto dwOldMode = screenInfo.OutputMode;
+        auto& activeScreenInfo = screenInfo.GetActiveBuffer();
+        const auto dwOldMode = activeScreenInfo.OutputMode;
         const auto dwNewMode = mode;
 
-        screenInfo.OutputMode = dwNewMode;
+        activeScreenInfo.OutputMode = dwNewMode;
 
         // if we're moving from VT on->off
         if (WI_IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
             WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
         {
             // jiggle the handle
-            screenInfo.GetStateMachine().ResetState();
+            activeScreenInfo.GetStateMachine().ResetState();
         }
 
         // if we changed rendering modes then redraw the output buffer,
@@ -458,7 +458,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // Routine Description:
 // - Sets the given output buffer as the active one
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext) noexcept
 {
     try
@@ -474,15 +474,15 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
 // Routine Description:
 // - Clears all items out of the input buffer queue
 // Arguments:
-// - context - The input buffer concerned
-void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
+// - inputBuffer - The input buffer concerned
+void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& inputBuffer) noexcept
 {
     try
     {
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        context.Flush();
+        inputBuffer.Flush();
     }
     CATCH_LOG();
 }
@@ -490,9 +490,9 @@ void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
 // Routine Description:
 // - Gets the largest possible window size in characters.
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - size - receives the size in character count (rows/columns)
-void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
+void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& screenInfo,
                                                   til::size& size) noexcept
 {
     try
@@ -500,9 +500,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        const auto& screenInfo = context.GetActiveBuffer();
+        const auto& activeScreenInfo = screenInfo.GetActiveBuffer();
 
-        size = screenInfo.GetLargestWindowSizeInCharacters();
+        size = activeScreenInfo.GetLargestWindowSizeInCharacters();
     }
     CATCH_LOG();
 }
@@ -510,11 +510,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Sets the size of the output buffer (screen buffer) in rows/columns
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - size - size in character rows and columns
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& screenInfo,
                                                                   const til::size size) noexcept
 {
     try
@@ -522,18 +522,18 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& screenInfo = context.GetActiveBuffer();
+        auto& activeScreenInfo = screenInfo.GetActiveBuffer();
 
         // microsoft/terminal#3907 - We shouldn't resize the buffer to be
         // smaller than the viewport. This was previously erroneously checked
         // when the host was not in conpty mode.
-        RETURN_HR_IF(E_INVALIDARG, (size.width < screenInfo.GetViewport().Width() || size.height < screenInfo.GetViewport().Height()));
+        RETURN_HR_IF(E_INVALIDARG, (size.width < activeScreenInfo.GetViewport().Width() || size.height < activeScreenInfo.GetViewport().Height()));
 
         // see MSFT:17415266
         // We only really care about the minimum window size if we have a head.
         if (!ServiceLocator::LocateGlobals().IsHeadless())
         {
-            const auto coordMin = screenInfo.GetMinWindowSizeInCharacters();
+            const auto coordMin = activeScreenInfo.GetMinWindowSizeInCharacters();
             // Make sure requested screen buffer size isn't smaller than the window.
             RETURN_HR_IF(E_INVALIDARG, (size.height < coordMin.height || size.width < coordMin.width));
         }
@@ -542,24 +542,24 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         RETURN_HR_IF(E_INVALIDARG, (size.width == SHORT_MAX || size.height == SHORT_MAX));
 
         // Only do the resize if we're actually changing one of the dimensions
-        const auto coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+        const auto coordScreenBufferSize = activeScreenInfo.GetBufferSize().Dimensions();
         if (size.width != coordScreenBufferSize.width || size.height != coordScreenBufferSize.height)
         {
-            RETURN_IF_NTSTATUS_FAILED(screenInfo.ResizeScreenBuffer(size, TRUE));
+            RETURN_IF_NTSTATUS_FAILED(activeScreenInfo.ResizeScreenBuffer(size, TRUE));
         }
 
         // Make sure the viewport doesn't now overflow the buffer dimensions.
-        auto overflow = screenInfo.GetViewport().BottomRightExclusive() - screenInfo.GetBufferSize().Dimensions();
+        auto overflow = activeScreenInfo.GetViewport().BottomRightExclusive() - activeScreenInfo.GetBufferSize().Dimensions();
         if (overflow.x > 0 || overflow.y > 0)
         {
             overflow = { -std::max(overflow.x, 0), -std::max(overflow.y, 0) };
-            RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, overflow, false));
+            RETURN_IF_NTSTATUS_FAILED(activeScreenInfo.SetViewportOrigin(false, overflow, false));
         }
 
         // And also that the cursor position is clamped within the buffer boundaries.
-        auto& cursor = screenInfo.GetTextBuffer().GetCursor();
+        auto& cursor = activeScreenInfo.GetTextBuffer().GetCursor();
         auto clampedCursorPosition = cursor.GetPosition();
-        screenInfo.GetBufferSize().Clamp(clampedCursorPosition);
+        activeScreenInfo.GetBufferSize().Clamp(clampedCursorPosition);
         if (clampedCursorPosition != cursor.GetPosition())
         {
             cursor.SetPosition(clampedCursorPosition);
@@ -573,11 +573,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Sets metadata information on the output buffer
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - data - metadata information structure like buffer size, viewport size, colors, and more.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& screenInfo,
                                                                     const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
     try
@@ -595,13 +595,13 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
 
-        const auto coordScreenBufferSize = context.GetBufferSize().Dimensions();
+        const auto coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
         const auto requestedBufferSize = til::wrap_coord_size(data.dwSize);
         if (requestedBufferSize != coordScreenBufferSize)
         {
-            LOG_IF_FAILED(context.ResizeScreenBuffer(requestedBufferSize, TRUE));
+            LOG_IF_FAILED(screenInfo.ResizeScreenBuffer(requestedBufferSize, TRUE));
         }
-        const auto newBufferSize = context.GetBufferSize().Dimensions();
+        const auto newBufferSize = screenInfo.GetBufferSize().Dimensions();
 
         bool changedOneTableEntry = false;
         for (size_t i = 0; i < std::size(data.ColorTable); i++)
@@ -629,7 +629,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             }
         }
 
-        context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
+        screenInfo.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
         const auto requestedViewport = Viewport::FromExclusive(til::wrap_exclusive_small_rect(data.srWindow));
 
@@ -647,10 +647,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             NewSize.width = newBufferSize.width;
         }
 
-        if (NewSize.width != context.GetViewport().Width() ||
-            NewSize.height != context.GetViewport().Height())
+        if (NewSize.width != screenInfo.GetViewport().Width() ||
+            NewSize.height != screenInfo.GetViewport().Height())
         {
-            context.SetViewportSize(&NewSize);
+            screenInfo.SetViewportSize(&NewSize);
 
             const auto pWindow = ServiceLocator::LocateConsoleWindow();
             if (pWindow != nullptr)
@@ -665,17 +665,17 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // Note that it also doesn't set cursor position.
 
         // However, we do need to make sure the viewport doesn't now overflow the buffer dimensions.
-        auto overflow = context.GetViewport().BottomRightExclusive() - context.GetBufferSize().Dimensions();
+        auto overflow = screenInfo.GetViewport().BottomRightExclusive() - screenInfo.GetBufferSize().Dimensions();
         if (overflow.x > 0 || overflow.y > 0)
         {
             overflow = { -std::max(overflow.x, 0), -std::max(overflow.y, 0) };
-            RETURN_IF_NTSTATUS_FAILED(context.SetViewportOrigin(false, overflow, false));
+            RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, overflow, false));
         }
 
         // And also that the cursor position is clamped within the buffer boundaries.
-        auto& cursor = context.GetTextBuffer().GetCursor();
+        auto& cursor = screenInfo.GetTextBuffer().GetCursor();
         auto clampedCursorPosition = cursor.GetPosition();
-        context.GetBufferSize().Clamp(clampedCursorPosition);
+        screenInfo.GetBufferSize().Clamp(clampedCursorPosition);
         if (clampedCursorPosition != cursor.GetPosition())
         {
             cursor.SetPosition(clampedCursorPosition);
@@ -689,11 +689,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Sets the cursor position in the given output buffer
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - position - The X/Y (row/column) position in the buffer to place the cursor
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& screenInfo,
                                                                 const til::point position) noexcept
 {
     try
@@ -701,7 +701,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& buffer = context.GetActiveBuffer();
+        auto& buffer = screenInfo.GetActiveBuffer();
 
         const auto coordScreenBufferSize = buffer.GetBufferSize().Dimensions();
         // clang-format off
@@ -772,12 +772,12 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Sets metadata on the cursor
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - size - Height percentage of the displayed cursor (when visible)
 // - isVisible - Whether or not the cursor should be displayed
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& screenInfo,
                                                             const ULONG size,
                                                             const bool isVisible) noexcept
 {
@@ -789,7 +789,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // If more than 100% or less than 0% cursor height, reject it.
         RETURN_HR_IF(E_INVALIDARG, (size > 100 || size == 0));
 
-        context.SetCursorInformation(size, isVisible);
+        screenInfo.SetCursorInformation(size, isVisible);
 
         return S_OK;
     }
@@ -799,13 +799,13 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Sets the viewport/window information for displaying a portion of the output buffer visually
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - isAbsolute - Coordinates are based on the entire screen buffer (origin 0,0) if true.
 //              - If false, coordinates are a delta from the existing viewport position
 // - windowRect - Updated viewport rectangle information
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& screenInfo,
                                                             const bool isAbsolute,
                                                             const til::inclusive_rect& windowRect) noexcept
 {
@@ -819,7 +819,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         if (!isAbsolute)
         {
-            auto currentViewport = context.GetViewport().ToInclusive();
+            auto currentViewport = screenInfo.GetViewport().ToInclusive();
             Window.left += currentViewport.left;
             Window.right += currentViewport.right;
             Window.top += currentViewport.top;
@@ -840,20 +840,20 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         if (g.getConsoleInformation().IsInVtIoMode())
         {
             // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
-            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
+            RETURN_IF_NTSTATUS_FAILED(screenInfo.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
         }
         if (!g.IsHeadless())
         {
-            const auto coordMax = context.GetMaxWindowSizeInCharacters();
+            const auto coordMax = screenInfo.GetMaxWindowSizeInCharacters();
             RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.width > coordMax.width || NewWindowSize.height > coordMax.height));
         }
 
         // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-        context.SetViewport(Viewport::FromInclusive(Window), true);
-        if (context.IsActiveScreenBuffer())
+        screenInfo.SetViewport(Viewport::FromInclusive(Window), true);
+        if (screenInfo.IsActiveScreenBuffer())
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
-            context.PostUpdateWindowSize();
+            screenInfo.PostUpdateWindowSize();
 
             // Use WriteToScreen to invalidate the viewport with the renderer.
             // GH#3490 - If we're in conpty mode, don't invalidate the entire
@@ -861,7 +861,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             // part of the buffer actually needs to be re-sent to the terminal.
             if (!(g.getConsoleInformation().IsInVtIoMode() && g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
             {
-                WriteToScreen(context, context.GetViewport());
+                WriteToScreen(screenInfo, screenInfo.GetViewport());
             }
         }
         return S_OK;
@@ -872,7 +872,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Moves a portion of text from one part of the output buffer to another
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - source - The rectangular region to copy from
 // - target - The top left corner of the destination to paste the copy (source)
 // - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
@@ -880,7 +880,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& screenInfo,
                                                                   const til::inclusive_rect& source,
                                                                   const til::point target,
                                                                   std::optional<til::inclusive_rect> clip,
@@ -891,7 +891,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     {
         const auto unicodeFillCharacter = CharToWchar(&fillCharacter, 1);
 
-        return ScrollConsoleScreenBufferWImpl(context, source, target, clip, unicodeFillCharacter, fillAttribute);
+        return ScrollConsoleScreenBufferWImpl(screenInfo, source, target, clip, unicodeFillCharacter, fillAttribute);
     }
     CATCH_RETURN();
 }
@@ -899,7 +899,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Moves a portion of text from one part of the output buffer to another
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - source - The rectangular region to copy from
 // - target - The top left corner of the destination to paste the copy (source)
 // - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
@@ -910,7 +910,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 //   conpty mode. See GH#3126.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& screenInfo,
                                                                   const til::inclusive_rect& source,
                                                                   const til::point target,
                                                                   std::optional<til::inclusive_rect> clip,
@@ -923,7 +923,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& buffer = context.GetActiveBuffer();
+        auto& buffer = screenInfo.GetActiveBuffer();
 
         TextAttribute useThisAttr(fillAttribute);
         ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
@@ -968,11 +968,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Routine Description:
 // - Adjusts the default color used for future text written to this output buffer
 // Arguments:
-// - context - The output buffer concerned
+// - screenInfo - The output buffer concerned
 // - attribute - Color information
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& screenInfo,
                                                                const WORD attribute) noexcept
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -984,7 +984,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(attribute, ~VALID_TEXT_ATTRIBUTES));
 
         const TextAttribute attr{ attribute };
-        context.SetAttributes(attr);
+        screenInfo.SetAttributes(attr);
 
         gci.ConsoleIme.RefreshAreaAttributes();
 
@@ -1203,7 +1203,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - This routine sets the console display mode for an output buffer.
 // - This API is only supported on x86 machines.
 // Parameters:
-// - context - Supplies a console output handle.
+// - screenInfo - Supplies a console output handle.
 // - flags - Specifies the display mode. Options are:
 //      CONSOLE_FULLSCREEN_MODE - data is displayed fullscreen
 //      CONSOLE_WINDOWED_MODE - data is displayed in a window
@@ -1214,7 +1214,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // NOTE:
 // - This was in private.c, but turns out to be a public API:
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
-[[nodiscard]] HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& screenInfo,
                                                              const ULONG flags,
                                                              til::size& newSize) noexcept
 {
@@ -1227,10 +1227,8 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
         {
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            auto& screenInfo = context.GetActiveBuffer();
-
-            newSize = screenInfo.GetBufferSize().Dimensions();
-            RETURN_HR_IF(E_INVALIDARG, !(screenInfo.IsActiveScreenBuffer()));
+            auto& activeScreenInfo = screenInfo.GetActiveBuffer();
+            newSize = activeScreenInfo.GetBufferSize().Dimensions();
         }
 
         const auto pWindow = ServiceLocator::LocateConsoleWindow();

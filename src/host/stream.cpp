@@ -533,7 +533,7 @@ NT_CATCH_RETURN()
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleImpl(IConsoleInputObject& context,
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleImpl(InputBuffer& inputBuffer,
                                                    std::span<char> buffer,
                                                    size_t& written,
                                                    std::unique_ptr<IWaitRoutine>& waiter,
@@ -545,7 +545,7 @@ NT_CATCH_RETURN()
                                                    const DWORD controlWakeupMask,
                                                    DWORD& controlKeyState) noexcept
 {
-    return HRESULT_FROM_NT(DoReadConsole(context,
+    return HRESULT_FROM_NT(DoReadConsole(inputBuffer,
                                          clientHandle,
                                          buffer,
                                          written,

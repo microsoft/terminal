@@ -34,22 +34,22 @@ public:
 
     void GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept override;
 
-    void GetConsoleInputModeImpl(InputBuffer& context,
+    void GetConsoleInputModeImpl(InputBuffer& inputBuffer,
                                  ULONG& mode) noexcept override;
 
-    void GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
+    void GetConsoleOutputModeImpl(SCREEN_INFORMATION& screenInfo,
                                   ULONG& mode) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleInputModeImpl(InputBuffer& context,
+    [[nodiscard]] HRESULT SetConsoleInputModeImpl(InputBuffer& inputBuffer,
                                                   const ULONG mode) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleOutputModeImpl(SCREEN_INFORMATION& screenInfo,
                                                    const ULONG Mode) noexcept override;
 
-    [[nodiscard]] HRESULT GetNumberOfConsoleInputEventsImpl(const InputBuffer& context,
+    [[nodiscard]] HRESULT GetNumberOfConsoleInputEventsImpl(const InputBuffer& inputBuffer,
                                                             ULONG& events) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleInputImpl(IConsoleInputObject& context,
+    [[nodiscard]] HRESULT GetConsoleInputImpl(InputBuffer& inputBuffer,
                                               InputEventQueue& outEvents,
                                               const size_t eventReadCount,
                                               INPUT_READ_HANDLE_DATA& readHandleState,
@@ -57,7 +57,7 @@ public:
                                               const bool IsPeek,
                                               std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
-    [[nodiscard]] HRESULT ReadConsoleImpl(IConsoleInputObject& context,
+    [[nodiscard]] HRESULT ReadConsoleImpl(InputBuffer& inputBuffer,
                                           std::span<char> buffer,
                                           size_t& written,
                                           std::unique_ptr<IWaitRoutine>& waiter,
@@ -69,13 +69,13 @@ public:
                                           const DWORD controlWakeupMask,
                                           DWORD& controlKeyState) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
+    [[nodiscard]] HRESULT WriteConsoleAImpl(SCREEN_INFORMATION& screenInfo,
                                             const std::string_view buffer,
                                             size_t& read,
                                             bool requiresVtQuirk,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
+    [[nodiscard]] HRESULT WriteConsoleWImpl(SCREEN_INFORMATION& screenInfo,
                                             const std::wstring_view buffer,
                                             size_t& read,
                                             bool requiresVtQuirk,
@@ -89,19 +89,19 @@ public:
 
 #pragma region L2
 
-    [[nodiscard]] HRESULT FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+    [[nodiscard]] HRESULT FillConsoleOutputAttributeImpl(SCREEN_INFORMATION& OutContext,
                                                          const WORD attribute,
                                                          const size_t lengthToWrite,
                                                          const til::point startingCoordinate,
                                                          size_t& cellsModified) noexcept override;
 
-    [[nodiscard]] HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+    [[nodiscard]] HRESULT FillConsoleOutputCharacterAImpl(SCREEN_INFORMATION& OutContext,
                                                           const char character,
                                                           const size_t lengthToWrite,
                                                           const til::point startingCoordinate,
                                                           size_t& cellsModified) noexcept override;
 
-    [[nodiscard]] HRESULT FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+    [[nodiscard]] HRESULT FillConsoleOutputCharacterWImpl(SCREEN_INFORMATION& OutContext,
                                                           const wchar_t character,
                                                           const size_t lengthToWrite,
                                                           const til::point startingCoordinate,
@@ -114,44 +114,44 @@ public:
 
     void SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext) noexcept override;
 
-    void FlushConsoleInputBuffer(InputBuffer& context) noexcept override;
+    void FlushConsoleInputBuffer(InputBuffer& inputBuffer) noexcept override;
 
     [[nodiscard]] HRESULT SetConsoleInputCodePageImpl(const ULONG codepage) noexcept override;
 
     [[nodiscard]] HRESULT SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept override;
 
-    void GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
+    void GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& screenInfo,
                                   ULONG& size,
                                   bool& isVisible) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleCursorInfoImpl(SCREEN_INFORMATION& screenInfo,
                                                    const ULONG size,
                                                    const bool isVisible) noexcept override;
 
     //// driver will pare down for non-Ex method
-    void GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
+    void GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& screenInfo,
                                           CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& screenInfo,
                                                            const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& screenInfo,
                                                          const til::size size) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleCursorPositionImpl(SCREEN_INFORMATION& screenInfo,
                                                        const til::point position) noexcept override;
 
-    void GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
+    void GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& screenInfo,
                                          til::size& size) noexcept override;
 
-    [[nodiscard]] HRESULT ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& screenInfo,
                                                          const til::inclusive_rect& source,
                                                          const til::point target,
                                                          std::optional<til::inclusive_rect> clip,
                                                          const char fillCharacter,
                                                          const WORD fillAttribute) noexcept override;
 
-    [[nodiscard]] HRESULT ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& screenInfo,
                                                          const til::inclusive_rect& source,
                                                          const til::point target,
                                                          std::optional<til::inclusive_rect> clip,
@@ -159,69 +159,69 @@ public:
                                                          const WORD fillAttribute,
                                                          const bool enableCmdShim = false) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleTextAttributeImpl(SCREEN_INFORMATION& screenInfo,
                                                       const WORD attribute) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleWindowInfoImpl(SCREEN_INFORMATION& screenInfo,
                                                    const bool isAbsolute,
                                                    const til::inclusive_rect& windowRect) noexcept override;
 
-    [[nodiscard]] HRESULT ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& screenInfo,
                                                          const til::point origin,
                                                          std::span<WORD> buffer,
                                                          size_t& written) noexcept override;
 
-    [[nodiscard]] HRESULT ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& screenInfo,
                                                           const til::point origin,
                                                           std::span<char> buffer,
                                                           size_t& written) noexcept override;
 
-    [[nodiscard]] HRESULT ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& screenInfo,
                                                           const til::point origin,
                                                           std::span<wchar_t> buffer,
                                                           size_t& written) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleInputAImpl(InputBuffer& context,
+    [[nodiscard]] HRESULT WriteConsoleInputAImpl(InputBuffer& inputBuffer,
                                                  const std::span<const INPUT_RECORD> buffer,
                                                  size_t& written,
                                                  const bool append) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleInputWImpl(InputBuffer& context,
+    [[nodiscard]] HRESULT WriteConsoleInputWImpl(InputBuffer& inputBuffer,
                                                  const std::span<const INPUT_RECORD> buffer,
                                                  size_t& written,
                                                  const bool append) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT WriteConsoleOutputAImpl(SCREEN_INFORMATION& screenInfo,
                                                   std::span<CHAR_INFO> buffer,
                                                   const Microsoft::Console::Types::Viewport& requestRectangle,
                                                   Microsoft::Console::Types::Viewport& writtenRectangle) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT WriteConsoleOutputWImpl(SCREEN_INFORMATION& screenInfo,
                                                   std::span<CHAR_INFO> buffer,
                                                   const Microsoft::Console::Types::Viewport& requestRectangle,
                                                   Microsoft::Console::Types::Viewport& writtenRectangle) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+    [[nodiscard]] HRESULT WriteConsoleOutputAttributeImpl(SCREEN_INFORMATION& OutContext,
                                                           const std::span<const WORD> attrs,
                                                           const til::point target,
                                                           size_t& used) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+    [[nodiscard]] HRESULT WriteConsoleOutputCharacterAImpl(SCREEN_INFORMATION& OutContext,
                                                            const std::string_view text,
                                                            const til::point target,
                                                            size_t& used) noexcept override;
 
-    [[nodiscard]] HRESULT WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+    [[nodiscard]] HRESULT WriteConsoleOutputCharacterWImpl(SCREEN_INFORMATION& OutContext,
                                                            const std::wstring_view text,
                                                            const til::point target,
                                                            size_t& used) noexcept override;
 
-    [[nodiscard]] HRESULT ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT ReadConsoleOutputAImpl(const SCREEN_INFORMATION& screenInfo,
                                                  std::span<CHAR_INFO> buffer,
                                                  const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                  Microsoft::Console::Types::Viewport& readRectangle) noexcept override;
 
-    [[nodiscard]] HRESULT ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT ReadConsoleOutputWImpl(const SCREEN_INFORMATION& screenInfo,
                                                  std::span<CHAR_INFO> buffer,
                                                  const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                  Microsoft::Console::Types::Viewport& readRectangle) noexcept override;
@@ -251,16 +251,16 @@ public:
 #pragma region L3
     void GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& screenInfo,
                                                  const DWORD index,
                                                  til::size& size) noexcept override;
 
     //// driver will pare down for non-Ex method
-    [[nodiscard]] HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& screenInfo,
                                                       const bool isForMaximumWindowSize,
                                                       CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept override;
 
-    [[nodiscard]] HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
+    [[nodiscard]] HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& screenInfo,
                                                     const ULONG flags,
                                                     til::size& newSize) noexcept override;
 
@@ -344,7 +344,7 @@ public:
 
     [[nodiscard]] HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept override;
 
-    [[nodiscard]] HRESULT SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
+    [[nodiscard]] HRESULT SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& screenInfo,
                                                       const bool isForMaximumWindowSize,
                                                       const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept override;
 
