@@ -90,6 +90,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::array<byte, 256> _getKeyboardState(const WORD virtualKeyCode, const DWORD controlKeyState) const;
         [[nodiscard]] static wchar_t _makeCtrlChar(const wchar_t ch);
         [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
+        [[nodiscard]] static StringType _makeNoOutput() noexcept;
         [[nodiscard]] void _escapeOutput(StringType& charSequence, const bool altIsPressed) const;
         [[nodiscard]] OutputType _makeWin32Output(const KEY_EVENT_RECORD& key) const;
 

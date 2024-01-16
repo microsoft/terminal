@@ -143,14 +143,14 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         }
         // Otherwise we should return an empty string here to prevent unwanted
         // characters being transmitted by the release event.
-        return MakeOutput({});
+        return _makeNoOutput();
     }
 
     // Unpaired surrogates are no good -> early return.
     if (til::is_leading_surrogate(unicodeChar))
     {
         _leadingSurrogate = unicodeChar;
-        return MakeOutput({});
+        return _makeNoOutput();
     }
     // Using a scope_exit ensures that a previous leading surrogate is forgotten
     // even if the KEY_EVENT that followed didn't end up calling _makeCharOutput.
@@ -172,14 +172,14 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     {
         // Note that we must return an empty string here to imply that we've handled
         // the event, otherwise the key press can still end up being submitted.
-        return MakeOutput({});
+        return _makeNoOutput();
     }
     _lastVirtualKeyCode = virtualKeyCode;
 
     // If this is a modifier, it won't produce output, so we can return early.
     if (virtualKeyCode >= VK_SHIFT && virtualKeyCode <= VK_MENU)
     {
-        return MakeOutput({});
+        return _makeNoOutput();
     }
 
     // Keyboards that have an AltGr key will generate both a RightAlt key press
@@ -208,7 +208,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     // generated character will be transmitted when the Alt is released.
     if (virtualKeyCode >= VK_NUMPAD0 && virtualKeyCode <= VK_NUMPAD9 && altIsPressed && !ctrlIsPressed)
     {
-        return MakeOutput({});
+        return _makeNoOutput();
     }
 
     // The only enhanced key we care about is the Return key, because that
@@ -255,7 +255,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     // this only makes sense if there were actually modifiers pressed.
     if (!altIsPressed && !ctrlIsPressed)
     {
-        return MakeOutput({});
+        return _makeNoOutput();
     }
 
     // We need the current keyboard layout and state to lookup the character
@@ -275,7 +275,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     auto length = ToUnicodeEx(virtualKeyCode, 0, keyState.data(), buffer.data(), bufferSize, flags, hkl);
     if (length < 0 || (length == 2 && buffer.at(0) == buffer.at(1)))
     {
-        return MakeOutput({});
+        return _makeNoOutput();
     }
 
     // Once we know it's not a dead key, we run the query again, but with the
@@ -287,7 +287,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     {
         // If we've got nothing usable, we'll just return an empty string. The event
         // has technically still been handled, even if it's an unmapped key.
-        return MakeOutput({});
+        return _makeNoOutput();
     }
 
     auto charSequence = StringType{ buffer.data(), gsl::narrow_cast<size_t>(length) };
@@ -612,6 +612,11 @@ TerminalInput::StringType TerminalInput::_makeCharOutput(const wchar_t ch)
 
     str.push_back(ch);
     return str;
+}
+
+TerminalInput::StringType TerminalInput::_makeNoOutput() noexcept
+{
+    return {};
 }
 
 // Sends the given char as a sequence representing Alt+char, also the same as Meta+char.
