@@ -54,6 +54,8 @@ WindowEmperor::WindowEmperor() noexcept :
     ::winrt::detach_abi(a);
 }
 
+// Disable the "destructor never returns, potential memory leak" warning - we're literally already exiting here. 
+#pragma warning(suppress : 4722)
 WindowEmperor::~WindowEmperor()
 {
     // _app.Close();
