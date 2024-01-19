@@ -78,7 +78,7 @@ It would look (roughly) like this:
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <application>
     <windowsSettings>
-      <consoleAllocationPolicy xmlns="http://schemas.microsoft.com/SMI/20XX/WindowsSettings">detached</consoleAllocationPolicy>
+      <consoleAllocationPolicy xmlns="http://schemas.microsoft.com/SMI/2024/WindowsSettings">detached</consoleAllocationPolicy>
     </windowsSettings>
   </application>
 </assembly>
@@ -144,23 +144,29 @@ spawned, we propose the inclusion of a new API, `AllocConsoleWithOptions(PALLOC_
 ```c++
 // Console Allocation Modes
 typedef enum ALLOC_CONSOLE_MODE {
-    ALLOC_CONSOLE_MODE_DEFAULT  = 0,
-    ALLOC_CONSOLE_MODE_WINDOW   = 1,
-    ALLOC_CONSOLE_MODE_HEADLESS = 2
+    ALLOC_CONSOLE_MODE_DEFAULT    = 0,
+    ALLOC_CONSOLE_MODE_NEW_WINDOW = 1,
+    ALLOC_CONSOLE_MODE_NO_WINDOW  = 2
 } ALLOC_CONSOLE_MODE;
+
+typedef enum ALLOC_CONSOLE_RESULT {
+    ALLOC_CONSOLE_RESULT_NO_CONSOLE       = 0,
+    ALLOC_CONSOLE_RESULT_NEW_CONSOLE      = 1,
+    ALLOC_CONSOLE_RESULT_EXISTING_CONSOLE = 2
+} ALLOC_CONSOLE_RESULT, *PALLOC_CONSOLE_RESULT;
 
 typedef
 struct ALLOC_CONSOLE_OPTIONS
 {
     ALLOC_CONSOLE_MODE mode;
-    BOOL  useShowWindow;
-    WORD  showWindow;
+    BOOL useShowWindow;
+    WORD showWindow;
 } ALLOC_CONSOLE_OPTIONS, *PALLOC_CONSOLE_OPTIONS;
 
 WINBASEAPI
 HRESULT
 WINAPI
-AllocConsoleWithOptions(PALLOC_CONSOLE_OPTIONS allocOptions);
+AllocConsoleWithOptions(_In_opt_ PALLOC_CONSOLE_OPTIONS allocOptions, _Out_opt_ PALLOC_CONSOLE_RESULT result);
 ```
 
 **AllocConsoleWithOptions** affords an application control over how and when it begins a console session.
@@ -169,12 +175,14 @@ AllocConsoleWithOptions(PALLOC_CONSOLE_OPTIONS allocOptions);
 > Unlike `AllocConsole`, `AllocConsoleWithOptions` without a mode (`ALLOC_CONSOLE_MODE_DEFAULT`) will only allocate a console if one was
 > requested during `CreateProcess`.
 >
-> To override this behavior, pass one of `ALLOC_CONSOLE_MODE_WINDOW` (which is equivalent to being spawned with
-> `CREATE_NEW_WINDOW`) or `ALLOC_CONSOLE_MODE_HEADLESS` (which is equivalent to being spawned with `CREATE_NO_WINDOW`.)
+> To override this behavior, pass one of `ALLOC_CONSOLE_MODE_NEW_WINDOW` (which is equivalent to being spawned with
+> `CREATE_NEW_WINDOW`) or `ALLOC_CONSOLE_MODE_NO_WINDOW` (which is equivalent to being spawned with `CREATE_NO_CONSOLE`.)
 
 ##### Parameters
 
 **allocOptions**: A pointer to a `ALLOC_CONSOLE_OPTIONS`.
+
+**result**: An optional out pointer, which will be populated with a member of the `ALLOC_CONSOLE_RESULT` enum.
 
 ##### `ALLOC_CONSOLE_OPTIONS`
 
@@ -189,21 +197,18 @@ console window.
 
 ###### Return Value
 
-`AllocConsoleWithOptions` will return `S_OK` if a console was allocated, and `S_FALSE` if one was not allocated.
+`AllocConsoleWithOptions` will return `S_OK` and populate `result` to indicate whether--and how--a console session was
+created.
 
-`AllocConsoleWithOptions` may return `S_FALSE` without having allocated a console if your process was spawned with
-`DETACHED_PROCESS`.
-
-`AllocConsoleWithOptions` will return an appropriate failing `HRESULT` if you pass it invalid parameters or the system is unable
-to allocate a new console, including in circumstances where your process is already attached to a console.
+`AllocConsoleWithOptions` will return a failing `HRESULT` if the request could not be completed.
 
 ###### Modes
 
-|             Mode              | Description                                                                                                                    |
-|:-----------------------------:| ------------------------------------------------------------------------------------------------------------------------------ |
-| `ALLOC_CONSOLE_MODE_DEFAULT`  | Allocate a console session if (and how) one was requested by the parent process.                                               |
-|  `ALLOC_CONSOLE_MODE_WINDOW`  | Allocate a console session with a window, even if this process was created with `CREATE_NO_WINDOW` or `DETACHED_PROCESS`.      |
-| `ALLOC_CONSOLE_MODE_HEADLESS` | Allocate a console session _without_ a window, even if this process was created with `CREATE_NEW_WINDOW` or `DETACHED_CONSOLE` |
+|             Mode                | Description                                                                                                                    |
+|:-------------------------------:| ------------------------------------------------------------------------------------------------------------------------------ |
+| `ALLOC_CONSOLE_MODE_DEFAULT`    | Allocate a console session if (and how) one was requested by the parent process.                                               |
+| `ALLOC_CONSOLE_MODE_NEW_WINDOW` | Allocate a console session with a window, even if this process was created with `CREATE_NO_CONSOLE` or `DETACHED_PROCESS`.     |
+| `ALLOC_CONSOLE_MODE_NO_WINDOW`  | Allocate a console session _without_ a window, even if this process was created with `CREATE_NEW_WINDOW` or `DETACHED_PROCESS` |
 
 ###### Notes
 
