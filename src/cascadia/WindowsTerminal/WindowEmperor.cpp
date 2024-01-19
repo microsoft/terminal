@@ -54,13 +54,25 @@ WindowEmperor::WindowEmperor() noexcept :
     ::winrt::detach_abi(a);
 }
 
-// Disable the "destructor never returns, potential memory leak" warning - we're literally already exiting here. 
+// Disable the "destructor never returns, potential memory leak" warning - we're literally already exiting here.
 #pragma warning(suppress : 4722)
 WindowEmperor::~WindowEmperor()
 {
+    // BODGY: If the emperor is being dtor'd, it's because we've gone past the
+    // end of main, and released the ref in main. Here, we want to manually
+    // terminate our process.
+    //
+    // If you just do a
+    //
     // _app.Close();
-    // _app = nullptr;
-    // TerminateProcess(GetCurrentProcess(), 0);
+    //
+    // here, then we might run into an edge case where main releases it's ref to
+    // the emperor, but one of the window threads might be in the process of
+    // exiting, and still holding a strong ref to the emperor. In that case, we
+    // can actually end up with the _window thread_ being the last reference,
+    // and calling App::Close on that thread will crash us with a E_WRONG_THREAD
+    //
+    // For more context, see MSFT:46744208
     std::exit(0);
 }
 
