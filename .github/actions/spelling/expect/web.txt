@@ -1,4 +1,3 @@
-WCAG
 winui
 appshellintegration
 mdtauk

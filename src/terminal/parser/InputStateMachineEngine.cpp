@@ -102,6 +102,11 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
+bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
+{
+    return _encounteredWin32InputModeSequence;
+}
+
 void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
 {
     _lookingForDSR = looking;
@@ -448,6 +453,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // Ctrl+C, Ctrl+Break are handled correctly.
         const auto key = _GenerateWin32Key(parameters);
         success = _pDispatch->WriteCtrlKey(key);
+        _encounteredWin32InputModeSequence = true;
         break;
     }
     default:
@@ -794,7 +800,6 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
     // VT Modifiers are 1+(modifier flags)
     const auto vtParam = modifierParam - 1;
     DWORD modifierState = 0;
-    WI_SetFlagIf(modifierState, ENHANCED_KEY, modifierParam > 0);
     WI_SetFlagIf(modifierState, SHIFT_PRESSED, WI_IsFlagSet(vtParam, VT_SHIFT));
     WI_SetFlagIf(modifierState, LEFT_ALT_PRESSED, WI_IsFlagSet(vtParam, VT_ALT));
     WI_SetFlagIf(modifierState, LEFT_CTRL_PRESSED, WI_IsFlagSet(vtParam, VT_CTRL));

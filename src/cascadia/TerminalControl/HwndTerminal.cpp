@@ -272,7 +272,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
 
 void HwndTerminal::_WriteTextToConnection(const std::wstring_view input) noexcept
 {
-    if (!_pfnWriteCallback)
+    if (input.empty() || !_pfnWriteCallback)
     {
         return;
     }
@@ -758,8 +758,17 @@ try
         WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
     };
 
-    const auto lock = _terminal->LockForWriting();
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    TerminalInput::OutputType out;
+    {
+        const auto lock = _terminal->LockForReading();
+        out = _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    }
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+        return true;
+    }
+    return false;
 }
 catch (...)
 {
@@ -784,8 +793,16 @@ try
     {
         _uiaProvider->RecordKeyEvent(vkey);
     }
-    const auto lock = _terminal->LockForWriting();
-    _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+
+    TerminalInput::OutputType out;
+    {
+        const auto lock = _terminal->LockForReading();
+        out = _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+    }
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+    }
 }
 CATCH_LOG();
 
@@ -797,31 +814,39 @@ try
         return;
     }
 
-    const auto lock = _terminal->LockForWriting();
-
-    if (_terminal->IsSelectionActive())
+    TerminalInput::OutputType out;
     {
-        _ClearSelection();
-        if (ch == UNICODE_ESC)
+        const auto lock = _terminal->LockForWriting();
+
+        if (_terminal->IsSelectionActive())
         {
-            // ESC should clear any selection before it triggers input.
-            // Other characters pass through.
+            _ClearSelection();
+            if (ch == UNICODE_ESC)
+            {
+                // ESC should clear any selection before it triggers input.
+                // Other characters pass through.
+                return;
+            }
+        }
+
+        if (ch == UNICODE_TAB)
+        {
+            // TAB was handled as a keydown event (cf. Terminal::SendKeyEvent)
             return;
         }
-    }
 
-    if (ch == UNICODE_TAB)
-    {
-        // TAB was handled as a keydown event (cf. Terminal::SendKeyEvent)
-        return;
-    }
+        auto modifiers = getControlKeyState();
+        if (WI_IsFlagSet(flags, ENHANCED_KEY))
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
 
-    auto modifiers = getControlKeyState();
-    if (WI_IsFlagSet(flags, ENHANCED_KEY))
-    {
-        modifiers |= ControlKeyStates::EnhancedKey;
+        out = _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
-    _terminal->SendCharEvent(ch, scanCode, modifiers);
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+    }
 }
 CATCH_LOG();
 

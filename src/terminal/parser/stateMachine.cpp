@@ -2127,6 +2127,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
     // If we're at the end of the string and have remaining un-printed characters,
     if (_state != VTStates::Ground)
     {
+        const auto run = _CurrentRun();
+
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
         // also the start of a CSI, and could be the start of a longer sequence,
@@ -2136,60 +2138,34 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
         // which is _wrong_).
         //
-        // Fortunately, for VT input, each keystroke comes in as an individual
-        // write operation. So, if at the end of processing a string for the
-        // InputEngine, we find that we're not in the Ground state, that implies
-        // that we've processed some input, but not dispatched it yet. This
-        // block at the end of `ProcessString` will then re-process the
-        // undispatched string, but it will ensure that it dispatches on the
-        // last character of the string. For our previous `\x1b[` scenario, that
-        // means we'll make sure to call `_ActionEscDispatch('[')`., which will
-        // properly decode the string as <kbd>alt+[</kbd>.
-        const auto run = _CurrentRun();
-
+        // At the same time, input may be broken up arbitrarily, depending on the pipe's
+        // buffer size, our read-buffer size, the sender's write-buffer size, and more.
+        // In fact, with the current WSL, input is broken up in 16 byte chunks (Why? :(),
+        // which breaks up many of our longer sequences, like our Win32InputMode ones.
+        //
+        // As a heuristic, this code specifically checks for a trailing Esc or Alt+key.
+        // If we encountered a win32-input-mode sequence before, we know that our \x1b[?9001h
+        // request to enable them was successful. While a client may still send \x1b{some char}
+        // intentionally, it's far more likely now that we're looking at a broken up sequence.
+        // The most common win32-input-mode is ConPTY itself after all, and we never emit
+        // \x1b{some char} once it's enabled.
         if (_isEngineForInput)
         {
-            // Reset our state, and put all but the last char in again.
-            ResetState();
-            _processingLastCharacter = false;
-            // Chars to flush are [pwchSequenceStart, pwchCurr)
-            auto wchIter = run.cbegin();
-            while (wchIter < run.cend() - 1)
+            const auto win32 = _engine->EncounteredWin32InputModeSequence();
+            if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
             {
-                ProcessCharacter(*wchIter);
-                wchIter++;
+                _EnterGround();
+                if (run.size() == 1)
+                {
+                    _ActionExecute(L'\x1b');
+                }
+                else
+                {
+                    _EnterEscape();
+                    _ActionEscDispatch(run.back());
+                }
+                _EnterGround();
             }
-            // Manually execute the last char [pwchCurr]
-            _processingLastCharacter = true;
-            switch (_state)
-            {
-            case VTStates::Ground:
-                _ActionExecute(*wchIter);
-                break;
-            case VTStates::Escape:
-            case VTStates::EscapeIntermediate:
-                _ActionEscDispatch(*wchIter);
-                break;
-            case VTStates::CsiEntry:
-            case VTStates::CsiIntermediate:
-            case VTStates::CsiIgnore:
-            case VTStates::CsiParam:
-            case VTStates::CsiSubParam:
-                _ActionCsiDispatch(*wchIter);
-                break;
-            case VTStates::OscParam:
-            case VTStates::OscString:
-            case VTStates::OscTermination:
-                _ActionOscDispatch(*wchIter);
-                break;
-            case VTStates::Ss3Entry:
-            case VTStates::Ss3Param:
-                _ActionSs3Dispatch(*wchIter);
-                break;
-            }
-            // microsoft/terminal#2746: Make sure to return to the ground state
-            // after dispatching the characters
-            _EnterGround();
         }
         else if (_state != VTStates::SosPmApcString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIgnore)
         {

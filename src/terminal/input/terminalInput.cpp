@@ -259,7 +259,7 @@ bool TerminalInput::GetInputMode(const Mode mode) const noexcept
 
 void TerminalInput::ResetInputModes() noexcept
 {
-    _inputMode = { Mode::Ansi, Mode::AutoRepeat };
+    _inputMode = { Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
     _mouseInputState.lastPos = { -1, -1 };
     _mouseInputState.lastButton = 0;
 }

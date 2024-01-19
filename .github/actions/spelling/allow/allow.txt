@@ -1,3 +1,4 @@
+aci
 admins
 allcolors
 Apc
@@ -8,6 +9,7 @@ breadcrumbs
 bsd
 calt
 ccmp
+ccon
 changelog
 clickable
 clig
@@ -53,6 +55,7 @@ hyperlinks
 iconify
 img
 inlined
+issuetitle
 It'd
 kje
 libfuzzer
@@ -91,7 +94,9 @@ reserialize
 reserializes
 rlig
 runtimes
+servicebus
 shcha
+similaritytolerance
 slnt
 Sos
 ssh
@@ -117,7 +122,9 @@ vsdevcmd
 walkthrough
 walkthroughs
 We'd
+westus
 wildcards
+workarounds
 XBox
 YBox
 yeru

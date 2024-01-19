@@ -10,11 +10,11 @@
 
 #include <DefaultSettings.h>
 #include <unicode.hpp>
+#include <utils.hpp>
 #include <WinUser.h>
 #include <LibraryResources.h>
 
 #include "EventArgs.h"
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../buffer/out/search.h"
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -443,6 +443,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_sendInputToConnection(std::wstring_view wstr)
     {
+        if (wstr.empty())
+        {
+            return;
+        }
+
+        // The connection may call functions like WriteFile() which may block indefinitely.
+        // It's important we don't hold any mutexes across such calls.
+        _terminal->_assertUnlocked();
+
         if (_isReadOnly)
         {
             _raiseReadOnlyWarning();
@@ -492,8 +501,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _handleControlC();
         }
 
-        const auto lock = _terminal->LockForWriting();
-        return _terminal->SendCharEvent(ch, scanCode, modifiers);
+        TerminalInput::OutputType out;
+        {
+            const auto lock = _terminal->LockForReading();
+            out = _terminal->SendCharEvent(ch, scanCode, modifiers);
+        }
+        if (out)
+        {
+            _sendInputToConnection(*out);
+            return true;
+        }
+        return false;
     }
 
     void ControlCore::_handleControlC()
@@ -602,46 +620,56 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
     {
-        const auto lock = _terminal->LockForWriting();
-
-        // Update the selection, if it's present
-        // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
-        // modify on key up, then there's chance that we'll immediately dismiss
-        // a selection created by an action bound to a keydown.
-        if (_shouldTryUpdateSelection(vkey) && keyDown)
+        if (!vkey)
         {
-            // try to update the selection
-            if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
-            {
-                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
-                _updateSelectionUI();
-                return true;
-            }
-
-            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
-            if (!modifiers.IsWinPressed())
-            {
-                _terminal->ClearSelection();
-                _updateSelectionUI();
-            }
-
-            // When there is a selection active, escape should clear it and NOT flow through
-            // to the terminal. With any other keypress, it should clear the selection AND
-            // flow through to the terminal.
-            if (vkey == VK_ESCAPE)
-            {
-                return true;
-            }
+            return true;
         }
 
-        // If the terminal translated the key, mark the event as handled.
-        // This will prevent the system from trying to get the character out
-        // of it and sending us a CharacterReceived event.
-        return vkey ? _terminal->SendKeyEvent(vkey,
-                                              scanCode,
-                                              modifiers,
-                                              keyDown) :
-                      true;
+        TerminalInput::OutputType out;
+        {
+            const auto lock = _terminal->LockForWriting();
+
+            // Update the selection, if it's present
+            // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
+            // modify on key up, then there's chance that we'll immediately dismiss
+            // a selection created by an action bound to a keydown.
+            if (_shouldTryUpdateSelection(vkey) && keyDown)
+            {
+                // try to update the selection
+                if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+                {
+                    _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
+                    _updateSelectionUI();
+                    return true;
+                }
+
+                // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+                if (!modifiers.IsWinPressed())
+                {
+                    _terminal->ClearSelection();
+                    _updateSelectionUI();
+                }
+
+                // When there is a selection active, escape should clear it and NOT flow through
+                // to the terminal. With any other keypress, it should clear the selection AND
+                // flow through to the terminal.
+                if (vkey == VK_ESCAPE)
+                {
+                    return true;
+                }
+            }
+
+            // If the terminal translated the key, mark the event as handled.
+            // This will prevent the system from trying to get the character out
+            // of it and sending us a CharacterReceived event.
+            out = _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+        }
+        if (out)
+        {
+            _sendInputToConnection(*out);
+            return true;
+        }
+        return false;
     }
 
     bool ControlCore::SendMouseEvent(const til::point viewportPos,
@@ -650,8 +678,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const short wheelDelta,
                                      const TerminalInput::MouseButtonState state)
     {
-        const auto lock = _terminal->LockForWriting();
-        return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
+        TerminalInput::OutputType out;
+        {
+            const auto lock = _terminal->LockForReading();
+            out = _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
+        }
+        if (out)
+        {
+            _sendInputToConnection(*out);
+            return true;
+        }
+        return false;
     }
 
     void ControlCore::UserScrollViewport(const int viewTop)
@@ -1324,8 +1361,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   before sending it over the terminal's connection.
     void ControlCore::PasteText(const winrt::hstring& hstr)
     {
+        using namespace ::Microsoft::Console::Utils;
+
+        auto filtered = FilterStringForPaste(hstr, CarriageReturnNewline | ControlCodes);
+        if (BracketedPasteEnabled())
+        {
+            filtered.insert(0, L"\x1b[200~");
+            filtered.append(L"\x1b[201~");
+        }
+
+        // It's important to not hold the terminal lock while calling this function as sending the data may take a long time.
+        _sendInputToConnection(filtered);
+
         const auto lock = _terminal->LockForWriting();
-        _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
         _updateSelectionUI();
         _terminal->TrySnapOnInput();
@@ -1604,6 +1652,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
+            _searcher.HighlightResults();
             _searcher.MoveToCurrentSelection();
             _cachedSearchResultRows = {};
         }
@@ -1620,7 +1669,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // DO NOT call _updateSelectionUI() here.
             // We don't want to show the markers so manually tell it to clear it.
             _terminal->SetBlockSelection(false);
-            _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
 
             foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
@@ -1628,6 +1676,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->AlwaysNotifyOnBufferRotation(true);
         }
+        _renderer->TriggerSelection();
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
@@ -1894,17 +1943,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const auto endPoint = goRight ? clampedClick : cursorPos;
 
                     const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
-
                     const WORD key = goRight ? VK_RIGHT : VK_LEFT;
+
+                    std::wstring buffer;
+                    const auto append = [&](TerminalInput::OutputType&& out) {
+                        if (out)
+                        {
+                            buffer.append(std::move(*out));
+                        }
+                    };
+
                     // Send an up and a down once per cell. This won't
                     // accurately handle wide characters, or continuation
                     // prompts, or cases where a single escape character in the
                     // command (e.g. ^[) takes up two cells.
                     for (size_t i = 0u; i < delta; i++)
                     {
-                        _terminal->SendKeyEvent(key, 0, {}, true);
-                        _terminal->SendKeyEvent(key, 0, {}, false);
+                        append(_terminal->SendKeyEvent(key, 0, {}, true));
+                        append(_terminal->SendKeyEvent(key, 0, {}, false));
                     }
+
+                    _sendInputToConnection(buffer);
                 }
             }
         }
@@ -1915,7 +1974,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Updates the renderer's representation of the selection as well as the selection marker overlay in TermControl
     void ControlCore::_updateSelectionUI()
     {
-        const auto lock = _terminal->LockForWriting();
         _renderer->TriggerSelection();
         // only show the markers if we're doing a keyboard selection or in mark mode
         const bool showMarkers{ _terminal->SelectionMode() >= ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Keyboard };
@@ -2247,14 +2305,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_focusChanged(bool focused)
     {
-        // GH#13461 - temporarily turn off read-only mode, send the focus event,
-        // then turn it back on. Even in focus mode, focus events are fine to
-        // send. We don't want to pop a warning every time the control is
-        // focused.
-        const auto previous = std::exchange(_isReadOnly, false);
-        const auto restore = wil::scope_exit([&]() { _isReadOnly = previous; });
-        const auto lock = _terminal->LockForWriting();
-        _terminal->FocusChanged(focused);
+        TerminalInput::OutputType out;
+        {
+            const auto lock = _terminal->LockForReading();
+            out = _terminal->FocusChanged(focused);
+        }
+        if (out && !out->empty())
+        {
+            // _sendInputToConnection() asserts that we aren't in focus mode,
+            // but window focus events are always fine to send.
+            _connection.WriteInput(*out);
+        }
     }
 
     bool ControlCore::_isBackgroundTransparent()
