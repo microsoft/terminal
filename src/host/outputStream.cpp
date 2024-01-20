@@ -52,6 +52,19 @@ StateMachine& ConhostInternalGetSet::GetStateMachine()
 }
 
 // Routine Description:
+// - Retrieves the text buffer and virtual viewport for the active output
+//   buffer. Also returns a flag indicating whether it's the main buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - a tuple with the buffer reference, viewport, and main buffer flag.
+std::tuple<TextBuffer&, til::rect, bool> ConhostInternalGetSet::GetBufferAndViewport()
+{
+    auto& info = _io.GetActiveOutputBuffer();
+    return { info.GetTextBuffer(), info.GetVirtualViewport().ToExclusive(), info.Next == nullptr };
+}
+
+// Routine Description:
 // - Retrieves the text buffer for the active output buffer.
 // Arguments:
 // - <none>

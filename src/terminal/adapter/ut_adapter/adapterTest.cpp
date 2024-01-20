@@ -81,6 +81,12 @@ public:
         return *_stateMachine;
     }
 
+    std::tuple<TextBuffer&, til::rect, bool> GetBufferAndViewport() override
+    {
+        const auto viewport = til::rect{ _viewport.left, _viewport.top, _viewport.right, _viewport.bottom };
+        return { *_textBuffer.get(), viewport, true };
+    }
+
     TextBuffer& GetTextBuffer() override
     {
         return *_textBuffer.get();
