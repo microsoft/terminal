@@ -865,7 +865,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         newAction.Args(sendInputArgs);
         auto cmd{ make_self<Command>() };
         cmd->ActionAndArgs(newAction);
-        cmd->Name(name);
+        if (!name.empty())
+        {
+            cmd->Name(name);
+        }
         cmd->RegisterKey(keys);
         AddAction(*cmd);
     }

@@ -595,10 +595,6 @@ void AppCommandlineArgs::_buildSaveParser()
                 winrt::hstring hString = winrt::to_hstring(_saveInputName);
                 args.Name(hString);
             }
-            else
-            {
-                args.Name(args.GenerateName());
-            }
 
             saveAction.Args(args);
             _startupActions.push_back(saveAction);
