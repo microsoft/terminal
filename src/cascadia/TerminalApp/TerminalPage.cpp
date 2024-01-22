@@ -1670,6 +1670,8 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
+        term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
+
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
         {
@@ -2950,6 +2952,113 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
         ShowWindowChanged.raise(*this, args);
+    }
+
+    void TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs /*args*/)
+    {
+        // 1. Search winget for missing command; retrieve packages
+        // TODO CARLOS
+
+        // TEMPORARY SOLUTION
+        //std::vector<std::wstring> pkgList{ L"Microsoft.PowerToys", L"Microsoft.WindowsTerminal" };
+        std::vector<std::wstring> pkgList{ L"Microsoft.PowerToys" };
+        bool tooManySuggestions = true;
+        std::wstring searchOption = L"id";
+        std::wstring searchQuery = L"Microsoft.PowerToys";
+        // END TEMPORARY SOLUTION
+
+        // 2. Display packages in UI
+        if (!pkgList.empty())
+        {
+            std::vector<std::wstring> suggestions;
+            suggestions.reserve(pkgList.size());
+            for (auto pkg : pkgList)
+            {
+                suggestions.emplace_back(fmt::format(L"winget install --{} {}", searchOption, pkg));
+            }
+
+            std::wstring footer = tooManySuggestions ?
+                                      fmt::format(L"winget search --{} {}", searchOption, searchQuery) :
+                                      L"";
+
+            ShowCommandNotFoundInfoBar(suggestions, footer);
+        }
+    }
+
+    winrt::fire_and_forget TerminalPage::ShowCommandNotFoundInfoBar(const std::vector<std::wstring> suggestions, std::wstring footerCmd)
+    {
+        co_await wil::resume_foreground(Dispatcher());
+        auto infoBar = FindName(L"CommandNotFoundInfoBar").try_as<MUX::Controls::InfoBar>();
+
+        // Insert the message as custom content so we can make it selectable
+        RichTextBlock infoBarMsg;
+        Windows::UI::Xaml::Documents::Paragraph paragraph;
+
+        // Append header
+        Windows::UI::Xaml::Documents::Run header;
+        header.Text(RS_(L"CommandNotFoundInfoBarHeader"));
+        paragraph.Inlines().Append(header);
+
+        // Append each suggestion (and format the code blocks)
+        for (auto suggestion : suggestions)
+        {
+            Windows::UI::Xaml::Documents::LineBreak lineBreak;
+            paragraph.Inlines().Append(lineBreak);
+
+            Windows::UI::Xaml::Documents::Run bulletPoint;
+            bulletPoint.Text(L"• ");
+            paragraph.Inlines().Append(bulletPoint);
+
+            Windows::UI::Xaml::Documents::Run suggestionRun;
+            suggestionRun.Text(suggestion);
+            suggestionRun.FontFamily(Media::FontFamily{ L"Cascadia Code" });
+            paragraph.Inlines().Append(suggestionRun);
+        }
+
+        // Append the footer, if appropriate
+        if (!footerCmd.empty())
+        {
+            Windows::UI::Xaml::Documents::LineBreak lineBreak;
+            paragraph.Inlines().Append(lineBreak);
+
+            Windows::UI::Xaml::Documents::Run footerRun;
+            footerRun.Text(RS_(L"CommandNotFoundInfoBarFooter") + L" ");
+            paragraph.Inlines().Append(footerRun);
+
+            Windows::UI::Xaml::Documents::Run footerCmdRun;
+            footerCmdRun.Text(footerCmd);
+            footerCmdRun.FontFamily(Media::FontFamily{ L"Cascadia Code" });
+            paragraph.Inlines().Append(footerCmdRun);
+        }
+
+        infoBarMsg.Blocks().Append(paragraph);
+        infoBarMsg.IsTextSelectionEnabled(true);
+
+        // Set up the action button, if appropriate
+        // We have to use a stack panel here to force the button to be on the bottom
+        StackPanel infoBarContent;
+        infoBarContent.Children().Append(infoBarMsg);
+        if (suggestions.size() == 1)
+        {
+            Button infoBarBtn;
+            infoBarBtn.Content(box_value(RS_(L"CommandNotFoundInfoBarButtonCaption")));
+            // upon clicking the action button, we inject the suggestion into the active terminal
+            infoBarBtn.Click([weakThis{ get_weak() }, infoBar, suggestion{ suggestions.at(0) }](auto&&, auto&&) {
+                if (auto page{ weakThis.get() })
+                {
+                    if (auto termControl = page->_GetActiveControl())
+                    {
+                        termControl.SendInput(suggestion);
+                    }
+                }
+                infoBar.IsOpen(false);
+            });
+
+            infoBarContent.Children().Append(infoBarBtn);
+        }
+
+        infoBar.Content(infoBarContent);
+        infoBar.IsOpen(true);
     }
 
     // Method Description:

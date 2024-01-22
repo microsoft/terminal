@@ -185,6 +185,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
+        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
 

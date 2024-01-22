@@ -146,6 +146,7 @@ namespace winrt::TerminalApp::implementation
 
         void ShowKeyboardServiceWarning() const;
         winrt::hstring KeyboardServiceDisabledText();
+        winrt::fire_and_forget ShowCommandNotFoundInfoBar(const std::vector<std::wstring> suggestions, std::wstring footer);
 
         winrt::fire_and_forget IdentifyWindow();
         winrt::fire_and_forget RenameFailed();
@@ -517,6 +518,8 @@ namespace winrt::TerminalApp::implementation
         void _OpenSuggestions(const Microsoft::Terminal::Control::TermControl& sender, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode, winrt::hstring filterText);
 
         void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+
+        void _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
 
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
