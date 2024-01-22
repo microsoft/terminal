@@ -75,10 +75,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // If multiple peasants are added concurrently we keep trying to update
                 // until we get to set the new id.
                 uint64_t current;
+                uint64_t next;
                 do
                 {
                     current = _nextPeasantID.load(std::memory_order_relaxed);
-                } while (current <= providedID && !_nextPeasantID.compare_exchange_weak(current, providedID + 1, std::memory_order_relaxed));
+                    next = std::max(current, providedID) + 1;
+                } while (!_nextPeasantID.compare_exchange_weak(current, next, std::memory_order_relaxed));
             }
 
             auto newPeasantsId = peasant.GetID();
@@ -111,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-            _WindowCreatedHandlers(nullptr, nullptr);
+            _WindowCreatedHandlers(*this, winrt::box_value(newPeasantsId));
             return newPeasantsId;
         }
         catch (...)
@@ -207,7 +209,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             std::unique_lock lock{ _peasantsMutex };
             _peasants.erase(peasantId);
         }
-        _WindowClosedHandlers(nullptr, nullptr);
+        _WindowClosedHandlers(*this, winrt::box_value(peasantId));
     }
 
     // Method Description:

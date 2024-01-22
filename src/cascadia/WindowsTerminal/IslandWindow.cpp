@@ -77,7 +77,7 @@ void IslandWindow::Refrigerate() noexcept
 
     _pfnCreateCallback = nullptr;
     _pfnSnapDimensionCallback = nullptr;
-
+    
     _rootGrid.Children().Clear();
     ShowWindow(_window.get(), SW_HIDE);
 }

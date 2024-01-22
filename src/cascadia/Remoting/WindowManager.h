@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args, const bool isolatedMode);
         Remoting::Peasant CreatePeasant(const Remoting::WindowRequestedArgs& args);
 
+        void AddPeasant(const Remoting::Peasant& peasant) const;
         void SignalClose(const Remoting::Peasant& peasant);
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
         void SummonAllWindows();

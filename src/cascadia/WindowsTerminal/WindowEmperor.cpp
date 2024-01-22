@@ -5,14 +5,10 @@
 #include "WindowEmperor.h"
 
 #include "../inc/WindowingBehavior.h"
-
 #include "../../types/inc/utils.hpp"
-
 #include "../WinRTUtils/inc/WtExeUtils.h"
-
 #include "resource.h"
 #include "NotificationIcon.h"
-#include <til/env.h>
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -38,20 +34,6 @@ WindowEmperor::WindowEmperor() noexcept :
     });
 
     _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
-
-    // BODGY
-    //
-    // There's a mysterious crash in XAML on Windows 10 if you just let the App
-    // get dtor'd. By all accounts, it doesn't make sense. To mitigate this, we
-    // need to intentionally leak a reference to our App. Crazily, if you just
-    // let the app get cleaned up with the rest of the process when the process
-    // exits, then it doesn't crash. But if you let it get explicitly dtor'd, it
-    // absolutely will crash on exit.
-    //
-    // GH#15410 has more details.
-
-    auto a{ _app };
-    ::winrt::detach_abi(a);
 }
 
 WindowEmperor::~WindowEmperor()
@@ -82,7 +64,7 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
     }
 }
 
-bool WindowEmperor::HandleCommandlineArgs()
+bool WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
@@ -98,28 +80,16 @@ bool WindowEmperor::HandleCommandlineArgs()
         }
     }
 
-    // Get the requested initial state of the window from our startup info. For
-    // something like `start /min`, this will set the wShowWindow member to
-    // SW_SHOWMINIMIZED. We'll need to make sure is bubbled all the way through,
-    // so we can open a new window with the same state.
-    STARTUPINFOW si;
-    GetStartupInfoW(&si);
-    const uint32_t showWindow = WI_IsFlagSet(si.dwFlags, STARTF_USESHOWWINDOW) ? si.wShowWindow : SW_SHOW;
-
-    const auto currentEnv{ til::env::from_current_environment() };
-
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow, winrt::hstring{ currentEnv.to_string() } };
-
+    const Remoting::CommandlineArgs eventArgs{ args, cwd, gsl::narrow_cast<uint32_t>(nCmdShow), GetEnvironmentStringsW() };
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
-
     const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
+    int exitCode = 0;
 
-    const bool makeWindow = result.ShouldCreateWindow();
-    if (makeWindow)
+    if (result.ShouldCreateWindow())
     {
         _createNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
-
         _becomeMonarch();
+        WaitForWindows();
     }
     else
     {
@@ -127,11 +97,12 @@ bool WindowEmperor::HandleCommandlineArgs()
         if (!res.Message.empty())
         {
             AppHost::s_DisplayMessageBox(res);
-            std::quick_exit(res.ExitCode);
         }
+        exitCode = res.ExitCode;
     }
 
-    return makeWindow;
+    TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(exitCode));
+    __assume(false);
 }
 
 void WindowEmperor::WaitForWindows()
@@ -146,7 +117,6 @@ void WindowEmperor::WaitForWindows()
 
 void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
 {
-    Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
     std::shared_ptr<WindowThread> window{ nullptr };
 
     // FIRST: Attempt to reheat an existing window that we refrigerated for
@@ -168,7 +138,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
         // Cool! Let's increment the number of active windows, and re-heat it.
         _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
 
-        window->Microwave(args, peasant);
+        window->Microwave(args);
         // This will unblock the event we're waiting on in KeepWarm, and the
         // window thread (started below) will continue through it's loop
         return;
@@ -177,9 +147,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     // At this point, there weren't any pending refrigerated threads we could
     // just use. That's fine. Let's just go create a new one.
 
-    window = std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant);
-
-    std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
+    window = std::make_shared<WindowThread>(_app.Logic(), _manager);
 
     // Increment our count of window instances _now_, immediately. We're
     // starting a window now, we shouldn't exit (due to having 0 windows) till
@@ -196,69 +164,30 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     // Hence: increment the number of total windows now.
     _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
 
-    std::thread t([weakThis, window]() {
+    std::thread t([weakThis = weak_from_this(), window = std::move(window), args = std::move(args)]() {
         try
         {
-            window->CreateHost();
+            winrt::init_apartment(winrt::apartment_type::single_threaded);
+
+            window->CreateHost(std::move(args));
 
             if (auto self{ weakThis.lock() })
             {
                 self->_windowStartedHandlerPostXAML(window);
             }
-            while (window->KeepWarm())
+
+            // Now that the window is ready to go, we can add it to our list of windows,
+            // because we know it will be well behaved.
+            //
+            // Be sure to only modify the list of windows under lock.
+
+            if (auto self{ weakThis.lock() })
             {
-                // Now that the window is ready to go, we can add it to our list of windows,
-                // because we know it will be well behaved.
-                //
-                // Be sure to only modify the list of windows under lock.
-
-                if (auto self{ weakThis.lock() })
-                {
-                    auto lockedWindows{ self->_windows.lock() };
-                    lockedWindows->push_back(window);
-                }
-                auto removeWindow = wil::scope_exit([&]() {
-                    if (auto self{ weakThis.lock() })
-                    {
-                        self->_removeWindow(window->PeasantID());
-                    }
-                });
-
-                auto decrementWindowCount = wil::scope_exit([&]() {
-                    if (auto self{ weakThis.lock() })
-                    {
-                        self->_decrementWindowCount();
-                    }
-                });
-
-                window->RunMessagePump();
-
-                // Manually trigger the cleanup callback. This will ensure that we
-                // remove the window from our list of windows, before we release the
-                // AppHost (and subsequently, the host's Logic() member that we use
-                // elsewhere).
-                removeWindow.reset();
-
-                // On Windows 11, we DONT want to refrigerate the window. There,
-                // we can just close it like normal. Break out of the loop, so
-                // we don't try to put this window in the fridge.
-                if (Utils::IsWindows11())
-                {
-                    decrementWindowCount.reset();
-                    break;
-                }
-                else
-                {
-                    window->Refrigerate();
-                    decrementWindowCount.reset();
-
-                    if (auto self{ weakThis.lock() })
-                    {
-                        auto fridge{ self->_oldThreads.lock() };
-                        fridge->push_back(window);
-                    }
-                }
+                auto lockedWindows{ self->_windows.lock() };
+                lockedWindows->push_back(window);
             }
+
+            window->RunMessagePump();
 
             // Now that we no longer care about this thread's window, let it
             // release it's app host and flush the rest of the XAML queue.
@@ -292,17 +221,6 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
     // the Terminal window, making it visible BEFORE the XAML island is actually
     // ready to be drawn. We want to wait till the app's Initialized event
     // before we make the window visible.
-}
-
-void WindowEmperor::_removeWindow(uint64_t senderID)
-{
-    auto lockedWindows{ _windows.lock() };
-
-    // find the window in _windows who's peasant's Id matches the peasant's Id
-    // and remove it
-    std::erase_if(*lockedWindows, [&](const auto& w) {
-        return w->PeasantID() == senderID;
-    });
 }
 
 void WindowEmperor::_decrementWindowCount()
@@ -358,8 +276,8 @@ void WindowEmperor::_becomeMonarch()
     // Set the number of open windows (so we know if we are the last window)
     // and subscribe for updates if there are any changes to that number.
 
-    _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
-    _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
+    _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_windowCreated });
+    _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_windowClosed });
 
     // If the monarch receives a QuitAll event it will signal this event to be
     // ran before each peasant is closed.
@@ -371,9 +289,49 @@ void WindowEmperor::_becomeMonarch()
     _getWindowLayoutThrottler.value()();
 }
 
-// sender and args are always nullptr
-void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&,
-                                            const winrt::Windows::Foundation::IInspectable&)
+void WindowEmperor::_windowCreated(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
+{
+    _numberOfWindowsChanged();
+}
+
+void WindowEmperor::_windowClosed(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable& value)
+{
+    const auto peasantID = winrt::unbox_value<uint64_t>(value);
+    std::shared_ptr<WindowThread> window;
+
+    // Below we'll lock _oldThreads. It would be possible to do it within this block so that we can avoid the window variable above.
+    // But holding both locks simultaneously may result in an ABBA deadlock. Bumping reference counts is cheap and so this is a good solution.
+    {
+        const auto windows = _windows.lock();
+        const auto it = std::find_if(windows->begin(), windows->end(), [&](const auto& w) {
+            return w->PeasantID() == peasantID;
+        });
+
+        if (it == windows->end())
+        {
+            return;
+        }
+
+        window = *it;
+        windows->erase(it);
+    }
+
+    _decrementWindowCount();
+
+    if (Utils::IsWindows11())
+    {
+        PostQuitMessage(0);
+    }
+    else
+    {
+        window->Refrigerate();
+        _oldThreads.lock()->push_back(std::move(window));
+    }
+
+    _numberOfWindowsChanged();
+}
+
+void WindowEmperor::_numberOfWindowsChanged()
 {
     if (_getWindowLayoutThrottler)
     {
@@ -584,15 +542,6 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
 // we'll undoubtedly crash.
 winrt::fire_and_forget WindowEmperor::_close()
 {
-    {
-        auto fridge{ _oldThreads.lock() };
-        for (auto& window : *fridge)
-        {
-            window->ThrowAway();
-        }
-        fridge->clear();
-    }
-
     // Important! Switch back to the main thread for the emperor. That way, the
     // quit will go to the emperor's message pump.
     co_await wil::resume_foreground(_dispatcher);

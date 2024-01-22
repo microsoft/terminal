@@ -166,7 +166,8 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
 
                 if (_windowLogic.ShouldExitEarly())
                 {
-                    ExitThread(result);
+                    TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(result));
+                    __assume(false);
                 }
             }
         }
@@ -538,23 +539,10 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     {
         _windowLogic.ClearPersistedWindowState();
     }
-
-    // If the user closes the last tab, in the last window, _by closing the tab_
-    // (not by closing the whole window), we need to manually persist an empty
-    // window state here. That will cause the terminal to re-open with the usual
-    // settings (not the persisted state)
-    if (args.ClearPersistedState() &&
-        _windowManager.GetNumberOfPeasants() == 1)
-    {
-        _windowLogic.ClearPersistedWindowState();
-    }
-
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
-
-    PostQuitMessage(0);
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()

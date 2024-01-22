@@ -11,6 +11,7 @@ namespace Microsoft.Terminal.Remoting
         ProposeCommandlineResult ProposeCommandline(CommandlineArgs args, Boolean isolatedMode);
         Peasant CreatePeasant(WindowRequestedArgs args);
 
+        void AddPeasant(Peasant p);
         void SignalClose(Peasant p);
 
         void UpdateActiveTabTitle(String title, Peasant p);

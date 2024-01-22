@@ -7,33 +7,25 @@
 class WindowThread : public std::enable_shared_from_this<WindowThread>
 {
 public:
-    WindowThread(winrt::TerminalApp::AppLogic logic,
-                 winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
-                 winrt::Microsoft::Terminal::Remoting::WindowManager manager,
-                 winrt::Microsoft::Terminal::Remoting::Peasant peasant);
+    WindowThread(winrt::TerminalApp::AppLogic logic, winrt::Microsoft::Terminal::Remoting::WindowManager manager);
 
     winrt::TerminalApp::TerminalWindow Logic();
-    void CreateHost();
+    void CreateHost(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args);
     int RunMessagePump();
     void RundownForExit();
 
-    bool KeepWarm();
     void Refrigerate();
-    void Microwave(
-        winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
-        winrt::Microsoft::Terminal::Remoting::Peasant peasant);
-    void ThrowAway();
+    void Microwave(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args);
 
     uint64_t PeasantID();
 
     WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 
 private:
-    winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
-
     winrt::TerminalApp::AppLogic _appLogic{ nullptr };
-    winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs _args{ nullptr };
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager{ nullptr };
+    winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
+    winrt::Windows::System::DispatcherQueue  _dispatcher{ nullptr };
 
     // This is a "shared_ptr", but it should be treated as a unique, owning ptr.
     // It's shared, because there are edge cases in refrigeration where internal
@@ -43,8 +35,6 @@ private:
     winrt::event_token _UpdateSettingsRequestedToken;
 
     std::unique_ptr<::IslandWindow> _warmWindow{ nullptr };
-    std::mutex _microwave;
-    std::condition_variable _microwaveBuzzer;
 
     int _messagePump();
     void _pumpRemainingXamlMessages();

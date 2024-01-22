@@ -354,8 +354,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                                  args.ShowWindowCommand(),
                                                                  args.CurrentEnvironment()));
 
-        _monarch.AddPeasant(*p);
-
         p->GetWindowLayoutRequested({ get_weak(), &WindowManager::_GetWindowLayoutRequestedHandlers });
 
         TraceLoggingWrite(g_hRemotingProvider,
@@ -365,6 +363,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         return *p;
+    }
+
+    void WindowManager::AddPeasant(const Remoting::Peasant& peasant) const
+    {
+        if (_monarch)
+        {
+            _monarch.AddPeasant(peasant);
+        }
     }
 
     void WindowManager::SignalClose(const Remoting::Peasant& peasant)
