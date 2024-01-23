@@ -35,7 +35,7 @@ struct SafeDispatcherTimer
 
     bool IsEnabled()
     {
-        return _getTimer().IsEnabled();
+        return _timer && _timer.IsEnabled();
     }
 
     void Tick(winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> const& handler)
@@ -74,6 +74,7 @@ struct SafeDispatcherTimer
             _timer.Tick(_token);
         }
         _timer = nullptr;
+        _token = {};
     }
 
 private:
