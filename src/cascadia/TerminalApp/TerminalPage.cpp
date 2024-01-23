@@ -11,6 +11,7 @@
 #include "RequestReceiveContentArgs.g.cpp"
 
 #include <filesystem>
+#include <winrt/Microsoft.Management.Deployment.h>
 
 #include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
@@ -26,6 +27,7 @@
 #include "Utils.h"
 
 using namespace winrt;
+using namespace winrt::Microsoft::Management::Deployment;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
@@ -2954,31 +2956,148 @@ namespace winrt::TerminalApp::implementation
         ShowWindowChanged.raise(*this, args);
     }
 
-    void TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs /*args*/)
+    void TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
     {
-        // 1. Search winget for missing command; retrieve packages
-        // TODO CARLOS
+        static constexpr CLSID CLSID_PackageManager = { 0xC53A4F16, 0x787E, 0x42A4, 0xB3, 0x04, 0x29, 0xEF, 0xFB, 0x4B, 0xF5, 0x97 }; //C53A4F16-787E-42A4-B304-29EFFB4BF597
+        static constexpr CLSID CLSID_FindPackagesOptions = { 0x572DED96, 0x9C60, 0x4526, { 0x8F, 0x92, 0xEE, 0x7D, 0x91, 0xD3, 0x8C, 0x1A } }; //572DED96-9C60-4526-8F92-EE7D91D38C1A
+        static constexpr CLSID CLSID_PackageMatchFilter = { 0xD02C9DAF, 0x99DC, 0x429C, { 0xB5, 0x03, 0x4E, 0x50, 0x4E, 0x4A, 0xB0, 0x00 } }; //D02C9DAF-99DC-429C-B503-4E504E4AB000
 
-        // TEMPORARY SOLUTION
-        //std::vector<std::wstring> pkgList{ L"Microsoft.PowerToys", L"Microsoft.WindowsTerminal" };
-        std::vector<std::wstring> pkgList{ L"Microsoft.PowerToys" };
-        bool tooManySuggestions = true;
-        std::wstring searchOption = L"id";
-        std::wstring searchQuery = L"Microsoft.PowerToys";
-        // END TEMPORARY SOLUTION
+        static constexpr unsigned int maxSuggestions = 5;
+        bool tooManySuggestions = false;
 
-        // 2. Display packages in UI
+        // TODO CARLOS: this is where we fail! "Class not registered" error
+        PackageManager pkgManager = winrt::create_instance<PackageManager>(CLSID_PackageManager, CLSCTX_ALL);
+        auto catalogRef = pkgManager.GetPredefinedPackageCatalog(PredefinedPackageCatalog::OpenWindowsCatalog);
+        auto connectResult = catalogRef.Connect();
+        int retryCount = 0;
+        while (connectResult.Status() != ConnectResultStatus::Ok && retryCount < 3)
+        {
+            connectResult = catalogRef.Connect();
+            ++retryCount;
+        }
+        if (connectResult.Status() != ConnectResultStatus::Ok)
+        {
+            return;
+        }
+        auto catalog = connectResult.PackageCatalog();
+
+        // Perform the query (search by command)
+        auto packageMatchFilter = winrt::create_instance<PackageMatchFilter>(CLSID_PackageMatchFilter, CLSCTX_ALL);
+        auto findPackagesOptions = winrt::create_instance<FindPackagesOptions>(CLSID_FindPackagesOptions, CLSCTX_ALL);
+
+        // Helper lambda to apply a filter to the query
+        auto applyPackageMatchFilter = [&packageMatchFilter, &findPackagesOptions](PackageMatchField field, PackageFieldMatchOption matchOption, hstring query) {
+            // Configure filter
+            packageMatchFilter.Field(field);
+            packageMatchFilter.Option(matchOption);
+            packageMatchFilter.Value(query);
+
+            // Apply filter
+            findPackagesOptions.ResultLimit(maxSuggestions + 1u);
+            findPackagesOptions.Filters().Clear();
+            findPackagesOptions.Filters().Append(packageMatchFilter);
+        };
+
+        // Helper lambda to retrieve the best matching package(s) from the query's result
+        auto tryGetBestMatchingPackage = [&tooManySuggestions](IVectorView<MatchResult> matches) {
+            std::vector<CatalogPackage> results;
+            results.reserve(std::min(matches.Size(), maxSuggestions));
+            if (matches.Size() == 1)
+            {
+                // One match --> return the package
+                results.emplace_back(matches.GetAt(0).CatalogPackage());
+            }
+            else if (matches.Size() > 1)
+            {
+                // Multiple matches --> display top 5 matches (prioritize best matches first)
+                std::queue<CatalogPackage> bestExactMatches, secondaryMatches, tertiaryMatches;
+                for (auto match : matches)
+                {
+                    switch (match.MatchCriteria().Option())
+                    {
+                    case PackageFieldMatchOption::EqualsCaseInsensitive:
+                    case PackageFieldMatchOption::Equals:
+                        bestExactMatches.push(match.CatalogPackage());
+                        break;
+                    case PackageFieldMatchOption::StartsWithCaseInsensitive:
+                        secondaryMatches.push(match.CatalogPackage());
+                        break;
+                    case PackageFieldMatchOption::ContainsCaseInsensitive:
+                        tertiaryMatches.push(match.CatalogPackage());
+                        break;
+                    }
+                }
+
+                // Now return the top maxSuggestions
+                while (results.size() < maxSuggestions)
+                {
+                    if (bestExactMatches.size() > 0)
+                    {
+                        results.emplace_back(bestExactMatches.front());
+                        bestExactMatches.pop();
+                    }
+                    else if (secondaryMatches.size() > 0)
+                    {
+                        results.emplace_back(secondaryMatches.front());
+                        secondaryMatches.pop();
+                    }
+                    else if (tertiaryMatches.size() > 0)
+                    {
+                        results.emplace_back(tertiaryMatches.front());
+                        tertiaryMatches.pop();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            tooManySuggestions = matches.Size() > maxSuggestions;
+            return results;
+        };
+
+        // Search by command
+        auto missingCmd = args.MissingCommand();
+        std::wstring searchOption = L"command";
+        applyPackageMatchFilter(PackageMatchField::Command, PackageFieldMatchOption::StartsWithCaseInsensitive, missingCmd);
+        auto findPackagesResult = catalog.FindPackages(findPackagesOptions);
+        auto matches = findPackagesResult.Matches();
+        auto pkgList = tryGetBestMatchingPackage(matches);
+        if (pkgList.empty())
+        {
+            // No matches found --> search by name
+            applyPackageMatchFilter(PackageMatchField::Name, PackageFieldMatchOption::ContainsCaseInsensitive, missingCmd);
+
+            findPackagesResult = catalog.FindPackages(findPackagesOptions);
+            matches = findPackagesResult.Matches();
+            pkgList = tryGetBestMatchingPackage(matches);
+            searchOption = L"name";
+
+            if (pkgList.empty())
+            {
+                // No matches found --> search by moniker
+                applyPackageMatchFilter(PackageMatchField::Moniker, PackageFieldMatchOption::ContainsCaseInsensitive, missingCmd);
+
+                // Perform the query (search by name)
+                findPackagesResult = catalog.FindPackages(findPackagesOptions);
+                matches = findPackagesResult.Matches();
+                pkgList = tryGetBestMatchingPackage(matches);
+                searchOption = L"moniker";
+            }
+        }
+
+        // Display packages in UI
         if (!pkgList.empty())
         {
             std::vector<std::wstring> suggestions;
             suggestions.reserve(pkgList.size());
             for (auto pkg : pkgList)
             {
-                suggestions.emplace_back(fmt::format(L"winget install --{} {}", searchOption, pkg));
+                suggestions.emplace_back(fmt::format(L"winget install --id {}", pkg.Id()));
             }
 
             std::wstring footer = tooManySuggestions ?
-                                      fmt::format(L"winget search --{} {}", searchOption, searchQuery) :
+                                      fmt::format(L"winget search --{} {}", searchOption, missingCmd) :
                                       L"";
 
             ShowCommandNotFoundInfoBar(suggestions, footer);
