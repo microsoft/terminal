@@ -107,6 +107,8 @@ bool WindowThread::KeepWarm()
         {
             return false;
         }
+        // We're using a single window message (WM_REFRIGERATE) to indicate both 
+        // state transitions. In this case, the window is actually being microwaved. 
         if (msg.message == AppHost::WM_REFRIGERATE)
         {
             _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
@@ -182,6 +184,11 @@ int WindowThread::_messagePump()
 
     while (GetMessageW(&message, nullptr, 0, 0))
     {
+        // We're using a single window message (WM_REFRIGERATE) to indicate both
+        // state transitions. In this case, the window is actually being
+        // refrigerated. This will break us out of our main message loop, and if
+        // we're on windows 10, we'll eventually start the loop in
+        // WindowThread::KeepWarm to await being microwaved
         if (message.message == AppHost::WM_REFRIGERATE)
         {
             break;
