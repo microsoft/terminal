@@ -5,14 +5,10 @@
 #include "WindowEmperor.h"
 
 #include "../inc/WindowingBehavior.h"
-
 #include "../../types/inc/utils.hpp"
-
 #include "../WinRTUtils/inc/WtExeUtils.h"
-
 #include "resource.h"
 #include "NotificationIcon.h"
-#include <til/env.h>
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -82,7 +78,7 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
     }
 }
 
-bool WindowEmperor::HandleCommandlineArgs()
+bool WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
@@ -98,20 +94,8 @@ bool WindowEmperor::HandleCommandlineArgs()
         }
     }
 
-    // Get the requested initial state of the window from our startup info. For
-    // something like `start /min`, this will set the wShowWindow member to
-    // SW_SHOWMINIMIZED. We'll need to make sure is bubbled all the way through,
-    // so we can open a new window with the same state.
-    STARTUPINFOW si;
-    GetStartupInfoW(&si);
-    const uint32_t showWindow = WI_IsFlagSet(si.dwFlags, STARTF_USESHOWWINDOW) ? si.wShowWindow : SW_SHOW;
-
-    const auto currentEnv{ til::env::from_current_environment() };
-
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow, winrt::hstring{ currentEnv.to_string() } };
-
+    const Remoting::CommandlineArgs eventArgs{ args, cwd, gsl::narrow_cast<uint32_t>(nCmdShow), GetEnvironmentStringsW() };
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
-
     const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
 
     const bool makeWindow = result.ShouldCreateWindow();
