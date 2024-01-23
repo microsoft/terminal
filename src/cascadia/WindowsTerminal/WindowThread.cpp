@@ -107,8 +107,8 @@ bool WindowThread::KeepWarm()
         {
             return false;
         }
-        // We're using a single window message (WM_REFRIGERATE) to indicate both 
-        // state transitions. In this case, the window is actually being microwaved. 
+        // We're using a single window message (WM_REFRIGERATE) to indicate both
+        // state transitions. In this case, the window is actually being woken up.
         if (msg.message == AppHost::WM_REFRIGERATE)
         {
             _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
@@ -140,9 +140,7 @@ void WindowThread::Refrigerate()
 
 // Method Description:
 // - "Reheat" this thread for reuse. We'll build a new AppHost, and pass in the
-//   existing window to it. We'll then trigger the _microwaveBuzzer, so KeepWarm
-//   (which is on the UI thread) will get unblocked, and we can initialize this
-//   window.
+//   existing window to it. We'll then wake up the thread stuck in KeepWarm().
 void WindowThread::Microwave(WindowRequestedArgs args, Peasant peasant)
 {
     const auto hwnd = _warmWindow->GetInteropHandle();
@@ -185,10 +183,9 @@ int WindowThread::_messagePump()
     while (GetMessageW(&message, nullptr, 0, 0))
     {
         // We're using a single window message (WM_REFRIGERATE) to indicate both
-        // state transitions. In this case, the window is actually being
-        // refrigerated. This will break us out of our main message loop, and if
-        // we're on windows 10, we'll eventually start the loop in
-        // WindowThread::KeepWarm to await being microwaved
+        // state transitions. In this case, the window is actually being refrigerated.
+        // This will break us out of our main message loop we'll eventually start
+        // the loop in WindowThread::KeepWarm to await a call to Microwave().
         if (message.message == AppHost::WM_REFRIGERATE)
         {
             break;
