@@ -166,7 +166,8 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
 
                 if (_windowLogic.ShouldExitEarly())
                 {
-                    ExitThread(result);
+                    TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(result));
+                    __assume(false);
                 }
             }
         }
