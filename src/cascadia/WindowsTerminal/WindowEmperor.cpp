@@ -584,15 +584,6 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
 // we'll undoubtedly crash.
 winrt::fire_and_forget WindowEmperor::_close()
 {
-    {
-        auto fridge{ _oldThreads.lock() };
-        for (auto& window : *fridge)
-        {
-            window->ThrowAway();
-        }
-        fridge->clear();
-    }
-
     // Important! Switch back to the main thread for the emperor. That way, the
     // quit will go to the emperor's message pump.
     co_await wil::resume_foreground(_dispatcher);
