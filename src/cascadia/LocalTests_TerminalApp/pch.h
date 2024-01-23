@@ -68,6 +68,8 @@ Author(s):
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
 
+#include <SafeDispatcherTimer.h>
+
 // Common includes for most tests:
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
