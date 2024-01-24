@@ -1473,22 +1473,52 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id)
 {
+    constexpr auto GoodCondition = L"0";
+    constexpr auto PrinterNotConnected = L"?13";
+    constexpr auto UserDefinedKeysNotSupported = L"?23";
+    constexpr auto UnknownPcKeyboard = L"?27;0;0;5";
+    constexpr auto LocatorNotConnected = L"?53";
+    constexpr auto UnknownLocatorDevice = L"?57;0";
+    constexpr auto TerminalReady = L"?70";
+    constexpr auto MultipleSessionsNotSupported = L"?83";
+
     switch (statusType)
     {
-    case DispatchTypes::StatusType::OS_OperatingStatus:
-        _OperatingStatus();
+    case DispatchTypes::StatusType::OperatingStatus:
+        _DeviceStatusReport(GoodCondition);
         return true;
-    case DispatchTypes::StatusType::CPR_CursorPositionReport:
+    case DispatchTypes::StatusType::CursorPositionReport:
         _CursorPositionReport(false);
         return true;
-    case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
+    case DispatchTypes::StatusType::ExtendedCursorPositionReport:
         _CursorPositionReport(true);
         return true;
-    case DispatchTypes::StatusType::MSR_MacroSpaceReport:
+    case DispatchTypes::StatusType::PrinterStatus:
+        _DeviceStatusReport(PrinterNotConnected);
+        return true;
+    case DispatchTypes::StatusType::UserDefinedKeys:
+        _DeviceStatusReport(UserDefinedKeysNotSupported);
+        return true;
+    case DispatchTypes::StatusType::KeyboardStatus:
+        _DeviceStatusReport(UnknownPcKeyboard);
+        return true;
+    case DispatchTypes::StatusType::LocatorStatus:
+        _DeviceStatusReport(LocatorNotConnected);
+        return true;
+    case DispatchTypes::StatusType::LocatorIdentity:
+        _DeviceStatusReport(UnknownLocatorDevice);
+        return true;
+    case DispatchTypes::StatusType::MacroSpaceReport:
         _MacroSpaceReport();
         return true;
-    case DispatchTypes::StatusType::MEM_MemoryChecksum:
+    case DispatchTypes::StatusType::MemoryChecksum:
         _MacroChecksumReport(id);
+        return true;
+    case DispatchTypes::StatusType::DataIntegrity:
+        _DeviceStatusReport(TerminalReady);
+        return true;
+    case DispatchTypes::StatusType::MultipleSessionStatus:
+        _DeviceStatusReport(MultipleSessionsNotSupported);
         return true;
     default:
         return false;
@@ -1609,15 +1639,14 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 }
 
 // Routine Description:
-// - DSR-OS - Reports the operating status back to the input channel
+// - DSR - Transmits a device status report with a given parameter string.
 // Arguments:
-// - <none>
+// - parameters - One or more parameter values representing the status
 // Return Value:
 // - <none>
-void AdaptDispatch::_OperatingStatus() const
+void AdaptDispatch::_DeviceStatusReport(const wchar_t* parameters) const
 {
-    // We always report a good operating condition.
-    _api.ReturnResponse(L"\x1b[0n");
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{}n"), parameters));
 }
 
 // Routine Description:
