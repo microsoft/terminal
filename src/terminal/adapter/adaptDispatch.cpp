@@ -2822,16 +2822,23 @@ void AdaptDispatch::_ClearAllTabStops() noexcept
 }
 
 // Routine Description:
-// - Clears all tab stops and sets the _initDefaultTabStops flag to indicate
+// - DECST8C - If the parameter is SetEvery8Columns or is omitted, then this
+//    clears all tab stops and sets the _initDefaultTabStops flag to indicate
 //    that the default positions should be reinitialized when needed.
 // Arguments:
-// - <none>
+// - setType - only SetEvery8Columns is supported
 // Return value:
-// - <none>
-void AdaptDispatch::_ResetTabStops() noexcept
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::TabSet(const VTParameter setType) noexcept
 {
-    _tabStopColumns.clear();
-    _initDefaultTabStops = true;
+    constexpr auto SetEvery8Columns = DispatchTypes::TabSetType::SetEvery8Columns;
+    if (setType.value_or(SetEvery8Columns) == SetEvery8Columns)
+    {
+        _tabStopColumns.clear();
+        _initDefaultTabStops = true;
+        return true;
+    }
+    return false;
 }
 
 // Routine Description:
@@ -3105,7 +3112,7 @@ bool AdaptDispatch::HardReset()
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
 
     // Delete all current tab stops and reapply
-    _ResetTabStops();
+    TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
 
     // Clear the soft font in the renderer and delete the font buffer.
     _renderer.UpdateSoftFont({}, {}, false);

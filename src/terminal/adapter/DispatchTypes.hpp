@@ -565,6 +565,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ClearAllColumns = 3
     };
 
+    enum TabSetType : VTInt
+    {
+        SetEvery8Columns = 5
+    };
+
     enum WindowManipulationType : VTInt
     {
         Invalid = 0,
