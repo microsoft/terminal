@@ -31,7 +31,8 @@
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
-        <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <StackPanel Grid.Row="1"
+                    Style="{StaticResource SettingsStackStyle}">
 
             <!--  Name  -->
             <!--
