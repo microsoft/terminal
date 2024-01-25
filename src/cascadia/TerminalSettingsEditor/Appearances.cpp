@@ -81,10 +81,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
 
                 uint32_t length;
-                if (SUCCEEDED(names->GetStringLength(0, &length)))
+                if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
                 {
                     wchar_t* name = new (std::nothrow) wchar_t[length + 1];
-                    if (SUCCEEDED(names->GetString(0, name, length + 1)))
+                    if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
                     {
                         fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
                         continue;
