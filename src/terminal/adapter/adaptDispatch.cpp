@@ -76,10 +76,10 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 {
     const auto page = _pages.ActivePage();
     auto& textBuffer = page.Buffer();
-    auto& cursor = textBuffer.GetCursor();
+    auto& cursor = page.Cursor();
     auto cursorPosition = cursor.GetPosition();
     const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
-    const auto& attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = page.Attributes();
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(textBuffer.GetSize().Width());
@@ -339,8 +339,8 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // First retrieve some information about the buffer
     const auto page = _pages.ActivePage();
     const auto viewport = page.Viewport();
-    auto& textBuffer = page.Buffer();
-    auto& cursor = textBuffer.GetCursor();
+    const auto& textBuffer = page.Buffer();
+    auto& cursor = page.Cursor();
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto cursorPosition = cursor.GetPosition();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
@@ -505,11 +505,10 @@ bool AdaptDispatch::CursorSaveState()
     const auto page = _pages.ActivePage();
     const auto viewport = page.Viewport();
     const auto& textBuffer = page.Buffer();
-    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
-    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    auto cursorPosition = page.Cursor().GetPosition();
     cursorPosition.y -= viewport.top;
 
     // Although if origin mode is set, the cursor is relative to the margin origin.
@@ -524,9 +523,9 @@ bool AdaptDispatch::CursorSaveState()
     savedCursorState.Column = cursorPosition.x + 1;
     savedCursorState.Row = cursorPosition.y + 1;
     savedCursorState.Page = page.Number();
-    savedCursorState.IsDelayedEOLWrap = textBuffer.GetCursor().IsDelayedEOLWrap();
+    savedCursorState.IsDelayedEOLWrap = page.Cursor().IsDelayedEOLWrap();
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
-    savedCursorState.Attributes = attributes;
+    savedCursorState.Attributes = page.Attributes();
     savedCursorState.TermOutput = _termOutput;
 
     return true;
@@ -554,13 +553,14 @@ bool AdaptDispatch::CursorRestoreState()
     CursorPosition(savedCursorState.Row, savedCursorState.Column);
 
     // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
+    const auto page = _pages.ActivePage();
     if (savedCursorState.IsDelayedEOLWrap)
     {
-        _pages.ActivePage().Buffer().GetCursor().DelayEOLWrap();
+        page.Cursor().DelayEOLWrap();
     }
 
     // Restore text attributes.
-    _api.SetTextAttributes(savedCursorState.Attributes);
+    page.SetAttributes(savedCursorState.Attributes, &_api);
 
     // Restore designated character sets.
     _termOutput.RestoreFrom(savedCursorState.TermOutput);
@@ -584,7 +584,7 @@ TextAttribute AdaptDispatch::_GetEraseAttributes(const Page& page) const noexcep
     }
     else
     {
-        auto eraseAttributes = page.Buffer().GetCurrentAttributes();
+        auto eraseAttributes = page.Attributes();
         eraseAttributes.SetStandardErase();
         return eraseAttributes;
     }
@@ -702,9 +702,9 @@ void AdaptDispatch::_ScrollRectHorizontally(const Page& page, const til::rect& s
 void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto col = textBuffer.GetCursor().GetPosition().x;
+    const auto& textBuffer = page.Buffer();
+    const auto row = page.Cursor().GetPosition().y;
+    const auto col = page.Cursor().GetPosition().x;
     const auto lineWidth = textBuffer.GetLineWidth(row);
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = (row >= topMargin && row <= bottomMargin) ?
@@ -714,7 +714,7 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
     {
         _ScrollRectHorizontally(page, { col, row, rightMargin + 1, row + 1 }, delta);
         // The ICH and DCH controls are expected to reset the delayed wrap flag.
-        textBuffer.GetCursor().ResetDelayEOLWrap();
+        page.Cursor().ResetDelayEOLWrap();
     }
 }
 
@@ -771,13 +771,13 @@ void AdaptDispatch::_FillRect(const Page& page, const til::rect& fillRect, const
 bool AdaptDispatch::EraseCharacters(const VTInt numChars)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto startCol = textBuffer.GetCursor().GetPosition().x;
+    const auto& textBuffer = page.Buffer();
+    const auto row = page.Cursor().GetPosition().y;
+    const auto startCol = page.Cursor().GetPosition().x;
     const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
     // The ECH control is expected to reset the delayed wrap flag.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    page.Cursor().ResetDelayEOLWrap();
 
     const auto eraseAttributes = _GetEraseAttributes(page);
     _FillRect(page, { startCol, row, endCol, row + 1 }, whitespace, eraseAttributes);
@@ -817,13 +817,13 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     const auto viewport = page.Viewport();
     auto& textBuffer = page.Buffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
-    const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto col = textBuffer.GetCursor().GetPosition().x;
+    const auto row = page.Cursor().GetPosition().y;
+    const auto col = page.Cursor().GetPosition().x;
 
     // The ED control is expected to reset the delayed wrap flag.
     // The special case variants above ("erase all" and "erase scrollback")
     // take care of that themselves when they set the cursor position.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    page.Cursor().ResetDelayEOLWrap();
 
     const auto eraseAttributes = _GetEraseAttributes(page);
 
@@ -858,12 +858,12 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto col = textBuffer.GetCursor().GetPosition().x;
+    const auto& textBuffer = page.Buffer();
+    const auto row = page.Cursor().GetPosition().y;
+    const auto col = page.Cursor().GetPosition().x;
 
     // The EL control is expected to reset the delayed wrap flag.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    page.Cursor().ResetDelayEOLWrap();
 
     const auto eraseAttributes = _GetEraseAttributes(page);
     switch (eraseType)
@@ -924,13 +924,13 @@ bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
 {
     const auto page = _pages.ActivePage();
     const auto viewport = page.Viewport();
-    auto& textBuffer = page.Buffer();
+    const auto& textBuffer = page.Buffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
-    const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto col = textBuffer.GetCursor().GetPosition().x;
+    const auto row = page.Cursor().GetPosition().y;
+    const auto col = page.Cursor().GetPosition().x;
 
     // The DECSED control is expected to reset the delayed wrap flag.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    page.Cursor().ResetDelayEOLWrap();
 
     switch (eraseType)
     {
@@ -962,12 +962,12 @@ bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
 bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseType)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto col = textBuffer.GetCursor().GetPosition().x;
+    const auto& textBuffer = page.Buffer();
+    const auto row = page.Cursor().GetPosition().y;
+    const auto col = page.Cursor().GetPosition().x;
 
     // The DECSEL control is expected to reset the delayed wrap flag.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    page.Cursor().ResetDelayEOLWrap();
 
     switch (eraseType)
     {
@@ -1285,7 +1285,6 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
 bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     const auto page = _pages.ActivePage();
-    const auto& textBuffer = page.Buffer();
     const auto fillRect = _CalculateRectArea(page, top, left, bottom, right);
 
     // The standard only allows for characters in the range of the GL and GR
@@ -1298,7 +1297,7 @@ bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     if (glChar || grChar || unicodeChar)
     {
         const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
-        const auto& fillAttributes = textBuffer.GetCurrentAttributes();
+        const auto& fillAttributes = page.Attributes();
         _FillRect(page, fillRect, { &fillChar, 1 }, fillAttributes);
     }
 
@@ -1466,7 +1465,7 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
         // terminals, but the STD 070 reference (on page D-13) makes it clear that
         // the delayed wrap (aka the Last Column Flag) was expected to be reset when
         // line rendition controls were executed.
-        textBuffer.GetCursor().ResetDelayEOLWrap();
+        page.Cursor().ResetDelayEOLWrap();
     }
     return true;
 }
@@ -1671,7 +1670,7 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     const auto& textBuffer = page.Buffer();
 
     // First pull the cursor position relative to the entire buffer out of the console.
-    til::point cursorPosition{ textBuffer.GetCursor().GetPosition() };
+    til::point cursorPosition{ page.Cursor().GetPosition() };
 
     // Now adjust it for its position in respect to the current viewport top.
     cursorPosition.y -= viewport.top;
@@ -1971,17 +1970,17 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         // Resetting DECAWM should also reset the delayed wrap flag.
         if (!enable)
         {
-            _pages.ActivePage().Buffer().GetCursor().ResetDelayEOLWrap();
+            _pages.ActivePage().Cursor().ResetDelayEOLWrap();
         }
         return true;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        _pages.ActivePage().Buffer().GetCursor().SetBlinkingAllowed(enable);
+        _pages.ActivePage().Cursor().SetBlinkingAllowed(enable);
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        _pages.ActivePage().Buffer().GetCursor().SetIsVisible(enable);
+        _pages.ActivePage().Cursor().SetIsVisible(enable);
         return true;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         _modes.set(Mode::AllowDECCOLM, enable);
@@ -2130,10 +2129,10 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        enabled = _pages.ActivePage().Buffer().GetCursor().IsBlinkingAllowed();
+        enabled = _pages.ActivePage().Cursor().IsBlinkingAllowed();
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        enabled = _pages.ActivePage().Buffer().GetCursor().IsVisible();
+        enabled = _pages.ActivePage().Cursor().IsVisible();
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         // DECCOLM is not supported in conpty mode
@@ -2223,10 +2222,10 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
+    const auto& textBuffer = page.Buffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
 
-    auto& cursor = textBuffer.GetCursor();
+    auto& cursor = page.Cursor();
     const auto col = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
 
@@ -2284,10 +2283,10 @@ bool AdaptDispatch::DeleteLine(const VTInt distance)
 void AdaptDispatch::_InsertDeleteColumnHelper(const VTInt delta)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
+    const auto& textBuffer = page.Buffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
 
-    const auto& cursor = textBuffer.GetCursor();
+    const auto& cursor = page.Cursor();
     const auto col = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
 
@@ -2554,7 +2553,7 @@ void AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
 
-    auto& cursor = textBuffer.GetCursor();
+    auto& cursor = page.Cursor();
     const auto currentPosition = cursor.GetPosition();
     auto newPosition = currentPosition;
 
@@ -2673,8 +2672,8 @@ bool AdaptDispatch::ReverseLineFeed()
 {
     const auto page = _pages.ActivePage();
     const auto viewport = page.Viewport();
-    auto& textBuffer = page.Buffer();
-    auto& cursor = textBuffer.GetCursor();
+    const auto& textBuffer = page.Buffer();
+    auto& cursor = page.Cursor();
     const auto cursorPosition = cursor.GetPosition();
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
@@ -2705,8 +2704,8 @@ bool AdaptDispatch::ReverseLineFeed()
 bool AdaptDispatch::BackIndex()
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    auto& cursor = textBuffer.GetCursor();
+    const auto& textBuffer = page.Buffer();
+    auto& cursor = page.Cursor();
     const auto cursorPosition = cursor.GetPosition();
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
@@ -2736,8 +2735,8 @@ bool AdaptDispatch::BackIndex()
 bool AdaptDispatch::ForwardIndex()
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    auto& cursor = textBuffer.GetCursor();
+    const auto& textBuffer = page.Buffer();
+    auto& cursor = page.Cursor();
     const auto cursorPosition = cursor.GetPosition();
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
@@ -2780,7 +2779,7 @@ bool AdaptDispatch::HorizontalTabSet()
     const auto page = _pages.ActivePage();
     const auto& textBuffer = page.Buffer();
     const auto width = textBuffer.GetSize().Dimensions().width;
-    const auto column = textBuffer.GetCursor().GetPosition().x;
+    const auto column = page.Cursor().GetPosition().x;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = true;
@@ -2800,8 +2799,8 @@ bool AdaptDispatch::HorizontalTabSet()
 bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    auto& cursor = textBuffer.GetCursor();
+    const auto& textBuffer = page.Buffer();
+    auto& cursor = page.Cursor();
     auto column = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
     const auto width = textBuffer.GetLineWidth(row);
@@ -2849,8 +2848,8 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
-    auto& cursor = textBuffer.GetCursor();
+    const auto& textBuffer = page.Buffer();
+    auto& cursor = page.Cursor();
     auto column = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
     const auto width = textBuffer.GetLineWidth(row);
@@ -2910,7 +2909,7 @@ void AdaptDispatch::_ClearSingleTabStop()
     const auto page = _pages.ActivePage();
     const auto& textBuffer = page.Buffer();
     const auto width = textBuffer.GetSize().Dimensions().width;
-    const auto column = textBuffer.GetCursor().GetPosition().x;
+    const auto column = page.Cursor().GetPosition().x;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = false;
@@ -3149,7 +3148,7 @@ bool AdaptDispatch::AnnounceCodeStructure(const VTInt ansiLevel)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
-    _pages.ActivePage().Buffer().GetCursor().SetIsVisible(true); // Cursor enabled.
+    _pages.ActivePage().Cursor().SetIsVisible(true); // Cursor enabled.
 
     // Replace mode; Absolute cursor addressing; Disallow left/right margins.
     _modes.reset(Mode::InsertReplace, Mode::Origin, Mode::AllowDECSLRM);
@@ -3257,7 +3256,7 @@ bool AdaptDispatch::HardReset()
     _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
-    _pages.ActivePage().Buffer().GetCursor().SetBlinkingAllowed(true);
+    _pages.ActivePage().Cursor().SetBlinkingAllowed(true);
 
     // Delete all current tab stops and reapply
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
@@ -3313,9 +3312,9 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     // Reset the line rendition for all of these rows.
     textBuffer.ResetLineRenditionRange(viewport.top, viewport.bottom);
     // Reset the meta/extended attributes (but leave the colors unchanged).
-    auto attr = textBuffer.GetCurrentAttributes();
+    auto attr = page.Attributes();
     attr.SetStandardErase();
-    _api.SetTextAttributes(attr);
+    page.SetAttributes(attr);
     // Reset the origin mode to absolute, and disallow left/right margins.
     _modes.reset(Mode::Origin, Mode::AllowDECSLRM);
     // Clear the scrolling margins.
@@ -3347,7 +3346,7 @@ bool AdaptDispatch::_EraseScrollback()
     const auto height = viewport.bottom - viewport.top;
     auto& textBuffer = page.Buffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
-    auto& cursor = textBuffer.GetCursor();
+    auto& cursor = page.Cursor();
     const auto row = cursor.GetPosition().y;
 
     textBuffer.ClearScrollback(top, height);
@@ -3388,7 +3387,7 @@ bool AdaptDispatch::_EraseAll()
     // Stash away the current position of the cursor within the viewport.
     // We'll need to restore the cursor to that same relative position, after
     //      we move the viewport.
-    auto& cursor = textBuffer.GetCursor();
+    auto& cursor = page.Cursor();
     const auto row = cursor.GetPosition().y - viewport.top;
 
     // Calculate new viewport position. Typically we want to move one line below
@@ -3491,7 +3490,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         return false;
     }
 
-    auto& cursor = _pages.ActivePage().Buffer().GetCursor();
+    auto& cursor = _pages.ActivePage().Cursor();
     cursor.SetType(actualType);
     cursor.SetBlinkingAllowed(fEnableBlinking);
 
@@ -3677,12 +3676,12 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 // - true
 bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
-    auto& textBuffer = _pages.ActivePage().Buffer();
-    auto attr = textBuffer.GetCurrentAttributes();
-    const auto id = textBuffer.GetHyperlinkId(uri, params);
+    const auto page = _pages.ActivePage();
+    auto attr = page.Attributes();
+    const auto id = page.Buffer().GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
-    textBuffer.SetCurrentAttributes(attr);
-    textBuffer.AddHyperlinkToMap(uri, id);
+    page.SetAttributes(attr);
+    page.Buffer().AddHyperlinkToMap(uri, id);
     return true;
 }
 
@@ -3692,10 +3691,10 @@ bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
 // - true
 bool AdaptDispatch::EndHyperlink()
 {
-    auto& textBuffer = _pages.ActivePage().Buffer();
-    auto attr = textBuffer.GetCurrentAttributes();
+    const auto page = _pages.ActivePage();
+    auto attr = page.Attributes();
     attr.SetHyperlinkId(0);
-    textBuffer.SetCurrentAttributes(attr);
+    page.SetAttributes(attr);
     return true;
 }
 
@@ -4408,7 +4407,7 @@ void AdaptDispatch::_ReportSGRSetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r0"sv);
 
-    const auto& attr = _pages.ActivePage().Buffer().GetCurrentAttributes();
+    const auto& attr = _pages.ActivePage().Attributes();
     const auto ulStyle = attr.GetUnderlineStyle();
     // For each boolean attribute that is set, we add the appropriate
     // parameter value to the response string.
@@ -4525,7 +4524,7 @@ void AdaptDispatch::_ReportDECSCASetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    const auto& attr = _pages.ActivePage().Buffer().GetCurrentAttributes();
+    const auto& attr = _pages.ActivePage().Attributes();
     response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
 
     // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
@@ -4646,8 +4645,8 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto page = _pages.ActivePage();
     const auto viewport = page.Viewport();
     const auto& textBuffer = page.Buffer();
-    const auto& cursor = textBuffer.GetCursor();
-    const auto& attributes = textBuffer.GetCurrentAttributes();
+    const auto& cursor = page.Cursor();
+    const auto& attributes = page.Attributes();
 
     // First pull the cursor position relative to the entire buffer out of the console.
     til::point cursorPosition{ cursor.GetPosition() };
@@ -4795,22 +4794,20 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
                 if (state.field == Field::SGR)
                 {
                     const auto page = _pages.ActivePage();
-                    auto& textBuffer = page.Buffer();
-                    auto attr = textBuffer.GetCurrentAttributes();
+                    auto attr = page.Attributes();
                     attr.SetIntense(state.value & 1);
                     attr.SetUnderlineStyle(state.value & 2 ? UnderlineStyle::SinglyUnderlined : UnderlineStyle::NoUnderline);
                     attr.SetBlinking(state.value & 4);
                     attr.SetReverseVideo(state.value & 8);
                     attr.SetInvisible(state.value & 16);
-                    textBuffer.SetCurrentAttributes(attr);
+                    page.SetAttributes(attr);
                 }
                 else if (state.field == Field::Attr)
                 {
                     const auto page = _pages.ActivePage();
-                    auto& textBuffer = page.Buffer();
-                    auto attr = textBuffer.GetCurrentAttributes();
+                    auto attr = page.Attributes();
                     attr.SetProtected(state.value & 1);
-                    textBuffer.SetCurrentAttributes(attr);
+                    page.SetAttributes(attr);
                 }
                 else if (state.field == Field::Sizes)
                 {
@@ -4837,8 +4834,7 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
                     if (delayedEOLWrap)
                     {
                         const auto page = _pages.ActivePage();
-                        auto& textBuffer = page.Buffer();
-                        textBuffer.GetCursor().DelayEOLWrap();
+                        page.Cursor().DelayEOLWrap();
                     }
                 }
             }

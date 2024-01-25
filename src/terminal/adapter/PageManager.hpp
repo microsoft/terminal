@@ -23,6 +23,9 @@ namespace Microsoft::Console::VirtualTerminal
         TextBuffer& Buffer() const noexcept;
         til::rect Viewport() const noexcept;
         til::CoordType Number() const noexcept;
+        Cursor& Cursor() const noexcept;
+        const TextAttribute& Attributes() const noexcept;
+        void SetAttributes(const TextAttribute& attr, ITerminalApi* api = nullptr) const;
 
     private:
         TextBuffer& _buffer;

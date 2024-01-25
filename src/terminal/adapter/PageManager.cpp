@@ -30,6 +30,28 @@ til::CoordType Page::Number() const noexcept
     return _number;
 }
 
+Cursor& Page::Cursor() const noexcept
+{
+    return _buffer.GetCursor();
+}
+
+const TextAttribute& Page::Attributes() const noexcept
+{
+    return _buffer.GetCurrentAttributes();
+}
+
+void Page::SetAttributes(const TextAttribute& attr, ITerminalApi* api) const
+{
+    _buffer.SetCurrentAttributes(attr);
+    // If the api parameter was specified, we need to pass the new attributes
+    // through to the api. This occurs when there's a potential for the colors
+    // to be changed, which may require some legacy remapping in conhost.
+    if (api)
+    {
+        api->SetTextAttributes(attr);
+    }
+}
+
 PageManager::PageManager(ITerminalApi& api, Renderer& renderer) noexcept :
     _api{ api },
     _renderer{ renderer }
