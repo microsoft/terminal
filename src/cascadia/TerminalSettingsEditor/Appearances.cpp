@@ -465,6 +465,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _FontAxesNames.Append(tagAndName.Value());
         }
+
+        // when the font face changes, we have to tell the view model to update the font axes vector
+        // since the new font may not have the same possible axes as the previous one
         Appearance().InitializeFontAxesVector();
     }
 

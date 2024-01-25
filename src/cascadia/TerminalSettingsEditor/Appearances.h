@@ -88,8 +88,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AxisValue(float axisValue)
         {
-            // todo: this probably causes an issue if there are 2 pairs with the same key...
-            // we should probably ensure that keys can't be repeated
             _baseMap.Remove(_AxisKey);
             _AxisValue = axisValue;
             _baseMap.Insert(_AxisKey, _AxisValue);
@@ -97,8 +95,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AxisKey(winrt::hstring axisKey)
         {
-            // todo: this probably causes an issue if there are 2 pairs with the same key...
-            // we should probably ensure that keys can't be repeated
             _baseMap.Remove(_AxisKey);
             _AxisKey = axisKey;
             _baseMap.Insert(_AxisKey, _AxisValue);

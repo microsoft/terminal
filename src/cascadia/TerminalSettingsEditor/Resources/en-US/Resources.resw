@@ -914,14 +914,6 @@
     <value>Add or remove font axes for the given font.</value>
     <comment>A description for what the "font axes" setting does. Presented near "Profile_FontAxes".</comment>
   </data>
-  <data name="Profile_FontFeatures.Header" xml:space="preserve">
-    <value>Font features</value>
-    <comment>Header for a control to allow editing the font features.</comment>
-  </data>
-  <data name="Profile_FontFeatures.HelpText" xml:space="preserve">
-    <value>Add or remove font features for the given font.</value>
-    <comment>A description for what the "font features" setting does. Presented near "Profile_FontFeatures".</comment>
-  </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>General</value>
     <comment>Header for a sub-page of profile settings focused on more general scenarios.</comment>
