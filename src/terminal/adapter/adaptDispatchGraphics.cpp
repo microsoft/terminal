@@ -422,7 +422,7 @@ void AdaptDispatch::_ApplyGraphicsOptions(const VTParameters options,
 // - True.
 bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
-    auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    auto attr = _pages.ActivePage().Buffer().GetCurrentAttributes();
     _ApplyGraphicsOptions(options, attr);
     _api.SetTextAttributes(attr);
     return true;
@@ -438,7 +438,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 {
-    auto& textBuffer = _api.GetTextBuffer();
+    auto& textBuffer = _pages.ActivePage().Buffer();
     auto attr = textBuffer.GetCurrentAttributes();
     for (size_t i = 0; i < options.size(); i++)
     {
@@ -470,7 +470,7 @@ bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 // - True.
 bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 {
-    const auto& currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& currentAttributes = _pages.ActivePage().Buffer().GetCurrentAttributes();
     _sgrStack.Push(currentAttributes, options);
     return true;
 }
@@ -484,7 +484,7 @@ bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::PopGraphicsRendition()
 {
-    const auto& currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& currentAttributes = _pages.ActivePage().Buffer().GetCurrentAttributes();
     _api.SetTextAttributes(_sgrStack.Pop(currentAttributes));
     return true;
 }

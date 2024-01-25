@@ -18,6 +18,7 @@ Author(s):
 #include "ITerminalApi.hpp"
 #include "FontBuffer.hpp"
 #include "MacroBuffer.hpp"
+#include "PageManager.hpp"
 #include "terminalOutput.hpp"
 #include "../input/terminalInput.hpp"
 #include "../../types/inc/sgrStack.hpp"
@@ -194,6 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             VTInt Row = 1;
             VTInt Column = 1;
+            VTInt Page = 1;
             bool IsDelayedEOLWrap = false;
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
@@ -227,7 +229,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
         void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
         void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
-        til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
+        til::rect _CalculateRectArea(const Page& page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right);
         bool _EraseScrollback();
         bool _EraseAll();
         TextAttribute _GetEraseAttributes(const TextBuffer& textBuffer) const noexcept;
@@ -245,7 +247,7 @@ namespace Microsoft::Console::VirtualTerminal
                                              const VTInt rightMargin,
                                              const bool homeCursor = false);
 
-        void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
+        void _DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced);
 
         void _DeviceStatusReport(const wchar_t* parameters) const;
         void _CursorPositionReport(const bool extendedReport);
@@ -286,6 +288,7 @@ namespace Microsoft::Console::VirtualTerminal
         RenderSettings& _renderSettings;
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
+        PageManager _pages;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
