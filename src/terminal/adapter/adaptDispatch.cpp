@@ -1840,6 +1840,23 @@ bool AdaptDispatch::PagePositionBack(const VTInt pageCount)
 }
 
 // Routine Description:
+// - DECRQDE - Requests the area of page memory that is currently visible.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::RequestDisplayedExtent()
+{
+    const auto page = _pages.VisiblePage();
+    const auto width = page.Viewport().width();
+    const auto height = page.Viewport().height();
+    const auto left = page.Viewport().left + 1;
+    const auto top = 1;
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{};{};{};{};{}\"w"), height, width, left, top, page.Number()));
+    return true;
+}
+
+// Routine Description:
 // - DECCOLM not only sets the number of columns, but also clears the screen buffer,
 //    resets the page margins and origin mode, and places the cursor at 1,1
 // Arguments:

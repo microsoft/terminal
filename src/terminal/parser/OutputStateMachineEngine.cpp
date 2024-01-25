@@ -624,6 +624,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
         success = _dispatch->SetCharacterProtectionAttribute(parameters);
         break;
+    case CsiActionCodes::DECRQDE_RequestDisplayedExtent:
+        success = _dispatch->RequestDisplayedExtent();
+        break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
         success = _dispatch->PushGraphicsRendition(parameters);

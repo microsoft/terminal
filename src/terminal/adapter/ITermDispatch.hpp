@@ -54,6 +54,7 @@ public:
     virtual bool PagePositionAbsolute(const VTInt page) = 0; // PPA
     virtual bool PagePositionRelative(const VTInt pageCount) = 0; // PPR
     virtual bool PagePositionBack(const VTInt pageCount) = 0; // PPB
+    virtual bool RequestDisplayedExtent() = 0; // DECRQDE
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
     virtual bool InsertColumn(const VTInt distance) = 0; // DECIC

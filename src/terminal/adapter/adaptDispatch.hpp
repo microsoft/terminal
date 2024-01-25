@@ -87,6 +87,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool PagePositionAbsolute(const VTInt page) override; // PPA
         bool PagePositionRelative(const VTInt pageCount) override; // PPR
         bool PagePositionBack(const VTInt pageCount) override; // PPB
+        bool RequestDisplayedExtent() override; // DECRQDE
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
         bool InsertColumn(const VTInt distance) override; // DECIC
