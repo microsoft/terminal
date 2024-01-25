@@ -40,12 +40,6 @@ WindowEmperor::WindowEmperor() noexcept :
     _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
 }
 
-WindowEmperor::~WindowEmperor()
-{
-    _app.Close();
-    _app = nullptr;
-}
-
 void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 {
     if (auto commandline{ GetCommandLineW() })

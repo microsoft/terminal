@@ -24,7 +24,6 @@ class WindowEmperor : public std::enable_shared_from_this<WindowEmperor>
 {
 public:
     WindowEmperor() noexcept;
-    ~WindowEmperor();
     void WaitForWindows();
 
     void HandleCommandlineArgs();
