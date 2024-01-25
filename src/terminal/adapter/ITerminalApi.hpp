@@ -41,8 +41,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual StateMachine& GetStateMachine() = 0;
         virtual std::tuple<TextBuffer&, til::rect, bool> GetBufferAndViewport() = 0;
-        virtual TextBuffer& GetTextBuffer() = 0;
-        virtual til::rect GetViewport() const = 0;
         virtual void SetViewportPosition(const til::point position) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;

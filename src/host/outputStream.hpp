@@ -33,8 +33,6 @@ public:
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
     std::tuple<TextBuffer&, til::rect, bool> GetBufferAndViewport() override;
-    TextBuffer& GetTextBuffer() override;
-    til::rect GetViewport() const override;
     void SetViewportPosition(const til::point position) override;
 
     void SetTextAttributes(const TextAttribute& attrs) override;

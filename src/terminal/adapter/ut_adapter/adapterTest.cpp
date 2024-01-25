@@ -87,16 +87,6 @@ public:
         return { *_textBuffer.get(), viewport, true };
     }
 
-    TextBuffer& GetTextBuffer() override
-    {
-        return *_textBuffer.get();
-    }
-
-    til::rect GetViewport() const override
-    {
-        return { _viewport.left, _viewport.top, _viewport.right, _viewport.bottom };
-    }
-
     void SetViewportPosition(const til::point /*position*/) override
     {
         Log::Comment(L"SetViewportPosition MOCK called...");
@@ -3285,7 +3275,7 @@ public:
         setMacroText(63, L"Macro 63");
 
         const auto getBufferOutput = [&]() {
-            const auto& textBuffer = _testGetSet->GetTextBuffer();
+            const auto& textBuffer = std::get<TextBuffer&>(_testGetSet->GetBufferAndViewport());
             const auto cursorPos = textBuffer.GetCursor().GetPosition();
             return textBuffer.GetRowByOffset(cursorPos.y).GetText().substr(0, cursorPos.x);
         };
@@ -3336,7 +3326,8 @@ public:
     {
         _testGetSet->PrepData();
         _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
-        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", _testGetSet->GetViewport().height(), _testGetSet->GetTextBuffer().GetSize().Width());
+        const auto [textBuffer, viewport, _] = _testGetSet->GetBufferAndViewport();
+        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", viewport.height(), textBuffer.GetSize().Width());
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
     }
 

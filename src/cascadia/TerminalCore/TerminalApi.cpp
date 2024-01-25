@@ -38,16 +38,6 @@ std::tuple<TextBuffer&, til::rect, bool> Terminal::GetBufferAndViewport() noexce
     return { _activeBuffer(), til::rect{ _GetMutableViewport().ToInclusive() }, !_inAltBuffer() };
 }
 
-TextBuffer& Terminal::GetTextBuffer() noexcept
-{
-    return _activeBuffer();
-}
-
-til::rect Terminal::GetViewport() const noexcept
-{
-    return til::rect{ _GetMutableViewport().ToInclusive() };
-}
-
 void Terminal::SetViewportPosition(const til::point position) noexcept
 try
 {

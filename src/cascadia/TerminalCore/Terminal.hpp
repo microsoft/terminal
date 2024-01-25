@@ -132,8 +132,6 @@ public:
     void ReturnResponse(const std::wstring_view response) override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
     std::tuple<TextBuffer&, til::rect, bool> GetBufferAndViewport() noexcept override;
-    TextBuffer& GetTextBuffer() noexcept override;
-    til::rect GetViewport() const noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
