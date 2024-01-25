@@ -1809,7 +1809,7 @@ bool AdaptDispatch::PrecedingPage(const VTInt pageCount)
 // - True.
 bool AdaptDispatch::PagePositionAbsolute(const VTInt page)
 {
-    _pages.MoveTo(page);
+    _pages.MoveTo(page, _modes.test(Mode::PageCursorCoupling));
     return true;
 }
 
@@ -1822,7 +1822,7 @@ bool AdaptDispatch::PagePositionAbsolute(const VTInt page)
 // - True.
 bool AdaptDispatch::PagePositionRelative(const VTInt pageCount)
 {
-    _pages.MoveRelative(pageCount);
+    _pages.MoveRelative(pageCount, _modes.test(Mode::PageCursorCoupling));
     return true;
 }
 
@@ -1835,7 +1835,7 @@ bool AdaptDispatch::PagePositionRelative(const VTInt pageCount)
 // - True.
 bool AdaptDispatch::PagePositionBack(const VTInt pageCount)
 {
-    _pages.MoveRelative(-pageCount);
+    _pages.MoveRelative(-pageCount, _modes.test(Mode::PageCursorCoupling));
     return true;
 }
 
@@ -1972,6 +1972,13 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         _modes.set(Mode::AllowDECCOLM, enable);
+        return true;
+    case DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode:
+        _modes.set(Mode::PageCursorCoupling, enable);
+        if (enable)
+        {
+            _pages.MakeActivePageVisible();
+        }
         return true;
     case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, enable);
@@ -2121,6 +2128,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         {
             enabled = _modes.test(Mode::AllowDECCOLM);
         }
+        break;
+    case DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode:
+        enabled = _modes.test(Mode::PageCursorCoupling);
         break;
     case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Keypad);
@@ -3250,7 +3260,7 @@ bool AdaptDispatch::HardReset()
     _fontBuffer = nullptr;
 
     // Reset internal modes to their initial state
-    _modes = {};
+    _modes = { Mode::PageCursorCoupling };
 
     // Clear and release the macro buffer.
     if (_macroBuffer)

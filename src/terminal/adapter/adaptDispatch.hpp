@@ -184,7 +184,8 @@ namespace Microsoft::Console::VirtualTerminal
             AllowDECCOLM,
             AllowDECSLRM,
             EraseColor,
-            RectangularChangeExtent
+            RectangularChangeExtent,
+            PageCursorCoupling
         };
         enum class ScrollDirection
         {
@@ -303,7 +304,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         til::inclusive_rect _scrollMargins;
 
-        til::enumset<Mode> _modes;
+        til::enumset<Mode> _modes{ Mode::PageCursorCoupling };
 
         SgrStack _sgrStack;
 

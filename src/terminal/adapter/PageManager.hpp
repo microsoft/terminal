@@ -40,8 +40,9 @@ namespace Microsoft::Console::VirtualTerminal
         Page Get(const til::CoordType pageNumber) const;
         Page ActivePage() const;
         Page VisiblePage() const;
-        void MoveTo(const til::CoordType pageNumber);
-        void MoveRelative(const til::CoordType pageCount);
+        void MoveTo(const til::CoordType pageNumber, const bool makeVisible);
+        void MoveRelative(const til::CoordType pageCount, const bool makeVisible);
+        void MakeActivePageVisible();
 
     private:
         TextBuffer& _getBuffer(const til::CoordType pageNumber, const til::size pageSize) const;

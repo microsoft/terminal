@@ -73,7 +73,7 @@ Page PageManager::VisiblePage() const
     return Get(_visiblePageNumber);
 }
 
-void PageManager::MoveTo(const til::CoordType pageNumber)
+void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible)
 {
     auto [visibleBuffer, visibleViewport, isMainBuffer] = _api.GetBufferAndViewport();
     if (!isMainBuffer)
@@ -91,7 +91,7 @@ void PageManager::MoveTo(const til::CoordType pageNumber)
     // visible page into its backing buffer, and swap in the new page from the
     // backing buffer to the main buffer. That way the rest of the system only
     // ever has to deal with the main buffer.
-    if (_visiblePageNumber != newPageNumber)
+    if (makeVisible && _visiblePageNumber != newPageNumber)
     {
         const auto& newBuffer = _getBuffer(newPageNumber, pageSize);
         auto& saveBuffer = _getBuffer(_visiblePageNumber, pageSize);
@@ -146,9 +146,17 @@ void PageManager::MoveTo(const til::CoordType pageNumber)
     }
 }
 
-void PageManager::MoveRelative(const til::CoordType pageCount)
+void PageManager::MoveRelative(const til::CoordType pageCount, const bool makeVisible)
 {
-    MoveTo(_activePageNumber + pageCount);
+    MoveTo(_activePageNumber + pageCount, makeVisible);
+}
+
+void PageManager::MakeActivePageVisible()
+{
+    if (_activePageNumber != _visiblePageNumber)
+    {
+        MoveTo(_activePageNumber, true);
+    }
 }
 
 TextBuffer& PageManager::_getBuffer(const til::CoordType pageNumber, const til::size pageSize) const
