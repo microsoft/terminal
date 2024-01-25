@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             int32_t i{ 0 };
             // same as in the constructor, this assumes that iterating through the map
-            // gives us the same order everytime
+            // gives us the same order every time
             for (const auto tagAndName : _tagToNameMap)
             {
                 if (i == _AxisIndex)

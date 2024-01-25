@@ -80,7 +80,6 @@ nje
 noreply
 ogonek
 ok'd
-opsz
 overlined
 pipeline
 postmodern
@@ -123,7 +122,6 @@ versioned
 vsdevcmd
 walkthrough
 walkthroughs
-wdth
 We'd
 westus
 wildcards
