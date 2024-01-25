@@ -288,7 +288,6 @@
                     </Grid>
                 </StackPanel>
             </local:SettingContainer>
-
             <local:SettingContainer x:Uid="Profile_FontAxes"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Spacing="16">
@@ -296,8 +295,8 @@
                               ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
                               SelectionMode="None">
                         <ListView.Resources>
-                            <CollectionViewSource x:Key="CommonFontAxesListCVS"
-                                                  x:Name="CommonFontAxesListCVS" />
+                            <CollectionViewSource x:Key="FontAxesNamesCVS"
+                                                  x:Name="FontAxesNamesCVS" />
                         </ListView.Resources>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:AxisKeyValuePair">
@@ -309,11 +308,9 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <ComboBox Grid.Column="0"
-                                              IsEditable="True"
                                               IsSynchronizedWithCurrentItem="False"
-                                              ItemsSource="{Binding Source={StaticResource CommonFontAxesListCVS}}"
-                                              Text="{x:Bind AxisKey, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                              TextSubmitted="AxisKeyComboBox_TextSubmitted">
+                                              ItemsSource="{Binding Source={StaticResource FontAxesNamesCVS}}"
+                                              SelectedIndex="{x:Bind AxisIndex, Mode=TwoWay}">
                                     </ComboBox>
                                     <muxc:NumberBox Grid.Column="1"
                                                     Value="{x:Bind AxisValue, Mode=TwoWay}" />
