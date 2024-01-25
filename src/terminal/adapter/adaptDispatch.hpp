@@ -223,20 +223,20 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         void _WriteToBuffer(const std::wstring_view string);
-        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept;
+        std::pair<int, int> _GetVerticalMargins(const Page& page, const bool absolute) noexcept;
         std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
-        void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
-        void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
-        void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
+        void _FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
+        void _SelectiveEraseRect(const Page& page, const til::rect& eraseRect);
+        void _ChangeRectAttributes(const Page& page, const til::rect& changeRect, const ChangeOps& changeOps);
         void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
         til::rect _CalculateRectArea(const Page& page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right);
         bool _EraseScrollback();
         bool _EraseAll();
-        TextAttribute _GetEraseAttributes(const TextBuffer& textBuffer) const noexcept;
-        void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
-        void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
+        TextAttribute _GetEraseAttributes(const Page& page) const noexcept;
+        void _ScrollRectVertically(const Page& page, const til::rect& scrollRect, const VTInt delta);
+        void _ScrollRectHorizontally(const Page& page, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);
         void _InsertDeleteLineHelper(const VTInt delta);
         void _InsertDeleteColumnHelper(const VTInt delta);
