@@ -110,6 +110,10 @@ void WindowEmperor::HandleCommandlineArgs()
         exitCode = res.ExitCode;
     }
 
+    // There's a mysterious crash in XAML on Windows 10 if you just let _app get destroyed (GH#15410).
+    // We also need to ensure that all UI threads exit before WindowEmperor leaves the scope on the main thread (MSFT:46744208).
+    // Both problems can be solved and the shutdown accelerated by using TerminateProcess.
+    // std::exit(), etc., cannot be used here, because those use ExitProcess for unpackaged applications.
     TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(exitCode));
     __assume(false);
 }
