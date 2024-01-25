@@ -294,14 +294,19 @@
                     <ListView IsItemClickEnabled="False"
                               ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
                               SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.Resources>
                             <CollectionViewSource x:Key="FontAxesNamesCVS"
                                                   x:Name="FontAxesNamesCVS" />
                         </ListView.Resources>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:AxisKeyValuePair">
-                                <Grid Margin="-16,0,-12,0"
-                                      ColumnSpacing="8">
+                                <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
