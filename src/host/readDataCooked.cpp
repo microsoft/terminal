@@ -845,15 +845,12 @@ void COOKED_READ_DATA::_flushBuffer()
 
     // If the contents of _buffer became shorter we'll have to erase the previously printed contents.
     _erase(eraseDistance);
-    _offsetCursorPosition(-eraseDistance - distanceAfterCursor);
+    // Using the *Always() variant ensures that we reset the blinking timer, etc., even if the cursor didn't move.
+    _offsetCursorPositionAlways(-eraseDistance - distanceAfterCursor);
 
     _buffer.MarkAsClean();
     _distanceCursor = distanceBeforeCursor;
     _distanceEnd = distanceEnd;
-
-    const auto pos = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    _screenInfo.MakeCursorVisible(pos);
-    std::ignore = _screenInfo.SetCursorPosition(pos, true);
 }
 
 // This is just a small helper to fill the next N cells starting at the current cursor position with whitespace.
@@ -1045,15 +1042,21 @@ til::point COOKED_READ_DATA::_offsetPosition(til::point pos, ptrdiff_t distance)
     };
 }
 
-// This moves the cursor `distance`-many cells back up in the buffer.
-// It's intended to be used in combination with _writeChars.
+// See _offsetCursorPositionAlways(). This wrapper is just here to avoid doing
+// expensive cursor movements when there's nothing to move. A no-op wrapper.
 void COOKED_READ_DATA::_offsetCursorPosition(ptrdiff_t distance) const
 {
-    if (distance == 0)
+    if (distance != 0)
     {
-        return;
+        _offsetCursorPositionAlways(distance);
     }
+}
 
+// This moves the cursor `distance`-many cells around in the buffer.
+// It's intended to be used in combination with _writeChars.
+// Usually you should use _offsetCursorPosition() to no-op distance==0.
+void COOKED_READ_DATA::_offsetCursorPositionAlways(ptrdiff_t distance) const
+{
     const auto& textBuffer = _screenInfo.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
     const auto pos = _offsetPosition(cursor.GetPosition(), distance);

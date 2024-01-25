@@ -150,6 +150,24 @@ catch (...)
     return {};
 }
 
+std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSearchSelectionRects() noexcept
+try
+{
+    std::vector<Viewport> result;
+
+    for (const auto& lineRect : _GetSearchSelectionRects(_GetVisibleViewport()))
+    {
+        result.emplace_back(Viewport::FromInclusive(lineRect));
+    }
+
+    return result;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+
 void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
 #pragma warning(push)
@@ -186,6 +204,23 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
 
     SetSelectionAnchor(realCoordStart);
     SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
+}
+
+void Terminal::SelectSearchRegions(std::vector<til::inclusive_rect> rects)
+{
+    _searchSelections.clear();
+    for (auto& rect : rects)
+    {
+        rect.top -= _VisibleStartIndex();
+        rect.bottom -= _VisibleStartIndex();
+
+        const auto realStart = _ConvertToBufferCell(til::point{ rect.left, rect.top });
+        const auto realEnd = _ConvertToBufferCell(til::point{ rect.right, rect.bottom });
+
+        auto rr = til::inclusive_rect{ realStart.x, realStart.y, realEnd.x, realEnd.y };
+
+        _searchSelections.emplace_back(rr);
+    }
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept

@@ -75,8 +75,6 @@ void Clipboard::Paste()
     StringPaste(pwstr, (ULONG)GlobalSize(ClipboardDataHandle) / sizeof(WCHAR));
 
     // WIP auditing if user is enrolled
-    static auto DestinationName = _LoadString(ID_CONSOLE_WIP_DESTINATIONNAME);
-    Microsoft::Console::Internal::EdpPolicy::AuditClipboard(DestinationName);
 
     GlobalUnlock(ClipboardDataHandle);
 

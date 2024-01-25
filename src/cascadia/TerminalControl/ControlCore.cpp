@@ -1250,8 +1250,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        const auto copyHtml = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML);
-        const auto copyRtf = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF);
+        // use action's copyFormatting if it's present, else fallback to globally
+        // set copyFormatting.
+        const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
+
+        const auto copyHtml = WI_IsFlagSet(copyFormats, CopyFormat::HTML);
+        const auto copyRtf = WI_IsFlagSet(copyFormats, CopyFormat::RTF);
 
         // extract text from buffer
         // RetrieveSelectedTextFromBuffer will lock while it's reading
@@ -1262,7 +1266,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
                                                                        winrt::to_hstring(htmlData),
                                                                        winrt::to_hstring(rtfData),
-                                                                       formats));
+                                                                       copyFormats));
         return true;
     }
 
@@ -1631,6 +1635,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
+            _searcher.HighlightResults();
             _searcher.MoveToCurrentSelection();
             _cachedSearchResultRows = {};
         }
@@ -1647,7 +1652,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // DO NOT call _updateSelectionUI() here.
             // We don't want to show the markers so manually tell it to clear it.
             _terminal->SetBlockSelection(false);
-            _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
 
             foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
@@ -1655,6 +1659,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->AlwaysNotifyOnBufferRotation(true);
         }
+        _renderer->TriggerSelection();
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer

@@ -8,7 +8,6 @@
 #include "../host/globals.h"
 #include "../host/handle.h"
 #include "../host/server.h"
-#include "../host/telemetry.hpp"
 
 #include "../host/ntprivapi.hpp"
 

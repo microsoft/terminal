@@ -66,7 +66,7 @@ Abstract:
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
-#include "telemetry.hpp"
+
 #include "tracing.hpp"
 
 #ifdef BUILDING_INSIDE_WINIDE

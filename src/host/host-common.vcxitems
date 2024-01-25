@@ -43,7 +43,6 @@
     <ClCompile Include="..\settings.cpp" />
     <ClCompile Include="..\srvinit.cpp" />
     <ClCompile Include="..\stream.cpp" />
-    <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\utils.cpp" />
     <ClCompile Include="..\VtApiRoutines.cpp" />
@@ -96,7 +95,6 @@
     <ClInclude Include="..\settings.hpp" />
     <ClInclude Include="..\srvinit.h" />
     <ClInclude Include="..\stream.h" />
-    <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\utils.hpp" />
     <ClInclude Include="..\VtApiRoutines.h" />

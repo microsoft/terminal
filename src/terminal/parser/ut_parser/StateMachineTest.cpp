@@ -40,6 +40,11 @@ public:
         dcsDataString.clear();
     }
 
+    bool EncounteredWin32InputModeSequence() const noexcept override
+    {
+        return false;
+    }
+
     bool ActionExecute(const wchar_t wch) override
     {
         executed += wch;

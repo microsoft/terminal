@@ -2593,12 +2593,9 @@ namespace winrt::TerminalApp::implementation
         auto dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
 
-        // The EventArgs.Formats() is an override for the global setting "copyFormatting"
-        //   iff it is set
-        auto useGlobal = copiedData.Formats() == nullptr;
-        auto copyFormats = useGlobal ?
-                               _settings.GlobalSettings().CopyFormatting() :
-                               copiedData.Formats().Value();
+        const auto copyFormats = copiedData.Formats() != nullptr ?
+                                     copiedData.Formats().Value() :
+                                     static_cast<CopyFormat>(0);
 
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());

@@ -604,6 +604,16 @@ void ScreenBufferTests::TestResetClearTabStops()
     stateMachine.ProcessString(resetToInitialState);
     expectedStops = { 8, 16, 24, 32, 40, 48, 56, 64, 72 };
     VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(screenInfo));
+
+    Log::Comment(L"DECST8C with 5 parameter resets tabs to defaults.");
+    stateMachine.ProcessString(clearTabStops);
+    stateMachine.ProcessString(L"\033[?5W");
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(screenInfo));
+
+    Log::Comment(L"DECST8C with omitted parameter resets tabs to defaults.");
+    stateMachine.ProcessString(clearTabStops);
+    stateMachine.ProcessString(L"\033[?W");
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(screenInfo));
 }
 
 void ScreenBufferTests::TestAddTabStop()
