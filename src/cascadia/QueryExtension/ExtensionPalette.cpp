@@ -336,12 +336,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             return false;
         }
         const auto contentFilters = contentFiltersObject.GetNamedObject(L"content_filter_results");
+        if (!contentFilters.HasKey(L"jailbreak"))
+        {
+            return false;
+        }
         for (const auto filterPair : contentFilters)
         {
             const auto filterLevel = filterPair.Value().GetObjectW();
-            if (filterLevel.GetNamedString(L"severity") != acceptedSeverityLevel)
+            if (filterLevel.HasKey(L"severity"))
             {
-                return false;
+                if (filterLevel.GetNamedString(L"severity") != acceptedSeverityLevel)
+                {
+                    return false;
+                }
             }
         }
         return true;
