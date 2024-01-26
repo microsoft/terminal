@@ -315,8 +315,7 @@
                                     <ComboBox Grid.Column="0"
                                               IsSynchronizedWithCurrentItem="False"
                                               ItemsSource="{Binding Source={StaticResource FontAxesNamesCVS}}"
-                                              SelectedIndex="{x:Bind AxisIndex, Mode=TwoWay}">
-                                    </ComboBox>
+                                              SelectedIndex="{x:Bind AxisIndex, Mode=TwoWay}" />
                                     <muxc:NumberBox Grid.Column="1"
                                                     Value="{x:Bind AxisValue, Mode=TwoWay}" />
                                     <Button Grid.Column="2"
