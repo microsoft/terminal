@@ -35,7 +35,8 @@
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
-        <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <StackPanel Grid.Row="1"
+                    Style="{StaticResource SettingsStackStyle}">
             <!--  Suppress Application Title  -->
             <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
                                     ClearSettingValue="{x:Bind Profile.ClearSuppressApplicationTitle}"

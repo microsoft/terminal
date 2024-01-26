@@ -438,10 +438,7 @@ void AppHost::Close()
     // After calling _window->Close() we should avoid creating more WinUI related actions.
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
-    if (_frameTimer)
-    {
-        _frameTimer.Tick(_frameTimerToken);
-    }
+    _frameTimer.Destroy();
     _showHideWindowThrottler.reset();
 
     _revokeWindowCallbacks();
@@ -1190,12 +1187,8 @@ void AppHost::_startFrameTimer()
     // _updateFrameColor, which will actually handle setting the colors. If we
     // already have a timer, just start that one.
 
-    if (_frameTimer == nullptr)
-    {
-        _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
-        _frameTimer.Interval(FrameUpdateInterval);
-        _frameTimerToken = _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
-    }
+    _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
+    _frameTimer.Interval(FrameUpdateInterval);
     _frameTimer.Start();
 }
 
