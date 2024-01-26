@@ -115,8 +115,5 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nCmdShow)
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     const auto emperor = std::make_shared<::WindowEmperor>();
-    if (emperor->HandleCommandlineArgs(nCmdShow))
-    {
-        emperor->WaitForWindows();
-    }
+    emperor->HandleCommandlineArgs(nCmdShow);
 }
