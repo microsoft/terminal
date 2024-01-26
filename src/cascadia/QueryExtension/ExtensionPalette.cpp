@@ -336,7 +336,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             return false;
         }
         const auto contentFilters = contentFiltersObject.GetNamedObject(L"content_filter_results");
-        if (!contentFilters.HasKey(L"jailbreak"))
+        if (Feature_TerminalChatJailbreakFilter::IsEnabled() && !contentFilters.HasKey(L"jailbreak"))
         {
             return false;
         }
