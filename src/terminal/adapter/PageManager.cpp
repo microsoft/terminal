@@ -52,6 +52,41 @@ void Page::SetAttributes(const TextAttribute& attr, ITerminalApi* api) const
     }
 }
 
+til::CoordType Page::Top() const noexcept
+{
+    return _viewport.top;
+}
+
+til::CoordType Page::Bottom() const noexcept
+{
+    return _viewport.bottom;
+}
+
+til::CoordType Page::Width() const noexcept
+{
+    return _buffer.GetSize().Width();
+}
+
+til::CoordType Page::Height() const noexcept
+{
+    return _viewport.bottom - _viewport.top;
+}
+
+til::CoordType Page::BufferHeight() const noexcept
+{
+    return _buffer.GetSize().Height();
+}
+
+til::CoordType Page::XPanOffset() const noexcept
+{
+    return _viewport.left;
+}
+
+til::CoordType Page::YPanOffset() const noexcept
+{
+    return 0; // Vertical panning is not yet supported
+}
+
 PageManager::PageManager(ITerminalApi& api, Renderer& renderer) noexcept :
     _api{ api },
     _renderer{ renderer }
