@@ -26,7 +26,7 @@ public:
     WindowEmperor() noexcept;
     void WaitForWindows();
 
-    void HandleCommandlineArgs();
+    void HandleCommandlineArgs(int nCmdShow);
 
 private:
     void _createNewWindowThread(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);

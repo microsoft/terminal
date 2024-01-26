@@ -500,11 +500,18 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class StatusType : VTInt
     {
-        OS_OperatingStatus = ANSIStandardStatus(5),
-        CPR_CursorPositionReport = ANSIStandardStatus(6),
-        ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
-        MSR_MacroSpaceReport = DECPrivateStatus(62),
-        MEM_MemoryChecksum = DECPrivateStatus(63),
+        OperatingStatus = ANSIStandardStatus(5),
+        CursorPositionReport = ANSIStandardStatus(6),
+        ExtendedCursorPositionReport = DECPrivateStatus(6),
+        PrinterStatus = DECPrivateStatus(15),
+        UserDefinedKeys = DECPrivateStatus(25),
+        KeyboardStatus = DECPrivateStatus(26),
+        LocatorStatus = DECPrivateStatus(55),
+        LocatorIdentity = DECPrivateStatus(56),
+        MacroSpaceReport = DECPrivateStatus(62),
+        MemoryChecksum = DECPrivateStatus(63),
+        DataIntegrity = DECPrivateStatus(75),
+        MultipleSessionStatus = DECPrivateStatus(85),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -556,6 +563,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     {
         ClearCurrentColumn = 0,
         ClearAllColumns = 3
+    };
+
+    enum TabSetType : VTInt
+    {
+        SetEvery8Columns = 5
     };
 
     enum WindowManipulationType : VTInt
