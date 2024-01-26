@@ -83,7 +83,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 uint32_t length;
                 if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
                 {
-                    wchar_t* name = new (std::nothrow) wchar_t[length + 1];
+                    // it is reasonable to assume that the name length is not going to exceed 512 chars
+                    wchar_t name[512];
                     if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
                     {
                         fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
