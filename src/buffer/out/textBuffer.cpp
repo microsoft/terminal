@@ -126,6 +126,8 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
 // The compiler doesn't understand the likelihood of our branches. (PGO does, but that's imperfect.)
 __declspec(noinline) void TextBuffer::_commit(const std::byte* row)
 {
+    assert(row >= _commitWatermark);
+
     const auto rowEnd = row + _bufferRowStride;
     const auto remaining = gsl::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
     const auto minimum = gsl::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
@@ -146,7 +148,7 @@ void TextBuffer::_decommit() noexcept
     _commitWatermark = _buffer.get();
 }
 
-// Constructs ROWs up to (excluding) the ROW pointed to by `until`.
+// Constructs ROWs between [_commitWatermark,until).
 void TextBuffer::_construct(const std::byte* until) noexcept
 {
     for (; _commitWatermark < until; _commitWatermark += _bufferRowStride)
@@ -158,8 +160,7 @@ void TextBuffer::_construct(const std::byte* until) noexcept
     }
 }
 
-// Destroys all previously constructed ROWs.
-// Be careful! This doesn't reset any of the members, in particular the _commitWatermark.
+// Destructs ROWs between [_buffer,_commitWatermark).
 void TextBuffer::_destroy() const noexcept
 {
     for (auto it = _buffer.get(); it < _commitWatermark; it += _bufferRowStride)
@@ -168,9 +169,8 @@ void TextBuffer::_destroy() const noexcept
     }
 }
 
-// This function is "direct" because it trusts the caller to properly wrap the "offset"
-// parameter modulo the _height of the buffer, etc. But keep in mind that a offset=0
-// is the GetScratchpadRow() and not the GetRowByOffset(0). That one is offset=1.
+// This function is "direct" because it trusts the caller to properly
+// wrap the "offset" parameter modulo the _height of the buffer.
 ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
 {
     const auto row = _buffer.get() + _bufferRowStride * offset;
@@ -184,6 +184,7 @@ ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
     return *reinterpret_cast<ROW*>(row);
 }
 
+// See GetRowByOffset().
 ROW& TextBuffer::_getRow(til::CoordType y) const
 {
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
@@ -197,6 +198,7 @@ ROW& TextBuffer::_getRow(til::CoordType y) const
     }
 
     // We add 1 to the row offset, because row "0" is the one returned by GetScratchpadRow().
+    // See GetScratchpadRow() for more explanation.
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
     return const_cast<TextBuffer*>(this)->_getRowByOffsetDirect(gsl::narrow_cast<size_t>(offset) + 1);
 }
@@ -238,6 +240,9 @@ ROW& TextBuffer::GetScratchpadRow()
 // Returns a row filled with whitespace and the given attributes, for you to freely use.
 ROW& TextBuffer::GetScratchpadRow(const TextAttribute& attributes)
 {
+    // The scratchpad row is mapped to the underlying index 0, whereas all regular rows are mapped to
+    // index 1 and up. We do it this way instead of the other way around (scratchpad row at index _height),
+    // because that would force us to MEM_COMMIT the entire buffer whenever this function is called.
     auto& r = _getRowByOffsetDirect(0);
     r.Reset(attributes);
     return r;
@@ -902,15 +907,14 @@ til::point TextBuffer::GetLastNonSpaceCharacter(const Viewport* viewOptional) co
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
-    auto fDoBackUp = (coordEndOfText.x < 0 && coordEndOfText.y > viewportTop); // this row is empty, and we're not at the top
-    while (fDoBackUp)
+
+    // while (this row is empty, and we're not at the top)
+    while (coordEndOfText.x < 0 && coordEndOfText.y > viewportTop)
     {
         coordEndOfText.y--;
         const auto& backupRow = GetRowByOffset(coordEndOfText.y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
-
         coordEndOfText.x = backupRow.MeasureRight() - 1;
-        fDoBackUp = (coordEndOfText.x < 0 && coordEndOfText.y > viewportTop);
     }
 
     // don't allow negative results
@@ -1144,6 +1148,41 @@ void TextBuffer::Reset() noexcept
 {
     _decommit();
     _initialAttributes = _currentAttributes;
+}
+
+void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordType height)
+{
+    if (start <= 0)
+    {
+        return;
+    }
+
+    if (height <= 0)
+    {
+        _decommit();
+        return;
+    }
+
+    // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
+    // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
+    // The start parameter is relative to the _firstRow. The trick to get the content to the absolute start
+    // is to simply add _firstRow ourselves and then reset it to 0. This causes ScrollRows() to write into
+    // the absolute start while reading from relative coordinates. This works because GetRowByOffset()
+    // operates modulo the buffer height and so the possibly-too-large startAbsolute won't be an issue.
+    const auto startAbsolute = _firstRow + start;
+    _firstRow = 0;
+    ScrollRows(startAbsolute, height, -startAbsolute);
+
+    const auto end = _estimateOffsetOfLastCommittedRow();
+    for (auto y = height; y < end; ++y)
+    {
+        GetMutableRowByOffset(y).Reset(_initialAttributes);
+    }
+
+    // Clear all the marks below the new viewport position.
+    ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
+    // Then scroll all the remaining marks up. This will trim ones that are now "outside" the buffer
+    ScrollMarks(-start);
 }
 
 // Routine Description:
