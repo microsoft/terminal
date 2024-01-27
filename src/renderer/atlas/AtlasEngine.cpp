@@ -434,7 +434,7 @@ try
         }
 
         const auto bg = &_p.backgroundBitmap[_p.colorBitmapRowStride * y];
-        const auto fg = &_p.foregroundBitmap[_p.colorBitmapRowStride * y];
+        const auto fg = _p.rows[y]->colors.data();
         std::fill(bg + from, bg + to, 0xff3296ff);
         std::fill(fg + from, fg + to, 0xff000000);
     }
