@@ -53,6 +53,8 @@ namespace Microsoft.Terminal.Settings.Editor
         void AddNewAxisKeyValuePair();
         void DeleteAxisKeyValuePair(String key);
         void InitializeFontAxesVector();
+        Boolean AreFontAxesAvailable { get; };
+        Boolean CanFontAxesBeAdded { get; };
         Windows.Foundation.Collections.IObservableVector<AxisKeyValuePair> FontAxesVector;
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);

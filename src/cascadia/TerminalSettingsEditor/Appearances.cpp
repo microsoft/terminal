@@ -91,7 +91,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         continue;
                     }
                 }
-                fontAxesTagsAndNames.Insert(tagString, tagString);
+                // if there was no name found, it means the font does not actually support this axis
+                // don't insert anything into the vector in this case
             }
         }
         return fontAxesTagsAndNames;
@@ -293,6 +294,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 break;
             }
         }
+        _NotifyChanges(L"CanFontAxesBeAdded");
     }
 
     void AppearanceViewModel::DeleteAxisKeyValuePair(winrt::hstring key)
@@ -306,6 +308,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 break;
             }
         }
+        _NotifyChanges(L"CanFontAxesBeAdded");
     }
 
     void AppearanceViewModel::InitializeFontAxesVector()
@@ -329,6 +332,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         }
+        _NotifyChanges(L"AreFontAxesAvailable", L"CanFontAxesBeAdded");
+    }
+
+    bool AppearanceViewModel::AreFontAxesAvailable()
+    {
+        return ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames().Size() > 0;
+    }
+
+    bool AppearanceViewModel::CanFontAxesBeAdded()
+    {
+        if (const auto fontAxesTagToNameMap = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames(); fontAxesTagToNameMap.Size() > 0)
+        {
+            if (const auto fontAxesMap = _appearance.SourceProfile().FontInfo().FontAxes())
+            {
+                for (const auto tagAndName : fontAxesTagToNameMap)
+                {
+                    // only show the axes that the font supports
+                    // any axes that the font doesn't support continue to be stored in the json, we just don't show them in the UI
+                    if (!fontAxesMap.HasKey(tagAndName.Key()))
+                    {
+                        // we found an axis that has not been set
+                        return true;
+                    }
+                }
+                // all possible axes have been set already
+                return false;
+            }
+            // the font supports font axes but the profile has none set
+            return true;
+        }
+        // the font does not support any font axes
+        return false;
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
@@ -470,6 +505,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // when the font face changes, we have to tell the view model to update the font axes vector
         // since the new font may not have the same possible axes as the previous one
         Appearance().InitializeFontAxesVector();
+        if (!Appearance().AreFontAxesAvailable())
+        {
+            // if the previous font had available font axes and the expander was expanded,
+            // at this point the expander would be set to disabled so manually collapse it
+            FontAxesContainer().SetExpanded(false);
+            FontAxesContainer().HelpText(RS_(L"Profile_FontAxesUnavailable/Text"));
+        }
+        else
+        {
+            FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text"));
+        }
     }
 
     void Appearances::_ViewModelChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
@@ -489,6 +535,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
 
             FontAxesCVS().Source(Appearance().FontAxesVector());
+            if (Appearance().AreFontAxesAvailable())
+            {
+                FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text"));
+            }
+            else
+            {
+                FontAxesContainer().HelpText(RS_(L"Profile_FontAxesUnavailable/Text"));
+            }
 
             _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
                 const auto settingName{ args.PropertyName() };

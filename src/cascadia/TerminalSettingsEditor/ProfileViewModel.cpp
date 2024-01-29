@@ -163,6 +163,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::Font fallbackFont{ nullptr };
         try
         {
+            if (!CompleteFontList())
+            {
+                UpdateFontList();
+            }
             const auto& currentFontList{ CompleteFontList() };
             for (const auto& font : currentFontList)
             {

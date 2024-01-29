@@ -289,7 +289,9 @@
                 </StackPanel>
             </local:SettingContainer>
             <local:SettingContainer x:Uid="Profile_FontAxes"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                                    x:Name="FontAxesContainer"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}"
+                                    IsEnabled="{x:Bind Appearance.AreFontAxesAvailable, Mode=OneWay}">
                 <StackPanel Spacing="16">
                     <ListView IsItemClickEnabled="False"
                               ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
@@ -330,7 +332,8 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
-                    <Button Click="AddNewAxisKeyValuePair_Click">
+                    <Button Click="AddNewAxisKeyValuePair_Click"
+                            IsEnabled="{x:Bind Appearance.CanFontAxesBeAdded, Mode=OneWay}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon VerticalAlignment="Bottom"

@@ -907,12 +907,16 @@
     <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
   </data>
   <data name="Profile_FontAxes.Header" xml:space="preserve">
-    <value>Font axes</value>
+    <value>Variable font axes</value>
     <comment>Header for a control to allow editing the font axes.</comment>
   </data>
-  <data name="Profile_FontAxes.HelpText" xml:space="preserve">
+  <data name="Profile_FontAxesAvailable.Text" xml:space="preserve">
     <value>Add or remove font axes for the given font.</value>
     <comment>A description for what the "font axes" setting does. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontAxesUnavailable.Text" xml:space="preserve">
+    <value>The selected font has no variable font axes.</value>
+    <comment>A description provided when the font axes setting is disabled. Presented near "Profile_FontAxes".</comment>
   </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>General</value>

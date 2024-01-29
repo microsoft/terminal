@@ -152,6 +152,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddNewAxisKeyValuePair();
         void DeleteAxisKeyValuePair(winrt::hstring key);
         void InitializeFontAxesVector();
+        bool AreFontAxesAvailable();
+        bool CanFontAxesBeAdded();
 
         WINRT_PROPERTY(bool, IsDefault, false);
 
