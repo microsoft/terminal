@@ -1174,15 +1174,13 @@ void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordTyp
     ScrollRows(startAbsolute, height, -startAbsolute);
 
     const auto end = _estimateOffsetOfLastCommittedRow();
-    for (auto y = height; y < end; ++y)
+    for (auto y = height; y <= end; ++y)
     {
         GetMutableRowByOffset(y).Reset(_initialAttributes);
     }
 
-    // Clear all the marks below the new viewport position.
-    ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
-    // Then scroll all the remaining marks up. This will trim ones that are now "outside" the buffer
     ScrollMarks(-start);
+    ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
 }
 
 // Routine Description:
