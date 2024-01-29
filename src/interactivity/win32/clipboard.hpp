@@ -35,14 +35,15 @@ namespace Microsoft::Console::Interactivity::Win32
         void Paste();
 
     private:
+        static wil::unique_close_clipboard_call _openClipboard(HWND hwnd);
+        static void _copyToClipboard(UINT format, const void* src, size_t bytes);
+        static void _copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes);
+
         InputEventQueue TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
                                         const size_t cchData,
                                         const bool bracketedPaste = false);
 
         void StoreSelectionToClipboard(_In_ const bool fAlsoCopyFormatting);
-
-        void CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const;
-        void CopyToSystemClipboard(const std::string& stringToPlaceOnClip, LPCWSTR lpszFormat) const;
 
         bool FilterCharacterOnPaste(_Inout_ WCHAR* const pwch);
 
