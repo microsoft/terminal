@@ -250,6 +250,10 @@ InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* co
 //   <none>
 void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 {
+    std::wstring text;
+    std::string htmlData, rtfData;
+    UINT CF_HTML = 0, CF_RTF = 0;
+
     const auto& selection = Selection::Instance();
 
     // See if there is a selection to get
@@ -266,60 +270,38 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     const auto& renderSettings = gci.GetRenderSettings();
 
     const auto GetAttributeColors = [&](const auto& attr) {
-        return renderSettings.GetAttributeColors(attr);
+        const auto [fg, bg] = renderSettings.GetAttributeColors(attr);
+        const auto ul = renderSettings.GetAttributeUnderlineColor(attr);
+        return std::tuple{ fg, bg, ul };
     };
 
-    bool includeCRLF, trimTrailingWhitespace;
+    bool singleLine = false;
     if (WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED))
     {
         // When shift is held, put everything in one line
-        includeCRLF = trimTrailingWhitespace = false;
-    }
-    else
-    {
-        includeCRLF = trimTrailingWhitespace = true;
+        singleLine = true;
     }
 
-    const auto text = buffer.GetText(includeCRLF,
-                                     trimTrailingWhitespace,
-                                     selectionRects,
-                                     GetAttributeColors,
-                                     !selection.IsLineSelection());
+    const auto& [selectionStart, selectionEnd] = selection.GetSelectionAnchors();
 
-    CopyTextToSystemClipboard(text, copyFormatting);
-}
+    const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selectionStart, selectionEnd, singleLine, !selection.IsLineSelection(), false);
+    text = buffer.GetPlainText(req);
 
-// Routine Description:
-// - Copies the text given onto the global system clipboard.
-// Arguments:
-// - rows - Rows of text data to copy
-// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
-{
-    // Before we acquire the global clipboard we'll prepare all the necessary data in advance.
-    // This reduces lock contention on the clipboard for other applications.
-    std::wstring plain;
-    for (const auto& str : rows.text)
-    {
-        plain += str;
-    }
-
-    UINT CF_HTML = 0, CF_RTF = 0;
-    std::string html, rtf;
-    if (fAlsoCopyFormatting)
+    if (copyFormatting)
     {
         CF_HTML = RegisterClipboardFormatW(L"HTML Format");
         THROW_LAST_ERROR_IF(!CF_HTML);
         CF_RTF = RegisterClipboardFormatW(L"Rich Text Format");
         THROW_LAST_ERROR_IF(!CF_RTF);
 
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
-        const auto iFontHeightPoints = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
-        const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
+        const auto& fontName = fontData.GetFaceName();
+        const auto fontSizePt = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
+        const auto bgColor = renderSettings.GetAttributeColors({}).second;
+        const auto isIntenseBold = renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
 
-        html = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-        rtf = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+        htmlData = buffer.GenHTML(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
+        rtfData = buffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
     }
 
     const auto clipboard = _openClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
@@ -328,12 +310,12 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
     // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
     //   CF_UNICODETEXT: [...] A null character signals the end of the data.
     // --> We add +1 to the length. This works because .c_str() is null-terminated.
-    _copyToClipboard(CF_UNICODETEXT, plain.c_str(), (plain.size() + 1) * sizeof(wchar_t));
+    _copyToClipboard(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
 
-    if (fAlsoCopyFormatting)
+    if (copyFormatting)
     {
-        _copyToClipboard(CF_HTML, html.data(), html.size());
-        _copyToClipboard(CF_RTF, rtf.data(), rtf.size());
+        _copyToClipboard(CF_HTML, htmlData.data(), htmlData.size());
+        _copyToClipboard(CF_RTF, rtfData.data(), rtfData.size());
     }
 }
 

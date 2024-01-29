@@ -75,4 +75,5 @@
     X(bool, UseAtlasEngine, true)                                                                                                                        \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
+    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
     X(bool, RightClickContextMenu, false)
