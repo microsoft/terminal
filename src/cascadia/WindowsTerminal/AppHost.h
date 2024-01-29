@@ -11,6 +11,8 @@
 class AppHost : public std::enable_shared_from_this<AppHost>
 {
 public:
+    static constexpr DWORD WM_REFRIGERATE = WM_APP + 0;
+
     AppHost(const winrt::TerminalApp::AppLogic& logic,
             winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
             const winrt::Microsoft::Terminal::Remoting::WindowManager& manager,
