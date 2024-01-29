@@ -37,6 +37,7 @@ namespace Microsoft::Console::Interactivity::Win32
     private:
         static wil::unique_close_clipboard_call _openClipboard(HWND hwnd);
         static void _copyToClipboard(UINT format, const void* src, size_t bytes);
+        static void _copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes);
 
         InputEventQueue TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
                                         const size_t cchData,

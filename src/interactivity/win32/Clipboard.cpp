@@ -159,6 +159,17 @@ void Clipboard::_copyToClipboard(const UINT format, const void* src, const size_
     handle.release();
 }
 
+void Clipboard::_copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes)
+{
+    const auto id = RegisterClipboardFormatW(L"HTML Format");
+    if (!id)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
+    _copyToClipboard(id, src, bytes);
+}
+
 // Routine Description:
 // - converts a wchar_t* into a series of KeyEvents as if it was typed
 // from the keyboard
@@ -252,7 +263,6 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 {
     std::wstring text;
     std::string htmlData, rtfData;
-    UINT CF_HTML = 0, CF_RTF = 0;
 
     const auto& selection = Selection::Instance();
 
@@ -289,11 +299,6 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 
     if (copyFormatting)
     {
-        CF_HTML = RegisterClipboardFormatW(L"HTML Format");
-        THROW_LAST_ERROR_IF(!CF_HTML);
-        CF_RTF = RegisterClipboardFormatW(L"Rich Text Format");
-        THROW_LAST_ERROR_IF(!CF_RTF);
-
         const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
         const auto& fontName = fontData.GetFaceName();
         const auto fontSizePt = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
@@ -314,8 +319,8 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 
     if (copyFormatting)
     {
-        _copyToClipboard(CF_HTML, htmlData.data(), htmlData.size());
-        _copyToClipboard(CF_RTF, rtfData.data(), rtfData.size());
+        _copyToClipboardRegisteredFormat(L"HTML Format", htmlData.data(), htmlData.size());
+        _copyToClipboardRegisteredFormat(L"Rich Text Format", rtfData.data(), rtfData.size());
     }
 }
 
