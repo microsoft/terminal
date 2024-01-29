@@ -161,7 +161,7 @@ void Clipboard::_copyToClipboard(const UINT format, const void* src, const size_
 
 void Clipboard::_copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes)
 {
-    const auto id = RegisterClipboardFormatW(L"HTML Format");
+    const auto id = RegisterClipboardFormatW(format);
     if (!id)
     {
         LOG_LAST_ERROR();
