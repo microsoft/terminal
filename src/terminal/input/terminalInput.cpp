@@ -412,7 +412,7 @@ try
         // there's not much need to support mappings for them.
         for (auto vk = VK_F5; vk <= VK_F20; vk++)
         {
-            constexpr std::array parameters = { 15, 17, 18, 19, 20, 21, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34 };
+            static constexpr std::array<uint8_t, 16> parameters = { 15, 17, 18, 19, 20, 21, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34 };
             const auto parm = parameters.at(static_cast<size_t>(vk) - VK_F5);
             defineEditingKey(vk, parm);
         }
