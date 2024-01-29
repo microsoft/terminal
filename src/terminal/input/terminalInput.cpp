@@ -591,7 +591,7 @@ wchar_t TerminalInput::_makeCtrlChar(const wchar_t ch)
     }
     if (ch >= L'2' && ch <= L'8')
     {
-        constexpr auto numericCtrls = std::array<wchar_t, 8>{ 0, 27, 28, 29, 30, 31, 127 };
+        constexpr auto numericCtrls = std::array<wchar_t, 7>{ 0, 27, 28, 29, 30, 31, 127 };
         return numericCtrls.at(ch - L'2');
     }
     return ch;
