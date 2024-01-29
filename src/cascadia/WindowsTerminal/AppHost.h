@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#pragma once
+
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 #include "NotificationIcon.h"
@@ -56,7 +58,7 @@ private:
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
 
     std::chrono::time_point<std::chrono::steady_clock> _started;
-    winrt::Windows::UI::Xaml::DispatcherTimer _frameTimer{ nullptr };
+    SafeDispatcherTimer _frameTimer;
 
     uint32_t _launchShowWindowCommand{ SW_NORMAL };
 
@@ -165,7 +167,6 @@ private:
     void _updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
 
     winrt::event_token _GetWindowLayoutRequestedToken;
-    winrt::event_token _frameTimerToken;
 
     // Helper struct. By putting these all into one struct, we can revoke them
     // all at once, by assigning _revokers to a fresh Revokers instance. That'll

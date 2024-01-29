@@ -24,10 +24,9 @@ class WindowEmperor : public std::enable_shared_from_this<WindowEmperor>
 {
 public:
     WindowEmperor() noexcept;
-    ~WindowEmperor();
     void WaitForWindows();
 
-    bool HandleCommandlineArgs();
+    void HandleCommandlineArgs(int nCmdShow);
 
 private:
     void _createNewWindowThread(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);

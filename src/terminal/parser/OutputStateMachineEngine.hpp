@@ -121,6 +121,7 @@ namespace Microsoft::Console::VirtualTerminal
             DCH_DeleteCharacter = VTID("P"),
             SU_ScrollUp = VTID("S"),
             SD_ScrollDown = VTID("T"),
+            DECST8C_SetTabEvery8Columns = VTID("?W"),
             ECH_EraseCharacters = VTID("X"),
             CBT_CursorBackTab = VTID("Z"),
             HPA_HorizontalPositionAbsolute = VTID("`"),
