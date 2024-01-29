@@ -282,8 +282,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto fontAxesMap = _appearance.SourceProfile().FontInfo().FontAxes();
 
         // find one axis that does not already exist, and add that
-        // if there are no more possible axes to add, don't do anything
-        // (maybe in the future we could popup a message to let the user know there are no more valid axes)
+        // if there are no more possible axes to add, the button is disabled so there shouldn't be a way to get here
         const auto possibleAxesTagsAndNames = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames();
         for (const auto tagAndName : possibleAxesTagsAndNames)
         {
@@ -348,8 +347,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 for (const auto tagAndName : fontAxesTagToNameMap)
                 {
-                    // only show the axes that the font supports
-                    // any axes that the font doesn't support continue to be stored in the json, we just don't show them in the UI
                     if (!fontAxesMap.HasKey(tagAndName.Key()))
                     {
                         // we found an axis that has not been set
