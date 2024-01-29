@@ -468,7 +468,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
         {
             if (error)
             {
-                LOG_HR_MSG(hr, "%*hs", error->GetBufferSize(), error->GetBufferPointer());
+                LOG_HR_MSG(hr, "%.*hs", error->GetBufferSize(), error->GetBufferPointer());
             }
             else
             {
