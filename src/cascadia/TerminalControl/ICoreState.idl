@@ -46,7 +46,8 @@ namespace Microsoft.Terminal.Control
         Int32 BufferHeight { get; };
 
         Boolean HasSelection { get; };
-        IVector<String> SelectedText(Boolean trimTrailingWhitespace);
+        Boolean HasMultiLineSelection { get; };
+        String SelectedText(Boolean trimTrailingWhitespace);
 
         Boolean BracketedPasteEnabled { get; };
 

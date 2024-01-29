@@ -1113,8 +1113,8 @@ msix
 msrc
 MSVCRTD
 MTSM
-munged
 munges
+Munged
 murmurhash
 muxes
 myapplet
@@ -1870,7 +1870,12 @@ uiautomationcore
 uielem
 UIELEMENTENABLEDONLY
 UINTs
+ul
 ulcch
+uld
+uldb
+uldash
+ulwave
 Unadvise
 unattend
 UNCPRIORITY
