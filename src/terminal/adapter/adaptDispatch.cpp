@@ -338,7 +338,6 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 {
     // First retrieve some information about the buffer
     const auto page = _pages.ActivePage();
-    const auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     const auto pageWidth = page.Width();
     const auto cursorPosition = cursor.GetPosition();
@@ -409,7 +408,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     }
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    cursor.SetPosition(textBuffer.ClampPositionWithinLine({ col, row }));
+    cursor.SetPosition(page.Buffer().ClampPositionWithinLine({ col, row }));
     _ApplyCursorMovementFlags(cursor);
 
     return true;
@@ -699,10 +698,9 @@ void AdaptDispatch::_ScrollRectHorizontally(const Page& page, const til::rect& s
 void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 {
     const auto page = _pages.ActivePage();
-    const auto& textBuffer = page.Buffer();
     const auto row = page.Cursor().GetPosition().y;
     const auto col = page.Cursor().GetPosition().x;
-    const auto lineWidth = textBuffer.GetLineWidth(row);
+    const auto lineWidth = page.Buffer().GetLineWidth(row);
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = (row >= topMargin && row <= bottomMargin) ?
                                                _GetHorizontalMargins(lineWidth) :
@@ -768,10 +766,9 @@ void AdaptDispatch::_FillRect(const Page& page, const til::rect& fillRect, const
 bool AdaptDispatch::EraseCharacters(const VTInt numChars)
 {
     const auto page = _pages.ActivePage();
-    const auto& textBuffer = page.Buffer();
     const auto row = page.Cursor().GetPosition().y;
     const auto startCol = page.Cursor().GetPosition().x;
-    const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
+    const auto endCol = std::min<VTInt>(startCol + numChars, page.Buffer().GetLineWidth(row));
 
     // The ECH control is expected to reset the delayed wrap flag.
     page.Cursor().ResetDelayEOLWrap();
@@ -1388,7 +1385,6 @@ bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
             defaultBgIndex = defaultBgIndex < 16 ? defaultBgIndex : 0;
 
             const auto target = _pages.Get(page);
-            const auto& textBuffer = target.Buffer();
             const auto eraseRect = _CalculateRectArea(target, top, left, bottom, right);
             for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
             {
@@ -1399,7 +1395,7 @@ bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
                     // predate Unicode, though, so we'd need a custom mapping table
                     // to lookup the correct checksums. Considering this is only for
                     // testing at the moment, that doesn't seem worth the effort.
-                    const auto cell = textBuffer.GetCellDataAt({ col, row });
+                    const auto cell = target.Buffer().GetCellDataAt({ col, row });
                     for (auto ch : cell->Chars())
                     {
                         // That said, I've made a special allowance for U+2426,
@@ -1450,9 +1446,8 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
     if (!_modes.test(Mode::AllowDECSLRM))
     {
         const auto page = _pages.ActivePage();
-        auto& textBuffer = page.Buffer();
         const auto eraseAttributes = _GetEraseAttributes(page);
-        textBuffer.SetCurrentLineRendition(rendition, eraseAttributes);
+        page.Buffer().SetCurrentLineRendition(rendition, eraseAttributes);
         // There is some variation in how this was handled by the different DEC
         // terminals, but the STD 070 reference (on page D-13) makes it clear that
         // the delayed wrap (aka the Last Column Flag) was expected to be reset when
@@ -1992,8 +1987,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         {
             // If we've allowed left/right margins, we can't have line renditions.
             const auto page = _pages.ActivePage();
-            auto& textBuffer = page.Buffer();
-            textBuffer.ResetLineRenditionRange(page.Top(), page.Bottom());
+            page.Buffer().ResetLineRenditionRange(page.Top(), page.Bottom());
         }
         return true;
     case DispatchTypes::ModeParams::DECECM_EraseColorMode:
@@ -2708,7 +2702,6 @@ bool AdaptDispatch::BackIndex()
 bool AdaptDispatch::ForwardIndex()
 {
     const auto page = _pages.ActivePage();
-    const auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     const auto cursorPosition = cursor.GetPosition();
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
@@ -2720,7 +2713,7 @@ bool AdaptDispatch::ForwardIndex()
         _ScrollRectHorizontally(page, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, -1);
     }
     // Otherwise we move the cursor right, but not past the end of the line.
-    else if (cursorPosition.x < textBuffer.GetLineWidth(cursorPosition.y) - 1)
+    else if (cursorPosition.x < page.Buffer().GetLineWidth(cursorPosition.y) - 1)
     {
         cursor.SetXPosition(cursorPosition.x + 1);
         _ApplyCursorMovementFlags(cursor);
@@ -2769,11 +2762,10 @@ bool AdaptDispatch::HorizontalTabSet()
 bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
     const auto page = _pages.ActivePage();
-    const auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     auto column = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
-    const auto width = textBuffer.GetLineWidth(row);
+    const auto width = page.Buffer().GetLineWidth(row);
     auto tabsPerformed = 0;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
@@ -2818,11 +2810,10 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
     const auto page = _pages.ActivePage();
-    const auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     auto column = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
-    const auto width = textBuffer.GetLineWidth(row);
+    const auto width = page.Buffer().GetLineWidth(row);
     auto tabsPerformed = 0;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
@@ -3271,12 +3262,11 @@ bool AdaptDispatch::HardReset()
 bool AdaptDispatch::ScreenAlignmentPattern()
 {
     const auto page = _pages.ActivePage();
-    auto& textBuffer = page.Buffer();
 
     // Fill the screen with the letter E using the default attributes.
     _FillRect(page, { 0, page.Top(), page.Width(), page.Bottom() }, L"E", {});
     // Reset the line rendition for all of these rows.
-    textBuffer.ResetLineRenditionRange(page.Top(), page.Bottom());
+    page.Buffer().ResetLineRenditionRange(page.Top(), page.Bottom());
     // Reset the meta/extended attributes (but leave the colors unchanged).
     auto attr = page.Attributes();
     attr.SetStandardErase();
@@ -3307,11 +3297,10 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 bool AdaptDispatch::_EraseScrollback()
 {
     const auto page = _pages.VisiblePage();
-    auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     const auto row = cursor.GetPosition().y;
 
-    textBuffer.ClearScrollback(page.Top(), page.Height());
+    page.Buffer().ClearScrollback(page.Top(), page.Height());
     // Move the viewport
     _api.SetViewportPosition({ page.XPanOffset(), 0 });
     // Move the cursor to the same relative location.
