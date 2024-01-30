@@ -54,22 +54,28 @@ void Page::SetAttributes(const TextAttribute& attr, ITerminalApi* api) const
 
 til::CoordType Page::Top() const noexcept
 {
+    // If we ever support vertical window panning, the page top won't
+    // necessarily align with the viewport top, so it's best we always
+    // treat them as distinct properties.
     return _viewport.top;
 }
 
 til::CoordType Page::Bottom() const noexcept
 {
+    // Similarly, the page bottom won't always match the viewport bottom.
     return _viewport.bottom;
 }
 
 til::CoordType Page::Width() const noexcept
 {
+    // The page width could also one day be different from the buffer width,
+    // so again it's best treated as a distinct property.
     return _buffer.GetSize().Width();
 }
 
 til::CoordType Page::Height() const noexcept
 {
-    return _viewport.bottom - _viewport.top;
+    return Bottom() - Top();
 }
 
 til::CoordType Page::BufferHeight() const noexcept
@@ -104,20 +110,29 @@ Page PageManager::Get(const til::CoordType pageNumber) const
 {
     const auto requestedPageNumber = std::min(std::max(pageNumber, 1), MAX_PAGES);
     auto [visibleBuffer, visibleViewport, isMainBuffer] = _api.GetBufferAndViewport();
+
+    // If we're not in the main buffer (either because an app has enabled the
+    // alternate buffer mode, or switched the conhost screen buffer), then VT
+    // paging doesn't apply, so we disregard the requested page number and just
+    // use the visible buffer (with a fixed page number of 1).
     if (!isMainBuffer)
     {
         return { visibleBuffer, visibleViewport, 1 };
     }
-    else if (requestedPageNumber == _visiblePageNumber)
+
+    // If the requested page number happens to be the visible page, then we
+    // can also just use the visible buffer as is.
+    if (requestedPageNumber == _visiblePageNumber)
     {
         return { visibleBuffer, visibleViewport, _visiblePageNumber };
     }
-    else
-    {
-        const auto pageSize = visibleViewport.size();
-        auto& pageBuffer = _getBuffer(requestedPageNumber, pageSize);
-        return { pageBuffer, til::rect{ pageSize }, requestedPageNumber };
-    }
+
+    // Otherwise we're working with a background buffer, so we need to
+    // retrieve that from the buffer array, and resize it to match the
+    // active page size.
+    const auto pageSize = visibleViewport.size();
+    auto& pageBuffer = _getBuffer(requestedPageNumber, pageSize);
+    return { pageBuffer, til::rect{ pageSize }, requestedPageNumber };
 }
 
 Page PageManager::ActivePage() const
@@ -187,9 +202,11 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
             newBuffer.CopyProperties(oldBuffer);
             newBuffer.GetCursor().SetPosition(position);
         }
-        // If we moved from the visible buffer to a background buffer
-        // we need to hide the cursor in the visible buffer. It should
-        // be restored when moving back.
+        // If we moved from the visible buffer to a background buffer we need
+        // to hide the cursor in the visible buffer. This is because the page
+        // number is like a third dimension in the cursor coordinate system.
+        // If the cursor isn't on the visible page, it's the same as if its
+        // x/y coordinates are outside the visible viewport.
         if (wasVisible && !isVisible)
         {
             visibleBuffer.GetCursor().SetIsVisible(false);
@@ -221,10 +238,16 @@ TextBuffer& PageManager::_getBuffer(const til::CoordType pageNumber, const til::
     auto& buffer = til::at(_buffers, pageNumber - 1);
     if (buffer == nullptr)
     {
+        // Page buffers are created on demand, and are sized to match the active
+        // page dimensions without any scrollback rows.
         buffer = std::make_unique<TextBuffer>(pageSize, TextAttribute{}, 0, false, _renderer);
     }
     else if (buffer->GetSize().Dimensions() != pageSize)
     {
+        // If a buffer already exists for the page, and the page dimensions have
+        // changed while it was inactive, it will need to be resized.
+        // TODO: We don't currently reflow the existing content in this case, but
+        // that may be something we want to reconsider.
         buffer->ResizeTraditional(pageSize);
     }
     return *buffer;
