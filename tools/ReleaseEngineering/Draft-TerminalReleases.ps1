@@ -55,6 +55,8 @@ Class Asset {
 
 	[string]$Path
 
+	[string]$VersionMoniker
+
 	Asset([string]$Path) {
 		$this.Path = $Path;
 	}
@@ -109,6 +111,9 @@ Class Asset {
 			# Zip files just encode everything in their filename. Not great, but workable.
 			$this.ParseFilename($local:filename)
 		}
+
+		$v = [version]$this.Version
+		$this.VersionMoniker = "{0}.{1}" -f ($v.Major, $v.Minor)
 
 		$this.Branding = Switch($this.Name) {
 			"Microsoft.WindowsTerminal" { [Branding]::Release }
@@ -253,7 +258,7 @@ $Assets = Get-ChildItem $Directory -Recurse -Include *.msixbundle, *.zip | ForEa
 	[Asset]::CreateFromFile($_.FullName)
 }
 
-$Releases = $Assets | Group Branding | ForEach-Object {
+$Releases = $Assets | Group VersionMoniker | ForEach-Object {
 	[Release]::new($_.Group)
 }
 
