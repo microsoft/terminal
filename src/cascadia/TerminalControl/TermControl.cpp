@@ -1336,7 +1336,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Alt, so we should be ignoring the individual keydowns. The character
         // will be sent through the TSFInputControl. See GH#1401 for more
         // details
-        if (modifiers.IsAltPressed() &&
+        if (modifiers.IsAltPressed() && !modifiers.IsCtrlPressed() &&
             (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9))
         {
             e.Handled(true);
