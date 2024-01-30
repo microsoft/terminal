@@ -152,7 +152,7 @@ void TerminalApiTest::CursorVisibility()
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 
-    auto& textBuffer = std::get<TextBuffer&>(term.GetBufferAndViewport());
+    auto& textBuffer = term.GetBufferAndViewport().buffer;
     textBuffer.GetCursor().SetIsVisible(false);
     VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());

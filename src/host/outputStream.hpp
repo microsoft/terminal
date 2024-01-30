@@ -32,7 +32,7 @@ public:
     void ReturnResponse(const std::wstring_view response) override;
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
-    std::tuple<TextBuffer&, til::rect, bool> GetBufferAndViewport() override;
+    BufferState GetBufferAndViewport() override;
     void SetViewportPosition(const til::point position) override;
 
     void SetTextAttributes(const TextAttribute& attrs) override;

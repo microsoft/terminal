@@ -33,7 +33,7 @@ Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() n
     return *_stateMachine;
 }
 
-std::tuple<TextBuffer&, til::rect, bool> Terminal::GetBufferAndViewport() noexcept
+ITerminalApi::BufferState Terminal::GetBufferAndViewport() noexcept
 {
     return { _activeBuffer(), til::rect{ _GetMutableViewport().ToInclusive() }, !_inAltBuffer() };
 }

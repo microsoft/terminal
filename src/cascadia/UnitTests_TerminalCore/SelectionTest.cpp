@@ -46,7 +46,7 @@ namespace TerminalCoreUnitTests
 
         TextBuffer& GetTextBuffer(Terminal& term)
         {
-            return std::get<TextBuffer&>(term.GetBufferAndViewport());
+            return term.GetBufferAndViewport().buffer;
         }
 
         TEST_METHOD(SelectUnit)

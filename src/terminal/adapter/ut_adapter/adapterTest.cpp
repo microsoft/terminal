@@ -81,7 +81,7 @@ public:
         return *_stateMachine;
     }
 
-    std::tuple<TextBuffer&, til::rect, bool> GetBufferAndViewport() override
+    BufferState GetBufferAndViewport() override
     {
         const auto viewport = til::rect{ _viewport.left, _viewport.top, _viewport.right, _viewport.bottom };
         return { *_textBuffer.get(), viewport, true };
@@ -3275,7 +3275,7 @@ public:
         setMacroText(63, L"Macro 63");
 
         const auto getBufferOutput = [&]() {
-            const auto& textBuffer = std::get<TextBuffer&>(_testGetSet->GetBufferAndViewport());
+            const auto& textBuffer = _testGetSet->GetBufferAndViewport().buffer;
             const auto cursorPos = textBuffer.GetCursor().GetPosition();
             return textBuffer.GetRowByOffset(cursorPos.y).GetText().substr(0, cursorPos.x);
         };

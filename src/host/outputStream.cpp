@@ -58,7 +58,7 @@ StateMachine& ConhostInternalGetSet::GetStateMachine()
 // - <none>
 // Return Value:
 // - a tuple with the buffer reference, viewport, and main buffer flag.
-std::tuple<TextBuffer&, til::rect, bool> ConhostInternalGetSet::GetBufferAndViewport()
+ITerminalApi::BufferState ConhostInternalGetSet::GetBufferAndViewport()
 {
     auto& info = _io.GetActiveOutputBuffer();
     return { info.GetTextBuffer(), info.GetVirtualViewport().ToExclusive(), info.Next == nullptr };
