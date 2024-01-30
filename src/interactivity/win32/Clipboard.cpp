@@ -52,33 +52,36 @@ contents and writing them to the console's input buffer
 --*/
 void Clipboard::Paste()
 {
-    HANDLE ClipboardDataHandle;
+    const auto clipboard = _openClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+    if (!clipboard)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
+
+    const auto handle = GetClipboardData(CF_UNICODETEXT);
+    if (!handle)
+    {
+        return;
+    }
 
     // Clear any selection or scrolling that may be active.
     Selection::Instance().ClearSelection();
     Scrolling::s_ClearScroll();
 
-    // Get paste data from clipboard
-    if (!OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle()))
+    const wil::unique_hglobal_locked lock{ handle };
+    const auto str = static_cast<const wchar_t*>(lock.get());
+    if (!str)
     {
         return;
     }
 
-    ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
-    if (ClipboardDataHandle == nullptr)
-    {
-        CloseClipboard();
-        return;
-    }
-
-    auto pwstr = (PWCHAR)GlobalLock(ClipboardDataHandle);
-    StringPaste(pwstr, (ULONG)GlobalSize(ClipboardDataHandle) / sizeof(WCHAR));
-
-    // WIP auditing if user is enrolled
-
-    GlobalUnlock(ClipboardDataHandle);
-
-    CloseClipboard();
+    // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+    //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+    // --> Use wcsnlen() to determine the actual length.
+    // NOTE: Some applications don't add a trailing null character. This includes past conhost versions.
+    const auto maxLen = GlobalSize(handle) / sizeof(WCHAR);
+    StringPaste(str, wcsnlen(str, maxLen));
 }
 
 Clipboard& Clipboard::Instance()
@@ -120,6 +123,52 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 #pragma endregion
 
 #pragma region Private Methods
+
+Clipboard::unique_close_clipboard_call Clipboard::_openClipboard(HWND hwnd)
+{
+    bool success = false;
+
+    // OpenClipboard may fail to acquire the internal lock --> retry.
+    for (DWORD sleep = 10;; sleep *= 2)
+    {
+        if (OpenClipboard(hwnd))
+        {
+            success = true;
+            break;
+        }
+        // 10 iterations
+        if (sleep > 10000)
+        {
+            break;
+        }
+        Sleep(sleep);
+    }
+
+    return Clipboard::unique_close_clipboard_call{ success };
+}
+
+void Clipboard::_copyToClipboard(const UINT format, const void* src, const size_t bytes)
+{
+    wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
+
+    const auto locked = GlobalLock(handle.get());
+    memcpy(locked, src, bytes);
+    GlobalUnlock(handle.get());
+
+    THROW_LAST_ERROR_IF_NULL(SetClipboardData(format, handle.get()));
+    handle.release();
+}
+
+void Clipboard::_copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes)
+{
+    const auto id = RegisterClipboardFormatW(format);
+    if (!id)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
+    _copyToClipboard(id, src, bytes);
+}
 
 // Routine Description:
 // - converts a wchar_t* into a series of KeyEvents as if it was typed
@@ -242,108 +291,39 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
         includeCRLF = trimTrailingWhitespace = true;
     }
 
-    const auto text = buffer.GetText(includeCRLF,
+    const auto rows = buffer.GetText(includeCRLF,
                                      trimTrailingWhitespace,
                                      selectionRects,
                                      GetAttributeColors,
                                      !selection.IsLineSelection());
 
-    CopyTextToSystemClipboard(text, copyFormatting);
-}
-
-// Routine Description:
-// - Copies the text given onto the global system clipboard.
-// Arguments:
-// - rows - Rows of text data to copy
-// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
-{
-    std::wstring finalString;
-
-    // Concatenate strings into one giant string to put onto the clipboard.
+    std::wstring text;
     for (const auto& str : rows.text)
     {
-        finalString += str;
+        text += str;
     }
 
-    // allocate the final clipboard data
-    const auto cchNeeded = finalString.size() + 1;
-    const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
-    wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
-    THROW_LAST_ERROR_IF_NULL(globalHandle.get());
-
-    auto pwszClipboard = (PWSTR)GlobalLock(globalHandle.get());
-    THROW_LAST_ERROR_IF_NULL(pwszClipboard);
-
-    // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
-    // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
-    GlobalUnlock(globalHandle.get());
-    THROW_IF_FAILED(hr);
-
-    // Set global data to clipboard
-    THROW_LAST_ERROR_IF(!OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle()));
-
-    { // Clipboard Scope
-        auto clipboardCloser = wil::scope_exit([]() {
-            THROW_LAST_ERROR_IF(!CloseClipboard());
-        });
-
-        THROW_LAST_ERROR_IF(!EmptyClipboard());
-        THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
-
-        if (fAlsoCopyFormatting)
-        {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
-            const auto iFontHeightPoints = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
-            const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
-
-            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-            CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
-
-            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-            CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
-        }
-    }
-
-    // only free if we failed.
-    // the memory has to remain allocated if we successfully placed it on the clipboard.
-    // Releasing the smart pointer will leave it allocated as we exit scope.
-    globalHandle.release();
-}
-
-// Routine Description:
-// - Copies the given string onto the global system clipboard in the specified format
-// Arguments:
-// - stringToCopy - The string to copy
-// - lpszFormat - the name of the format
-void Clipboard::CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
-{
-    const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
-    if (cbData)
+    std::string htmlData, rtfData;
+    if (copyFormatting)
     {
-        wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
-        THROW_LAST_ERROR_IF_NULL(globalHandleData.get());
+        const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
+        const auto iFontHeightPoints = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
+        const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
 
-        auto pszClipboardHTML = (PSTR)GlobalLock(globalHandleData.get());
-        THROW_LAST_ERROR_IF_NULL(pszClipboardHTML);
+        htmlData = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+        rtfData = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+    }
 
-        // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
-        // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-        const auto hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
-        GlobalUnlock(globalHandleData.get());
-        THROW_IF_FAILED(hr2);
+    EmptyClipboard();
+    // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+    //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+    // --> We add +1 to the length. This works because .c_str() is null-terminated.
+    _copyToClipboard(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
 
-        const auto CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
-        THROW_LAST_ERROR_IF(0 == CF_FORMAT);
-
-        THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
-
-        // only free if we failed.
-        // the memory has to remain allocated if we successfully placed it on the clipboard.
-        // Releasing the smart pointer will leave it allocated as we exit scope.
-        globalHandleData.release();
+    if (copyFormatting)
+    {
+        _copyToClipboardRegisteredFormat(L"HTML Format", htmlData.data(), htmlData.size());
+        _copyToClipboardRegisteredFormat(L"Rich Text Format", rtfData.data(), rtfData.size());
     }
 }
 
