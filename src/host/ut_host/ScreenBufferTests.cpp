@@ -4515,6 +4515,7 @@ void ScreenBufferTests::EraseScrollbackTests()
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto& stateMachine = si.GetStateMachine();
     const auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto initialAttributes = si.GetAttributes();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const auto bufferWidth = si.GetBufferSize().Width();
@@ -4571,7 +4572,7 @@ void ScreenBufferTests::EraseScrollbackTests()
     }
 
     Log::Comment(L"The rest of the buffer should be cleared with default attributes.");
-    VERIFY_IS_TRUE(_ValidateLinesContain(viewportLine, bufferHeight, L' ', TextAttribute{}));
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportLine, bufferHeight, L' ', initialAttributes));
 }
 
 void ScreenBufferTests::EraseTests()
