@@ -67,14 +67,14 @@ void InputBuffer::Consume(bool isUnicode, std::wstring_view& source, std::span<c
 
         // Fast path: Batch convert all data in case the user provided buffer is large enough.
         {
-            const auto wideLength = gsl::narrow<ULONG>(source.size());
-            const auto narrowLength = gsl::narrow<ULONG>(target.size());
+            const auto wideLength = wil::safe_cast<ULONG>(source.size());
+            const auto narrowLength = wil::safe_cast<ULONG>(target.size());
 
             const auto length = WideCharToMultiByte(cp, 0, source.data(), wideLength, target.data(), narrowLength, nullptr, nullptr);
             if (length > 0)
             {
                 source = {};
-                til::bytes_advance(target, gsl::narrow_cast<size_t>(length));
+                til::bytes_advance(target, til::narrow_cast<size_t>(length));
                 return;
             }
 
@@ -90,10 +90,10 @@ void InputBuffer::Consume(bool isUnicode, std::wstring_view& source, std::span<c
             for (const auto& s : til::utf16_iterator{ source })
             {
                 char buffer[8];
-                const auto length = WideCharToMultiByte(cp, 0, s.data(), gsl::narrow_cast<int>(s.size()), &buffer[0], sizeof(buffer), nullptr, nullptr);
+                const auto length = WideCharToMultiByte(cp, 0, s.data(), til::narrow_cast<int>(s.size()), &buffer[0], sizeof(buffer), nullptr, nullptr);
                 THROW_LAST_ERROR_IF(length <= 0);
 
-                std::string_view slice{ &buffer[0], gsl::narrow_cast<size_t>(length) };
+                std::string_view slice{ &buffer[0], til::narrow_cast<size_t>(length) };
                 til::bytes_transfer(target, slice);
 
                 ++read;
@@ -426,7 +426,7 @@ try
                 const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
                 THROW_LAST_ERROR_IF(length <= 0);
 
-                const std::string_view str{ &buffer[0], gsl::narrow_cast<size_t>(length) };
+                const std::string_view str{ &buffer[0], til::narrow_cast<size_t>(length) };
 
                 do
                 {
@@ -655,7 +655,7 @@ bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button
     {
         // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
         // "If the high-order bit is 1, the key is down; otherwise, it is up."
-        static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+        static constexpr short KeyPressed{ til::narrow_cast<short>(0x8000) };
 
         const TerminalInput::MouseButtonState state{
             WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),

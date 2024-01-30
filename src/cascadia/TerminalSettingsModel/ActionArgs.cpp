@@ -974,7 +974,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             if (color.R < indexedColorNames.size())
             {
-                colorStr = GetLibraryResourceString(til::at(indexedColorNames, color.R));
+                colorStr = GetLibraryResourceString(til::at_unchecked(indexedColorNames, color.R));
             }
             else
             {

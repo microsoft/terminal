@@ -62,9 +62,9 @@ namespace til
     // Returns the index of the next codepoint in the given wstr (i.e. after the codepoint that idx points at).
     constexpr size_t utf16_iterate_next(const std::wstring_view& wstr, size_t idx) noexcept
     {
-        if (idx < wstr.size() && is_leading_surrogate(til::at(wstr, idx++)))
+        if (idx < wstr.size() && is_leading_surrogate(til::at_unchecked(wstr, idx++)))
         {
-            if (idx < wstr.size() && is_trailing_surrogate(til::at(wstr, idx)))
+            if (idx < wstr.size() && is_trailing_surrogate(til::at_unchecked(wstr, idx)))
             {
                 ++idx;
             }
@@ -75,9 +75,9 @@ namespace til
     // Returns the index of the preceding codepoint in the given wstr (i.e. in front of the codepoint that idx points at).
     constexpr size_t utf16_iterate_prev(const std::wstring_view& wstr, size_t idx) noexcept
     {
-        if (idx > 0 && is_trailing_surrogate(til::at(wstr, --idx)))
+        if (idx > 0 && is_trailing_surrogate(til::at_unchecked(wstr, --idx)))
         {
-            if (idx > 0 && is_leading_surrogate(til::at(wstr, idx - 1)))
+            if (idx > 0 && is_leading_surrogate(til::at_unchecked(wstr, idx - 1)))
             {
                 --idx;
             }

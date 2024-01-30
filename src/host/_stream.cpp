@@ -213,7 +213,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             {
                 const auto pos = cursor.GetPosition();
                 const auto remaining = width - pos.x;
-                const auto tabCount = gsl::narrow_cast<size_t>(std::min(remaining, 8 - (pos.x & 7)));
+                const auto tabCount = til::narrow_cast<size_t>(std::min(remaining, 8 - (pos.x & 7)));
                 _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], tabCount }, psScrollY);
                 continue;
             }
@@ -244,7 +244,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             // As a special favor to incompetent apps that attempt to display control chars,
             // convert to corresponding OEM Glyph Chars
             const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-            const auto ch = gsl::narrow_cast<char>(*it);
+            const auto ch = til::narrow_cast<char>(*it);
             wchar_t wch = 0;
             const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, &ch, 1, &wch, 1);
             if (result == 1)
@@ -434,12 +434,12 @@ NT_CATCH_RETURN()
             auto wcPtr{ wstr.data() };
             auto mbPtr{ buffer.data() };
             size_t dbcsLength{};
-            if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && gsl::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })
+            if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && til::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })
             {
                 // there was a portion of a dbcs character stored from a previous
                 // call so we take the 2nd half from mbPtr[0], put them together
                 // and write the wide char to wcPtr[0]
-                screenInfo.WriteConsoleDbcsLeadByte[1] = gsl::narrow_cast<byte>(*mbPtr);
+                screenInfo.WriteConsoleDbcsLeadByte[1] = til::narrow_cast<byte>(*mbPtr);
 
                 try
                 {
@@ -475,7 +475,7 @@ NT_CATCH_RETURN()
             // back together then
             if (mbPtrLength != 0 && CheckBisectStringA(const_cast<char*>(mbPtr), mbPtrLength, &consoleInfo.OutputCPInfo))
             {
-                screenInfo.WriteConsoleDbcsLeadByte[0] = gsl::narrow_cast<byte>(mbPtr[mbPtrLength - 1]);
+                screenInfo.WriteConsoleDbcsLeadByte[0] = til::narrow_cast<byte>(mbPtr[mbPtrLength - 1]);
                 mbPtrLength--;
 
                 // Note that we captured a lead byte during this call, but won't actually draw it until later.

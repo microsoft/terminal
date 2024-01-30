@@ -65,7 +65,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         _resetStateToDefault();
 
         // Manually check for the "/?" or "-?" flags, to manually trigger the help text.
-        if (argc == 2 && (NixHelpFlag == til::at(command.Args(), 1) || WindowsHelpFlag == til::at(command.Args(), 1)))
+        if (argc == 2 && (NixHelpFlag == til::at_unchecked(command.Args(), 1) || WindowsHelpFlag == til::at_unchecked(command.Args(), 1)))
         {
             throw CLI::CallForHelp();
         }

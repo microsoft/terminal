@@ -110,9 +110,9 @@ HRESULT Base64::Decode(const std::wstring_view& src, std::wstring& dst) noexcept
         accumulate(r, error, ch2);
         accumulate(r, error, ch3);
 
-        *out++ = gsl::narrow_cast<char>(r >> 16);
-        *out++ = gsl::narrow_cast<char>(r >> 8);
-        *out++ = gsl::narrow_cast<char>(r >> 0);
+        *out++ = til::narrow_cast<char>(r >> 16);
+        *out++ = til::narrow_cast<char>(r >> 8);
+        *out++ = til::narrow_cast<char>(r >> 0);
     }
 
     {
@@ -131,16 +131,16 @@ HRESULT Base64::Decode(const std::wstring_view& src, std::wstring& dst) noexcept
         switch (ri)
         {
         case 2:
-            *out++ = gsl::narrow_cast<char>(r >> 4);
+            *out++ = til::narrow_cast<char>(r >> 4);
             break;
         case 3:
-            *out++ = gsl::narrow_cast<char>(r >> 10);
-            *out++ = gsl::narrow_cast<char>(r >> 2);
+            *out++ = til::narrow_cast<char>(r >> 10);
+            *out++ = til::narrow_cast<char>(r >> 2);
             break;
         case 4:
-            *out++ = gsl::narrow_cast<char>(r >> 16);
-            *out++ = gsl::narrow_cast<char>(r >> 8);
-            *out++ = gsl::narrow_cast<char>(r >> 0);
+            *out++ = til::narrow_cast<char>(r >> 16);
+            *out++ = til::narrow_cast<char>(r >> 8);
+            *out++ = til::narrow_cast<char>(r >> 0);
             break;
         default:
             error |= ri;

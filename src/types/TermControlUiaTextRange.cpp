@@ -75,7 +75,7 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
 // - <none>
 void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
 {
-    const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    const auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     const auto includeOffsets = [](long clientPos, double termControlPos, double padding, double scaleFactor) {
         auto result = base::ClampedNumeric<double>(padding);
@@ -109,7 +109,7 @@ void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) c
 // - <none>
 void TermControlUiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
 {
-    const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    const auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     const auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
         auto result = base::ClampedNumeric<double>(padding);
@@ -139,6 +139,6 @@ til::size TermControlUiaTextRange::_getScreenFontSize() const noexcept
     // Do NOT get the font info from IRenderData. It is a dummy font info.
     // Instead, the font info is saved in the TermControl. So we have to
     // ask our parent to get it for us.
-    const gsl::not_null<const TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    const auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
     return provider->GetFontSize();
 }

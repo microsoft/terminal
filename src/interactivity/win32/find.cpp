@@ -43,7 +43,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
         {
             auto length = SendDlgItemMessageW(hWnd, ID_CONSOLE_FINDSTR, WM_GETTEXTLENGTH, 0, 0);
             lastFindString.resize(length);
-            length = GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, lastFindString.data(), gsl::narrow_cast<int>(length + 1));
+            length = GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, lastFindString.data(), til::narrow_cast<int>(length + 1));
             lastFindString.resize(length);
 
             caseInsensitive = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;

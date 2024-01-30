@@ -69,7 +69,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             const char* begin{ nullptr };
             const char* end{ nullptr };
             json.getString(&begin, &end);
-            const std::string_view zeroCopyString{ begin, gsl::narrow_cast<size_t>(end - begin) };
+            const std::string_view zeroCopyString{ begin, til::narrow_cast<size_t>(end - begin) };
             return zeroCopyString;
         }
     }

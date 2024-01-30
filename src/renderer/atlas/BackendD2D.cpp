@@ -152,7 +152,7 @@ void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
 {
     if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
     {
-        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32)));
+        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), til::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32)));
         _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
     }
 
@@ -208,7 +208,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
                 const DWRITE_GLYPH_RUN glyphRun{
                     .fontFace = m.fontFace.get(),
                     .fontEmSize = p.s->font->fontSize,
-                    .glyphCount = gsl::narrow_cast<UINT32>(count),
+                    .glyphCount = til::narrow_cast<UINT32>(count),
                     .glyphIndices = &row->glyphIndices[off],
                     .glyphAdvances = &row->glyphAdvances[off],
                     .glyphOffsets = &row->glyphOffsets[off],
@@ -346,7 +346,7 @@ f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 
         size = size + (size >> 1);
         size = std::max<size_t>(size, glyphRun.glyphCount);
         // Overflow check.
-        Expects(size > _glyphMetrics.size());
+        assert(size > _glyphMetrics.size());
         _glyphMetrics = Buffer<DWRITE_GLYPH_METRICS>{ size };
     }
 
@@ -367,8 +367,8 @@ f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 
 
         const auto left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
         const auto top = static_cast<f32>(glyphMetrics.topSideBearing - glyphMetrics.verticalOriginY) * fontScale;
-        const auto right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale;
-        const auto bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.bottomSideBearing - glyphMetrics.verticalOriginY) * fontScale;
+        const auto right = static_cast<f32>(til::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale;
+        const auto bottom = static_cast<f32>(til::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.bottomSideBearing - glyphMetrics.verticalOriginY) * fontScale;
 
         if (left < right && top < bottom)
         {
@@ -394,10 +394,10 @@ f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 
 
 void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
 {
-    const auto widthShift = gsl::narrow_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
+    const auto widthShift = til::narrow_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
     const auto cellSize = p.s->font->cellSize;
-    const auto rowTop = gsl::narrow_cast<i16>(cellSize.y * y);
-    const auto rowBottom = gsl::narrow_cast<i16>(rowTop + cellSize.y);
+    const auto rowTop = til::narrow_cast<i16>(cellSize.y * y);
+    const auto rowBottom = til::narrow_cast<i16>(rowTop + cellSize.y);
     const auto textCellCenter = row->lineRendition == LineRendition::DoubleHeightTop ? rowBottom : rowTop;
 
     const auto appendVerticalLines = [&](const GridLineRange& r, FontDecorationPosition pos) {
@@ -533,7 +533,7 @@ void BackendD2D::_resizeCursorBitmap(const RenderingPayload& p, const til::size 
     // parent render target (like the AA mode or D2D1_UNIT_MODE_PIXELS). Not sure who came up with that,
     // but fact is that we need to set both sizes to override the DPI and fake D2D1_UNIT_MODE_PIXELS.
     const D2D1_SIZE_F sizeF{ static_cast<f32>(newSizeInPx.width), static_cast<f32>(newSizeInPx.height) };
-    const D2D1_SIZE_U sizeU{ gsl::narrow_cast<UINT32>(newSizeInPx.width), gsl::narrow_cast<UINT32>(newSizeInPx.height) };
+    const D2D1_SIZE_U sizeU{ til::narrow_cast<UINT32>(newSizeInPx.width), til::narrow_cast<UINT32>(newSizeInPx.height) };
     wil::com_ptr<ID2D1BitmapRenderTarget> cursorRenderTarget;
     _renderTarget->CreateCompatibleRenderTarget(&sizeF, &sizeU, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, cursorRenderTarget.addressof());
     cursorRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -650,7 +650,7 @@ void BackendD2D::_debugDumpRenderTarget(const RenderingPayload& p)
 {
     if (_dumpRenderTargetCounter == 0)
     {
-        ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], gsl::narrow_cast<DWORD>(std::size(_dumpRenderTargetBasePath)));
+        ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], til::narrow_cast<DWORD>(std::size(_dumpRenderTargetBasePath)));
         std::filesystem::create_directories(_dumpRenderTargetBasePath);
     }
 

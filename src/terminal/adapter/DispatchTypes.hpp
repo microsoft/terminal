@@ -51,7 +51,7 @@ namespace Microsoft::Console::VirtualTerminal
             uint64_t value = 0;
             for (auto i = Length - 1; i-- > 0;)
             {
-                value = (value << CHAR_BIT) + gsl::at(s, i);
+                value = (value << CHAR_BIT) + til::at(s, i);
             }
             return value;
         }
@@ -167,7 +167,7 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a sub parameter with no value.
-            return index < _subParams.size() ? til::at(_subParams, index) : defaultParameter;
+            return index < _subParams.size() ? til::at_unchecked(_subParams, index) : defaultParameter;
         }
 
         VTSubParameters subspan(const size_t offset, const size_t count) const noexcept
@@ -223,7 +223,7 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _params.size() ? til::at(_params, index) : defaultParameter;
+            return index < _params.size() ? til::at_unchecked(_params, index) : defaultParameter;
         }
 
         constexpr bool empty() const noexcept
@@ -252,7 +252,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             if (index < _subParamRanges.size())
             {
-                const auto& range = til::at(_subParamRanges, index);
+                const auto& range = til::at_unchecked(_subParamRanges, index);
                 return _subParams.subspan(range.first, range.second - range.first);
             }
             else
@@ -270,7 +270,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             if (index < _subParamRanges.size())
             {
-                const auto& range = til::at(_subParamRanges, index);
+                const auto& range = til::at_unchecked(_subParamRanges, index);
                 return range.second > range.first;
             }
             else

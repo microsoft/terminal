@@ -525,7 +525,7 @@ NT_CATCH_RETURN()
                                                    unicode);
             if (status == CONSOLE_STATUS_WAIT)
             {
-                waiter = std::make_unique<RAW_READ_DATA>(&inputBuffer, &readHandleState, gsl::narrow<ULONG>(buffer.size()), reinterpret_cast<wchar_t*>(buffer.data()));
+                waiter = std::make_unique<RAW_READ_DATA>(&inputBuffer, &readHandleState, wil::safe_cast<ULONG>(buffer.size()), reinterpret_cast<wchar_t*>(buffer.data()));
             }
             return status;
         }

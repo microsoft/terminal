@@ -74,7 +74,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         }
     }
 
-    const Remoting::CommandlineArgs eventArgs{ args, cwd, gsl::narrow_cast<uint32_t>(nCmdShow), GetEnvironmentStringsW() };
+    const Remoting::CommandlineArgs eventArgs{ args, cwd, til::narrow_cast<uint32_t>(nCmdShow), GetEnvironmentStringsW() };
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
     const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
     int exitCode = 0;
@@ -99,7 +99,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     // We also need to ensure that all UI threads exit before WindowEmperor leaves the scope on the main thread (MSFT:46744208).
     // Both problems can be solved and the shutdown accelerated by using TerminateProcess.
     // std::exit(), etc., cannot be used here, because those use ExitProcess for unpackaged applications.
-    TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(exitCode));
+    TerminateProcess(GetCurrentProcess(), til::narrow_cast<UINT>(exitCode));
     __assume(false);
 }
 
@@ -609,7 +609,7 @@ void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
         return;
     }
 
-    const auto& summonArgs = til::at(_hotkeys, hotkeyIndex);
+    const auto& summonArgs = til::at_unchecked(_hotkeys, hotkeyIndex);
     Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
 
     // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
@@ -714,7 +714,7 @@ winrt::fire_and_forget WindowEmperor::_setupGlobalHotkeys()
     // If a hotkey with a given HWND and ID combination already exists
     // then a duplicate one will be added, which we don't want.
     // (Additionally we want to remove hotkeys that were removed from the settings.)
-    for (auto i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
+    for (auto i = 0, count = til::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
     {
         _unregisterHotKey(i);
     }
@@ -726,7 +726,7 @@ winrt::fire_and_forget WindowEmperor::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            auto index = gsl::narrow_cast<int>(_hotkeys.size());
+            auto index = til::narrow_cast<int>(_hotkeys.size());
             const auto succeeded = _registerHotKey(index, keyChord);
 
             TraceLoggingWrite(g_hWindowsTerminalProvider,

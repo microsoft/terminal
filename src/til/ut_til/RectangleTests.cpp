@@ -107,7 +107,7 @@ class RectangleTests
                 const til::rect rc{ pt, til::size{ x, y } };
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Overflow y-dimension case.");
@@ -118,7 +118,7 @@ class RectangleTests
                 const til::rect rc{ pt, til::size{ x, y } };
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -549,7 +549,7 @@ class RectangleTests
                 const auto actual = start.scale_up(scale);
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Multiply by size with height way too big.");
@@ -560,7 +560,7 @@ class RectangleTests
                 const auto actual = start.scale_up(scale);
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -652,7 +652,7 @@ class RectangleTests
                 rc.width();
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -681,7 +681,7 @@ class RectangleTests
                 rc.height();
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -800,7 +800,7 @@ class RectangleTests
                 bigRc.index_of(pt);
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -848,7 +848,7 @@ class RectangleTests
                 const auto val = til::unwrap_small_rect(rc.to_inclusive_rect());
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Overflow on top.");
@@ -863,7 +863,7 @@ class RectangleTests
                 const auto val = til::unwrap_small_rect(rc.to_inclusive_rect());
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Overflow on right.");
@@ -878,7 +878,7 @@ class RectangleTests
                 const auto val = til::unwrap_small_rect(rc.to_inclusive_rect());
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Overflow on bottom.");
@@ -893,7 +893,7 @@ class RectangleTests
                 const auto val = til::unwrap_small_rect(rc.to_inclusive_rect());
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -926,7 +926,7 @@ class RectangleTests
                     auto val = rc.to_win32_rect();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {
@@ -952,7 +952,7 @@ class RectangleTests
                     auto val = rc.to_win32_rect();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {
@@ -978,7 +978,7 @@ class RectangleTests
                     auto val = rc.to_win32_rect();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {
@@ -1004,7 +1004,7 @@ class RectangleTests
                     auto val = rc.to_win32_rect();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {

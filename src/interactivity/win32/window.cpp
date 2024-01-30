@@ -28,9 +28,6 @@
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
 #include "../../renderer/atlas/AtlasEngine.h"
 #endif
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-#include "../../renderer/dx/DxRenderer.hpp"
-#endif
 
 #include "../inc/ServiceLocator.hpp"
 #include "../../types/inc/Viewport.hpp"
@@ -70,9 +67,6 @@ Window::~Window()
     // reducing the change for existing race conditions to turn into deadlocks.
 #ifndef NDEBUG
     delete pGdiEngine;
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-    delete pDxEngine;
-#endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
     delete pAtlasEngine;
 #endif
@@ -219,18 +213,6 @@ void Window::_UpdateSystemMetrics() const
     {
         switch (useDx)
         {
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-        case UseDx::DxEngine:
-            pDxEngine = new DxEngine();
-            // TODO: MSFT:21255595 make this less gross
-            // Manually set the Dx Engine to Hwnd mode. When we're trying to
-            // determine the initial window size, which happens BEFORE the
-            // window is created, we'll want to make sure the DX engine does
-            // math in the hwnd mode, not the Composition mode.
-            THROW_IF_FAILED(pDxEngine->SetHwnd(nullptr));
-            g.pRender->AddRenderEngine(pDxEngine);
-            break;
-#endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         case UseDx::AtlasEngine:
             pAtlasEngine = new AtlasEngine();
@@ -332,18 +314,6 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-            if (pDxEngine)
-            {
-                HRESULT hr = S_OK;
-                if (SUCCEEDED(hr = pDxEngine->SetHwnd(hWnd)))
-                {
-                    hr = pDxEngine->Enable();
-                }
-                status = NTSTATUS_FROM_HRESULT(hr);
-            }
-            else
-#endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
                 if (pAtlasEngine)
             {

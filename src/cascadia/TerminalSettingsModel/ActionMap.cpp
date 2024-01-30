@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (const auto args = actionAndArgs.Args())
         {
-            hasher = til::hasher{ gsl::narrow_cast<size_t>(args.Hash()) };
+            hasher = til::hasher{ til::narrow_cast<size_t>(args.Hash()) };
         }
         else
         {
@@ -40,7 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     case ShortcutAction::action:                                       \
     {                                                                  \
         /* If it does, hash the default values for the args. */        \
-        static const auto cachedHash = gsl::narrow_cast<size_t>(       \
+        static const auto cachedHash = til::narrow_cast<size_t>(       \
             winrt::make_self<implementation::action##Args>()->Hash()); \
         hash = cachedHash;                                             \
         break;                                                         \

@@ -107,7 +107,7 @@ bool ColorScheme::_layerJson(const Json::Value& json)
     size_t colorCount = 0;
     for (const auto& [key, index] : TableColorsMapping)
     {
-        colorCount += JsonUtils::GetValueForKey(json, key, til::at(_table, index));
+        colorCount += JsonUtils::GetValueForKey(json, key, til::at_unchecked(_table, index));
         if (colorCount == ColorSchemeExpectedSize)
         {
             break;
@@ -137,8 +137,8 @@ Json::Value ColorScheme::ToJson() const
 
     for (size_t i = 0; i < ColorSchemeExpectedSize; ++i)
     {
-        const auto& key = til::at(TableColorsMapping, i).first;
-        JsonUtils::SetValueForKey(json, key, til::at(_table, i));
+        const auto& key = til::at_unchecked(TableColorsMapping, i).first;
+        JsonUtils::SetValueForKey(json, key, til::at_unchecked(_table, i));
     }
 
     return json;

@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 if (newTerminalArgs.Profile().empty() && !newTerminalArgs.Commandline().empty())
                 {
                     const std::wstring_view commandLine{ newTerminalArgs.Commandline() };
-                    const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+                    const auto start{ til::at_unchecked(commandLine, 0) == L'"' ? 1 : 0 };
                     const auto terminator{ commandLine.find_first_of(start ? L'"' : L' ', start) }; // look past the first character if it starts with "
                     // We have to take a copy here; winrt::param::hstring requires a null-terminated string
                     const std::wstring firstComponent{ commandLine.substr(start, terminator - start) };

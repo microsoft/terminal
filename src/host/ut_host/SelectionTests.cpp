@@ -65,7 +65,7 @@ class SelectionTests
 
         if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
         {
-            for (auto iRect = 0; iRect < gsl::narrow<int>(selectionRects.size()); iRect++)
+            for (auto iRect = 0; iRect < wil::safe_cast<int>(selectionRects.size()); iRect++)
             {
                 // ensure each rectangle is exactly the width requested (block selection)
                 const auto psrRect = &selectionRects[iRect];
@@ -193,7 +193,7 @@ class SelectionTests
 
                 // RULE #3: Check first and last line have invalid regions removed, if applicable
                 UINT iFirst = 0;
-                auto iLast = gsl::narrow<UINT>(selectionRects.size() - 1u);
+                auto iLast = wil::safe_cast<UINT>(selectionRects.size() - 1u);
 
                 const auto psrFirst = &selectionRects[iFirst];
                 const auto psrLast = &selectionRects[iLast];
@@ -395,7 +395,7 @@ class SelectionInputTests
 
         // Get the left and right side of the text we inserted (right is one past the end)
         const til::point left;
-        const til::point right{ gsl::narrow<til::CoordType>(text.length()), 0 };
+        const til::point right{ wil::safe_cast<til::CoordType>(text.length()), 0 };
 
         // Get the selection instance and buffer size
         auto& sel = Selection::Instance();
@@ -442,7 +442,7 @@ class SelectionInputTests
 
         // Get the left and right side of the text we inserted (right is one past the end)
         const til::point left;
-        const til::point right = { gsl::narrow<til::CoordType>(text.length()), 0 };
+        const til::point right = { wil::safe_cast<til::CoordType>(text.length()), 0 };
 
         // Get the selection instance and buffer size
         auto& sel = Selection::Instance();

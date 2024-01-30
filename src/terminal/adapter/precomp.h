@@ -13,10 +13,6 @@ Abstract:
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
-#include <cmath>
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
 #include <sal.h>
 
 #include "../../inc/conattrs.hpp"

@@ -88,8 +88,8 @@ TextBuffer::~TextBuffer()
 // memory usage from ~7MB down to just ~2MB at startup in the general case.
 void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes)
 {
-    const auto w = gsl::narrow<uint16_t>(screenBufferSize.width);
-    const auto h = gsl::narrow<uint16_t>(screenBufferSize.height);
+    const auto w = wil::safe_cast<uint16_t>(screenBufferSize.width);
+    const auto h = wil::safe_cast<uint16_t>(screenBufferSize.height);
 
     constexpr auto rowSize = ROW::CalculateRowSize();
     const auto charsBufferSize = ROW::CalculateCharsBufferSize(w);
@@ -101,7 +101,7 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
     // --> Use uint64_t so that we can safely do our calculations even on x86.
     // We allocate 1 additional row, which will be used for GetScratchpadRow().
     const auto rowCount = ::base::strict_cast<uint64_t>(h) + 1;
-    const auto allocSize = gsl::narrow<size_t>(rowCount * rowStride);
+    const auto allocSize = wil::safe_cast<size_t>(rowCount * rowStride);
 
     // NOTE: Modifications to this block of code might have to be mirrored over to ResizeTraditional().
     // It constructs a temporary TextBuffer and then extracts the members below, overwriting itself.
@@ -129,8 +129,8 @@ __declspec(noinline) void TextBuffer::_commit(const std::byte* row)
     assert(row >= _commitWatermark);
 
     const auto rowEnd = row + _bufferRowStride;
-    const auto remaining = gsl::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
-    const auto minimum = gsl::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
+    const auto remaining = til::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
+    const auto minimum = til::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
     const auto ideal = minimum + _bufferRowStride * _commitReadAheadRowCount;
     const auto size = std::min(remaining, ideal);
 
@@ -200,7 +200,7 @@ ROW& TextBuffer::_getRow(til::CoordType y) const
     // We add 1 to the row offset, because row "0" is the one returned by GetScratchpadRow().
     // See GetScratchpadRow() for more explanation.
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-    return const_cast<TextBuffer*>(this)->_getRowByOffsetDirect(gsl::narrow_cast<size_t>(offset) + 1);
+    return const_cast<TextBuffer*>(this)->_getRowByOffsetDirect(til::narrow_cast<size_t>(offset) + 1);
 }
 
 // Returns the "user-visible" index of the last committed row, which can be used
@@ -213,7 +213,7 @@ til::CoordType TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
     // * scratchpad row at offset 0, whereas regular rows start at offset 1.
     // * fact that _commitWatermark points _past_ the last committed row,
     //   but we want to return an index pointing at the last row.
-    return std::max(0, gsl::narrow_cast<til::CoordType>(lastRowOffset - 2));
+    return std::max(0, til::narrow_cast<til::CoordType>(lastRowOffset - 2));
 }
 
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
@@ -438,15 +438,15 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
     const auto beg = chars.begin();
     const auto end = chars.end();
     auto it = beg;
-    const auto asciiEnd = beg + std::min(chars.size(), gsl::narrow_cast<size_t>(columnLimit));
+    const auto asciiEnd = beg + std::min(chars.size(), til::narrow_cast<size_t>(columnLimit));
 
     // ASCII fast-path: 1 char always corresponds to 1 column.
     for (; it != asciiEnd && *it < 0x80; ++it)
     {
     }
 
-    const auto dist = gsl::narrow_cast<size_t>(it - beg);
-    auto col = gsl::narrow_cast<til::CoordType>(dist);
+    const auto dist = til::narrow_cast<size_t>(it - beg);
+    auto col = til::narrow_cast<til::CoordType>(dist);
 
     if (it == asciiEnd) [[likely]]
     {
@@ -490,7 +490,7 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         if (col > columnLimit)
         {
             columns = columnLimit;
-            return gsl::narrow_cast<size_t>(it - beg);
+            return til::narrow_cast<size_t>(it - beg);
         }
 
         // But if we simply ran out of text we just need to return the actual number of columns.
@@ -1086,7 +1086,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         {
             const auto fillChar = L' ';
             const auto fillOffset = GetLineWidth(rowIndex);
-            const auto fillLength = gsl::narrow<size_t>(GetSize().Width() - fillOffset);
+            const auto fillLength = wil::safe_cast<size_t>(GetSize().Width() - fillOffset);
             const OutputCellIterator fillData{ fillChar, fillAttributes, fillLength };
             row.WriteCells(fillData, fillOffset, false);
             // We also need to make sure the cursor is clamped within the new width.
@@ -1958,7 +1958,7 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
     const auto bufferSize = GetSize();
     // The coords are inclusive, so to get the (inclusive) length we add 1.
     const auto length = bufferSize.CompareInBounds(coordEnd, coordStart) + 1;
-    return gsl::narrow<size_t>(length);
+    return wil::safe_cast<size_t>(length);
 }
 
 // Routine Description:
@@ -2137,14 +2137,14 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
         {
             const auto& row = GetRowByOffset(iRow);
             const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
-            const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
-            const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
+            const auto rowBegU16 = til::narrow_cast<uint16_t>(rowBeg);
+            const auto rowEndU16 = til::narrow_cast<uint16_t>(rowEnd);
             const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
 
             auto x = rowBegU16;
             for (const auto& [attr, length] : runs)
             {
-                const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+                const auto nextX = til::narrow_cast<uint16_t>(x + length);
                 const auto [fg, bg, ul] = GetAttributeColors(attr);
                 const auto fgHex = Utils::ColorToHexString(fg);
                 const auto bgHex = Utils::ColorToHexString(bg);
@@ -2262,8 +2262,8 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
 
         // these values are byte offsets from start of clipboard
         const auto htmlStartPos = ClipboardHeaderSize;
-        const auto htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.length());
-        const auto fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
+        const auto htmlEndPos = ClipboardHeaderSize + wil::safe_cast<size_t>(htmlBuilder.length());
+        const auto fragStartPos = ClipboardHeaderSize + wil::safe_cast<size_t>(htmlHeader.length());
         const auto fragEndPos = htmlEndPos - HtmlFooter.length();
 
         // header required by HTML 0.9 format
@@ -2387,14 +2387,14 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
         {
             const auto& row = GetRowByOffset(iRow);
             const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
-            const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
-            const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
+            const auto rowBegU16 = til::narrow_cast<uint16_t>(rowBeg);
+            const auto rowEndU16 = til::narrow_cast<uint16_t>(rowEnd);
             const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
 
             auto x = rowBegU16;
             for (auto& [attr, length] : runs)
             {
-                const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+                const auto nextX = til::narrow_cast<uint16_t>(x + length);
                 const auto [fg, bg, ul] = GetAttributeColors(attr);
                 const auto fgIdx = getColorTableIndex(fg);
                 const auto bgIdx = getColorTableIndex(bg);
@@ -2495,7 +2495,7 @@ void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_
                 contentBuilder += "\\";
                 [[fallthrough]];
             default:
-                contentBuilder += gsl::narrow_cast<char>(codeUnit);
+                contentBuilder += til::narrow_cast<char>(codeUnit);
             }
         }
         else
@@ -2554,7 +2554,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
     const auto oldHeight = std::max(lastRowWithText, oldCursorPos.y) + 1;
     const auto newHeight = newBuffer.GetSize().Height();
-    const auto newWidthU16 = gsl::narrow_cast<uint16_t>(newWidth);
+    const auto newWidthU16 = til::narrow_cast<uint16_t>(newWidth);
 
     // Copy oldBuffer into newBuffer until oldBuffer has been fully consumed.
     for (; oldY < oldHeight && newY < newYLimit; ++oldY)
@@ -2662,8 +2662,8 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
             const auto& oldAttr = oldRow.Attributes();
             auto& newAttr = newRow.Attributes();
-            const auto attributes = oldAttr.slice(gsl::narrow_cast<uint16_t>(oldX), oldAttr.size());
-            newAttr.replace(gsl::narrow_cast<uint16_t>(newX), newAttr.size(), attributes);
+            const auto attributes = oldAttr.slice(til::narrow_cast<uint16_t>(oldX), oldAttr.size());
+            newAttr.replace(til::narrow_cast<uint16_t>(newX), newAttr.size(), attributes);
             newAttr.resize_trailing_extent(newWidthU16);
 
             if (oldY == oldCursorPos.y && oldCursorPos.x >= oldX)

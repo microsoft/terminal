@@ -36,7 +36,7 @@ void MacroBuffer::InvokeMacro(const size_t macroId, StateMachine& stateMachine)
 {
     if (macroId < _macros.size())
     {
-        const auto& macroSequence = til::at(_macros, macroId);
+        const auto& macroSequence = til::at_unchecked(_macros, macroId);
         // Macros can invoke other macros up to a depth of 16, but we don't allow
         // the total sequence length to exceed the maximum buffer size, since that's
         // likely to facilitate a denial-of-service attack.

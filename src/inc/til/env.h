@@ -9,7 +9,7 @@
 
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
-#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, til::narrow_cast or gsl::narrow (type.1).
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
@@ -81,7 +81,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             HRESULT RegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
             {
                 return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
-                    auto length = gsl::narrow<DWORD>(valueLength * sizeof(wchar_t));
+                    auto length = wil::safe_cast<DWORD>(valueLength * sizeof(wchar_t));
                     const auto status = ::RegQueryValueExW(key, valueName, nullptr, nullptr, reinterpret_cast<BYTE*>(value), &length);
                     // length will receive the number of bytes including trailing null byte. Convert to a number of wchar_t's.
                     // AdaptFixedSizeToAllocatedResult will then resize buffer to valueLengthNeededWithNull.

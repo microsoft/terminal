@@ -315,7 +315,7 @@ bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
     auto success = false;
 
     // There are no intermediates, so the id is effectively the final char.
-    const auto wch = gsl::narrow_cast<wchar_t>(id);
+    const auto wch = til::narrow_cast<wchar_t>(id);
 
     // 0x7f is DEL, which we treat effectively the same as a ctrl character.
     if (wch == 0x7f)
@@ -587,7 +587,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         WI_SetFlag(currentModifiers, SHIFT_PRESSED);
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_SHIFT, MAPVK_VK_TO_VSC));
         input.push_back(next);
     }
     if (alt)
@@ -595,7 +595,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         WI_SetFlag(currentModifiers, LEFT_ALT_PRESSED);
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC));
         input.push_back(next);
     }
     if (ctrl)
@@ -603,7 +603,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         WI_SetFlag(currentModifiers, LEFT_CTRL_PRESSED);
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_CONTROL, MAPVK_VK_TO_VSC));
         input.push_back(next);
     }
 
@@ -619,7 +619,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         WI_ClearFlag(currentModifiers, LEFT_CTRL_PRESSED);
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_CONTROL, MAPVK_VK_TO_VSC));
         input.push_back(next);
     }
     if (alt)
@@ -627,7 +627,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         WI_ClearFlag(currentModifiers, LEFT_ALT_PRESSED);
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC));
         input.push_back(next);
     }
     if (shift)
@@ -635,7 +635,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         WI_ClearFlag(currentModifiers, SHIFT_PRESSED);
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_SHIFT, MAPVK_VK_TO_VSC));
         input.push_back(next);
     }
 }
@@ -658,7 +658,7 @@ void InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
 {
     input.reserve(input.size() + 2);
 
-    const auto sc = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
+    const auto sc = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
     auto rec = SynthesizeKeyEvent(true, 1, vkey, sc, wch, modifierState);
 
     input.push_back(rec);
@@ -695,7 +695,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
 // - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modifierState)
 {
-    const auto wch = gsl::narrow_cast<wchar_t>(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
+    const auto wch = til::narrow_cast<wchar_t>(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
     return _WriteSingleKey(wch, vkey, modifierState);
 }
 
@@ -1069,7 +1069,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const std::span<const s
 
     if (!parameters.empty())
     {
-        switch (til::at(parameters, 0))
+        switch (til::at_unchecked(parameters, 0))
         {
         case DispatchTypes::WindowManipulationType::RefreshWindow:
             function = DispatchTypes::WindowManipulationType::RefreshWindow;

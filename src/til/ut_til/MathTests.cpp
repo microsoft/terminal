@@ -35,7 +35,7 @@ class MathTests
         {
             if (tc.throws)
             {
-                VERIFY_THROWS(TilMath::template cast<decltype(tc.expected)>(tc.given), gsl::narrowing_error);
+                VERIFY_THROWS(TilMath::template cast<decltype(tc.expected)>(tc.given), wil::ResultException);
             }
             else
             {

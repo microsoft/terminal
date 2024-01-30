@@ -332,7 +332,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         _transitionToState(ConnectionState::Connecting);
 
-        const til::size dimensions{ gsl::narrow<til::CoordType>(_cols), gsl::narrow<til::CoordType>(_rows) };
+        const til::size dimensions{ wil::safe_cast<til::CoordType>(_cols), wil::safe_cast<til::CoordType>(_rows) };
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
@@ -412,7 +412,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     return pInstance->_OutputThread();
                 }
-                return gsl::narrow_cast<DWORD>(E_INVALIDARG);
+                return til::narrow_cast<DWORD>(E_INVALIDARG);
             },
             this,
             0,
@@ -638,7 +638,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             DWORD read{};
 
-            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), til::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
 
             // When we call CancelSynchronousIo() in Close() this is the branch that's taken and gets us out of here.
             if (_isStateAtOrBeyond(ConnectionState::Closing))
@@ -659,7 +659,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
                     _transitionToState(ConnectionState::Failed);
-                    return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
+                    return til::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
                 }
             }
 
@@ -669,7 +669,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);
-                return gsl::narrow_cast<DWORD>(result);
+                return til::narrow_cast<DWORD>(result);
             }
 
             if (_u16Str.empty())

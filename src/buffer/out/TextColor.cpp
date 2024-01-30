@@ -159,7 +159,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& 
 {
     if (IsDefault())
     {
-        const auto defaultColor = til::at(colorTable, defaultIndex);
+        const auto defaultColor = til::at_unchecked(colorTable, defaultIndex);
 
         if (brighten)
         {
@@ -206,7 +206,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& 
             const auto result = _mm256_cmpeq_epi32(haystack, needle); // 3.
             const auto mask = _mm256_movemask_ps(_mm256_castsi256_ps(result)); // 4.
             unsigned long index;
-            return _BitScanForward(&index, mask) ? til::at(colorTable, static_cast<size_t>(index) + 8) : defaultColor; // 5.
+            return _BitScanForward(&index, mask) ? til::at_unchecked(colorTable, static_cast<size_t>(index) + 8) : defaultColor; // 5.
 #elif _M_AMD64
             // If you look closely this SSE2 algorithm is the same as the AVX one.
             // The two differences are that we need to:
@@ -225,13 +225,13 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& 
             const auto result = _mm_packs_epi32(result1, result2); // 3.5
             const auto mask = _mm_movemask_epi8(result);
             unsigned long index;
-            return _BitScanForward(&index, mask) ? til::at(colorTable, static_cast<size_t>(index / 2) + 8) : defaultColor;
+            return _BitScanForward(&index, mask) ? til::at_unchecked(colorTable, static_cast<size_t>(index / 2) + 8) : defaultColor;
 #else
             for (size_t i = 0; i < 8; i++)
             {
-                if (til::at(colorTable, i) == defaultColor)
+                if (til::at_unchecked(colorTable, i) == defaultColor)
                 {
-                    return til::at(colorTable, i + 8);
+                    return til::at_unchecked(colorTable, i + 8);
                 }
             }
 #endif
@@ -246,11 +246,11 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& 
     }
     else if (IsIndex16() && brighten)
     {
-        return til::at(colorTable, _index | 8);
+        return til::at_unchecked(colorTable, _index | 8);
     }
     else
     {
-        return til::at(colorTable, _index);
+        return til::at_unchecked(colorTable, _index);
     }
 }
 
@@ -268,7 +268,7 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
     }
     else if (IsIndex16() || IsIndex256())
     {
-        return til::at(Index256ToIndex16, GetIndex());
+        return til::at_unchecked(Index256ToIndex16, GetIndex());
     }
     else
     {
@@ -277,7 +277,7 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
         const BYTE compressedRgb = (_red & 0b11100000) +
                                    ((_green >> 3) & 0b00011100) +
                                    ((_blue >> 6) & 0b00000011);
-        return til::at(CompressedRgbToIndex16, compressedRgb);
+        return til::at_unchecked(CompressedRgbToIndex16, compressedRgb);
     }
 }
 

@@ -9,8 +9,6 @@
 #include <wil/stl.h>
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>
-#include <gsl/gsl_util>
-#include <gsl/pointers>
 #include <shellapi.h>
 #include <appmodel.h>
 
@@ -45,8 +43,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // see if we're a store app we can invoke with shell:AppsFolder
     std::wstring appUserModelId;
     const auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, APPLICATION_USER_MODEL_ID_MAX_LENGTH>(
-        appUserModelId, [&](PWSTR value, size_t valueLength, gsl::not_null<size_t*> valueLengthNeededWithNull) noexcept -> HRESULT {
-            UINT32 length = gsl::narrow_cast<UINT32>(valueLength);
+        appUserModelId, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) noexcept -> HRESULT {
+            UINT32 length = til::narrow_cast<UINT32>(valueLength);
             const LONG rc = GetCurrentApplicationUserModelId(&length, value);
             switch (rc)
             {

@@ -170,7 +170,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _outOfRange();
             }
 
-            til::at(_array, _used) = val;
+            til::at_unchecked(_array, _used) = val;
 
             ++_used;
         }
@@ -182,7 +182,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _outOfRange();
             }
 
-            til::at(_array, _used) = std::move(val);
+            til::at_unchecked(_array, _used) = std::move(val);
 
             ++_used;
         }
@@ -196,7 +196,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             --_used;
 
-            til::at(_array, _used) = 0;
+            til::at_unchecked(_array, _used) = 0;
         }
 
         [[noreturn]] constexpr void _invalidArg() const

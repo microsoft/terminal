@@ -307,7 +307,7 @@ void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocit
 // - True if handled successfully. False otherwise.
 bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const til::CoordType sRows)
 {
-    // Ensure we can safely use gsl::narrow_cast<short>(...).
+    // Ensure we can safely use til::narrow_cast<short>(...).
     if (sColumns <= 0 || sRows <= 0 || sColumns > SHRT_MAX || sRows > SHRT_MAX)
     {
         return false;
@@ -331,12 +331,12 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     const auto oldViewport = screenInfo.GetVirtualViewport();
     auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
     // Always resize the width of the console
-    csbiex.dwSize.X = gsl::narrow_cast<short>(sColumns);
+    csbiex.dwSize.X = til::narrow_cast<short>(sColumns);
     // Only set the screen buffer's height if it's currently less than
     //  what we're requesting.
     if (sRows > csbiex.dwSize.Y)
     {
-        csbiex.dwSize.Y = gsl::narrow_cast<short>(sRows);
+        csbiex.dwSize.Y = til::narrow_cast<short>(sRows);
     }
 
     // If the cursor row is now past the bottom of the viewport, we'll have to

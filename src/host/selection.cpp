@@ -414,7 +414,7 @@ void Selection::ColorSelection(const til::inclusive_rect& srRect, const TextAttr
     // Now color the selection a line at a time.
     for (; (coordTarget.y < srRect.top + coordTargetSize.y); ++coordTarget.y)
     {
-        const auto cchWrite = gsl::narrow<size_t>(coordTargetSize.x);
+        const auto cchWrite = wil::safe_cast<size_t>(coordTargetSize.x);
 
         try
         {

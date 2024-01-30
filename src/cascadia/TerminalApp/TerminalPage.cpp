@@ -1419,8 +1419,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_KeyDownHandler(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto keyStatus = e.KeyStatus();
-        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
-        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto vkey = til::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = til::narrow_cast<WORD>(keyStatus.ScanCode);
         const auto modifiers = _GetPressedModifierKeys();
 
         // GH#11076:
@@ -1505,7 +1505,7 @@ namespace winrt::TerminalApp::implementation
                         modifiers.IsAltPressed(),
                         modifiers.IsShiftPressed(),
                         modifiers.IsWinPressed(),
-                        gsl::narrow_cast<int32_t>(vkey),
+                        til::narrow_cast<int32_t>(vkey),
                         scanCode,
                     }))
                 {
@@ -1584,7 +1584,7 @@ namespace winrt::TerminalApp::implementation
         //   http://archives.miloush.net/michkap/archive/2006/09/10/748775.html
         // > "The key here is to keep trying to pass stuff to ToUnicode until -1 is not returned."
         std::array<wchar_t, 16> buffer;
-        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
+        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), til::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
         {
         }
     }
@@ -2557,7 +2557,7 @@ namespace winrt::TerminalApp::implementation
             auto mappedCh = MapVirtualKeyW(keyChord.Vkey(), MAPVK_VK_TO_CHAR);
             if (mappedCh != 0)
             {
-                menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
+                menuItem.KeyboardAcceleratorTextOverride(overrideString + til::narrow_cast<wchar_t>(mappedCh));
             }
         }
     }
@@ -2693,7 +2693,7 @@ namespace winrt::TerminalApp::implementation
 
             const auto maxLength = GlobalSize(data) / sizeof(wchar_t);
             const auto length = wcsnlen(str, maxLength);
-            text = winrt::hstring{ str, gsl::narrow_cast<uint32_t>(length) };
+            text = winrt::hstring{ str, til::narrow_cast<uint32_t>(length) };
         }
 
         if (globalSettings.TrimPaste())
@@ -4858,7 +4858,7 @@ namespace winrt::TerminalApp::implementation
         const auto cursorPos{ control.CursorPositionInDips() };
         const auto controlTransform = control.TransformToVisual(this->Root());
         const auto realCursorPos{ controlTransform.TransformPoint({ cursorPos.X, cursorPos.Y }) }; // == controlTransform + cursorPos
-        const Windows::Foundation::Size windowDimensions{ gsl::narrow_cast<float>(ActualWidth()), gsl::narrow_cast<float>(ActualHeight()) };
+        const Windows::Foundation::Size windowDimensions{ til::narrow_cast<float>(ActualWidth()), til::narrow_cast<float>(ActualHeight()) };
 
         sxnUi.Open(mode,
                    commandsCollection,

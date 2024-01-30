@@ -1064,10 +1064,10 @@ namespace winrt::TerminalApp::implementation
         // We want to align the left edge of the text within the control to the
         // cursor position. We'll need to scoot a little to the left, to align
         // text with cursor
-        const auto proposedX = gsl::narrow_cast<int>(_anchor.X - 40);
+        const auto proposedX = til::narrow_cast<int>(_anchor.X - 40);
         // If the control is too wide to fit in the window, clamp it fit inside
         // the window.
-        const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
+        const auto maxX = til::narrow_cast<int>(space.Width - actualSize.width);
         const auto clampedX = std::clamp(proposedX, 0, maxX);
 
         // Create a thickness for the new margins

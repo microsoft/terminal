@@ -27,7 +27,7 @@ bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, c
     _lastMutationId = lastMutationId;
 
     _results = textBuffer.SearchText(needle, caseInsensitive);
-    _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
+    _index = reverse ? til::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
 
     return true;
@@ -48,18 +48,18 @@ void Search::MoveToPoint(const til::point anchor) noexcept
         return;
     }
 
-    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
+    const auto count = til::narrow_cast<ptrdiff_t>(_results.size());
     ptrdiff_t index = 0;
 
     if (_step < 0)
     {
-        for (index = count - 1; index >= 0 && til::at(_results, index).start > anchor; --index)
+        for (index = count - 1; index >= 0 && til::at_unchecked(_results, index).start > anchor; --index)
         {
         }
     }
     else
     {
-        for (index = 0; index < count && til::at(_results, index).start < anchor; ++index)
+        for (index = 0; index < count && til::at_unchecked(_results, index).start < anchor; ++index)
         {
         }
     }
@@ -74,18 +74,18 @@ void Search::MovePastPoint(const til::point anchor) noexcept
         return;
     }
 
-    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
+    const auto count = til::narrow_cast<ptrdiff_t>(_results.size());
     ptrdiff_t index = 0;
 
     if (_step < 0)
     {
-        for (index = count - 1; index >= 0 && til::at(_results, index).start >= anchor; --index)
+        for (index = count - 1; index >= 0 && til::at_unchecked(_results, index).start >= anchor; --index)
         {
         }
     }
     else
     {
-        for (index = 0; index < count && til::at(_results, index).start <= anchor; ++index)
+        for (index = 0; index < count && til::at_unchecked(_results, index).start <= anchor; ++index)
         {
         }
     }
@@ -95,7 +95,7 @@ void Search::MovePastPoint(const til::point anchor) noexcept
 
 void Search::FindNext() noexcept
 {
-    if (const auto count{ gsl::narrow_cast<ptrdiff_t>(_results.size()) })
+    if (const auto count{ til::narrow_cast<ptrdiff_t>(_results.size()) })
     {
         _index = (_index + _step + count) % count;
     }
@@ -103,10 +103,10 @@ void Search::FindNext() noexcept
 
 const til::point_span* Search::GetCurrent() const noexcept
 {
-    const auto index = gsl::narrow_cast<size_t>(_index);
+    const auto index = til::narrow_cast<size_t>(_index);
     if (index < _results.size())
     {
-        return &til::at(_results, index);
+        return &til::at_unchecked(_results, index);
     }
     return nullptr;
 }

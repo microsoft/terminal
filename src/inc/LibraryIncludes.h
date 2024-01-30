@@ -22,6 +22,8 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
+
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -57,19 +59,13 @@
 
 // WIL
 #include <wil/com.h>
-#include <wil/stl.h>
 #include <wil/filesystem.h>
+#include <wil/safecast.h>
+#include <wil/stl.h>
 // Due to the use of RESOURCE_SUPPRESS_STL in result.h, we need to include resource.h first, which happens
 // implicitly through the includes above. If RESOURCE_SUPPRESS_STL is gone, the order doesn't matter anymore.
 #include <wil/result.h>
 #include <wil/nt_result_macros.h>
-
-// GSL
-// Block GSL Multi Span include because it both has C++17 deprecated iterators
-// and uses the C-namespaced "max" which conflicts with Windows definitions.
-#include <gsl/gsl>
-#include <gsl/gsl_util>
-#include <gsl/pointers>
 
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
@@ -79,10 +75,6 @@
 #pragma warning(disable:4100) // unreferenced parameter
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
-
-// IntSafe
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
 
 // LibPopCnt - Fast C/C++ bit population count library (on bits in an array)
 #include <libpopcnt.h>

@@ -28,7 +28,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                            const RenderSettings& /*renderSettings*/,
-                                                           const gsl::not_null<IRenderData*> pData,
+                                                           IRenderData* pData,
                                                            const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept
 {
@@ -150,7 +150,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT Microsoft::Console::Render::Xterm256Engine::_UpdateHyperlinkAttr(const TextAttribute& textAttributes,
-                                                                         const gsl::not_null<IRenderData*> pData) noexcept
+                                                                         IRenderData* pData) noexcept
 {
     if (textAttributes.GetHyperlinkId() != _lastTextAttributes.GetHyperlinkId())
     {

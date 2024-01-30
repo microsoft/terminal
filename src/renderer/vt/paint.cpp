@@ -488,7 +488,7 @@ using namespace Microsoft::Console::Types;
     // - "AA"
     //      cch = 2, spaceIndex = 1, foundNonSpace = true
     //      cch-nonSpaceLength = 0
-    const auto numSpaces = gsl::narrow_cast<til::CoordType>(cchLine - nonSpaceLength);
+    const auto numSpaces = til::narrow_cast<til::CoordType>(cchLine - nonSpaceLength);
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase

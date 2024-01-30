@@ -1103,8 +1103,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto cx = gsl::narrow_cast<til::CoordType>(lrint(_panelWidth * _compositionScale));
-        auto cy = gsl::narrow_cast<til::CoordType>(lrint(_panelHeight * _compositionScale));
+        auto cx = til::narrow_cast<til::CoordType>(lrint(_panelWidth * _compositionScale));
+        auto cy = til::narrow_cast<til::CoordType>(lrint(_panelHeight * _compositionScale));
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
@@ -1654,8 +1654,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetBlockSelection(false);
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
 
-            foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
-            foundResults->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
+            foundResults->TotalMatches(wil::safe_cast<int32_t>(_searcher.Results().size()));
+            foundResults->CurrentMatch(wil::safe_cast<int32_t>(_searcher.CurrentMatch()));
 
             _terminal->AlwaysNotifyOnBufferRotation(true);
         }

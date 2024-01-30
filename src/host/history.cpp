@@ -62,10 +62,10 @@ void CommandHistory::s_Free(const HANDLE processHandle)
 
 void CommandHistory::s_ResizeAll(const size_t commands)
 {
-    const auto size = gsl::narrow<Index>(commands);
+    const auto size = wil::safe_cast<Index>(commands);
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.SetHistoryBufferSize(gsl::narrow<UINT>(commands));
+    gci.SetHistoryBufferSize(wil::safe_cast<UINT>(commands));
 
     for (auto& historyList : s_historyLists)
     {
@@ -75,7 +75,7 @@ void CommandHistory::s_ResizeAll(const size_t commands)
 
 bool CommandHistory::IsAppNameMatch(const std::wstring_view other) const
 {
-    return CompareStringOrdinal(_appName.data(), gsl::narrow<int>(_appName.size()), other.data(), gsl::narrow<int>(other.size()), TRUE) == CSTR_EQUAL;
+    return CompareStringOrdinal(_appName.data(), wil::safe_cast<int>(_appName.size()), other.data(), wil::safe_cast<int>(other.size()), TRUE) == CSTR_EQUAL;
 }
 
 // Routine Description:
@@ -243,7 +243,7 @@ void CommandHistory::Realloc(const Index commands)
         return;
     }
 
-    _commands.resize(std::min(_commands.size(), gsl::narrow_cast<size_t>(std::max(0, commands))));
+    _commands.resize(std::min(_commands.size(), til::narrow_cast<size_t>(std::max(0, commands))));
 
     WI_SetFlag(Flags, CLE_RESET);
     LastDisplayed = GetNumberOfCommands() - 1;
@@ -252,7 +252,7 @@ void CommandHistory::Realloc(const Index commands)
 
 void CommandHistory::s_ReallocExeToFront(const std::wstring_view appName, const size_t commands)
 {
-    const auto size = gsl::narrow<Index>(commands);
+    const auto size = wil::safe_cast<Index>(commands);
 
     for (auto it = s_historyLists.begin(), end = s_historyLists.end(); it != end; ++it)
     {
@@ -321,7 +321,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         History._appName = appName;
         History.Flags = CLE_ALLOCATED;
         History.LastDisplayed = -1;
-        History._maxCommands = gsl::narrow<Index>(gci.GetHistoryBufferSize());
+        History._maxCommands = wil::safe_cast<Index>(gci.GetHistoryBufferSize());
         History._processHandle = processHandle;
         return &s_historyLists.emplace_front(History);
     }
@@ -366,7 +366,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
 
 CommandHistory::Index CommandHistory::GetNumberOfCommands() const
 {
-    return gsl::narrow_cast<Index>(_commands.size());
+    return til::narrow_cast<Index>(_commands.size());
 }
 
 void CommandHistory::_Prev(Index& ind) const
@@ -711,7 +711,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
     writtenOrNeeded = 0;
     if (historyBuffer.size() > 0)
     {
-        til::at(historyBuffer, 0) = UNICODE_NULL;
+        til::at_unchecked(historyBuffer, 0) = UNICODE_NULL;
     }
 
     const auto CommandHistory = CommandHistory::s_FindByExe(exeName);
@@ -786,7 +786,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
     {
         if (commandHistory.size() > 0)
         {
-            til::at(commandHistory, 0) = ANSI_NULL;
+            til::at_unchecked(commandHistory, 0) = ANSI_NULL;
         }
 
         LockConsole();

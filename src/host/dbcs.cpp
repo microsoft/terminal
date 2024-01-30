@@ -67,10 +67,10 @@ DWORD UnicodeRasterFontCellMungeOnRead(const std::span<CHAR_INFO> buffer)
     for (DWORD iSrc = 0; iSrc < buffer.size(); iSrc++)
     {
         // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        auto& src{ til::at(buffer, iSrc) };
+        auto& src{ til::at_unchecked(buffer, iSrc) };
         if (!WI_IsFlagSet(src.Attributes, COMMON_LVB_TRAILING_BYTE))
         {
-            auto& dst{ til::at(buffer, iDst) };
+            auto& dst{ til::at_unchecked(buffer, iDst) };
             dst = src;
             WI_ClearAllFlags(dst.Attributes, COMMON_LVB_SBCSDBCS);
             iDst++;
@@ -80,7 +80,7 @@ DWORD UnicodeRasterFontCellMungeOnRead(const std::span<CHAR_INFO> buffer)
     }
 
     // Zero out the remaining part of the destination buffer that we didn't use.
-    const auto cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
+    const auto cchDstToClear = wil::safe_cast<DWORD>(buffer.size()) - iDst;
 
     if (cchDstToClear > 0)
     {

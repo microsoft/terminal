@@ -147,7 +147,7 @@ void VtEngine::_flushImpl() noexcept
 {
     if (_hFile)
     {
-        const auto fSuccess = WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        const auto fSuccess = WriteFile(_hFile.get(), _buffer.data(), til::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {

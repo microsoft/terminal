@@ -75,7 +75,7 @@ winrt::hstring _GetMessageText(uint32_t index, const T& keys)
 {
     if (index < keys.size())
     {
-        return GetLibraryResourceString(til::at(keys, index));
+        return GetLibraryResourceString(til::at_unchecked(keys, index));
     }
     return {};
 }
@@ -492,7 +492,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        const auto& settingsLoadedResult = gsl::narrow_cast<HRESULT>(_initialLoadResult.Result());
+        const auto& settingsLoadedResult = til::narrow_cast<HRESULT>(_initialLoadResult.Result());
         if (FAILED(settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
@@ -775,7 +775,7 @@ namespace winrt::TerminalApp::implementation
                 const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
                 _ShowLoadErrorsDialog(titleKey,
                                       textKey,
-                                      gsl::narrow_cast<HRESULT>(args.Result()),
+                                      til::narrow_cast<HRESULT>(args.Result()),
                                       args.ExceptionText());
                 co_return;
             }

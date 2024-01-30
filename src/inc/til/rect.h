@@ -41,31 +41,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { rect.Left, rect.Top, rect.Right, rect.Bottom };
     }
 
-    constexpr SMALL_RECT unwrap_small_rect(const inclusive_rect& rect)
+    inline SMALL_RECT unwrap_small_rect(const inclusive_rect& rect)
     {
         return {
-            gsl::narrow<short>(rect.left),
-            gsl::narrow<short>(rect.top),
-            gsl::narrow<short>(rect.right),
-            gsl::narrow<short>(rect.bottom),
+            wil::safe_cast<short>(rect.left),
+            wil::safe_cast<short>(rect.top),
+            wil::safe_cast<short>(rect.right),
+            wil::safe_cast<short>(rect.bottom),
         };
     }
 
     constexpr HRESULT unwrap_small_rect_hr(const inclusive_rect& rect, SMALL_RECT& out) noexcept
     {
-        short l = 0;
-        short t = 0;
-        short r = 0;
-        short b = 0;
-        if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
-        {
-            out.Left = l;
-            out.Top = t;
-            out.Right = r;
-            out.Bottom = b;
-            return S_OK;
-        }
-        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.left, &out.Left));
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.top, &out.Top));
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.right, &out.Right));
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.bottom, &out.Bottom));
+        return S_OK;
     }
 
     namespace details
@@ -506,25 +498,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename T>
         constexpr T narrow_left() const
         {
-            return gsl::narrow<T>(left);
+            return wil::safe_cast<T>(left);
         }
 
         template<typename T>
         constexpr T narrow_top() const
         {
-            return gsl::narrow<T>(top);
+            return wil::safe_cast<T>(top);
         }
 
         template<typename T>
         constexpr T narrow_right() const
         {
-            return gsl::narrow<T>(right);
+            return wil::safe_cast<T>(right);
         }
 
         template<typename T>
         constexpr T narrow_bottom() const
         {
-            return gsl::narrow<T>(bottom);
+            return wil::safe_cast<T>(bottom);
         }
 
         constexpr CoordType width() const
@@ -605,8 +597,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Not checking math on these because we're presuming
             // that the point can't be in bounds of a rect where
             // this would overflow on addition after the division.
-            const auto quot = gsl::narrow_cast<CoordType>(index / width);
-            const auto rem = gsl::narrow_cast<CoordType>(index % width);
+            const auto quot = til::narrow_cast<CoordType>(index / width);
+            const auto rem = til::narrow_cast<CoordType>(index % width);
             return point{ left + rem, top + quot };
         }
 
@@ -729,31 +721,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { rect.Left, rect.Top, rect.Right, rect.Bottom };
     }
 
-    constexpr SMALL_RECT unwrap_exclusive_small_rect(const rect& rect)
+    inline SMALL_RECT unwrap_exclusive_small_rect(const rect& rect)
     {
         return {
-            gsl::narrow<short>(rect.left),
-            gsl::narrow<short>(rect.top),
-            gsl::narrow<short>(rect.right),
-            gsl::narrow<short>(rect.bottom),
+            wil::safe_cast<short>(rect.left),
+            wil::safe_cast<short>(rect.top),
+            wil::safe_cast<short>(rect.right),
+            wil::safe_cast<short>(rect.bottom),
         };
     }
 
     constexpr HRESULT unwrap_exclusive_small_rect_hr(const rect& rect, SMALL_RECT& out) noexcept
     {
-        short l = 0;
-        short t = 0;
-        short r = 0;
-        short b = 0;
-        if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
-        {
-            out.Left = l;
-            out.Top = t;
-            out.Right = r;
-            out.Bottom = b;
-            return S_OK;
-        }
-        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.left, &out.Left));
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.top, &out.Top));
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.right, &out.Right));
+        RETURN_IF_FAILED_EXPECTED(wil::safe_cast_nothrow(rect.bottom, &out.Bottom));
+        return S_OK;
     }
 }
 

@@ -113,9 +113,6 @@ namespace Microsoft::Console::Interactivity::Win32
         HWND _hWnd;
 
         Render::GdiEngine* pGdiEngine = nullptr;
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-        Render::DxEngine* pDxEngine = nullptr;
-#endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         Render::AtlasEngine* pAtlasEngine = nullptr;
 #endif

@@ -474,7 +474,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
                     {
                         // if we're pointing to the currently selected URL,
                         // pick the next one.
-                        range = til::at(list, 1);
+                        range = til::at_unchecked(list, 1);
                         resultFromList = { range.start, range.stop };
                     }
                     else

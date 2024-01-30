@@ -146,7 +146,7 @@ std::unordered_map<std::wstring,
 
     if (target.has_value() && target->size() > 0)
     {
-        til::at(*target, 0) = UNICODE_NULL;
+        til::at_unchecked(*target, 0) = UNICODE_NULL;
     }
 
     std::wstring exeNameString(exeName);
@@ -208,7 +208,7 @@ std::unordered_map<std::wstring,
     {
         if (target.size() > 0)
         {
-            til::at(target, 0) = ANSI_NULL;
+            til::at_unchecked(target, 0) = ANSI_NULL;
         }
 
         LockConsole();
@@ -448,7 +448,7 @@ void Alias::s_ClearCmdExeAliases()
 
     if (aliasBuffer.has_value() && aliasBuffer->size() > 0)
     {
-        til::at(*aliasBuffer, 0) = UNICODE_NULL;
+        til::at_unchecked(*aliasBuffer, 0) = UNICODE_NULL;
     }
 
     std::wstring exeNameString(exeName);
@@ -540,7 +540,7 @@ void Alias::s_ClearCmdExeAliases()
     {
         if (alias.size() > 0)
         {
-            til::at(alias, 0) = '\0';
+            til::at_unchecked(alias, 0) = '\0';
         }
 
         LockConsole();
@@ -695,7 +695,7 @@ void Alias::s_ClearCmdExeAliases()
     writtenOrNeeded = 0;
     if (aliasExesBuffer.has_value() && aliasExesBuffer->size() > 0)
     {
-        til::at(*aliasExesBuffer, 0) = UNICODE_NULL;
+        til::at_unchecked(*aliasExesBuffer, 0) = UNICODE_NULL;
     }
 
     auto AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer->data() : nullptr;
@@ -758,7 +758,7 @@ void Alias::s_ClearCmdExeAliases()
     {
         if (aliasExes.size() > 0)
         {
-            til::at(aliasExes, 0) = '\0';
+            til::at_unchecked(aliasExes, 0) = '\0';
         }
 
         LockConsole();

@@ -85,8 +85,8 @@ WddmConEngine::~WddmConEngine()
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;
-                DisplaySize.bottom = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Height);
-                DisplaySize.right = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Width);
+                DisplaySize.bottom = til::narrow_cast<LONG>(DisplaySizeIoctl.Height);
+                DisplaySize.right = til::narrow_cast<LONG>(DisplaySizeIoctl.Width);
 
                 _displayState = static_cast<PCD_IO_ROW_INFORMATION*>(calloc(DisplaySize.bottom, sizeof(PCD_IO_ROW_INFORMATION)));
 
@@ -102,7 +102,7 @@ WddmConEngine::~WddmConEngine()
                             break;
                         }
 
-                        _displayState[i]->Index = gsl::narrow_cast<SHORT>(i);
+                        _displayState[i]->Index = til::narrow_cast<SHORT>(i);
                         _displayState[i]->Old = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
                         _displayState[i]->New = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
 
@@ -267,7 +267,7 @@ CATCH_RETURN()
     {
         RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
-        for (size_t i = 0; i < clusters.size() && i < gsl::narrow_cast<size_t>(_displayWidth); i++)
+        for (size_t i = 0; i < clusters.size() && i < til::narrow_cast<size_t>(_displayWidth); i++)
         {
             const auto OldChar = &_displayState[coord.y]->Old[coord.x + i];
             const auto NewChar = &_displayState[coord.y]->New[coord.x + i];
@@ -275,7 +275,7 @@ CATCH_RETURN()
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
 
-            NewChar->Character = til::at(clusters, i).GetTextAsSingle();
+            NewChar->Character = til::at_unchecked(clusters, i).GetTextAsSingle();
             NewChar->Attribute = _currentLegacyColorAttribute;
         }
 
@@ -310,7 +310,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                           const RenderSettings& /*renderSettings*/,
-                                                          const gsl::not_null<IRenderData*> /*pData*/,
+                                                          IRenderData* /*pData*/,
                                                           const bool /*usingSoftFont*/,
                                                           const bool /*isSettingDefaultBrushes*/) noexcept
 {

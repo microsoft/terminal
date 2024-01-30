@@ -597,7 +597,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
 
         if (const auto index = newTerminalArgs.ProfileIndex())
         {
-            if (auto profile = GetProfileByIndex(gsl::narrow<uint32_t>(index.Value())))
+            if (auto profile = GetProfileByIndex(wil::safe_cast<uint32_t>(index.Value())))
             {
                 return profile;
             }
@@ -695,7 +695,7 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
         for (; it != end; ++it)
         {
             const auto& prefix = it->first;
-            const auto length = gsl::narrow<int>(prefix.size());
+            const auto length = wil::safe_cast<int>(prefix.size());
             if (CompareStringOrdinal(needle.data(), length, prefix.data(), length, TRUE) == CSTR_EQUAL)
             {
                 return it->second;

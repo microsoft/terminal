@@ -1294,7 +1294,7 @@ bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
     if (glChar || grChar || unicodeChar)
     {
-        const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
+        const auto fillChar = _termOutput.TranslateKey(til::narrow_cast<wchar_t>(charValue));
         const auto& fillAttributes = textBuffer.GetCurrentAttributes();
         _FillRect(textBuffer, fillRect, { &fillChar, 1 }, fillAttributes);
     }
@@ -1429,8 +1429,8 @@ bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
                     };
                     const auto fgIndex = colorIndex(attr.GetForeground(), defaultFgIndex);
                     const auto bgIndex = colorIndex(attr.GetBackground(), defaultBgIndex);
-                    checksum -= gsl::narrow_cast<uint16_t>(fgIndex << 4);
-                    checksum -= gsl::narrow_cast<uint16_t>(bgIndex);
+                    checksum -= til::narrow_cast<uint16_t>(fgIndex << 4);
+                    checksum -= til::narrow_cast<uint16_t>(bgIndex);
                 }
             }
         }
@@ -2709,7 +2709,7 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
     while (column < maxColumn && tabsPerformed < numTabs)
     {
         column++;
-        if (til::at(_tabStopColumns, column))
+        if (til::at_unchecked(_tabStopColumns, column))
         {
             tabsPerformed++;
         }
@@ -2758,7 +2758,7 @@ bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
     while (column > minColumn && tabsPerformed < numTabs)
     {
         column--;
-        if (til::at(_tabStopColumns, column))
+        if (til::at_unchecked(_tabStopColumns, column))
         {
             tabsPerformed++;
         }
@@ -2851,7 +2851,7 @@ bool AdaptDispatch::TabSet(const VTParameter setType) noexcept
 // - <none>
 void AdaptDispatch::_InitTabStopsForWidth(const VTInt width)
 {
-    const auto screenWidth = gsl::narrow<size_t>(width);
+    const auto screenWidth = wil::safe_cast<size_t>(width);
     const auto initialWidth = _tabStopColumns.size();
     if (screenWidth > initialWidth)
     {
@@ -2862,7 +2862,7 @@ void AdaptDispatch::_InitTabStopsForWidth(const VTInt width)
             {
                 if (column >= initialWidth)
                 {
-                    til::at(_tabStopColumns, column) = true;
+                    til::at_unchecked(_tabStopColumns, column) = true;
                 }
             }
         }
@@ -3571,7 +3571,7 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     const auto parts = Utils::SplitString(string, L';');
     unsigned int subParam = 0;
 
-    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
+    if (parts.size() < 1 || !Utils::StringToUint(til::at_unchecked(parts, 0), subParam))
     {
         return false;
     }
@@ -3582,16 +3582,16 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
         if (parts.size() >= 2)
         {
             // A state parameter is defined, parse it out
-            const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
-            if (!stateSuccess && !til::at(parts, 1).empty())
+            const auto stateSuccess = Utils::StringToUint(til::at_unchecked(parts, 1), state);
+            if (!stateSuccess && !til::at_unchecked(parts, 1).empty())
             {
                 return false;
             }
             if (parts.size() >= 3)
             {
                 // A progress parameter is also defined, parse it out
-                const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
-                if (!progressSuccess && !til::at(parts, 2).empty())
+                const auto progressSuccess = Utils::StringToUint(til::at_unchecked(parts, 2), progress);
+                if (!progressSuccess && !til::at_unchecked(parts, 2).empty())
                 {
                     return false;
                 }
@@ -3616,7 +3616,7 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     {
         if (parts.size() >= 2)
         {
-            auto path = til::at(parts, 1);
+            auto path = til::at_unchecked(parts, 1);
             // The path should be surrounded with '"' according to the documentation of ConEmu.
             // An example: 9;"D:/"
             // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
@@ -3683,7 +3683,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
         return false;
     }
 
-    const auto action = til::at(parts, 0);
+    const auto action = til::at_unchecked(parts, 0);
 
     if (action == L"SetMark")
     {
@@ -3727,10 +3727,10 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         return false;
     }
 
-    const auto action = til::at(parts, 0);
+    const auto action = til::at_unchecked(parts, 0);
     if (action.size() == 1)
     {
-        switch (til::at(action, 0))
+        switch (til::at_unchecked(action, 0))
         {
         case L'A': // FTCS_PROMPT
         {
@@ -3755,7 +3755,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             std::optional<unsigned int> error = std::nullopt;
             if (parts.size() >= 2)
             {
-                const auto errorString = til::at(parts, 1);
+                const auto errorString = til::at_unchecked(parts, 1);
 
                 // If we fail to parse the code, then it was gibberish, or it might
                 // have just started with "-". Either way, let's just treat it as an
@@ -3815,7 +3815,7 @@ bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
         return false;
     }
 
-    const auto action = til::at(parts, 0);
+    const auto action = til::at_unchecked(parts, 0);
 
     if (action == L"Completions")
     {
@@ -3831,21 +3831,21 @@ bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
         unsigned int cursorIndex = 0;
 
         bool succeeded = (parts.size() >= 2) &&
-                         (Utils::StringToUint(til::at(parts, 1), replacementIndex));
+                         (Utils::StringToUint(til::at_unchecked(parts, 1), replacementIndex));
         succeeded &= (parts.size() >= 3) &&
-                     (Utils::StringToUint(til::at(parts, 2), replacementLength));
+                     (Utils::StringToUint(til::at_unchecked(parts, 2), replacementLength));
         succeeded &= (parts.size() >= 4) &&
-                     (Utils::StringToUint(til::at(parts, 3), cursorIndex));
+                     (Utils::StringToUint(til::at_unchecked(parts, 3), cursorIndex));
 
         // VsCode is using cursorIndex and replacementIndex, but we aren't currently.
         if (succeeded)
         {
             // Get the combined lengths of parts 0-3, plus the semicolons. We
             // need this so that we can just pass the remainder of the string.
-            const auto prefixLength = til::at(parts, 0).size() + 1 +
-                                      til::at(parts, 1).size() + 1 +
-                                      til::at(parts, 2).size() + 1 +
-                                      til::at(parts, 3).size() + 1;
+            const auto prefixLength = til::at_unchecked(parts, 0).size() + 1 +
+                                      til::at_unchecked(parts, 1).size() + 1 +
+                                      til::at_unchecked(parts, 2).size() + 1 +
+                                      til::at_unchecked(parts, 3).size() + 1;
             if (prefixLength > string.size())
             {
                 return true;
@@ -4695,7 +4695,7 @@ void AdaptDispatch::_ReportTabStops()
     auto need_separator = false;
     for (auto column = 0; column < width; column++)
     {
-        if (til::at(_tabStopColumns, column))
+        if (til::at_unchecked(_tabStopColumns, column))
         {
             response.append(need_separator ? L"/"sv : L""sv);
             fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{}"), column + 1);

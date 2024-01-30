@@ -444,7 +444,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // end V2 console properties
 
     // Apply font information (must come before all character calculations for window/buffer size).
-    FontInfo fiNewFont(pStateInfo->FaceName, gsl::narrow_cast<unsigned char>(pStateInfo->FontFamily), pStateInfo->FontWeight, til::wrap_coord_size(pStateInfo->FontSize), pStateInfo->CodePage);
+    FontInfo fiNewFont(pStateInfo->FaceName, til::narrow_cast<unsigned char>(pStateInfo->FontFamily), pStateInfo->FontWeight, til::wrap_coord_size(pStateInfo->FontSize), pStateInfo->CodePage);
 
     ScreenInfo.UpdateFont(&fiNewFont);
 

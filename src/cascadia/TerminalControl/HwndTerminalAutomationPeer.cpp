@@ -62,7 +62,7 @@ void HwndTerminalAutomationPeer::RecordKeyEvent(const WORD vkey)
 {
     if (const auto charCode{ MapVirtualKey(vkey, MAPVK_VK_TO_CHAR) })
     {
-        if (const auto keyEventChar{ gsl::narrow_cast<wchar_t>(charCode) }; IsReadable({ &keyEventChar, 1 }))
+        if (const auto keyEventChar{ til::narrow_cast<wchar_t>(charCode) }; IsReadable({ &keyEventChar, 1 }))
         {
             _keyEvents.emplace_back(keyEventChar);
         }

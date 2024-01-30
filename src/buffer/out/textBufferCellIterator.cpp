@@ -160,7 +160,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     if (newY == oldY)
     {
         // hot path
-        const auto diff = gsl::narrow_cast<ptrdiff_t>(newX) - gsl::narrow_cast<ptrdiff_t>(oldX);
+        const auto diff = til::narrow_cast<ptrdiff_t>(newX) - til::narrow_cast<ptrdiff_t>(oldX);
         _attrIter += diff;
         _view.UpdateTextAttribute(*_attrIter);
 
@@ -298,7 +298,7 @@ void TextBufferCellIterator::_SetPos(const til::point newPos)
 
     if (newPos.x != _pos.x)
     {
-        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.x) - gsl::narrow_cast<ptrdiff_t>(_pos.x);
+        const auto diff = til::narrow_cast<ptrdiff_t>(newPos.x) - til::narrow_cast<ptrdiff_t>(_pos.x);
         _attrIter += diff;
     }
 

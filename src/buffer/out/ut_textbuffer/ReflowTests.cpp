@@ -794,7 +794,7 @@ class ReflowTests
         auto textBuffer{ _textBufferFromTestBuffer(testCase.buffers.front()) };
         for (size_t bufferIndex{ 1 }; bufferIndex < testCase.buffers.size(); ++bufferIndex)
         {
-            const auto& testBuffer{ til::at(testCase.buffers, bufferIndex) };
+            const auto& testBuffer{ til::at_unchecked(testCase.buffers, bufferIndex) };
             Log::Comment(NoThrowString().Format(L"[%zu.%zu] Resizing to %dx%d", i, bufferIndex, testBuffer.size.width, testBuffer.size.height));
 
             auto newBuffer{ _textBufferByReflowingTextBuffer(*textBuffer, testBuffer.size) };

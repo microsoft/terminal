@@ -299,8 +299,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto scrollBarWidthInDIP = scrollBar.ActualWidth();
             const auto scrollBarHeightInDIP = scrollBar.ActualHeight();
-            const auto scrollBarWidthInPx = gsl::narrow_cast<int32_t>(lrint(scrollBarWidthInDIP * scaleFactor));
-            const auto scrollBarHeightInPx = gsl::narrow_cast<int32_t>(lrint(scrollBarHeightInDIP * scaleFactor));
+            const auto scrollBarWidthInPx = til::narrow_cast<int32_t>(lrint(scrollBarWidthInDIP * scaleFactor));
+            const auto scrollBarHeightInPx = til::narrow_cast<int32_t>(lrint(scrollBarHeightInDIP * scaleFactor));
 
             const auto canvas = FindName(L"ScrollBarCanvas").as<Controls::Image>();
             auto source = canvas.Source().try_as<Media::Imaging::WriteableBitmap>();
@@ -345,7 +345,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto pipHeight = lround(1 * scaleFactor);
 
             const auto maxOffsetY = drawableRange - pipHeight;
-            const auto offsetScale = maxOffsetY / gsl::narrow_cast<float>(update.newMaximum + update.newViewportSize);
+            const auto offsetScale = maxOffsetY / til::narrow_cast<float>(update.newMaximum + update.newViewportSize);
             // A helper to turn a TextBuffer row offset into a bitmap offset.
             const auto dataAt = [&](til::CoordType row) [[msvc::forceinline]] {
                 const auto y = std::clamp<long>(lrintf(row * offsetScale), 0, maxOffsetY);
@@ -1171,7 +1171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();
-        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto scanCode = til::narrow_cast<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
 
         if (keyStatus.IsExtendedKey)
@@ -1240,7 +1240,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 modifiers.IsAltPressed(),
                 modifiers.IsShiftPressed(),
                 modifiers.IsWinPressed(),
-                gsl::narrow_cast<WORD>(vkey),
+                til::narrow_cast<WORD>(vkey),
                 0
             };
 
@@ -1259,7 +1259,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!handled && sendToTerminal)
             {
                 // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(gsl::narrow_cast<WORD>(vkey), scanCode, modifiers, true);
+                (void)_TrySendKeyEvent(til::narrow_cast<WORD>(vkey), scanCode, modifiers, true);
                 // GH#6438: Note that we're _not_ sending the key up here - that'll
                 // get passed through XAML to our KeyUp handler normally.
                 handled = true;
@@ -1290,8 +1290,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto keyStatus = e.KeyStatus();
-        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
-        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto vkey = til::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = til::narrow_cast<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
 
         if (keyStatus.IsExtendedKey)
@@ -1431,7 +1431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //   http://archives.miloush.net/michkap/archive/2006/09/10/748775.html
         // > "The key here is to keep trying to pass stuff to ToUnicode until -1 is not returned."
         std::array<wchar_t, 16> buffer;
-        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
+        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), til::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
         {
         }
     }
@@ -2515,13 +2515,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontDimension = widthOrHeight ? fontSize.Width : fontSize.Height;
 
         const auto padding = GetPadding();
-        auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
+        auto nonTerminalArea = til::narrow_cast<float>(widthOrHeight ?
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
         if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
         {
-            nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
+            nonTerminalArea += til::narrow_cast<float>(ScrollBar().ActualWidth());
         }
 
         const auto gridSize = dimension - nonTerminalArea;
@@ -2858,7 +2858,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         auto stream = fileDropData.as<IRandomAccessStream>();
                         stream.Seek(0);
 
-                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>(stream.Size());
+                        const uint32_t streamSize = til::narrow_cast<uint32_t>(stream.Size());
                         const Buffer buf(streamSize);
                         const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
 

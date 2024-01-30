@@ -357,12 +357,12 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         // Convert data from clusters into the text array and the widths array.
         for (size_t i = 0; i < cchLine; i++)
         {
-            const auto& cluster = til::at(clusters, i);
+            const auto& cluster = til::at_unchecked(clusters, i);
 
             const auto text = cluster.GetText();
             polyString += text;
             polyString.back() &= softFontCharMask;
-            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
+            polyWidth.push_back(wil::safe_cast<int>(cluster.GetColumns()) * coordFontSize.width);
             cchCharWidths += polyWidth.back();
             polyWidth.append(text.size() - 1, 0);
         }
@@ -413,7 +413,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
 
         pPolyTextLine->lpstr = polyString.data();
-        pPolyTextLine->n = gsl::narrow<UINT>(polyString.size());
+        pPolyTextLine->n = wil::safe_cast<UINT>(polyString.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
@@ -533,7 +533,7 @@ try
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
     const auto fontWidth = _GetFontSize().width;
     const auto fontHeight = _GetFontSize().height;
-    const auto widthOfAllCells = fontWidth * gsl::narrow_cast<til::CoordType>(cchLine);
+    const auto widthOfAllCells = fontWidth * til::narrow_cast<til::CoordType>(cchLine);
 
     const auto DrawLine = [=](const til::CoordType x, const til::CoordType y, const til::CoordType w, const til::CoordType h) {
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
@@ -575,7 +575,7 @@ try
             points.emplace_back(x + period, y);
         }
 
-        const auto cpt = gsl::narrow_cast<DWORD>(points.size());
+        const auto cpt = til::narrow_cast<DWORD>(points.size());
         return PolyBezier(_hdcMemoryContext, points.data(), cpt);
     };
 

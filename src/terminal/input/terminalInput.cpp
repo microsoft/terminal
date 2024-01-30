@@ -290,7 +290,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         return _makeNoOutput();
     }
 
-    auto charSequence = StringType{ buffer.data(), gsl::narrow_cast<size_t>(length) };
+    auto charSequence = StringType{ buffer.data(), til::narrow_cast<size_t>(length) };
     // Once we've got the base character, we can apply the Ctrl modifier.
     if (ctrlIsReallyPressed && charSequence.length() == 1)
     {
@@ -635,12 +635,12 @@ TerminalInput::OutputType TerminalInput::_makeWin32Output(const KEY_EVENT_RECORD
 {
     // .uChar.UnicodeChar must be cast to an integer because we want its numerical value.
     // Casting the rest to uint16_t as well doesn't hurt because that's MAX_PARAMETER_VALUE anyways.
-    const auto kd = gsl::narrow_cast<uint16_t>(key.bKeyDown ? 1 : 0);
-    const auto rc = gsl::narrow_cast<uint16_t>(key.wRepeatCount);
-    const auto vk = gsl::narrow_cast<uint16_t>(key.wVirtualKeyCode);
-    const auto sc = gsl::narrow_cast<uint16_t>(key.wVirtualScanCode);
-    const auto uc = gsl::narrow_cast<uint16_t>(key.uChar.UnicodeChar);
-    const auto cs = gsl::narrow_cast<uint16_t>(key.dwControlKeyState);
+    const auto kd = til::narrow_cast<uint16_t>(key.bKeyDown ? 1 : 0);
+    const auto rc = til::narrow_cast<uint16_t>(key.wRepeatCount);
+    const auto vk = til::narrow_cast<uint16_t>(key.wVirtualKeyCode);
+    const auto sc = til::narrow_cast<uint16_t>(key.wVirtualScanCode);
+    const auto uc = til::narrow_cast<uint16_t>(key.uChar.UnicodeChar);
+    const auto cs = til::narrow_cast<uint16_t>(key.dwControlKeyState);
 
     // Sequences are formatted as follows:
     //

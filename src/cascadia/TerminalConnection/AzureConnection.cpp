@@ -77,8 +77,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (settings)
         {
-            _initialRows = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
-            _initialCols = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
+            _initialRows = wil::safe_cast<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
+            _initialCols = wil::safe_cast<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
         }
     }
 
@@ -130,7 +130,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     return pInstance->_OutputThread();
                 }
-                return gsl::narrow<DWORD>(E_INVALIDARG);
+                return wil::safe_cast<DWORD>(E_INVALIDARG);
             },
             this,
             0,
@@ -188,12 +188,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_state == AzureState::TermConnected)
         {
             auto buff{ winrt::to_string(data) };
-            WinHttpWebSocketSend(_webSocket.get(), WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, buff.data(), gsl::narrow<DWORD>(buff.size()));
+            WinHttpWebSocketSend(_webSocket.get(), WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, buff.data(), wil::safe_cast<DWORD>(buff.size()));
             return;
         }
 
         std::lock_guard<std::mutex> lock{ _inputMutex };
-        if (data.size() > 0 && (gsl::at(data, 0) == UNICODE_BACKSPACE || gsl::at(data, 0) == UNICODE_DEL)) // BS or DEL
+        if (data.size() > 0 && (til::at(data, 0) == UNICODE_BACKSPACE || til::at(data, 0) == UNICODE_DEL)) // BS or DEL
         {
             if (_userInput.size() > 0)
             {
@@ -208,7 +208,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             switch (_currentInputMode)
             {
             case InputMode::Line:
-                if (data.size() > 0 && gsl::at(data, 0) == UNICODE_CARRIAGERETURN)
+                if (data.size() > 0 && til::at(data, 0) == UNICODE_CARRIAGERETURN)
                 {
                     _TerminalOutputHandlers(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
                     _currentInputMode = InputMode::None; // toggling the mode indicates completion
@@ -394,7 +394,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     {
                         WINHTTP_WEB_SOCKET_BUFFER_TYPE bufferType{};
                         DWORD read{};
-                        THROW_IF_WIN32_ERROR(WinHttpWebSocketReceive(_webSocket.get(), _buffer.data(), gsl::narrow<DWORD>(_buffer.size()), &read, &bufferType));
+                        THROW_IF_WIN32_ERROR(WinHttpWebSocketReceive(_webSocket.get(), _buffer.data(), wil::safe_cast<DWORD>(_buffer.size()), &read, &bufferType));
 
                         switch (bufferType)
                         {
@@ -407,7 +407,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                             {
                                 // EXIT POINT
                                 _transitionToState(ConnectionState::Failed);
-                                return gsl::narrow<DWORD>(result);
+                                return wil::safe_cast<DWORD>(result);
                             }
 
                             if (_u16Str.empty())
@@ -552,7 +552,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto desiredCredential = credList.GetAt(selectedTenant);
         desiredCredential.RetrievePassword();
         auto passWordJson = WDJ::JsonObject::Parse(desiredCredential.Password());
-        _currentTenant = til::at(_tenantList, selectedTenant); // we already unpacked the name info, so we should just use it
+        _currentTenant = til::at_unchecked(_tenantList, selectedTenant); // we already unpacked the name info, so we should just use it
         _setAccessToken(passWordJson.GetNamedString(L"accessToken"));
         _refreshToken = passWordJson.GetNamedString(L"refreshToken");
         _expiry = std::stoi(winrt::to_string(passWordJson.GetNamedString(L"expiry")));
@@ -626,7 +626,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else if (_tenantList.size() == 1)
         {
-            _currentTenant = til::at(_tenantList, 0);
+            _currentTenant = til::at_unchecked(_tenantList, 0);
 
             // We have to refresh now that we have the tenantID
             _RefreshTokens();
@@ -642,10 +642,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to list the user's tenants and let them decide which tenant they wish to connect to
     void AzureConnection::_RunTenantChoiceState()
     {
-        auto numTenants = gsl::narrow<int>(_tenantList.size());
+        auto numTenants = wil::safe_cast<int>(_tenantList.size());
         for (auto i = 0; i < numTenants; i++)
         {
-            _WriteStringWithNewline(_formatTenant(i, til::at(_tenantList, i)));
+            _WriteStringWithNewline(_formatTenant(i, til::at_unchecked(_tenantList, i)));
         }
         _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
 
@@ -679,7 +679,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
         } while (true);
 
-        _currentTenant = til::at(_tenantList, selectedTenant);
+        _currentTenant = til::at_unchecked(_tenantList, selectedTenant);
 
         // We have to refresh now that we have the tenantID
         _RefreshTokens();

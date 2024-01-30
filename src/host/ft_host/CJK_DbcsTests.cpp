@@ -329,7 +329,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
         // This console API can treat the buffer as a 2D array. We're only doing 1 dimension so the Y is 1 and the X is the number of CHAR_INFO characters.
         COORD coordBufferSize = { 0 };
         coordBufferSize.Y = 1;
-        coordBufferSize.X = gsl::narrow<SHORT>(rgChars.size());
+        coordBufferSize.X = wil::safe_cast<SHORT>(rgChars.size());
 
         // We want to write to the coordinate 0,0 of the buffer. The test setup function has blanked out that line.
         COORD coordBufferTarget = { 0 };
@@ -338,7 +338,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
         SMALL_RECT srWriteRegion = { 0 };
 
         // Since we could have full-width characters, we have to "allow" the console to write up to the entire A string length (up to double the W length)
-        srWriteRegion.Right = gsl::narrow<SHORT>(dbcsInput.size()) - 1;
+        srWriteRegion.Right = wil::safe_cast<SHORT>(dbcsInput.size()) - 1;
 
         // Save the expected written rectangle for comparison after the call
         srWrittenExpected = { 0 };
@@ -365,12 +365,12 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
 
         if (fIsUnicode)
         {
-            dwWrittenExpected = gsl::narrow<DWORD>(unicodeInput.size());
+            dwWrittenExpected = wil::safe_cast<DWORD>(unicodeInput.size());
             WriteConsoleOutputCharacterW(hOut, unicodeInput.data(), dwWrittenExpected, coordBufferTarget, &dwWritten);
         }
         else
         {
-            dwWrittenExpected = gsl::narrow<DWORD>(dbcsInput.size());
+            dwWrittenExpected = wil::safe_cast<DWORD>(dbcsInput.size());
             WriteConsoleOutputCharacterA(hOut, dbcsInput.data(), dwWrittenExpected, coordBufferTarget, &dwWritten);
         }
 
@@ -381,12 +381,12 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     {
         if (fIsUnicode)
         {
-            dwWrittenExpected = gsl::narrow<DWORD>(unicodeInput.size());
+            dwWrittenExpected = wil::safe_cast<DWORD>(unicodeInput.size());
             WriteConsoleW(hOut, unicodeInput.data(), dwWrittenExpected, &dwWritten, nullptr);
         }
         else
         {
-            dwWrittenExpected = gsl::narrow<DWORD>(dbcsInput.size());
+            dwWrittenExpected = wil::safe_cast<DWORD>(dbcsInput.size());
             WriteConsoleA(hOut, dbcsInput.data(), dwWrittenExpected, &dwWritten, nullptr);
         }
 
@@ -1253,7 +1253,7 @@ void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
         // Since we wrote (in SendOutput function) to the 0,0 line, we need to read back the same width from that line.
         COORD coordBufferSize = { 0 };
         coordBufferSize.Y = 1;
-        coordBufferSize.X = gsl::narrow<SHORT>(rgChars.size());
+        coordBufferSize.X = wil::safe_cast<SHORT>(rgChars.size());
 
         SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
         srReadRegion.Right = coordBufferSize.X - 1;
@@ -1276,7 +1276,7 @@ void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
     }
     case DbcsWriteRead::ReadMode::ReadConsoleOutputCharacterFunc:
     {
-        const auto cChars = gsl::narrow<DWORD>(rgChars.size());
+        const auto cChars = wil::safe_cast<DWORD>(rgChars.size());
         DWORD dwRead = 0;
         if (!fReadUnicode)
         {

@@ -361,7 +361,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         for (size_t i = 0; i < MAX_PARAMETER_COUNT; i++)
         {
             VERIFY_IS_TRUE(mach._parameters.at(i).has_value());
-            VERIFY_ARE_EQUAL(mach._parameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 10));
+            VERIFY_ARE_EQUAL(mach._parameters.at(i).value(), til::narrow_cast<VTInt>(i % 10));
         }
     }
 
@@ -486,7 +486,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         for (size_t i = 0; i < 12; i++)
         {
             VERIFY_IS_TRUE(mach._subParameters.at(i).has_value());
-            VERIFY_ARE_EQUAL(mach._subParameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 6));
+            VERIFY_ARE_EQUAL(mach._subParameters.at(i).value(), til::narrow_cast<VTInt>(i % 6));
         }
 
         auto firstRange = mach._subParameterRanges.at(0);
@@ -1973,14 +1973,14 @@ class StateMachineExternalTest final
 
             if (i < expectedOptions.size())
             {
-                expectedOption = til::at(expectedOptions, i);
+                expectedOption = til::at_unchecked(expectedOptions, i);
             }
 
-            optionsValid = expectedOption == til::at(dispatch._options, i);
+            optionsValid = expectedOption == til::at_unchecked(dispatch._options, i);
 
             if (!optionsValid)
             {
-                Log::Comment(NoThrowString().Format(L"Graphics option match failed, index [%zu]. Expected: '%d' Actual: '%d'", i, expectedOption, til::at(dispatch._options, i)));
+                Log::Comment(NoThrowString().Format(L"Graphics option match failed, index [%zu]. Expected: '%d' Actual: '%d'", i, expectedOption, til::at_unchecked(dispatch._options, i)));
                 break;
             }
         }

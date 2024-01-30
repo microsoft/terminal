@@ -338,11 +338,11 @@ CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view& glyph) 
     switch (glyph.size())
     {
     case 1:
-        codepoint = til::at(glyph, 0);
+        codepoint = til::at_unchecked(glyph, 0);
         break;
     case 2:
-        codepoint = (til::at(glyph, 0) & 0x3FF) << 10;
-        codepoint |= til::at(glyph, 1) & 0x3FF;
+        codepoint = (til::at_unchecked(glyph, 0) & 0x3FF) << 10;
+        codepoint |= til::at_unchecked(glyph, 1) & 0x3FF;
         codepoint += 0x10000;
         break;
     default:

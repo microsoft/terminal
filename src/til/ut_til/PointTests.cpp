@@ -243,7 +243,7 @@ class PointTests
                 pt + pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Addition results in value that is too large (y).");
@@ -256,7 +256,7 @@ class PointTests
                 pt + pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -286,7 +286,7 @@ class PointTests
                 actual += pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Addition results in value that is too large (y).");
@@ -300,7 +300,7 @@ class PointTests
                 actual += pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -326,7 +326,7 @@ class PointTests
                 pt2 - pt;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Subtraction results in value that is too small (y).");
@@ -339,7 +339,7 @@ class PointTests
                 pt2 - pt;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -369,7 +369,7 @@ class PointTests
                 actual -= pt;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Subtraction results in value that is too small (y).");
@@ -383,7 +383,7 @@ class PointTests
                 actual -= pt;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -409,7 +409,7 @@ class PointTests
                 pt* pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Multiplication results in value that is too large (y).");
@@ -422,7 +422,7 @@ class PointTests
                 pt* pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -452,7 +452,7 @@ class PointTests
                 actual *= pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Multiplication results in value that is too large (y).");
@@ -466,7 +466,7 @@ class PointTests
                 actual *= pt2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -492,7 +492,7 @@ class PointTests
                 pt2 / pt;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -521,7 +521,7 @@ class PointTests
                 actual /= pt;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -562,7 +562,7 @@ class PointTests
                     auto val = pt.to_win32_point();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {
@@ -586,7 +586,7 @@ class PointTests
                     auto val = pt.to_win32_point();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {
@@ -631,7 +631,7 @@ class PointTests
                 pt* scale;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Multiplication results in value that is too large (y).");
@@ -644,7 +644,7 @@ class PointTests
                 pt* scale;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"Division of two things that should be in bounds.");
@@ -666,7 +666,7 @@ class PointTests
                 pt / scale;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 

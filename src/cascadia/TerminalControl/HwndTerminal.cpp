@@ -14,7 +14,7 @@ static LPCWSTR term_window_class = L"HwndTerminalClass";
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
-static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+static constexpr short KeyPressed{ til::narrow_cast<short>(0x8000) };
 
 static constexpr bool _IsMouseMessage(UINT uMsg)
 {
@@ -890,8 +890,8 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
-            // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
+            // It's using til::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
+            [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, til::at(theme.ColorTable, tableIndex));
         }
 
         publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));

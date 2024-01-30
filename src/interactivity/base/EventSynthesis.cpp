@@ -74,7 +74,7 @@ void Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch, const
 void Microsoft::Console::Interactivity::SynthesizeKeyboardEvents(const wchar_t wch, const short keyState, InputEventQueue& keyEvents)
 {
     const auto vk = LOBYTE(keyState);
-    const auto sc = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+    const auto sc = wil::safe_cast<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
     // The caller provides us with the result of VkKeyScanW() in keyState.
     // The magic constants below are the expected (documented) return values from VkKeyScanW().
     const auto modifierState = HIBYTE(keyState);
@@ -143,7 +143,7 @@ void Microsoft::Console::Interactivity::SynthesizeNumpadEvents(const wchar_t wch
         for (const auto& ch : charString)
         {
             const WORD vk = ch - '0' + VK_NUMPAD0;
-            const auto sc = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+            const auto sc = wil::safe_cast<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
             auto keyEvent = SynthesizeKeyEvent(true, 1, vk, sc, 0, LEFT_ALT_PRESSED);
             keyEvents.push_back(keyEvent);
             keyEvent.Event.KeyEvent.bKeyDown = FALSE;

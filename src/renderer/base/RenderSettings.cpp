@@ -120,7 +120,7 @@ void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tab
 {
     if (tableIndex < TextColor::TABLE_SIZE)
     {
-        gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+        til::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
     }
 }
 
@@ -132,7 +132,7 @@ void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tab
 // - The position in the color table where the color is stored.
 size_t RenderSettings::GetColorAliasIndex(const ColorAlias alias) const noexcept
 {
-    return gsl::at(_colorAliasIndices, static_cast<size_t>(alias));
+    return til::at(_colorAliasIndices, static_cast<size_t>(alias));
 }
 
 // Routine Description:

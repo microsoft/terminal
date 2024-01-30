@@ -26,7 +26,7 @@ using namespace std::chrono_literals;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
-static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+static constexpr short KeyPressed{ til::narrow_cast<short>(0x8000) };
 
 constexpr const auto FrameUpdateInterval = std::chrono::milliseconds(16);
 
@@ -109,8 +109,8 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
     if (_windowLogic)
     {
         const auto state = _windowLogic.TaskbarState();
-        _window->SetTaskbarProgress(gsl::narrow_cast<size_t>(state.State()),
-                                    gsl::narrow_cast<size_t>(state.Progress()));
+        _window->SetTaskbarProgress(til::narrow_cast<size_t>(state.State()),
+                                    til::narrow_cast<size_t>(state.Progress()));
     }
 }
 
@@ -619,8 +619,8 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
     // Acquire the actual initial position
     auto initialPos = _windowLogic.GetInitialPosition(proposedRect.left, proposedRect.top);
     const auto centerOnLaunch = _windowLogic.CenterOnLaunch();
-    proposedRect.left = gsl::narrow<til::CoordType>(initialPos.X);
-    proposedRect.top = gsl::narrow<til::CoordType>(initialPos.Y);
+    proposedRect.left = wil::safe_cast<til::CoordType>(initialPos.X);
+    proposedRect.top = wil::safe_cast<til::CoordType>(initialPos.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;

@@ -416,7 +416,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
                                                       const RenderSettings& /*renderSettings*/,
-                                                      const gsl::not_null<IRenderData*> /*pData*/,
+                                                      IRenderData* /*pData*/,
                                                       const bool /*usingSoftFont*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {

@@ -61,7 +61,7 @@ namespace
         HRESULT PaintSelection(const til::rect& /*rect*/) noexcept { return S_OK; }
         HRESULT PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept { return S_OK; }
         HRESULT PaintCursor(const CursorOptions& /*options*/) noexcept { return S_OK; }
-        HRESULT UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/, const RenderSettings& /*renderSettings*/, gsl::not_null<IRenderData*> /*pData*/, bool /*usingSoftFont*/, bool /*isSettingDefaultBrushes*/) noexcept { return S_OK; }
+        HRESULT UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/, const RenderSettings& /*renderSettings*/, IRenderData* /*pData*/, bool /*usingSoftFont*/, bool /*isSettingDefaultBrushes*/) noexcept { return S_OK; }
         HRESULT UpdateFont(const FontInfoDesired& /*FontInfoDesired*/, _Out_ FontInfo& /*FontInfo*/) noexcept { return S_OK; }
         HRESULT UpdateDpi(int /*iDpi*/) noexcept { return S_OK; }
         HRESULT UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept { return S_OK; }

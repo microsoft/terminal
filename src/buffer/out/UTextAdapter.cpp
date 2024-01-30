@@ -88,7 +88,7 @@ try
         accessLength(ut) = length;
     }
 
-    return gsl::narrow_cast<int64_t>(length);
+    return til::narrow_cast<int64_t>(length);
 }
 catch (...)
 {
@@ -165,17 +165,17 @@ try
         accessCurrentRow(ut) = y;
         ut->chunkNativeStart = start;
         ut->chunkNativeLimit = limit;
-        ut->chunkLength = gsl::narrow_cast<int32_t>(text.size());
+        ut->chunkLength = til::narrow_cast<int32_t>(text.size());
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
         ut->chunkContents = reinterpret_cast<const char16_t*>(text.data());
         ut->nativeIndexingLimit = ut->chunkLength;
     }
 
-    auto offset = gsl::narrow_cast<int32_t>(nativeIndex - start);
+    auto offset = til::narrow_cast<int32_t>(nativeIndex - start);
 
     // Don't leave the offset on a trailing surrogate pair. See U16_SET_CP_START.
     // This assumes that the TextBuffer contains valid UTF-16 which may theoretically not be the case.
-    if (offset > 0 && offset < ut->chunkLength && U16_IS_TRAIL(til::at(ut->chunkContents, offset)))
+    if (offset > 0 && offset < ut->chunkLength && U16_IS_TRAIL(til::at_unchecked(ut->chunkContents, offset)))
     {
         offset--;
     }
@@ -229,14 +229,14 @@ try
 
     if (destCapacity <= 0)
     {
-        return gsl::narrow_cast<int32_t>(nativeLimit - nativeStart);
+        return til::narrow_cast<int32_t>(nativeLimit - nativeStart);
     }
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     const auto y = accessCurrentRow(ut);
     const auto offset = ut->chunkNativeStart - nativeStart;
-    const auto text = textBuffer.GetRowByOffset(y).GetText().substr(gsl::narrow_cast<size_t>(std::max<int64_t>(0, offset)));
-    const auto destCapacitySizeT = gsl::narrow_cast<size_t>(destCapacity);
+    const auto text = textBuffer.GetRowByOffset(y).GetText().substr(til::narrow_cast<size_t>(std::max<int64_t>(0, offset)));
+    const auto destCapacitySizeT = til::narrow_cast<size_t>(destCapacity);
     const auto length = std::min(destCapacitySizeT, text.size());
 
     memcpy(dest, text.data(), length * sizeof(char16_t));
@@ -247,7 +247,7 @@ try
         dest[length] = 0;
     }
 
-    return gsl::narrow_cast<int32_t>(length);
+    return til::narrow_cast<int32_t>(length);
 }
 catch (...)
 {
@@ -281,7 +281,7 @@ UText Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer,
 Microsoft::Console::ICU::unique_uregex Microsoft::Console::ICU::CreateRegex(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
 {
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-    const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, status);
+    const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), til::narrow_cast<int32_t>(pattern.size()), flags, nullptr, status);
     // ICU describes the time unit as being dependent on CPU performance and "typically [in] the order of milliseconds",
     // but this claim seems highly outdated already. On my CPU from 2021, a limit of 4096 equals roughly 600ms.
     uregex_setTimeLimit(re, 4096, status);

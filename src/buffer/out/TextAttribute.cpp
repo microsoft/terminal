@@ -22,7 +22,7 @@ namespace
         for (auto i = 0u; i < legacyColorMap.size(); i++)
         {
             const auto legacyIndex = TextColor::TransposeLegacyIndex(i);
-            gsl::at(legacyColorMap, i) = i == defaultIndex ? TextColor{} : TextColor{ legacyIndex, true };
+            til::at(legacyColorMap, i) = i == defaultIndex ? TextColor{} : TextColor{ legacyIndex, true };
         }
         return legacyColorMap;
     }
@@ -49,8 +49,8 @@ void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noe
 {
     // First we reset the current default color map entries to what they should
     // be for a regular translation from a legacy index to an ANSI TextColor.
-    gsl::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{ s_ansiDefaultForeground, true };
-    gsl::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{ s_ansiDefaultBackground, true };
+    til::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{ s_ansiDefaultForeground, true };
+    til::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{ s_ansiDefaultBackground, true };
 
     // Then we save the new default attribute values and their corresponding
     // ANSI translations. We use the latter values to more efficiently handle
@@ -61,8 +61,8 @@ void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noe
     s_ansiDefaultBackground = TextColor::TransposeLegacyIndex(s_legacyDefaultBackground);
 
     // Finally we set the new default color map entries.
-    gsl::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{};
-    gsl::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{};
+    til::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{};
+    til::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{};
 }
 
 // Routine Description:

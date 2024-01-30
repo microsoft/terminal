@@ -144,7 +144,7 @@ bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     coordCursor.x = std::clamp(coordCursor.x, viewport.left, viewport.right);
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
+    const auto api = ServiceLocator::LocateGlobals().api;
     auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
     return SUCCEEDED(api->SetConsoleCursorPositionImpl(info, coordCursor));
 }

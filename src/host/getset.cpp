@@ -314,7 +314,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), consoleFontInfoEx.FaceName));
 
         FontInfo fi(FaceName,
-                    gsl::narrow_cast<unsigned char>(consoleFontInfoEx.FontFamily),
+                    til::narrow_cast<unsigned char>(consoleFontInfoEx.FontFamily),
                     consoleFontInfoEx.FontWeight,
                     til::wrap_coord_size(consoleFontInfoEx.dwFontSize),
                     gci.OutputCP);
@@ -1282,7 +1282,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 
         if (title.has_value() && title->size() > 0)
         {
-            til::at(*title, 0) = ANSI_NULL;
+            til::at_unchecked(*title, 0) = ANSI_NULL;
         }
 
         // Get the appropriate title and length depending on the mode.
@@ -1333,7 +1333,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 
         if (title.size() > 0)
         {
-            til::at(title, 0) = ANSI_NULL;
+            til::at_unchecked(title, 0) = ANSI_NULL;
         }
 
         // Figure out how big our temporary Unicode buffer must be to get the title.
@@ -1388,7 +1388,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
             // If we didn't copy anything back and there is space, null terminate the given buffer and return.
             if (title.size() > 0)
             {
-                til::at(title, 0) = ANSI_NULL;
+                til::at_unchecked(title, 0) = ANSI_NULL;
                 written = 1;
             }
         }

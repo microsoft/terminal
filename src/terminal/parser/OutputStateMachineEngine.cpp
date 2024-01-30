@@ -780,8 +780,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscSetColorTable(string, tableIndexes, colors);
         for (size_t i = 0; i < tableIndexes.size(); i++)
         {
-            const auto tableIndex = til::at(tableIndexes, i);
-            const auto rgb = til::at(colors, i);
+            const auto tableIndex = til::at_unchecked(tableIndexes, i);
+            const auto rgb = til::at_unchecked(colors, i);
             success = success && _dispatch->SetColorTableEntry(tableIndex, rgb);
         }
         break;
@@ -799,7 +799,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 
             if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
             {
-                const auto color = til::at(colors, colorIndex);
+                const auto color = til::at_unchecked(colors, colorIndex);
                 if (color != INVALID_COLOR)
                 {
                     success = success && _dispatch->SetDefaultForeground(color);
@@ -810,7 +810,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 
             if (commandIndex == OscActionCodes::SetBackgroundColor && colors.size() > colorIndex)
             {
-                const auto color = til::at(colors, colorIndex);
+                const auto color = til::at_unchecked(colors, colorIndex);
                 if (color != INVALID_COLOR)
                 {
                     success = success && _dispatch->SetDefaultBackground(color);
@@ -821,7 +821,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 
             if (commandIndex == OscActionCodes::SetCursorColor && colors.size() > colorIndex)
             {
-                const auto color = til::at(colors, colorIndex);
+                const auto color = til::at_unchecked(colors, colorIndex);
                 if (color != INVALID_COLOR)
                 {
                     success = success && _dispatch->SetCursorColor(color);
@@ -961,8 +961,8 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
         unsigned int tableIndex = 0;
-        const auto indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
+        const auto indexSuccess = Utils::StringToUint(til::at_unchecked(parts, i), tableIndex);
+        const auto colorOptional = Utils::ColorFromXTermColor(til::at_unchecked(parts, j));
         if (indexSuccess && colorOptional.has_value())
         {
             newTableIndexes.push_back(tableIndex);
@@ -1052,7 +1052,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     std::vector<DWORD> newRgbs;
     for (size_t i = 0; i < parts.size(); i++)
     {
-        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, i));
+        const auto colorOptional = Utils::ColorFromXTermColor(til::at_unchecked(parts, i));
         if (colorOptional.has_value())
         {
             newRgbs.push_back(colorOptional.value());

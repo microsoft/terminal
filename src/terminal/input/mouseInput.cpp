@@ -185,7 +185,7 @@ static constexpr wchar_t _windowsButtonToXEncoding(const unsigned int button,
     WI_UpdateFlag(xvalue, 0x08, WI_IsAnyFlagSet(modifierKeyState, ALT_PRESSED));
     WI_UpdateFlag(xvalue, 0x10, WI_IsAnyFlagSet(modifierKeyState, CTRL_PRESSED));
 
-    return gsl::narrow_cast<wchar_t>(L' ' + xvalue);
+    return til::narrow_cast<wchar_t>(L' ' + xvalue);
 }
 
 // Routine Description:
@@ -266,7 +266,7 @@ static constexpr til::point _winToVTCoord(const til::point coordWinCoordinate) n
 // - the encoded value.
 static constexpr wchar_t _encodeDefaultCoordinate(const til::CoordType sCoordinateValue) noexcept
 {
-    return gsl::narrow_cast<wchar_t>(sCoordinateValue + 32);
+    return til::narrow_cast<wchar_t>(sCoordinateValue + 32);
 }
 
 // Routine Description:

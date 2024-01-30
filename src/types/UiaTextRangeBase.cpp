@@ -897,13 +897,13 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
 
         // convert to a safearray
-        *ppRetVal = SafeArrayCreateVector(VT_R8, 0, gsl::narrow<ULONG>(coords.size()));
+        *ppRetVal = SafeArrayCreateVector(VT_R8, 0, wil::safe_cast<ULONG>(coords.size()));
         if (*ppRetVal == nullptr)
         {
             return E_OUTOFMEMORY;
         }
         auto hr = E_UNEXPECTED;
-        const auto l = gsl::narrow<LONG>(coords.size());
+        const auto l = wil::safe_cast<LONG>(coords.size());
         for (LONG i = 0; i < l; ++i)
         {
             hr = SafeArrayPutElement(*ppRetVal, &i, &coords.at(i));
@@ -975,7 +975,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 
         // -1 is supposed to be interpreted as "no limit",
         // so leverage size_t(-1) being converted to 0xffff...
-        const auto maxLengthAsSize = gsl::narrow_cast<size_t>(maxLength);
+        const auto maxLengthAsSize = til::narrow_cast<size_t>(maxLength);
 
         // TODO GH#5406: create a different UIA parent object for each TextBuffer
         // nvaccess/nvda#11428: Ensure our endpoints are in bounds
@@ -1258,7 +1258,7 @@ try
 
     Unlock.reset();
 
-    const gsl::not_null<ScreenInfoUiaProviderBase*> provider = static_cast<ScreenInfoUiaProviderBase*>(_pProvider);
+    const auto provider = static_cast<ScreenInfoUiaProviderBase*>(_pProvider);
     provider->ChangeViewport(newViewport);
 
     UiaTracing::TextRange::ScrollIntoView(alignToTop, *this);
@@ -1394,7 +1394,7 @@ void UiaTextRangeBase::_getBoundingRect(const til::rect& textRect, _Inout_ std::
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
-                                                    _Out_ const gsl::not_null<int*> pAmountMoved,
+                                                    _Out_ int* pAmountMoved,
                                                     _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
@@ -1451,7 +1451,7 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
-                                               _Out_ const gsl::not_null<int*> pAmountMoved,
+                                               _Out_ int* pAmountMoved,
                                                _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
@@ -1567,7 +1567,7 @@ bool UiaTextRangeBase::_tryMoveToWordStart(const TextBuffer& buffer, const til::
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
-                                               _Out_ const gsl::not_null<int*> pAmountMoved,
+                                               _Out_ int* pAmountMoved,
                                                _In_ const bool preventBoundary) noexcept
 {
     *pAmountMoved = 0;
@@ -1675,7 +1675,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
                                                    _In_ const TextPatternRangeEndpoint endpoint,
-                                                   _Out_ const gsl::not_null<int*> pAmountMoved,
+                                                   _Out_ int* pAmountMoved,
                                                    _In_ const bool preventBoundary) noexcept
 {
     *pAmountMoved = 0;
@@ -1742,10 +1742,10 @@ til::rect UiaTextRangeBase::_getTerminalRect() const
     }
 
     return {
-        gsl::narrow_cast<til::CoordType>(result.left),
-        gsl::narrow_cast<til::CoordType>(result.top),
-        gsl::narrow_cast<til::CoordType>(result.left + result.width),
-        gsl::narrow_cast<til::CoordType>(result.top + result.height),
+        til::narrow_cast<til::CoordType>(result.left),
+        til::narrow_cast<til::CoordType>(result.top),
+        til::narrow_cast<til::CoordType>(result.left + result.width),
+        til::narrow_cast<til::CoordType>(result.top + result.height),
     };
 }
 

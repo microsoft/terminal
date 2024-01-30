@@ -260,9 +260,9 @@ void TextAttributeTests::TestRoundtripDefaultColors()
 void TextAttributeTests::TestIntenseAsBright()
 {
     const auto& colorTable = _renderSettings.GetColorTable();
-    const auto darkBlack = til::at(colorTable, 0);
-    const auto brightBlack = til::at(colorTable, 8);
-    const auto darkGreen = til::at(colorTable, 2);
+    const auto darkBlack = til::at_unchecked(colorTable, 0);
+    const auto brightBlack = til::at_unchecked(colorTable, 8);
+    const auto darkGreen = til::at_unchecked(colorTable, 2);
 
     TextAttribute attr{};
 

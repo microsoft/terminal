@@ -66,7 +66,7 @@ winrt::hstring _GetMessageText(uint32_t index, const T& keys)
 {
     if (index < keys.size())
     {
-        return GetLibraryResourceString(til::at(keys, index));
+        return GetLibraryResourceString(til::at_unchecked(keys, index));
     }
     return {};
 }

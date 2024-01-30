@@ -532,7 +532,7 @@ void InputTest::TerminalInputModifierKeyTests()
             // significant ones to be zeroed out (when using ASCII).
             if (AltPressed(uiKeystate) && ControlPressed(uiKeystate) && ch > 0x40 && ch <= 0x5A)
             {
-                const wchar_t buffer[2]{ L'\x1b', gsl::narrow_cast<wchar_t>(ch & 0b11111) };
+                const wchar_t buffer[2]{ L'\x1b', til::narrow_cast<wchar_t>(ch & 0b11111) };
                 expected = TerminalInput::MakeOutput({ &buffer[0], 2 });
                 ch = 0;
                 break;

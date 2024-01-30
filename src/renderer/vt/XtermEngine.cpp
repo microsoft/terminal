@@ -73,12 +73,12 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
-        auto dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromExclusive(til::at(dirty, 0));
+        auto dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromExclusive(til::at_unchecked(dirty, 0));
 
         // If there's more than 1, union them all up with the 1 we already have.
         for (size_t i = 1; i < dirty.size(); ++i)
         {
-            dirtyView = Viewport::Union(dirtyView, Viewport::FromExclusive(til::at(dirty, i)));
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromExclusive(til::at_unchecked(dirty, i)));
         }
     }
 
@@ -146,7 +146,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                         const RenderSettings& /*renderSettings*/,
-                                                        const gsl::not_null<IRenderData*> /*pData*/,
+                                                        IRenderData* /*pData*/,
                                                         const bool /*usingSoftFont*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
 {

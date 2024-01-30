@@ -172,7 +172,7 @@ IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_
     }
     catch (...)
     {
-        return gsl::narrow_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
+        return til::narrow_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
     }
 }
 #pragma endregion

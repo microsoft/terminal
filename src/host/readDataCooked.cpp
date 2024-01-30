@@ -862,7 +862,7 @@ void COOKED_READ_DATA::_erase(ptrdiff_t distance) const
     }
 
     std::array<wchar_t, 128> whitespace;
-    auto remaining = gsl::narrow_cast<size_t>(distance);
+    auto remaining = til::narrow_cast<size_t>(distance);
     auto nextWriteSize = std::min(remaining, whitespace.size());
 
     // If we only need to erase 1 character worth of whitespace,
@@ -942,7 +942,7 @@ ptrdiff_t COOKED_READ_DATA::_writeCharsImpl(const std::wstring_view& text, const
         {
             // In the interactive mode we replace C0 control characters (0x00-0x1f) with ASCII representations like ^C (= 0x03).
             buf[0] = L'^';
-            buf[1] = gsl::narrow_cast<wchar_t>(wch + L'@');
+            buf[1] = til::narrow_cast<wchar_t>(wch + L'@');
             len = 2;
         }
 
@@ -1037,8 +1037,8 @@ til::point COOKED_READ_DATA::_offsetPosition(til::point pos, ptrdiff_t distance)
     off = off < 0 ? 0 : (off > area ? area : off);
 
     return {
-        gsl::narrow_cast<til::CoordType>(off % w),
-        gsl::narrow_cast<til::CoordType>(off / w),
+        til::narrow_cast<til::CoordType>(off % w),
+        til::narrow_cast<til::CoordType>(off / w),
     };
 }
 
@@ -1072,7 +1072,7 @@ til::CoordType COOKED_READ_DATA::_getColumnAtRelativeCursorPosition(ptrdiff_t di
     const auto& cursor = textBuffer.GetCursor();
     const auto pos = cursor.GetPosition();
 
-    auto x = gsl::narrow_cast<til::CoordType>((pos.x + distance) % size.width);
+    auto x = til::narrow_cast<til::CoordType>((pos.x + distance) % size.width);
     if (x < 0)
     {
         x += size.width;
@@ -1125,7 +1125,7 @@ try
         // class to expose how wide characters are, any more than necessary. It makes implementing Unicode support
         // much harder, because things like combining marks and work zones may cause TextBuffer to end up deciding
         // a piece of text has a different size than what you thought it had when measuring it on its own.
-        proposedSize.width = gsl::narrow_cast<til::CoordType>(std::clamp<size_t>(maxStringLength, 40, til::CoordTypeMax));
+        proposedSize.width = til::narrow_cast<til::CoordType>(std::clamp<size_t>(maxStringLength, 40, til::CoordTypeMax));
         proposedSize.height = std::clamp(commandCount, 10, 20);
         break;
     }
@@ -1145,8 +1145,8 @@ try
         return;
     }
 
-    const auto widthSizeT = gsl::narrow_cast<size_t>(contentSize.width + 2);
-    const auto heightSizeT = gsl::narrow_cast<size_t>(contentSize.height + 2);
+    const auto widthSizeT = til::narrow_cast<size_t>(contentSize.width + 2);
+    const auto heightSizeT = til::narrow_cast<size_t>(contentSize.height + 2);
     const til::point contentOrigin{
         (viewportSize.width - contentSize.width) / 2 + viewportOrigin.x,
         (viewportSize.height - contentSize.height) / 2 + viewportOrigin.y,

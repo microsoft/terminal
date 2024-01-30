@@ -263,12 +263,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         // If user has dragged anything but the top or bottom border (so e.g. left border,
         // top-right corner etc.), then this means that the width has changed. We thus ask to
         // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
-        clientWidth = gsl::narrow_cast<decltype(clientWidth)>(_pfnSnapDimensionCallback(true, gsl::narrow_cast<float>(clientWidth)));
+        clientWidth = til::narrow_cast<decltype(clientWidth)>(_pfnSnapDimensionCallback(true, til::narrow_cast<float>(clientWidth)));
     }
     if (wParam != WMSZ_LEFT && wParam != WMSZ_RIGHT)
     {
         // Analogous to above, but for height.
-        clientHeight = gsl::narrow_cast<decltype(clientHeight)>(_pfnSnapDimensionCallback(false, gsl::narrow_cast<float>(clientHeight)));
+        clientHeight = til::narrow_cast<decltype(clientHeight)>(_pfnSnapDimensionCallback(false, til::narrow_cast<float>(clientHeight)));
     }
 
     // Now make the window rectangle match the calculated client width and height,
@@ -489,7 +489,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
 {
     if (_pfnSnapDimensionCallback)
     {
-        return gsl::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, gsl::narrow_cast<float>(clientSize)) + nonClientSize);
+        return til::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, til::narrow_cast<float>(clientSize)) + nonClientSize);
     }
     // We might have been called in WM_CREATE, before we've initialized XAML or
     // our page. That's okay.

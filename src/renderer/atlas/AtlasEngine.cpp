@@ -89,8 +89,8 @@ try
     }
     if (_api.scrollOffset)
     {
-        const auto limit = gsl::narrow_cast<i16>(_p.s->viewportCellCount.y & 0x7fff);
-        const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
+        const auto limit = til::narrow_cast<i16>(_p.s->viewportCellCount.y & 0x7fff);
+        const auto offset = til::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
         const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
 
         _api.scrollOffset = offset;
@@ -182,8 +182,8 @@ try
         // Scrolling the background bitmap is a lot easier because we can rely on memmove which works
         // with both forwards and backwards copying. It's a mystery why the STL doesn't have this.
         {
-            const auto srcOffset = std::max<ptrdiff_t>(0, -offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
-            const auto dstOffset = std::max<ptrdiff_t>(0, offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+            const auto srcOffset = std::max<ptrdiff_t>(0, -offset) * til::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+            const auto dstOffset = std::max<ptrdiff_t>(0, offset) * til::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
             const auto count = _p.colorBitmapDepthStride - std::max(srcOffset, dstOffset);
             assert(dstOffset >= 0 && dstOffset + count <= _p.colorBitmapDepthStride);
             assert(srcOffset >= 0 && srcOffset + count <= _p.colorBitmapDepthStride);
@@ -293,7 +293,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y));
+    const auto y = til::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y));
     _p.rows[y]->lineRendition = lineRendition;
     _api.lineRendition = lineRendition;
     return S_OK;
@@ -307,15 +307,15 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y));
+    const auto y = til::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
         _flushBufferLine();
     }
 
-    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_p.s->viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
+    const auto shift = til::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
+    const auto x = til::narrow_cast<u16>(clamp<int>(coord.x - (_p.s->viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
     auto columnEnd = x;
 
     // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
@@ -335,7 +335,7 @@ try
                 _api.bufferLine.emplace_back(ch);
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }
-            columnEnd += gsl::narrow_cast<u16>(cluster.GetColumns());
+            columnEnd += til::narrow_cast<u16>(cluster.GetColumns());
         }
 
         _api.bufferLineColumn.emplace_back(columnEnd);
@@ -378,13 +378,13 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
 try
 {
-    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
+    const auto shift = til::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
     const auto x = std::max(0, coordTarget.x - (_p.s->viewportOffset.x >> shift));
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
-    const auto glColor = gsl::narrow_cast<u32>(gridlineColor) | 0xff000000;
-    const auto ulColor = gsl::narrow_cast<u32>(underlineColor) | 0xff000000;
+    const auto y = til::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
+    const auto from = til::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
+    const auto to = til::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
+    const auto glColor = til::narrow_cast<u32>(gridlineColor) | 0xff000000;
+    const auto ulColor = til::narrow_cast<u32>(underlineColor) | 0xff000000;
     _p.rows[y]->gridLineRanges.emplace_back(lines, glColor, ulColor, from, to);
     return S_OK;
 }
@@ -398,9 +398,9 @@ try
     // As such we got to call _flushBufferLine() here just to be sure.
     _flushBufferLine();
 
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
+    const auto y = til::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+    const auto from = til::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
+    const auto to = til::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
 
     auto& row = *_p.rows[y];
     row.selectionFrom = from;
@@ -424,9 +424,9 @@ try
 
     for (const auto& rect : rects)
     {
-        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
-        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
+        const auto y = til::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+        const auto from = til::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
+        const auto to = til::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
 
         if (rect.bottom <= 0 || rect.top >= _p.s->viewportCellCount.y)
         {
@@ -458,9 +458,9 @@ try
 
     {
         const CursorSettings cachedOptions{
-            .cursorColor = gsl::narrow_cast<u32>(options.fUseColor ? options.cursorColor | 0xff000000 : INVALID_COLOR),
-            .cursorType = gsl::narrow_cast<u16>(options.cursorType),
-            .heightPercentage = gsl::narrow_cast<u16>(options.ulCursorHeightPercent),
+            .cursorColor = til::narrow_cast<u32>(options.fUseColor ? options.cursorColor | 0xff000000 : INVALID_COLOR),
+            .cursorType = til::narrow_cast<u16>(options.cursorType),
+            .heightPercentage = til::narrow_cast<u16>(options.ulCursorHeightPercent),
         };
         if (*_api.s->cursor != cachedOptions)
         {
@@ -474,7 +474,7 @@ try
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
-        const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
+        const auto shift = til::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
         auto left = options.coordCursor.x - (_p.s->viewportOffset.x >> shift);
         auto right = left + cursorWidth;
 
@@ -501,7 +501,7 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, const gsl::not_null<IRenderData*> /*pData*/, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, IRenderData* /*pData*/, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
 try
 {
     auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
@@ -519,8 +519,8 @@ try
             _flushBufferLine();
         }
 
-        _api.currentBackground = gsl::narrow_cast<u32>(bg);
-        _api.currentForeground = gsl::narrow_cast<u32>(fg);
+        _api.currentBackground = til::narrow_cast<u32>(bg);
+        _api.currentForeground = til::narrow_cast<u32>(fg);
         _api.attributes = attributes;
     }
     else if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)
@@ -664,7 +664,7 @@ void AtlasEngine::_flushBufferLine()
     });
 
     // This would seriously blow us up otherwise.
-    Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
+    assert(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
@@ -673,7 +673,7 @@ void AtlasEngine::_flushBufferLine()
     {
         u32 mappedLength = 0;
         wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.addressof());
+        _mapCharacters(_api.bufferLine.data() + idx, til::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -692,7 +692,7 @@ void AtlasEngine::_flushBufferLine()
             auto size = _api.glyphIndices.size();
             size = size + (size >> 1);
             size = std::max<size_t>(size, mappedLength);
-            Expects(size > _api.glyphIndices.size());
+            assert(size > _api.glyphIndices.size());
             _api.glyphIndices = Buffer<u16>{ size };
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
@@ -707,7 +707,7 @@ void AtlasEngine::_flushBufferLine()
 
                 if (isTextSimple)
                 {
-                    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+                    const auto shift = til::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
                     const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
 
                     for (size_t i = 0; i < complexityLength; ++i)
@@ -740,11 +740,11 @@ void AtlasEngine::_flushBufferLine()
             // it can also repeatedly return the same font face again and again. :)
             if (row.mappings.empty() || row.mappings.back().fontFace != mappedFontFace)
             {
-                row.mappings.emplace_back(std::move(mappedFontFace), gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+                row.mappings.emplace_back(std::move(mappedFontFace), til::narrow_cast<u32>(initialIndicesCount), til::narrow_cast<u32>(indicesCount));
             }
             else
             {
-                row.mappings.back().glyphsTo = gsl::narrow_cast<u32>(indicesCount);
+                row.mappings.back().glyphsTo = til::narrow_cast<u32>(indicesCount);
             }
         }
     }
@@ -768,7 +768,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
             /* baseFontCollection */ _p.s->font->fontCollection.get(),
             /* baseFamilyName     */ _p.s->font->fontName.c_str(),
             /* fontAxisValues     */ textFormatAxis.data(),
-            /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
+            /* fontAxisValueCount */ til::narrow_cast<u32>(textFormatAxis.size()),
             /* mappedLength       */ mappedLength,
             /* scale              */ &scale,
             /* mappedFontFace     */ reinterpret_cast<IDWriteFontFace5**>(mappedFontFace)));
@@ -807,7 +807,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 {
     _api.analysisResults.clear();
 
-    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), _api.bufferLine.data(), wil::safe_cast<UINT32>(_api.bufferLine.size()) };
     TextAnalysisSink analysisSink{ _api.analysisResults };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
 
@@ -831,7 +831,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             // Direct2D, why is this mutable?         Why?
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
             feature.features = const_cast<DWRITE_FONT_FEATURE*>(_p.s->font->fontFeatures.data());
-            feature.featureCount = gsl::narrow_cast<u32>(_p.s->font->fontFeatures.size());
+            feature.featureCount = til::narrow_cast<u32>(_p.s->font->fontFeatures.size());
             features = &feature;
             featureRangeLengths = a.textLength;
             featureRanges = 1;
@@ -857,7 +857,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* features            */ &features,
                 /* featureRangeLengths */ &featureRangeLengths,
                 /* featureRanges       */ featureRanges,
-                /* maxGlyphCount       */ gsl::narrow_cast<u32>(_api.glyphIndices.size()),
+                /* maxGlyphCount       */ til::narrow_cast<u32>(_api.glyphIndices.size()),
                 /* clusterMap          */ _api.clusterMap.data(),
                 /* textProps           */ _api.textProps.data(),
                 /* glyphIndices        */ _api.glyphIndices.data(),
@@ -870,7 +870,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 auto size = _api.glyphIndices.size();
                 size = size + (size >> 1);
                 // Overflow check.
-                Expects(size > _api.glyphIndices.size());
+                assert(size > _api.glyphIndices.size());
                 _api.glyphIndices = Buffer<u16>{ size };
                 _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
                 continue;
@@ -911,9 +911,9 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* glyphAdvances       */ _api.glyphAdvances.data(),
             /* glyphOffsets        */ _api.glyphOffsets.data()));
 
-        _api.clusterMap[a.textLength] = gsl::narrow_cast<u16>(actualGlyphCount);
+        _api.clusterMap[a.textLength] = til::narrow_cast<u16>(actualGlyphCount);
 
-        const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+        const auto shift = til::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
         const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
         auto prevCluster = _api.clusterMap[0];
         size_t beg = 0;
@@ -986,7 +986,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
     auto initialIndicesCount = row.glyphIndices.size();
     const auto softFontAvailable = !_p.s->font->softFontPattern.empty();
     auto currentlyMappingSoftFont = isSoftFontChar(_api.bufferLine[pos1]);
-    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+    const auto shift = til::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
     const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
 
     while (pos2 < to)
@@ -1013,7 +1013,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 
             if (indicesCount > initialIndicesCount)
             {
-                row.mappings.emplace_back(fontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+                row.mappings.emplace_back(fontFace, til::narrow_cast<u32>(initialIndicesCount), til::narrow_cast<u32>(indicesCount));
                 initialIndicesCount = indicesCount;
             }
         }
@@ -1029,7 +1029,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 
         if (indicesCount > initialIndicesCount)
         {
-            row.mappings.emplace_back(fontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+            row.mappings.emplace_back(fontFace, til::narrow_cast<u32>(initialIndicesCount), til::narrow_cast<u32>(indicesCount));
         }
     }
 }

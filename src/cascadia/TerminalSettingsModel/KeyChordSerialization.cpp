@@ -104,7 +104,7 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
     const auto value = til::to_ulong({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
     if (value > 0 && value < 256)
     {
-        return gsl::narrow_cast<int32_t>(value);
+        return til::narrow_cast<int32_t>(value);
     }
 
     throw winrt::hresult_invalid_argument(L"Invalid numeric argument to vk() or sc()");
@@ -296,7 +296,7 @@ static std::wstring _toString(const KeyChord& chord)
     // Quick lookup: ranges of vkeys that correlate directly to a key.
     if ((vkey >= L'0' && vkey <= L'9') || (vkey >= L'A' && vkey <= L'Z'))
     {
-        buffer.push_back(til::tolower_ascii(gsl::narrow_cast<wchar_t>(vkey)));
+        buffer.push_back(til::tolower_ascii(til::narrow_cast<wchar_t>(vkey)));
         return buffer;
     }
 
@@ -309,7 +309,7 @@ static std::wstring _toString(const KeyChord& chord)
     const auto mappedChar = MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
     if (mappedChar != 0)
     {
-        buffer.push_back(gsl::narrow_cast<wchar_t>(mappedChar));
+        buffer.push_back(til::narrow_cast<wchar_t>(mappedChar));
         return buffer;
     }
 

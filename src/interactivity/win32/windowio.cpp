@@ -167,7 +167,7 @@ void HandleKeyEvent(const HWND hWnd,
         // We try to infer the correct scan code from the virtual key code. If the
         // virtual key code is invalid or we couldn't map it to a scan code,
         // MapVirtualKeyEx will return 0.
-        auto FullVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VirtualKeyCode, MAPVK_VK_TO_VSC_EX));
+        auto FullVirtualScanCode = til::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VirtualKeyCode, MAPVK_VK_TO_VSC_EX));
         VirtualScanCode = LOBYTE(FullVirtualScanCode);
         ControlKeyState |= (HIBYTE(FullVirtualScanCode) == 0xE0) ? ENHANCED_KEY : 0;
         if (VirtualScanCode == 0)

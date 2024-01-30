@@ -14,7 +14,7 @@
 // performance (including Debug performance). Other languages are a little bit more ergonomic there than C++.
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).)
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
-#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, til::narrow_cast or gsl::narrow (type.1).
 
 extern "C" int __isa_available;
 
@@ -284,7 +284,7 @@ void ROW::_init() noexcept
         // we need to subtract 1 alignment from the buffer length (= 16 bytes). Since _columnCount is
         // in wchar_t's we subtract -8. The same applies to the ~7 here vs ~15. If you squint slightly
         // you'll see how this is effectively the inverse of what CalculateCharsBufferStride does.
-        const auto tailColumnOffset = gsl::narrow_cast<uint16_t>((_columnCount - 8u) & ~7);
+        const auto tailColumnOffset = til::narrow_cast<uint16_t>((_columnCount - 8u) & ~7);
         const auto charsEndLoop = chars + tailColumnOffset;
         const auto charOffsetsEndLoop = charOffsets + tailColumnOffset;
 
@@ -363,7 +363,7 @@ void ROW::_init() noexcept
 void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)
 {
     _attr = attr;
-    _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
+    _attr.resize_trailing_extent(wil::safe_cast<uint16_t>(newWidth));
 }
 
 void ROW::CopyFrom(const ROW& source)
@@ -447,7 +447,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
-    auto colorStarts = gsl::narrow_cast<uint16_t>(columnBegin);
+    auto colorStarts = til::narrow_cast<uint16_t>(columnBegin);
     auto currentIndex = colorStarts;
 
     while (it && currentIndex <= finalColumnInRow)
@@ -603,17 +603,17 @@ catch (...)
 
 [[msvc::forceinline]] void ROW::WriteHelper::ReplaceCharacters(til::CoordType width) noexcept
 {
-    const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
+    const auto colEndNew = til::narrow_cast<uint16_t>(colEnd + width);
     if (colEndNew > colLimit)
     {
         colEndDirty = colLimit;
     }
     else
     {
-        til::at(row._charOffsets, colEnd++) = chBeg;
+        til::at_unchecked(row._charOffsets, colEnd++) = chBeg;
         for (; colEnd < colEndNew; ++colEnd)
         {
-            til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(chBeg | CharOffsetsTrailer);
+            til::at_unchecked(row._charOffsets, colEnd) = til::narrow_cast<uint16_t>(chBeg | CharOffsetsTrailer);
         }
 
         colEndDirty = colEnd;
@@ -670,7 +670,7 @@ catch (...)
             return;
         }
 
-        til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(ch);
+        til::at_unchecked(row._charOffsets, colEnd) = til::narrow_cast<uint16_t>(ch);
         ++colEnd;
         ++ch;
         ++it;
@@ -713,7 +713,7 @@ catch (...)
             width = IsGlyphFullWidth({ ptr, advance }) + 1u;
         }
 
-        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
+        const auto colEndNew = til::narrow_cast<uint16_t>(colEnd + width);
         if (colEndNew > colLimit)
         {
             colEndDirty = colLimit;
@@ -723,12 +723,12 @@ catch (...)
 
         // Fill our char-offset buffer with 1 entry containing the mapping from the
         // current column (colEnd) to the start of the glyph in the string (ch)...
-        til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
+        til::at_unchecked(row._charOffsets, colEnd++) = til::narrow_cast<uint16_t>(ch);
         // ...followed by 0-N entries containing an indication that the
         // columns are just a wide-glyph extension of the preceding one.
         while (colEnd < colEndNew)
         {
-            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
+            til::at_unchecked(row._charOffsets, colEnd++) = til::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
         }
 
         ch += advance;
@@ -795,24 +795,24 @@ catch (...)
 {
     // Since our `charOffsets` input is already in columns (just like the `ROW::_charOffsets`),
     // we can directly look up the end char-offset, but...
-    const auto colEndDirtyInput = std::min(gsl::narrow_cast<uint16_t>(colLimit - colBeg), gsl::narrow<uint16_t>(charOffsets.size() - 1));
+    const auto colEndDirtyInput = std::min(til::narrow_cast<uint16_t>(colLimit - colBeg), wil::safe_cast<uint16_t>(charOffsets.size() - 1));
 
     // ...since the colLimit might intersect with a wide glyph in `charOffset`, we need to adjust our input-colEnd.
     auto colEndInput = colEndDirtyInput;
-    for (; WI_IsFlagSet(til::at(charOffsets, colEndInput), CharOffsetsTrailer); --colEndInput)
+    for (; WI_IsFlagSet(til::at_unchecked(charOffsets, colEndInput), CharOffsetsTrailer); --colEndInput)
     {
     }
 
-    const auto baseOffset = til::at(charOffsets, 0);
-    const auto endOffset = til::at(charOffsets, colEndInput);
-    const auto inToOutOffset = gsl::narrow_cast<uint16_t>(chBeg - baseOffset);
+    const auto baseOffset = til::at_unchecked(charOffsets, 0);
+    const auto endOffset = til::at_unchecked(charOffsets, colEndInput);
+    const auto inToOutOffset = til::narrow_cast<uint16_t>(chBeg - baseOffset);
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     const auto dst = row._charOffsets.data() + colEnd;
 
     _copyOffsets(dst, charOffsets.data(), colEndInput, inToOutOffset);
 
     colEnd += colEndInput;
-    colEndDirty = gsl::narrow_cast<uint16_t>(colBeg + colEndDirtyInput);
+    colEndDirty = til::narrow_cast<uint16_t>(colBeg + colEndDirtyInput);
     charsConsumed = endOffset - baseOffset;
 }
 
@@ -863,7 +863,7 @@ catch (...)
         if (trailingSpaces)
         {
             fill_n_small(itBeg + charsConsumed, trailingSpaces, L' ');
-            iota_n(row._charOffsets.begin() + colEnd, trailingSpaces, gsl::narrow_cast<uint16_t>(chBeg + charsConsumed));
+            iota_n(row._charOffsets.begin() + colEnd, trailingSpaces, til::narrow_cast<uint16_t>(chBeg + charsConsumed));
         }
     }
 
@@ -898,7 +898,7 @@ void ROW::_resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDi
     else
     {
         const auto minCapacity = std::min<size_t>(UINT16_MAX, _chars.size() + (_chars.size() >> 1));
-        const auto newCapacity = gsl::narrow<uint16_t>(std::max(newLength, minCapacity));
+        const auto newCapacity = wil::safe_cast<uint16_t>(std::max(newLength, minCapacity));
 
         auto charsHeap = std::make_unique_for_overwrite<wchar_t[]>(newCapacity);
         const std::span chars{ charsHeap.get(), newCapacity };
@@ -914,7 +914,7 @@ void ROW::_resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDi
     const auto end = _charOffsets.end();
     for (; it != end; ++it)
     {
-        *it = gsl::narrow_cast<uint16_t>(*it + diff);
+        *it = til::narrow_cast<uint16_t>(*it + diff);
     }
 }
 
@@ -963,7 +963,7 @@ til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
     for (; it != beg; --it)
     {
         // it[-1] is safe as `it` is always greater than `beg` (loop invariant).
-        if (til::at(it, -1) != L' ')
+        if (til::at_unchecked(it, -1) != L' ')
         {
             break;
         }
@@ -974,7 +974,7 @@ til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
     //
     // An example: The row is 10 cells wide and `it` points to the second character.
     // `it - beg` would return 1, but it's possible it's actually 1 wide glyph and 8 whitespace.
-    return gsl::narrow_cast<til::CoordType>(GetReadableColumnCount() - (end - it));
+    return til::narrow_cast<til::CoordType>(GetReadableColumnCount() - (end - it));
 }
 
 til::CoordType ROW::MeasureLeft() const noexcept
@@ -992,7 +992,7 @@ til::CoordType ROW::MeasureLeft() const noexcept
         }
     }
 
-    return gsl::narrow_cast<til::CoordType>(it - beg);
+    return til::narrow_cast<til::CoordType>(it - beg);
 }
 
 // Routine Description:
@@ -1068,7 +1068,7 @@ DbcsAttribute ROW::DbcsAttrAt(til::CoordType column) const noexcept
 
 std::wstring_view ROW::GetText() const noexcept
 {
-    const auto width = size_t{ til::at(_charOffsets, GetReadableColumnCount()) } & CharOffsetsMask;
+    const auto width = size_t{ til::at_unchecked(_charOffsets, GetReadableColumnCount()) } & CharOffsetsMask;
     return { _chars.data(), width };
 }
 
@@ -1077,8 +1077,8 @@ std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType column
     const til::CoordType columns = _columnCount;
     const auto colBeg = clamp(columnBegin, 0, columns);
     const auto colEnd = clamp(columnEnd, colBeg, columns);
-    const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
-    const size_t chEnd = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colEnd));
+    const size_t chBeg = _uncheckedCharOffset(til::narrow_cast<size_t>(colBeg));
+    const size_t chEnd = _uncheckedCharOffset(til::narrow_cast<size_t>(colEnd));
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     return { _chars.data() + chBeg, chEnd - chBeg };
 }
@@ -1187,9 +1187,9 @@ T ROW::_adjustForward(T column) const noexcept
 CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexcept
 {
     const auto charsSize = _charSize();
-    const auto lastChar = gsl::narrow_cast<ptrdiff_t>(charsSize - 1);
+    const auto lastChar = til::narrow_cast<ptrdiff_t>(charsSize - 1);
     // We can sort of guess what column belongs to what offset because BMP glyphs are very common and
     // UTF-16 stores them in 1 char. In other words, usually a ROW will have N chars for N columns.
-    const auto guessedColumn = gsl::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
+    const auto guessedColumn = til::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
     return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
 }

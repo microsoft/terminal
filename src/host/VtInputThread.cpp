@@ -90,7 +90,7 @@ bool VtInputThread::DoReadInput()
     }
 
     // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-    if (FAILED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(dwRead) }, _wstr, _u8State)))
+    if (FAILED_LOG(til::u8u16({ buffer, til::narrow_cast<size_t>(dwRead) }, _wstr, _u8State)))
     {
         return true;
     }

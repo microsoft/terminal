@@ -506,7 +506,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
         if (_parameters.empty())
         {
             _parameters.push_back({});
-            const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
+            const auto rangeStart = til::narrow_cast<BYTE>(_subParameters.size());
             _subParameterRanges.push_back({ rangeStart, rangeStart });
         }
 
@@ -528,7 +528,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
                 _parameters.push_back({});
                 _subParameterCounter = 0;
                 _subParameterLimitOverflowed = false;
-                const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
+                const auto rangeStart = til::narrow_cast<BYTE>(_subParameters.size());
                 _subParameterRanges.push_back({ rangeStart, rangeStart });
             }
         }
@@ -561,7 +561,7 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
         if (_parameters.empty())
         {
             _parameters.push_back({});
-            const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
+            const auto rangeStart = til::narrow_cast<BYTE>(_subParameters.size());
             _subParameterRanges.push_back({ rangeStart, rangeStart });
         }
 
@@ -1957,7 +1957,7 @@ bool StateMachine::FlushToTerminal()
 // Disable vectorization-unfriendly warnings.
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
-#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, til::narrow_cast or gsl::narrow (type.1).
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
@@ -2119,7 +2119,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
             _runSize++;
             _processingLastCharacter = i + 1 >= string.size();
             // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(til::at(string, i));
+            ProcessCharacter(til::at_unchecked(string, i));
             ++i;
         } while (i < string.size() && _state != VTStates::Ground);
     }

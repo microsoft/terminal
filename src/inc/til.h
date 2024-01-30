@@ -64,7 +64,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         if (requiredCapacity < existingCapacity)
         {
             // Now check if it's even worth shrinking. We don't want to shrink by 1 at a time, so meet a threshold first.
-            if (requiredCapacity <= gsl::narrow_cast<size_t>((static_cast<float>(existingCapacity) * shrinkThreshold)))
+            if (requiredCapacity <= til::narrow_cast<size_t>((static_cast<float>(existingCapacity) * shrinkThreshold)))
             {
                 // There's no real way to force a shrink, so make a new one.
                 vector = std::vector<T>{};

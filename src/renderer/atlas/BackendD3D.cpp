@@ -23,12 +23,12 @@
 TIL_FAST_MATH_BEGIN
 
 // This code packs various data into smaller-than-int types to save both CPU and GPU memory. This warning would force
-// us to add dozens upon dozens of gsl::narrow_cast<>s throughout the file which is more annoying than helpful.
+// us to add dozens upon dozens of til::narrow_cast<>s throughout the file which is more annoying than helpful.
 #pragma warning(disable : 4242) // '=': conversion from '...' to '...', possible loss of data
 #pragma warning(disable : 4244) // 'initializing': conversion from '...' to '...', possible loss of data
 #pragma warning(disable : 4267) // 'argument': conversion from '...' to '...', possible loss of data
 #pragma warning(disable : 4838) // conversion from '...' to '...' requires a narrowing conversion
-#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, til::narrow_cast or gsl::narrow (type.1).
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
@@ -330,8 +330,8 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
 
         const auto curlyUnderlinePos = underlineMidY - _curlyLinePeakHeight - font.underline.height;
         const auto curlyUnderlineWidth = 2.0f * (_curlyLinePeakHeight + font.underline.height);
-        const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
-        const auto curlyUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
+        const auto curlyUnderlinePosU16 = til::narrow_cast<u16>(lrintf(curlyUnderlinePos));
+        const auto curlyUnderlineWidthU16 = til::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
         _curlyUnderline = { curlyUnderlinePosU16, curlyUnderlineWidthU16 };
     }
 
@@ -867,7 +867,7 @@ void BackendD3D::_bumpInstancesSize()
 {
     auto newSize = std::max(_instancesCount, _instances.size() * 2);
     newSize = std::max(size_t{ 256 }, newSize);
-    Expects(newSize > _instances.size());
+    assert(newSize > _instances.size());
 
     // Our render loop heavily relies on memcpy() which is up to between 1.5x (Intel)
     // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
@@ -940,7 +940,7 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 
     {
         const D3D11_BUFFER_DESC desc{
-            .ByteWidth = gsl::narrow<UINT>(newSize),
+            .ByteWidth = wil::safe_cast<UINT>(newSize),
             .Usage = D3D11_USAGE_DYNAMIC,
             .BindFlags = D3D11_BIND_VERTEX_BUFFER,
             .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1188,12 +1188,12 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
             const auto prevWidth = clipLeft - prev.position.x;
             const auto nextWidth = prev.size.x - prevWidth;
 
-            prev.size.x = gsl::narrow<u16>(prevWidth);
+            prev.size.x = wil::safe_cast<u16>(prevWidth);
 
             next = prev;
-            next.position.x = gsl::narrow<i16>(next.position.x + prevWidth);
-            next.texcoord.x = gsl::narrow<u16>(next.texcoord.x + prevWidth);
-            next.size.x = gsl::narrow<u16>(nextWidth);
+            next.position.x = wil::safe_cast<i16>(next.position.x + prevWidth);
+            next.texcoord.x = wil::safe_cast<u16>(next.texcoord.x + prevWidth);
+            next.size.x = wil::safe_cast<u16>(nextWidth);
             next.color = fg;
 
             lastFg = fg;
@@ -2186,7 +2186,7 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 {
     if (_dumpRenderTargetCounter == 0)
     {
-        ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], gsl::narrow_cast<DWORD>(std::size(_dumpRenderTargetBasePath)));
+        ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], til::narrow_cast<DWORD>(std::size(_dumpRenderTargetBasePath)));
         std::filesystem::create_directories(_dumpRenderTargetBasePath);
     }
 

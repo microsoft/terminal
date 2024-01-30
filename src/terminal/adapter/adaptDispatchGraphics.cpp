@@ -6,9 +6,6 @@
 #include "adaptDispatch.hpp"
 #include "../../types/inc/utils.hpp"
 
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
@@ -25,7 +22,7 @@ void AdaptDispatch::_SetUnderlineStyleHelper(const VTParameter option, TextAttri
     // Only apply the style if it's one of the valid underline styles (0-5).
     if ((style >= 0) && (style <= WI_EnumValue(UnderlineStyle::Max)))
     {
-        attr.SetUnderlineStyle(gsl::narrow_cast<UnderlineStyle>(style));
+        attr.SetUnderlineStyle(til::narrow_cast<UnderlineStyle>(style));
     }
 }
 
@@ -69,7 +66,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         // This is to match XTerm's and VTE's behavior.
         if (tableIndex <= 255)
         {
-            const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
+            const auto adjustedIndex = til::narrow_cast<BYTE>(tableIndex);
             if (isForeground)
             {
                 attr.SetIndexedForeground256(adjustedIndex);
@@ -153,7 +150,7 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         // This is to match XTerm's and VTE's behavior.
         if (tableIndex <= 255)
         {
-            const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
+            const auto adjustedIndex = til::narrow_cast<BYTE>(tableIndex);
             applyColor(TextColor{ adjustedIndex, true });
         }
         break;

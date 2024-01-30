@@ -118,10 +118,10 @@ til::color Utils::ColorFromHexString(const std::string_view str)
         aStr = std::string(&str.at(7), 2);
     }
 
-    const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
-    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
+    const auto r = til::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    const auto g = til::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    const auto b = til::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto a = til::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
 
     return til::color{ r, g, b, a };
 }
@@ -208,7 +208,7 @@ try
     // Try the sharp sign format.
     if (!foundXParseColorSpec && stringSize > 1)
     {
-        if (til::at(string, 0) == L'#')
+        if (til::at_unchecked(string, 0) == L'#')
         {
             // We can have one of the following formats:
             // 4 "#hhh"
@@ -239,7 +239,7 @@ try
     for (size_t component = 0; component < 3; component++)
     {
         auto foundColor = false;
-        auto& parameterValue = til::at(parameterValues, component);
+        auto& parameterValue = til::at_unchecked(parameterValues, component);
         // For "sharp sign" format, the rgbHexDigitCount is known.
         // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
         const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
@@ -302,7 +302,7 @@ try
         }
 
         // Calculate the actual color value based on the hex digit count.
-        auto& colorValue = til::at(colorValues, component);
+        auto& colorValue = til::at_unchecked(colorValues, component);
         const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
         const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
         colorValue = parameterValue * scaleMultiplier / scaleDivisor;
@@ -317,9 +317,9 @@ try
     // Only if we find a valid colorspec can we pass it out successfully.
     if (foundValidColorSpec)
     {
-        return til::color(LOBYTE(til::at(colorValues, 0)),
-                          LOBYTE(til::at(colorValues, 1)),
-                          LOBYTE(til::at(colorValues, 2)));
+        return til::color(LOBYTE(til::at_unchecked(colorValues, 0)),
+                          LOBYTE(til::at_unchecked(colorValues, 1)),
+                          LOBYTE(til::at_unchecked(colorValues, 2)));
     }
 
     return std::nullopt;
@@ -347,14 +347,14 @@ til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcep
         std::array<uint8_t, 101> lut{};
         for (size_t i = 0; i < std::size(lut); i++)
         {
-            lut.at(i) = gsl::narrow_cast<uint8_t>((i * 255 + 50) / 100);
+            lut.at(i) = til::narrow_cast<uint8_t>((i * 255 + 50) / 100);
         }
         return lut;
     }();
 
-    const auto red = til::at(scale100To255, std::min<unsigned>(r, 100u));
-    const auto green = til::at(scale100To255, std::min<unsigned>(g, 100u));
-    const auto blue = til::at(scale100To255, std::min<unsigned>(b, 100u));
+    const auto red = til::at_unchecked(scale100To255, std::min<unsigned>(r, 100u));
+    const auto green = til::at_unchecked(scale100To255, std::min<unsigned>(g, 100u));
+    const auto blue = til::at_unchecked(scale100To255, std::min<unsigned>(b, 100u));
     return { red, green, blue };
 }
 
@@ -369,8 +369,8 @@ til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcep
 til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
 {
     const auto hue = h % 360;
-    const auto lum = gsl::narrow_cast<float>(std::min(l, 100));
-    const auto sat = gsl::narrow_cast<float>(std::min(s, 100));
+    const auto lum = til::narrow_cast<float>(std::min(l, 100));
+    const auto sat = til::narrow_cast<float>(std::min(s, 100));
 
     // This calculation is based on the HSL to RGB algorithm described in
     // Wikipedia: https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB
@@ -386,9 +386,9 @@ til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
     // brightest, and 0 for the last. The values  are scaled by 255/100 to get
     // them in the range 0 to 255, as required by the color class.
     constexpr auto scale = 255.f / 100.f;
-    const auto comp1 = gsl::narrow_cast<uint8_t>((chroma + lightness) * scale + 0.5f);
-    const auto comp2 = gsl::narrow_cast<uint8_t>((x + lightness) * scale + 0.5f);
-    const auto comp3 = gsl::narrow_cast<uint8_t>((0 + lightness) * scale + 0.5f);
+    const auto comp1 = til::narrow_cast<uint8_t>((chroma + lightness) * scale + 0.5f);
+    const auto comp2 = til::narrow_cast<uint8_t>((x + lightness) * scale + 0.5f);
+    const auto comp3 = til::narrow_cast<uint8_t>((0 + lightness) * scale + 0.5f);
 
     // Finally we order the components based on the given hue. But note that the
     // DEC terminals used a different mapping for hue than is typical for modern
@@ -555,13 +555,13 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
 
     while (pos < wstr.size())
     {
-        const auto c = til::at(wstr, pos);
+        const auto c = til::at_unchecked(wstr, pos);
 
         if (WI_IsFlagSet(option, FilterOption::CarriageReturnNewline) && c == L'\n')
         {
             // copy up to but not including the \n
             filtered.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
-            if (!(pos > 0 && (til::at(wstr, pos - 1) == L'\r')))
+            if (!(pos > 0 && (til::at_unchecked(wstr, pos - 1) == L'\r')))
             {
                 // there was no \r before the \n we did not copy,
                 // so append our own \r (this effectively replaces the \n
@@ -635,10 +635,10 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::b
     // through unsigned char or char pointer *is defined*.
     THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(&correctEndianNamespaceGuid), sizeof(GUID), 0));
     // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
-    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<std::byte*>(name.data())), gsl::narrow<ULONG>(name.size()), 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<std::byte*>(name.data())), wil::safe_cast<ULONG>(name.size()), 0));
 
     std::array<uint8_t, 20> buffer;
-    THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), wil::safe_cast<ULONG>(buffer.size()), 0));
 
     buffer.at(6) = (buffer.at(6) & 0x0F) | 0x50; // set the uuid version to 5
     buffer.at(8) = (buffer.at(8) & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
@@ -727,7 +727,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
         { // "wsl" is three characters; this is a safe bet. no point in doing it if there's no starting directory though!
             // Find the first space, quote or the end of the string -- we'll look for wsl before that.
             const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
-            const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+            const auto start{ til::at_unchecked(commandLine, 0) == L'"' ? 1 : 0 };
             const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
             const auto executableFilename{ executablePath.filename() };
             if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
@@ -760,7 +760,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                 const auto tilde{ arguments.find_first_of(L'~') };
                 if (tilde != std::wstring_view::npos)
                 {
-                    if (tilde + 1 == arguments.size() || til::at(arguments, tilde + 1) == L' ')
+                    if (tilde + 1 == arguments.size() || til::at_unchecked(arguments, tilde + 1) == L' ')
                     {
                         // We want to suppress --cd if they have added a bare ~ to their commandline (they conflict).
                         break;
@@ -842,7 +842,7 @@ std::wstring Utils::EvaluateStartingDirectory(
     // with `~` or `/`.
     const bool looksLikeLinux =
         resultPath.size() >= 1 &&
-        (til::at(resultPath, 0) == L'~' || til::at(resultPath, 0) == L'/');
+        (til::at_unchecked(resultPath, 0) == L'~' || til::at_unchecked(resultPath, 0) == L'/');
 
     if (!looksLikeLinux)
     {

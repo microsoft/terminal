@@ -191,7 +191,7 @@ class SizeTests
                 sz + sz2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"2.) Addition results in value that is too large (height).");
@@ -204,7 +204,7 @@ class SizeTests
                 sz + sz2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -230,7 +230,7 @@ class SizeTests
                 sz2 - sz;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"2.) Subtraction results in value that is too small (height).");
@@ -243,7 +243,7 @@ class SizeTests
                 sz2 - sz;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -269,7 +269,7 @@ class SizeTests
                 sz* sz2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
 
         Log::Comment(L"2.) Multiplication results in value that is too large (height).");
@@ -282,7 +282,7 @@ class SizeTests
                 sz* sz2;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -309,7 +309,7 @@ class SizeTests
                 std::ignore = sz.scale(til::math::ceiling, scale);
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -335,7 +335,7 @@ class SizeTests
                 sz2 / sz;
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -395,7 +395,7 @@ class SizeTests
                 sz.area();
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
     TEST_METHOD(AreaCast)
@@ -415,7 +415,7 @@ class SizeTests
                 sz.area<SHORT>();
             };
 
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
+            VERIFY_THROWS(fn(), wil::ResultException);
         }
     }
 
@@ -444,7 +444,7 @@ class SizeTests
                     auto val = sz.to_win32_size();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {
@@ -468,7 +468,7 @@ class SizeTests
                     auto val = sz.to_win32_size();
                 };
 
-                VERIFY_THROWS(fn(), gsl::narrowing_error);
+                VERIFY_THROWS(fn(), wil::ResultException);
             }
             else
             {

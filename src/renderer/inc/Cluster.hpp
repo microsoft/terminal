@@ -36,7 +36,7 @@ namespace Microsoft::Console::Render
         {
             if (_text.size() == 1)
             {
-                return til::at(_text, 0);
+                return til::at_unchecked(_text, 0);
             }
             else
             {

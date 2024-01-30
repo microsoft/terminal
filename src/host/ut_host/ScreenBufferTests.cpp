@@ -2316,7 +2316,7 @@ void ScreenBufferTests::GetWordBoundary()
     const auto length = wcslen(text);
 
     // Make the buffer as big as our test text.
-    const til::size newBufferSize = { gsl::narrow<til::CoordType>(length), 10 };
+    const til::size newBufferSize = { wil::safe_cast<til::CoordType>(length), 10 };
     si.GetTextBuffer().ResizeTraditional(newBufferSize);
 
     const OutputCellIterator it(text, si.GetAttributes());
@@ -2392,7 +2392,7 @@ void ScreenBufferTests::GetWordBoundaryTrimZeros(const bool on)
     const auto length = wcslen(text);
 
     // Make the buffer as big as our test text.
-    const til::size newBufferSize = { gsl::narrow<til::CoordType>(length), 10 };
+    const til::size newBufferSize = { wil::safe_cast<til::CoordType>(length), 10 };
     si.GetTextBuffer().ResizeTraditional(newBufferSize);
 
     const OutputCellIterator it(text, si.GetAttributes());
@@ -3861,7 +3861,7 @@ void ScreenBufferTests::ScrollOperations()
     }
 
     Log::Comment(L"Scrolled area should have moved up/down by given magnitude.");
-    viewportChar += gsl::narrow<wchar_t>(deletedLines); // Characters dropped when deleting
+    viewportChar += wil::safe_cast<wchar_t>(deletedLines); // Characters dropped when deleting
     viewportLine += insertedLines; // Lines skipped when inserting
     while (viewportLine < viewportEnd - deletedLines)
     {
@@ -4590,7 +4590,7 @@ void ScreenBufferTests::EraseTests()
     bool selectiveErase;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"selectiveErase", selectiveErase));
 
-    const auto eraseType = gsl::narrow<DispatchTypes::EraseType>(eraseTypeValue);
+    const auto eraseType = til::narrow_cast<DispatchTypes::EraseType>(eraseTypeValue);
 
     std::wstringstream escapeSequence;
     escapeSequence << "\x1b[";
@@ -8283,7 +8283,7 @@ void ScreenBufferTests::DelayedWrapReset()
         { L"ED (scrollback)", L"\033[3J" },
         { L"DECSED", L"\033[?J" },
     };
-    const auto& op = gsl::at(ops, opIndex);
+    const auto& op = til::at(ops, opIndex);
 
     if (op.name == L"DECSLRM")
     {
@@ -8388,7 +8388,7 @@ void ScreenBufferTests::EraseColorMode()
         { L"SU", L"\033[S", {}, { 0, 23 } }, // last row erased
         { L"SD", L"\033[T" },
     };
-    const auto& op = gsl::at(ops, opIndex);
+    const auto& op = til::at(ops, opIndex);
 
     si.GetTextBuffer().GetCursor().SetPosition(op.startPos);
 

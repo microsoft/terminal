@@ -1812,7 +1812,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
     const auto readBackText = *readBack;
-    VERIFY_ARE_EQUAL(String(bButton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(readBackText.data(), wil::safe_cast<int>(readBackText.size())));
 
     // Make it the first row in the buffer so it will rotate around when we resize and cause renumbering
     const auto delta = _buffer->GetFirstRowIndex() - pos.y;
@@ -1827,8 +1827,8 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
     const auto shouldBeEmojiText = *_buffer->GetTextDataAt(newPos);
 
-    VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
-    VERIFY_ARE_EQUAL(String(bButton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
+    VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), wil::safe_cast<int>(shouldBeEmptyText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(shouldBeEmojiText.data(), wil::safe_cast<int>(shouldBeEmojiText.size())));
 }
 
 // This tests that when buffer storage rows are rotated around during a scroll buffer operation,
@@ -1853,7 +1853,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
     const auto readBackText = *readBack;
-    VERIFY_ARE_EQUAL(String(fire), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+    VERIFY_ARE_EQUAL(String(fire), String(readBackText.data(), wil::safe_cast<int>(readBackText.size())));
 
     // Prepare a delta and the new position we expect the symbol to be moved into.
     const auto delta = 5;
@@ -1863,7 +1863,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     _buffer->ScrollRows(pos.y, 1, delta);
 
     const auto shouldBeFireText = *_buffer->GetTextDataAt(newPos);
-    VERIFY_ARE_EQUAL(String(fire), String(shouldBeFireText.data(), gsl::narrow<int>(shouldBeFireText.size())));
+    VERIFY_ARE_EQUAL(String(fire), String(shouldBeFireText.data(), wil::safe_cast<int>(shouldBeFireText.size())));
 }
 
 // This tests that rows removed from the buffer while resizing traditionally will also drop the high unicode
@@ -1888,7 +1888,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
     const auto readBackText = *readBack;
-    VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+    VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), wil::safe_cast<int>(readBackText.size())));
 
     // Perform resize to trim off the row of the buffer that included the emoji
     til::size trimmedBufferSize{ bufferSize.width, bufferSize.height - 1 };
@@ -1918,7 +1918,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
     const auto readBackText = *readBack;
-    VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+    VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), wil::safe_cast<int>(readBackText.size())));
 
     // Perform resize to trim off the column of the buffer that included the emoji
     til::size trimmedBufferSize{ bufferSize.width - 1, bufferSize.height };
@@ -2134,7 +2134,7 @@ void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, 
             }
 
             OutputCellIterator iter{ line };
-            buffer.Write(iter, { 0, gsl::narrow<til::CoordType>(row + rowsWrapped) }, wrap);
+            buffer.Write(iter, { 0, wil::safe_cast<til::CoordType>(row + rowsWrapped) }, wrap);
             //prevent bug that overwrites wrapped rows
             if (line.size() > static_cast<size_t>(bufferSize.RightExclusive()))
             {

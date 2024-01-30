@@ -97,7 +97,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         {
                             // At this point: move <= std::numeric_limits<size_type>::max().
                             // --> the narrowing is safe.
-                            _pos += gsl::narrow_cast<size_type>(move);
+                            _pos += til::narrow_cast<size_type>(move);
                             break;
                         }
 
@@ -124,7 +124,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         {
                             // At this point: move <= std::numeric_limits<size_type>::max()
                             // --> the narrowing is safe.
-                            _pos -= gsl::narrow_cast<size_type>(move);
+                            _pos -= til::narrow_cast<size_type>(move);
                             break;
                         }
 
@@ -453,7 +453,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             slice.back().length = end_run_pos + 1;
             slice.front().length -= start_run_pos;
 
-            return { std::move(slice), gsl::narrow_cast<size_type>(end_index - start_index) };
+            return { std::move(slice), til::narrow_cast<size_type>(end_index - start_index) };
         }
 
         // Replace the range [start_index, end_index) with the given value.
@@ -463,7 +463,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _check_indices(start_index, end_index);
 
-            const rle_type replacement{ value, gsl::narrow_cast<size_type>(end_index - start_index) };
+            const rle_type replacement{ value, til::narrow_cast<size_type>(end_index - start_index) };
             _replace_unchecked(start_index, end_index, { &replacement, 1 });
         }
 
@@ -527,7 +527,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
             else if (new_size > _total_length)
             {
-                Expects(!_runs.empty());
+                assert(!_runs.empty());
                 auto& run = _runs.back();
 
                 run.length += new_size - _total_length;

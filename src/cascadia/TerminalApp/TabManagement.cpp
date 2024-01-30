@@ -487,7 +487,7 @@ namespace winrt::TerminalApp::implementation
             // we are missing and remove us that way otherwise.
             _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(!_maintainStateOnTabClose));
         }
-        else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
+        else if (focusedTabIndex.has_value() && focusedTabIndex.value() == til::narrow_cast<uint32_t>(tabIndex))
         {
             // Manually select the new tab to get focus, rather than relying on TabView since:
             // 1. We want to customize this behavior (e.g., use MRU logic)
@@ -988,7 +988,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
-            if (selectedIndex >= 0 && selectedIndex < gsl::narrow_cast<int32_t>(_tabs.Size()))
+            if (selectedIndex >= 0 && selectedIndex < til::narrow_cast<int32_t>(_tabs.Size()))
             {
                 const auto tab{ _tabs.GetAt(selectedIndex) };
                 _UpdatedSelectedTab(tab);
@@ -1042,7 +1042,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex,
                                    const int32_t suggestedNewTabIndex)
     {
-        auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
+        auto newTabIndex = til::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
         if (currentTabIndex != newTabIndex)
         {
             auto tab = _tabs.GetAt(currentTabIndex);
@@ -1096,7 +1096,7 @@ namespace winrt::TerminalApp::implementation
         _rearranging = false;
 
         if (to.has_value() &&
-            *to < gsl::narrow_cast<int32_t>(TabRow().TabView().TabItems().Size()))
+            *to < til::narrow_cast<int32_t>(TabRow().TabView().TabItems().Size()))
         {
             // Selecting the dropped tab
             TabRow().TabView().SelectedIndex(to.value());

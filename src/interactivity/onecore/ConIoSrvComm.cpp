@@ -506,7 +506,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
 {
     CIS_MSG Message{};
     Message.Type = CIS_MSG_TYPE_UPDATEDISPLAY;
-    Message.UpdateDisplayParams.RowIndex = gsl::narrow<SHORT>(RowIndex);
+    Message.UpdateDisplayParams.RowIndex = wil::safe_cast<SHORT>(RowIndex);
 
     auto Status = SendRequestReceiveReply(&Message);
     if (SUCCEEDED_NTSTATUS(Status))
