@@ -27,26 +27,8 @@
     </feature>
 
     <feature>
-        <name>Feature_ConhostDxEngine</name>
-        <description>Controls whether conhost supports the DX engine and the UseDx registry key</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>WindowsInbox</brandingToken>
-        </alwaysDisabledBrandingTokens>
-    </feature>
-
-    <feature>
         <name>Feature_ConhostAtlasEngine</name>
         <description>Controls whether conhost supports the Atlas engine</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>WindowsInbox</brandingToken>
-        </alwaysDisabledBrandingTokens>
-    </feature>
-
-    <feature>
-        <name>Feature_DxEngineShaderSupport</name>
-        <description>Controls whether the DX engine is built with shader support.</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledBrandingTokens>
             <brandingToken>WindowsInbox</brandingToken>
