@@ -291,6 +291,9 @@
             <local:SettingContainer x:Uid="Profile_FontAxes"
                                     x:Name="FontAxesContainer"
                                     Style="{StaticResource ExpanderSettingContainerStyle}"
+                                    ClearSettingValue="{x:Bind Appearance.ClearFontAxes}"
+                                    HasSettingValue="{x:Bind Appearance.HasFontAxes, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.FontAxesOverrideSource, Mode=OneWay}"
                                     IsEnabled="{x:Bind Appearance.AreFontAxesAvailable, Mode=OneWay}">
                 <StackPanel Spacing="16">
                     <ListView IsItemClickEnabled="False"

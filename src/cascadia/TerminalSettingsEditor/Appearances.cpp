@@ -126,6 +126,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // box, prevent it from ever being changed again.
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
+            else if (viewModelProperty == L"FontAxes")
+            {
+                // this is a weird one
+                // we manually make the observable vector based on the map in the settings model
+                // (this is due to xaml being unable to bind a listview to a map)
+                // so when the FontAxes change (say from the reset button), reinitialize the observable vector
+                InitializeFontAxesVector();
+            }
         });
 
         InitializeFontAxesVector();
