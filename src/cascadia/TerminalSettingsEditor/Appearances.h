@@ -59,66 +59,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     struct AxisKeyValuePair : AxisKeyValuePairT<AxisKeyValuePair>, ViewModelHelper<AxisKeyValuePair>
     {
-        AxisKeyValuePair(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap) :
-            _AxisKey{ axisKey },
-            _AxisValue{ axisValue },
-            _baseMap{ baseMap },
-            _tagToNameMap{ tagToNameMap }
-        {
-            if (_tagToNameMap.HasKey(_AxisKey))
-            {
-                int32_t i{ 0 };
-                // this loop assumes that every time we iterate through the map
-                // we get the same ordering - is this true?
-                for (const auto tagAndName : _tagToNameMap)
-                {
-                    if (tagAndName.Key() == _AxisKey)
-                    {
-                        _AxisIndex = i;
-                        break;
-                    }
-                    ++i;
-                }
-            }
-        }
+        AxisKeyValuePair(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap);
 
-        winrt::hstring AxisKey() { return _AxisKey; }
-        float AxisValue() { return _AxisValue; }
-        int32_t AxisIndex() { return _AxisIndex; }
+        winrt::hstring AxisKey();
+        void AxisKey(winrt::hstring axisKey);
 
-        void AxisValue(float axisValue)
-        {
-            _baseMap.Remove(_AxisKey);
-            _AxisValue = axisValue;
-            _baseMap.Insert(_AxisKey, _AxisValue);
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisValue" });
-        }
+        float AxisValue();
+        void AxisValue(float axisValue);
 
-        void AxisKey(winrt::hstring axisKey)
-        {
-            _baseMap.Remove(_AxisKey);
-            _AxisKey = axisKey;
-            _baseMap.Insert(_AxisKey, _AxisValue);
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisKey" });
-        }
-
-        void AxisIndex(int32_t axisIndex)
-        {
-            _AxisIndex = axisIndex;
-
-            int32_t i{ 0 };
-            // same as in the constructor, this assumes that iterating through the map
-            // gives us the same order every time
-            for (const auto tagAndName : _tagToNameMap)
-            {
-                if (i == _AxisIndex)
-                {
-                    AxisKey(tagAndName.Key());
-                    break;
-                }
-                ++i;
-            }
-        }
+        int32_t AxisIndex();
+        void AxisIndex(int32_t axisIndex);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 

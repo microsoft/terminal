@@ -108,6 +108,78 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::hstring{ result };
     }
 
+    AxisKeyValuePair::AxisKeyValuePair(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap) :
+        _AxisKey{ axisKey },
+        _AxisValue{ axisValue },
+        _baseMap{ baseMap },
+        _tagToNameMap{ tagToNameMap }
+    {
+        if (_tagToNameMap.HasKey(_AxisKey))
+        {
+            int32_t i{ 0 };
+            // this loop assumes that every time we iterate through the map
+            // we get the same ordering
+            for (const auto tagAndName : _tagToNameMap)
+            {
+                if (tagAndName.Key() == _AxisKey)
+                {
+                    _AxisIndex = i;
+                    break;
+                }
+                ++i;
+            }
+        }
+    }
+
+    winrt::hstring AxisKeyValuePair::AxisKey()
+    {
+        return _AxisKey;
+    }
+
+    float AxisKeyValuePair::AxisValue()
+    {
+        return _AxisValue;
+    }
+
+    int32_t AxisKeyValuePair::AxisIndex()
+    {
+        return _AxisIndex;
+    }
+
+    void AxisKeyValuePair::AxisValue(float axisValue)
+    {
+        _baseMap.Remove(_AxisKey);
+        _AxisValue = axisValue;
+        _baseMap.Insert(_AxisKey, _AxisValue);
+        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisValue" });
+    }
+
+    void AxisKeyValuePair::AxisKey(winrt::hstring axisKey)
+    {
+        _baseMap.Remove(_AxisKey);
+        _AxisKey = axisKey;
+        _baseMap.Insert(_AxisKey, _AxisValue);
+        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisKey" });
+    }
+
+    void AxisKeyValuePair::AxisIndex(int32_t axisIndex)
+    {
+        _AxisIndex = axisIndex;
+
+        int32_t i{ 0 };
+        // same as in the constructor, this assumes that iterating through the map
+        // gives us the same order every time
+        for (const auto tagAndName : _tagToNameMap)
+        {
+            if (i == _AxisIndex)
+            {
+                AxisKey(tagAndName.Key());
+                break;
+            }
+            ++i;
+        }
+    }
+
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
@@ -130,7 +202,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // this is a weird one
                 // we manually make the observable vector based on the map in the settings model
-                // (this is due to xaml being unable to bind a listview to a map)
+                // (this is due to xaml being unable to bind a list view to a map)
                 // so when the FontAxes change (say from the reset button), reinitialize the observable vector
                 InitializeFontAxesVector();
             }
@@ -342,11 +414,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"AreFontAxesAvailable", L"CanFontAxesBeAdded");
     }
 
+    // Method Description:
+    // - Determines whether the currently selected font has any variable font axes
     bool AppearanceViewModel::AreFontAxesAvailable()
     {
         return ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames().Size() > 0;
     }
 
+    // Method Description:
+    // - Determines whether the currently selected font has any variable font axes that have not already been set
     bool AppearanceViewModel::CanFontAxesBeAdded()
     {
         if (const auto fontAxesTagToNameMap = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames(); fontAxesTagToNameMap.Size() > 0)
@@ -371,6 +447,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
+    // Method Description:
+    // - Creates an AxisKeyValuePair and sets up an event handler for it
     Editor::AxisKeyValuePair AppearanceViewModel::_CreateAxisKeyValuePairHelper(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap)
     {
         const auto axisKeyValuePair = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::AxisKeyValuePair>(axisKey, axisValue, baseMap, tagToNameMap);
