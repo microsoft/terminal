@@ -631,14 +631,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
 
             FontAxesCVS().Source(Appearance().FontAxesVector());
-            if (Appearance().AreFontAxesAvailable())
-            {
-                FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text"));
-            }
-            else
-            {
-                FontAxesContainer().HelpText(RS_(L"Profile_FontAxesUnavailable/Text"));
-            }
+            Appearance().AreFontAxesAvailable() ? FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text")) : FontAxesContainer().HelpText(RS_(L"Profile_FontAxesUnavailable/Text"));
 
             _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
                 const auto settingName{ args.PropertyName() };
