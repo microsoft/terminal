@@ -3306,7 +3306,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseScrollback()
 {
-    const auto page = _pages.ActivePage();
+    const auto page = _pages.VisiblePage();
     auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     const auto row = cursor.GetPosition().y;
@@ -3376,8 +3376,11 @@ bool AdaptDispatch::_EraseAll()
             textBuffer.TriggerScroll({ 0, -delta });
         }
     }
-    // Move the viewport
-    _api.SetViewportPosition({ page.XPanOffset(), newPageTop });
+    // Move the viewport if necessary.
+    if (newPageTop != page.Top())
+    {
+        _api.SetViewportPosition({ page.XPanOffset(), newPageTop });
+    }
     // Restore the relative cursor position
     cursor.SetYPosition(row + newPageTop);
     cursor.SetHasMoved(true);
