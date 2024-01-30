@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _axisTagToString(DWRITE_FONT_AXIS_TAG tag);
     };
 
-    struct AxisKeyValuePair : AxisKeyValuePairT<AxisKeyValuePair>
+    struct AxisKeyValuePair : AxisKeyValuePairT<AxisKeyValuePair>, ViewModelHelper<AxisKeyValuePair>
     {
         AxisKeyValuePair(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap) :
             _AxisKey{ axisKey },
@@ -91,6 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _baseMap.Remove(_AxisKey);
             _AxisValue = axisValue;
             _baseMap.Insert(_AxisKey, _AxisValue);
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisValue" });
         }
 
         void AxisKey(winrt::hstring axisKey)
@@ -98,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _baseMap.Remove(_AxisKey);
             _AxisKey = axisKey;
             _baseMap.Insert(_AxisKey, _AxisValue);
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisKey" });
         }
 
         void AxisIndex(int32_t axisIndex)
@@ -117,6 +119,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 ++i;
             }
         }
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
     private:
         winrt::hstring _AxisKey;
@@ -184,6 +188,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
+
+        Editor::AxisKeyValuePair _CreateAxisKeyValuePairHelper(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap);
     };
 
     struct Appearances : AppearancesT<Appearances>

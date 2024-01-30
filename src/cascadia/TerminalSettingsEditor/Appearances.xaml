@@ -288,13 +288,13 @@
                     </Grid>
                 </StackPanel>
             </local:SettingContainer>
-            <local:SettingContainer x:Uid="Profile_FontAxes"
-                                    x:Name="FontAxesContainer"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
+            <local:SettingContainer x:Name="FontAxesContainer"
+                                    x:Uid="Profile_FontAxes"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontAxes}"
                                     HasSettingValue="{x:Bind Appearance.HasFontAxes, Mode=OneWay}"
+                                    IsEnabled="{x:Bind Appearance.AreFontAxesAvailable, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontAxesOverrideSource, Mode=OneWay}"
-                                    IsEnabled="{x:Bind Appearance.AreFontAxesAvailable, Mode=OneWay}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Spacing="16">
                     <ListView IsItemClickEnabled="False"
                               ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"

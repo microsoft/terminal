@@ -297,7 +297,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!fontAxesMap.HasKey(tagAndName.Key()))
             {
                 fontAxesMap.Insert(tagAndName.Key(), gsl::narrow<float>(0));
-                FontAxesVector().Append(winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::AxisKeyValuePair>(tagAndName.Key(), gsl::narrow<float>(0), fontAxesMap, possibleAxesTagsAndNames));
+                FontAxesVector().Append(_CreateAxisKeyValuePairHelper(tagAndName.Key(), gsl::narrow<float>(0), fontAxesMap, possibleAxesTagsAndNames));
                 break;
             }
         }
@@ -335,7 +335,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // any axes that the font doesn't support continue to be stored in the json, we just don't show them in the UI
                 if (fontAxesTagToNameMap.HasKey(axis.Key()))
                 {
-                    _FontAxesVector.Append(winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::AxisKeyValuePair>(axis.Key(), axis.Value(), fontAxesMap, fontAxesTagToNameMap));
+                    _FontAxesVector.Append(_CreateAxisKeyValuePairHelper(axis.Key(), axis.Value(), fontAxesMap, fontAxesTagToNameMap));
                 }
             }
         }
@@ -369,6 +369,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         // the font does not support any font axes
         return false;
+    }
+
+    Editor::AxisKeyValuePair AppearanceViewModel::_CreateAxisKeyValuePairHelper(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap)
+    {
+        const auto axisKeyValuePair = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::AxisKeyValuePair>(axisKey, axisValue, baseMap, tagToNameMap);
+        // when either the key or the value changes, send an event for the preview control to catch
+        axisKeyValuePair.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& /*e*/) {
+            if (auto appVM{ weakThis.get() })
+            {
+                appVM->_NotifyChanges(L"AxisKeyValuePair");
+            }
+        });
+        return axisKeyValuePair;
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
