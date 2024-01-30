@@ -249,10 +249,6 @@ Function New-ReleaseBody([Release]$Release) {
 	Return $body
 }
 
-# Get SHA1 from AppXManifest (no matter how deep)
-#
-# Create releases
-
 # Collect Assets from $Directory, figure out what those assets are
 $Assets = Get-ChildItem $Directory -Recurse -Include *.msixbundle, *.zip | ForEach-Object {
 	[Asset]::CreateFromFile($_.FullName)
