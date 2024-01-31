@@ -59,29 +59,60 @@ void Clipboard::Paste()
         return;
     }
 
-    const auto handle = GetClipboardData(CF_UNICODETEXT);
-    if (!handle)
+    // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
+    if (const auto handle = GetClipboardData(CF_UNICODETEXT))
     {
-        return;
+        const wil::unique_hglobal_locked lock{ handle };
+        const auto str = static_cast<const wchar_t*>(lock.get());
+        if (!str)
+        {
+            return;
+        }
+
+        // Clear any selection or scrolling that may be active.
+        Selection::Instance().ClearSelection();
+        Scrolling::s_ClearScroll();
+
+        // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+        //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+        // --> Use wcsnlen() to determine the actual length.
+        // NOTE: Some applications don't add a trailing null character. This includes past conhost versions.
+        const auto maxLen = GlobalSize(handle) / sizeof(WCHAR);
+        StringPaste(str, wcsnlen(str, maxLen));
     }
 
-    // Clear any selection or scrolling that may be active.
-    Selection::Instance().ClearSelection();
-    Scrolling::s_ClearScroll();
-
-    const wil::unique_hglobal_locked lock{ handle };
-    const auto str = static_cast<const wchar_t*>(lock.get());
-    if (!str)
+    // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
+    if (const auto handle = GetClipboardData(CF_HDROP))
     {
-        return;
-    }
+        const wil::unique_hglobal_locked lock{ handle };
+        const auto drop = static_cast<HDROP>(lock.get());
+        if (!drop)
+        {
+            return;
+        }
 
-    // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
-    //   CF_UNICODETEXT: [...] A null character signals the end of the data.
-    // --> Use wcsnlen() to determine the actual length.
-    // NOTE: Some applications don't add a trailing null character. This includes past conhost versions.
-    const auto maxLen = GlobalSize(handle) / sizeof(WCHAR);
-    StringPaste(str, wcsnlen(str, maxLen));
+        // NOTE: When asking DragQueryFileW for the required capacity it returns a length without trailing \0,
+        // but then expects a capacity that includes it. If you don't make space for a trailing \0
+        // then it will silently (!) cut off the end of the string. A somewhat disappointing API design.
+        const auto cap = DragQueryFileW(drop, 0, nullptr, 0) + 1;
+        if (cap <= 1)
+        {
+            return;
+        }
+
+        const auto buffer = std::make_unique_for_overwrite<wchar_t[]>(cap);
+        const auto len = DragQueryFileW(drop, 0, buffer.get(), cap);
+        if (len == 0)
+        {
+            return;
+        }
+
+        // Clear any selection or scrolling that may be active.
+        Selection::Instance().ClearSelection();
+        Scrolling::s_ClearScroll();
+
+        StringPaste(buffer.get(), len);
+    }
 }
 
 Clipboard& Clipboard::Instance()
