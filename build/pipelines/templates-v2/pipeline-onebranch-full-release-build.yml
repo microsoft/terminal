@@ -247,7 +247,7 @@ extends:
 
       - stage: Publish
         displayName: Publish
-        dependsOn: [Build, Package]
+        dependsOn: [Build]
         jobs:
           - template: ./build/pipelines/templates-v2/job-publish-symbols.yml@self
             parameters:
