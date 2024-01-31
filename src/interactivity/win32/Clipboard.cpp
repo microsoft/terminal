@@ -77,7 +77,7 @@ void Clipboard::Paste()
         //   CF_UNICODETEXT: [...] A null character signals the end of the data.
         // --> Use wcsnlen() to determine the actual length.
         // NOTE: Some applications don't add a trailing null character. This includes past conhost versions.
-        const auto maxLen = GlobalSize(handle) / sizeof(WCHAR);
+        const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
         StringPaste(str, wcsnlen(str, maxLen));
     }
 

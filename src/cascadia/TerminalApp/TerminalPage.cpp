@@ -2663,7 +2663,7 @@ namespace winrt::TerminalApp::implementation
                 return {};
             }
 
-            const auto maxLen = GlobalSize(handle) / sizeof(WCHAR);
+            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
             const auto len = wcsnlen(str, maxLen);
             return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
         }
