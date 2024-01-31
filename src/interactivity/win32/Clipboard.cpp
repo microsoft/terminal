@@ -69,10 +69,6 @@ void Clipboard::Paste()
             return;
         }
 
-        // Clear any selection or scrolling that may be active.
-        Selection::Instance().ClearSelection();
-        Scrolling::s_ClearScroll();
-
         // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
         //   CF_UNICODETEXT: [...] A null character signals the end of the data.
         // --> Use wcsnlen() to determine the actual length.
@@ -91,28 +87,45 @@ void Clipboard::Paste()
             return;
         }
 
-        // NOTE: When asking DragQueryFileW for the required capacity it returns a length without trailing \0,
-        // but then expects a capacity that includes it. If you don't make space for a trailing \0
-        // then it will silently (!) cut off the end of the string. A somewhat disappointing API design.
-        const auto cap = DragQueryFileW(drop, 0, nullptr, 0) + 1;
-        if (cap <= 1)
-        {
-            return;
-        }
-
-        const auto buffer = std::make_unique_for_overwrite<wchar_t[]>(cap);
-        const auto len = DragQueryFileW(drop, 0, buffer.get(), cap);
-        if (len == 0)
-        {
-            return;
-        }
-
-        // Clear any selection or scrolling that may be active.
-        Selection::Instance().ClearSelection();
-        Scrolling::s_ClearScroll();
-
-        StringPaste(buffer.get(), len);
+        PasteDrop(drop);
     }
+}
+
+void Clipboard::PasteDrop(HDROP drop)
+{
+    // NOTE: When asking DragQueryFileW for the required capacity it returns a length without trailing \0,
+    // but then expects a capacity that includes it. If you don't make space for a trailing \0
+    // then it will silently (!) cut off the end of the string. A somewhat disappointing API design.
+    const auto expectedLength = DragQueryFileW(drop, 0, nullptr, 0);
+    if (expectedLength == 0)
+    {
+        return;
+    }
+
+    // If the path contains spaces, we'll wrap it in quotes and so this allocates +2 characters ahead of time.
+    // We'll first make DragQueryFileW copy its contents in the middle and then check if that contains spaces.
+    // If it does, only then we'll add the quotes at the start and end.
+    // This is preferable over calling StringPaste 3x (an alternative, simpler approach),
+    // because the pasted content should be treated as a single atomic unit by the InputBuffer.
+    const auto buffer = std::make_unique_for_overwrite<wchar_t[]>(expectedLength + 2);
+    auto str = buffer.get() + 1;
+    size_t len = expectedLength;
+
+    const auto actualLength = DragQueryFileW(drop, 0, str, expectedLength + 1);
+    if (actualLength != expectedLength)
+    {
+        return;
+    }
+
+    if (wmemchr(str, L' ', len))
+    {
+        str = buffer.get();
+        len += 2;
+        til::at(str, 0) = L'"';
+        til::at(str, len - 1) = L'"';
+    }
+
+    StringPaste(str, len);
 }
 
 Clipboard& Clipboard::Instance()
@@ -140,6 +153,10 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 
     try
     {
+        // Clear any selection or scrolling that may be active.
+        Selection::Instance().ClearSelection();
+        Scrolling::s_ClearScroll();
+
         const auto vtInputMode = gci.pInputBuffer->IsInVirtualTerminalInputMode();
         const auto bracketedPasteMode = gci.GetBracketedPasteMode();
         auto inEvents = TextToKeyEvents(pData, cchData, vtInputMode && bracketedPasteMode);
