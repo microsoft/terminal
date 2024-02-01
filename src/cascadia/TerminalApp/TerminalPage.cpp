@@ -2631,6 +2631,75 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
+    static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
+    {
+        bool success = false;
+
+        // OpenClipboard may fail to acquire the internal lock --> retry.
+        for (DWORD sleep = 10;; sleep *= 2)
+        {
+            if (OpenClipboard(hwnd))
+            {
+                success = true;
+                break;
+            }
+            // 10 iterations
+            if (sleep > 10000)
+            {
+                break;
+            }
+            Sleep(sleep);
+        }
+
+        return wil::unique_close_clipboard_call{ success };
+    }
+
+    static winrt::hstring _extractClipboard()
+    {
+        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
+        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto str = static_cast<const wchar_t*>(lock.get());
+            if (!str)
+            {
+                return {};
+            }
+
+            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
+            const auto len = wcsnlen(str, maxLen);
+            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
+        }
+
+        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
+        if (const auto handle = GetClipboardData(CF_HDROP))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto drop = static_cast<HDROP>(lock.get());
+            if (!drop)
+            {
+                return {};
+            }
+
+            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
+            if (cap == 0)
+            {
+                return {};
+            }
+
+            auto buffer = winrt::impl::hstring_builder{ cap };
+            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
+            if (len == 0)
+            {
+                return {};
+            }
+
+            return buffer.to_hstring();
+        }
+
+        return {};
+    }
+
     // Function Description:
     // - This function is called when the `TermControl` requests that we send
     //   it the clipboard's content.
@@ -2650,53 +2719,14 @@ namespace winrt::TerminalApp::implementation
         const auto weakThis = get_weak();
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
-        winrt::hstring text;
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
+        winrt::hstring text;
+        if (const auto clipboard = _openClipboard(nullptr))
         {
-            // According to various reports on the internet, OpenClipboard might
-            // fail to acquire the internal lock, for instance due to rdpclip.exe.
-            for (int attempts = 1;;)
-            {
-                if (OpenClipboard(nullptr))
-                {
-                    break;
-                }
-
-                if (attempts > 5)
-                {
-                    co_return;
-                }
-
-                attempts++;
-                Sleep(10 * attempts);
-            }
-
-            const auto clipboardCleanup = wil::scope_exit([]() {
-                CloseClipboard();
-            });
-
-            const auto data = GetClipboardData(CF_UNICODETEXT);
-            if (!data)
-            {
-                co_return;
-            }
-
-            const auto str = static_cast<const wchar_t*>(GlobalLock(data));
-            if (!str)
-            {
-                co_return;
-            }
-
-            const auto dataCleanup = wil::scope_exit([&]() {
-                GlobalUnlock(data);
-            });
-
-            const auto maxLength = GlobalSize(data) / sizeof(wchar_t);
-            const auto length = wcsnlen(str, maxLength);
-            text = winrt::hstring{ str, gsl::narrow_cast<uint32_t>(length) };
+            text = _extractClipboard();
         }
 
         if (globalSettings.TrimPaste())

@@ -30,9 +30,8 @@ namespace Microsoft::Console::Interactivity::Win32
         static Clipboard& Instance();
 
         void Copy(_In_ const bool fAlsoCopyFormatting = false);
-        void StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
-                         const size_t cchData);
         void Paste();
+        void PasteDrop(HDROP drop);
 
     private:
         using unique_close_clipboard_call = wil::unique_call<decltype(::CloseClipboard), &::CloseClipboard>;
@@ -40,6 +39,7 @@ namespace Microsoft::Console::Interactivity::Win32
         static void _copyToClipboard(UINT format, const void* src, size_t bytes);
         static void _copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes);
 
+        void StringPaste(_In_reads_(cchData) PCWCHAR pwchData, const size_t cchData);
         InputEventQueue TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
                                         const size_t cchData,
                                         const bool bracketedPaste = false);

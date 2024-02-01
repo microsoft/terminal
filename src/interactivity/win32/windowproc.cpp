@@ -869,30 +869,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // - <none>
 void Window::_HandleDrop(const WPARAM wParam) const
 {
-    WCHAR szPath[MAX_PATH];
-    BOOL fAddQuotes;
-
-    if (DragQueryFile((HDROP)wParam, 0, szPath, ARRAYSIZE(szPath)) != 0)
-    {
-        // Log a telemetry flag saying the user interacted with the Console
-        // Only log when DragQueryFile succeeds, because if we don't when the console starts up, we're seeing
-        // _HandleDrop get called multiple times (and DragQueryFile fail),
-        // which can incorrectly mark this console session as interactive.
-        Telemetry::Instance().SetUserInteractive();
-
-        fAddQuotes = (wcschr(szPath, L' ') != nullptr);
-        if (fAddQuotes)
-        {
-            Clipboard::Instance().StringPaste(L"\"", 1);
-        }
-
-        Clipboard::Instance().StringPaste(szPath, wcslen(szPath));
-
-        if (fAddQuotes)
-        {
-            Clipboard::Instance().StringPaste(L"\"", 1);
-        }
-    }
+    Clipboard::Instance().PasteDrop((HDROP)wParam);
 }
 
 [[nodiscard]] LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
