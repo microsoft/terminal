@@ -47,52 +47,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto fontAxesTagsAndNames = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
 
-        winrt::com_ptr<IDWriteFont> font;
+        wil::com_ptr<IDWriteFont> font;
         THROW_IF_FAILED(_family->GetFont(0, font.put()));
-        winrt::com_ptr<IDWriteFontFace> fontFace;
+        wil::com_ptr<IDWriteFontFace> fontFace;
         THROW_IF_FAILED(font->CreateFontFace(fontFace.put()));
-        winrt::com_ptr<IDWriteFontFace5> fontFace5{ fontFace.as<IDWriteFontFace5>() };
-
-        winrt::com_ptr<IDWriteFontResource> fontResource;
-        THROW_IF_FAILED(fontFace5->GetFontResource(fontResource.put()));
-
-        std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
-        const auto axesCount = fontFace5->GetFontAxisValueCount();
-        if (axesCount > 0)
+        wil::com_ptr<IDWriteFontFace5> fontFace5;
+        if (fontFace5 = fontFace.try_query<IDWriteFontFace5>())
         {
-            uint32_t localeIndex;
-            BOOL localeExists;
-            wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
-            const auto localeToTry = GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) ? localeName : L"en-US";
+            wil::com_ptr<IDWriteFontResource> fontResource;
+            THROW_IF_FAILED(fontFace5->GetFontResource(fontResource.put()));
 
-            axesVector.resize(axesCount);
-            fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
-            for (uint32_t i = 0; i < axesCount; ++i)
+            std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
+            const auto axesCount = fontFace5->GetFontAxisValueCount();
+            if (axesCount > 0)
             {
-                const auto tagString = _axisTagToString(axesVector[i].axisTag);
+                uint32_t localeIndex;
+                BOOL localeExists;
+                wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+                const auto localeToTry = GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) ? localeName : L"en-US";
 
-                winrt::com_ptr<IDWriteLocalizedStrings> names;
-                THROW_IF_FAILED(fontResource->GetAxisNames(i, names.put()));
-
-                if (!SUCCEEDED(names->FindLocaleName(localeToTry, &localeIndex, &localeExists)) || !localeExists)
+                axesVector.resize(axesCount);
+                fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
+                for (uint32_t i = 0; i < axesCount; ++i)
                 {
-                    // default to the first locale in the list
-                    localeIndex = 0;
-                }
+                    const auto tagString = _axisTagToString(axesVector[i].axisTag);
 
-                uint32_t length;
-                if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
-                {
-                    // it is reasonable to assume that the name length is not going to exceed 512 chars
-                    wchar_t name[512];
-                    if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
+                    wil::com_ptr<IDWriteLocalizedStrings> names;
+                    THROW_IF_FAILED(fontResource->GetAxisNames(i, names.put()));
+
+                    if (!SUCCEEDED(names->FindLocaleName(localeToTry, &localeIndex, &localeExists)) || !localeExists)
                     {
-                        fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
-                        continue;
+                        // default to the first locale in the list
+                        localeIndex = 0;
                     }
+
+                    uint32_t length;
+                    if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
+                    {
+                        // it is reasonable to assume that the name length is not going to exceed 512 chars
+                        wchar_t name[512];
+                        if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
+                        {
+                            fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
+                            continue;
+                        }
+                    }
+                    // if there was no name found, it means the font does not actually support this axis
+                    // don't insert anything into the vector in this case
                 }
-                // if there was no name found, it means the font does not actually support this axis
-                // don't insert anything into the vector in this case
             }
         }
         return fontAxesTagsAndNames;
