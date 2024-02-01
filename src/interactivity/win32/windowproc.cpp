@@ -681,7 +681,16 @@ using namespace Microsoft::Console::Types;
 
     case CM_UPDATE_SCROLL_BARS:
     {
-        ScreenInfo.InternalUpdateScrollBars();
+        const auto state = ScreenInfo.FetchScrollBarState();
+
+        // EnableScrollbar() and especially SetScrollInfo() are prohibitively expensive functions nowadays.
+        // Unlocking early here improves throughput of good old `type` in cmd.exe by ~10x.
+        UnlockConsole();
+        Unlock = FALSE;
+
+        _resizingWindow++;
+        UpdateScrollBars(state);
+        _resizingWindow--;
         break;
     }
 
@@ -792,7 +801,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     // CONSOLE_IS_ICONIC bit appropriately. doing so in the WM_SIZE handler is incorrect because the WM_SIZE
     // comes after the WM_ERASEBKGND during SetWindowPos() processing, and the WM_ERASEBKGND needs to know if
     // the console window is iconic or not.
-    if (!ScreenInfo.ResizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
+    if (!_resizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
     {
         // calculate the dimensions for the newly proposed window rectangle
         til::rect rcNew;
@@ -860,30 +869,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // - <none>
 void Window::_HandleDrop(const WPARAM wParam) const
 {
-    WCHAR szPath[MAX_PATH];
-    BOOL fAddQuotes;
-
-    if (DragQueryFile((HDROP)wParam, 0, szPath, ARRAYSIZE(szPath)) != 0)
-    {
-        // Log a telemetry flag saying the user interacted with the Console
-        // Only log when DragQueryFile succeeds, because if we don't when the console starts up, we're seeing
-        // _HandleDrop get called multiple times (and DragQueryFile fail),
-        // which can incorrectly mark this console session as interactive.
-        Telemetry::Instance().SetUserInteractive();
-
-        fAddQuotes = (wcschr(szPath, L' ') != nullptr);
-        if (fAddQuotes)
-        {
-            Clipboard::Instance().StringPaste(L"\"", 1);
-        }
-
-        Clipboard::Instance().StringPaste(szPath, wcslen(szPath));
-
-        if (fAddQuotes)
-        {
-            Clipboard::Instance().StringPaste(L"\"", 1);
-        }
-    }
+    Clipboard::Instance().PasteDrop((HDROP)wParam);
 }
 
 [[nodiscard]] LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
