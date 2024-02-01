@@ -34,11 +34,12 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
     // since that'll just create a reference; we have to manually copy the values.
     if (source->_FontAxes)
     {
-        fontInfo->_FontAxes = winrt::single_threaded_map<winrt::hstring, float>();
+        std::map<winrt::hstring, float> fontAxes;
         for (const auto keyValuePair : source->_FontAxes.value())
         {
-            fontInfo->_FontAxes.value().Insert(keyValuePair.Key(), keyValuePair.Value());
+            fontAxes.insert(std::pair<winrt::hstring, float>(keyValuePair.Key(), keyValuePair.Value()));
         }
+        fontInfo->_FontAxes = winrt::single_threaded_map(std::move(fontAxes));
     }
 
     return fontInfo;
