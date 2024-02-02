@@ -330,8 +330,19 @@ using namespace Microsoft::Console::Interactivity;
                 // will return the console handle again, not the owning
                 // terminal's handle. It's not entirely clear why, but WS_POPUP
                 // is absolutely vital for this to work correctly.
-                const auto windowStyle = WS_OVERLAPPEDWINDOW | WS_POPUP;
-                const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
+                //
+                // We're doing WS_MINIMIZEBOX | WS_SYSMENU to get a "minimize
+                // button" for the window, but not the rest of WS_OVERLAPPED, so
+                // that we don't have an actual border, caption, nothing.
+                //
+                // (We're using velocity to experimentally try these changes
+                // out, and gather feedback.)
+                const auto windowStyle = Feature_ConPtyHwndStyles::IsEnabled() ?
+                                             WS_OVERLAPPED | (WS_MINIMIZEBOX | WS_SYSMENU) | WS_POPUP :
+                                             WS_OVERLAPPEDWINDOW | WS_POPUP;
+                const auto exStyles = Feature_ConPtyHwndStyles::IsEnabled() ?
+                                          WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE :
+                                          WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
 
                 // Attempt to create window.
                 hwnd = CreateWindowExW(exStyles,
@@ -463,6 +474,7 @@ using namespace Microsoft::Console::Interactivity;
         {
             _WritePseudoWindowCallback((bool)wParam);
         }
+        break;
     }
     case WM_GETOBJECT:
     {
