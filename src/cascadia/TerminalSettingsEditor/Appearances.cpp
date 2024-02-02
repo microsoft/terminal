@@ -5,6 +5,7 @@
 #include "Appearances.h"
 #include "Appearances.g.cpp"
 #include "AxisKeyValuePair.g.cpp"
+#include "FeatureKeyValuePair.g.cpp"
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
@@ -176,6 +177,78 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (i == _AxisIndex)
             {
                 AxisKey(tagAndName.Key());
+                break;
+            }
+            ++i;
+        }
+    }
+
+    FeatureKeyValuePair::FeatureKeyValuePair(winrt::hstring featureKey, uint32_t featureValue, const Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap) :
+        _FeatureKey{ featureKey },
+        _FeatureValue{ featureValue },
+        _baseMap{ baseMap },
+        _tagToNameMap{ tagToNameMap }
+    {
+        if (_tagToNameMap.HasKey(_FeatureKey))
+        {
+            int32_t i{ 0 };
+            // this loop assumes that every time we iterate through the map
+            // we get the same ordering
+            for (const auto tagAndName : _tagToNameMap)
+            {
+                if (tagAndName.Key() == _FeatureKey)
+                {
+                    _FeatureIndex = i;
+                    break;
+                }
+                ++i;
+            }
+        }
+    }
+
+    winrt::hstring FeatureKeyValuePair::FeatureKey()
+    {
+        return _FeatureKey;
+    }
+
+    uint32_t FeatureKeyValuePair::FeatureValue()
+    {
+        return _FeatureValue;
+    }
+
+    int32_t FeatureKeyValuePair::FeatureIndex()
+    {
+        return _FeatureIndex;
+    }
+
+    void FeatureKeyValuePair::FeatureValue(uint32_t featureValue)
+    {
+        _baseMap.Remove(_FeatureKey);
+        _FeatureValue = featureValue;
+        _baseMap.Insert(_FeatureKey, _FeatureValue);
+        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"FeatureValue" });
+    }
+
+    void FeatureKeyValuePair::FeatureKey(winrt::hstring featureKey)
+    {
+        _baseMap.Remove(_FeatureKey);
+        _FeatureKey = featureKey;
+        _baseMap.Insert(_FeatureKey, _FeatureValue);
+        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"FeatureKey" });
+    }
+
+    void FeatureKeyValuePair::FeatureIndex(int32_t featureIndex)
+    {
+        _FeatureIndex = featureIndex;
+
+        int32_t i{ 0 };
+        // same as in the constructor, this assumes that iterating through the map
+        // gives us the same order every time
+        for (const auto tagAndName : _tagToNameMap)
+        {
+            if (i == _FeatureIndex)
+            {
+                FeatureKey(tagAndName.Key());
                 break;
             }
             ++i;

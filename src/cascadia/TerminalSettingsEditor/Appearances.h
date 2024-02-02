@@ -18,6 +18,7 @@ Author(s):
 
 #include "Font.g.h"
 #include "AxisKeyValuePair.g.h"
+#include "FeatureKeyValuePair.g.h"
 #include "Appearances.g.h"
 #include "AppearanceViewModel.g.h"
 #include "Utils.h"
@@ -77,6 +78,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         float _AxisValue;
         int32_t _AxisIndex;
         Windows::Foundation::Collections::IMap<winrt::hstring, float> _baseMap{ nullptr };
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> _tagToNameMap{ nullptr };
+    };
+
+    struct FeatureKeyValuePair : FeatureKeyValuePairT<FeatureKeyValuePair>, ViewModelHelper<FeatureKeyValuePair>
+    {
+        FeatureKeyValuePair(winrt::hstring featureKey, uint32_t featureValue, const Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap);
+
+        winrt::hstring FeatureKey();
+        void FeatureKey(winrt::hstring featureKey);
+
+        uint32_t FeatureValue();
+        void FeatureValue(uint32_t featureValue);
+
+        int32_t FeatureIndex();
+        void FeatureIndex(int32_t featureIndex);
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
+    private:
+        winrt::hstring _FeatureKey;
+        uint32_t _FeatureValue;
+        int32_t _FeatureIndex;
+        Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t> _baseMap{ nullptr };
         Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> _tagToNameMap{ nullptr };
     };
 
@@ -201,4 +225,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(Appearances);
     BASIC_FACTORY(AxisKeyValuePair);
+    BASIC_FACTORY(FeatureKeyValuePair);
 }
