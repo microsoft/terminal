@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
                 for (uint32_t i = 0; i < axesCount; ++i)
                 {
-                    const auto tagString = _axisTagToString(axesVector[i].axisTag);
+                    const auto tagString = _tagToString(axesVector[i].axisTag);
 
                     wil::com_ptr<IDWriteLocalizedStrings> names;
                     THROW_IF_FAILED(fontResource->GetAxisNames(i, names.put()));
@@ -101,7 +101,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return fontAxesTagsAndNames;
     }
 
-    winrt::hstring Font::_axisTagToString(DWRITE_FONT_AXIS_TAG tag)
+    Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> Font::FontFeaturesTagsAndNames()
+    {
+        auto fontFeaturesTagsAndNames = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+
+        wil::com_ptr<IDWriteFont> font;
+        THROW_IF_FAILED(_family->GetFont(0, font.put()));
+        wil::com_ptr<IDWriteFontFace> fontFace;
+        THROW_IF_FAILED(font->CreateFontFace(fontFace.put()));
+
+        wil::com_ptr<IDWriteFactory2> factory;
+        THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
+        wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
+        factory->CreateTextAnalyzer(textAnalyzer.addressof());
+        wil::com_ptr<IDWriteTextAnalyzer2> textAnalyzer2 = textAnalyzer.query<IDWriteTextAnalyzer2>();
+
+        DWRITE_SCRIPT_ANALYSIS scriptAnalysis{};
+        UINT32 tagCount;
+        // we have to call GetTypographicFeatures twice, first to get the actual count then to get the features
+        std::ignore = textAnalyzer2->GetTypographicFeatures(fontFace.get(), DWRITE_SCRIPT_ANALYSIS{}, L"en-us", 0, &tagCount, nullptr);
+        std::vector<DWRITE_FONT_FEATURE_TAG> tags{ tagCount };
+        textAnalyzer2->GetTypographicFeatures(fontFace.get(), scriptAnalysis, L"en-us", tagCount, &tagCount, tags.data());
+
+        for (auto tag : tags)
+        {
+            // todo: have an internal map of tags to names to reference
+            fontFeaturesTagsAndNames.Insert(_tagToString(tag), _tagToString(tag));
+        }
+        return fontFeaturesTagsAndNames;
+    }
+
+    winrt::hstring Font::_tagToString(DWRITE_FONT_AXIS_TAG tag)
+    {
+        std::wstring result;
+        for (int i = 0; i < 4; ++i)
+        {
+            result.push_back((tag >> (i * 8)) & 0xFF);
+        }
+        return winrt::hstring{ result };
+    }
+
+    winrt::hstring Font::_tagToString(DWRITE_FONT_FEATURE_TAG tag)
     {
         std::wstring result;
         for (int i = 0; i < 4; ++i)
@@ -281,9 +321,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // so when the FontAxes change (say from the reset button), reinitialize the observable vector
                 InitializeFontAxesVector();
             }
+            else if (viewModelProperty == L"FontFeatures")
+            {
+                // same as the FontAxes one
+                InitializeFontFeaturesVector();
+            }
         });
 
         InitializeFontAxesVector();
+        InitializeFontFeaturesVector();
 
         // Cache the original BG image path. If the user clicks "Use desktop
         // wallpaper", then un-checks it, this is the string we'll restore to
@@ -537,6 +583,117 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return axisKeyValuePair;
     }
 
+    void AppearanceViewModel::AddNewFeatureKeyValuePair()
+    {
+        if (!_appearance.SourceProfile().FontInfo().FontFeatures())
+        {
+            _appearance.SourceProfile().FontInfo().FontFeatures(winrt::single_threaded_map<winrt::hstring, uint32_t>());
+        }
+        const auto fontFeaturesMap = _appearance.SourceProfile().FontInfo().FontFeatures();
+
+        // find one feature that does not already exist, and add that
+        // if there are no more possible features to add, the button is disabled so there shouldn't be a way to get here
+        const auto possibleFeaturesTagsAndNames = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontFeaturesTagsAndNames();
+        for (const auto tagAndName : possibleFeaturesTagsAndNames)
+        {
+            if (!fontFeaturesMap.HasKey(tagAndName.Key()))
+            {
+                fontFeaturesMap.Insert(tagAndName.Key(), 0);
+                FontFeaturesVector().Append(_CreateFeatureKeyValuePairHelper(tagAndName.Key(), 0, fontFeaturesMap, possibleFeaturesTagsAndNames));
+                break;
+            }
+        }
+        _NotifyChanges(L"CanFontFeaturesBeAdded");
+    }
+
+    void AppearanceViewModel::DeleteFeatureKeyValuePair(winrt::hstring key)
+    {
+        for (uint32_t i = 0; i < _FontFeaturesVector.Size(); i++)
+        {
+            if (_FontFeaturesVector.GetAt(i).FeatureKey() == key)
+            {
+                FontFeaturesVector().RemoveAt(i);
+                _appearance.SourceProfile().FontInfo().FontFeatures().Remove(key);
+                break;
+            }
+        }
+        _NotifyChanges(L"CanFontAxesBeAdded");
+    }
+
+    void AppearanceViewModel::InitializeFontFeaturesVector()
+    {
+        if (!_FontFeaturesVector)
+        {
+            _FontFeaturesVector = winrt::single_threaded_observable_vector<Editor::FeatureKeyValuePair>();
+        }
+
+        _FontFeaturesVector.Clear();
+        if (const auto fontFeaturesMap = _appearance.SourceProfile().FontInfo().FontFeatures())
+        {
+            const auto fontFeaturesTagToNameMap = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontFeaturesTagsAndNames();
+            for (const auto feature : fontFeaturesMap)
+            {
+                // only show the features that the font supports
+                // any features that the font doesn't support continue to be stored in the json, we just don't show them in the UI
+                if (fontFeaturesTagToNameMap.HasKey(feature.Key()))
+                {
+                    _FontFeaturesVector.Append(_CreateFeatureKeyValuePairHelper(feature.Key(), feature.Value(), fontFeaturesMap, fontFeaturesTagToNameMap));
+                }
+            }
+        }
+        _NotifyChanges(L"AreFontAxesAvailable", L"CanFontAxesBeAdded");
+    }
+
+    // Method Description:
+    // - Determines whether the currently selected font has any font features
+    bool AppearanceViewModel::AreFontFeaturesAvailable()
+    {
+        return ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontFeaturesTagsAndNames().Size() > 0;
+    }
+
+    // Method Description:
+    // - Determines whether the currently selected font has any font features that have not already been set
+    bool AppearanceViewModel::CanFontFeaturesBeAdded()
+    {
+        if (const auto fontFeaturesTagToNameMap = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontFeaturesTagsAndNames(); fontFeaturesTagToNameMap.Size() > 0)
+        {
+            if (const auto fontFeaturesMap = _appearance.SourceProfile().FontInfo().FontFeatures())
+            {
+                for (const auto tagAndName : fontFeaturesTagToNameMap)
+                {
+                    if (!fontFeaturesMap.HasKey(tagAndName.Key()))
+                    {
+                        // we found a feature that has not been set
+                        return true;
+                    }
+                }
+                // all possible features have been set already
+                return false;
+            }
+            // the font supports font features but the profile has none set
+            return true;
+        }
+        // the font does not support any font features
+        return false;
+    }
+
+    // Method Description:
+    // - Creates a FeatureKeyValuePair and sets up an event handler for it
+    Editor::FeatureKeyValuePair AppearanceViewModel::_CreateFeatureKeyValuePairHelper(winrt::hstring featureKey, uint32_t featureValue, const Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap)
+    {
+        // todo: probably make a map (or put in resources) of tag -> name translations
+        // todo: there's possible features that are on by default, but not set in the SUI so we don't show it, figure this out
+        const auto featureKeyValuePair = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FeatureKeyValuePair>(featureKey, featureValue, baseMap, tagToNameMap);
+        // when either the key or the value changes, send an event for the preview control to catch
+        featureKeyValuePair.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& /*e*/) {
+            if (auto appVM{ weakThis.get() })
+            {
+                appVM->_NotifyChanges(L"FeatureKeyValuePair");
+            }
+        });
+        return featureKeyValuePair;
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
@@ -606,6 +763,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _FontAxesNames = winrt::single_threaded_observable_vector<winrt::hstring>();
         FontAxesNamesCVS().Source(_FontAxesNames);
 
+        _FontFeaturesNames = winrt::single_threaded_observable_vector<winrt::hstring>();
+        FontFeaturesNamesCVS().Source(_FontFeaturesNames);
+
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
@@ -673,7 +833,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _FontAxesNames.Append(tagAndName.Value());
         }
 
-        // when the font face changes, we have to tell the view model to update the font axes vector
+        _FontFeaturesNames.Clear();
+        const auto featuresTagsAndNames = newFontFace.FontFeaturesTagsAndNames();
+        for (const auto tagAndName : featuresTagsAndNames)
+        {
+            _FontFeaturesNames.Append(tagAndName.Value());
+        }
+
+        // when the font face changes, we have to tell the view model to update the font axes/features vectors
         // since the new font may not have the same possible axes as the previous one
         Appearance().InitializeFontAxesVector();
         if (!Appearance().AreFontAxesAvailable())
@@ -686,6 +853,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else
         {
             FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text"));
+        }
+
+        Appearance().InitializeFontFeaturesVector();
+        if (!Appearance().AreFontFeaturesAvailable())
+        {
+            // if the previous font had available font features and the expander was expanded,
+            // at this point the expander would be set to disabled so manually collapse it
+            FontFeaturesContainer().SetExpanded(false);
+            FontFeaturesContainer().HelpText(RS_(L"Profile_FontFeaturesUnavailable/Text"));
+        }
+        else
+        {
+            FontFeaturesContainer().HelpText(RS_(L"Profile_FontFeaturesAvailable/Text"));
         }
     }
 
@@ -707,6 +887,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             FontAxesCVS().Source(Appearance().FontAxesVector());
             Appearance().AreFontAxesAvailable() ? FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text")) : FontAxesContainer().HelpText(RS_(L"Profile_FontAxesUnavailable/Text"));
+
+            FontFeaturesCVS().Source(Appearance().FontFeaturesVector());
+            Appearance().AreFontFeaturesAvailable() ? FontFeaturesContainer().HelpText(RS_(L"Profile_FontFeaturesAvailable/Text")) : FontFeaturesContainer().HelpText(RS_(L"Profile_FontFeaturesUnavailable/Text"));
 
             _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
                 const auto settingName{ args.PropertyName() };
@@ -844,6 +1027,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Appearances::AddNewAxisKeyValuePair_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         Appearance().AddNewAxisKeyValuePair();
+    }
+
+    void Appearances::DeleteFeatureKeyValuePair_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        if (const auto& button{ sender.try_as<Controls::Button>() })
+        {
+            if (const auto& tag{ button.Tag().try_as<winrt::hstring>() })
+            {
+                Appearance().DeleteFeatureKeyValuePair(tag.value());
+            }
+        }
+    }
+
+    void Appearances::AddNewFeatureKeyValuePair_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        Appearance().AddNewFeatureKeyValuePair();
     }
 
     bool Appearances::IsVintageCursor() const

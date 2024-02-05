@@ -714,6 +714,10 @@
     <value>Add new</value>
     <comment>Button label that adds a new font axis for the current font.</comment>
   </data>
+  <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
+    <value>Add new</value>
+    <comment>Button label that adds a new font feature for the current font.</comment>
+  </data>
   <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background image opacity</value>
     <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>
@@ -917,6 +921,18 @@
   <data name="Profile_FontAxesUnavailable.Text" xml:space="preserve">
     <value>The selected font has no variable font axes.</value>
     <comment>A description provided when the font axes setting is disabled. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontFeatures.Header" xml:space="preserve">
+    <value>Font features</value>
+    <comment>Header for a control to allow editing the font features.</comment>
+  </data>
+  <data name="Profile_FontFeaturesAvailable.Text" xml:space="preserve">
+    <value>Add or remove font features for the given font.</value>
+    <comment>A description for what the "font features" setting does. Presented near "Profile_FontFeatures".</comment>
+  </data>
+  <data name="Profile_FontFeaturesUnavailable.Text" xml:space="preserve">
+    <value>The selected font has no font features.</value>
+    <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>General</value>
