@@ -358,6 +358,11 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     }
 
     const auto clipboard = _openClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+    if (!clipboard)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
 
     EmptyClipboard();
     // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
