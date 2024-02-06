@@ -85,18 +85,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto environment = _initialEnv;
 
         {
-            // Convert connection Guid to string and ignore the enclosing '{}'.
-            auto wsGuid{ Utils::GuidToString(_guid) };
-            wsGuid.pop_back();
-
-            const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
-
             // Ensure every connection has the unique identifier in the environment.
-            environment.as_map().insert_or_assign(L"WT_SESSION", guidSubStr.data());
+            // Convert connection Guid to string and ignore the enclosing '{}'.
+            environment.as_map().insert_or_assign(L"WT_SESSION", Utils::GuidToPlainString(_sessionId));
 
             // The profile Guid does include the enclosing '{}'
-            const auto profileGuid{ Utils::GuidToString(_profileGuid) };
-            environment.as_map().insert_or_assign(L"WT_PROFILE_ID", profileGuid.data());
+            environment.as_map().insert_or_assign(L"WT_PROFILE_ID", Utils::GuidToString(_profileGuid));
 
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
@@ -171,7 +165,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             g_hTerminalConnectionProvider,
             "ConPtyConnected",
             TraceLoggingDescription("Event emitted when ConPTY connection is started"),
-            TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+            TraceLoggingGuid(_sessionId, "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
@@ -189,7 +183,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        TERMINAL_STARTUP_INFO startupInfo) :
         _rows{ 25 },
         _cols{ 80 },
-        _guid{ Utils::CreateGuid() },
         _inPipe{ hIn },
         _outPipe{ hOut }
     {
@@ -249,12 +242,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return vs;
     }
 
-    template<typename T>
-    T unbox_prop_or(const Windows::Foundation::Collections::ValueSet& blob, std::wstring_view key, T defaultValue)
-    {
-        return winrt::unbox_value_or<T>(blob.TryLookup(key).try_as<Windows::Foundation::IPropertyValue>(), defaultValue);
-    }
-
     void ConptyConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         if (settings)
@@ -268,7 +255,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _startingTitle = unbox_prop_or<winrt::hstring>(settings, L"startingTitle", _startingTitle);
             _rows = unbox_prop_or<uint32_t>(settings, L"initialRows", _rows);
             _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
-            _guid = unbox_prop_or<winrt::guid>(settings, L"guid", _guid);
+            _sessionId = unbox_prop_or<winrt::guid>(settings, L"sessionId", _sessionId);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
@@ -299,17 +286,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     _initialEnv = til::env::from_current_environment();
                 }
             }
-
-            if (_guid == guid{})
-            {
-                _guid = Utils::CreateGuid();
-            }
         }
-    }
 
-    winrt::guid ConptyConnection::Guid() const noexcept
-    {
-        return _guid;
+        if (_sessionId == guid{})
+        {
+            _sessionId = Utils::CreateGuid();
+        }
     }
 
     winrt::hstring ConptyConnection::Commandline() const
@@ -382,7 +364,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 g_hTerminalConnectionProvider,
                 "ConPtyConnectedToDefterm",
                 TraceLoggingDescription("Event emitted when ConPTY connection is started, for a defterm session"),
-                TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+                TraceLoggingGuid(_sessionId, "SessionGuid", "The WT_SESSION's GUID"),
                 TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
@@ -686,7 +668,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingWrite(g_hTerminalConnectionProvider,
                                   "ReceivedFirstByte",
                                   TraceLoggingDescription("An event emitted when the connection receives the first byte"),
-                                  TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+                                  TraceLoggingGuid(_sessionId, "SessionGuid", "The WT_SESSION's GUID"),
                                   TraceLoggingFloat64(delta.count(), "Duration"),
                                   TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                   TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
