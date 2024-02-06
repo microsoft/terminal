@@ -178,7 +178,7 @@
     </feature>
 
     <feature>
-        <name>Feature_KepadModeEnabled</name>
+        <name>Feature_KeypadModeEnabled</name>
         <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
         <id>16654</id>
         <stage>AlwaysDisabled</stage>
