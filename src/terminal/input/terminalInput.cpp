@@ -230,8 +230,12 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         return keyMatch->second;
     }
 
-    // If it's not in the key map, we'll use the UnicodeChar, if provided.
-    if (unicodeChar != 0)
+    // If it's not in the key map, we'll use the UnicodeChar, if provided,
+    // except in the case of Ctrl+Space, which is often mapped incorrectly as
+    // a space character when it's expected to be mapped to NUL. We need to
+    // let that fall through to the standard mapping algorithm below.
+    const auto ctrlSpaceKey = ctrlIsReallyPressed && virtualKeyCode == VK_SPACE;
+    if (unicodeChar != 0 && !ctrlSpaceKey)
     {
         // In the case of an AltGr key, we may still need to apply a Ctrl
         // modifier to the char, either because both Ctrl keys were pressed,
@@ -388,13 +392,6 @@ try
     defineKeyWithAltModifier(Shift + Enhanced + VK_RETURN, returnSequence);
     defineKeyWithAltModifier(Ctrl + Enhanced + VK_RETURN, L"\n"s);
     defineKeyWithAltModifier(Ctrl + Shift + Enhanced + VK_RETURN, L"\n"s);
-
-    // SPACE maps to SP, and Ctrl+SPACE to NUL. The Shift modifier as no effect.
-    // The Alt modifier adds an ESC prefix (not standard).
-    defineKeyWithAltModifier(VK_SPACE, L" "s);
-    defineKeyWithAltModifier(Shift + VK_SPACE, L" "s);
-    defineKeyWithAltModifier(Ctrl + VK_SPACE, L"\0"s);
-    defineKeyWithAltModifier(Ctrl + Shift + VK_SPACE, L"\0"s);
 
     if (_inputMode.test(Mode::Ansi))
     {
@@ -580,6 +577,10 @@ wchar_t TerminalInput::_makeCtrlChar(const wchar_t ch)
     if (ch >= L'@' && ch <= L'~')
     {
         return ch & 0b11111;
+    }
+    if (ch == L' ')
+    {
+        return 0x00;
     }
     if (ch == L'/')
     {
