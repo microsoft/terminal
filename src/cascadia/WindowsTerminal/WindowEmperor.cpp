@@ -59,32 +59,6 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
         args.emplace_back(L"wt.exe");
     }
 }
-
-HWND _createToolWindow()
-{
-    WNDCLASS wc{};
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
-    wc.lpszClassName = TERMINAL_MESSAGE_CLASS_NAME;
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = DefWindowProc; //WindowEmperor::_wndProc;
-    wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
-    RegisterClass(&wc);
-    // WINRT_ASSERT(!_window);
-
-    return CreateWindow(wc.lpszClassName,
-                        L"Windows Terminal Notification Handoff",
-                        0,
-                        CW_USEDEFAULT,
-                        CW_USEDEFAULT,
-                        CW_USEDEFAULT,
-                        CW_USEDEFAULT,
-                        HWND_MESSAGE,
-                        nullptr,
-                        wc.hInstance,
-                        nullptr);
-}
-
 bool WindowEmperor::_handleLaunchArgs()
 try
 {
@@ -140,8 +114,6 @@ try
                     // }
                 }
             }
-            auto fake = _createToolWindow();
-            fake;
             return winrt::Microsoft::Terminal::Remoting::WindowManager::SummonForNotification(window);
         }
     }

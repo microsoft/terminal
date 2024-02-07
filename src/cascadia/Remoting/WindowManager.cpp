@@ -75,26 +75,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //
         // * If we're running unpackaged: the .winmd must be a sibling of the .exe
         // * If we're running packaged: the .winmd must be in the package root
-        // const winrt::com_ptr<::IUnknown> monarch = try_create_instance<::IUnknown>(MonarchCLSID(),
-        //                                                                            CLSCTX_LOCAL_SERVER);
-        // // const auto monarch = try_create_instance<Remoting::IMonarch>(MonarchCLSID(),
-        // //                                                              CLSCTX_LOCAL_SERVER);
-
-        // if (monarch)
-        // {
-        //     const auto hr = (CoAllowSetForegroundWindow(monarch.get(), nullptr));
-        //     if (FAILED(hr))
-        //     {
-        //         DebugBreak();
-        //     }
-        // }
-
-        // _monarch = monarch.try_as<Remoting::IMonarch>();
-        _monarch = try_create_instance<Remoting::IMonarch>(MonarchCLSID(), CLSCTX_LOCAL_SERVER);
-        if (_monarch)
-        {
-            LOG_LAST_ERROR_IF(!AllowSetForegroundWindow((DWORD)_monarch.GetPID()));
-        }
+        _monarch = try_create_instance<Remoting::IMonarch>(MonarchCLSID(),
+                                                           CLSCTX_LOCAL_SERVER);
     }
 
     // Check if we became the king, and if we are, wire up callbacks.
@@ -507,9 +489,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         summonArgs.ToggleVisibility(false);
 
         args.SummonBehavior(summonArgs);
-
-        LOG_LAST_ERROR_IF(!AllowSetForegroundWindow((DWORD)monarch.GetPID()));
-
         monarch.SummonWindow(args);
         return true;
     }

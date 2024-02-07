@@ -27,16 +27,6 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
 
-void _trace(const wchar_t* const pwsz)
-{
-    TraceLoggingWrite(g_hWindowsTerminalProvider,
-                      "TraceMessage",
-                      TraceLoggingDescription("debug print messages"),
-                      TraceLoggingWideString(pwsz, "message", "the message"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-}
-
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
@@ -1532,7 +1522,6 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     // restore-down the window.
     if (IsIconic(_window.get()))
     {
-        _trace(L"window was iconic");
         if (dropdownDuration > 0)
         {
             _dropdownWindow(dropdownDuration, toMonitor);
@@ -1545,39 +1534,9 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
             // able to properly set this as the foreground window.
             if (!IsWindowVisible(GetHandle()))
             {
-                _trace(L"window wasn't visible");
                 ShowWindow(_window.get(), SW_SHOW);
             }
             ShowWindow(_window.get(), SW_RESTORE);
-            if (!SetForegroundWindow(_window.get()))
-            {
-                const auto gle = GetLastError();
-                _trace(fmt::format(L"SetForegroundWindow failed: {}", gle).c_str());
-
-                const auto fg = GetForegroundWindow();
-                std::wstring title(GetWindowTextLength(fg) + 1, L'\0');
-                GetWindowTextW(fg, &title[0], (DWORD)title.size());
-                DWORD fgPid = 0;
-                GetWindowThreadProcessId(fg, &fgPid);
-                _trace(fmt::format(L"Foreground Window is: [{}]={}", (uint64_t)fgPid, title).c_str());
-
-                SwitchToThisWindow(_window.get(), false);
-            }
-            else
-            {
-                _trace(L"got fg?");
-            }
-
-            // LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
-            if (!BringWindowToTop(_window.get()))
-            {
-                const auto gle = GetLastError();
-                _trace(fmt::format(L"BringWindowToTop failed: {}", gle).c_str());
-            }
-            else
-            {
-                _trace(L"brought to top?");
-            }
 
             // Once we've been restored, throw us on the active monitor.
             _moveToMonitor(oldForegroundWindow, toMonitor);
@@ -1585,7 +1544,6 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     }
     else
     {
-        _trace(L"window wasn't iconic");
         // Try first to send a message to the current foreground window. If it's not responding, it may
         // be waiting on us to finish launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
         // behavior as before--that is, waiting for the message loop--but we've done an early return if
@@ -1610,10 +1568,6 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
 
             // Throw us on the active monitor.
             _moveToMonitor(oldForegroundWindow, toMonitor);
-        }
-        else
-        {
-            _trace(L"huh");
         }
     }
 }
