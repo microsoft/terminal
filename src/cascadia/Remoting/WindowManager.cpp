@@ -476,6 +476,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         SummonWindowSelectionArgs args{};
         args.WindowID(windowId);
+
+        // Summon the window...
+        // * On its current desktop
+        // * Without a dropdown
+        // * On the monitor it is already on
+        // * Do not toggle, just make visible.
+        const Remoting::SummonWindowBehavior summonArgs{};
+        summonArgs.MoveToCurrentDesktop(false);
+        summonArgs.DropdownDuration(0);
+        summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+        summonArgs.ToggleVisibility(false);
+
+        args.SummonBehavior(summonArgs);
         monarch.SummonWindow(args);
         return true;
     }

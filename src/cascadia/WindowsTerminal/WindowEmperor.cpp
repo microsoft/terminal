@@ -124,6 +124,9 @@ CATCH_LOG_RETURN_HR(false)
 
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
+    // Before handling any commandline arguments, check if this was a toast
+    // invocation. If it was, we can go ahead and totally ignore everything
+    // else.
     if (_handleLaunchArgs())
     {
         TerminateProcess(GetCurrentProcess(), 0u);
