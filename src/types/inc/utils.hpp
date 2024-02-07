@@ -39,8 +39,10 @@ namespace Microsoft::Console::Utils
                                              static_cast<long>(SHRT_MAX)));
     }
 
-    std::wstring GuidToString(const GUID guid);
+    std::wstring GuidToString(const GUID& guid);
+    std::wstring GuidToPlainString(const GUID& guid);
     GUID GuidFromString(_Null_terminated_ const wchar_t* str);
+    GUID GuidFromPlainString(_Null_terminated_ const wchar_t* str);
     GUID CreateGuid();
 
     std::string ColorToHexString(const til::color color);

@@ -78,6 +78,7 @@ private:
     winrt::fire_and_forget _setupGlobalHotkeys();
 
     winrt::fire_and_forget _close();
+    void _finalizeSessionPersistence() const;
 
     void _createNotificationIcon();
     void _destroyNotificationIcon();

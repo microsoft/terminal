@@ -127,6 +127,9 @@ void WindowEmperor::WaitForWindows()
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
+
+    _finalizeSessionPersistence();
+    TerminateProcess(GetCurrentProcess(), 0);
 }
 
 void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
@@ -573,6 +576,14 @@ winrt::fire_and_forget WindowEmperor::_close()
     // quit will go to the emperor's message pump.
     co_await wil::resume_foreground(_dispatcher);
     PostQuitMessage(0);
+}
+
+void WindowEmperor::_finalizeSessionPersistence() const
+{
+    const auto state = ApplicationState::SharedInstance();
+
+    // Ensure to write the state.json before we TerminateProcess()
+    state.Flush();
 }
 
 #pragma endregion

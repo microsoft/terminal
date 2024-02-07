@@ -1279,7 +1279,7 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
-        winrt::guid sessionGuid{};
+        Windows::Foundation::Collections::ValueSet valueSet;
 
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
@@ -1295,23 +1295,16 @@ namespace winrt::TerminalApp::implementation
                 connection = TerminalConnection::ConptyConnection{};
             }
 
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
-                                                                                 L".",
-                                                                                 L"Azure",
-                                                                                 false,
-                                                                                 L"",
-                                                                                 nullptr,
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid(),
-                                                                                 profile.Guid());
-
-            if constexpr (Feature_VtPassthroughMode::IsEnabled())
-            {
-                valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-            }
-
-            connection.Initialize(valueSet);
+            valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
+                                                                            L".",
+                                                                            L"Azure",
+                                                                            false,
+                                                                            L"",
+                                                                            nullptr,
+                                                                            settings.InitialRows(),
+                                                                            settings.InitialCols(),
+                                                                            winrt::guid(),
+                                                                            profile.Guid());
         }
 
         else
@@ -1336,30 +1329,30 @@ namespace winrt::TerminalApp::implementation
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
             auto newWorkingDirectory{ _evaluatePathForCwd(settings.StartingDirectory()) };
-            auto conhostConn = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                 newWorkingDirectory,
-                                                                                 settings.StartingTitle(),
-                                                                                 settings.ReloadEnvironmentVariables(),
-                                                                                 _WindowProperties.VirtualEnvVars(),
-                                                                                 environment,
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid(),
-                                                                                 profile.Guid());
-
-            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            connection = TerminalConnection::ConptyConnection{};
+            valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                            newWorkingDirectory,
+                                                                            settings.StartingTitle(),
+                                                                            settings.ReloadEnvironmentVariables(),
+                                                                            _WindowProperties.VirtualEnvVars(),
+                                                                            environment,
+                                                                            settings.InitialRows(),
+                                                                            settings.InitialCols(),
+                                                                            winrt::guid(),
+                                                                            profile.Guid());
 
             if (inheritCursor)
             {
                 valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
             }
-
-            conhostConn.Initialize(valueSet);
-
-            sessionGuid = conhostConn.Guid();
-            connection = conhostConn;
         }
+
+        if constexpr (Feature_VtPassthroughMode::IsEnabled())
+        {
+            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+        }
+
+        connection.Initialize(valueSet);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -1367,7 +1360,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingDescription("Event emitted upon the creation of a connection"),
             TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
             TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
-            TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
+            TraceLoggingGuid(connection.SessionId(), "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
