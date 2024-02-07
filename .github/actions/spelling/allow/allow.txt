@@ -117,6 +117,7 @@ uiatextrange
 UIs
 und
 unregister
+urxvt
 versioned
 vsdevcmd
 walkthrough

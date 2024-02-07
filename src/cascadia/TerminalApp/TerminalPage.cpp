@@ -3056,7 +3056,7 @@ namespace winrt::TerminalApp::implementation
         doc.SelectSingleNode(L"//text[2]").InnerText(body);
 
         // Construct the notification
-        ToastNotification notif{ doc };
+        ToastNotification notification{ doc };
 
         // lazy-init
         if (!_toastNotifier)
@@ -3065,7 +3065,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // And show it!
-        _toastNotifier.Show(notif);
+        _toastNotifier.Show(notification);
     }
 
     // Method Description:
