@@ -405,16 +405,22 @@ std::optional<bool> UiaTextRangeBase::_verifyAttr(TEXTATTRIBUTEID attributeId, V
         THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
 
         // The underline style is stored as a TextDecorationLineStyle.
-        // However, The text buffer doesn't have that many different styles for being underlined.
-        // Instead, we only have single and double underlined.
+        // However, The text buffer doesn't have all the different styles for being underlined.
+        // Instead, we only use a subset of them.
         switch (val.lVal)
         {
         case TextDecorationLineStyle_None:
-            return !attr.IsUnderlined() && !attr.IsDoublyUnderlined();
-        case TextDecorationLineStyle_Double:
-            return attr.IsDoublyUnderlined();
+            return !attr.IsUnderlined();
         case TextDecorationLineStyle_Single:
-            return attr.IsUnderlined();
+            return attr.GetUnderlineStyle() == UnderlineStyle::SinglyUnderlined;
+        case TextDecorationLineStyle_Double:
+            return attr.GetUnderlineStyle() == UnderlineStyle::DoublyUnderlined;
+        case TextDecorationLineStyle_Wavy:
+            return attr.GetUnderlineStyle() == UnderlineStyle::CurlyUnderlined;
+        case TextDecorationLineStyle_Dot:
+            return attr.GetUnderlineStyle() == UnderlineStyle::DottedUnderlined;
+        case TextDecorationLineStyle_Dash:
+            return attr.GetUnderlineStyle() == UnderlineStyle::DashedUnderlined;
         default:
             return std::nullopt;
         }
@@ -694,19 +700,32 @@ bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT
     case UIA_UnderlineStyleAttributeId:
     {
         pRetVal->vt = VT_I4;
-        if (attr.IsDoublyUnderlined())
+        const auto style = attr.GetUnderlineStyle();
+        switch (style)
         {
-            pRetVal->lVal = TextDecorationLineStyle_Double;
-        }
-        else if (attr.IsUnderlined())
-        {
-            pRetVal->lVal = TextDecorationLineStyle_Single;
-        }
-        else
-        {
+        case UnderlineStyle::NoUnderline:
             pRetVal->lVal = TextDecorationLineStyle_None;
+            return true;
+        case UnderlineStyle::SinglyUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Single;
+            return true;
+        case UnderlineStyle::DoublyUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Double;
+            return true;
+        case UnderlineStyle::CurlyUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Wavy;
+            return true;
+        case UnderlineStyle::DottedUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Dot;
+            return true;
+        case UnderlineStyle::DashedUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Dash;
+            return true;
+        // Out of range styles are treated as singly underlined.
+        default:
+            pRetVal->lVal = TextDecorationLineStyle_Single;
+            return true;
         }
-        return true;
     }
     default:
         // This attribute is not supported.
@@ -966,29 +985,15 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
-        // reserve size in accordance to extracted text
-        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
-        const auto bufferData = buffer.GetText(true,
-                                               false,
-                                               textRects);
-        const size_t textDataSize = bufferData.text.size() * bufferSize.Width();
-        textData.reserve(textDataSize);
-        for (const auto& text : bufferData.text)
+        const auto req = TextBuffer::CopyRequest{ buffer, _start, inclusiveEnd, _blockRange, true, false, false, true };
+        auto plainText = buffer.GetPlainText(req);
+
+        if (plainText.size() > maxLengthAsSize)
         {
-            if (textData.size() >= maxLengthAsSize)
-            {
-                // early exit; we're already at/past max length
-                break;
-            }
-            textData += text;
+            plainText.resize(maxLengthAsSize);
         }
 
-        // only use maxLength to resize down.
-        // if maxLength > size, we don't want to resize and append unnecessary L'\0'.
-        if (textData.size() > maxLengthAsSize)
-        {
-            textData.resize(maxLengthAsSize);
-        }
+        textData = std::move(plainText);
     }
 
     return textData;
@@ -1330,7 +1335,7 @@ til::point UiaTextRangeBase::_getDocumentEnd() const
 {
     const auto optimizedBufferSize{ _getOptimizedBufferSize() };
     const auto& buffer{ _pData->GetTextBuffer() };
-    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(optimizedBufferSize) };
+    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(&optimizedBufferSize) };
     const auto cursorPos{ buffer.GetCursor().GetPosition() };
     return { optimizedBufferSize.Left(), std::max(lastCharPos.y, cursorPos.y) + 1 };
 }

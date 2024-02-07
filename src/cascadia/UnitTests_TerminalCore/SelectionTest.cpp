@@ -46,7 +46,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectUnit)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -59,7 +59,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectArea)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -113,7 +113,7 @@ namespace TerminalCoreUnitTests
             // Test SetSelectionAnchor(til::point) and SetSelectionEnd(til::point)
             // Behavior: clamp coord to viewport.
             auto ValidateSingleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
-                Terminal term;
+                Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
@@ -126,7 +126,7 @@ namespace TerminalCoreUnitTests
             // Behavior: clamp coord to viewport.
             //           Then, do double click selection.
             auto ValidateDoubleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
-                Terminal term;
+                Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
@@ -138,7 +138,7 @@ namespace TerminalCoreUnitTests
             // Behavior: clamp coord to viewport.
             //           Then, do triple click selection.
             auto ValidateTripleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
-                Terminal term;
+                Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
@@ -171,7 +171,7 @@ namespace TerminalCoreUnitTests
                     - All selection expansion functions will operate as if they were performed at the boundary
             */
 
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 10, 10 }, 0, renderer);
 
@@ -213,7 +213,7 @@ namespace TerminalCoreUnitTests
                     - All selection expansion functions will operate as if they were performed at the boundary
             */
 
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 10, 10 }, 0, renderer);
 
@@ -299,7 +299,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectBoxArea)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -335,7 +335,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectAreaAfterScroll)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             til::CoordType scrollbackLines = 5;
             term.Create({ 100, 100 }, scrollbackLines, renderer);
@@ -385,7 +385,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -408,7 +408,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyph_Leading)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -431,7 +431,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -486,7 +486,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClick_GeneralCase)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -509,7 +509,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClick_Delimiter)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -530,7 +530,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClick_DelimiterClass)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -558,7 +558,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClickDrag_Right)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -587,7 +587,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClickDrag_Left)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -616,7 +616,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(TripleClick_GeneralCase)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -630,7 +630,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(TripleClickDrag_Horizontal)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -647,7 +647,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(TripleClickDrag_Vertical)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -675,7 +675,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(ShiftClick)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -792,7 +792,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(Pivot)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 

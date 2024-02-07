@@ -1,6 +1,4 @@
-#include "pch.h"
 #include "ColorHelper.h"
-#include <limits>
 
 using namespace winrt::TerminalApp;
 

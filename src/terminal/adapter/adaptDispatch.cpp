@@ -77,7 +77,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     auto& cursor = textBuffer.GetCursor();
     auto cursorPosition = cursor.GetPosition();
     const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
-    const auto attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     const auto viewport = _api.GetViewport();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
@@ -502,7 +502,7 @@ bool AdaptDispatch::CursorSaveState()
     // First retrieve some information about the buffer
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
-    const auto attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
@@ -1012,6 +1012,10 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
                 {
                     attr.SetBackground(*changeOps.background);
                 }
+                if (changeOps.underlineColor)
+                {
+                    attr.SetUnderlineColor(*changeOps.underlineColor);
+                }
                 rowBuffer.ReplaceAttributes(col, col + 1, attr);
             }
         }
@@ -1121,7 +1125,7 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     // provides us with an OR mask and an AND mask which can then be applied to
     // each cell to set and reset the appropriate attribute bits.
     auto allAttrsOff = TextAttribute{};
-    auto allAttrsOn = TextAttribute{ 0, 0 };
+    auto allAttrsOn = TextAttribute{ 0, 0, 0 };
     allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
     _ApplyGraphicsOptions(attrs, allAttrsOff);
     _ApplyGraphicsOptions(attrs, allAttrsOn);
@@ -1144,6 +1148,10 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     changeOps.foreground = foregroundChanged ? std::optional{ foreground } : std::nullopt;
     changeOps.background = backgroundChanged ? std::optional{ background } : std::nullopt;
 
+    const auto underlineColor = allAttrsOff.GetUnderlineColor();
+    const auto underlineColorChanged = !underlineColor.IsDefault() || allAttrsOn.GetUnderlineColor().IsDefault();
+    changeOps.underlineColor = underlineColorChanged ? std::optional{ underlineColor } : std::nullopt;
+
     _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOps);
 
     return true;
@@ -1152,6 +1160,8 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
 // Routine Description:
 // - DECRARA - Reverses the attributes in a rectangular area. The affected range
 //   is dependent on the change extent setting defined by DECSACE.
+//   Note: Reversing the underline style has some unexpected consequences.
+//         See https://github.com/microsoft/terminal/pull/15795#issuecomment-1702559350.
 // Arguments:
 // - top - The first row of the area.
 // - left - The first column of the area.
@@ -1168,6 +1178,7 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
     // then combine them with XOR, because if we're reversing the same attribute
     // twice, we'd expect the two instances to cancel each other out.
     auto reverseMask = CharacterAttributes::Normal;
+
     if (!attrs.empty())
     {
         for (size_t i = 0; i < attrs.size();)
@@ -1178,7 +1189,9 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
             // the empty check above.
             if (attrs.at(i).value_or(0) == 0)
             {
-                reverseMask ^= CharacterAttributes::Rendition;
+                // With param 0, we only reverse the SinglyUnderlined bit.
+                const auto singlyUnderlinedAttr = static_cast<CharacterAttributes>(WI_EnumValue(UnderlineStyle::SinglyUnderlined) << UNDERLINE_STYLE_SHIFT);
+                reverseMask ^= (CharacterAttributes::Rendition & ~CharacterAttributes::UnderlineStyle) | singlyUnderlinedAttr;
                 i++;
             }
             else
@@ -1460,22 +1473,52 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id)
 {
+    constexpr auto GoodCondition = L"0";
+    constexpr auto PrinterNotConnected = L"?13";
+    constexpr auto UserDefinedKeysNotSupported = L"?23";
+    constexpr auto UnknownPcKeyboard = L"?27;0;0;5";
+    constexpr auto LocatorNotConnected = L"?53";
+    constexpr auto UnknownLocatorDevice = L"?57;0";
+    constexpr auto TerminalReady = L"?70";
+    constexpr auto MultipleSessionsNotSupported = L"?83";
+
     switch (statusType)
     {
-    case DispatchTypes::StatusType::OS_OperatingStatus:
-        _OperatingStatus();
+    case DispatchTypes::StatusType::OperatingStatus:
+        _DeviceStatusReport(GoodCondition);
         return true;
-    case DispatchTypes::StatusType::CPR_CursorPositionReport:
+    case DispatchTypes::StatusType::CursorPositionReport:
         _CursorPositionReport(false);
         return true;
-    case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
+    case DispatchTypes::StatusType::ExtendedCursorPositionReport:
         _CursorPositionReport(true);
         return true;
-    case DispatchTypes::StatusType::MSR_MacroSpaceReport:
+    case DispatchTypes::StatusType::PrinterStatus:
+        _DeviceStatusReport(PrinterNotConnected);
+        return true;
+    case DispatchTypes::StatusType::UserDefinedKeys:
+        _DeviceStatusReport(UserDefinedKeysNotSupported);
+        return true;
+    case DispatchTypes::StatusType::KeyboardStatus:
+        _DeviceStatusReport(UnknownPcKeyboard);
+        return true;
+    case DispatchTypes::StatusType::LocatorStatus:
+        _DeviceStatusReport(LocatorNotConnected);
+        return true;
+    case DispatchTypes::StatusType::LocatorIdentity:
+        _DeviceStatusReport(UnknownLocatorDevice);
+        return true;
+    case DispatchTypes::StatusType::MacroSpaceReport:
         _MacroSpaceReport();
         return true;
-    case DispatchTypes::StatusType::MEM_MemoryChecksum:
+    case DispatchTypes::StatusType::MemoryChecksum:
         _MacroChecksumReport(id);
+        return true;
+    case DispatchTypes::StatusType::DataIntegrity:
+        _DeviceStatusReport(TerminalReady);
+        return true;
+    case DispatchTypes::StatusType::MultipleSessionStatus:
+        _DeviceStatusReport(MultipleSessionsNotSupported);
         return true;
     default:
         return false;
@@ -1596,15 +1639,14 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 }
 
 // Routine Description:
-// - DSR-OS - Reports the operating status back to the input channel
+// - DSR - Transmits a device status report with a given parameter string.
 // Arguments:
-// - <none>
+// - parameters - One or more parameter values representing the status
 // Return Value:
 // - <none>
-void AdaptDispatch::_OperatingStatus() const
+void AdaptDispatch::_DeviceStatusReport(const wchar_t* parameters) const
 {
-    // We always report a good operating condition.
-    _api.ReturnResponse(L"\x1b[0n");
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{}n"), parameters));
 }
 
 // Routine Description:
@@ -1904,7 +1946,13 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
-        return !_PassThroughInputModes();
+        // ConPTY requests the Win32InputMode on startup and disables it on shutdown. When nesting ConPTY inside
+        // ConPTY then this should not bubble up. Otherwise, when the inner ConPTY exits and the outer ConPTY
+        // passes the disable sequence up to the hosting terminal, we'd stop getting Win32InputMode entirely!
+        // It also makes more sense to not bubble it up, because this mode is specifically for INPUT_RECORD interop
+        // and thus entirely between a PTY's input records and its INPUT_RECORD-aware VT-aware console clients.
+        // Returning true here will mark this as being handled and avoid this.
+        return true;
     default:
         // If no functions to call, overall dispatch was a failure.
         return false;
@@ -2774,16 +2822,23 @@ void AdaptDispatch::_ClearAllTabStops() noexcept
 }
 
 // Routine Description:
-// - Clears all tab stops and sets the _initDefaultTabStops flag to indicate
+// - DECST8C - If the parameter is SetEvery8Columns or is omitted, then this
+//    clears all tab stops and sets the _initDefaultTabStops flag to indicate
 //    that the default positions should be reinitialized when needed.
 // Arguments:
-// - <none>
+// - setType - only SetEvery8Columns is supported
 // Return value:
-// - <none>
-void AdaptDispatch::_ResetTabStops() noexcept
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::TabSet(const VTParameter setType) noexcept
 {
-    _tabStopColumns.clear();
-    _initDefaultTabStops = true;
+    constexpr auto SetEvery8Columns = DispatchTypes::TabSetType::SetEvery8Columns;
+    if (setType.value_or(SetEvery8Columns) == SetEvery8Columns)
+    {
+        _tabStopColumns.clear();
+        _initDefaultTabStops = true;
+        return true;
+    }
+    return false;
 }
 
 // Routine Description:
@@ -3057,7 +3112,7 @@ bool AdaptDispatch::HardReset()
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
 
     // Delete all current tab stops and reapply
-    _ResetTabStops();
+    TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
 
     // Clear the soft font in the renderer and delete the font buffer.
     _renderer.UpdateSoftFont({}, {}, false);
@@ -3084,7 +3139,7 @@ bool AdaptDispatch::HardReset()
         if (stateMachine.FlushToTerminal())
         {
             auto& engine = stateMachine.Engine();
-            engine.ActionPassThroughString(L"\033[?9001;1004h");
+            engine.ActionPassThroughString(L"\033[?9001h\033[?1004h");
         }
     }
     return true;
@@ -3145,18 +3200,7 @@ bool AdaptDispatch::_EraseScrollback()
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().y;
 
-    // Clear all the marks below the new viewport position.
-    textBuffer.ClearMarksInRange(til::point{ 0, height },
-                                 til::point{ bufferSize.width, bufferSize.height });
-    // Then scroll all the remaining marks up. This will trim ones that are now "outside" the buffer
-    textBuffer.ScrollMarks(-top);
-
-    // Scroll the viewport content to the top of the buffer.
-    textBuffer.ScrollRows(top, height, -top);
-    // Clear everything after the viewport.
-    _FillRect(textBuffer, { 0, height, bufferSize.width, bufferSize.height }, whitespace, {});
-    // Also reset the line rendition for all of the cleared rows.
-    textBuffer.ResetLineRenditionRange(height, bufferSize.height);
+    textBuffer.ClearScrollback(top, height);
     // Move the viewport
     _api.SetViewportPosition({ viewport.left, 0 });
     // Move the cursor to the same relative location.
@@ -4195,7 +4239,8 @@ void AdaptDispatch::_ReportSGRSetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r0"sv);
 
-    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& attr = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto ulStyle = attr.GetUnderlineStyle();
     // For each boolean attribute that is set, we add the appropriate
     // parameter value to the response string.
     const auto addAttribute = [&](const auto& parameter, const auto enabled) {
@@ -4207,12 +4252,15 @@ void AdaptDispatch::_ReportSGRSetting() const
     addAttribute(L";1"sv, attr.IsIntense());
     addAttribute(L";2"sv, attr.IsFaint());
     addAttribute(L";3"sv, attr.IsItalic());
-    addAttribute(L";4"sv, attr.IsUnderlined());
+    addAttribute(L";4"sv, ulStyle == UnderlineStyle::SinglyUnderlined);
+    addAttribute(L";4:3"sv, ulStyle == UnderlineStyle::CurlyUnderlined);
+    addAttribute(L";4:4"sv, ulStyle == UnderlineStyle::DottedUnderlined);
+    addAttribute(L";4:5"sv, ulStyle == UnderlineStyle::DashedUnderlined);
     addAttribute(L";5"sv, attr.IsBlinking());
     addAttribute(L";7"sv, attr.IsReverseVideo());
     addAttribute(L";8"sv, attr.IsInvisible());
     addAttribute(L";9"sv, attr.IsCrossedOut());
-    addAttribute(L";21"sv, attr.IsDoublyUnderlined());
+    addAttribute(L";21"sv, ulStyle == UnderlineStyle::DoublyUnderlined);
     addAttribute(L";53"sv, attr.IsOverlined());
 
     // We also need to add the appropriate color encoding parameters for
@@ -4239,6 +4287,7 @@ void AdaptDispatch::_ReportSGRSetting() const
     };
     addColor(30, attr.GetForeground());
     addColor(40, attr.GetBackground());
+    addColor(50, attr.GetUnderlineColor());
 
     // The 'm' indicates this is an SGR response, and ST ends the sequence.
     response.append(L"m\033\\"sv);
@@ -4307,7 +4356,7 @@ void AdaptDispatch::_ReportDECSCASetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& attr = _api.GetTextBuffer().GetCurrentAttributes();
     response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
 
     // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
@@ -4329,7 +4378,6 @@ void AdaptDispatch::_ReportDECSACESetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
     response.append(_modes.test(Mode::RectangularChangeExtent) ? L"2"sv : L"1"sv);
 
     // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
@@ -4429,7 +4477,7 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
-    const auto attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     // First pull the cursor position relative to the entire buffer out of the console.
     til::point cursorPosition{ cursor.GetPosition() };
@@ -4452,7 +4500,16 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto pageNumber = 1;
 
     // Only some of the rendition attributes are reported.
-    auto renditionAttributes = L'@';
+    //   Bit    Attribute
+    //   1      bold
+    //   2      underlined
+    //   3      blink
+    //   4      reverse video
+    //   5      invisible
+    //   6      extension indicator
+    //   7      Always 1 (on)
+    //   8      Always 0 (off)
+    auto renditionAttributes = L'@'; // (0100 0000)
     renditionAttributes += (attributes.IsIntense() ? 1 : 0);
     renditionAttributes += (attributes.IsUnderlined() ? 2 : 0);
     renditionAttributes += (attributes.IsBlinking() ? 4 : 0);
@@ -4573,7 +4630,7 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
                 {
                     auto attr = textBuffer.GetCurrentAttributes();
                     attr.SetIntense(state.value & 1);
-                    attr.SetUnderlined(state.value & 2);
+                    attr.SetUnderlineStyle(state.value & 2 ? UnderlineStyle::SinglyUnderlined : UnderlineStyle::NoUnderline);
                     attr.SetBlinking(state.value & 4);
                     attr.SetReverseVideo(state.value & 8);
                     attr.SetInvisible(state.value & 16);

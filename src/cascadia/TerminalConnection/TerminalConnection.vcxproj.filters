@@ -26,6 +26,7 @@
     <ClInclude Include="AzureConnection.h" />
     <ClInclude Include="AzureClientID.h" />
     <ClInclude Include="CTerminalHandoff.h" />
+    <ClInclude Include="BaseTerminalConnection.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
@@ -35,10 +36,8 @@
     <Midl Include="ConnectionInformation.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />

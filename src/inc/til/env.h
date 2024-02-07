@@ -76,65 +76,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         namespace wil_env
         {
-            /** Looks up the computer name and fails if it is not found. */
-            template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            HRESULT GetComputerNameW(string_type& result) WI_NOEXCEPT
-            {
-                return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
-                    // If the function succeeds, the return value is the number of characters stored in the buffer
-                    // pointed to by lpBuffer, not including the terminating null character.
-                    //
-                    // If lpBuffer is not large enough to hold the data, the return value is the buffer size, in
-                    // characters, required to hold the string and its terminating null character and the contents of
-                    // lpBuffer are undefined.
-                    //
-                    // If the function fails, the return value is zero. If the specified environment variable was not
-                    // found in the environment block, GetLastError returns ERROR_ENVVAR_NOT_FOUND.
-
-                    ::SetLastError(ERROR_SUCCESS);
-
-                    DWORD length = static_cast<DWORD>(valueLength);
-
-                    const auto result = ::GetComputerNameW(value, &length);
-                    *valueLengthNeededWithNul = length;
-                    RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(result);
-                    if (*valueLengthNeededWithNul < valueLength)
-                    {
-                        (*valueLengthNeededWithNul)++; // It fit, account for the null.
-                    }
-                    return S_OK;
-                });
-            }
-
-            /** Looks up the computer name and returns null if it is not found. */
-            template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            HRESULT TryGetComputerNameW(string_type& result) WI_NOEXCEPT
-            {
-                const auto hr = wil_env::GetComputerNameW<string_type, initialBufferLength>(result);
-                RETURN_HR_IF(hr, FAILED(hr) && (hr != HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND)));
-                return S_OK;
-            }
-
-#ifdef WIL_ENABLE_EXCEPTIONS
-            /** Looks up the computer name and fails if it is not found. */
-            template<typename string_type = wil::unique_cotaskmem_string, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            string_type GetComputerNameW()
-            {
-                string_type result;
-                THROW_IF_FAILED((wil_env::GetComputerNameW<string_type, initialBufferLength>(result)));
-                return result;
-            }
-
-            /** Looks up the computer name and returns null if it is not found. */
-            template<typename string_type = wil::unique_cotaskmem_string, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            string_type TryGetComputerNameW()
-            {
-                string_type result;
-                THROW_IF_FAILED((wil_env::TryGetComputerNameW<string_type, initialBufferLength>(result)));
-                return result;
-            }
-#endif
-
             /** Looks up a registry value from 'key' and fails if it is not found. */
             template<typename string_type, size_t initialBufferLength = 256>
             HRESULT RegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
@@ -231,41 +172,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        void get_computer_name()
-        {
-            if (auto value = til::details::wil_env::TryGetComputerNameW<std::wstring>(); !value.empty())
-            {
-                save_to_map(std::wstring{ til::details::vars::computer_name }, std::move(value));
-            }
-        }
-
-        void get_user_name_and_domain()
-        try
-        {
-            const auto token = wil::open_current_access_token();
-            const auto user = wil::get_token_information<TOKEN_USER>(token.get());
-
-            DWORD accountNameSize = 0, userDomainSize = 0;
-            SID_NAME_USE sidNameUse;
-            SetLastError(ERROR_SUCCESS);
-            if (LookupAccountSidW(nullptr, user.get()->User.Sid, nullptr, &accountNameSize, nullptr, &userDomainSize, &sidNameUse) || GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-            {
-                std::wstring accountName, userDomain;
-                accountName.resize(accountNameSize);
-                userDomain.resize(userDomainSize);
-
-                SetLastError(ERROR_SUCCESS);
-                if (LookupAccountSidW(nullptr, user.get()->User.Sid, accountName.data(), &accountNameSize, userDomain.data(), &userDomainSize, &sidNameUse))
-                {
-                    strip_trailing_null(accountName);
-                    strip_trailing_null(userDomain);
-                    save_to_map(std::wstring{ til::details::vars::user_name }, std::move(accountName));
-                    save_to_map(std::wstring{ til::details::vars::user_domain }, std::move(userDomain));
-                }
-            }
-        }
-        CATCH_LOG()
-
         void get_program_files()
         {
             wil::unique_hkey key;
@@ -325,22 +231,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 std::wstring data;
                                 if (pass == 0 && (type == REG_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
-                                    data = {
-                                        reinterpret_cast<wchar_t*>(valueData.data()), valueData.size() / sizeof(wchar_t)
-                                    };
+                                    const auto p = reinterpret_cast<const wchar_t*>(valueData.data());
+                                    const auto l = wcsnlen(p, valueData.size() / sizeof(wchar_t));
+                                    data.assign(p, l);
                                 }
                                 else if (pass == 1 && (type == REG_EXPAND_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
-                                    data = {
-                                        reinterpret_cast<wchar_t*>(valueData.data()), valueData.size() / sizeof(wchar_t)
-                                    };
+                                    const auto p = reinterpret_cast<const wchar_t*>(valueData.data());
+                                    const auto l = wcsnlen(p, valueData.size() / sizeof(wchar_t));
+                                    data.assign(p, l);
                                     data = expand_environment_strings(data.data());
                                 }
-
-                                // Because Registry data may or may not be null terminated... check if we've managed
-                                // to store an extra null in the wstring by telling it to create itself from pointer and size.
-                                // If we did, pull it off.
-                                strip_trailing_null(data);
 
                                 if (!data.empty())
                                 {
@@ -468,14 +369,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                    til::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
         }
 
-        static void strip_trailing_null(std::wstring& str) noexcept
-        {
-            if (!str.empty() && str.back() == L'\0')
-            {
-                str.pop_back();
-            }
-        }
-
         void parse(const wchar_t* lastCh)
         {
             for (; *lastCh != '\0'; ++lastCh)
@@ -537,13 +430,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void regenerate()
         {
             // Generally replicates the behavior of shell32!RegenerateUserEnvironment
+            // The difference is that we don't
+            // * handle autoexec.bat (intentionally unsupported).
+            // * call LookupAccountSidW to get the USERNAME/USERDOMAIN variables.
+            //   Windows sets these as values of the "Volatile Environment" key at each login.
+            //   We don't expect our process to impersonate another user so we can get them from the PEB.
+            // * call GetComputerNameW to get the COMPUTERNAME variable, for the same reason.
             get(til::details::vars::system_root);
             get(til::details::vars::system_drive);
             get(til::details::vars::all_users_profile);
             get(til::details::vars::public_var);
             get(til::details::vars::program_data);
-            get_computer_name();
-            get_user_name_and_domain();
+            get(til::details::vars::computer_name);
+            get(til::details::vars::user_name);
+            get(til::details::vars::user_domain);
             get(til::details::vars::user_dns_domain);
             get(til::details::vars::home_drive);
             get(til::details::vars::home_share);
@@ -559,106 +459,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(til::details::vars::reg::user_volatile_session_env_var_root_pattern, NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
         }
 
-        std::wstring to_string()
+        std::wstring to_string() const
         {
             std::wstring result;
-            for (const auto& [name, value] : _envMap)
+            for (const auto& [k, v] : _envMap)
             {
-                result += name;
-                result += L"=";
-                result += value;
-                result.append(L"\0", 1); // Override string's natural propensity to stop at \0
+                result.append(k);
+                result.push_back(L'=');
+                result.append(v);
+                result.push_back(L'\0');
             }
-            result.append(L"\0", 1);
+            result.push_back(L'\0');
             return result;
         }
-
-        void clear() noexcept
-        {
-            // Can't zero the keys, but at least we can zero the values.
-            for (auto& [name, value] : _envMap)
-            {
-                ::SecureZeroMemory(value.data(), value.size() * sizeof(decltype(value.begin())::value_type));
-            }
-
-            _envMap.clear();
-        }
-
-        // Function Description:
-        // - Creates a new environment block using the provided vector as appropriate
-        //   (resizing if needed) based on the current environment variable map
-        //   matching the format of GetEnvironmentStringsW.
-        // Arguments:
-        // - newEnvVars: The vector that will be used to create the new environment block.
-        // Return Value:
-        // - S_OK if we succeeded, or an appropriate HRESULT for failing
-        HRESULT to_environment_strings_w(std::vector<wchar_t>& newEnvVars)
-        try
-        {
-            // Clear environment block before use.
-            constexpr auto cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
-
-            if (!newEnvVars.empty())
-            {
-                ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
-            }
-
-            // Resize environment block to fit map.
-            size_t cchEnv{ 2 }; // For the block's double NULL-terminator.
-            for (const auto& [name, value] : _envMap)
-            {
-                // Final form of "name=value\0".
-                cchEnv += name.size() + 1 + value.size() + 1;
-            }
-            newEnvVars.resize(cchEnv);
-
-            // Ensure new block is wiped if we exit due to failure.
-            auto zeroNewEnv = wil::scope_exit([&]() noexcept {
-                ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
-            });
-
-            // Transform each map entry and copy it into the new environment block.
-            auto pEnvVars{ newEnvVars.data() };
-            auto cbRemaining{ cchEnv * cbChar };
-            for (const auto& [name, value] : _envMap)
-            {
-                // Final form of "name=value\0" for every entry.
-                {
-                    const auto cchSrc{ name.size() };
-                    const auto cbSrc{ cchSrc * cbChar };
-                    RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, name.c_str(), cbSrc) != 0);
-                    pEnvVars += cchSrc;
-                    cbRemaining -= cbSrc;
-                }
-
-                RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"=", cbChar) != 0);
-                ++pEnvVars;
-                cbRemaining -= cbChar;
-
-                {
-                    const auto cchSrc{ value.size() };
-                    const auto cbSrc{ cchSrc * cbChar };
-                    RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, value.c_str(), cbSrc) != 0);
-                    pEnvVars += cchSrc;
-                    cbRemaining -= cbSrc;
-                }
-
-                RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0", cbChar) != 0);
-                ++pEnvVars;
-                cbRemaining -= cbChar;
-            }
-
-            // Environment block only has to be NULL-terminated, but double NULL-terminate anyway.
-            RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0\0", cbChar * 2) != 0);
-            cbRemaining -= cbChar * 2;
-
-            RETURN_HR_IF(E_UNEXPECTED, cbRemaining != 0);
-
-            zeroNewEnv.release(); // success; don't wipe new environment block on exit
-
-            return S_OK;
-        }
-        CATCH_RETURN();
 
         auto& as_map() noexcept
         {

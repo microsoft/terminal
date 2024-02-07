@@ -1,3 +1,4 @@
+aci
 admins
 allcolors
 Apc
@@ -8,11 +9,13 @@ breadcrumbs
 bsd
 calt
 ccmp
+ccon
 changelog
 clickable
 clig
 CMMI
 copyable
+Counterintuitively
 CtrlDToClose
 cybersecurity
 dalet
@@ -52,6 +55,7 @@ hyperlinks
 iconify
 img
 inlined
+issuetitle
 It'd
 kje
 libfuzzer
@@ -90,10 +94,13 @@ reserialize
 reserializes
 rlig
 runtimes
+servicebus
 shcha
+similaritytolerance
 slnt
 Sos
 ssh
+sustainability
 stakeholders
 sxn
 timeline
@@ -115,7 +122,9 @@ vsdevcmd
 walkthrough
 walkthroughs
 We'd
+westus
 wildcards
+workarounds
 XBox
 YBox
 yeru

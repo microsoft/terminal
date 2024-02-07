@@ -105,6 +105,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
         bool BackwardsTab(const VTInt numTabs) override; // CBT
         bool TabClear(const DispatchTypes::TabClearType clearType) override; // TBC
+        bool TabSet(const VTParameter setType) noexcept override; // DECST8C
         bool DesignateCodingSystem(const VTID codingSystem) override; // DOCS
         bool Designate94Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
         bool Designate96Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
@@ -208,6 +209,7 @@ namespace Microsoft::Console::VirtualTerminal
             CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
             std::optional<TextColor> foreground;
             std::optional<TextColor> background;
+            std::optional<TextColor> underlineColor;
         };
 
         void _WriteToBuffer(const std::wstring_view string);
@@ -239,7 +241,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
 
-        void _OperatingStatus() const;
+        void _DeviceStatusReport(const wchar_t* parameters) const;
         void _CursorPositionReport(const bool extendedReport);
         void _MacroSpaceReport() const;
         void _MacroChecksumReport(const VTParameter id) const;
@@ -251,7 +253,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ClearSingleTabStop();
         void _ClearAllTabStops() noexcept;
-        void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const VTInt width);
 
         StringHandler _RestoreColorTable();
@@ -271,7 +272,7 @@ namespace Microsoft::Console::VirtualTerminal
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
 
-        std::vector<bool> _tabStopColumns;
+        std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
         ITerminalApi& _api;
@@ -297,6 +298,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         SgrStack _sgrStack;
 
+        void _SetUnderlineStyleHelper(const VTParameter option, TextAttribute& attr) noexcept;
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;

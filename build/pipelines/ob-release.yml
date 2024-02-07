@@ -44,14 +44,6 @@ parameters:
       - x64
       - x86
       - arm64
-  - name: codeSign
-    displayName: "Sign all build outputs"
-    type: boolean
-    default: true
-  - name: generateSbom
-    displayName: "Generate a Bill of Materials"
-    type: boolean
-    default: true
   - name: terminalInternalPackageVersion
     displayName: "Terminal Internal Package Version"
     type: string
@@ -68,9 +60,16 @@ parameters:
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 
+variables:
+  - template: templates-v2/variables-nuget-package-version.yml
+    parameters:
+      branding: ${{ parameters.branding }}
+  - template: templates-v2/variables-onebranch-config.yml
+
 extends:
-  template: templates-v2/pipeline-full-release-build.yml
+  template: templates-v2/pipeline-onebranch-full-release-build.yml
   parameters:
+    official: true
     branding: ${{ parameters.branding }}
     buildTerminal: ${{ parameters.buildTerminal }}
     buildConPTY: ${{ parameters.buildConPTY }}
@@ -78,8 +77,7 @@ extends:
     pgoBuildMode: ${{ parameters.pgoBuildMode }}
     buildConfigurations: ${{ parameters.buildConfigurations }}
     buildPlatforms: ${{ parameters.buildPlatforms }}
-    codeSign: ${{ parameters.codeSign }}
-    generateSbom: ${{ parameters.generateSbom }}
+    codeSign: true
     terminalInternalPackageVersion: ${{ parameters.terminalInternalPackageVersion }}
     publishSymbolsToPublic: ${{ parameters.publishSymbolsToPublic }}
     publishVpackToWindows: ${{ parameters.publishVpackToWindows }}

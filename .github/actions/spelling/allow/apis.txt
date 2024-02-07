@@ -28,6 +28,7 @@ CYICON
 Dacl
 dataobject
 dcomp
+debugbreak
 delayimp
 DERR
 dlldata
@@ -209,6 +210,7 @@ tlg
 TME
 tmp
 tmpdir
+tokeninfo
 tolower
 toupper
 TRACKMOUSEEVENT
@@ -219,16 +221,19 @@ UFIELD
 ULARGE
 UOI
 UPDATEINIFILE
+urlmon
 userenv
 USEROBJECTFLAGS
 Vcpp
 Viewbox
 virtualalloc
 vsnwprintf
+wcsnlen
 wcsstr
 wcstoui
 WDJ
 winhttp
+wininet
 winmain
 winsta
 winstamin

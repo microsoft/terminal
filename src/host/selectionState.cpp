@@ -198,6 +198,38 @@ til::point Selection::GetSelectionAnchor() const noexcept
 }
 
 // Routine Description:
+// - Gets the current selection begin and end (inclusive) anchor positions. The
+//   first anchor is at the top left, and the second is at the bottom right
+//   corner of the selection area.
+// Return Value:
+// - The current selection anchors
+std::pair<til::point, til::point> Selection::GetSelectionAnchors() const noexcept
+{
+    if (!_fSelectionVisible)
+    {
+        // return anchors that represent an empty selection
+        return { { 0, 0 }, { -1, -1 } };
+    }
+
+    auto startSelectionAnchor = _coordSelectionAnchor;
+
+    // _coordSelectionAnchor is at one of the corners of _srSelectionRects
+    // endSelectionAnchor is at the exact opposite corner
+    til::point endSelectionAnchor;
+    endSelectionAnchor.x = (_coordSelectionAnchor.x == _srSelectionRect.left) ? _srSelectionRect.right : _srSelectionRect.left;
+    endSelectionAnchor.y = (_coordSelectionAnchor.y == _srSelectionRect.top) ? _srSelectionRect.bottom : _srSelectionRect.top;
+
+    if (startSelectionAnchor > endSelectionAnchor)
+    {
+        return { endSelectionAnchor, startSelectionAnchor };
+    }
+    else
+    {
+        return { startSelectionAnchor, endSelectionAnchor };
+    }
+}
+
+// Routine Description:
 // - Gets the current selection rectangle
 // Arguments:
 // - none

@@ -40,6 +40,46 @@ public:
 
 private:
     static constexpr uint8_t CommandNumberMaxInputLength = 5;
+    static constexpr size_t npos = static_cast<size_t>(-1);
+
+    enum class State : uint8_t
+    {
+        Accumulating = 0,
+        DoneWithWakeupMask,
+        DoneWithCarriageReturn,
+    };
+
+    // A helper struct to ensure we keep track of _dirtyBeg while the
+    // underlying _buffer is being modified by COOKED_READ_DATA.
+    struct BufferState
+    {
+        const std::wstring& Get() const noexcept;
+        std::wstring Extract() noexcept
+        {
+            return std::move(_buffer);
+        }
+        void Replace(size_t offset, size_t remove, const wchar_t* input, size_t count);
+        void Replace(const std::wstring_view& str);
+
+        size_t GetCursorPosition() const noexcept;
+        void SetCursorPosition(size_t pos) noexcept;
+
+        bool IsClean() const noexcept;
+        void MarkEverythingDirty() noexcept;
+        void MarkAsClean() noexcept;
+
+        std::wstring_view GetUnmodifiedTextBeforeCursor() const noexcept;
+        std::wstring_view GetUnmodifiedTextAfterCursor() const noexcept;
+        std::wstring_view GetModifiedTextBeforeCursor() const noexcept;
+        std::wstring_view GetModifiedTextAfterCursor() const noexcept;
+
+    private:
+        std::wstring_view _slice(size_t from, size_t to) const noexcept;
+
+        std::wstring _buffer;
+        size_t _dirtyBeg = npos;
+        size_t _cursor = 0;
+    };
 
     enum class PopupKind
     {
@@ -106,26 +146,30 @@ private:
     static size_t _wordPrev(const std::wstring_view& chars, size_t position);
     static size_t _wordNext(const std::wstring_view& chars, size_t position);
 
-    const std::wstring_view& _newlineSuffix() const noexcept;
-    bool _readCharInputLoop();
-    bool _handleChar(wchar_t wch, DWORD modifiers);
+    void _readCharInputLoop();
+    void _handleChar(wchar_t wch, DWORD modifiers);
     void _handleVkey(uint16_t vkey, DWORD modifiers);
     void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
-    void _markAsDirty();
+    void _transitionState(State state) noexcept;
     void _flushBuffer();
-    void _erase(til::CoordType distance) const;
-    til::CoordType _writeChars(const std::wstring_view& text) const;
-    til::point _offsetPosition(til::point pos, til::CoordType distance) const;
-    void _unwindCursorPosition(til::CoordType distance) const;
-    void _replaceBuffer(const std::wstring_view& str);
+    void _erase(ptrdiff_t distance) const;
+    ptrdiff_t _measureChars(const std::wstring_view& text, ptrdiff_t cursorOffset) const;
+    ptrdiff_t _writeChars(const std::wstring_view& text) const;
+    ptrdiff_t _writeCharsImpl(const std::wstring_view& text, bool measureOnly, ptrdiff_t cursorOffset) const;
+    ptrdiff_t _measureCharsUnprocessed(const std::wstring_view& text, ptrdiff_t cursorOffset) const;
+    ptrdiff_t _writeCharsUnprocessed(const std::wstring_view& text) const;
+    til::point _offsetPosition(til::point pos, ptrdiff_t distance) const;
+    void _offsetCursorPosition(ptrdiff_t distance) const;
+    void _offsetCursorPositionAlways(ptrdiff_t distance) const;
+    til::CoordType _getColumnAtRelativeCursorPosition(ptrdiff_t distance) const;
 
     void _popupPush(PopupKind kind);
     void _popupsDone();
     void _popupHandleCopyToCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleCopyFromCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleCommandNumberInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
-    bool _popupHandleCommandListInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
-    bool _popupHandleInput(wchar_t wch, uint16_t vkey, DWORD keyState);
+    void _popupHandleCommandListInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
+    void _popupHandleInput(wchar_t wch, uint16_t vkey, DWORD keyState);
     void _popupDrawPrompt(const Popup& popup, UINT id) const;
     void _popupDrawCommandList(Popup& popup) const;
 
@@ -138,12 +182,15 @@ private:
     ULONG _controlKeyState = 0;
     std::unique_ptr<ConsoleHandleData> _tempHandle;
 
-    std::wstring _buffer;
-    size_t _bufferCursor = 0;
-    til::CoordType _distanceCursor;
-    til::CoordType _distanceEnd;
-    bool _bufferDirty = false;
+    BufferState _buffer;
+    // _distanceCursor is the distance between the start of the prompt and the
+    // current cursor location in columns (including wide glyph padding columns).
+    ptrdiff_t _distanceCursor = 0;
+    // _distanceEnd is the distance between the start of the prompt and its last
+    // glyph at the end in columns (including wide glyph padding columns).
+    ptrdiff_t _distanceEnd = 0;
     bool _insertMode = false;
+    State _state = State::Accumulating;
 
     std::vector<Popup> _popups;
 };

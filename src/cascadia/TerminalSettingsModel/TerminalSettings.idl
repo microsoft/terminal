@@ -45,5 +45,6 @@ namespace Microsoft.Terminal.Settings.Model
         String StartingDirectory { set; };
 
         Boolean Elevate;
+        Boolean ReloadEnvironmentVariables;
     };
 }

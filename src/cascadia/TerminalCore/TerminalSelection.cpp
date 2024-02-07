@@ -64,6 +64,40 @@ std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 }
 
 // Method Description:
+// - Helper to determine the selected region of the buffer. Used for rendering.
+// Return Value:
+// - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
+std::vector<til::inclusive_rect> Terminal::_GetSearchSelectionRects(Microsoft::Console::Types::Viewport viewport) const noexcept
+{
+    std::vector<til::inclusive_rect> result;
+    try
+    {
+        auto lowerIt = std::lower_bound(_searchSelections.begin(), _searchSelections.end(), viewport.Top(), [](const til::inclusive_rect& rect, til::CoordType value) {
+            return rect.top < value;
+        });
+
+        auto upperIt = std::upper_bound(_searchSelections.begin(), _searchSelections.end(), viewport.BottomExclusive(), [](til::CoordType value, const til::inclusive_rect& rect) {
+            return value < rect.top;
+        });
+
+        for (auto selection = lowerIt; selection != upperIt; ++selection)
+        {
+            const auto start = til::point{ selection->left, selection->top };
+            const auto end = til::point{ selection->right, selection->top };
+            const auto adj = _activeBuffer().GetTextRects(start, end, _blockSelection, false);
+            for (auto a : adj)
+            {
+                result.emplace_back(a);
+            }
+        }
+
+        return result;
+    }
+    CATCH_LOG();
+    return result;
+}
+
+// Method Description:
 // - Identical to GetTextRects if it's a block selection, else returns a single span for the whole selection.
 // Return Value:
 // - A vector of one or more spans representing the selection. They are absolute coordinates relative to the buffer origin.
@@ -92,6 +126,7 @@ std::vector<til::point_span> Terminal::_GetSelectionSpans() const noexcept
 // - None
 const til::point Terminal::GetSelectionAnchor() const noexcept
 {
+    _assertLocked();
     return _selection->start;
 }
 
@@ -103,6 +138,7 @@ const til::point Terminal::GetSelectionAnchor() const noexcept
 // - None
 const til::point Terminal::GetSelectionEnd() const noexcept
 {
+    _assertLocked();
     return _selection->end;
 }
 
@@ -155,11 +191,13 @@ const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noex
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
+    _assertLocked();
     return _selection.has_value();
 }
 
 const bool Terminal::IsBlockSelection() const noexcept
 {
+    _assertLocked();
     return _blockSelection;
 }
 
@@ -188,6 +226,8 @@ void Terminal::MultiClickSelection(const til::point viewportPos, SelectionExpans
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::SetSelectionAnchor(const til::point viewportPos)
 {
+    _assertLocked();
+
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
@@ -205,7 +245,7 @@ void Terminal::SetSelectionAnchor(const til::point viewportPos)
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
 void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<SelectionExpansion> newExpansionMode)
 {
-    if (!_selection.has_value())
+    if (!IsSelectionActive())
     {
         // capture a log for spurious endpoint sets without an active selection
         LOG_HR(E_ILLEGAL_STATE_CHANGE);
@@ -817,6 +857,8 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos) noex
 #pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
+    _assertLocked();
+    _searchSelections.clear();
     _selection = std::nullopt;
     _selectionMode = SelectionInteractionMode::None;
     _selectionIsTargetingUrl = false;
@@ -825,29 +867,53 @@ void Terminal::ClearSelection()
 }
 
 // Method Description:
-// - get wstring text from highlighted portion of text buffer
+// - Get text from highlighted portion of text buffer
+// - Optionally, get the highlighted text in HTML and RTF formats
 // Arguments:
-// - singleLine: collapse all of the text to one line
+// - singleLine: collapse all of the text to one line. (Turns off trailing whitespace trimming)
+// - html: also get text in HTML format
+// - rtf: also get text in RTF format
 // Return Value:
-// - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine)
+// - Plain and formatted selected text from buffer. Empty string represents no data for that format.
+// - If extended to multiple lines, each line is separated by \r\n
+Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html, const bool rtf) const
 {
-    auto lock = LockForReading();
+    TextCopyData data;
 
-    const auto selectionRects = _GetSelectionRects();
+    if (!IsSelectionActive())
+    {
+        return data;
+    }
 
     const auto GetAttributeColors = [&](const auto& attr) {
-        return _renderSettings.GetAttributeColors(attr);
+        const auto [fg, bg] = _renderSettings.GetAttributeColors(attr);
+        const auto ul = _renderSettings.GetAttributeUnderlineColor(attr);
+        return std::tuple{ fg, bg, ul };
     };
 
-    // GH#6740: Block selection should preserve the visual structure:
-    // - CRLFs need to be added - so the lines structure is preserved
-    // - We should apply formatting above to wrapped rows as well (newline should be added).
-    // GH#9706: Trimming of trailing white-spaces in block selection is configurable.
-    const auto includeCRLF = !singleLine || _blockSelection;
-    const auto trimTrailingWhitespace = !singleLine && (!_blockSelection || _trimBlockSelection);
-    const auto formatWrappedRows = _blockSelection;
-    return _activeBuffer().GetText(includeCRLF, trimTrailingWhitespace, selectionRects, GetAttributeColors, formatWrappedRows);
+    const auto& textBuffer = _activeBuffer();
+
+    const auto req = TextBuffer::CopyRequest::FromConfig(textBuffer, _selection->start, _selection->end, singleLine, _blockSelection, _trimBlockSelection);
+    data.plainText = textBuffer.GetPlainText(req);
+
+    if (html || rtf)
+    {
+        const auto bgColor = _renderSettings.GetAttributeColors({}).second;
+        const auto isIntenseBold = _renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
+        const auto fontSizePt = _fontInfo.GetUnscaledSize().height; // already in points
+        const auto& fontName = _fontInfo.GetFaceName();
+
+        if (html)
+        {
+            data.html = textBuffer.GenHTML(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
+        }
+        if (rtf)
+        {
+            data.rtf = textBuffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
+        }
+    }
+
+    return data;
 }
 
 // Method Description:

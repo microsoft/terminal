@@ -67,7 +67,16 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
+    std::pair<til::CoordType, til::CoordType> GetBufferSize()
+    {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& screenInfo = gci.GetActiveOutputBuffer();
+        const auto& buffer = screenInfo.GetTextBuffer();
+        const auto bufferBounds = buffer.GetSize();
+        return { bufferBounds.Width(), bufferBounds.Height() };
+    }
+
+    std::wstring SetupRetrieveFromBuffer(bool fLineSelection)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -75,82 +84,86 @@ class ClipboardTests
 
         // set up and try to retrieve the first 4 rows from the buffer
         const auto& screenInfo = gci.GetActiveOutputBuffer();
-
-        selection.clear();
-        selection.emplace_back(til::inclusive_rect{ 0, 0, 8, 0 });
-        selection.emplace_back(til::inclusive_rect{ 0, 1, 14, 1 });
-        selection.emplace_back(til::inclusive_rect{ 0, 2, 14, 2 });
-        selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
-
         const auto& buffer = screenInfo.GetTextBuffer();
-        return buffer.GetText(true, fLineSelection, selection).text;
+
+        constexpr til::point_span selection = { { 0, 0 }, { 14, 3 } };
+        const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selection.start, selection.end, false, !fLineSelection, false);
+        return buffer.GetPlainText(req);
     }
 
-#pragma prefast(push)
-#pragma prefast(disable : 26006, "Specifically trying to check unterminated strings in this test.")
-    TEST_METHOD(TestRetrieveFromBuffer)
+    TEST_METHOD(TestRetrieveBlockSelectionFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBuffers(false, selection);
+        const auto text = SetupRetrieveFromBuffer(false);
 
-        // verify trailing bytes were trimmed
-        // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
-        // the width is right - left
-        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].right - selection[0].left + 1);
+        std::wstring expectedText;
 
-        // since we're not in line selection, the line should be \r\n terminated
-        auto tempPtr = text[0].data();
-        tempPtr += text[0].size();
-        tempPtr -= 2;
-        VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
+        // Block selection:
+        // - Add line breaks on wrapped and non-wrapped rows.
+        // - No trimming of trailing whitespace because trimming in Block
+        //   selection is disabled.
 
-        // since we're not in line selection, spaces should be trimmed from the end
-        tempPtr = text[0].data();
-        tempPtr += selection[0].right - selection[0].left - 2;
-        tempPtr++;
-        VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
+        // All rows:
+        // First 15 columns selected -> 7 characters (9 columns) + 6 spaces
+        // Add CR/LF (except the last row)
 
-        // final line of selection should not contain CR/LF
-        tempPtr = text[3].data();
-        tempPtr += text[3].size();
-        tempPtr -= 2;
-        VERIFY_ARE_NOT_EQUAL(String(tempPtr), String(L"\r\n"));
+        // row 0
+        expectedText += L"AB\u304bC\u304dDE      ";
+        expectedText += L"\r\n";
+
+        // row 1
+        expectedText += L"AB\u304bC\u304dDE      ";
+        expectedText += L"\r\n";
+
+        // row 2
+        expectedText += L"AB\u304bC\u304dDE      ";
+        expectedText += L"\r\n";
+
+        // row 3
+        // last row -> no CR/LF
+        expectedText += L"AB\u304bC\u304dDE      ";
+
+        VERIFY_ARE_EQUAL(expectedText, text);
     }
-#pragma prefast(pop)
 
     TEST_METHOD(TestRetrieveLineSelectionFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
+        const auto text = SetupRetrieveFromBuffer(true);
 
-        std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBuffers(true, selection);
+        std::wstring expectedText;
 
-        // row 2, no wrap
-        // no wrap row before the end should have CR/LF
-        auto tempPtr = text[2].data();
-        tempPtr += text[2].size();
-        tempPtr -= 2;
-        VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
+        // Line Selection:
+        // - Add line breaks on non-wrapped rows.
+        // - Trim trailing whitespace on non-wrapped rows.
 
-        // no wrap row should trim spaces at the end
-        tempPtr = text[2].data();
-        VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
+        // row 0
+        // no wrap -> trim trailing whitespace, add CR/LF
+        // All columns selected -> 7 characters, trimmed trailing spaces
+        expectedText += L"AB\u304bC\u304dDE";
+        expectedText += L"\r\n";
 
-        // row 1, wrap
-        // wrap row before the end should *not* have CR/LF
-        tempPtr = text[1].data();
-        tempPtr += text[1].size();
-        tempPtr -= 2;
-        VERIFY_ARE_NOT_EQUAL(String(tempPtr), String(L"\r\n"));
+        // row 1
+        // wrap -> no trimming of trailing whitespace, no CR/LF
+        // All columns selected -> 7 characters (9 columns) + (bufferWidth - 9) spaces
+        const auto [bufferWidth, bufferHeight] = GetBufferSize();
+        expectedText += L"AB\u304bC\u304dDE" + std::wstring(bufferWidth - 9, L' ');
 
-        // wrap row should have spaces at the end
-        tempPtr = text[1].data();
-        auto ptr = wcsrchr(tempPtr, L' ');
-        VERIFY_IS_NOT_NULL(ptr);
+        // row 2
+        // no wrap -> trim trailing whitespace, add CR/LF
+        // All columns selected -> 7 characters (9 columns), trimmed trailing spaces
+        expectedText += L"AB\u304bC\u304dDE";
+        expectedText += L"\r\n";
+
+        // row 3
+        // wrap -> no trimming of trailing whitespace, no CR/LF
+        // First 15 columns selected -> 7 characters (9 columns) + 6 spaces
+        expectedText += L"AB\u304bC\u304dDE      ";
+
+        VERIFY_ARE_EQUAL(expectedText, text);
     }
 
     TEST_METHOD(CanConvertText)

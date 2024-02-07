@@ -43,13 +43,13 @@ try
         return DefWindowProc(hwnd, WM_NCCREATE, wParam, lParam);
     }
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
-    auto terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    const auto publicTerminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
-    if (terminal)
+    if (publicTerminal)
     {
         if (_IsMouseMessage(uMsg))
         {
-            if (terminal->_CanSendVTMouseInput() && terminal->_SendMouseEvent(uMsg, wParam, lParam))
+            if (publicTerminal->_CanSendVTMouseInput() && publicTerminal->_SendMouseEvent(uMsg, wParam, lParam))
             {
                 // GH#6401: Capturing the mouse ensures that we get drag/release events
                 // even if the user moves outside the window.
@@ -81,14 +81,14 @@ try
         case WM_GETOBJECT:
             if (lParam == UiaRootObjectId)
             {
-                return UiaReturnRawElementProvider(hwnd, wParam, lParam, terminal->_GetUiaProvider());
+                return UiaReturnRawElementProvider(hwnd, wParam, lParam, publicTerminal->_GetUiaProvider());
             }
             break;
         case WM_LBUTTONDOWN:
-            LOG_IF_FAILED(terminal->_StartSelection(lParam));
+            LOG_IF_FAILED(publicTerminal->_StartSelection(lParam));
             return 0;
         case WM_LBUTTONUP:
-            terminal->_singleClickTouchdownPos = std::nullopt;
+            publicTerminal->_singleClickTouchdownPos = std::nullopt;
             [[fallthrough]];
         case WM_MBUTTONUP:
         case WM_RBUTTONUP:
@@ -97,30 +97,34 @@ try
         case WM_MOUSEMOVE:
             if (WI_IsFlagSet(wParam, MK_LBUTTON))
             {
-                LOG_IF_FAILED(terminal->_MoveSelection(lParam));
+                LOG_IF_FAILED(publicTerminal->_MoveSelection(lParam));
                 return 0;
             }
             break;
         case WM_RBUTTONDOWN:
-            if (const auto& termCore{ terminal->_terminal }; termCore && termCore->IsSelectionActive())
+            if (publicTerminal->_terminal && publicTerminal->_terminal->IsSelectionActive())
             {
                 try
                 {
-                    const auto bufferData = termCore->RetrieveSelectedTextFromBuffer(false);
-                    LOG_IF_FAILED(terminal->_CopyTextToSystemClipboard(bufferData, true));
-                    TerminalClearSelection(terminal);
+                    Terminal::TextCopyData bufferData;
+                    {
+                        const auto lock = publicTerminal->_terminal->LockForWriting();
+                        bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                    }
+                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
+                    publicTerminal->_ClearSelection();
                 }
                 CATCH_LOG();
             }
             else
             {
-                terminal->_PasteTextFromClipboard();
+                publicTerminal->_PasteTextFromClipboard();
             }
             return 0;
         case WM_DESTROY:
             // Release Terminal's hwnd so Teardown doesn't try to destroy it again
-            terminal->_hwnd.release();
-            terminal->Teardown();
+            publicTerminal->_hwnd.release();
+            publicTerminal->Teardown();
             return 0;
         default:
             break;
@@ -195,6 +199,8 @@ HwndTerminal::~HwndTerminal()
 HRESULT HwndTerminal::Initialize()
 {
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+    const auto lock = _terminal->LockForWriting();
+
     auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
     auto* const localPointerToThread = renderThread.get();
     auto& renderSettings = _terminal->GetRenderSettings();
@@ -269,7 +275,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
 
 void HwndTerminal::_WriteTextToConnection(const std::wstring_view input) noexcept
 {
-    if (!_pfnWriteCallback)
+    if (input.empty() || !_pfnWriteCallback)
     {
         return;
     }
@@ -304,7 +310,6 @@ void HwndTerminal::_UpdateFont(int newDpi)
         return;
     }
     _currentDpi = newDpi;
-    auto lock = _terminal->LockForWriting();
 
     // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
     //      actually fail. We need a way to gracefully fallback.
@@ -323,10 +328,10 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
             {
                 return nullptr;
             }
-            auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetRenderData(), this));
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
             LOG_IF_FAILED(_uiaEngine->Enable());
+            const auto lock = _terminal->LockForWriting();
             _renderer->AddRenderEngine(_uiaEngine.get());
         }
         catch (...)
@@ -344,7 +349,7 @@ HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimen
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
 
-    auto lock = _terminal->LockForWriting();
+    const auto lock = _terminal->LockForWriting();
 
     _terminal->ClearSelection();
 
@@ -381,37 +386,45 @@ void HwndTerminal::SendOutput(std::wstring_view data)
     {
         return;
     }
+    const auto lock = _terminal->LockForWriting();
     _terminal->Write(data);
 }
 
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
-    auto _terminal = std::make_unique<HwndTerminal>(parentHwnd);
-    RETURN_IF_FAILED(_terminal->Initialize());
+    auto publicTerminal = std::make_unique<HwndTerminal>(parentHwnd);
 
-    *hwnd = _terminal->GetHwnd();
-    *terminal = _terminal.release();
+    RETURN_IF_FAILED(publicTerminal->Initialize());
+
+    *hwnd = publicTerminal->GetHwnd();
+    *terminal = publicTerminal.release();
 
     return S_OK;
 }
 
 void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int))
+try
 {
-    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterScrollCallback(callback);
 }
+CATCH_LOG()
 
 void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*))
+try
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterWriteCallback(callback);
 }
+CATCH_LOG()
 
 void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
+try
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->SendOutput(data);
 }
+CATCH_LOG()
 
 /// <summary>
 /// Triggers a terminal resize using the new width and height in pixel.
@@ -446,13 +459,18 @@ HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ til::CoordType 
 /// <param name="dimensionsInPixels">Out parameter with the new size of the renderer.</param>
 /// <returns>HRESULT of the attempted resize.</returns>
 HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ til::size dimensionsInCharacters, _Out_ til::size* dimensionsInPixels)
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensionsInPixels);
 
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
-    const auto viewInCharacters = Viewport::FromDimensions(dimensionsInCharacters);
-    const auto viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
+    Viewport viewInPixels;
+    {
+        const auto viewInCharacters = Viewport::FromDimensions(dimensionsInCharacters);
+        const auto lock = publicTerminal->_terminal->LockForReading();
+        viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
+    }
 
     dimensionsInPixels->width = viewInPixels.Width();
     dimensionsInPixels->height = viewInPixels.Height();
@@ -461,6 +479,7 @@ HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ ti
 
     return TerminalTriggerResize(terminal, viewInPixels.Width(), viewInPixels.Height(), &unused);
 }
+CATCH_RETURN()
 
 /// <summary>
 /// Calculates the amount of rows and columns that fit in the provided width and height.
@@ -471,10 +490,12 @@ HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ ti
 /// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
 /// <returns>HRESULT of the calculation.</returns>
 HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions)
+try
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
     const auto viewInPixels = Viewport::FromDimensions({ width, height });
+    const auto lock = publicTerminal->_terminal->LockForReading();
     const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
 
     dimensions->width = viewInCharacters.Width();
@@ -482,20 +503,27 @@ HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordTyp
 
     return S_OK;
 }
+CATCH_RETURN()
 
 void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
+try
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto lock = publicTerminal->_terminal->LockForWriting();
     publicTerminal->_UpdateFont(newDpi);
 }
+CATCH_LOG()
 
 void _stdcall TerminalUserScroll(void* terminal, int viewTop)
+try
 {
     if (const auto publicTerminal = static_cast<const HwndTerminal*>(terminal); publicTerminal && publicTerminal->_terminal)
     {
+        const auto lock = publicTerminal->_terminal->LockForWriting();
         publicTerminal->_terminal->UserScrollViewport(viewTop);
     }
 }
+CATCH_LOG()
 
 const unsigned int HwndTerminal::_NumberOfClicks(til::point point, std::chrono::steady_clock::time_point timestamp) noexcept
 {
@@ -522,7 +550,7 @@ try
         GET_Y_LPARAM(lParam),
     };
 
-    auto lock = _terminal->LockForWriting();
+    const auto lock = _terminal->LockForWriting();
     const auto altPressed = GetKeyState(VK_MENU) < 0;
     const til::size fontSize{ this->_actualFont.GetSize() };
 
@@ -566,7 +594,7 @@ try
         GET_Y_LPARAM(lParam),
     };
 
-    auto lock = _terminal->LockForWriting();
+    const auto lock = _terminal->LockForWriting();
     const til::size fontSize{ this->_actualFont.GetSize() };
 
     RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.area() == 0); // either dimension = 0, area == 0
@@ -596,55 +624,66 @@ try
 }
 CATCH_RETURN();
 
-void HwndTerminal::_ClearSelection() noexcept
-try
+void HwndTerminal::_ClearSelection()
 {
     if (!_terminal)
     {
         return;
     }
-    auto lock{ _terminal->LockForWriting() };
     _terminal->ClearSelection();
     _renderer->TriggerSelection();
 }
-CATCH_LOG();
 
 void _stdcall TerminalClearSelection(void* terminal)
+try
 {
-    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto lock = publicTerminal->_terminal->LockForWriting();
     publicTerminal->_ClearSelection();
 }
+CATCH_LOG()
 
 bool _stdcall TerminalIsSelectionActive(void* terminal)
+try
 {
     if (const auto publicTerminal = static_cast<const HwndTerminal*>(terminal); publicTerminal && publicTerminal->_terminal)
     {
+        const auto lock = publicTerminal->_terminal->LockForReading();
         return publicTerminal->_terminal->IsSelectionActive();
     }
+    return false;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
     return false;
 }
 
 // Returns the selected text in the terminal.
 const wchar_t* _stdcall TerminalGetSelection(void* terminal)
+try
 {
-    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     if (!publicTerminal || !publicTerminal->_terminal)
     {
         return nullptr;
     }
 
-    const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
-    publicTerminal->_ClearSelection();
-
-    // convert text: vector<string> --> string
     std::wstring selectedText;
-    for (const auto& text : bufferData.text)
     {
-        selectedText += text;
+        const auto lock = publicTerminal->_terminal->LockForWriting();
+        auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+        selectedText = std::move(bufferData.plainText);
+        publicTerminal->_ClearSelection();
     }
 
     auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
     return returnText.release();
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return nullptr;
 }
 
 static ControlKeyStates getControlKeyState() noexcept
@@ -683,6 +722,7 @@ bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 {
     // Only allow the transit of mouse events if shift isn't pressed.
     const auto shiftPressed = GetKeyState(VK_SHIFT) < 0;
+    const auto lock = _terminal->LockForReading();
     return !shiftPressed && _focused && _terminal && _terminal->IsTrackingMouseInput();
 }
 
@@ -715,7 +755,17 @@ try
         WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
     };
 
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    TerminalInput::OutputType out;
+    {
+        const auto lock = _terminal->LockForReading();
+        out = _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    }
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+        return true;
+    }
+    return false;
 }
 catch (...)
 {
@@ -740,7 +790,16 @@ try
     {
         _uiaProvider->RecordKeyEvent(vkey);
     }
-    _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+
+    TerminalInput::OutputType out;
+    {
+        const auto lock = _terminal->LockForReading();
+        out = _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+    }
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+    }
 }
 CATCH_LOG();
 
@@ -751,43 +810,58 @@ try
     {
         return;
     }
-    else if (_terminal->IsSelectionActive())
+
+    TerminalInput::OutputType out;
     {
-        _ClearSelection();
-        if (ch == UNICODE_ESC)
+        const auto lock = _terminal->LockForWriting();
+
+        if (_terminal->IsSelectionActive())
         {
-            // ESC should clear any selection before it triggers input.
-            // Other characters pass through.
+            _ClearSelection();
+            if (ch == UNICODE_ESC)
+            {
+                // ESC should clear any selection before it triggers input.
+                // Other characters pass through.
+                return;
+            }
+        }
+
+        if (ch == UNICODE_TAB)
+        {
+            // TAB was handled as a keydown event (cf. Terminal::SendKeyEvent)
             return;
         }
-    }
 
-    if (ch == UNICODE_TAB)
-    {
-        // TAB was handled as a keydown event (cf. Terminal::SendKeyEvent)
-        return;
-    }
+        auto modifiers = getControlKeyState();
+        if (WI_IsFlagSet(flags, ENHANCED_KEY))
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
 
-    auto modifiers = getControlKeyState();
-    if (WI_IsFlagSet(flags, ENHANCED_KEY))
-    {
-        modifiers |= ControlKeyStates::EnhancedKey;
+        out = _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
-    _terminal->SendCharEvent(ch, scanCode, modifiers);
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+    }
 }
 CATCH_LOG();
 
 void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown)
+try
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_SendKeyEvent(vkey, scanCode, flags, keyDown);
 }
+CATCH_LOG()
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags)
+try
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_SendCharEvent(ch, scanCode, flags);
 }
+CATCH_LOG()
 
 void _stdcall DestroyTerminal(void* terminal)
 {
@@ -803,8 +877,9 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     {
         return;
     }
+
     {
-        auto lock = publicTerminal->_terminal->LockForWriting();
+        const auto lock = publicTerminal->_terminal->LockForWriting();
 
         auto& renderSettings = publicTerminal->_terminal->GetRenderSettings();
         renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
@@ -818,12 +893,12 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
             [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
+
+        publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));
+
+        publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, static_cast<float>(fontSize), CP_UTF8 };
+        publicTerminal->_UpdateFont(newDpi);
     }
-
-    publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));
-
-    publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, static_cast<float>(fontSize), CP_UTF8 };
-    publicTerminal->_UpdateFont(newDpi);
 
     // When the font changes the terminal dimensions need to be recalculated since the available row and column
     // space will have changed.
@@ -836,29 +911,35 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 }
 
 void _stdcall TerminalBlinkCursor(void* terminal)
-{
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    if (!publicTerminal || !publicTerminal->_terminal || (!publicTerminal->_terminal->IsCursorBlinkingAllowed() && publicTerminal->_terminal->IsCursorVisible()))
-    {
-        return;
-    }
-
-    publicTerminal->_terminal->SetCursorOn(!publicTerminal->_terminal->IsCursorOn());
-}
-
-void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
+try
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     if (!publicTerminal || !publicTerminal->_terminal)
     {
         return;
     }
+
+    const auto lock = publicTerminal->_terminal->LockForWriting();
+    publicTerminal->_terminal->BlinkCursor();
+}
+CATCH_LOG()
+
+void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
+try
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    if (!publicTerminal || !publicTerminal->_terminal)
+    {
+        return;
+    }
+    const auto lock = publicTerminal->_terminal->LockForWriting();
     publicTerminal->_terminal->SetCursorOn(visible);
 }
+CATCH_LOG()
 
 void __stdcall TerminalSetFocus(void* terminal)
 {
-    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = true;
     if (auto uiaEngine = publicTerminal->_uiaEngine.get())
     {
@@ -868,7 +949,7 @@ void __stdcall TerminalSetFocus(void* terminal)
 
 void __stdcall TerminalKillFocus(void* terminal)
 {
-    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = false;
     if (auto uiaEngine = publicTerminal->_uiaEngine.get())
     {
@@ -879,22 +960,16 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
-// - rows - Rows of text data to copy
-// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
+// - text - selected text in plain-text format
+// - htmlData - selected text in HTML format
+// - rtfData - selected text in RTF format
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const
 try
 {
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
-    std::wstring finalString;
-
-    // Concatenate strings into one giant string to put onto the clipboard.
-    for (const auto& str : rows.text)
-    {
-        finalString += str;
-    }
 
     // allocate the final clipboard data
-    const auto cchNeeded = finalString.size() + 1;
+    const auto cchNeeded = text.size() + 1;
     const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
@@ -904,7 +979,7 @@ try
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
     // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, text.data());
     GlobalUnlock(globalHandle.get());
     RETURN_IF_FAILED(hr);
 
@@ -919,17 +994,14 @@ try
         RETURN_LAST_ERROR_IF(!EmptyClipboard());
         RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
 
-        if (fAlsoCopyFormatting)
+        if (!htmlData.empty())
         {
-            const auto& fontData = _actualFont;
-            const int iFontHeightPoints = fontData.GetUnscaledSize().height; // this renderer uses points already
-            const auto bgColor = _terminal->GetAttributeColors({}).second;
+            RETURN_IF_FAILED(_CopyToSystemClipboard(htmlData, L"HTML Format"));
+        }
 
-            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-            _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
-
-            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-            _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
+        if (!rtfData.empty())
+        {
+            RETURN_IF_FAILED(_CopyToSystemClipboard(rtfData, L"Rich Text Format"));
         }
     }
 
@@ -947,7 +1019,7 @@ CATCH_RETURN()
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
+HRESULT HwndTerminal::_CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)
@@ -993,28 +1065,14 @@ void HwndTerminal::_PasteTextFromClipboard() noexcept
         return;
     }
 
-    auto pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
-
-    _StringPaste(pwstr);
+    if (const auto pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle)))
+    {
+        _WriteTextToConnection(pwstr);
+    }
 
     GlobalUnlock(ClipboardDataHandle);
 
     CloseClipboard();
-}
-
-void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
-{
-    if (pData == nullptr)
-    {
-        return;
-    }
-
-    try
-    {
-        std::wstring text(pData);
-        _WriteTextToConnection(text);
-    }
-    CATCH_LOG();
 }
 
 til::size HwndTerminal::GetFontSize() const noexcept
@@ -1045,6 +1103,7 @@ void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
         return;
     }
+    const auto lock = _terminal->LockForWriting();
     _terminal->UserScrollViewport(NewWindow.top);
 }
 

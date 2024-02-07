@@ -349,7 +349,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // If the name wasn't specified, this will be an empty string.
         p->WindowName(args.WindowName());
 
-        p->ExecuteCommandline(*winrt::make_self<CommandlineArgs>(args.Commandline(), args.CurrentDirectory(), args.ShowWindowCommand()));
+        p->ExecuteCommandline(*winrt::make_self<CommandlineArgs>(args.Commandline(),
+                                                                 args.CurrentDirectory(),
+                                                                 args.ShowWindowCommand(),
+                                                                 args.CurrentEnvironment()));
 
         _monarch.AddPeasant(*p);
 

@@ -9,7 +9,7 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-BOOL APIENTRY RegenerateUserEnvironment(void** pNewEnv, BOOL bSetCurrentEnv);
+BOOL APIENTRY RegenerateUserEnvironment(wchar_t** pNewEnv, BOOL bSetCurrentEnv);
 
 class EnvTests
 {
@@ -26,9 +26,11 @@ class EnvTests
         wil::unique_hmodule shell32{ LoadLibraryW(L"shell32.dll") };
         auto func = GetProcAddressByFunctionDeclaration(shell32.get(), RegenerateUserEnvironment);
 
+        wchar_t* newEnvPtr = nullptr;
+        VERIFY_WIN32_BOOL_SUCCEEDED(func(&newEnvPtr, FALSE));
+
         // Use a WIL pointer to free it on scope exit.
-        wil::unique_environstrings_ptr newEnv;
-        VERIFY_WIN32_BOOL_SUCCEEDED(func((void**)&newEnv, FALSE));
+        const wil::unique_environstrings_ptr newEnv{ newEnvPtr };
 
         // Parse the string into our environment table.
         til::env expected{ newEnv.get() };
@@ -38,12 +40,15 @@ class EnvTests
         actual.regenerate();
 
         VERIFY_ARE_EQUAL(expected.as_map().size(), actual.as_map().size());
-        for (const auto& [expectedKey, expectedValue] : expected.as_map())
+
+        const auto expectedEnd = expected.as_map().end();
+        auto expectedIt = expected.as_map().begin();
+        auto actualIt = actual.as_map().begin();
+
+        for (; expectedIt != expectedEnd; ++expectedIt, ++actualIt)
         {
-            Log::Comment(String().Format(L"Environment Variable: '%s'", expectedKey.data()));
-            const auto actualValue = actual.as_map()[expectedKey];
-            VERIFY_IS_TRUE(actual.as_map().find(expectedKey) != actual.as_map().end());
-            VERIFY_ARE_EQUAL(expectedValue, actual.as_map()[expectedKey]);
+            VERIFY_ARE_EQUAL(expectedIt->first, actualIt->first);
+            VERIFY_ARE_EQUAL(expectedIt->second, actualIt->second);
         }
     }
 
@@ -54,16 +59,10 @@ class EnvTests
         environment.as_map().insert_or_assign(L"B", L"Banana");
         environment.as_map().insert_or_assign(L"C", L"Cassowary");
 
-        wchar_t expectedArray[] = L"A=Apple\0B=Banana\0C=Cassowary\0";
-
-        const std::wstring expected{ expectedArray, ARRAYSIZE(expectedArray) };
+        static constexpr wchar_t expectedArray[] = L"A=Apple\0B=Banana\0C=Cassowary\0";
+        static constexpr std::wstring_view expected{ expectedArray, std::size(expectedArray) };
         const auto& actual = environment.to_string();
-
-        VERIFY_ARE_EQUAL(expected.size(), actual.size());
-        for (size_t i = 0; i < expected.size(); ++i)
-        {
-            VERIFY_ARE_EQUAL(expected[i], actual[i]);
-        }
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(TestExpandEnvironmentStrings)

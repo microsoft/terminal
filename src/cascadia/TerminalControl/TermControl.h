@@ -72,7 +72,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool HasSelection() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+        bool HasMultiLineSelection() const;
+        winrt::hstring SelectedText(bool trimTrailingWhitespace) const;
 
         bool BracketedPasteEnabled() const noexcept;
 
@@ -160,6 +161,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection Connection();
         void Connection(const TerminalConnection::ITerminalConnection& connection);
 
+        Control::CursorDisplayState CursorVisibility() const noexcept;
+        void CursorVisibility(Control::CursorDisplayState cursorVisibility);
+
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -194,9 +198,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
-
-    public:
-        til::property<bool> DisplayCursorWhileBlurred{ false };
 
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
@@ -237,16 +238,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
-        Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
+        SafeDispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
-        Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
+        SafeDispatcherTimer _bellLightTimer;
 
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
+        SafeDispatcherTimer _cursorTimer;
+        SafeDispatcherTimer _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         bool _showMarksInScrollbar{ false };
@@ -258,6 +259,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
+
+        Control::CursorDisplayState _cursorVisibility{ Control::CursorDisplayState::Default };
 
         inline bool _IsClosing() const noexcept
         {
@@ -275,6 +278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
+
         void _ApplyUISettings();
         winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
@@ -344,6 +348,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+
+        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         // TSFInputControl Handlers
@@ -358,7 +364,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
-        void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+        winrt::fire_and_forget _coreFoundMatch(const IInspectable& sender, Control::FoundResultsArgs args);
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
@@ -374,6 +380,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
+        bool _displayCursorWhileBlurred() const noexcept;
 
         struct Revokers
         {
