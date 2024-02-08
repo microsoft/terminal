@@ -3873,6 +3873,11 @@ bool AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
         return false;
     }
 
+    if constexpr (!Feature_Notifications::IsEnabled())
+    {
+        return false;
+    }
+
     const auto parts = Utils::SplitString(string, L';');
 
     if (parts.size() < 1)

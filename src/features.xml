@@ -187,4 +187,15 @@
         </alwaysEnabledBrandingTokens>
     </feature>
 
+    <feature>
+        <name>Feature_Notifications</name>
+        <description>Enables OSC777 notifications</description>
+        <id>16654</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>

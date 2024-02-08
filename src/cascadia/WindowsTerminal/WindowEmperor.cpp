@@ -59,6 +59,17 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
         args.emplace_back(L"wt.exe");
     }
 }
+
+// Method Description:
+// - Attempt to handle activated event args, which are a kind of "modern"
+//   activation, which we use for supporting toast notifications.
+// - If we do find we were activated from a toast notification, we'll unpack the
+//   arguments from the toast. Then, we'll try to open up a connection to the
+//   monarch and ask the monarch to activate the right window.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 bool WindowEmperor::_handleLaunchArgs()
 try
 {
