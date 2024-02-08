@@ -8,12 +8,12 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "ConnectionStateHolder.h"
+#include "BaseTerminalConnection.h"
 #include "AzureClient.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
+    struct AzureConnection : AzureConnectionT<AzureConnection>, BaseTerminalConnection<AzureConnection>
     {
         static winrt::guid ConnectionType() noexcept;
         static bool IsAzureConnectionAvailable() noexcept;
@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void _WriteStringWithNewline(const std::wstring_view str);
         void _WriteCaughtExceptionRecord();
-        winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr);
+        winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr, const winrt::Windows::Foundation::Uri referer = nullptr);
         void _setAccessToken(std::wstring_view accessToken);
         winrt::Windows::Data::Json::JsonObject _GetDeviceCode();
         winrt::Windows::Data::Json::JsonObject _WaitForUser(const winrt::hstring& deviceCode, int pollInterval, int expiresIn);

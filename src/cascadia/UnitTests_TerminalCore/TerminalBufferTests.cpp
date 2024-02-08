@@ -56,7 +56,7 @@ class TerminalCoreUnitTests::TerminalBufferTests final
     TEST_METHOD_SETUP(MethodSetup)
     {
         // STEP 1: Set up the Terminal
-        term = std::make_unique<Terminal>();
+        term = std::make_unique<Terminal>(Terminal::TestDummyMarker{});
         emptyRenderer = std::make_unique<DummyRenderer>(term.get());
         term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *emptyRenderer);
         return true;

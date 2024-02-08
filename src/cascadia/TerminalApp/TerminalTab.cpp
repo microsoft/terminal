@@ -121,12 +121,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_BellIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
     {
         ShowBellIndicator(false);
-        // Just do a sanity check that the timer still exists before we stop it
-        if (_bellIndicatorTimer.has_value())
-        {
-            _bellIndicatorTimer->Stop();
-            _bellIndicatorTimer = std::nullopt;
-        }
+        _bellIndicatorTimer.Stop();
     }
 
     // Method Description:
@@ -361,14 +356,13 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
-        if (!_bellIndicatorTimer.has_value())
+        if (!_bellIndicatorTimer)
         {
-            DispatcherTimer bellIndicatorTimer;
-            bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
-            bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
-            bellIndicatorTimer.Start();
-            _bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
+            _bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+            _bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
         }
+
+        _bellIndicatorTimer.Start();
     }
 
     // Method Description:
@@ -936,9 +930,14 @@ namespace winrt::TerminalApp::implementation
         events.TitleChanged = content.TitleChanged(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+                // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
+                // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
+                // copy `weakThis` onto the stack, because that's the only thing that gets captured in coroutines.
+                // See: https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870
+                const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 // Check if Tab's lifetime has expired
-                if (auto tab{ weakThis.get() })
+                if (auto tab{ weakThisCopy.get() })
                 {
                     // The title of the control changed, but not necessarily the title of the tab.
                     // Set the tab's text to the active panes' text.
@@ -949,8 +948,9 @@ namespace winrt::TerminalApp::implementation
         events.TabColorChanged = content.TabColorChanged(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+                const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
-                if (auto tab{ weakThis.get() })
+                if (auto tab{ weakThisCopy.get() })
                 {
                     // The control's tabColor changed, but it is not necessarily the
                     // active control in this tab. We'll just recalculate the
@@ -962,9 +962,10 @@ namespace winrt::TerminalApp::implementation
         events.TaskbarProgressChanged = content.TaskbarProgressChanged(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+                const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 // Check if Tab's lifetime has expired
-                if (auto tab{ weakThis.get() })
+                if (auto tab{ weakThisCopy.get() })
                 {
                     tab->_UpdateProgressState();
                 }
@@ -973,8 +974,9 @@ namespace winrt::TerminalApp::implementation
         events.ConnectionStateChanged = content.ConnectionStateChanged(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+                const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
-                if (auto tab{ weakThis.get() })
+                if (auto tab{ weakThisCopy.get() })
                 {
                     tab->_UpdateConnectionClosedState();
                 }
@@ -983,6 +985,7 @@ namespace winrt::TerminalApp::implementation
         events.ReadOnlyChanged = content.ReadOnlyChanged(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+                const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (auto tab{ weakThis.get() })
                 {
@@ -993,8 +996,9 @@ namespace winrt::TerminalApp::implementation
         events.FocusRequested = content.FocusRequested(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
+                const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
-                if (const auto tab{ weakThis.get() })
+                if (const auto tab{ weakThisCopy.get() })
                 {
                     if (tab->_focused())
                     {
@@ -1686,6 +1690,18 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    TermControl _termControlFromPane(const auto& pane)
+    {
+        if (const auto content{ pane->GetContent() })
+        {
+            if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
+            {
+                return termContent.GetTerminal();
+            }
+        }
+        return nullptr;
+    }
+
     // Method Description:
     // - Toggle read-only mode on the active pane
     // - If a parent pane is selected, this will ensure that all children have
@@ -1697,14 +1713,14 @@ namespace winrt::TerminalApp::implementation
         auto hasReadOnly = false;
         auto allReadOnly = true;
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 // If all controls have the same read only state then just toggle
                 if (allReadOnly || !hasReadOnly)
@@ -1729,14 +1745,14 @@ namespace winrt::TerminalApp::implementation
         auto hasReadOnly = false;
         auto allReadOnly = true;
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 // If all controls have the same read only state then just disable
                 if (allReadOnly || !hasReadOnly)
@@ -1821,7 +1837,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return;
             }
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 auto it = _contentEvents.find(*paneId);
                 if (it != _contentEvents.end())

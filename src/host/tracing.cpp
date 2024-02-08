@@ -6,6 +6,12 @@
 #include "../types/UiaTextRangeBase.hpp"
 #include "../types/ScreenInfoUiaProviderBase.h"
 
+TRACELOGGING_DEFINE_PROVIDER(g_hConhostV2EventTraceProvider,
+                             "Microsoft.Windows.Console.Host",
+                             // {fe1ff234-1f09-50a8-d38d-c44fab43e818}
+                             (0xfe1ff234, 0x1f09, 0x50a8, 0xd3, 0x8d, 0xc4, 0x4f, 0xab, 0x43, 0xe8, 0x18),
+                             TraceLoggingOptionMicrosoftTelemetry());
+
 using namespace Microsoft::Console::Types;
 
 // NOTE: See `til.h` for which keyword flags are reserved
@@ -194,15 +200,12 @@ void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConso
 {
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach))
     {
-        auto bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
-
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "ConsoleAttachDetach",
             TraceLoggingPid(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
             TraceLoggingFileTime(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingBool(bIsAttach, "IsAttach"),
-            TraceLoggingBool(bIsUserInteractive, "IsUserInteractive"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::ConsoleAttachDetach));
     }

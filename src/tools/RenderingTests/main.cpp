@@ -5,7 +5,39 @@
 
 #include <array>
 #include <cassert>
-#include <cstdio>
+#include <string_view>
+
+// The following list of colors is only used as a debug aid and not part of the final product.
+// They're licensed under:
+//
+//   Apache-Style Software License for ColorBrewer software and ColorBrewer Color Schemes
+//
+//   Copyright (c) 2002 Cynthia Brewer, Mark Harrower, and The Pennsylvania State University.
+//
+//   Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software distributed
+//   under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+//   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+//   specific language governing permissions and limitations under the License.
+//
+namespace colorbrewer
+{
+    inline constexpr uint32_t pastel1[]{
+        0xfbb4ae,
+        0xb3cde3,
+        0xccebc5,
+        0xdecbe4,
+        0xfed9a6,
+        0xffffcc,
+        0xe5d8bd,
+        0xfddaec,
+        0xf2f2f2,
+    };
+}
 
 // Another variant of "defer" for C++.
 namespace
@@ -110,64 +142,93 @@ int main()
     };
 
     {
-        struct ConsoleAttributeTest
+        struct AttributeTest
         {
             const wchar_t* text = nullptr;
             WORD attribute = 0;
         };
-        static constexpr ConsoleAttributeTest consoleAttributeTests[]{
-            { L"Console attributes:", 0 },
+
+        {
+            static constexpr AttributeTest consoleAttributeTests[]{
+                { L"Console attributes:", 0 },
 #define MAKE_TEST_FOR_ATTRIBUTE(attr) { L## #attr, attr }
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_HORIZONTAL),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_LVERTICAL),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_RVERTICAL),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_REVERSE_VIDEO),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_UNDERSCORE),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_HORIZONTAL),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_LVERTICAL),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_RVERTICAL),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_REVERSE_VIDEO),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_UNDERSCORE),
 #undef MAKE_TEST_FOR_ATTRIBUTE
-            { L"all gridlines", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE },
-            { L"all attributes", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE },
-        };
+                { L"all gridlines", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE },
+                { L"all attributes", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE },
+            };
 
-        SHORT row = 2;
-        for (const auto& t : consoleAttributeTests)
-        {
-            const auto length = static_cast<DWORD>(wcslen(t.text));
-            printfUTF16(L"\x1B[%d;5H%s", row + 1, t.text);
+            SHORT row = 2;
+            for (const auto& t : consoleAttributeTests)
+            {
+                const auto length = static_cast<DWORD>(wcslen(t.text));
+                printfUTF16(L"\x1B[%d;5H%s", row + 1, t.text);
 
-            WORD attributes[32];
-            std::fill_n(&attributes[0], length, static_cast<WORD>(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | t.attribute));
+                WORD attributes[32];
+                std::fill_n(&attributes[0], length, static_cast<WORD>(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | t.attribute));
 
-            DWORD numberOfAttrsWritten;
-            WriteConsoleOutputAttribute(outputHandle, attributes, length, { 4, row }, &numberOfAttrsWritten);
+                DWORD numberOfAttrsWritten;
+                WriteConsoleOutputAttribute(outputHandle, attributes, length, { 4, row }, &numberOfAttrsWritten);
 
-            row += 2;
+                row += 2;
+            }
         }
 
-        struct VTAttributeTest
         {
-            const wchar_t* text = nullptr;
-            int sgr = 0;
-        };
-        static constexpr VTAttributeTest vtAttributeTests[]{
-            { L"ANSI escape SGR:", 0 },
-            { L"bold", 1 },
-            { L"faint", 2 },
-            { L"italic", 3 },
-            { L"underline", 4 },
-            { L"reverse", 7 },
-            { L"strikethrough", 9 },
-            { L"double underline", 21 },
-            { L"overlined", 53 },
-        };
+            static constexpr AttributeTest basicSGR[]{
+                { L"bold", 1 },
+                { L"faint", 2 },
+                { L"italic", 3 },
+                { L"underline", 4 },
+                { L"reverse", 7 },
+                { L"strikethrough", 9 },
+                { L"double underline", 21 },
+                { L"overlined", 53 },
+            };
 
-        row = 3;
-        for (const auto& t : vtAttributeTests)
-        {
-            printfUTF16(L"\x1B[%d;45H\x1b[%dm%s\x1b[m", row, t.sgr, t.text);
-            row += 2;
+            printfUTF16(L"\x1B[3;39HANSI escape SGR:");
+
+            int row = 5;
+            for (const auto& t : basicSGR)
+            {
+                printfUTF16(L"\x1B[%d;39H\x1b[%dm%s\x1b[m", row, t.attribute, t.text);
+                row += 2;
+            }
+
+            printfUTF16(L"\x1B[%d;39H\x1b]8;;https://example.com\x1b\\hyperlink\x1b]8;;\x1b\\", row);
         }
 
-        printfUTF16(L"\x1B[%d;45H\x1b]8;;https://example.com\x1b\\hyperlink\x1b]8;;\x1b\\", row);
+        {
+            static constexpr AttributeTest styledUnderlines[]{
+                { L"straight", 1 },
+                { L"double", 2 },
+                { L"curly", 3 },
+                { L"dotted", 4 },
+                { L"dashed", 5 },
+            };
+
+            printfUTF16(L"\x1B[3;63HStyled Underlines:");
+
+            int row = 5;
+            for (const auto& t : styledUnderlines)
+            {
+                printfUTF16(L"\x1B[%d;63H\x1b[4:%dm", row, t.attribute);
+
+                const auto len = wcslen(t.text);
+                for (size_t i = 0; i < len; ++i)
+                {
+                    const auto color = colorbrewer::pastel1[i % std::size(colorbrewer::pastel1)];
+                    printfUTF16(L"\x1B[58:2::%d:%d:%dm%c", (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff, t.text[i]);
+                }
+
+                printfUTF16(L"\x1b[m");
+                row += 2;
+            }
+        }
 
         wait();
         clear();

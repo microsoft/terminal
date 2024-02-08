@@ -26,6 +26,11 @@ NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme)
 {
 }
 
+NonClientIslandWindow::~NonClientIslandWindow()
+{
+    Close();
+}
+
 void NonClientIslandWindow::Close()
 {
     // Avoid further callbacks into XAML/WinUI-land after we've Close()d the DesktopWindowXamlSource

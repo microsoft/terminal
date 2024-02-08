@@ -48,7 +48,7 @@ using namespace TerminalCoreUnitTests;
 
 void TerminalApiTest::SetColorTableEntry()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -67,7 +67,7 @@ void TerminalApiTest::SetColorTableEntry()
 // PrintString() is called with more code units than the buffer width.
 void TerminalApiTest::PrintStringOfSurrogatePairs()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 3, renderer);
 
@@ -134,7 +134,7 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
 void TerminalApiTest::CursorVisibility()
 {
     // GH#3093 - Cursor Visibility and On states shouldn't affect each other
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -166,7 +166,7 @@ void TerminalApiTest::CursorVisibility()
 void TerminalApiTest::CursorVisibilityViaStateMachine()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestCursorIsOn, adapted for the Terminal
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -218,7 +218,7 @@ void TerminalApiTest::CursorVisibilityViaStateMachine()
 
 void TerminalApiTest::CheckDoubleWidthCursor()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -262,7 +262,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlink, adapted for the Terminal
 
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -288,7 +288,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomId()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlinkCustomId, adapted for the Terminal
 
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -316,7 +316,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlinkCustomId, adapted for the Terminal
 
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -344,7 +344,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
 
 void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -415,7 +415,7 @@ void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
 
 void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 

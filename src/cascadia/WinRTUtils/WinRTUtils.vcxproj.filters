@@ -2,21 +2,21 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="LibraryResources.cpp" />
     <ClCompile Include="ScopedResourceLoader.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ScopedResourceLoader.h" />
     <ClInclude Include="inc\LibraryResources.h" />
+    <ClInclude Include="inc\SafeDispatcherTimer.h" />
+    <ClInclude Include="inc\ScopedResourceLoader.h" />
     <ClInclude Include="inc\ThrottledFunc.h" />
     <ClInclude Include="inc\Utils.h" />
     <ClInclude Include="inc\WtExeUtils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

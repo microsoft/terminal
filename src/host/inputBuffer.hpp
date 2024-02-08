@@ -58,6 +58,7 @@ public:
     size_t Prepend(const std::span<const INPUT_RECORD>& inEvents);
     size_t Write(const INPUT_RECORD& inEvent);
     size_t Write(const std::span<const INPUT_RECORD>& inEvents);
+    void WriteString(const std::wstring_view& text);
     void WriteFocusEvent(bool focused) noexcept;
     bool WriteMouseEvent(til::point position, unsigned int button, short keyState, short wheelDelta);
 
@@ -96,6 +97,7 @@ private:
     void _WriteBuffer(const std::span<const INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten, _Out_ bool& setWaitEvent);
     bool _CoalesceEvent(const INPUT_RECORD& inEvent) noexcept;
     void _HandleTerminalInputCallback(const Microsoft::Console::VirtualTerminal::TerminalInput::StringType& text);
+    void _writeString(const std::wstring_view& text);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;
