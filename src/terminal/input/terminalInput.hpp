@@ -32,6 +32,7 @@ namespace Microsoft::Console::VirtualTerminal
             Keypad,
             CursorKey,
             BackarrowKey,
+            NumLock,
             Win32,
 
             Utf8MouseEncoding,
@@ -77,7 +78,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::wstring _focusInSequence;
         std::wstring _focusOutSequence;
 
-        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
+        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat, Mode::NumLock, Mode::AlternateScroll };
         bool _forceDisableWin32InputMode{ false };
 
         // In the future, if we add support for "8-bit" input mode, these prefixes
