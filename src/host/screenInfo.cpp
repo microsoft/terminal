@@ -34,7 +34,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
     OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
-    ResizingWindow{ 0 },
     WheelDelta{ 0 },
     HWheelDelta{ 0 },
     _textBuffer{ nullptr },
@@ -641,56 +640,19 @@ VOID SCREEN_INFORMATION::UpdateScrollBars()
         return;
     }
 
-    if (gci.Flags & CONSOLE_UPDATING_SCROLL_BARS)
+    if (gci.Flags & CONSOLE_UPDATING_SCROLL_BARS || ServiceLocator::LocateConsoleWindow() == nullptr)
     {
         return;
     }
 
     gci.Flags |= CONSOLE_UPDATING_SCROLL_BARS;
-
-    if (ServiceLocator::LocateConsoleWindow() != nullptr)
-    {
-        ServiceLocator::LocateConsoleWindow()->PostUpdateScrollBars();
-    }
+    LOG_IF_WIN32_BOOL_FALSE(ServiceLocator::LocateConsoleWindow()->PostUpdateScrollBars());
 }
 
-VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
+SCREEN_INFORMATION::ScrollBarState SCREEN_INFORMATION::FetchScrollBarState()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto pWindow = ServiceLocator::LocateConsoleWindow();
-
     WI_ClearFlag(gci.Flags, CONSOLE_UPDATING_SCROLL_BARS);
-
-    if (!IsActiveScreenBuffer())
-    {
-        return;
-    }
-
-    ResizingWindow++;
-
-    if (pWindow != nullptr)
-    {
-        const auto buffer = GetBufferSize();
-
-        // If this is the main buffer, make sure we enable both of the scroll bars.
-        //      The alt buffer likely disabled the scroll bars, this is the only
-        //      way to re-enable it.
-        if (!_IsAltBuffer())
-        {
-            pWindow->EnableBothScrollBars();
-        }
-
-        pWindow->UpdateScrollBar(true,
-                                 _IsAltBuffer(),
-                                 _viewport.Height(),
-                                 gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive(),
-                                 _viewport.Top());
-        pWindow->UpdateScrollBar(false,
-                                 _IsAltBuffer(),
-                                 _viewport.Width(),
-                                 buffer.RightInclusive(),
-                                 _viewport.Left());
-    }
 
     // Fire off an event to let accessibility apps know the layout has changed.
     if (_pAccessibilityNotifier)
@@ -698,7 +660,15 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
     }
 
-    ResizingWindow--;
+    const auto buffer = GetBufferSize();
+    const auto isAltBuffer = _IsAltBuffer();
+    const auto maxSizeVer = gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive();
+    const auto maxSizeHor = buffer.RightInclusive();
+    return ScrollBarState{
+        .maxSize = { maxSizeHor, maxSizeVer },
+        .viewport = _viewport.ToExclusive(),
+        .isAltBuffer = isAltBuffer,
+    };
 }
 
 // Routine Description:
@@ -1391,7 +1361,7 @@ try
 {
     if ((USHORT)coordNewScreenSize.width >= SHORT_MAX || (USHORT)coordNewScreenSize.height >= SHORT_MAX)
     {
-        RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", coordNewScreenSize.width, coordNewScreenSize.height);
+        LOG_HR_MSG(E_INVALIDARG, "Invalid screen buffer size (0x%x, 0x%x)", coordNewScreenSize.width, coordNewScreenSize.height);
         return STATUS_INVALID_PARAMETER;
     }
 

@@ -3,6 +3,9 @@
 
 #include "precomp.h"
 #include "inc/utils.hpp"
+
+#include <propsys.h>
+
 #include "inc/colorTable.hpp"
 
 #include <wil/token_helpers.h>
@@ -21,32 +24,52 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
 
-// Function Description:
-// - Creates a String representation of a guid, in the format
-//      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
-// Arguments:
-// - guid: the GUID to create the string for
-// Return Value:
-// - a string representation of the GUID. On failure, throws E_INVALIDARG.
-std::wstring Utils::GuidToString(const GUID guid)
+[[gsl::suppress(bounds)]] static std::wstring guidToStringCommon(const GUID& guid, size_t offset, size_t length)
 {
-    return wil::str_printf<std::wstring>(L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    // This is just like StringFromGUID2 but with lowercase hexadecimal.
+    wchar_t buffer[39];
+    swprintf_s(&buffer[0], 39, L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    return { &buffer[offset], length };
 }
 
-// Method Description:
-// - Parses a GUID from a string representation of the GUID. Throws an exception
-//      if it fails to parse the GUID. See documentation of IIDFromString for
-//      details.
-// Arguments:
-// - wstr: a string representation of the GUID to parse
-// Return Value:
-// - A GUID if the string could successfully be parsed. On failure, throws the
-//      failing HRESULT.
+// Creates a string from the given GUID in the format "{12345678-abcd-ef12-3456-7890abcdef12}".
+std::wstring Utils::GuidToString(const GUID& guid)
+{
+    return guidToStringCommon(guid, 0, 38);
+}
+
+// Creates a string from the given GUID in the format "12345678-abcd-ef12-3456-7890abcdef12".
+std::wstring Utils::GuidToPlainString(const GUID& guid)
+{
+    return guidToStringCommon(guid, 1, 36);
+}
+
+// Creates a GUID from a string in the format "{12345678-abcd-ef12-3456-7890abcdef12}".
+// Throws if the conversion failed.
 GUID Utils::GuidFromString(_Null_terminated_ const wchar_t* str)
 {
     GUID result;
     THROW_IF_FAILED(IIDFromString(str, &result));
     return result;
+}
+
+// Creates a GUID from a string in the format "12345678-abcd-ef12-3456-7890abcdef12".
+// Throws if the conversion failed.
+//
+// Side-note: An interesting quirk of this method is that the given string doesn't need to be null-terminated.
+// This method could be combined with GuidFromString() so that it also doesn't require null-termination.
+[[gsl::suppress(bounds)]] GUID Utils::GuidFromPlainString(_Null_terminated_ const wchar_t* str)
+{
+    // Add "{}" brackets around our string, as required by IIDFromString().
+    wchar_t buffer[39];
+    buffer[0] = L'{';
+    // This wcscpy_s() copies 36 characters and 1 terminating null.
+    // The latter forces us to call this method before filling buffer[37] with '}'.
+    THROW_HR_IF(CO_E_CLASSSTRING, wcscpy_s(&buffer[1], 37, str));
+    buffer[37] = L'}';
+    buffer[38] = L'\0';
+
+    return GuidFromString(&buffer[0]);
 }
 
 // Method Description:

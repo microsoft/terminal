@@ -375,7 +375,7 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
 try
 {
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
@@ -383,8 +383,9 @@ try
     const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
-    const auto fg = gsl::narrow_cast<u32>(color) | 0xff000000;
-    _p.rows[y]->gridLineRanges.emplace_back(lines, fg, from, to);
+    const auto glColor = gsl::narrow_cast<u32>(gridlineColor) | 0xff000000;
+    const auto ulColor = gsl::narrow_cast<u32>(underlineColor) | 0xff000000;
+    _p.rows[y]->gridLineRanges.emplace_back(lines, glColor, ulColor, from, to);
     return S_OK;
 }
 CATCH_RETURN()
@@ -409,6 +410,40 @@ try
     _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
     _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
     _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
+    return S_OK;
+}
+CATCH_RETURN()
+
+[[nodiscard]] HRESULT AtlasEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+try
+{
+    if (rects.empty())
+    {
+        return S_OK;
+    }
+
+    for (const auto& rect : rects)
+    {
+        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
+        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
+
+        if (rect.bottom <= 0 || rect.top >= _p.s->viewportCellCount.y)
+        {
+            continue;
+        }
+
+        const auto bg = &_p.backgroundBitmap[_p.colorBitmapRowStride * y];
+        const auto fg = &_p.foregroundBitmap[_p.colorBitmapRowStride * y];
+        std::fill(bg + from, bg + to, 0xff3296ff);
+        std::fill(fg + from, fg + to, 0xff000000);
+    }
+
+    for (int i = 0; i < 2; ++i)
+    {
+        _p.colorBitmapGenerations[i].bump();
+    }
+
     return S_OK;
 }
 CATCH_RETURN()

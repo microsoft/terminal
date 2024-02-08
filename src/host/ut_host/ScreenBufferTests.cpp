@@ -604,6 +604,16 @@ void ScreenBufferTests::TestResetClearTabStops()
     stateMachine.ProcessString(resetToInitialState);
     expectedStops = { 8, 16, 24, 32, 40, 48, 56, 64, 72 };
     VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(screenInfo));
+
+    Log::Comment(L"DECST8C with 5 parameter resets tabs to defaults.");
+    stateMachine.ProcessString(clearTabStops);
+    stateMachine.ProcessString(L"\033[?5W");
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(screenInfo));
+
+    Log::Comment(L"DECST8C with omitted parameter resets tabs to defaults.");
+    stateMachine.ProcessString(clearTabStops);
+    stateMachine.ProcessString(L"\033[?W");
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(screenInfo));
 }
 
 void ScreenBufferTests::TestAddTabStop()
@@ -2927,13 +2937,13 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     if (writeSingly)
     {
-        WriteCharsLegacy(si, L"X", false, nullptr);
-        WriteCharsLegacy(si, L"X", false, nullptr);
-        WriteCharsLegacy(si, L"\x08", false, nullptr);
+        WriteCharsLegacy(si, L"X", nullptr);
+        WriteCharsLegacy(si, L"X", nullptr);
+        WriteCharsLegacy(si, L"\x08", nullptr);
     }
     else
     {
-        WriteCharsLegacy(si, L"XX\x08", false, nullptr);
+        WriteCharsLegacy(si, L"XX\x08", nullptr);
     }
 
     TextAttribute expectedDefaults{};
@@ -4505,6 +4515,7 @@ void ScreenBufferTests::EraseScrollbackTests()
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto& stateMachine = si.GetStateMachine();
     const auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto initialAttributes = si.GetAttributes();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const auto bufferWidth = si.GetBufferSize().Width();
@@ -4561,7 +4572,7 @@ void ScreenBufferTests::EraseScrollbackTests()
     }
 
     Log::Comment(L"The rest of the buffer should be cleared with default attributes.");
-    VERIFY_IS_TRUE(_ValidateLinesContain(viewportLine, bufferHeight, L' ', TextAttribute{}));
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportLine, bufferHeight, L' ', initialAttributes));
 }
 
 void ScreenBufferTests::EraseTests()
@@ -7188,7 +7199,7 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
 
     Log::Comment(L"Now write several lines of content using WriteCharsLegacy");
     const auto content = L"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n";
-    WriteCharsLegacy(si, content, false, nullptr);
+    WriteCharsLegacy(si, content, nullptr);
 
     Log::Comment(L"Confirm that the cursor position has moved down 10 lines");
     const auto newCursorPos = til::point{ initialCursorPos.x, initialCursorPos.y + 10 };

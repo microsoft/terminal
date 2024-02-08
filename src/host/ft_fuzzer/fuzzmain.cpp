@@ -132,6 +132,6 @@ extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data,
     til::CoordType scrollY{};
     gci.LockConsole();
     auto u = wil::scope_exit([&]() { gci.UnlockConsole(); });
-    WriteCharsLegacy(gci.GetActiveOutputBuffer(), u16String, true, &scrollY);
+    WriteCharsLegacy(gci.GetActiveOutputBuffer(), u16String, &scrollY);
     return 0;
 }

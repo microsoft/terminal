@@ -217,7 +217,7 @@ void AtlasEngine::_recreateBackend()
     if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING)
     {
         // This might happen if you don't have "Graphics debugger and GPU
-        // profiler for DirectX" installed in VS. We shouln't just explode if
+        // profiler for DirectX" installed in VS. We shouldn't just explode if
         // you don't though - instead, disable debugging and try again.
         WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_DEBUG);
 
@@ -329,7 +329,7 @@ void AtlasEngine::_createSwapChain()
         .SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
         // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
         // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
-        .AlphaMode = _p.s->target->enableTransparentBackground ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
+        .AlphaMode = _p.s->target->useAlpha ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
         .Flags = swapChainFlags,
     };
 
@@ -359,6 +359,8 @@ void AtlasEngine::_createSwapChain()
     _p.swapChain.targetGeneration = _p.s->target.generation();
     _p.swapChain.targetSize = _p.s->targetSize;
     _p.swapChain.waitForPresentation = true;
+
+    LOG_IF_FAILED(_p.swapChain.swapChain->SetMaximumFrameLatency(1));
 
     WaitUntilCanRender();
 

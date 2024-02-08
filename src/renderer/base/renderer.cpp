@@ -217,7 +217,7 @@ void Renderer::TriggerSystemRedraw(const til::rect* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    auto view = _viewport;
+    auto view = _pData->GetViewport();
     auto srUpdateRegion = region.ToExclusive();
 
     // If the dirty region has double width lines, we need to double the size of
@@ -362,6 +362,7 @@ void Renderer::TriggerSelection()
     {
         // Get selection rectangles
         auto rects = _GetSelectionRects();
+        auto searchSelections = _GetSearchSelectionRects();
 
         // Make a viewport representing the coordinates that are currently presentable.
         const til::rect viewport{ _pData->GetViewport().Dimensions() };
@@ -374,11 +375,14 @@ void Renderer::TriggerSelection()
 
         FOREACH_ENGINE(pEngine)
         {
+            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSearchSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(searchSelections));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
         }
 
         _previousSelection = std::move(rects);
+        _previousSearchSelection = std::move(searchSelections);
 
         NotifyPaintFrame();
     }
@@ -955,13 +959,21 @@ GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcep
     {
     case UnderlineStyle::NoUnderline:
         break;
+    case UnderlineStyle::SinglyUnderlined:
+        lines.set(GridLines::Underline);
+        break;
     case UnderlineStyle::DoublyUnderlined:
         lines.set(GridLines::DoubleUnderline);
         break;
-    case UnderlineStyle::SinglyUnderlined:
     case UnderlineStyle::CurlyUnderlined:
+        lines.set(GridLines::CurlyUnderline);
+        break;
     case UnderlineStyle::DottedUnderlined:
+        lines.set(GridLines::DottedUnderline);
+        break;
     case UnderlineStyle::DashedUnderlined:
+        lines.set(GridLines::DashedUnderline);
+        break;
     default:
         lines.set(GridLines::Underline);
         break;
@@ -1002,10 +1014,11 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     // Return early if there are no lines to paint.
     if (lines.any())
     {
-        // Get the current foreground color to render the lines.
-        const auto rgb = _renderSettings.GetAttributeColors(textAttribute).first;
+        // Get the current foreground and underline colors to render the lines.
+        const auto fg = _renderSettings.GetAttributeColors(textAttribute).first;
+        const auto underlineColor = _renderSettings.GetAttributeUnderlineColor(textAttribute);
         // Draw the lines
-        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, fg, underlineColor, cchLine, coordTarget));
     }
 }
 
@@ -1197,15 +1210,31 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
-        for (const auto& rect : rectangles)
+        const auto searchRectangles = _GetSearchSelectionRects();
+
+        std::vector<til::rect> dirtySearchRectangles;
+        for (auto& dirtyRect : dirtyAreas)
         {
-            for (auto& dirtyRect : dirtyAreas)
+            for (const auto& sr : searchRectangles)
+            {
+                if (const auto rectCopy = sr & dirtyRect)
+                {
+                    dirtySearchRectangles.emplace_back(rectCopy);
+                }
+            }
+
+            for (const auto& rect : rectangles)
             {
                 if (const auto rectCopy = rect & dirtyRect)
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
             }
+        }
+
+        if (!dirtySearchRectangles.empty())
+        {
+            LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
         }
     }
     CATCH_LOG();
@@ -1254,6 +1283,28 @@ std::vector<til::rect> Renderer::_GetSelectionRects() const
 {
     const auto& buffer = _pData->GetTextBuffer();
     auto rects = _pData->GetSelectionRects();
+    // Adjust rectangles to viewport
+    auto view = _pData->GetViewport();
+
+    std::vector<til::rect> result;
+    result.reserve(rects.size());
+
+    for (auto rect : rects)
+    {
+        // Convert buffer offsets to the equivalent range of screen cells
+        // expected by callers, taking line rendition into account.
+        const auto lineRendition = buffer.GetLineRendition(rect.Top());
+        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
+        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
+    }
+
+    return result;
+}
+
+std::vector<til::rect> Renderer::_GetSearchSelectionRects() const
+{
+    const auto& buffer = _pData->GetTextBuffer();
+    auto rects = _pData->GetSearchSelectionRects();
     // Adjust rectangles to viewport
     auto view = _pData->GetViewport();
 

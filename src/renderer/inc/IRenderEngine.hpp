@@ -41,6 +41,9 @@ namespace Microsoft::Console::Render
         Right,
         Underline,
         DoubleUnderline,
+        CurlyUnderline,
+        DottedUnderline,
+        DashedUnderline,
         Strikethrough,
         HyperlinkUnderline
     };
@@ -73,8 +76,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PrepareLineTransform(LineRendition lineRendition, til::CoordType targetRow, til::CoordType viewportLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, til::point coordTarget) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF gridlineColor, COLORREF underlineColor, size_t cchLine, til::point coordTarget) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintSelection(const til::rect& rect) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintSelections(const std::vector<til::rect>& rects) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept = 0;

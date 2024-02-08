@@ -18,13 +18,7 @@
     <ClCompile Include="..\adaptDispatch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\telemetry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\terminalOutput.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\tracing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\adaptDispatchGraphics.cpp">
@@ -53,13 +47,7 @@
     <ClInclude Include="..\precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\telemetry.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\terminalOutput.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\tracing.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\IInteractDispatch.hpp">
@@ -89,5 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
 </Project>

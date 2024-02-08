@@ -126,6 +126,8 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
 // The compiler doesn't understand the likelihood of our branches. (PGO does, but that's imperfect.)
 __declspec(noinline) void TextBuffer::_commit(const std::byte* row)
 {
+    assert(row >= _commitWatermark);
+
     const auto rowEnd = row + _bufferRowStride;
     const auto remaining = gsl::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
     const auto minimum = gsl::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
@@ -146,7 +148,7 @@ void TextBuffer::_decommit() noexcept
     _commitWatermark = _buffer.get();
 }
 
-// Constructs ROWs up to (excluding) the ROW pointed to by `until`.
+// Constructs ROWs between [_commitWatermark,until).
 void TextBuffer::_construct(const std::byte* until) noexcept
 {
     for (; _commitWatermark < until; _commitWatermark += _bufferRowStride)
@@ -158,8 +160,7 @@ void TextBuffer::_construct(const std::byte* until) noexcept
     }
 }
 
-// Destroys all previously constructed ROWs.
-// Be careful! This doesn't reset any of the members, in particular the _commitWatermark.
+// Destructs ROWs between [_buffer,_commitWatermark).
 void TextBuffer::_destroy() const noexcept
 {
     for (auto it = _buffer.get(); it < _commitWatermark; it += _bufferRowStride)
@@ -168,9 +169,8 @@ void TextBuffer::_destroy() const noexcept
     }
 }
 
-// This function is "direct" because it trusts the caller to properly wrap the "offset"
-// parameter modulo the _height of the buffer, etc. But keep in mind that a offset=0
-// is the GetScratchpadRow() and not the GetRowByOffset(0). That one is offset=1.
+// This function is "direct" because it trusts the caller to properly
+// wrap the "offset" parameter modulo the _height of the buffer.
 ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
 {
     const auto row = _buffer.get() + _bufferRowStride * offset;
@@ -184,6 +184,7 @@ ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
     return *reinterpret_cast<ROW*>(row);
 }
 
+// See GetRowByOffset().
 ROW& TextBuffer::_getRow(til::CoordType y) const
 {
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
@@ -197,6 +198,7 @@ ROW& TextBuffer::_getRow(til::CoordType y) const
     }
 
     // We add 1 to the row offset, because row "0" is the one returned by GetScratchpadRow().
+    // See GetScratchpadRow() for more explanation.
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
     return const_cast<TextBuffer*>(this)->_getRowByOffsetDirect(gsl::narrow_cast<size_t>(offset) + 1);
 }
@@ -238,6 +240,9 @@ ROW& TextBuffer::GetScratchpadRow()
 // Returns a row filled with whitespace and the given attributes, for you to freely use.
 ROW& TextBuffer::GetScratchpadRow(const TextAttribute& attributes)
 {
+    // The scratchpad row is mapped to the underlying index 0, whereas all regular rows are mapped to
+    // index 1 and up. We do it this way instead of the other way around (scratchpad row at index _height),
+    // because that would force us to MEM_COMMIT the entire buffer whenever this function is called.
     auto& r = _getRowByOffsetDirect(0);
     r.Reset(attributes);
     return r;
@@ -414,6 +419,88 @@ size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position)
 size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position) noexcept
 {
     return til::utf16_iterate_prev(chars, position);
+}
+
+// Ever wondered how much space a piece of text needs before inserting it? This function will tell you!
+// It fundamentally behaves identical to the various ROW functions around `RowWriteState`.
+//
+// Set `columnLimit` to the amount of space that's available (e.g. `buffer_width - cursor_position.x`)
+// and it'll return the amount of characters that fit into this space. The out parameter `columns`
+// will contain the amount of columns this piece of text has actually used.
+//
+// Just like with `RowWriteState` one special case is when not all text fits into the given space:
+// In that case, this function always returns exactly `columnLimit`. This distinction is important when "inserting"
+// a wide glyph but there's only 1 column left. That 1 remaining column is supposed to be padded with whitespace.
+size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::CoordType columnLimit, til::CoordType& columns) noexcept
+{
+    columnLimit = std::max(0, columnLimit);
+
+    const auto beg = chars.begin();
+    const auto end = chars.end();
+    auto it = beg;
+    const auto asciiEnd = beg + std::min(chars.size(), gsl::narrow_cast<size_t>(columnLimit));
+
+    // ASCII fast-path: 1 char always corresponds to 1 column.
+    for (; it != asciiEnd && *it < 0x80; ++it)
+    {
+    }
+
+    const auto dist = gsl::narrow_cast<size_t>(it - beg);
+    auto col = gsl::narrow_cast<til::CoordType>(dist);
+
+    if (it == asciiEnd) [[likely]]
+    {
+        columns = col;
+        return dist;
+    }
+
+    // Unicode slow-path where we need to count text and columns separately.
+    for (;;)
+    {
+        auto ptr = &*it;
+        const auto wch = *ptr;
+        size_t len = 1;
+
+        col++;
+
+        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
+        // It also allows us to skip the surrogate pair decoding at the same time.
+        if (wch >= 0x80)
+        {
+            if (til::is_surrogate(wch))
+            {
+                const auto it2 = it + 1;
+                if (til::is_leading_surrogate(wch) && it2 != end && til::is_trailing_surrogate(*it2))
+                {
+                    len = 2;
+                }
+                else
+                {
+                    ptr = &UNICODE_REPLACEMENT;
+                }
+            }
+
+            col += IsGlyphFullWidth({ ptr, len });
+        }
+
+        // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
+        // because if we tried inserting a wide glyph into just 1 remaining column it will
+        // fail to fit, but that remaining column still has been used up. When the caller sees
+        // `columns == columnLimit` they will line-wrap and continue inserting into the next row.
+        if (col > columnLimit)
+        {
+            columns = columnLimit;
+            return gsl::narrow_cast<size_t>(it - beg);
+        }
+
+        // But if we simply ran out of text we just need to return the actual number of columns.
+        it += len;
+        if (it == end)
+        {
+            columns = col;
+            return chars.size();
+        }
+    }
 }
 
 // Pretend as if `position` is a regular cursor in the TextBuffer.
@@ -820,15 +907,14 @@ til::point TextBuffer::GetLastNonSpaceCharacter(const Viewport* viewOptional) co
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
-    auto fDoBackUp = (coordEndOfText.x < 0 && coordEndOfText.y > viewportTop); // this row is empty, and we're not at the top
-    while (fDoBackUp)
+
+    // while (this row is empty, and we're not at the top)
+    while (coordEndOfText.x < 0 && coordEndOfText.y > viewportTop)
     {
         coordEndOfText.y--;
         const auto& backupRow = GetRowByOffset(coordEndOfText.y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
-
         coordEndOfText.x = backupRow.MeasureRight() - 1;
-        fDoBackUp = (coordEndOfText.x < 0 && coordEndOfText.y > viewportTop);
     }
 
     // don't allow negative results
@@ -1064,6 +1150,39 @@ void TextBuffer::Reset() noexcept
     _initialAttributes = _currentAttributes;
 }
 
+void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordType height)
+{
+    if (start <= 0)
+    {
+        return;
+    }
+
+    if (height <= 0)
+    {
+        _decommit();
+        return;
+    }
+
+    // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
+    // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
+    // The start parameter is relative to the _firstRow. The trick to get the content to the absolute start
+    // is to simply add _firstRow ourselves and then reset it to 0. This causes ScrollRows() to write into
+    // the absolute start while reading from relative coordinates. This works because GetRowByOffset()
+    // operates modulo the buffer height and so the possibly-too-large startAbsolute won't be an issue.
+    const auto startAbsolute = _firstRow + start;
+    _firstRow = 0;
+    ScrollRows(startAbsolute, height, -startAbsolute);
+
+    const auto end = _estimateOffsetOfLastCommittedRow();
+    for (auto y = height; y <= end; ++y)
+    {
+        GetMutableRowByOffset(y).Reset(_initialAttributes);
+    }
+
+    ScrollMarks(-start);
+    ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
+}
+
 // Routine Description:
 // - This is the legacy screen resize with minimal changes
 // Arguments:
@@ -1247,36 +1366,32 @@ til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, co
 {
     auto result = target;
     const auto bufferSize = GetSize();
-    auto stayAtOrigin = false;
 
     // ignore left boundary. Continue until readable text found
     while (_GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
     {
-        if (!bufferSize.DecrementInBounds(result))
+        if (result == bufferSize.Origin())
         {
-            // first char in buffer is a DelimiterChar or ControlChar
-            // we can't move any further back
-            stayAtOrigin = true;
-            break;
+            //looped around and hit origin (no word between origin and target)
+            return result;
         }
+        bufferSize.DecrementInBounds(result);
     }
 
     // make sure we expand to the left boundary or the beginning of the word
     while (_GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
     {
-        if (!bufferSize.DecrementInBounds(result))
+        if (result == bufferSize.Origin())
         {
             // first char in buffer is a RegularChar
             // we can't move any further back
-            break;
+            return result;
         }
+        bufferSize.DecrementInBounds(result);
     }
 
-    // move off of delimiter and onto word start
-    if (!stayAtOrigin && _GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
-    {
-        bufferSize.IncrementInBounds(result);
-    }
+    // move off of delimiter
+    bufferSize.IncrementInBounds(result);
 
     return result;
 }
@@ -1294,10 +1409,16 @@ til::point TextBuffer::_GetWordStartForSelection(const til::point target, const 
     const auto bufferSize = GetSize();
 
     const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
+    const bool isControlChar = initialDelimiter == DelimiterClass::ControlChar;
 
     // expand left until we hit the left boundary or a different delimiter class
-    while (result.x > bufferSize.Left() && (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
+    while (result != bufferSize.Origin() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
+        //prevent selection wrapping on whitespace selection
+        if (isControlChar && result.x == bufferSize.Left())
+        {
+            break;
+        }
         bufferSize.DecrementInBounds(result);
     }
 
@@ -1375,25 +1496,21 @@ til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, cons
     }
     else
     {
-        auto iter{ GetCellDataAt(result, bufferSize) };
-        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) == DelimiterClass::RegularChar)
+        while (result != limit && result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
         {
             // Iterate through readable text
-            ++iter;
+            bufferSize.IncrementInBounds(result);
         }
 
-        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) != DelimiterClass::RegularChar)
+        while (result != limit && result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
         {
             // expand to the beginning of the NEXT word
-            ++iter;
+            bufferSize.IncrementInBounds(result);
         }
 
-        result = iter.Pos();
-
-        // Special case: we tried to move one past the end of the buffer,
-        // but iter prevented that (because that pos doesn't exist).
+        // Special case: we tried to move one past the end of the buffer
         // Manually increment onto the EndExclusive point.
-        if (!iter)
+        if (result == bufferSize.BottomRightInclusive())
         {
             bufferSize.IncrementInBounds(result, true);
         }
@@ -1413,19 +1530,18 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
 {
     const auto bufferSize = GetSize();
 
-    // can't expand right
-    if (target.x == bufferSize.RightInclusive())
-    {
-        return target;
-    }
-
     auto result = target;
     const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
+    const bool isControlChar = initialDelimiter == DelimiterClass::ControlChar;
 
-    // expand right until we hit the right boundary or a different delimiter class
-    while (result.x < bufferSize.RightInclusive() && (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
+    // expand right until we hit the right boundary as a ControlChar or a different delimiter class
+    while (result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        bufferSize.IncrementInBounds(result);
+        if (isControlChar && result.x == bufferSize.RightInclusive())
+        {
+            break;
+        }
+        bufferSize.IncrementInBoundsCircular(result);
     }
 
     if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)
@@ -1837,135 +1953,6 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
     }
 }
 
-// Routine Description:
-// - Retrieves the text data from the selected region and presents it in a clipboard-ready format (given little post-processing).
-// Arguments:
-// - includeCRLF - inject CRLF pairs to the end of each line
-// - trimTrailingWhitespace - remove the trailing whitespace at the end of each line
-// - textRects - the rectangular regions from which the data will be extracted from the buffer (i.e.: selection rects)
-// - GetAttributeColors - function used to map TextAttribute to RGB COLORREFs. If null, only extract the text.
-// - formatWrappedRows - if set we will apply formatting (CRLF inclusion and whitespace trimming) on wrapped rows
-// Return Value:
-// - The text, background color, and foreground color data of the selected region of the text buffer.
-const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
-                                                   const bool trimTrailingWhitespace,
-                                                   const std::vector<til::inclusive_rect>& selectionRects,
-                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
-                                                   const bool formatWrappedRows) const
-{
-    TextAndColor data;
-    const auto copyTextColor = GetAttributeColors != nullptr;
-
-    // preallocate our vectors to reduce reallocs
-    const auto rows = selectionRects.size();
-    data.text.reserve(rows);
-    if (copyTextColor)
-    {
-        data.FgAttr.reserve(rows);
-        data.BkAttr.reserve(rows);
-    }
-
-    // for each row in the selection
-    for (size_t i = 0; i < rows; i++)
-    {
-        const auto iRow = selectionRects.at(i).top;
-
-        const auto highlight = Viewport::FromInclusive(selectionRects.at(i));
-
-        // retrieve the data from the screen buffer
-        auto it = GetCellDataAt(highlight.Origin(), highlight);
-
-        // allocate a string buffer
-        std::wstring selectionText;
-        std::vector<COLORREF> selectionFgAttr;
-        std::vector<COLORREF> selectionBkAttr;
-
-        // preallocate to avoid reallocs
-        selectionText.reserve(gsl::narrow<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
-        if (copyTextColor)
-        {
-            selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
-            selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
-        }
-
-        // copy char data into the string buffer, skipping trailing bytes
-        while (it)
-        {
-            const auto& cell = *it;
-
-            if (cell.DbcsAttr() != DbcsAttribute::Trailing)
-            {
-                const auto chars = cell.Chars();
-                selectionText.append(chars);
-
-                if (copyTextColor)
-                {
-                    const auto cellData = cell.TextAttr();
-                    const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(cellData);
-                    for (size_t j = 0; j < chars.size(); ++j)
-                    {
-                        selectionFgAttr.push_back(CellFgAttr);
-                        selectionBkAttr.push_back(CellBkAttr);
-                    }
-                }
-            }
-
-            ++it;
-        }
-
-        // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
-        const auto shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).WasWrapForced();
-
-        if (trimTrailingWhitespace)
-        {
-            if (shouldFormatRow)
-            {
-                // remove the spaces at the end (aka trim the trailing whitespace)
-                while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
-                {
-                    selectionText.pop_back();
-                    if (copyTextColor)
-                    {
-                        selectionFgAttr.pop_back();
-                        selectionBkAttr.pop_back();
-                    }
-                }
-            }
-        }
-
-        // apply CR/LF to the end of the final string, unless we're the last line.
-        // a.k.a if we're earlier than the bottom, then apply CR/LF.
-        if (includeCRLF && i < selectionRects.size() - 1)
-        {
-            if (shouldFormatRow)
-            {
-                // then we can assume a CR/LF is proper
-                selectionText.push_back(UNICODE_CARRIAGERETURN);
-                selectionText.push_back(UNICODE_LINEFEED);
-
-                if (copyTextColor)
-                {
-                    // can't see CR/LF so just use black FG & BK
-                    const auto Blackness = RGB(0x00, 0x00, 0x00);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
-                }
-            }
-        }
-
-        data.text.emplace_back(std::move(selectionText));
-        if (copyTextColor)
-        {
-            data.FgAttr.emplace_back(std::move(selectionFgAttr));
-            data.BkAttr.emplace_back(std::move(selectionBkAttr));
-        }
-    }
-
-    return data;
-}
-
 size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coordEnd) const
 {
     const auto bufferSize = GetSize();
@@ -2004,186 +1991,292 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 }
 
 // Routine Description:
-// - Generates a CF_HTML compliant structure based on the passed in text and color data
+// - Given a copy request and a row, retrieves the row bounds [begin, end) and
+//   a boolean indicating whether a line break should be added to this row.
 // Arguments:
-// - rows - the text and color data we will format & encapsulate
-// - backgroundColor - default background color for characters, also used in padding
+// - req - the copy request
+// - iRow - the row index
+// - row - the row
+// Return Value:
+// - The row bounds and a boolean for line break
+std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(const TextBuffer::CopyRequest& req, const til::CoordType iRow, const ROW& row) const
+{
+    til::CoordType rowBeg = 0;
+    til::CoordType rowEnd = 0;
+    if (req.blockSelection)
+    {
+        const auto lineRendition = row.GetLineRendition();
+        const auto minX = req.bufferCoordinates ? req.minX : ScreenToBufferLine(til::point{ req.minX, iRow }, lineRendition).x;
+        const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLine(til::point{ req.maxX, iRow }, lineRendition).x;
+
+        rowBeg = minX;
+        rowEnd = maxX + 1; // +1 to get an exclusive end
+    }
+    else
+    {
+        const auto lineRendition = row.GetLineRendition();
+        const auto beg = req.bufferCoordinates ? req.beg : ScreenToBufferLine(req.beg, lineRendition);
+        const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLine(req.end, lineRendition);
+
+        rowBeg = iRow != beg.y ? 0 : beg.x;
+        rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x + 1; // +1 to get an exclusive end
+    }
+
+    // Our selection mechanism doesn't stick to glyph boundaries at the moment.
+    // We need to adjust begin and end points manually to avoid partially
+    // selected glyphs.
+    rowBeg = row.AdjustToGlyphStart(rowBeg);
+    rowEnd = row.AdjustToGlyphEnd(rowEnd);
+
+    // When `formatWrappedRows` is set, apply formatting on all rows (wrapped
+    // and non-wrapped), but when it's false, format non-wrapped rows only.
+    const auto shouldFormatRow = req.formatWrappedRows || !row.WasWrapForced();
+
+    // trim trailing whitespace
+    if (shouldFormatRow && req.trimTrailingWhitespace)
+    {
+        rowEnd = std::min(rowEnd, row.GetLastNonSpaceColumn());
+    }
+
+    // line breaks
+    const auto addLineBreak = shouldFormatRow && req.includeLineBreak;
+
+    return { rowBeg, rowEnd, addLineBreak };
+}
+
+// Routine Description:
+// - Retrieves the text data from the buffer and presents it in a clipboard-ready format.
+// Arguments:
+// - req - the copy request having the bounds of the selected region and other related configuration flags.
+// Return Value:
+// - The text data from the selected region of the text buffer. Empty if the copy request is invalid.
+std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
+{
+    if (req.beg > req.end)
+    {
+        return {};
+    }
+
+    std::wstring selectedText;
+
+    for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
+    {
+        const auto& row = GetRowByOffset(iRow);
+        const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
+
+        // save selected text
+        selectedText += row.GetText(rowBeg, rowEnd);
+
+        if (addLineBreak && iRow != req.end.y)
+        {
+            selectedText += L"\r\n";
+        }
+    }
+
+    return selectedText;
+}
+
+// Routine Description:
+// - Generates a CF_HTML compliant structure from the selected region of the buffer
+// Arguments:
+// - req - the copy request having the bounds of the selected region and other related configuration flags.
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
+// - backgroundColor - default background color for characters, also used in padding
+// - isIntenseBold - true if being intense is treated as being bold
+// - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
-// - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows,
+// - string containing the generated HTML. Empty if the copy request is invalid.
+std::string TextBuffer::GenHTML(const CopyRequest& req,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
-                                const COLORREF backgroundColor)
+                                const COLORREF backgroundColor,
+                                const bool isIntenseBold,
+                                std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept
 {
+    // GH#5347 - Don't provide a title for the generated HTML, as many
+    // web applications will paste the title first, followed by the HTML
+    // content, which is unexpected.
+
+    if (req.beg > req.end)
+    {
+        return {};
+    }
+
     try
     {
-        std::ostringstream htmlBuilder;
+        std::string htmlBuilder;
 
-        // First we have to add some standard
-        // HTML boiler plate required for CF_HTML
-        // as part of the HTML Clipboard format
-        const std::string htmlHeader =
-            "<!DOCTYPE><HTML><HEAD></HEAD><BODY>";
-        htmlBuilder << htmlHeader;
+        // First we have to add some standard HTML boiler plate required for
+        // CF_HTML as part of the HTML Clipboard format
+        constexpr std::string_view htmlHeader = "<!DOCTYPE><HTML><HEAD></HEAD><BODY>";
+        htmlBuilder += htmlHeader;
 
-        htmlBuilder << "<!--StartFragment -->";
+        htmlBuilder += "<!--StartFragment -->";
 
         // apply global style in div element
         {
-            htmlBuilder << "<DIV STYLE=\"";
-            htmlBuilder << "display:inline-block;";
-            htmlBuilder << "white-space:pre;";
+            htmlBuilder += "<DIV STYLE=\"";
+            htmlBuilder += "display:inline-block;";
+            htmlBuilder += "white-space:pre;";
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("background-color:{};"), Utils::ColorToHexString(backgroundColor));
 
-            htmlBuilder << "background-color:";
-            htmlBuilder << Utils::ColorToHexString(backgroundColor);
-            htmlBuilder << ";";
-
-            htmlBuilder << "font-family:";
-            htmlBuilder << "'";
-            htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
-            htmlBuilder << "',";
             // even with different font, add monospace as fallback
-            htmlBuilder << "monospace;";
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-family:'{}',monospace;"), til::u16u8(fontFaceName));
 
-            htmlBuilder << "font-size:";
-            htmlBuilder << fontHeightPoints;
-            htmlBuilder << "pt;";
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-size:{}pt;"), fontHeightPoints);
 
             // note: MS Word doesn't support padding (in this way at least)
-            htmlBuilder << "padding:";
-            htmlBuilder << 4; // todo: customizable padding
-            htmlBuilder << "px;";
+            // todo: customizable padding
+            htmlBuilder += "padding:4px;";
 
-            htmlBuilder << "\">";
+            htmlBuilder += "\">";
         }
 
-        // copy text and info color from buffer
-        auto hasWrittenAnyText = false;
-        std::optional<COLORREF> fgColor = std::nullopt;
-        std::optional<COLORREF> bkColor = std::nullopt;
-        for (size_t row = 0; row < rows.text.size(); row++)
+        for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
         {
-            size_t startOffset = 0;
+            const auto& row = GetRowByOffset(iRow);
+            const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
+            const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
+            const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
+            const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
 
-            if (row != 0)
+            auto x = rowBegU16;
+            for (const auto& [attr, length] : runs)
             {
-                htmlBuilder << "<BR>";
+                const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+                const auto [fg, bg, ul] = GetAttributeColors(attr);
+                const auto fgHex = Utils::ColorToHexString(fg);
+                const auto bgHex = Utils::ColorToHexString(bg);
+                const auto ulHex = Utils::ColorToHexString(ul);
+                const auto ulStyle = attr.GetUnderlineStyle();
+                const auto isUnderlined = ulStyle != UnderlineStyle::NoUnderline;
+                const auto isCrossedOut = attr.IsCrossedOut();
+                const auto isOverlined = attr.IsOverlined();
+
+                htmlBuilder += "<SPAN STYLE=\"";
+                fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("color:{};"), fgHex);
+                fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("background-color:{};"), bgHex);
+
+                if (isIntenseBold && attr.IsIntense())
+                {
+                    htmlBuilder += "font-weight:bold;";
+                }
+
+                if (attr.IsItalic())
+                {
+                    htmlBuilder += "font-style:italic;";
+                }
+
+                if (isCrossedOut || isOverlined)
+                {
+                    fmt::format_to(std::back_inserter(htmlBuilder),
+                                   FMT_COMPILE("text-decoration:{} {} {};"),
+                                   isCrossedOut ? "line-through" : "",
+                                   isOverlined ? "overline" : "",
+                                   fgHex);
+                }
+
+                if (isUnderlined)
+                {
+                    // Since underline, overline and strikethrough use the same css property,
+                    // we cannot apply different colors to them at the same time. However, we
+                    // can achieve the desired result by creating a nested <span> and applying
+                    // underline style and color to it.
+                    htmlBuilder += "\"><SPAN STYLE=\"";
+
+                    switch (ulStyle)
+                    {
+                    case UnderlineStyle::NoUnderline:
+                        break;
+                    case UnderlineStyle::DoublyUnderlined:
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline double {};"), ulHex);
+                        break;
+                    case UnderlineStyle::CurlyUnderlined:
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline wavy {};"), ulHex);
+                        break;
+                    case UnderlineStyle::DottedUnderlined:
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline dotted {};"), ulHex);
+                        break;
+                    case UnderlineStyle::DashedUnderlined:
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline dashed {};"), ulHex);
+                        break;
+                    case UnderlineStyle::SinglyUnderlined:
+                    default:
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline {};"), ulHex);
+                        break;
+                    }
+                }
+
+                htmlBuilder += "\">";
+
+                // text
+                std::string unescapedText;
+                THROW_IF_FAILED(til::u16u8(row.GetText(x, nextX), unescapedText));
+                for (const auto c : unescapedText)
+                {
+                    switch (c)
+                    {
+                    case '<':
+                        htmlBuilder += "&lt;";
+                        break;
+                    case '>':
+                        htmlBuilder += "&gt;";
+                        break;
+                    case '&':
+                        htmlBuilder += "&amp;";
+                        break;
+                    default:
+                        htmlBuilder += c;
+                    }
+                }
+
+                if (isUnderlined)
+                {
+                    // close the nested span we created for underline
+                    htmlBuilder += "</SPAN>";
+                }
+
+                htmlBuilder += "</SPAN>";
+
+                // advance to next run of text
+                x = nextX;
             }
 
-            for (size_t col = 0; col < rows.text.at(row).length(); col++)
+            // never add line break to the last row.
+            if (addLineBreak && iRow < req.end.y)
             {
-                const auto writeAccumulatedChars = [&](bool includeCurrent) {
-                    if (col >= startOffset)
-                    {
-                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
-                        for (const auto c : unescapedText)
-                        {
-                            switch (c)
-                            {
-                            case '<':
-                                htmlBuilder << "&lt;";
-                                break;
-                            case '>':
-                                htmlBuilder << "&gt;";
-                                break;
-                            case '&':
-                                htmlBuilder << "&amp;";
-                                break;
-                            default:
-                                htmlBuilder << c;
-                            }
-                        }
-
-                        startOffset = col;
-                    }
-                };
-
-                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
-                {
-                    // do not include \r nor \n as they don't have color attributes
-                    // and are not HTML friendly. For line break use '<BR>' instead.
-                    writeAccumulatedChars(false);
-                    break;
-                }
-
-                auto colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
-                {
-                    fgColor = rows.FgAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
-                {
-                    bkColor = rows.BkAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
-                if (colorChanged)
-                {
-                    writeAccumulatedChars(false);
-
-                    if (hasWrittenAnyText)
-                    {
-                        htmlBuilder << "</SPAN>";
-                    }
-
-                    htmlBuilder << "<SPAN STYLE=\"";
-                    htmlBuilder << "color:";
-                    htmlBuilder << Utils::ColorToHexString(fgColor.value());
-                    htmlBuilder << ";";
-                    htmlBuilder << "background-color:";
-                    htmlBuilder << Utils::ColorToHexString(bkColor.value());
-                    htmlBuilder << ";";
-                    htmlBuilder << "\">";
-                }
-
-                hasWrittenAnyText = true;
-
-                // if this is the last character in the row, flush the whole row
-                if (col == rows.text.at(row).length() - 1)
-                {
-                    writeAccumulatedChars(true);
-                }
+                htmlBuilder += "<BR>";
             }
         }
 
-        if (hasWrittenAnyText)
-        {
-            // last opened span wasn't closed in loop above, so close it now
-            htmlBuilder << "</SPAN>";
-        }
+        htmlBuilder += "</DIV>";
 
-        htmlBuilder << "</DIV>";
-
-        htmlBuilder << "<!--EndFragment -->";
+        htmlBuilder += "<!--EndFragment -->";
 
         constexpr std::string_view HtmlFooter = "</BODY></HTML>";
-        htmlBuilder << HtmlFooter;
+        htmlBuilder += HtmlFooter;
 
         // once filled with values, there will be exactly 157 bytes in the clipboard header
         constexpr size_t ClipboardHeaderSize = 157;
 
         // these values are byte offsets from start of clipboard
         const auto htmlStartPos = ClipboardHeaderSize;
-        const auto htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.tellp());
+        const auto htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.length());
         const auto fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
         const auto fragEndPos = htmlEndPos - HtmlFooter.length();
 
         // header required by HTML 0.9 format
-        std::ostringstream clipHeaderBuilder;
-        clipHeaderBuilder << "Version:0.9\r\n";
-        clipHeaderBuilder << std::setfill('0');
-        clipHeaderBuilder << "StartHTML:" << std::setw(10) << htmlStartPos << "\r\n";
-        clipHeaderBuilder << "EndHTML:" << std::setw(10) << htmlEndPos << "\r\n";
-        clipHeaderBuilder << "StartFragment:" << std::setw(10) << fragStartPos << "\r\n";
-        clipHeaderBuilder << "EndFragment:" << std::setw(10) << fragEndPos << "\r\n";
-        clipHeaderBuilder << "StartSelection:" << std::setw(10) << fragStartPos << "\r\n";
-        clipHeaderBuilder << "EndSelection:" << std::setw(10) << fragEndPos << "\r\n";
+        std::string clipHeaderBuilder;
+        clipHeaderBuilder += "Version:0.9\r\n";
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("StartHTML:{:0>10}\r\n"), htmlStartPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("EndHTML:{:0>10}\r\n"), htmlEndPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("StartFragment:{:0>10}\r\n"), fragStartPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("EndFragment:{:0>10}\r\n"), fragEndPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("StartSelection:{:0>10}\r\n"), fragStartPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("EndSelection:{:0>10}\r\n"), fragEndPos);
 
-        return clipHeaderBuilder.str() + htmlBuilder.str();
+        return clipHeaderBuilder + htmlBuilder;
     }
     catch (...)
     {
@@ -2193,25 +2286,36 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
 }
 
 // Routine Description:
-// - Generates an RTF document based on the passed in text and color data
+// - Generates an RTF document from the selected region of the buffer
 //   RTF 1.5 Spec: https://www.biblioscape.com/rtf15_spec.htm
 //   RTF 1.9.1 Spec: https://msopenspecs.azureedge.net/files/Archive_References/[MSFT-RTF].pdf
 // Arguments:
-// - rows - the text and color data we will format & encapsulate
-// - backgroundColor - default background color for characters, also used in padding
+// - req - the copy request having the bounds of the selected region and other related configuration flags.
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
-// - htmlTitle - value used in title tag of html header. Used to name the application
+// - backgroundColor - default background color for characters, also used in padding
+// - isIntenseBold - true if being intense is treated as being bold
+// - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
-// - string containing the generated RTF
-std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
+// - string containing the generated RTF. Empty if the copy request is invalid.
+std::string TextBuffer::GenRTF(const CopyRequest& req,
+                               const int fontHeightPoints,
+                               const std::wstring_view fontFaceName,
+                               const COLORREF backgroundColor,
+                               const bool isIntenseBold,
+                               std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept
 {
+    if (req.beg > req.end)
+    {
+        return {};
+    }
+
     try
     {
-        std::ostringstream rtfBuilder;
+        std::string rtfBuilder;
 
         // start rtf
-        rtfBuilder << "{";
+        rtfBuilder += "{";
 
         // Standard RTF header.
         // This is similar to the header generated by WordPad.
@@ -2227,10 +2331,11 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
         //   Some features are blocked by default to maintain compatibility
         //   with older programs (Eg. Word 97-2003). `nouicompat` disables this
         //   behavior, and unblocks these features. See: Spec 1.9.1, Pg. 51.
-        rtfBuilder << "\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat";
+        rtfBuilder += "\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat";
 
         // font table
-        rtfBuilder << "{\\fonttbl{\\f0\\fmodern\\fcharset0 " << ConvertToA(CP_UTF8, fontFaceName) << ";}}";
+        // Brace escape: add an extra brace (of same kind) after a brace to escape it within the format string.
+        fmt::format_to(std::back_inserter(rtfBuilder), FMT_COMPILE("{{\\fonttbl{{\\f0\\fmodern\\fcharset0 {};}}}}"), til::u16u8(fontFaceName));
 
         // map to keep track of colors:
         // keys are colors represented by COLORREF
@@ -2238,8 +2343,8 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
         std::unordered_map<COLORREF, size_t> colorMap;
 
         // RTF color table
-        std::ostringstream colorTableBuilder;
-        colorTableBuilder << "{\\colortbl ;";
+        std::string colorTableBuilder;
+        colorTableBuilder += "{\\colortbl ;";
 
         const auto getColorTableIndex = [&](const COLORREF color) -> size_t {
             // Exclude the 0 index for the default color, and start with 1.
@@ -2247,103 +2352,127 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
             const auto [it, inserted] = colorMap.emplace(color, colorMap.size() + 1);
             if (inserted)
             {
-                colorTableBuilder << "\\red" << static_cast<int>(GetRValue(color))
-                                  << "\\green" << static_cast<int>(GetGValue(color))
-                                  << "\\blue" << static_cast<int>(GetBValue(color))
-                                  << ";";
+                const auto red = static_cast<int>(GetRValue(color));
+                const auto green = static_cast<int>(GetGValue(color));
+                const auto blue = static_cast<int>(GetBValue(color));
+                fmt::format_to(std::back_inserter(colorTableBuilder), FMT_COMPILE("\\red{}\\green{}\\blue{};"), red, green, blue);
             }
             return it->second;
         };
 
         // content
-        std::ostringstream contentBuilder;
-        contentBuilder << "\\viewkind4\\uc4";
+        std::string contentBuilder;
+
+        // \viewkindN: View mode of the document to be used. N=4 specifies that the document is in Normal view. (maybe unnecessary?)
+        // \ucN: Number of unicode fallback characters after each codepoint. (global)
+        contentBuilder += "\\viewkind4\\uc1";
 
         // paragraph styles
-        // \fs specifies font size in half-points i.e. \fs20 results in a font size
-        // of 10 pts. That's why, font size is multiplied by 2 here.
-        contentBuilder << "\\pard\\slmult1\\f0\\fs" << std::to_string(2 * fontHeightPoints)
-                       // Set the background color for the page. But, the
-                       // standard way (\cbN) to do this isn't supported in Word.
-                       // However, the following control words sequence works
-                       // in Word (and other RTF editors also) for applying the
-                       // text background color. See: Spec 1.9.1, Pg. 23.
-                       << "\\chshdng0\\chcbpat" << getColorTableIndex(backgroundColor)
-                       << " ";
+        // \pard: paragraph description
+        // \slmultN: line-spacing multiple
+        // \fN: font to be used for the paragraph, where N is the font index in the font table
+        contentBuilder += "\\pard\\slmult1\\f0";
 
-        std::optional<COLORREF> fgColor = std::nullopt;
-        std::optional<COLORREF> bkColor = std::nullopt;
-        for (size_t row = 0; row < rows.text.size(); ++row)
+        // \fsN: specifies font size in half-points. E.g. \fs20 results in a font
+        // size of 10 pts. That's why, font size is multiplied by 2 here.
+        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\fs{}"), std::to_string(2 * fontHeightPoints));
+
+        // Set the background color for the page. But the standard way (\cbN) to do
+        // this isn't supported in Word. However, the following control words sequence
+        // works in Word (and other RTF editors also) for applying the text background
+        // color. See: Spec 1.9.1, Pg. 23.
+        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\chshdng0\\chcbpat{}"), getColorTableIndex(backgroundColor));
+
+        for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
         {
-            size_t startOffset = 0;
+            const auto& row = GetRowByOffset(iRow);
+            const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
+            const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
+            const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
+            const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
 
-            if (row != 0)
+            auto x = rowBegU16;
+            for (auto& [attr, length] : runs)
             {
-                contentBuilder << "\\line "; // new line
-            }
+                const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+                const auto [fg, bg, ul] = GetAttributeColors(attr);
+                const auto fgIdx = getColorTableIndex(fg);
+                const auto bgIdx = getColorTableIndex(bg);
+                const auto ulIdx = getColorTableIndex(ul);
+                const auto ulStyle = attr.GetUnderlineStyle();
 
-            for (size_t col = 0; col < rows.text.at(row).length(); ++col)
-            {
-                const auto writeAccumulatedChars = [&](bool includeCurrent) {
-                    if (col >= startOffset)
-                    {
-                        const auto text = std::wstring_view{ rows.text.at(row) }.substr(startOffset, col - startOffset + includeCurrent);
-                        _AppendRTFText(contentBuilder, text);
+                // start an RTF group that can be closed later to restore the
+                // default attribute.
+                contentBuilder += "{";
 
-                        startOffset = col;
-                    }
-                };
+                fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\cf{}"), fgIdx);
+                fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\chshdng0\\chcbpat{}"), bgIdx);
 
-                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
+                if (isIntenseBold && attr.IsIntense())
                 {
-                    // do not include \r nor \n as they don't have color attributes.
-                    // For line break use \line instead.
-                    writeAccumulatedChars(false);
+                    contentBuilder += "\\b";
+                }
+
+                if (attr.IsItalic())
+                {
+                    contentBuilder += "\\i";
+                }
+
+                if (attr.IsCrossedOut())
+                {
+                    contentBuilder += "\\strike";
+                }
+
+                switch (ulStyle)
+                {
+                case UnderlineStyle::NoUnderline:
+                    break;
+                case UnderlineStyle::DoublyUnderlined:
+                    fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\uldb\\ulc{}"), ulIdx);
+                    break;
+                case UnderlineStyle::CurlyUnderlined:
+                    fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\ulwave\\ulc{}"), ulIdx);
+                    break;
+                case UnderlineStyle::DottedUnderlined:
+                    fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\uld\\ulc{}"), ulIdx);
+                    break;
+                case UnderlineStyle::DashedUnderlined:
+                    fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\uldash\\ulc{}"), ulIdx);
+                    break;
+                case UnderlineStyle::SinglyUnderlined:
+                default:
+                    fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\ul\\ulc{}"), ulIdx);
                     break;
                 }
 
-                auto colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
-                {
-                    fgColor = rows.FgAttr.at(row).at(col);
-                    colorChanged = true;
-                }
+                // RTF commands and the text data must be separated by a space.
+                // Otherwise, if the text begins with a space then that space will
+                // be interpreted as part of the last command, and will be lost.
+                contentBuilder += " ";
 
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
-                {
-                    bkColor = rows.BkAttr.at(row).at(col);
-                    colorChanged = true;
-                }
+                const auto unescapedText = row.GetText(x, nextX); // including character at nextX
+                _AppendRTFText(contentBuilder, unescapedText);
 
-                if (colorChanged)
-                {
-                    writeAccumulatedChars(false);
-                    contentBuilder << "\\chshdng0\\chcbpat" << getColorTableIndex(bkColor.value())
-                                   << "\\cf" << getColorTableIndex(fgColor.value())
-                                   << " ";
-                }
+                contentBuilder += "}"; // close RTF group
 
-                // if this is the last character in the row, flush the whole row
-                if (col == rows.text.at(row).length() - 1)
-                {
-                    writeAccumulatedChars(true);
-                }
+                // advance to next run of text
+                x = nextX;
+            }
+
+            // never add line break to the last row.
+            if (addLineBreak && iRow < req.end.y)
+            {
+                contentBuilder += "\\line";
             }
         }
 
-        // end colortbl
-        colorTableBuilder << "}";
-
         // add color table to the final RTF
-        rtfBuilder << colorTableBuilder.str();
+        rtfBuilder += colorTableBuilder + "}";
 
         // add the text content to the final RTF
-        rtfBuilder << contentBuilder.str();
+        rtfBuilder += contentBuilder + "}";
 
-        // end rtf
-        rtfBuilder << "}";
-
-        return rtfBuilder.str();
+        return rtfBuilder;
     }
     catch (...)
     {
@@ -2352,7 +2481,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
     }
 }
 
-void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text)
+void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_view& text)
 {
     for (const auto codeUnit : text)
     {
@@ -2363,16 +2492,18 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
             case L'\\':
             case L'{':
             case L'}':
-                contentBuilder << "\\" << gsl::narrow<char>(codeUnit);
-                break;
+                contentBuilder += "\\";
+                [[fallthrough]];
             default:
-                contentBuilder << gsl::narrow<char>(codeUnit);
+                contentBuilder += gsl::narrow_cast<char>(codeUnit);
             }
         }
         else
         {
             // Windows uses unsigned wchar_t - RTF uses signed ones.
-            contentBuilder << "\\u" << std::to_string(til::bit_cast<int16_t>(codeUnit)) << "?";
+            // '?' is the fallback ascii character.
+            const auto codeUnitRTFStr = std::to_string(til::bit_cast<int16_t>(codeUnit));
+            fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\u{}?"), codeUnitRTFStr);
         }
     }
 }

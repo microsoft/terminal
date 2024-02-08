@@ -109,8 +109,8 @@ private:
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring_view text) noexcept;
-    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting);
-    HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
+    HRESULT _CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const;
+    HRESULT _CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const;
     void _PasteTextFromClipboard() noexcept;
 
     const unsigned int _NumberOfClicks(til::point clickPos, std::chrono::steady_clock::time_point clickTime) noexcept;

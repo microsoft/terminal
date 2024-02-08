@@ -106,9 +106,12 @@ try
             {
                 try
                 {
-                    const auto lock = publicTerminal->_terminal->LockForWriting();
-                    const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
-                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData, true));
+                    Terminal::TextCopyData bufferData;
+                    {
+                        const auto lock = publicTerminal->_terminal->LockForWriting();
+                        bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                    }
+                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
                     publicTerminal->_ClearSelection();
                 }
                 CATCH_LOG();
@@ -272,7 +275,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
 
 void HwndTerminal::_WriteTextToConnection(const std::wstring_view input) noexcept
 {
-    if (!_pfnWriteCallback)
+    if (input.empty() || !_pfnWriteCallback)
     {
         return;
     }
@@ -666,18 +669,12 @@ try
         return nullptr;
     }
 
-    TextBuffer::TextAndColor bufferData;
+    std::wstring selectedText;
     {
         const auto lock = publicTerminal->_terminal->LockForWriting();
-        bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+        auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+        selectedText = std::move(bufferData.plainText);
         publicTerminal->_ClearSelection();
-    }
-
-    // convert text: vector<string> --> string
-    std::wstring selectedText;
-    for (const auto& text : bufferData.text)
-    {
-        selectedText += text;
     }
 
     auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
@@ -758,8 +755,17 @@ try
         WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
     };
 
-    const auto lock = _terminal->LockForWriting();
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    TerminalInput::OutputType out;
+    {
+        const auto lock = _terminal->LockForReading();
+        out = _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    }
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+        return true;
+    }
+    return false;
 }
 catch (...)
 {
@@ -784,8 +790,16 @@ try
     {
         _uiaProvider->RecordKeyEvent(vkey);
     }
-    const auto lock = _terminal->LockForWriting();
-    _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+
+    TerminalInput::OutputType out;
+    {
+        const auto lock = _terminal->LockForReading();
+        out = _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+    }
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+    }
 }
 CATCH_LOG();
 
@@ -797,31 +811,39 @@ try
         return;
     }
 
-    const auto lock = _terminal->LockForWriting();
-
-    if (_terminal->IsSelectionActive())
+    TerminalInput::OutputType out;
     {
-        _ClearSelection();
-        if (ch == UNICODE_ESC)
+        const auto lock = _terminal->LockForWriting();
+
+        if (_terminal->IsSelectionActive())
         {
-            // ESC should clear any selection before it triggers input.
-            // Other characters pass through.
+            _ClearSelection();
+            if (ch == UNICODE_ESC)
+            {
+                // ESC should clear any selection before it triggers input.
+                // Other characters pass through.
+                return;
+            }
+        }
+
+        if (ch == UNICODE_TAB)
+        {
+            // TAB was handled as a keydown event (cf. Terminal::SendKeyEvent)
             return;
         }
-    }
 
-    if (ch == UNICODE_TAB)
-    {
-        // TAB was handled as a keydown event (cf. Terminal::SendKeyEvent)
-        return;
-    }
+        auto modifiers = getControlKeyState();
+        if (WI_IsFlagSet(flags, ENHANCED_KEY))
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
 
-    auto modifiers = getControlKeyState();
-    if (WI_IsFlagSet(flags, ENHANCED_KEY))
-    {
-        modifiers |= ControlKeyStates::EnhancedKey;
+        out = _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
-    _terminal->SendCharEvent(ch, scanCode, modifiers);
+    if (out)
+    {
+        _WriteTextToConnection(*out);
+    }
 }
 CATCH_LOG();
 
@@ -938,22 +960,16 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
-// - rows - Rows of text data to copy
-// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
+// - text - selected text in plain-text format
+// - htmlData - selected text in HTML format
+// - rtfData - selected text in RTF format
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const
 try
 {
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
-    std::wstring finalString;
-
-    // Concatenate strings into one giant string to put onto the clipboard.
-    for (const auto& str : rows.text)
-    {
-        finalString += str;
-    }
 
     // allocate the final clipboard data
-    const auto cchNeeded = finalString.size() + 1;
+    const auto cchNeeded = text.size() + 1;
     const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
@@ -963,7 +979,7 @@ try
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
     // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, text.data());
     GlobalUnlock(globalHandle.get());
     RETURN_IF_FAILED(hr);
 
@@ -978,21 +994,14 @@ try
         RETURN_LAST_ERROR_IF(!EmptyClipboard());
         RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
 
-        if (fAlsoCopyFormatting)
+        if (!htmlData.empty())
         {
-            const auto& fontData = _actualFont;
-            const int iFontHeightPoints = fontData.GetUnscaledSize().height; // this renderer uses points already
-            COLORREF bgColor;
-            {
-                const auto lock = _terminal->LockForReading();
-                bgColor = _terminal->GetAttributeColors({}).second;
-            }
+            RETURN_IF_FAILED(_CopyToSystemClipboard(htmlData, L"HTML Format"));
+        }
 
-            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-            _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
-
-            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-            _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
+        if (!rtfData.empty())
+        {
+            RETURN_IF_FAILED(_CopyToSystemClipboard(rtfData, L"Rich Text Format"));
         }
     }
 
@@ -1010,7 +1019,7 @@ CATCH_RETURN()
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
+HRESULT HwndTerminal::_CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)

@@ -841,7 +841,6 @@ CATCH_RETURN();
                                                  _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                                  _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::CreateConsoleScreenBuffer);
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // If any buffer type except the one we support is set, it's invalid.

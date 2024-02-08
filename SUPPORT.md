@@ -14,4 +14,4 @@ Support for Windows Terminal is limited to the resources listed above.
 [gh-bug]: https://github.com/microsoft/terminal/issues/new?assignees=&labels=Issue-Bug&template=bug_report.md&title=
 [gh-feature]: https://github.com/microsoft/terminal/issues/new?assignees=&labels=Issue-Feature&template=Feature_Request.md&title=
 [docs]: https://docs.microsoft.com/windows/terminal
-[contributor]: https://github.com/microsoft/terminal/blob/main/CONTRIBUTING.md
+[contributor]: ./CONTRIBUTING.md

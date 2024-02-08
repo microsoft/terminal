@@ -178,6 +178,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Name(TableColorNames[index]);
         Tag(winrt::box_value<uint8_t>(index));
         Color(color);
+
+        PropertyChanged({ get_weak(), &ColorTableEntry::_PropertyChangedHandler });
     }
 
     ColorTableEntry::ColorTableEntry(std::wstring_view tag, Windows::UI::Color color)
@@ -185,5 +187,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Name(LocalizedNameForEnumName(L"ColorScheme_", tag, L"Text"));
         Tag(winrt::box_value(tag));
         Color(color);
+
+        PropertyChanged({ get_weak(), &ColorTableEntry::_PropertyChangedHandler });
     }
+
+    void ColorTableEntry::_PropertyChangedHandler(const IInspectable& /*sender*/, const PropertyChangedEventArgs& args)
+    {
+        const auto propertyName{ args.PropertyName() };
+        if (propertyName == L"Color" || propertyName == L"Name")
+        {
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AccessibleName" });
+        }
+    }
+
 }

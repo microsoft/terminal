@@ -159,6 +159,7 @@ protected:
 
     std::unordered_map<UINT, SystemMenuItemInfo> _systemMenuItems;
     UINT _systemMenuNextItemId;
+    void _resetSystemMenu();
 
 private:
     // This minimum width allows for width the tabs fit

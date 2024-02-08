@@ -43,7 +43,7 @@ Function Get-Git2GitIgnoresAsExcludes() {
 
 $Excludes = Get-Git2GitIgnoresAsExcludes
 Write-Verbose "IGNORING: $Excludes"
-$Entries = & git log $RevisionRange "--pretty=format:%an%x1C%ae%x1C%s" -- $Excludes |
+$Entries = & git log $RevisionRange --first-parent "--pretty=format:%an%x1C%ae%x1C%s" -- $Excludes |
     ConvertFrom-CSV -Delimiter "`u{001C}" -Header Author,Email,Subject
 
 Write-Verbose ("{0} unfiltered log entries" -f $Entries.Count)

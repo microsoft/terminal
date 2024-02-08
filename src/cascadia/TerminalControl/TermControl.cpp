@@ -57,10 +57,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
-        _autoScrollTimer{},
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _cursorTimer{},
-        _blinkTimer{},
         _searchBox{ nullptr }
     {
         InitializeComponent();
@@ -359,9 +356,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto end = beg + pipHeight * stride;
                 for (; beg < end; beg += stride)
                 {
-                    // Coincidentally a til::color has the same RGBA format as the bitmap.
+                    // a til::color does NOT have the same RGBA format as the bitmap.
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                    std::fill_n(reinterpret_cast<til::color*>(beg), pipWidth, color);
+                    const DWORD c = 0xff << 24 | color.r << 16 | color.g << 8 | color.b;
+                    std::fill_n(reinterpret_cast<DWORD*>(beg), pipWidth, c);
                 }
             };
 
@@ -418,10 +416,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // Currently we populate the search box only if a single line is selected.
                     // Empirically, multi-line selection works as well on sample scenarios,
                     // but since code paths differ, extra work is required to ensure correctness.
-                    auto bufferText = _core.SelectedText(true);
-                    if (bufferText.Size() == 1)
+                    if (!_core.HasMultiLineSelection())
                     {
-                        const auto selectedLine{ bufferText.GetAt(0) };
+                        const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
                 }
@@ -1086,10 +1083,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (blinkTime != INFINITE)
         {
             // Create a timer
-            DispatcherTimer cursorTimer;
-            cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
-            cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
-            _cursorTimer.emplace(std::move(cursorTimer));
+            _cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
+            _cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
             // As of GH#6586, don't start the cursor timer immediately, and
             // don't show the cursor initially. We'll show the cursor and start
             // the timer when the control is first focused.
@@ -1104,13 +1099,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core.CursorOn(_focused || _displayCursorWhileBlurred());
             if (_displayCursorWhileBlurred())
             {
-                _cursorTimer->Start();
+                _cursorTimer.Start();
             }
         }
         else
         {
-            // The user has disabled cursor blinking
-            _cursorTimer = std::nullopt;
+            _cursorTimer.Destroy();
         }
 
         // Set up blinking attributes
@@ -1119,16 +1113,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (animationsEnabled && blinkTime != INFINITE)
         {
             // Create a timer
-            DispatcherTimer blinkTimer;
-            blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
-            blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
-            blinkTimer.Start();
-            _blinkTimer.emplace(std::move(blinkTimer));
+            _blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
+            _blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
+            _blinkTimer.Start();
         }
         else
         {
             // The user has disabled blinking
-            _blinkTimer = std::nullopt;
+            _blinkTimer.Destroy();
         }
 
         // Now that the renderer is set up, update the appearance for initialization
@@ -1344,7 +1336,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Alt, so we should be ignoring the individual keydowns. The character
         // will be sent through the TSFInputControl. See GH#1401 for more
         // details
-        if (modifiers.IsAltPressed() &&
+        if (modifiers.IsAltPressed() && !modifiers.IsCtrlPressed() &&
             (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9))
         {
             e.Handled(true);
@@ -1497,7 +1489,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
             _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer->Start();
+            _cursorTimer.Start();
         }
 
         return handled;
@@ -1972,12 +1964,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // When the terminal focuses, show the cursor immediately
             _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer->Start();
+            _cursorTimer.Start();
         }
 
         if (_blinkTimer)
         {
-            _blinkTimer->Start();
+            _blinkTimer.Start();
         }
 
         // Only update the appearance here if an unfocused config exists - if an
@@ -2020,13 +2012,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_cursorTimer && !_displayCursorWhileBlurred())
         {
-            _cursorTimer->Stop();
+            _cursorTimer.Stop();
             _core.CursorOn(false);
         }
 
         if (_blinkTimer)
         {
-            _blinkTimer->Stop();
+            _blinkTimer.Stop();
         }
 
         // Check if there is an unfocused config we should set the appearance to
@@ -2277,7 +2269,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
+
+            // At the time of writing, closing the last tab of a window inexplicably
+            // does not lead to the destruction of the remaining TermControl instance(s).
+            // On Win10 we don't destroy window threads due to bugs in DesktopWindowXamlSource.
+            // In turn, we leak TermControl instances. This results in constant HWND messages
+            // while the thread is supposed to be idle. Stop these timers avoids this.
             _autoScrollTimer.Stop();
+            _bellLightTimer.Stop();
+            _cursorTimer.Stop();
+            _blinkTimer.Stop();
 
             if (!_detached)
             {
@@ -2907,7 +2908,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // However, it's likely that the control layer may need to
                     // know about the source anyways in the future, to support
                     // GH#3158
-                    if (_interactivity.ManglePathsForWsl())
+                    const auto isWSL = _interactivity.ManglePathsForWsl();
+
+                    if (isWSL)
                     {
                         std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
 
@@ -2941,17 +2944,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         }
                     }
 
-                    const auto containsSpaces = std::find(fullPath.begin(),
-                                                          fullPath.end(),
-                                                          L' ') != fullPath.end();
+                    const auto quotesNeeded = isWSL || fullPath.find(L' ') != std::wstring::npos;
+                    const auto quotesChar = isWSL ? L'\'' : L'"';
 
-                    if (containsSpaces)
+                    // Append fullPath and also wrap it in quotes if needed
+                    if (quotesNeeded)
                     {
-                        fullPath.insert(0, L"\"");
-                        fullPath += L"\"";
+                        allPathsString.push_back(quotesChar);
                     }
-
-                    allPathsString += fullPath;
+                    allPathsString.append(fullPath);
+                    if (quotesNeeded)
+                    {
+                        allPathsString.push_back(quotesChar);
+                    }
                 }
 
                 _pasteTextWithBroadcast(winrt::hstring{ allPathsString });
@@ -3124,20 +3129,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _bellDarkAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 
-        // Similar to the animation, only initialize the timer here
-        if (!_bellLightTimer)
-        {
-            _bellLightTimer = {};
-            _bellLightTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
-            _bellLightTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
-        }
-
         Windows::Foundation::Numerics::float2 zeroSize{ 0, 0 };
         // If the grid has 0 size or if the bell timer is
         // already active, do nothing
         if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer.IsEnabled())
         {
-            // Start the timer, when the timer ticks we switch off the light
+            _bellLightTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
+            _bellLightTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
             _bellLightTimer.Start();
 
             // Switch on the light and animate the intensity to fade out
@@ -3157,15 +3155,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_BellLightOff(const Windows::Foundation::IInspectable& /* sender */,
                                     const Windows::Foundation::IInspectable& /* e */)
     {
-        if (_bellLightTimer)
-        {
-            // Stop the timer and switch off the light
-            _bellLightTimer.Stop();
+        // Stop the timer and switch off the light
+        _bellLightTimer.Stop();
 
-            if (!_IsClosing())
-            {
-                VisualBellLight::SetIsTarget(RootGrid(), false);
-            }
+        if (!_IsClosing())
+        {
+            VisualBellLight::SetIsTarget(RootGrid(), false);
         }
     }
 
@@ -3491,7 +3486,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.HasSelection();
     }
-    Windows::Foundation::Collections::IVector<winrt::hstring> TermControl::SelectedText(bool trimTrailingWhitespace) const
+    bool TermControl::HasMultiLineSelection() const
+    {
+        return _core.HasMultiLineSelection();
+    }
+    winrt::hstring TermControl::SelectedText(bool trimTrailingWhitespace) const
     {
         return _core.SelectedText(trimTrailingWhitespace);
     }
@@ -3724,9 +3723,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If we should be ALWAYS displaying the cursor, turn it on and start blinking.
             _core.CursorOn(true);
-            if (_cursorTimer.has_value())
+            if (_cursorTimer)
             {
-                _cursorTimer->Start();
+                _cursorTimer.Start();
             }
         }
         else
@@ -3735,9 +3734,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // blinking. (if we're focused, then we're already doing the right
             // thing)
             const auto focused = FocusState() != FocusState::Unfocused;
-            if (!focused && _cursorTimer.has_value())
+            if (!focused && _cursorTimer)
             {
-                _cursorTimer->Stop();
+                _cursorTimer.Stop();
             }
             _core.CursorOn(focused);
         }
