@@ -67,4 +67,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
     }
+
+    void Actions::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*eventArgs*/)
+    {
+        _ViewModel.AddNewKeybinding();
+    }
 }

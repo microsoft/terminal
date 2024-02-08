@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
 
+        void AddNew_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(Editor::ActionsViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
     };
