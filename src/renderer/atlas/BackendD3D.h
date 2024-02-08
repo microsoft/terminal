@@ -42,6 +42,9 @@ namespace Microsoft::Console::Render::Atlas
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 underlineWidth = 0;
+            alignas(sizeof(f32)) f32 curlyLinePeakHeight = 0;
+            alignas(sizeof(f32)) f32 curlyLineWaveFreq = 0;
+            alignas(sizeof(f32)) f32 curlyLineCellOffset = 0;
 #pragma warning(suppress : 4324) // 'PSConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -55,7 +58,7 @@ namespace Microsoft::Console::Render::Atlas
 #pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
         };
 
-        enum class ShadingType : u32
+        enum class ShadingType : u16
         {
             Default = 0,
             Background = 0,
@@ -66,12 +69,13 @@ namespace Microsoft::Console::Render::Atlas
             TextClearType = 2,
             TextPassthrough = 3,
             DottedLine = 4,
-            DottedLineWide = 5,
+            DashedLine = 5,
+            CurlyLine = 6,
             // All items starting here will be drawing as a solid RGBA color
-            SolidLine = 6,
+            SolidLine = 7,
 
-            Cursor = 7,
-            Selection = 8,
+            Cursor = 8,
+            Selection = 9,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,
@@ -86,7 +90,8 @@ namespace Microsoft::Console::Render::Atlas
             // impact on performance and power draw. If (when?) displays with >32k resolution make their
             // appearance in the future, this should be changed to f32x2. But if you do so, please change
             // all other occurrences of i16x2 positions/offsets throughout the class to keep it consistent.
-            alignas(u32) ShadingType shadingType;
+            alignas(u16) ShadingType shadingType;
+            alignas(u16) u8x2 renditionScale;
             alignas(u32) i16x2 position;
             alignas(u32) u16x2 size;
             alignas(u32) u16x2 texcoord;
@@ -95,16 +100,11 @@ namespace Microsoft::Console::Render::Atlas
 
         struct alignas(u32) AtlasGlyphEntryData
         {
-            u16 shadingType;
+            ShadingType shadingType;
             u16 overlapSplit;
             i16x2 offset;
             u16x2 size;
             u16x2 texcoord;
-
-            constexpr ShadingType GetShadingType() const noexcept
-            {
-                return static_cast<ShadingType>(shadingType);
-            }
         };
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
@@ -290,6 +290,9 @@ namespace Microsoft::Console::Render::Atlas
         til::small_vector<CursorRect, 6> _cursorRects;
         // The bounding rect of _cursorRects in pixels.
         til::rect _cursorPosition;
+
+        f32 _curlyLinePeakHeight = 0.0f;
+        FontDecorationPosition _curlyUnderline;
 
         bool _requiresContinuousRedraw = false;
 

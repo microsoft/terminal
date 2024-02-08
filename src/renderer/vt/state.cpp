@@ -167,6 +167,7 @@ void VtEngine::_flushImpl() noexcept
 void VtEngine::Cork(bool corked) noexcept
 {
     _corked = corked;
+    _Flush();
 }
 
 // Method Description:
@@ -525,11 +526,13 @@ void VtEngine::SetTerminalCursorTextPosition(const til::point cursor) noexcept
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::RequestWin32Input() noexcept
 {
+    // On startup we request the modes we require for optimal functioning
+    // (namely win32 input mode and focus event mode).
+    //
     // It's important that any additional modes set here are also mirrored in
     // the AdaptDispatch::HardReset method, since that needs to re-enable them
     // in the connected terminal after passing through an RIS sequence.
-    RETURN_IF_FAILED(_RequestWin32Input());
-    RETURN_IF_FAILED(_RequestFocusEventMode());
+    RETURN_IF_FAILED(_Write("\033[?9001h\033[?1004h"));
     _Flush();
     return S_OK;
 }

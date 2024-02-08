@@ -66,15 +66,23 @@ void UtilsTests::TestClampToShortMax()
 
 void UtilsTests::TestGuidToString()
 {
-    constexpr GUID constantGuid{
+    static constexpr GUID constantGuid{
         0x01020304, 0x0506, 0x0708, { 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10 }
     };
-    constexpr std::wstring_view constantGuidString{ L"{01020304-0506-0708-090a-0b0c0d0e0f10}" };
 
-    auto generatedGuid{ GuidToString(constantGuid) };
+    {
+        const auto str = GuidToString(constantGuid);
+        const auto guid = GuidFromString(str.c_str());
+        VERIFY_ARE_EQUAL(L"{01020304-0506-0708-090a-0b0c0d0e0f10}", str);
+        VERIFY_ARE_EQUAL(constantGuid, guid);
+    }
 
-    VERIFY_ARE_EQUAL(constantGuidString.size(), generatedGuid.size());
-    VERIFY_ARE_EQUAL(constantGuidString, generatedGuid);
+    {
+        const auto str = GuidToPlainString(constantGuid);
+        const auto guid = GuidFromPlainString(str.c_str());
+        VERIFY_ARE_EQUAL(L"01020304-0506-0708-090a-0b0c0d0e0f10", str);
+        VERIFY_ARE_EQUAL(constantGuid, guid);
+    }
 }
 
 void UtilsTests::TestSplitString()

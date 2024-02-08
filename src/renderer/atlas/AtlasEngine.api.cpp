@@ -455,30 +455,34 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 {
-    static constexpr std::array fallbackFaceNames{ static_cast<const wchar_t*>(nullptr), L"Consolas", L"Lucida Console", L"Courier New" };
-    auto it = fallbackFaceNames.begin();
-    const auto end = fallbackFaceNames.end();
+    try
+    {
+        _updateFont(fontInfoDesired.GetFaceName().c_str(), fontInfoDesired, fontInfo, features, axes);
+        return S_OK;
+    }
+    CATCH_LOG();
 
-    for (;;)
+    if constexpr (Feature_NearbyFontLoading::IsEnabled())
     {
         try
         {
-            _updateFont(*it, fontInfoDesired, fontInfo, features, axes);
+            // _resolveFontMetrics() checks `_api.s->font->fontCollection` for a pre-existing font collection,
+            // before falling back to using the system font collection. This way we can inject our custom one. See GH#9375.
+            // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
+            // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
+            _api.s.write()->font.write()->fontCollection = FontCache::GetCached();
+            _updateFont(fontInfoDesired.GetFaceName().c_str(), fontInfoDesired, fontInfo, features, axes);
             return S_OK;
         }
-        catch (...)
-        {
-            ++it;
-            if (it == end)
-            {
-                RETURN_CAUGHT_EXCEPTION();
-            }
-            else
-            {
-                LOG_CAUGHT_EXCEPTION();
-            }
-        }
+        CATCH_LOG();
     }
+
+    try
+    {
+        _updateFont(nullptr, fontInfoDesired, fontInfo, features, axes);
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
@@ -490,20 +494,20 @@ void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 
 void AtlasEngine::_resolveTransparencySettings() noexcept
 {
+    // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
+    // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
+    const bool useAlpha = _api.enableTransparentBackground || !_api.s->misc->customPixelShaderPath.empty();
     // If the user asks for ClearType, but also for a transparent background
     // (which our ClearType shader doesn't simultaneously support)
     // then we need to sneakily force the renderer to grayscale AA.
-    const auto antialiasingMode = _api.enableTransparentBackground && _api.antialiasingMode == AntialiasingMode::ClearType ? AntialiasingMode::Grayscale : _api.antialiasingMode;
-    const bool enableTransparentBackground = _api.enableTransparentBackground || !_api.s->misc->customPixelShaderPath.empty() || _api.s->misc->useRetroTerminalEffect;
+    const auto antialiasingMode = useAlpha && _api.antialiasingMode == AntialiasingMode::ClearType ? AntialiasingMode::Grayscale : _api.antialiasingMode;
 
-    if (antialiasingMode != _api.s->font->antialiasingMode || enableTransparentBackground != _api.s->target->enableTransparentBackground)
+    if (antialiasingMode != _api.s->font->antialiasingMode || useAlpha != _api.s->target->useAlpha)
     {
         const auto s = _api.s.write();
         s->font.write()->antialiasingMode = antialiasingMode;
-        // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
-        // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
-        s->target.write()->enableTransparentBackground = enableTransparentBackground;
-        _api.backgroundOpaqueMixin = enableTransparentBackground ? 0x00000000 : 0xff000000;
+        s->target.write()->useAlpha = useAlpha;
+        _api.backgroundOpaqueMixin = useAlpha ? 0x00000000 : 0xff000000;
     }
 }
 
@@ -598,11 +602,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
     if (!requestedFaceName)
     {
-        requestedFaceName = fontInfoDesired.GetFaceName().c_str();
-        if (!requestedFaceName)
-        {
-            requestedFaceName = L"Consolas";
-        }
+        requestedFaceName = L"Consolas";
     }
     if (!requestedSize.height)
     {
@@ -614,22 +614,19 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         requestedWeight = DWRITE_FONT_WEIGHT_NORMAL;
     }
 
-    wil::com_ptr<IDWriteFontCollection> fontCollection;
-    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontCollection(fontCollection.addressof(), FALSE));
+    // UpdateFont() (and its NearbyFontLoading feature path specifically) sets `_api.s->font->fontCollection`
+    // to a custom font collection that includes .ttf files that are bundled with our app package. See GH#9375.
+    // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
+    // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
+    auto fontCollection = _api.s->font->fontCollection;
+    if (!fontCollection)
+    {
+        THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontCollection(fontCollection.addressof(), FALSE));
+    }
 
     u32 index = 0;
     BOOL exists = false;
     THROW_IF_FAILED(fontCollection->FindFamilyName(requestedFaceName, &index, &exists));
-
-    if constexpr (Feature_NearbyFontLoading::IsEnabled())
-    {
-        if (!exists)
-        {
-            fontCollection = FontCache::GetCached();
-            THROW_IF_FAILED(fontCollection->FindFamilyName(requestedFaceName, &index, &exists));
-        }
-    }
-
     THROW_HR_IF(DWRITE_E_NOFONT, !exists);
 
     wil::com_ptr<IDWriteFontFamily> fontFamily;

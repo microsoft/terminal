@@ -31,7 +31,6 @@ SOURCES= \
     ..\CodepointWidthDetector.cpp \
     ..\ColorFix.cpp \
     ..\GlyphWidth.cpp \
-    ..\ModifierKeyState.cpp \
     ..\Viewport.cpp \
     ..\convert.cpp \
     ..\colorTable.cpp \

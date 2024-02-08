@@ -259,9 +259,10 @@ private:
     void FillRow(ROW* pRow, bool wrapForced)
     {
         // fill a row
-        // 9 characters, 6 spaces. 15 total
-        // か = \x304b
-        // き = \x304d
+        // - Each row is populated with L"AB\u304bC\u304dDE      "
+        // - 7 characters, 6 spaces. 13 total
+        // - The characters take up first 9 columns. (The wide glyphs take up 2 columns each)
+        // - か = \x304b, き = \x304d
 
         uint16_t column = 0;
         for (const auto& ch : std::wstring_view{ L"AB\u304bC\u304dDE      " })

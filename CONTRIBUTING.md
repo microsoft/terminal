@@ -14,7 +14,7 @@ The point of doing all this work in public is to ensure that we are holding ours
 
 The team triages new issues several times a week. During triage, the team uses labels to categorize, manage, and drive the project workflow.
 
-We employ [a bot engine](https://github.com/microsoft/terminal/blob/main/doc/bot.md) to help us automate common processes within our workflow.
+We employ [a bot engine](./doc/bot.md) to help us automate common processes within our workflow.
 
 We drive the bot by tagging issues with specific labels which cause the bot engine to close issues, merge branches, etc. This bot engine helps us keep the repo clean by automating the process of notifying appropriate parties if/when information/follow-up is needed, and closing stale issues/PRs after reminders have remained unanswered for several days.
 

@@ -50,6 +50,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void TerminalOutput(const winrt::event_token& token) noexcept { _wrappedConnection.TerminalOutput(token); };
         winrt::event_token StateChanged(const TypedEventHandler<ITerminalConnection, IInspectable>& handler) { return _wrappedConnection.StateChanged(handler); };
         void StateChanged(const winrt::event_token& token) noexcept { _wrappedConnection.StateChanged(token); };
+        winrt::guid SessionId() const noexcept { return {}; }
         ConnectionState State() const noexcept { return _wrappedConnection.State(); }
 
     private:
@@ -96,6 +97,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
         _outputRevoker.revoke();
         _stateChangedRevoker.revoke();
         _wrappedConnection = nullptr;
+    }
+
+    guid DebugTapConnection::SessionId() const noexcept
+    {
+        if (const auto c = _wrappedConnection.get())
+        {
+            return c.SessionId();
+        }
+        return {};
     }
 
     ConnectionState DebugTapConnection::State() const noexcept
