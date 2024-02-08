@@ -4,13 +4,28 @@
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     template<typename T>
-    struct ConnectionStateHolder
+    struct BaseTerminalConnection
     {
     public:
-        ConnectionState State() const noexcept { return _connectionState; }
+        winrt::guid SessionId() const noexcept
+        {
+            return _sessionId;
+        }
+
+        ConnectionState State() const noexcept
+        {
+            return _connectionState;
+        }
+
         TYPED_EVENT(StateChanged, ITerminalConnection, winrt::Windows::Foundation::IInspectable);
 
     protected:
+        template<typename U>
+        U unbox_prop_or(const Windows::Foundation::Collections::ValueSet& blob, std::wstring_view key, U defaultValue)
+        {
+            return winrt::unbox_value_or<U>(blob.TryLookup(key).try_as<Windows::Foundation::IPropertyValue>(), defaultValue);
+        }
+
 #pragma warning(push)
 #pragma warning(disable : 26447) // Analyzer is still upset about noexcepts throwing even with function level try.
         // Method Description:
@@ -85,6 +100,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             return _isStateOneOf(ConnectionState::Connected);
         }
+
+        winrt::guid _sessionId{};
 
     private:
         std::atomic<ConnectionState> _connectionState{ ConnectionState::NotConnected };

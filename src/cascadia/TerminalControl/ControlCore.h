@@ -156,7 +156,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool HasSelection() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+        bool HasMultiLineSelection() const;
+        winrt::hstring SelectedText(bool trimTrailingWhitespace) const;
 
         bool BracketedPasteEnabled() const noexcept;
 

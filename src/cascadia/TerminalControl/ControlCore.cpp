@@ -1250,44 +1250,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
+        // use action's copyFormatting if it's present, else fallback to globally
+        // set copyFormatting.
+        const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
+
+        const auto copyHtml = WI_IsFlagSet(copyFormats, CopyFormat::HTML);
+        const auto copyRtf = WI_IsFlagSet(copyFormats, CopyFormat::RTF);
+
         // extract text from buffer
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
-
-        // convert text: vector<string> --> string
-        std::wstring textData;
-        for (const auto& text : bufferData.text)
-        {
-            textData += text;
-        }
-
-        const auto bgColor = _terminal->GetAttributeColors({}).second;
-
-        // convert text to HTML format
-        // GH#5347 - Don't provide a title for the generated HTML, as many
-        // web applications will paste the title first, followed by the HTML
-        // content, which is unexpected.
-        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
-                                  TextBuffer::GenHTML(bufferData,
-                                                      _actualFont.GetUnscaledSize().height,
-                                                      _actualFont.GetFaceName(),
-                                                      bgColor) :
-                                  "";
-
-        // convert to RTF format
-        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
-                                 TextBuffer::GenRTF(bufferData,
-                                                    _actualFont.GetUnscaledSize().height,
-                                                    _actualFont.GetFaceName(),
-                                                    bgColor) :
-                                 "";
+        const auto& [textData, htmlData, rtfData] = _terminal->RetrieveSelectedTextFromBuffer(singleLine, copyHtml, copyRtf);
 
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,
                                  winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
                                                                        winrt::to_hstring(htmlData),
                                                                        winrt::to_hstring(rtfData),
-                                                                       formats));
+                                                                       copyFormats));
         return true;
     }
 
@@ -1612,24 +1591,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->IsSelectionActive();
     }
 
+    // Method Description:
+    // - Checks if the currently active selection spans multiple lines
+    // Return Value:
+    // - true if selection is multi-line
+    bool ControlCore::HasMultiLineSelection() const
+    {
+        const auto lock = _terminal->LockForReading();
+        assert(_terminal->IsSelectionActive()); // should only be called when selection is active
+        return _terminal->GetSelectionAnchor().y != _terminal->GetSelectionEnd().y;
+    }
+
     bool ControlCore::CopyOnSelect() const
     {
         return _settings->CopyOnSelect();
     }
 
-    Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    winrt::hstring ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
         const auto lock = _terminal->LockForReading();
-        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
-
-        auto result = winrt::single_threaded_vector<winrt::hstring>();
-
-        for (const auto& row : internalResult)
-        {
-            result.Append(winrt::hstring{ row });
-        }
-        return result;
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(!trimTrailingWhitespace) };
+        return winrt::hstring{ internalResult.plainText };
     }
 
     ::Microsoft::Console::Render::IRenderData* ControlCore::GetRenderData() const

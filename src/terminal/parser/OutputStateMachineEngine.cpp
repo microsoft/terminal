@@ -566,6 +566,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
             return _dispatch->TabClear(clearType);
         });
         break;
+    case CsiActionCodes::DECST8C_SetTabEvery8Columns:
+        success = parameters.for_each([&](const auto setType) {
+            return _dispatch->TabSet(setType);
+        });
+        break;
     case CsiActionCodes::ECH_EraseCharacters:
         success = _dispatch->EraseCharacters(parameters.at(0));
         break;

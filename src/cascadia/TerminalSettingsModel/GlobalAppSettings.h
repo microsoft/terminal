@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr bool debugFeaturesDefault{ true };
 #endif
 
-        winrt::guid _defaultProfile;
+        winrt::guid _defaultProfile{};
         bool _legacyReloadEnvironmentVariables{ true };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
 
