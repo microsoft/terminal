@@ -681,8 +681,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - Creates a FeatureKeyValuePair and sets up an event handler for it
     Editor::FeatureKeyValuePair AppearanceViewModel::_CreateFeatureKeyValuePairHelper(winrt::hstring featureKey, uint32_t featureValue, const Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap)
     {
-        // todo: probably make a map (or put in resources) of tag -> name translations
-        // todo: there's possible features that are on by default, but not set in the SUI so we don't show it, figure this out
+        // todo: there's possible features that are on by default, but not set in the json so we don't show it, figure this out
         const auto featureKeyValuePair = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FeatureKeyValuePair>(featureKey, featureValue, baseMap, tagToNameMap);
         // when either the key or the value changes, send an event for the preview control to catch
         featureKeyValuePair.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& /*e*/) {
