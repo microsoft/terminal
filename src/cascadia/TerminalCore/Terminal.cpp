@@ -95,6 +95,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
+    _allowNotifications = settings.AllowNotifications();
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 

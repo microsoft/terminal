@@ -339,6 +339,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RightClickContextMenu = profile.RightClickContextMenu();
 
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
+        _AllowNotifications = profile.AllowNotifications();
 
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
     }

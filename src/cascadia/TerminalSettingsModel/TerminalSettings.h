@@ -167,6 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ShowMarks, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RightClickContextMenu, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RepositionCursorWithMouse, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AllowNotifications, true);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ReloadEnvironmentVariables, true);
 

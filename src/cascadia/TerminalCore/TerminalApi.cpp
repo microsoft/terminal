@@ -515,7 +515,8 @@ void Terminal::NotifyBufferRotation(const int delta)
 void Terminal::SendNotification(const std::wstring_view title,
                                 const std::wstring_view body)
 {
-    if (_pfnSendNotification)
+    // Only send notifications if enabled in the settings
+    if (_pfnSendNotification && _allowNotifications)
     {
         _pfnSendNotification(title, body);
     }
