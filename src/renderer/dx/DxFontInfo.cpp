@@ -7,36 +7,31 @@
 #include <unicode.hpp>
 #include <VersionHelpers.h>
 
+#include "../base/FontCache.h"
+
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 
 using namespace Microsoft::Console::Render;
 
-DxFontInfo::DxFontInfo() noexcept :
-    _weight(DWRITE_FONT_WEIGHT_NORMAL),
-    _style(DWRITE_FONT_STYLE_NORMAL),
-    _stretch(DWRITE_FONT_STRETCH_NORMAL),
-    _didFallback(false)
+DxFontInfo::DxFontInfo(IDWriteFactory1* dwriteFactory) :
+    DxFontInfo{ dwriteFactory, {}, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL }
 {
 }
 
-DxFontInfo::DxFontInfo(std::wstring_view familyName,
-                       unsigned int weight,
-                       DWRITE_FONT_STYLE style,
-                       DWRITE_FONT_STRETCH stretch) :
-    DxFontInfo(familyName, static_cast<DWRITE_FONT_WEIGHT>(weight), style, stretch)
-{
-}
-
-DxFontInfo::DxFontInfo(std::wstring_view familyName,
-                       DWRITE_FONT_WEIGHT weight,
-                       DWRITE_FONT_STYLE style,
-                       DWRITE_FONT_STRETCH stretch) :
+DxFontInfo::DxFontInfo(
+    IDWriteFactory1* dwriteFactory,
+    std::wstring_view familyName,
+    DWRITE_FONT_WEIGHT weight,
+    DWRITE_FONT_STYLE style,
+    DWRITE_FONT_STRETCH stretch) :
     _familyName(familyName),
     _weight(weight),
     _style(style),
     _stretch(stretch),
     _didFallback(false)
 {
+    __assume(dwriteFactory != nullptr);
+    THROW_IF_FAILED(dwriteFactory->GetSystemFontCollection(_fontCollection.addressof(), FALSE));
 }
 
 bool DxFontInfo::operator==(const DxFontInfo& other) const noexcept
@@ -93,6 +88,11 @@ bool DxFontInfo::GetFallback() const noexcept
     return _didFallback;
 }
 
+IDWriteFontCollection* DxFontInfo::GetFontCollection() const noexcept
+{
+    return _fontCollection.get();
+}
+
 void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
                                const DWRITE_FONT_WEIGHT weight,
                                const DWRITE_FONT_STYLE style,
@@ -114,7 +114,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - localeName - Locale to search for appropriate fonts
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(IDWriteFontCollection* fontCollection, std::wstring& localeName)
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(std::wstring& localeName)
 {
     // First attempt to find exactly what the user asked for.
     _didFallback = false;
@@ -125,38 +125,55 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     // method. We still want to fall back to a font that's reasonable, below.
     try
     {
-        face = _FindFontFace(fontCollection, localeName);
-
-        if (!face)
-        {
-            // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
-            // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
-            // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
-            // is the quick fix for the majority scenario.
-            // The long/full fix is backlogged to GH#9744
-            // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
-            // this resolution.
-            while (!face && !_familyName.empty())
-            {
-                const auto lastSpace = _familyName.find_last_of(UNICODE_SPACE);
-
-                // value is unsigned and npos will be greater than size.
-                // if we didn't find anything to trim, leave.
-                if (lastSpace >= _familyName.size())
-                {
-                    break;
-                }
-
-                // trim string down to just before the found space
-                // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
-                _familyName = _familyName.substr(0, lastSpace);
-
-                // Try to find it with the shortened family name
-                face = _FindFontFace(fontCollection, localeName);
-            }
-        }
+        face = _FindFontFace(localeName);
     }
     CATCH_LOG();
+
+    if constexpr (Feature_NearbyFontLoading::IsEnabled())
+    {
+        try
+        {
+            if (!face)
+            {
+                _fontCollection = FontCache::GetCached();
+                face = _FindFontFace(localeName);
+            }
+        }
+        CATCH_LOG();
+    }
+
+    if (!face)
+    {
+        // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
+        // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
+        // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
+        // is the quick fix for the majority scenario.
+        // The long/full fix is backlogged to GH#9744
+        // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
+        // this resolution.
+        while (!face && !_familyName.empty())
+        {
+            const auto lastSpace = _familyName.find_last_of(UNICODE_SPACE);
+
+            // value is unsigned and npos will be greater than size.
+            // if we didn't find anything to trim, leave.
+            if (lastSpace >= _familyName.size())
+            {
+                break;
+            }
+
+            // trim string down to just before the found space
+            // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
+            _familyName = _familyName.substr(0, lastSpace);
+
+            try
+            {
+                // Try to find it with the shortened family name
+                face = _FindFontFace(localeName);
+            }
+            CATCH_LOG();
+        }
+    }
 
     // Alright, if our quick shot at trimming didn't work either...
     // move onto looking up a font from our hard-coded list of fonts
@@ -167,7 +184,12 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         {
             _familyName = fallbackFace;
 
-            face = _FindFontFace(fontCollection, localeName);
+            try
+            {
+                face = _FindFontFace(localeName);
+            }
+            CATCH_LOG();
+
             if (face)
             {
                 _didFallback = true;
@@ -189,19 +211,19 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
 #pragma warning(suppress : 26429) // C26429: Symbol 'fontCollection' is never tested for nullness, it can be marked as not_null (f.23).
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(IDWriteFontCollection* fontCollection, std::wstring& localeName)
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(std::wstring& localeName)
 {
     Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
     UINT32 familyIndex;
     BOOL familyExists;
 
-    THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
+    THROW_IF_FAILED(_fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
 
     if (familyExists)
     {
         Microsoft::WRL::ComPtr<IDWriteFontFamily> fontFamily;
-        THROW_IF_FAILED(fontCollection->GetFontFamily(familyIndex, &fontFamily));
+        THROW_IF_FAILED(_fontCollection->GetFontFamily(familyIndex, &fontFamily));
 
         Microsoft::WRL::ComPtr<IDWriteFont> font;
         THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(GetWeight(), GetStretch(), GetStyle(), &font));

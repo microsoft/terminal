@@ -35,7 +35,7 @@ HRESULT RenderEngineBase::NotifyNewText(const std::wstring_view /*newText*/) noe
     return S_FALSE;
 }
 
-HRESULT RenderEngineBase::UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+HRESULT RenderEngineBase::UpdateSoftFont(const std::span<const uint16_t> /*bitPattern*/,
                                          const til::size /*cellSize*/,
                                          const size_t /*centeringHint*/) noexcept
 {

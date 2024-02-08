@@ -49,51 +49,25 @@ public:
     [[nodiscard]] HRESULT GetNumberOfConsoleInputEventsImpl(const InputBuffer& context,
                                                             ULONG& events) noexcept override;
 
-    [[nodiscard]] HRESULT PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
+    [[nodiscard]] HRESULT GetConsoleInputImpl(IConsoleInputObject& context,
+                                              InputEventQueue& outEvents,
+                                              const size_t eventReadCount,
+                                              INPUT_READ_HANDLE_DATA& readHandleState,
+                                              const bool IsUnicode,
+                                              const bool IsPeek,
+                                              std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
-    [[nodiscard]] HRESULT PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleAImpl(IConsoleInputObject& context,
-                                           gsl::span<char> buffer,
-                                           size_t& written,
-                                           std::unique_ptr<IWaitRoutine>& waiter,
-                                           const std::string_view initialData,
-                                           const std::wstring_view exeName,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           const HANDLE clientHandle,
-                                           const DWORD controlWakeupMask,
-                                           DWORD& controlKeyState) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleWImpl(IConsoleInputObject& context,
-                                           gsl::span<char> buffer,
-                                           size_t& written,
-                                           std::unique_ptr<IWaitRoutine>& waiter,
-                                           const std::string_view initialData,
-                                           const std::wstring_view exeName,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           const HANDLE clientHandle,
-                                           const DWORD controlWakeupMask,
-                                           DWORD& controlKeyState) noexcept override;
+    [[nodiscard]] HRESULT ReadConsoleImpl(IConsoleInputObject& context,
+                                          std::span<char> buffer,
+                                          size_t& written,
+                                          std::unique_ptr<IWaitRoutine>& waiter,
+                                          const std::wstring_view initialData,
+                                          const std::wstring_view exeName,
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          const bool IsUnicode,
+                                          const HANDLE clientHandle,
+                                          const DWORD controlWakeupMask,
+                                          DWORD& controlKeyState) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
                                             const std::string_view buffer,
@@ -194,41 +168,41 @@ public:
 
     [[nodiscard]] HRESULT ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
                                                          const til::point origin,
-                                                         gsl::span<WORD> buffer,
+                                                         std::span<WORD> buffer,
                                                          size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
                                                           const til::point origin,
-                                                          gsl::span<char> buffer,
+                                                          std::span<char> buffer,
                                                           size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
                                                           const til::point origin,
-                                                          gsl::span<wchar_t> buffer,
+                                                          std::span<wchar_t> buffer,
                                                           size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleInputAImpl(InputBuffer& context,
-                                                 const gsl::span<const INPUT_RECORD> buffer,
+                                                 const std::span<const INPUT_RECORD> buffer,
                                                  size_t& written,
                                                  const bool append) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleInputWImpl(InputBuffer& context,
-                                                 const gsl::span<const INPUT_RECORD> buffer,
+                                                 const std::span<const INPUT_RECORD> buffer,
                                                  size_t& written,
                                                  const bool append) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
-                                                  gsl::span<CHAR_INFO> buffer,
+                                                  std::span<CHAR_INFO> buffer,
                                                   const Microsoft::Console::Types::Viewport& requestRectangle,
                                                   Microsoft::Console::Types::Viewport& writtenRectangle) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
-                                                  gsl::span<CHAR_INFO> buffer,
+                                                  std::span<CHAR_INFO> buffer,
                                                   const Microsoft::Console::Types::Viewport& requestRectangle,
                                                   Microsoft::Console::Types::Viewport& writtenRectangle) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                          const gsl::span<const WORD> attrs,
+                                                          const std::span<const WORD> attrs,
                                                           const til::point target,
                                                           size_t& used) noexcept override;
 
@@ -243,28 +217,28 @@ public:
                                                            size_t& used) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
-                                                 gsl::span<CHAR_INFO> buffer,
+                                                 std::span<CHAR_INFO> buffer,
                                                  const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                  Microsoft::Console::Types::Viewport& readRectangle) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
-                                                 gsl::span<CHAR_INFO> buffer,
+                                                 std::span<CHAR_INFO> buffer,
                                                  const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                  Microsoft::Console::Types::Viewport& readRectangle) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleTitleAImpl(gsl::span<char> title,
+    [[nodiscard]] HRESULT GetConsoleTitleAImpl(std::span<char> title,
                                                size_t& written,
                                                size_t& needed) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+    [[nodiscard]] HRESULT GetConsoleTitleWImpl(std::span<wchar_t> title,
                                                size_t& written,
                                                size_t& needed) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+    [[nodiscard]] HRESULT GetConsoleOriginalTitleAImpl(std::span<char> title,
                                                        size_t& written,
                                                        size_t& needed) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+    [[nodiscard]] HRESULT GetConsoleOriginalTitleWImpl(std::span<wchar_t> title,
                                                        size_t& written,
                                                        size_t& needed) noexcept override;
 
@@ -301,12 +275,12 @@ public:
                                                const std::wstring_view exeName) noexcept override;
 
     [[nodiscard]] HRESULT GetConsoleAliasAImpl(const std::string_view source,
-                                               gsl::span<char> target,
+                                               std::span<char> target,
                                                size_t& written,
                                                const std::string_view exeName) noexcept override;
 
     [[nodiscard]] HRESULT GetConsoleAliasWImpl(const std::wstring_view source,
-                                               gsl::span<wchar_t> target,
+                                               std::span<wchar_t> target,
                                                size_t& written,
                                                const std::wstring_view exeName) noexcept override;
 
@@ -321,17 +295,17 @@ public:
     [[nodiscard]] HRESULT GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept override;
 
     [[nodiscard]] HRESULT GetConsoleAliasesAImpl(const std::string_view exeName,
-                                                 gsl::span<char> alias,
+                                                 std::span<char> alias,
                                                  size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                                 gsl::span<wchar_t> alias,
+                                                 std::span<wchar_t> alias,
                                                  size_t& written) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+    [[nodiscard]] HRESULT GetConsoleAliasExesAImpl(std::span<char> aliasExes,
                                                    size_t& written) noexcept override;
 
-    [[nodiscard]] HRESULT GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+    [[nodiscard]] HRESULT GetConsoleAliasExesWImpl(std::span<wchar_t> aliasExes,
                                                    size_t& written) noexcept override;
 
 #pragma region CMDext Private API
@@ -353,11 +327,11 @@ public:
                                                               size_t& length) noexcept override;
 
     [[nodiscard]] HRESULT GetConsoleCommandHistoryAImpl(const std::string_view exeName,
-                                                        gsl::span<char> commandHistory,
+                                                        std::span<char> commandHistory,
                                                         size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
-                                                        gsl::span<wchar_t> commandHistory,
+                                                        std::span<wchar_t> commandHistory,
                                                         size_t& written) noexcept override;
 
 #pragma endregion

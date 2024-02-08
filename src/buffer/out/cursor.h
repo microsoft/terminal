@@ -76,7 +76,7 @@ public:
 
     void CopyProperties(const Cursor& OtherCursor) noexcept;
 
-    void DelayEOLWrap(const til::point coordDelayedAt) noexcept;
+    void DelayEOLWrap() noexcept;
     void ResetDelayEOLWrap() noexcept;
     til::point GetDelayedAtPosition() const noexcept;
     bool IsDelayedEOLWrap() const noexcept;

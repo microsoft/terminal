@@ -20,8 +20,6 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #pragma once
 
-#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
-
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -146,7 +144,7 @@ public:
         delete gci.pInputBuffer;
     }
 
-    void PrepareCookedReadData(const std::string_view initialData = {})
+    void PrepareCookedReadData(const std::wstring_view initialData = {})
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
@@ -239,7 +237,7 @@ public:
 
         for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = textBuffer.GetRowByOffset(iRow);
+            ROW& row = textBuffer.GetMutableRowByOffset(iRow);
             FillRow(&row, iRow & 1);
         }
 
@@ -258,49 +256,21 @@ private:
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
     std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;
 
-    struct TestString
-    {
-        std::wstring_view string;
-        bool wide = false;
-    };
-
-    static void applyTestString(ROW* pRow, const auto& testStrings)
-    {
-        uint16_t x = 0;
-        for (const auto& t : testStrings)
-        {
-            if (t.wide)
-            {
-                pRow->ReplaceCharacters(x, 2, t.string);
-                x += 2;
-            }
-            else
-            {
-                for (const auto& ch : t.string)
-                {
-                    pRow->ReplaceCharacters(x, 1, { &ch, 1 });
-                    x += 1;
-                }
-            }
-        }
-    }
-
     void FillRow(ROW* pRow, bool wrapForced)
     {
         // fill a row
-        // 9 characters, 6 spaces. 15 total
-        // か = \x304b
-        // き = \x304d
+        // - Each row is populated with L"AB\u304bC\u304dDE      "
+        // - 7 characters, 6 spaces. 13 total
+        // - The characters take up first 9 columns. (The wide glyphs take up 2 columns each)
+        // - か = \x304b, き = \x304d
 
-        static constexpr std::array testStrings{
-            TestString{ L"AB" },
-            TestString{ L"\x304b", true },
-            TestString{ L"C" },
-            TestString{ L"\x304d", true },
-            TestString{ L"DE      " },
-        };
-
-        applyTestString(pRow, testStrings);
+        uint16_t column = 0;
+        for (const auto& ch : std::wstring_view{ L"AB\u304bC\u304dDE      " })
+        {
+            const uint16_t width = ch >= 0x80 ? 2 : 1;
+            pRow->ReplaceCharacters(column, width, { &ch, 1 });
+            column += width;
+        }
 
         // A = bright red on dark gray
         // This string starts at index 0

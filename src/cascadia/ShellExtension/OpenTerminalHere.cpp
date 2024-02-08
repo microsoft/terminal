@@ -27,6 +27,8 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
 try
 {
+    const auto runElevated = IsControlAndShiftPressed();
+
     wil::com_ptr_nothrow<IShellItem> psi;
     RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
     if (!psi)
@@ -42,10 +44,22 @@ try
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
+        // Explicitly create the terminal window visible.
+        siEx.StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
+        siEx.StartupInfo.wShowWindow = SW_SHOWNORMAL;
+
+        std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
         std::wstring cmdline;
-        RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        if (runElevated)
+        {
+            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-(-d %s)-", QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        }
+        else
+        {
+            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        }
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
-            nullptr, // lpApplicationName
+            runElevated ? modulePath.replace_filename(ElevateShimExe).c_str() : nullptr, // if elevation requested pass the elevate-shim.exe as the application name
             cmdline.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
@@ -80,6 +94,8 @@ HRESULT OpenTerminalHere::GetTitle(IShellItemArray* /*psiItemArray*/,
         RS_(L"ShellExtension_OpenInTerminalMenuItem");
 #elif defined(WT_BRANDING_PREVIEW)
         RS_(L"ShellExtension_OpenInTerminalMenuItem_Preview");
+#elif defined(WT_BRANDING_CANARY)
+        RS_(L"ShellExtension_OpenInTerminalMenuItem_Canary");
 #else
         RS_(L"ShellExtension_OpenInTerminalMenuItem_Dev");
 #endif
@@ -105,7 +121,8 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
 
     SFGAOF attributes;
     const bool isFileSystemItem = psi && (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
-    *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
+    const bool isCompressed = psi && (psi->GetAttributes(SFGAO_FOLDER | SFGAO_STREAM, &attributes) == S_OK);
+    *pCmdState = isFileSystemItem && !isCompressed ? ECS_ENABLED : ECS_HIDDEN;
 
     return S_OK;
 }
@@ -192,4 +209,16 @@ HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* ps
     RETURN_HR_IF(S_FALSE, !psi);
     RETURN_IF_FAILED(psi.copy_to(location));
     return S_OK;
+}
+
+// Check is both ctrl and shift keys are pressed during activation of the shell extension
+bool OpenTerminalHere::IsControlAndShiftPressed()
+{
+    short control = 0;
+    short shift = 0;
+    control = GetAsyncKeyState(VK_CONTROL);
+    shift = GetAsyncKeyState(VK_SHIFT);
+
+    // GetAsyncKeyState returns a value with the most significant bit set to 1 if the key is pressed. This is the sign bit.
+    return control < 0 && shift < 0;
 }

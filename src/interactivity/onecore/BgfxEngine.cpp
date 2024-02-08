@@ -79,7 +79,7 @@ try
 {
     const auto Status = ConIoSrvComm::GetConIoSrvComm()->RequestUpdateDisplay(0);
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         for (SIZE_T i = 0; i < _displayHeight; i++)
         {
@@ -126,7 +126,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                   const til::point coord,
                                                   const bool /*trimLeft*/,
                                                   const bool /*lineWrapped*/) noexcept
@@ -147,15 +147,21 @@ CATCH_RETURN()
     CATCH_RETURN()
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                       COLORREF const /*color*/,
-                                                       size_t const /*cchLine*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                       const COLORREF /*gridlineColor*/,
+                                                       const COLORREF /*underlineColor*/,
+                                                       const size_t /*cchLine*/,
                                                        const til::point /*coordTarget*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::PaintSelection(const til::rect& /*rect*/) noexcept
+{
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT BgfxEngine::PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept
 {
     return S_OK;
 }
@@ -215,7 +221,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     _dirtyArea.bottom = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayHeight));
     _dirtyArea.right = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayWidth));

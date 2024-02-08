@@ -222,7 +222,7 @@ class ApiRoutinesTests
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(gsl::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(std::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -239,7 +239,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(std::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
 
@@ -285,7 +285,7 @@ class ApiRoutinesTests
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(gsl::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(std::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -302,7 +302,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(std::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
 
@@ -607,7 +607,7 @@ class ApiRoutinesTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& si = gci.GetActiveOutputBuffer();
 
-        VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional({ 5, 5 }), L"Make the buffer small so this doesn't take forever.");
+        si.GetTextBuffer().ResizeTraditional({ 5, 5 });
 
         // Tests are run both with and without the DECSTBM margins set. This should not alter
         // the results, since ScrollConsoleScreenBuffer should not be affected by VT margins.

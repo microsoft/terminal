@@ -402,6 +402,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _runs;
         }
 
+        container& runs() noexcept
+        {
+            return _runs;
+        }
+
         // Get the value at the position
         const_reference at(size_type position) const
         {
@@ -421,7 +426,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Returns the range [start_index, end_index) as a new vector.
         // It works just like std::string::substr(), but with absolute indices.
-        [[nodiscard]] basic_rle slice(size_type start_index, size_type end_index) const noexcept
+        [[nodiscard]] basic_rle slice(size_type start_index, size_type end_index) const
         {
             if (end_index > _total_length)
             {
@@ -441,14 +446,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // --> It's safe to subtract 1 from end_index
 
             rle_scanner scanner(_runs.begin(), _runs.end());
-            auto [begin_run, start_run_pos] = scanner.scan(start_index);
-            auto [end_run, end_run_pos] = scanner.scan(end_index - 1);
+            const auto [begin_run, start_run_pos] = scanner.scan(start_index);
+            const auto [end_run, end_run_pos] = scanner.scan(end_index - 1);
 
             container slice{ begin_run, end_run + 1 };
             slice.back().length = end_run_pos + 1;
             slice.front().length -= start_run_pos;
 
-            return { std::move(slice), static_cast<size_type>(end_index - start_index) };
+            return { std::move(slice), gsl::narrow_cast<size_type>(end_index - start_index) };
         }
 
         // Replace the range [start_index, end_index) with the given value.
@@ -458,7 +463,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _check_indices(start_index, end_index);
 
-            const rle_type replacement{ value, static_cast<size_type>(end_index - start_index) };
+            const rle_type replacement{ value, gsl::narrow_cast<size_type>(end_index - start_index) };
             _replace_unchecked(start_index, end_index, { &replacement, 1 });
         }
 
@@ -473,10 +478,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Replace the range [start_index, end_index) with replacements.
         // If end_index is larger than size() it's set to size().
         // start_index must be smaller or equal to end_index.
-        void replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
+        void replace(size_type start_index, size_type end_index, const std::span<const rle_type> replacements)
         {
             _check_indices(start_index, end_index);
             _replace_unchecked(start_index, end_index, replacements);
+        }
+
+        // Replace the range [start_index, end_index) with replacements.
+        // If end_index is larger than size() it's set to size().
+        // start_index must be smaller or equal to end_index.
+        void replace(size_type start_index, size_type end_index, const basic_rle& replacements)
+        {
+            _check_indices(start_index, end_index);
+            _replace_unchecked(start_index, end_index, replacements._runs);
         }
 
         // Replaces every instance of old_value in this vector with new_value.
@@ -637,7 +651,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             size_type total = 0;
         };
 
-        basic_rle(container&& runs, size_type size) :
+        basic_rle(container&& runs, size_type size) noexcept :
             _runs(std::forward<container>(runs)),
             _total_length(size)
         {
@@ -692,7 +706,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Replace the range [start_index, end_index) with replacements.
-        void _replace_unchecked(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
+        void _replace_unchecked(size_type start_index, size_type end_index, const std::span<const rle_type> replacements)
         {
             //
             //

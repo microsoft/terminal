@@ -373,7 +373,7 @@ changes, or the active pane in a tab changes:
       `TabRowControl` to match.
 
 The `tab.cornerRadius` might be a bit trickier to implement. Currently, there's
-not a XAML resource that controls this, nor is this something that's exposed by
+no XAML resource that controls this, nor is this something that's exposed by
 the TabView control. Fortunately, this is something that's exposed to us
 programmatically. We'll need to manually set that value on each `TabViewItem` as
 we create new tabs. When we reload settings, we'll need to make sure to come

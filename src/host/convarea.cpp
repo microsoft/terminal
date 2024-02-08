@@ -116,8 +116,8 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 }
 
 [[nodiscard]] HRESULT ImeComposeData(std::wstring_view text,
-                                     gsl::span<const BYTE> attributes,
-                                     gsl::span<const WORD> colorArray)
+                                     std::span<const BYTE> attributes,
+                                     std::span<const WORD> colorArray)
 {
     try
     {

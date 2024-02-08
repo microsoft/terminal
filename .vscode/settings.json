@@ -6,7 +6,7 @@
     "C_Cpp.loggingLevel": "None",
     "files.associations": {
         "xstring": "cpp",
-        "*.idl": "cpp",
+        "*.idl": "midl3",
         "array": "cpp",
         "future": "cpp",
         "istream": "cpp",
@@ -103,7 +103,9 @@
     "files.exclude": {
         "**/bin/**": true,
         "**/obj/**": true,
-        "**/packages/**": true,
         "**/Generated Files/**": true
+    },
+    "search.exclude": {
+        "**/packages/**": true
     }
 }

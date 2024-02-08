@@ -15,7 +15,6 @@ Author(s):
 --*/
 #pragma once
 
-#include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
 #include <functional>
 #include "../../types/inc/IInputEvent.hpp"
@@ -133,6 +132,7 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
 
+        bool EncounteredWin32InputModeSequence() const noexcept override;
         void SetLookingForDSR(const bool looking) noexcept;
 
         bool ActionExecute(const wchar_t wch) override;
@@ -168,6 +168,7 @@ namespace Microsoft::Console::VirtualTerminal
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         std::function<bool()> _pfnFlushToInputQueue;
         bool _lookingForDSR;
+        bool _encounteredWin32InputModeSequence = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;
         std::optional<til::point> _lastMouseClickPos{};
@@ -198,17 +199,17 @@ namespace Microsoft::Console::VirtualTerminal
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,
                                       const DWORD modifierState,
-                                      std::vector<INPUT_RECORD>& input);
+                                      InputEventQueue& input);
 
         void _GetSingleKeypress(const wchar_t wch,
                                 const short vkey,
                                 const DWORD modifierState,
-                                std::vector<INPUT_RECORD>& input);
+                                InputEventQueue& input);
 
-        bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
+        bool _GetWindowManipulationType(const std::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
-        KeyEvent _GenerateWin32Key(const VTParameters parameters);
+        static INPUT_RECORD _GenerateWin32Key(const VTParameters& parameters);
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
 

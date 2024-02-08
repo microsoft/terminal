@@ -18,37 +18,6 @@
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
-CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
-    // ProcessHandleList initializes itself
-    pInputBuffer(nullptr),
-    pCurrentScreenBuffer(nullptr),
-    ScreenBuffers(nullptr),
-    OutputQueue(),
-    // ExeAliasList initialized below
-    _OriginalTitle(),
-    _Title(),
-    _Prefix(),
-    _TitleAndPrefix(),
-    _LinkTitle(),
-    Flags(0),
-    PopupCount(0),
-    CP(0),
-    OutputCP(0),
-    CtrlFlags(0),
-    LimitingProcessId(0),
-    // ColorTable initialized below
-    // CPInfo initialized below
-    // OutputCPInfo initialized below
-    _cookedReadData(nullptr),
-    ConsoleIme{},
-    _vtIo(),
-    _blinker{},
-    renderData{}
-{
-    ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
-    ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-}
-
 bool CONSOLE_INFORMATION::IsConsoleLocked() const noexcept
 {
     return _lock.is_locked();
@@ -64,6 +33,11 @@ void CONSOLE_INFORMATION::LockConsole() noexcept
 void CONSOLE_INFORMATION::UnlockConsole() noexcept
 {
     _lock.unlock();
+}
+
+til::recursive_ticket_lock_suspension CONSOLE_INFORMATION::SuspendLock() noexcept
+{
+    return _lock.suspend();
 }
 
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
@@ -119,7 +93,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
     }
 
     auto Status = DoCreateScreenBuffer();
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto ErrorExit2;
     }
@@ -130,12 +104,12 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 
     gci.ConsoleIme.RefreshAreaAttributes();
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         return STATUS_SUCCESS;
     }
 
-    RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
+    LOG_NTSTATUS_MSG(Status, "Console init failed");
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
@@ -161,6 +135,11 @@ bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
     return _cookedReadData != nullptr;
 }
 
+bool CONSOLE_INFORMATION::HasPendingPopup() const noexcept
+{
+    return _cookedReadData && _cookedReadData->PresentingPopup();
+}
+
 const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept
 {
     return *_cookedReadData;
@@ -174,6 +153,16 @@ COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() noexcept
 void CONSOLE_INFORMATION::SetCookedReadData(COOKED_READ_DATA* readData) noexcept
 {
     _cookedReadData = readData;
+}
+
+bool CONSOLE_INFORMATION::GetBracketedPasteMode() const noexcept
+{
+    return _bracketedPasteMode;
+}
+
+void CONSOLE_INFORMATION::SetBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
 }
 
 // Method Description:

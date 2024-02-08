@@ -16,9 +16,7 @@
     <ClCompile Include="..\InteractDispatch.cpp" />
     <ClCompile Include="..\MacroBuffer.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
-    <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\terminalOutput.cpp" />
-    <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -32,12 +30,10 @@
     <ClInclude Include="..\ITerminalApi.hpp" />
     <ClInclude Include="..\MacroBuffer.hpp" />
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\terminalOutput.hpp" />
     <ClInclude Include="..\ITermDispatch.hpp" />
     <ClInclude Include="..\termDispatch.hpp" />
     <ClInclude Include="..\IInteractDispatch.hpp" />
-    <ClInclude Include="..\tracing.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\types\lib\types.vcxproj">

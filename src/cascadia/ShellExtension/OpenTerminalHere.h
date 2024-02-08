@@ -29,6 +29,8 @@ struct
     __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
 #elif defined(WT_BRANDING_PREVIEW)
     __declspec(uuid("02db545a-3e20-46de-83a5-1329b1e88b6b"))
+#elif defined(WT_BRANDING_CANARY)
+    __declspec(uuid("6119575F-6918-4392-AF16-C2C627AF9416"))
 #else // DEV
     __declspec(uuid("52065414-e077-47ec-a3ac-1cc5455e1b54"))
 #endif
@@ -58,6 +60,7 @@ struct
 private:
     HRESULT GetLocationFromSite(IShellItem** location) const noexcept;
     HRESULT GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const noexcept;
+    bool IsControlAndShiftPressed();
 
     wil::com_ptr_nothrow<IUnknown> site_;
 };

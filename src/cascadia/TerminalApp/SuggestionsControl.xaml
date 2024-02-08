@@ -1,0 +1,214 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="TerminalApp.SuggestionsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:TerminalApp"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             AllowFocusOnInteraction="True"
+             AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             IsTabStop="True"
+             LostFocus="_lostFocusHandler"
+             PointerPressed="_rootPointerPressed"
+             PreviewKeyDown="_previewKeyDownHandler"
+             PreviewKeyUp="_keyUpHandler"
+             TabNavigation="Cycle"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter" />
+            <model:IconPathConverter x:Key="IconSourceConverter" />
+
+            <DataTemplate x:Key="ListItemTemplate"
+                          x:DataType="local:FilteredCommand">
+                <ListViewItem Height="32"
+                              MinHeight="0"
+                              Padding="16,0,12,0"
+                              HorizontalContentAlignment="Stretch"
+                              AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"
+                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                              FontSize="12" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="GeneralItemTemplate"
+                          x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="16" />
+                        <!--  icon  -->
+                        <ColumnDefinition Width="Auto" />
+                        <!--  command label  -->
+                        <ColumnDefinition Width="*" />
+                        <!--  key chord  -->
+                        <ColumnDefinition Width="16" />
+                        <!--  gutter for scrollbar  -->
+                    </Grid.ColumnDefinitions>
+
+                    <ContentPresenter Grid.Column="0"
+                                      Width="16"
+                                      Height="16"
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
+
+                    <local:HighlightedTextControl Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="NestedItemTemplate"
+                          x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="16" />
+                        <!--  icon  -->
+                        <ColumnDefinition Width="Auto" />
+                        <!--  command label  -->
+                        <ColumnDefinition Width="*" />
+                        <!--  key chord  -->
+                        <ColumnDefinition Width="16" />
+                        <!--  gutter for scrollbar  -->
+                    </Grid.ColumnDefinitions>
+
+                    <ContentPresenter Grid.Column="0"
+                                      Width="16"
+                                      Height="16"
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
+
+                    <local:HighlightedTextControl Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+
+                    <FontIcon Grid.Column="2"
+                              HorizontalAlignment="Right"
+                              FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                              FontSize="12"
+                              Glyph="&#xE76C;" />
+
+                </Grid>
+            </DataTemplate>
+
+            <local:PaletteItemTemplateSelector x:Key="PaletteItemTemplateSelector"
+                                               GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
+                                               NestedItemTemplate="{StaticResource NestedItemTemplate}" />
+
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="6*" />
+            <ColumnDefinition Width="2*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="8*" />
+            <RowDefinition Height="2*" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="_backdrop"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              Grid.Column="0"
+              Grid.ColumnSpan="3"
+              MaxWidth="300"
+              MaxHeight="300"
+              Margin="0"
+              Padding="0,8,0,0"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              Background="{ThemeResource FlyoutPresenterBackground}"
+              BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
+              BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
+              CornerRadius="{ThemeResource OverlayCornerRadius}"
+              PointerPressed="_backdropPointerPressed"
+              Shadow="{StaticResource SharedShadow}"
+              Translation="0,0,32">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <!--  Top-down _searchBox  -->
+                <RowDefinition Height="Auto" />
+                <!--  Top-down ParentCommandName  -->
+                <RowDefinition Height="Auto" />
+                <!--  Top-down UNUSED????????  -->
+                <RowDefinition Height="*" />
+                <!--  _filteredActionsView  -->
+                <RowDefinition Height="Auto" />
+                <!--  bottom-up _searchBox  -->
+            </Grid.RowDefinitions>
+
+            <TextBox x:Name="_searchBox"
+                     Grid.Row="0"
+                     Margin="8,0,8,8"
+                     Padding="18,8,8,8"
+                     IsSpellCheckEnabled="False"
+                     PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
+                     Text=""
+                     TextChanged="_filterTextChanged"
+                     Visibility="Collapsed" />
+
+            <StackPanel Grid.Row="1"
+                        Margin="8,0,8,8"
+                        Orientation="Horizontal"
+                        Visibility="{x:Bind ParentCommandName, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}">
+
+                <Button x:Name="_parentCommandBackButton"
+                        x:Uid="ParentCommandBackButton"
+                        VerticalAlignment="Center"
+                        Click="_moveBackButtonClicked"
+                        ClickMode="Press">
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                              FontSize="11"
+                              Glyph="&#xE76b;" />
+                </Button>
+
+                <TextBlock x:Name="_parentCommandText"
+                           Padding="16,4"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           Text="{x:Bind ParentCommandName, Mode=OneWay}" />
+            </StackPanel>
+
+
+            <Border x:Name="_noMatchesText"
+                    Grid.Row="3"
+                    Height="36"
+                    Margin="8,0,8,8"
+                    Visibility="Collapsed">
+                <TextBlock Padding="12,0"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           Text="{x:Bind NoMatchesText, Mode=OneWay}" />
+            </Border>
+
+            <ListView x:Name="_filteredActionsView"
+                      Grid.Row="3"
+                      Padding="4,-2,4,6"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      AllowDrop="False"
+                      CanReorderItems="False"
+                      ChoosingItemContainer="_choosingItemContainer"
+                      ContainerContentChanging="_containerContentChanging"
+                      IsItemClickEnabled="True"
+                      ItemClick="_listItemClicked"
+                      ItemsSource="{x:Bind FilteredActions}"
+                      SelectionChanged="_listItemSelectionChanged"
+                      SelectionMode="Single" />
+
+        </Grid>
+
+
+    </Grid>
+</UserControl>

@@ -57,8 +57,8 @@ void ConsoleImeInfo::RedrawCompMessage()
 // - attributes - Encoded attributes including the cursor position and the color index (to the array)
 // - colorArray - An array of colors to use for the text
 void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
-                                      const gsl::span<const BYTE> attributes,
-                                      const gsl::span<const WORD> colorArray)
+                                      const std::span<const BYTE> attributes,
+                                      const std::span<const WORD> colorArray)
 {
     ClearAllAreas();
 
@@ -181,8 +181,8 @@ void ConsoleImeInfo::ClearAllAreas()
 // Return Value:
 // - TextAttribute object with color and cursor and line drawing data.
 TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
-                                                    const gsl::span<const BYTE> attributes,
-                                                    const gsl::span<const WORD> colorArray)
+                                                    const std::span<const BYTE> attributes,
+                                                    const std::span<const WORD> colorArray)
 {
     // Encoded attribute is the shorthand information passed from the IME
     // that contains a cursor position packed in along with which color in the
@@ -218,8 +218,8 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
 // Return Value:
 // - Vector of OutputCells where each one represents one cell of the output buffer.
 std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view text,
-                                                         const gsl::span<const BYTE> attributes,
-                                                         const gsl::span<const WORD> colorArray)
+                                                         const std::span<const BYTE> attributes,
+                                                         const std::span<const WORD> colorArray)
 {
     std::vector<OutputCell> cells;
 
@@ -398,8 +398,8 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 //                each text character. This view must be the same size as the text view.
 // - colorArray - 8 colors to be used to format the text for display
 void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
-                                             const gsl::span<const BYTE> attributes,
-                                             const gsl::span<const WORD> colorArray)
+                                             const std::span<const BYTE> attributes,
+                                             const std::span<const WORD> colorArray)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& screenInfo = gci.GetActiveOutputBuffer();
@@ -462,18 +462,13 @@ void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
     }
 
     const auto dwControlKeyState = GetControlKeyState(0);
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
-    KeyEvent keyEvent{ TRUE, // keydown
-                       1, // repeatCount
-                       0, // virtualKeyCode
-                       0, // virtualScanCode
-                       0, // charData
-                       dwControlKeyState }; // activeModifierKeys
+    InputEventQueue inEvents;
+    auto keyEvent = SynthesizeKeyEvent(true, 1, 0, 0, 0, dwControlKeyState);
 
     for (const auto& ch : text)
     {
-        keyEvent.SetCharData(ch);
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        keyEvent.Event.KeyEvent.uChar.UnicodeChar = ch;
+        inEvents.push_back(keyEvent);
     }
 
     gci.pInputBuffer->Write(inEvents);

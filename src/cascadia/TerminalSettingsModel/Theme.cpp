@@ -13,6 +13,7 @@
 #include "WindowTheme.g.cpp"
 #include "TabRowTheme.g.cpp"
 #include "TabTheme.g.cpp"
+#include "ThemePair.g.cpp"
 #include "Theme.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -27,6 +28,8 @@ namespace winrt
 }
 
 static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view LightNameKey{ "light" };
+static constexpr std::string_view DarkNameKey{ "dark" };
 
 static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
 static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
@@ -320,3 +323,52 @@ winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
 {
     return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;
 }
+
+winrt::com_ptr<ThemePair> ThemePair::FromJson(const Json::Value& json)
+{
+    auto result = winrt::make_self<ThemePair>(L"dark");
+
+    if (json.isString())
+    {
+        result->_DarkName = result->_LightName = JsonUtils::GetValue<winrt::hstring>(json);
+    }
+    else if (json.isObject())
+    {
+        JsonUtils::GetValueForKey(json, DarkNameKey, result->_DarkName);
+        JsonUtils::GetValueForKey(json, LightNameKey, result->_LightName);
+    }
+    return result;
+}
+
+Json::Value ThemePair::ToJson() const
+{
+    if (_DarkName == _LightName)
+    {
+        return JsonUtils::ConversionTrait<winrt::hstring>().ToJson(DarkName());
+    }
+    else
+    {
+        Json::Value json{ Json::ValueType::objectValue };
+
+        JsonUtils::SetValueForKey(json, DarkNameKey, _DarkName);
+        JsonUtils::SetValueForKey(json, LightNameKey, _LightName);
+        return json;
+    }
+}
+winrt::com_ptr<ThemePair> ThemePair::Copy() const
+{
+    auto pair{ winrt::make_self<ThemePair>() };
+    pair->_DarkName = _DarkName;
+    pair->_LightName = _LightName;
+    return pair;
+}
+
+// I'm not even joking, this is the recommended way to do this:
+// https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
+bool Theme::IsSystemInDarkTheme()
+{
+    static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
+        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+    };
+    return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
+};

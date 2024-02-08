@@ -391,7 +391,113 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
-    TEST_METHOD(TestCsiIgnore)
+    TEST_METHOD(TestCsiSubParam)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        // "\e[:3;9:5::8J"
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'3');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L';');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L'9');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'5');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'8');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'J');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        VERIFY_ARE_EQUAL(mach._parameters.size(), 2u);
+        VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 9);
+
+        VERIFY_ARE_EQUAL(mach._subParameters.size(), 4u);
+        VERIFY_ARE_EQUAL(mach._subParameters.at(0), 3);
+        VERIFY_ARE_EQUAL(mach._subParameters.at(1), 5);
+        VERIFY_IS_FALSE(mach._subParameters.at(2).has_value());
+        VERIFY_ARE_EQUAL(mach._subParameters.at(3), 8);
+
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(0).first, 0);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(0).second, 1);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(1).first, 1);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(1).second, 4);
+
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.size(), mach._parameters.size());
+        VERIFY_IS_TRUE(
+            (mach._subParameterRanges.back().second == mach._subParameters.size() - 1) // lastIndex
+            || (mach._subParameterRanges.back().second == mach._subParameters.size()) // or lastIndex + 1
+        );
+    }
+
+    TEST_METHOD(TestCsiMaxSubParamCount)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Output two parameters with 100 sub parameters each");
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        for (size_t nParam = 0; nParam < 2; nParam++)
+        {
+            mach.ProcessCharacter(L'3');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+            for (size_t i = 0; i < 100; i++)
+            {
+                mach.ProcessCharacter(L':');
+                VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+                mach.ProcessCharacter(L'0' + i % 10);
+                VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+            }
+            Log::Comment(L"Receiving 100 sub parameters should set the overflow flag");
+            VERIFY_IS_TRUE(mach._subParameterLimitOverflowed);
+            mach.ProcessCharacter(L';');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+            VERIFY_IS_FALSE(mach._subParameterLimitOverflowed);
+        }
+        mach.ProcessCharacter(L'J');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        Log::Comment(L"Only MAX_SUBPARAMETER_COUNT (6) sub parameters should be stored for each parameter");
+        VERIFY_ARE_EQUAL(mach._subParameters.size(), 12u);
+
+        // Verify that first 6 sub parameters are stored for each parameter.
+        // subParameters = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 }
+        for (size_t i = 0; i < 12; i++)
+        {
+            VERIFY_IS_TRUE(mach._subParameters.at(i).has_value());
+            VERIFY_ARE_EQUAL(mach._subParameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 6));
+        }
+
+        auto firstRange = mach._subParameterRanges.at(0);
+        auto secondRange = mach._subParameterRanges.at(1);
+        VERIFY_ARE_EQUAL(firstRange.first, 0);
+        VERIFY_ARE_EQUAL(firstRange.second, 6);
+        VERIFY_ARE_EQUAL(secondRange.first, 6);
+        VERIFY_ARE_EQUAL(secondRange.second, 12);
+    }
+
+    TEST_METHOD(TestLeadingZeroCsiSubParam)
     {
         auto dispatch = std::make_unique<DummyDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -402,12 +508,30 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'[');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
-        mach.ProcessCharacter(L':');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
         mach.ProcessCharacter(L'3');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
-        mach.ProcessCharacter(L'q');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        for (auto i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        {
+            mach.ProcessCharacter(L'0');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        }
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        {
+            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        }
+        VERIFY_ARE_EQUAL(mach._subParameters.back(), 12345);
+        mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
+    TEST_METHOD(TestCsiIgnore)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
 
         mach.ProcessCharacter(AsciiChars::ESC);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
@@ -417,7 +541,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
-        mach.ProcessCharacter(L':');
+        mach.ProcessCharacter(L'=');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
         mach.ProcessCharacter(L'8');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
@@ -1657,12 +1781,10 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        mach.ProcessCharacter(AsciiChars::ESC);
-        mach.ProcessCharacter(L'[');
-        mach.ProcessCharacter(L's');
-        VERIFY_IS_TRUE(pDispatch->_cursorSave);
-
-        pDispatch->ClearState();
+        // Note that CSI s is dispatched as SetLeftRightScrollingMargins rather
+        // than CursorSaveState, so we don't test that here. The CursorSaveState
+        // will only be triggered by this sequence (in AdaptDispatch) when the
+        // Left-Right-Margin mode (DECLRMM) is disabled.
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
@@ -1839,7 +1961,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
-    void VerifyDispatchTypes(const gsl::span<const DispatchTypes::GraphicsOptions> expectedOptions,
+    void VerifyDispatchTypes(const std::span<const DispatchTypes::GraphicsOptions> expectedOptions,
                              const StatefulDispatch& dispatch)
     {
         VERIFY_ARE_EQUAL(expectedOptions.size(), dispatch._options.size());
@@ -2037,29 +2159,29 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        Log::Comment(L"Test 1: Check OS (operating status) case 5. Should succeed.");
+        Log::Comment(L"Test 1: Check operating status (case 5). Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'5');
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::OS_OperatingStatus, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::OperatingStatus, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 2: Check CPR (cursor position report) case 6. Should succeed.");
+        Log::Comment(L"Test 2: Check cursor position report (case 6). Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'6');
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::CursorPositionReport, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 3: Check DECXCPR (extended cursor position report) case ?6. Should succeed.");
+        Log::Comment(L"Test 3: Check extended cursor position report (case ?6). Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'?');
@@ -2067,7 +2189,124 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::ExtendedCursorPositionReport, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 4: Check printer status (case ?15). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'1');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::PrinterStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 5: Check user-defined keys (case ?25). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'2');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::UserDefinedKeys, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 6: Check keyboard status / dialect (case ?26). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'2');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::KeyboardStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 7: Check locator status (case ?55). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::LocatorStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 8: Check locator identity (case ?56). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::LocatorIdentity, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 9: Check macro space report (case ?62). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'2');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::MacroSpaceReport, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 10: Check memory checksum (case ?63). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'3');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::MemoryChecksum, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 11: Check data integrity report (case ?75). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'7');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::DataIntegrity, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 12: Check multiple session status (case ?85). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'8');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::MultipleSessionStatus, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
     }

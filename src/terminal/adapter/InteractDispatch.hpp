@@ -25,8 +25,8 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         InteractDispatch();
 
-        bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-        bool WriteCtrlKey(const KeyEvent& event) override;
+        bool WriteInput(const std::span<const INPUT_RECORD>& inputEvents) override;
+        bool WriteCtrlKey(const INPUT_RECORD& event) override;
         bool WriteString(const std::wstring_view string) override;
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                 const VTParameter parameter1,

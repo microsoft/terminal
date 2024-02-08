@@ -1,11 +1,12 @@
 Anup
-austdi
 arkthur
+austdi
 Ballmer
 bhoj
 Bhojwani
 Bluloco
 carlos
+craigloewen
 dhowett
 Diviness
 dsafa
@@ -31,8 +32,8 @@ jerrysh
 Kaiyu
 kimwalisch
 KMehrain
-KODELIFE
 Kodelife
+KODELIFE
 Kourosh
 kowalczyk
 leonardder
@@ -54,6 +55,7 @@ mikegr
 mikemaccana
 miloush
 miniksa
+nguyen
 niksa
 nvaccess
 nvda
@@ -61,6 +63,7 @@ oising
 oldnewthing
 opengl
 osgwiki
+Ottosson
 pabhojwa
 panos
 paulcam
@@ -88,8 +91,8 @@ Wirt
 Wojciech
 zadjii
 Zamor
-Zamora
 zamora
+Zamora
 zljubisic
 Zoey
 zorio

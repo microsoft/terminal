@@ -26,6 +26,7 @@
     <ClCompile Include="ConptyRoundtripTests.cpp" />
     <ClCompile Include="TerminalBufferTests.cpp" />
     <ClCompile Include="ScrollTest.cpp" />
+    <ClCompile Include="TilWinRtHelpersTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj">

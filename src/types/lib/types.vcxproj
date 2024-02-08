@@ -15,14 +15,7 @@
     <ClCompile Include="..\ColorFix.cpp" />
     <ClCompile Include="..\convert.cpp" />
     <ClCompile Include="..\colorTable.cpp" />
-    <ClCompile Include="..\Environment.cpp" />
     <ClCompile Include="..\GlyphWidth.cpp" />
-    <ClCompile Include="..\MouseEvent.cpp" />
-    <ClCompile Include="..\FocusEvent.cpp" />
-    <ClCompile Include="..\IInputEvent.cpp" />
-    <ClCompile Include="..\KeyEvent.cpp" />
-    <ClCompile Include="..\MenuEvent.cpp" />
-    <ClCompile Include="..\ModifierKeyState.cpp" />
     <ClCompile Include="..\ScreenInfoUiaProviderBase.cpp" />
     <ClCompile Include="..\sgrStack.cpp" />
     <ClCompile Include="..\ThemeUtils.cpp" />
@@ -31,7 +24,6 @@
     <ClCompile Include="..\TermControlUiaTextRange.cpp" />
     <ClCompile Include="..\TermControlUiaProvider.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
-    <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -43,7 +35,6 @@
     <ClInclude Include="..\inc\ColorFix.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\inc\colorTable.hpp" />
-    <ClInclude Include="..\inc\Environment.hpp" />
     <ClInclude Include="..\inc\GlyphWidth.hpp" />
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\sgrStack.hpp" />

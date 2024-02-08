@@ -47,6 +47,7 @@ namespace Microsoft::Console::Render
         virtual const TextBuffer& GetTextBuffer() const noexcept = 0;
         virtual const FontInfo& GetFontInfo() const noexcept = 0;
         virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
+        virtual std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept = 0;
         virtual void LockConsole() noexcept = 0;
         virtual void UnlockConsole() noexcept = 0;
 
@@ -57,7 +58,7 @@ namespace Microsoft::Console::Render
         virtual ULONG GetCursorHeight() const noexcept = 0;
         virtual CursorType GetCursorStyle() const noexcept = 0;
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual bool IsCursorDoubleWidth() const noexcept = 0;
+        virtual bool IsCursorDoubleWidth() const = 0;
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
         virtual const std::wstring_view GetConsoleTitle() const noexcept = 0;
@@ -71,9 +72,9 @@ namespace Microsoft::Console::Render
         virtual const bool IsBlockSelection() const = 0;
         virtual void ClearSelection() = 0;
         virtual void SelectNewRegion(const til::point coordStart, const til::point coordEnd) = 0;
+        virtual void SelectSearchRegions(std::vector<til::inclusive_rect> source) = 0;
         virtual const til::point GetSelectionAnchor() const noexcept = 0;
         virtual const til::point GetSelectionEnd() const noexcept = 0;
-        virtual void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr) = 0;
         virtual const bool IsUiaDataInitialized() const noexcept = 0;
     };
 }

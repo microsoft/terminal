@@ -821,7 +821,6 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         // 1234123412341234
         static constexpr std::array<float, 2> hyperlinkDashes{ 1.f, 3.f };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, hyperlinkDashes.data(), gsl::narrow_cast<UINT32>(hyperlinkDashes.size()), &_dashStrokeStyle));
-        _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1663,7 +1662,7 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                 const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -1697,22 +1696,22 @@ CATCH_RETURN()
 // - Paints lines around cells (draws in pieces of the grid)
 // Arguments:
 // - lines - Which grid lines (top, left, bottom, right) to draw
-// - color - The color to use for drawing the lines
+// - gridlineColor - The color to use for drawing the gridlines
+// - underlineColor - The color to use for drawing the underlines
 // - cchLine - Length of the line to draw in character cells
 // - coordTarget - The X,Y character position in the grid where we should start drawing
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(const GridLineSet lines,
-                                                     COLORREF const color,
+                                                     const COLORREF gridlineColor,
+                                                     const COLORREF underlineColor,
                                                      const size_t cchLine,
                                                      const til::point coordTarget) noexcept
 try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto restoreBrushOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
-
-    _d2dBrushForeground->SetColor(_ColorFFromColorRef(color | 0xff000000));
 
     const auto font = _fontRenderData->GlyphCell().to_d2d_size();
     const D2D_POINT_2F target = { coordTarget.x * font.width, coordTarget.y * font.height };
@@ -1722,9 +1721,11 @@ try
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
     };
 
-    const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
-        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _hyperlinkStrokeStyle.Get());
+    const auto DrawDottedLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
     };
+
+    _d2dBrushForeground->SetColor(_ColorFFromColorRef(gridlineColor | 0xff000000));
 
     // NOTE: Line coordinates are centered within the line, so they need to be
     // offset by half the stroke width. For the start coordinate we add half
@@ -1774,10 +1775,22 @@ try
         }
     }
 
+    if (lines.test(GridLines::Strikethrough))
+    {
+        const auto halfStrikethroughWidth = lineMetrics.strikethroughWidth / 2.0f;
+        const auto startX = target.x + halfStrikethroughWidth;
+        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
+        const auto y = target.y + lineMetrics.strikethroughOffset;
+
+        DrawLine(startX, y, endX, y, lineMetrics.strikethroughWidth);
+    }
+
+    _d2dBrushForeground->SetColor(_ColorFFromColorRef(underlineColor | 0xff000000));
+
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline, GridLines::HyperlinkUnderline))
+    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline, GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
@@ -1789,9 +1802,9 @@ try
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (lines.test(GridLines::HyperlinkUnderline))
+        if (lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
-            DrawHyperlinkLine(startX, y, endX, y, lineMetrics.underlineWidth);
+            DrawDottedLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
         if (lines.test(GridLines::DoubleUnderline))
@@ -1800,16 +1813,6 @@ try
             const auto y2 = target.y + lineMetrics.underlineOffset2;
             DrawLine(startX, y2, endX, y2, lineMetrics.underlineWidth);
         }
-    }
-
-    if (lines.test(GridLines::Strikethrough))
-    {
-        const auto halfStrikethroughWidth = lineMetrics.strikethroughWidth / 2.0f;
-        const auto startX = target.x + halfStrikethroughWidth;
-        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
-        const auto y = target.y + lineMetrics.strikethroughOffset;
-
-        DrawLine(startX, y, endX, y, lineMetrics.strikethroughWidth);
     }
 
     return S_OK;
@@ -1837,6 +1840,14 @@ try
 
     _d2dDeviceContext->FillRectangle(draw, _d2dBrushForeground.Get());
 
+    return S_OK;
+}
+CATCH_RETURN()
+
+[[nodiscard]] HRESULT DxEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+try
+{
+    UNREFERENCED_PARAMETER(rects);
     return S_OK;
 }
 CATCH_RETURN()
@@ -1980,11 +1991,6 @@ try
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
-    if (textAttributes.IsHyperlink())
-    {
-        _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
-    }
-
     // Update pixel shader settings as background color might have changed
     _ComputePixelShaderSettings();
 
@@ -2112,7 +2118,7 @@ CATCH_RETURN();
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT DxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 try
 {
     area = _invalidMap.runs();
@@ -2286,7 +2292,7 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - S_OK if successful. E_FAIL if there was an error.
-HRESULT DxEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+HRESULT DxEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                  const til::size cellSize,
                                  const size_t centeringHint) noexcept
 try
