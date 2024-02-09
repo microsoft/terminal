@@ -83,7 +83,7 @@ std::vector<til::inclusive_rect> Terminal::_GetSearchSelectionRects(Microsoft::C
         for (auto selection = lowerIt; selection != upperIt; ++selection)
         {
             const auto start = til::point{ selection->left, selection->top };
-            const auto end = til::point{ selection->right, selection->top };
+            const auto end = til::point{ selection->right, selection->bottom };
             const auto adj = _activeBuffer().GetTextRects(start, end, _blockSelection, false);
             for (auto a : adj)
             {
