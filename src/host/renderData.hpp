@@ -26,7 +26,6 @@ public:
     const FontInfo& GetFontInfo() const noexcept override;
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override;
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
@@ -55,7 +54,10 @@ public:
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    void SelectSearchRegions(std::vector<til::inclusive_rect> source) override;
+    std::vector<til::inclusive_rect> GetSearchHighlights() const noexcept override;
+    void SetSearchHighlights(std::vector<til::point_span> /*source*/) noexcept override;
+    std::vector<til::inclusive_rect> GetSearchHighlightFocused() const noexcept override;
+    void SetSearchHighlightFocused(const size_t /*idx*/) override;
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override { return true; }

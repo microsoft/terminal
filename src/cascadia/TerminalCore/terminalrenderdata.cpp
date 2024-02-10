@@ -150,14 +150,30 @@ catch (...)
     return {};
 }
 
-std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSearchSelectionRects() noexcept
+// Method Description:
+// - Helper to determine the search highlights in the buffer. Used for rendering.
+// Return Value:
+// - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
+std::vector<til::inclusive_rect> Terminal::GetSearchHighlights() const noexcept
 try
 {
-    std::vector<Viewport> result;
+    _assertLocked();
 
-    for (const auto& lineRect : _GetSearchSelectionRects(_GetVisibleViewport()))
+    std::vector<til::inclusive_rect> result;
+
+    // find the search highlights that are within the viewport
+    const auto& viewport = _GetVisibleViewport();
+    auto lowerIt = std::lower_bound(_searchHighlights.begin(), _searchHighlights.end(), viewport.Top(), [](const til::point_span& ps, til::CoordType value) {
+        return ps.start.y < value;
+    });
+    const auto upperIt = std::upper_bound(_searchHighlights.begin(), _searchHighlights.end(), viewport.BottomExclusive(), [](til::CoordType value, const til::point_span& ps) {
+        return value < ps.start.y;
+    });
+
+    for (; lowerIt != upperIt; ++lowerIt)
     {
-        result.emplace_back(Viewport::FromInclusive(lineRect));
+        const auto adj = _activeBuffer().GetTextRects(lowerIt->start, lowerIt->end, false, true);
+        result.insert(result.end(), adj.begin(), adj.end());
     }
 
     return result;
@@ -168,14 +184,17 @@ catch (...)
     return {};
 }
 
-void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
+// Method Description:
+// - If neccessary, scrolls the viewport such that the start point is in the
+//   viewport, and if that's already the case, also brings the end point inside
+//   the viewport
+// Arguments:
+// - coordStart - The start point
+// - coordEnd - The end point
+// Return Value:
+// - The updated scroll offset
+til::CoordType Terminal::_ScrollToPoints(const til::point coordStart, const til::point coordEnd)
 {
-#pragma warning(push)
-#pragma warning(disable : 26496) // cpp core checks wants these const, but they're decremented below.
-    auto realCoordStart = coordStart;
-    auto realCoordEnd = coordEnd;
-#pragma warning(pop)
-
     auto notifyScrollChange = false;
     if (coordStart.y < _VisibleStartIndex())
     {
@@ -199,28 +218,59 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
         _NotifyScrollEvent();
     }
 
-    realCoordStart.y -= _VisibleStartIndex();
-    realCoordEnd.y -= _VisibleStartIndex();
-
-    SetSelectionAnchor(realCoordStart);
-    SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
+    return _scrollOffset;
 }
 
-void Terminal::SelectSearchRegions(std::vector<til::inclusive_rect> rects)
+void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
-    _searchSelections.clear();
-    for (auto& rect : rects)
+    const auto newScrollOffset = _ScrollToPoints(coordStart, coordEnd);
+
+    // update the selection coordinates so they're relative to the new scroll-offset
+    const auto newCoordStart = til::point{ coordStart.x, coordStart.y - newScrollOffset };
+    const auto newCoordEnd = til::point{ coordEnd.x , coordEnd.y - newScrollOffset };
+    SetSelectionAnchor(newCoordStart);
+    SetSelectionEnd(newCoordEnd, SelectionExpansion::Char);
+}
+
+void Terminal::SetSearchHighlights(std::vector<til::point_span> rects) noexcept
+{
+    _assertLocked();
+
+    _searchHighlights = std::move(rects);
+    _searchHighlightFocused = 0;
+}
+
+void Terminal::SetSearchHighlightFocused(const size_t idx)
+{
+    _assertLocked();
+
+    // search highlight focused index must be within the search results bound
+    assert(idx < _searchHighlights.size());
+    _searchHighlightFocused = idx;
+
+    // bring focused region into the view
+    const auto& focusedRegion = _searchHighlights[_searchHighlightFocused];
+    _ScrollToPoints(focusedRegion.start, focusedRegion.end);
+}
+
+std::vector<til::inclusive_rect> Terminal::GetSearchHighlightFocused() const noexcept
+{
+    _assertLocked();
+
+    std::vector<til::inclusive_rect> result;
+    try
     {
-        rect.top -= _VisibleStartIndex();
-        rect.bottom -= _VisibleStartIndex();
+        if (_searchHighlightFocused >= _searchHighlights.size())
+        {
+            return result;
+        }
 
-        const auto realStart = _ConvertToBufferCell(til::point{ rect.left, rect.top });
-        const auto realEnd = _ConvertToBufferCell(til::point{ rect.right, rect.bottom });
-
-        auto rr = til::inclusive_rect{ realStart.x, realStart.y, realEnd.x, realEnd.y };
-
-        _searchSelections.emplace_back(rr);
+        const auto& focusedRegion = _searchHighlights[_searchHighlightFocused];
+        result = _activeBuffer().GetTextRects(focusedRegion.start, focusedRegion.end, false, true);
     }
+    CATCH_LOG();
+
+    return result;
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept
