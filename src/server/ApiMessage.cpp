@@ -2,9 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include <intsafe.h>
-
 #include "ApiMessage.h"
 #include "DeviceComm.h"
 
@@ -33,7 +31,7 @@ _CONSOLE_API_MSG& _CONSOLE_API_MSG::operator=(const _CONSOLE_API_MSG& other)
     _outputBuffer = other._outputBuffer;
 
     // Since this struct uses anonymous unions and thus cannot
-    // explicitly reference it, we have to a bit cheeky to copy it.
+    // explicitly reference it, we have to be a bit cheeky to copy it.
     // --> Just memcpy() the entire thing.
     memcpy(&Descriptor, &other.Descriptor, structPacketDataSize);
 
@@ -107,7 +105,7 @@ try
         const auto cbReadSize = Descriptor.InputSize - State.ReadOffset;
 
         // If we were previously called with a huge buffer we have an equally large _inputBuffer.
-        // We shouldn't just keep this huge buffer around, if no one needs it anymore.
+        // We shouldn't just keep this huge buffer around if no one needs it anymore.
         if (_inputBuffer.capacity() > 16 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
         {
             _inputBuffer.shrink_to_fit();
@@ -149,8 +147,8 @@ try
 
         auto cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
 
-        // If we were previously called with a huge buffer we have an equally large _outputBuffer.
-        // We shouldn't just keep this huge buffer around, if no one needs it anymore.
+        // If we were previously called with a huge buffer, we have an equally large _outputBuffer.
+        // We shouldn't just keep this huge buffer around if no one needs it anymore.
         if (_outputBuffer.capacity() > 16 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
         {
             _outputBuffer.shrink_to_fit();
@@ -201,7 +199,7 @@ CATCH_RETURN();
             IoOperation.Identifier = Descriptor.Identifier;
             IoOperation.Buffer.Offset = State.WriteOffset;
             IoOperation.Buffer.Data = State.OutputBuffer;
-            IoOperation.Buffer.Size = (ULONG)Complete.IoStatus.Information;
+            IoOperation.Buffer.Size = static_cast<ULONG>(Complete.IoStatus.Information);
 
             LOG_IF_FAILED(_pDeviceComm->WriteOutput(&IoOperation));
         }
