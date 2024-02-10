@@ -386,7 +386,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
     return S_FALSE;
 }
 
-[[nodiscard]] HRESULT UiaEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::PaintSearchHighlight(const std::vector<til::rect>& /*highlights*/, const std::vector<til::rect>& /*highlightFocused*/) noexcept
 {
     return S_FALSE;
 }

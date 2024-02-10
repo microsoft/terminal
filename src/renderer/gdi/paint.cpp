@@ -836,9 +836,10 @@ CATCH_RETURN();
     return S_OK;
 }
 
-[[nodiscard]] HRESULT GdiEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSearchHighlight(const std::vector<til::rect>& highlights, const std::vector<til::rect>& highlightFocused) noexcept
 {
-    UNREFERENCED_PARAMETER(rects);
+    UNREFERENCED_PARAMETER(highlights);
+    UNREFERENCED_PARAMETER(highlightFocused);
 
     return S_OK;
 }

@@ -64,7 +64,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
-        [[nodiscard]] HRESULT PaintSelections(const std::vector<til::rect>& rects) noexcept override;
+        [[nodiscard]] HRESULT PaintSearchHighlight(const std::vector<til::rect>& /*highlights*/, const std::vector<til::rect>& /*highlightFocused*/) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;

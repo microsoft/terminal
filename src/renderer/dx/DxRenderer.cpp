@@ -1844,10 +1844,11 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT DxEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintSearchHighlight(const std::vector<til::rect>& highlights, const std::vector<til::rect>& highlightFocused) noexcept
 try
 {
-    UNREFERENCED_PARAMETER(rects);
+    UNREFERENCED_PARAMETER(highlights);
+    UNREFERENCED_PARAMETER(highlightFocused);
     return S_OK;
 }
 CATCH_RETURN()

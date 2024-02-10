@@ -233,7 +233,7 @@ using namespace Microsoft::Console::Types;
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintSearchHighlight(const std::vector<til::rect>& /*highlights*/, const std::vector<til::rect>& /*highlightFocused*/) noexcept
 {
     return S_OK;
 }
