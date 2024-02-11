@@ -356,6 +356,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Removes the status message in the status box.
+    void SearchBoxControl::ClearStatus()
+    {
+        StatusBox().Text(L"");
+    }
+
+    // Method Description:
     // - Enables / disables results navigation buttons
     // Arguments:
     // - enable: if true, the buttons should be enabled

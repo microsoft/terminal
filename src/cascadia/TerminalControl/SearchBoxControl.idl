@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Control
         void PopulateTextbox(String text);
         Boolean ContainsFocus();
         void SetStatus(Int32 totalMatches, Int32 currentMatch);
+        void ClearStatus();
 
         Boolean NavigationEnabled;
 
