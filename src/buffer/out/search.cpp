@@ -30,6 +30,8 @@ bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, c
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
 
+    _renderData->SetSearchHighlights(_results);
+    _updateIdxInData();
     return true;
 }
 
@@ -65,6 +67,7 @@ void Search::MoveToPoint(const til::point anchor) noexcept
     }
 
     _index = (index + count) % count;
+    _updateIdxInData();
 }
 
 void Search::MovePastPoint(const til::point anchor) noexcept
@@ -91,6 +94,7 @@ void Search::MovePastPoint(const til::point anchor) noexcept
     }
 
     _index = (index + count) % count;
+    _updateIdxInData();
 }
 
 void Search::FindNext() noexcept
@@ -99,6 +103,8 @@ void Search::FindNext() noexcept
     {
         _index = (_index + _step + count) % count;
     }
+
+    _updateIdxInData();
 }
 
 const til::point_span* Search::GetCurrent() const noexcept
@@ -109,28 +115,6 @@ const til::point_span* Search::GetCurrent() const noexcept
         return &til::at(_results, index);
     }
     return nullptr;
-}
-
-void Search::HighlightResults() const
-{
-    std::vector<til::inclusive_rect> toSelect;
-    const auto& textBuffer = _renderData->GetTextBuffer();
-
-    for (const auto& r : _results)
-    {
-        const auto rbStart = textBuffer.BufferToScreenPosition(r.start);
-        const auto rbEnd = textBuffer.BufferToScreenPosition(r.end);
-
-        til::inclusive_rect re;
-        re.top = rbStart.y;
-        re.bottom = rbEnd.y;
-        re.left = rbStart.x;
-        re.right = rbEnd.x;
-
-        toSelect.emplace_back(re);
-    }
-
-    _renderData->SelectSearchRegions(std::move(toSelect));
 }
 
 // Routine Description:
@@ -161,4 +145,13 @@ const std::vector<til::point_span>& Search::Results() const noexcept
 ptrdiff_t Search::CurrentMatch() const noexcept
 {
     return _index;
+}
+
+void Search::_updateIdxInData()
+{
+    const auto index = gsl::narrow_cast<size_t>(_index);
+    if (index < _results.size())
+    {
+        _renderData->SetSearchHighlightFocused(index);
+    }
 }
