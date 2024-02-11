@@ -153,7 +153,9 @@
                 CornerRadius="{ThemeResource OverlayCornerRadius}"
                 Orientation="Horizontal"
                 Shadow="{StaticResource SharedShadow}"
-                Translation="0,0,16">
+                Translation="0,0,16"
+                PointerPressed="SearchBoxPointerPressedHandler"
+                PointerReleased="SearchBoxPointerReleasedHandler">
         <TextBox x:Name="TextBox"
                  x:Uid="SearchBox_TextBox"
                  Width="160"
