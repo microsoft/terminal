@@ -1656,7 +1656,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            _searcher.HighlightResults();
             _searcher.MoveToCurrentSelection();
             _cachedSearchResultRows = {};
         }
@@ -1665,7 +1664,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _searcher.FindNext();
         }
 
-        const auto foundMatch = _searcher.SelectCurrent();
+        const auto foundMatch = _searcher.GetCurrent() ? true : false;
         auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
         if (foundMatch)
         {
@@ -1680,7 +1679,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->AlwaysNotifyOnBufferRotation(true);
         }
-        _renderer->TriggerSelection();
+        _renderer->TriggerSearchHighlight();
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
@@ -1689,8 +1688,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
-        const auto lock = _terminal->LockForReading();
-
         if (!_cachedSearchResultRows)
         {
             auto results = std::vector<int32_t>();
@@ -1714,8 +1711,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ClearSearch()
     {
+        const auto lock = _terminal->LockForWriting();
+
         _terminal->AlwaysNotifyOnBufferRotation(false);
         _searcher = {};
+        _cachedSearchResultRows = {};
+
+        _terminal->SetSearchHighlights({});
+        _renderer->TriggerSearchHighlight();
     }
 
     void ControlCore::Close()

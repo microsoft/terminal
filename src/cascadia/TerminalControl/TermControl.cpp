@@ -1170,6 +1170,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _HidePointerCursorHandlers(*this, nullptr);
 
+        // since user has started entering text in the buffer, we should clear
+        // the search state.
+        _core.ClearSearch();
+        _UpdateSearchScrollMarks();
+        if (_searchBox)
+        {
+            _searchBox->ClearStatus();
+        }
+
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();
         const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
@@ -3493,6 +3502,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Triggers an update on scrollbar to redraw search scroll marks.
+    // - Called when the search results have changed, and the scroll marks'
+    //   positions need to be updated.
+    void TermControl::_UpdateSearchScrollMarks()
+    {
+        // Manually send a scrollbar update, on the UI thread. We're already
+        // UI-driven, so that's okay. We're not really changing the scrollbar,
+        // but we do want to update the position of any search marks. The Core
+        // might send a scrollbar update event too, but if the first search hit
+        // is in the visible viewport, then the pips won't display until the
+        // user first scrolls.
+        auto scrollBar = ScrollBar();
+        ScrollBarUpdate update{
+            .newValue = scrollBar.Value(),
+            .newMaximum = scrollBar.Maximum(),
+            .newMinimum = scrollBar.Minimum(),
+            .newViewportSize = scrollBar.ViewportSize(),
+        };
+        _throttledUpdateScrollbar(update);
+    }
+
+    // Method Description:
     // - Called when the core raises a FoundMatch event. That's done in response
     //   to us starting a search query with ControlCore::Search.
     // - The args will tell us if there were or were not any results for that
@@ -3515,25 +3546,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
         }
 
-        // Manually send a scrollbar update, now, on the UI thread. We're
-        // already UI-driven, so that's okay. We're not really changing the
-        // scrollbar, but we do want to update the position of any marks. The
-        // Core might send a scrollbar updated event too, but if the first
-        // search hit is in the visible viewport, then the pips won't display
-        // until the user first scrolls.
-        auto scrollBar = ScrollBar();
-        ScrollBarUpdate update{
-            .newValue = scrollBar.Value(),
-            .newMaximum = scrollBar.Maximum(),
-            .newMinimum = scrollBar.Minimum(),
-            .newViewportSize = scrollBar.ViewportSize(),
-        };
-        _throttledUpdateScrollbar(update);
+        _UpdateSearchScrollMarks();
 
         if (_searchBox)
         {
-            _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
             _searchBox->NavigationEnabled(true);
+            if (_searchBox->TextBox().Text().empty())
+            {
+                _searchBox->ClearStatus();
+            }
+            else
+            {
+                _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
+            }
         }
     }
 

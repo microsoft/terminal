@@ -349,6 +349,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void _UpdateSearchScrollMarks();
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
