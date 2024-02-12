@@ -221,7 +221,7 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
 
     // update the selection coordinates so they're relative to the new scroll-offset
     const auto newCoordStart = til::point{ coordStart.x, coordStart.y - newScrollOffset };
-    const auto newCoordEnd = til::point{ coordEnd.x , coordEnd.y - newScrollOffset };
+    const auto newCoordEnd = til::point{ coordEnd.x, coordEnd.y - newScrollOffset };
     SetSelectionAnchor(newCoordStart);
     SetSelectionEnd(newCoordEnd, SelectionExpansion::Char);
 }
