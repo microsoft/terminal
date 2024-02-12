@@ -47,9 +47,9 @@ namespace Microsoft::Console::Render
         virtual const TextBuffer& GetTextBuffer() const noexcept = 0;
         virtual const FontInfo& GetFontInfo() const noexcept = 0;
         virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
-        virtual void SetSearchHighlights(std::vector<til::point_span> highlights) noexcept = 0;
+        virtual void SetSearchHighlights(std::vector<til::inclusive_rect> highlights) noexcept = 0;
         virtual std::vector<til::inclusive_rect> GetSearchHighlights() const noexcept = 0;
-        virtual void SetSearchHighlightFocused(const size_t idx) = 0;
+        virtual void SetSearchHighlightFocused(std::vector<til::inclusive_rect> highlight) = 0;
         virtual std::vector<til::inclusive_rect> GetSearchHighlightFocused() const noexcept = 0;
         virtual void LockConsole() noexcept = 0;
         virtual void UnlockConsole() noexcept = 0;

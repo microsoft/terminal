@@ -49,5 +49,6 @@ private:
     ptrdiff_t _index = 0;
     ptrdiff_t _step = 0;
 
-    void _updateIdxInData();
+    void _setResultInData();
+    void _setCurrentInData();
 };

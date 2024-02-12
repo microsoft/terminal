@@ -381,11 +381,11 @@ void RenderData::SelectNewRegion(const til::point coordStart, const til::point c
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
 }
 
-void RenderData::SetSearchHighlights(std::vector<til::point_span> /*source*/) noexcept
+void RenderData::SetSearchHighlights(std::vector<til::inclusive_rect> /*highlights*/) noexcept
 {
 }
 
-void RenderData::SetSearchHighlightFocused(const size_t /*idx*/)
+void RenderData::SetSearchHighlightFocused(std::vector<til::inclusive_rect> /*highlight*/)
 {
 }
 

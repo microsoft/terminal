@@ -216,8 +216,8 @@ public:
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
     std::vector<til::inclusive_rect> GetSearchHighlights() const noexcept override;
-    void SetSearchHighlights(std::vector<til::point_span> source) noexcept override;
-    void SetSearchHighlightFocused(const size_t activeIdx) override;
+    void SetSearchHighlights(std::vector<til::inclusive_rect> highlights) noexcept override;
+    void SetSearchHighlightFocused(std::vector<til::inclusive_rect> highlight) override;
     std::vector<til::inclusive_rect> GetSearchHighlightFocused() const noexcept override;
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
@@ -349,8 +349,8 @@ private:
     std::wstring _startingTitle;
     std::optional<til::color> _startingTabColor;
 
-    std::vector<til::point_span> _searchHighlights;
-    size_t _searchHighlightFocused = -1;
+    std::vector<til::inclusive_rect> _searchHighlights;
+    std::vector<til::inclusive_rect> _searchHighlightFocused;
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 
