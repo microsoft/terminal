@@ -239,7 +239,6 @@ void Terminal::SetSearchHighlightFocused(std::vector<til::inclusive_rect> highli
 {
     _assertLocked();
 
-    _searchHighlightFocused = std::move(highlight);
     if (!highlight.empty())
     {
         // bring focused region into the view. We expect rects order to be top to bottom
@@ -247,6 +246,8 @@ void Terminal::SetSearchHighlightFocused(std::vector<til::inclusive_rect> highli
         const auto highlightEnd = til::point{ highlight.back().right, highlight.back().bottom };
         _ScrollToPoints(highlightStart, highlightEnd);
     }
+
+    _searchHighlightFocused = std::move(highlight);
 }
 
 std::vector<til::inclusive_rect> Terminal::GetSearchHighlightFocused() const noexcept
