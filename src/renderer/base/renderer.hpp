@@ -55,6 +55,7 @@ namespace Microsoft::Console::Render
         void TriggerTeardown() noexcept;
 
         void TriggerSelection();
+        void TriggerSearchHighlight();
         void TriggerScroll();
         void TriggerScroll(const til::point* const pcoordDelta);
 
@@ -104,13 +105,14 @@ namespace Microsoft::Console::Render
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
         bool _isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept;
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
+        void _PaintSearchHighlight(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
         std::vector<til::rect> _GetSelectionRects() const;
-        std::vector<til::rect> _GetSearchSelectionRects() const;
+        std::pair<std::vector<til::rect>, std::vector<til::rect>> _GetSearchHighlights() const;
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         bool _isInHoveredInterval(til::point coordTarget) const noexcept;
@@ -128,7 +130,7 @@ namespace Microsoft::Console::Render
         Microsoft::Console::Types::Viewport _viewport;
         std::vector<Cluster> _clusterBuffer;
         std::vector<til::rect> _previousSelection;
-        std::vector<til::rect> _previousSearchSelection;
+        std::vector<til::rect> _previousSearchHighlights;
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;

@@ -157,16 +157,19 @@ try
     // 2. Paint Rows of Text
     _PaintBufferOutput(pEngine);
 
-    // 3. Paint overlays that reside above the text buffer
+    // 3. Paint Search Highlights
+    _PaintSearchHighlight(pEngine);
+
+    // 4. Paint overlays that reside above the text buffer
     _PaintOverlays(pEngine);
 
-    // 4. Paint Selection
+    // 5. Paint Selection
     _PaintSelection(pEngine);
 
-    // 5. Paint Cursor
+    // 6. Paint Cursor
     _PaintCursor(pEngine);
 
-    // 6. Paint window title
+    // 7. Paint window title
     RETURN_IF_FAILED(_PaintTitle(pEngine));
 
     // Force scope exit end paint to finish up collecting information and possibly painting
@@ -362,7 +365,6 @@ void Renderer::TriggerSelection()
     {
         // Get selection rectangles
         auto rects = _GetSelectionRects();
-        auto searchSelections = _GetSearchSelectionRects();
 
         // Make a viewport representing the coordinates that are currently presentable.
         const til::rect viewport{ _pData->GetViewport().Dimensions() };
@@ -375,15 +377,39 @@ void Renderer::TriggerSelection()
 
         FOREACH_ENGINE(pEngine)
         {
-            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSearchSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
-            LOG_IF_FAILED(pEngine->InvalidateSelection(searchSelections));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
         }
 
         _previousSelection = std::move(rects);
-        _previousSearchSelection = std::move(searchSelections);
+        NotifyPaintFrame();
+    }
+    CATCH_LOG();
+}
 
+// Routine Description:
+// - Called when the search higlight areas in the console have changed.
+void Renderer::TriggerSearchHighlight()
+{
+    try
+    {
+        auto searchHighlights = _GetSearchHighlights();
+        FOREACH_ENGINE(pEngine)
+        {
+            for (const auto& rect: _previousSearchHighlights)
+            {
+                LOG_IF_FAILED(pEngine->Invalidate(&rect));
+            }
+
+            // we don't need to invalidate focused search highlight (.second) separately
+            // because they are already part of "all" search highlights (.first)
+            for (const auto& rect: searchHighlights.first)
+            {
+                LOG_IF_FAILED(pEngine->Invalidate(&rect));
+            }
+        }
+
+        _previousSearchHighlights = std::move(searchHighlights.first);
         NotifyPaintFrame();
     }
     CATCH_LOG();
@@ -1210,19 +1236,10 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
-        const auto searchRectangles = _GetSearchSelectionRects();
 
         std::vector<til::rect> dirtySearchRectangles;
         for (auto& dirtyRect : dirtyAreas)
         {
-            for (const auto& sr : searchRectangles)
-            {
-                if (const auto rectCopy = sr & dirtyRect)
-                {
-                    dirtySearchRectangles.emplace_back(rectCopy);
-                }
-            }
-
             for (const auto& rect : rectangles)
             {
                 if (const auto rectCopy = rect & dirtyRect)
@@ -1231,11 +1248,42 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
                 }
             }
         }
+    }
+    CATCH_LOG();
+}
 
-        if (!dirtySearchRectangles.empty())
+// Routine Description:
+// - Paint helper to draw search highlighted areas of the window.
+void Renderer::_PaintSearchHighlight(_In_ IRenderEngine* const pEngine)
+{
+    try
+    {
+        std::span<const til::rect> dirtyAreas;
+        LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
+
+        const auto [searchRects, searchFocusedRects] = _GetSearchHighlights();
+
+        std::vector<til::rect> dirtySearchRects, dirtySearchFocusedRects;
+        for (const auto& dirtyRect : dirtyAreas)
         {
-            LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
+            for (const auto& sr : searchRects)
+            {
+                if (const auto rectCopy = sr & dirtyRect)
+                {
+                    dirtySearchRects.emplace_back(rectCopy);
+                }
+            }
+
+            for (const auto& sfr : searchFocusedRects)
+            {
+                if (const auto rectCopy = sfr & dirtyRect)
+                {
+                    dirtySearchFocusedRects.emplace_back(rectCopy);
+                }
+            }
         }
+
+        LOG_IF_FAILED(pEngine->PaintSearchHighlight(dirtySearchRects, dirtySearchFocusedRects));
     }
     CATCH_LOG();
 }
@@ -1301,26 +1349,26 @@ std::vector<til::rect> Renderer::_GetSelectionRects() const
     return result;
 }
 
-std::vector<til::rect> Renderer::_GetSearchSelectionRects() const
+std::pair<std::vector<til::rect>, std::vector<til::rect>> Renderer::_GetSearchHighlights() const
 {
-    const auto& buffer = _pData->GetTextBuffer();
-    auto rects = _pData->GetSearchSelectionRects();
+    const auto rects = _pData->GetSearchHighlights();
+    const auto rectsFocused = _pData->GetSearchHighlightFocused();
+
+    std::vector<til::rect> adj, adjFocused;
+    adj.reserve(rects.size());
+    adjFocused.reserve(rectsFocused.size());
+
+    const auto adjustRectToViewport = [&buffer = _pData->GetTextBuffer(), view = _pData->GetViewport()](const auto& rect) {
+        const auto lineRendition = buffer.GetLineRendition(rect.top);
+        const auto rectVp = Viewport::FromInclusive(BufferToScreenLine(rect, lineRendition));
+        return view.ConvertToOrigin(rectVp).ToExclusive();
+    };
+
     // Adjust rectangles to viewport
-    auto view = _pData->GetViewport();
+    std::transform(rects.begin(), rects.end(), std::back_inserter(adj), adjustRectToViewport);
+    std::transform(rectsFocused.begin(), rectsFocused.end(), std::back_inserter(adjFocused), adjustRectToViewport);
 
-    std::vector<til::rect> result;
-    result.reserve(rects.size());
-
-    for (auto rect : rects)
-    {
-        // Convert buffer offsets to the equivalent range of screen cells
-        // expected by callers, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(rect.Top());
-        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
-        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
-    }
-
-    return result;
+    return { std::move(adj), std::move(adjFocused) };
 }
 
 // Method Description:
