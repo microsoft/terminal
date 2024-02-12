@@ -179,7 +179,7 @@ catch (...)
 }
 
 // Method Description:
-// - If neccessary, scrolls the viewport such that the start point is in the
+// - If necessary, scrolls the viewport such that the start point is in the
 //   viewport, and if that's already the case, also brings the end point inside
 //   the viewport
 // Arguments:

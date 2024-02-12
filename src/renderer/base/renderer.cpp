@@ -388,7 +388,7 @@ void Renderer::TriggerSelection()
 }
 
 // Routine Description:
-// - Called when the search higlight areas in the console have changed.
+// - Called when the search highlight areas in the console have changed.
 void Renderer::TriggerSearchHighlight()
 {
     try
