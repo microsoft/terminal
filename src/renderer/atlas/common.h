@@ -438,6 +438,7 @@ namespace Microsoft::Console::Render::Atlas
         void Clear(u16 y, u16 cellHeight) noexcept
         {
             mappings.clear();
+            clusterMap.clear();
             glyphIndices.clear();
             glyphAdvances.clear();
             glyphOffsets.clear();
@@ -451,6 +452,7 @@ namespace Microsoft::Console::Render::Atlas
         }
 
         std::vector<FontMapping> mappings;
+        std::vector<u16> clusterMap; // maps a character to its glyph indices
         std::vector<u16> glyphIndices;
         std::vector<f32> glyphAdvances; // same size as glyphIndices
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
