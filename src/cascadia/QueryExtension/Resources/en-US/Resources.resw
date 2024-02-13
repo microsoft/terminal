@@ -142,7 +142,7 @@
     <comment>Part of the placeholder text in the user's message box to let them know that the AI is aware of their current shell.</comment>
   </data>
   <data name="IntroText.Text" xml:space="preserve">
-    <value>Welcome to Terminal Chat (experimental)</value>
+    <value>Welcome to Terminal Chat (Experimental)</value>
     <comment>Header text of the AI chat box control.</comment>
   </data>
   <data name="ClearMessagesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
