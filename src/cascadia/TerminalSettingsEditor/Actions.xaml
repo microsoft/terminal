@@ -347,7 +347,7 @@
             <!--  Keybindings  -->
             <ListView x:Name="KeyBindingsListView"
                       ItemTemplate="{StaticResource KeyBindingTemplate}"
-                      ItemsSource="{x:Bind KeyBindingList, Mode=OneWay}"
+                      ItemsSource="{x:Bind ViewModel.KeyBindingList, Mode=OneWay}"
                       SelectionMode="None" />
         </StackPanel>
     </Border>
