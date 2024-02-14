@@ -24,6 +24,8 @@ Author(s):
 #include "Utils.h"
 #include "ViewModelHelpers.h"
 #include "SettingContainer.h"
+//#include "ScopedResourceLoader.h"
+#include <LibraryResources.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

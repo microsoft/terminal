@@ -20,6 +20,20 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+static std::unordered_set<std::wstring_view> DefaultFeatures{
+    L"rlig",
+    L"locl",
+    L"ccmp",
+    L"calt",
+    L"liga",
+    L"clig",
+    L"rnrn",
+    L"kern",
+    L"mark",
+    L"mkmk",
+    L"dist"
+};
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     bool Font::HasPowerlineCharacters()
@@ -125,8 +139,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         for (auto tag : tags)
         {
-            // todo: have an internal map of tags to names to reference
-            fontFeaturesTagsAndNames.Insert(_tagToString(tag), _tagToString(tag));
+            const auto tagString = _tagToString(tag);
+            winrt::hstring formattedResourceString{ fmt::format(L"Profile_FontFeature_{}", tagString) };
+            winrt::hstring localizedName{ tagString };
+            // we have resource strings for common font features, see if one for this feature exists
+            if (HasLibraryResourceWithName(formattedResourceString))
+            {
+                localizedName = GetLibraryResourceString(formattedResourceString);
+            }
+            fontFeaturesTagsAndNames.Insert(tagString, localizedName);
         }
         return fontFeaturesTagsAndNames;
     }
@@ -641,7 +662,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         }
-        _NotifyChanges(L"AreFontAxesAvailable", L"CanFontAxesBeAdded");
+        _NotifyChanges(L"AreFontFeaturesAvailable", L"CanFontFeaturesBeAdded");
     }
 
     // Method Description:
@@ -681,13 +702,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - Creates a FeatureKeyValuePair and sets up an event handler for it
     Editor::FeatureKeyValuePair AppearanceViewModel::_CreateFeatureKeyValuePairHelper(winrt::hstring featureKey, uint32_t featureValue, const Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap)
     {
-        // todo: there's possible features that are on by default, but not set in the json so we don't show it, figure this out
         const auto featureKeyValuePair = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FeatureKeyValuePair>(featureKey, featureValue, baseMap, tagToNameMap);
         // when either the key or the value changes, send an event for the preview control to catch
-        featureKeyValuePair.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& /*e*/) {
+        featureKeyValuePair.PropertyChanged([weakThis = get_weak()](auto& sender, const PropertyChangedEventArgs& args) {
             if (auto appVM{ weakThis.get() })
             {
                 appVM->_NotifyChanges(L"FeatureKeyValuePair");
+                const auto settingName{ args.PropertyName() };
+                if (settingName == L"FeatureKey")
+                {
+                    const auto senderPair = sender.as<FeatureKeyValuePair>();
+                    const auto senderKey = senderPair->FeatureKey();
+                    if (DefaultFeatures.contains(senderKey))
+                    {
+                        senderPair->FeatureValue(1);
+                    }
+                    else
+                    {
+                        senderPair->FeatureValue(0);
+                    }
+                }
             }
         });
         return featureKeyValuePair;
