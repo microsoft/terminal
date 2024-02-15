@@ -112,7 +112,8 @@
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="8*" />
+            <RowDefinition Height="7*" />
+            <RowDefinition Height="16" />
             <RowDefinition Height="2*" />
         </Grid.RowDefinitions>
 
@@ -145,8 +146,6 @@
                 <!--  3: _filteredActionsView  -->
                 <RowDefinition Height="*" />
                 <!--  4: bottom-up _searchBox  -->
-                <RowDefinition Height="Auto" />
-                <!--  5: descriptions view  -->
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
@@ -209,8 +208,35 @@
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single" />
 
+
+        </Grid>
+
+        <Grid x:Name="_descriptionsBackdrop"
+              Grid.Row="2"
+              Grid.RowSpan="2"
+              Grid.Column="0"
+              Grid.ColumnSpan="3"
+              MaxWidth="300"
+              MaxHeight="300"
+              Margin="0"
+              Padding="0,8,0,0"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              Background="{ThemeResource FlyoutPresenterBackground}"
+              BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
+              BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
+              CornerRadius="{ThemeResource OverlayCornerRadius}"
+              PointerPressed="_backdropPointerPressed"
+              Shadow="{StaticResource SharedShadow}"
+              Translation="0,0,32">
+
+            <Grid.RowDefinitions>
+                <!--  0: descriptions view  -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
             <StackPanel x:Name="_descriptionsView"
-                        Grid.Row="5"
+                        Grid.Row="0"
                         Margin="8,0,8,8"
                         Orientation="Vertical"
                         Visibility="Collapsed">
@@ -222,7 +248,6 @@
             </StackPanel>
 
         </Grid>
-
 
     </Grid>
 </UserControl>

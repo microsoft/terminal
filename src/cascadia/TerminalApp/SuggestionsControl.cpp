@@ -309,6 +309,7 @@ namespace winrt::TerminalApp::implementation
                     // If there's no description, then just close the tooltip.
                     // DescriptionTip().IsOpen(false);
                     _descriptionsView().Visibility(Visibility::Collapsed);
+                    _descriptionsBackdrop().Visibility(Visibility::Collapsed);
                 }
             }
         }
@@ -373,6 +374,7 @@ namespace winrt::TerminalApp::implementation
             // DescriptionTip().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
 
             _descriptionsView().Visibility(Visibility::Visible);
+            _descriptionsBackdrop().Visibility(Visibility::Visible);
         }
         co_return;
     }
