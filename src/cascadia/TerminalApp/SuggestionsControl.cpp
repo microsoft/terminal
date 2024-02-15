@@ -8,6 +8,7 @@
 #include <LibraryResources.h>
 
 #include "SuggestionsControl.g.cpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -18,6 +19,8 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+using namespace std::chrono_literals;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -262,8 +265,8 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
-                                                     const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    winrt::fire_and_forget SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
+                                                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
@@ -281,9 +284,97 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
-                PreviewAction.raise(*this, actionPaletteItem.Command());
+                const auto& cmd = actionPaletteItem.Command();
+                PreviewAction.raise(*this, cmd);
+
+                const auto description{ cmd.Description() };
+                if (!description.empty())
+                {
+                    // If it's already open, then just re-target it and update the content immediately.
+                    if (_descriptionsView().Visibility() == Visibility::Visible)
+                    {
+                        _openTooltip(cmd);
+                    }
+                    else
+                    {
+                        // Otherwise, wait a bit before opening it.
+                        co_await winrt::resume_after(200ms);
+                        co_await wil::resume_foreground(Dispatcher());
+                        _openTooltip(cmd);
+                        // DescriptionTip().IsOpen(true);
+                    }
+                }
+                else
+                {
+                    // If there's no description, then just close the tooltip.
+                    // DescriptionTip().IsOpen(false);
+                    _descriptionsView().Visibility(Visibility::Collapsed);
+                }
             }
         }
+    }
+
+    winrt::fire_and_forget SuggestionsControl::_openTooltip(Command cmd)
+    {
+        const auto description{ cmd.Description() };
+
+        if (!description.empty())
+        {
+            // DescriptionTip().Target(SelectedItem());
+            // DescriptionTip().Title(cmd.Name());
+            {
+                // The Title
+                _descriptionTitle().Inlines().Clear();
+                Documents::Run titleRun;
+                titleRun.Text(cmd.Name());
+                _descriptionTitle().Inlines().Append(titleRun);
+            }
+
+            // TODO! NOT REALLY TRUE ANYMORE
+            // If you try to put a newline in the Subtitle, it'll _immediately
+            // close the tooltip_. Instead, we'll need to build up the text as a
+            // series of runs, and put them in the content.
+
+            _descriptionComment().Inlines().Clear();
+
+            // First, replace all "\r\n" with "\n"
+            std::wstring filtered = description.c_str();
+
+            // replace all "\r\n" with "\n" in `filtered`
+            std::wstring::size_type pos = 0;
+            while ((pos = filtered.find(L"\r\n", pos)) != std::wstring::npos)
+            {
+                filtered.erase(pos, 1);
+            }
+
+            // Split the filtered description on '\n`
+            const auto lines = ::Microsoft::Console::Utils::SplitString(filtered.c_str(), L'\n');
+            // For each line, build a Run + LineBreak, and add them to the text
+            // block
+            for (const auto& line : lines)
+            {
+                if (line.empty())
+                {
+                    continue;
+                }
+                Documents::Run textRun;
+                textRun.Text(winrt::hstring{ line });
+                _descriptionComment().Inlines().Append(textRun);
+                _descriptionComment().Inlines().Append(Documents::LineBreak{});
+            }
+
+            // // TODO! These were all feigned attempts to allow us to focus the content of the teachingtip.
+
+            // // We may want to keep IsTextSelectionEnabled in the XAML.
+            // //
+            // // I also have no idea if the FullDescriptionProperty thing worked at all.
+            // _toolTipContent().AllowFocusOnInteraction(true);
+            // _toolTipContent().IsTextSelectionEnabled(true);
+            // DescriptionTip().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+
+            _descriptionsView().Visibility(Visibility::Visible);
+        }
+        co_return;
     }
 
     void SuggestionsControl::_previewKeyDownHandler(const IInspectable& /*sender*/,

@@ -110,7 +110,8 @@ namespace winrt::TerminalApp::implementation
 
         void _listItemClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
         void _listItemSelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
-        void _selectedCommandChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        winrt::fire_and_forget _selectedCommandChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        winrt::fire_and_forget _openTooltip(Microsoft::Terminal::Settings::Model::Command cmd);
 
         void _moveBackButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);
         void _updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand);

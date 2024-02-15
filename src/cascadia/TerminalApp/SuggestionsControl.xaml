@@ -136,16 +136,18 @@
               Translation="0,0,32">
 
             <Grid.RowDefinitions>
+                <!--  0: Top-down _searchBox  -->
                 <RowDefinition Height="Auto" />
-                <!--  Top-down _searchBox  -->
+                <!--  1: Top-down ParentCommandName  -->
                 <RowDefinition Height="Auto" />
-                <!--  Top-down ParentCommandName  -->
+                <!--  2: Top-down UNUSED????????  -->
                 <RowDefinition Height="Auto" />
-                <!--  Top-down UNUSED????????  -->
+                <!--  3: _filteredActionsView  -->
                 <RowDefinition Height="*" />
-                <!--  _filteredActionsView  -->
+                <!--  4: bottom-up _searchBox  -->
                 <RowDefinition Height="Auto" />
-                <!--  bottom-up _searchBox  -->
+                <!--  5: descriptions view  -->
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <TextBox x:Name="_searchBox"
@@ -206,6 +208,18 @@
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single" />
+
+            <StackPanel x:Name="_descriptionsView"
+                        Grid.Row="5"
+                        Margin="8,0,8,8"
+                        Orientation="Vertical"
+                        Visibility="Collapsed">
+                <TextBlock x:Name="_descriptionTitle"
+                           FontSize="24"
+                           TextWrapping="WrapWholeWords" />
+                <TextBlock x:Name="_descriptionComment"
+                           TextWrapping="WrapWholeWords" />
+            </StackPanel>
 
         </Grid>
 
