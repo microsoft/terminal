@@ -113,7 +113,7 @@
 
         <Grid.RowDefinitions>
             <RowDefinition Height="7*" />
-            <RowDefinition Height="16" />
+            <RowDefinition Height="0" />
             <RowDefinition Height="2*" />
         </Grid.RowDefinitions>
 
@@ -122,6 +122,7 @@
               Grid.RowSpan="2"
               Grid.Column="0"
               Grid.ColumnSpan="3"
+              MinWidth="300"
               MaxWidth="300"
               MaxHeight="300"
               Margin="0"
@@ -210,16 +211,15 @@
 
 
         </Grid>
-
+        <!-- <Border Height="1" Grid.Row="1" /> -->
         <Grid x:Name="_descriptionsBackdrop"
               Grid.Row="2"
-              Grid.RowSpan="2"
+              Grid.RowSpan="1"
               Grid.Column="0"
               Grid.ColumnSpan="3"
               MaxWidth="300"
-              MaxHeight="300"
-              Margin="0"
-              Padding="0,8,0,0"
+              Margin="0,6,0,0"
+              Padding="0,4,0,0"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"
               Background="{ThemeResource FlyoutPresenterBackground}"
@@ -241,10 +241,18 @@
                         Orientation="Vertical"
                         Visibility="Collapsed">
                 <TextBlock x:Name="_descriptionTitle"
-                           FontSize="24"
+                           FontSize="14"
+                           FontWeight="Bold"
                            TextWrapping="WrapWholeWords" />
-                <TextBlock x:Name="_descriptionComment"
-                           TextWrapping="WrapWholeWords" />
+                <ScrollViewer MaxHeight="64"
+                              VerticalScrollBarVisibility="Visible"
+                              VerticalScrollMode="Enabled"
+                              Visibility="Visible">
+                    <!-- <TextBlock Text="Foo bar bax"
+                           TextWrapping="WrapWholeWords" />-->
+                    <TextBlock x:Name="_descriptionComment"
+                               TextWrapping="WrapWholeWords" />
+                </ScrollViewer>
             </StackPanel>
 
         </Grid>
