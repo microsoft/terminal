@@ -243,6 +243,7 @@
                 <TextBlock x:Name="_descriptionTitle"
                            FontSize="14"
                            FontWeight="Bold"
+                           IsTextSelectionEnabled="True"
                            TextWrapping="WrapWholeWords" />
                 <ScrollViewer MaxHeight="64"
                               VerticalScrollBarVisibility="Visible"
@@ -251,6 +252,7 @@
                     <!-- <TextBlock Text="Foo bar bax"
                            TextWrapping="WrapWholeWords" />-->
                     <TextBlock x:Name="_descriptionComment"
+                               IsTextSelectionEnabled="True"
                                TextWrapping="WrapWholeWords" />
                 </ScrollViewer>
             </StackPanel>

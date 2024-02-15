@@ -288,6 +288,10 @@ namespace winrt::TerminalApp::implementation
                 PreviewAction.raise(*this, cmd);
 
                 const auto description{ cmd.Description() };
+
+                if (SelectedItem())
+                SelectedItem().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+
                 if (!description.empty())
                 {
                     // If it's already open, then just re-target it and update the content immediately.

@@ -24,12 +24,14 @@ try
 
     _pProvider = pProvider;
     _pData = pData;
+    _pData->LockConsole();
     _start = pData->GetViewport().Origin();
     _end = pData->GetViewport().Origin();
     _blockRange = false;
     _wordDelimiters = wordDelimiters;
 
     UiaTracing::TextRange::Constructor(*this);
+    _pData->UnlockConsole();
     return S_OK;
 }
 CATCH_RETURN();
