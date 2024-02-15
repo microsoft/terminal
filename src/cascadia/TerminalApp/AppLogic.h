@@ -74,6 +74,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
+        void DoTheThing() { DebugBreak(); }
+
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
     private:

@@ -15,6 +15,7 @@ namespace winrt::TerminalApp::implementation
         App();
         void OnLaunched(const Windows::ApplicationModel::Activation::LaunchActivatedEventArgs&);
         void Initialize();
+        void OnActivated(Windows::ApplicationModel::Activation::IActivatedEventArgs const& args);
 
         TerminalApp::AppLogic Logic();
 

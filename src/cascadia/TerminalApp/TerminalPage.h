@@ -272,6 +272,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
+        winrt::Windows::UI::Notifications::ToastNotification::Activated_revoker _toastActivatedRevoker;
+
         struct StashedDragData
         {
             winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> draggedTab{ nullptr };

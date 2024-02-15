@@ -114,4 +114,16 @@ namespace winrt::TerminalApp::implementation
             AddOtherProvider(winrt::Microsoft::Terminal::Settings::Editor::XamlMetaDataProvider{});
         }
     }
+
+    void App::OnActivated(Windows::ApplicationModel::Activation::IActivatedEventArgs const& args)
+    {
+        if (args != nullptr &&
+            args.Kind() == Windows::ApplicationModel::Activation::ActivationKind::ToastNotification)
+        {
+            if (const auto& toastArgs{ args.try_as<Windows::ApplicationModel::Activation::ToastNotificationActivatedEventArgs>() })
+            {
+                Logic().DoTheThing();
+            }
+        }
+    }
 }

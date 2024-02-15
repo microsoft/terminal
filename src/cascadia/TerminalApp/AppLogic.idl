@@ -57,5 +57,7 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 
+        void DoTheThing();
+
     }
 }

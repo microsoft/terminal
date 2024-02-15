@@ -27,6 +27,18 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
 
+#ifndef NDEBUG
+void _trace(const wchar_t* const pwsz)
+{
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "TraceMessage",
+                      TraceLoggingDescription("debug print messages"),
+                      TraceLoggingWideString(pwsz, "message", "the message"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+}
+#endif
+
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
@@ -1327,8 +1339,9 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
 {
     // On the foreground thread:
-    co_await wil::resume_foreground(_rootGrid.Dispatcher());
+    // co_await wil::resume_foreground(_rootGrid.Dispatcher());
     _summonWindowRoutineBody(args);
+    co_return;
 }
 
 // Method Description:
@@ -1337,6 +1350,8 @@ winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior
 //   when this was part of the coroutine body.
 void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
 {
+    _trace(L"_summonWindowRoutineBody");
+
     auto actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
     if (actualDropdownDuration > 0)
@@ -1507,11 +1522,14 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
                                          const Remoting::MonitorBehavior toMonitor)
 {
+    _trace(L"_globalActivateWindow");
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
     // GetForegroundWindow after the SetWindowPlacement/ShowWindow call, _we_
     // will be the foreground window.
     const auto oldForegroundWindow = GetForegroundWindow();
+
+    _trace(fmt::format(L"oldForegroundWindow: {}", (uint64_t)oldForegroundWindow).c_str());
 
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
@@ -1522,6 +1540,8 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     // restore-down the window.
     if (IsIconic(_window.get()))
     {
+        _trace(L"window was iconic");
+
         if (dropdownDuration > 0)
         {
             _dropdownWindow(dropdownDuration, toMonitor);
@@ -1537,6 +1557,36 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
                 ShowWindow(_window.get(), SW_SHOW);
             }
             ShowWindow(_window.get(), SW_RESTORE);
+
+            if (!SetForegroundWindow(_window.get()))
+            {
+                const auto gle = GetLastError();
+                _trace(fmt::format(L"SetForegroundWindow failed: {}", gle).c_str());
+
+                const auto fg = GetForegroundWindow();
+                std::wstring title(GetWindowTextLength(fg) + 1, L'\0');
+                GetWindowTextW(fg, &title[0], (DWORD)title.size());
+                DWORD fgPid = 0;
+                GetWindowThreadProcessId(fg, &fgPid);
+                _trace(fmt::format(L"Foreground Window is: [{}]={}", (uint64_t)fgPid, title).c_str());
+
+                SwitchToThisWindow(_window.get(), false);
+            }
+            else
+            {
+                _trace(L"got fg?");
+            }
+
+            // LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
+            if (!BringWindowToTop(_window.get()))
+            {
+                const auto gle = GetLastError();
+                _trace(fmt::format(L"BringWindowToTop failed: {}", gle).c_str());
+            }
+            else
+            {
+                _trace(L"brought to top?");
+            }
 
             // Once we've been restored, throw us on the active monitor.
             _moveToMonitor(oldForegroundWindow, toMonitor);

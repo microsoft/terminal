@@ -3038,7 +3038,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         static winrt::hstring xmlTemplate{ L"\
-    <toast>\
+    <toast launch=\"foo\">\
         <visual>\
             <binding template=\"ToastGeneric\">\
                 <text></text>\
@@ -3050,8 +3050,9 @@ namespace winrt::TerminalApp::implementation
         XmlDocument doc;
         doc.LoadXml(xmlTemplate);
         // Populate with text and values
-        auto payload{ fmt::format(L"window={}&tabIndex=0", WindowProperties().WindowId()) };
-        doc.DocumentElement().SetAttribute(L"launch", payload);
+        // auto payload{ fmt::format(L"window={}&tabIndex=0", WindowProperties().WindowId()) };
+        // doc.DocumentElement().SetAttribute(L"launch", payload);
+        // doc.SelectSingleNode(L"//toast").Attributes().SetNamedItem(payload);
         doc.SelectSingleNode(L"//text[1]").InnerText(title);
         doc.SelectSingleNode(L"//text[2]").InnerText(body);
 
@@ -3064,8 +3065,21 @@ namespace winrt::TerminalApp::implementation
             _toastNotifier = ToastNotificationManager::CreateToastNotifier();
         }
 
-        // And show it!
-        _toastNotifier.Show(notification);
+        if (_toastNotifier)
+        {
+            _toastActivatedRevoker = notification.Activated(winrt::auto_revoke, [this](auto&&, auto&&) {
+                TraceLoggingWrite(g_hTerminalAppProvider, "ActivatedFromToast", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+                // Request a summon of this window to the foreground
+                _SummonWindowRequestedHandlers(*this, nullptr);
+
+                // args.Handled(true);
+            });
+
+            // And show it!
+            _toastNotifier.Show(notification);
+            TraceLoggingWrite(g_hTerminalAppProvider, "SendToastNotification", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
     }
 
     // Method Description:
