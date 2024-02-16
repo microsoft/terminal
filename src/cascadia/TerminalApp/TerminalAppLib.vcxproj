@@ -71,6 +71,9 @@
     <Page Include="SuggestionsControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="TasksPaneContent.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -168,7 +171,7 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TasksPaneContent.h">
-      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+      <DependentUpon>TasksPaneContent.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsPaneContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
@@ -287,7 +290,7 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TasksPaneContent.cpp">
-      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+      <DependentUpon>TasksPaneContent.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="SettingsPaneContent.cpp">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
@@ -366,7 +369,10 @@
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalPaneContent.idl" />
+    <Midl Include="TerminalPaneContent.idl" >
+      <DependentUpon>TaskPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

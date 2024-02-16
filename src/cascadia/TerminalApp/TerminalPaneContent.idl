@@ -28,9 +28,9 @@ namespace TerminalApp
         SettingsPaneContent(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
     }
 
-    [default_interface] runtimeclass TasksPaneContent : IPaneContent
+    [default_interface] runtimeclass TasksPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent
     {
-        TasksPaneContent(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        TasksPaneContent();
     }
 
 }

@@ -19,24 +19,24 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TasksPaneContent::TasksPaneContent(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings)
+    TasksPaneContent::TasksPaneContent()
     {
-        _root = winrt::Windows::UI::Xaml::Controls::Grid{};
+        InitializeComponent();
+
+        // _root = this; // winrt::Windows::UI::Xaml::Controls::Grid{};
         // Vertical and HorizontalAlignment are Stretch by default
 
         auto res = Windows::UI::Xaml::Application::Current().Resources();
         auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
-        _root.Background(bg.try_as<WUX::Media::Brush>());
+        /*_root.*/ Background(bg.try_as<WUX::Media::Brush>());
 
-        _treeView = winrt::Microsoft::UI::Xaml::Controls::TreeView{};
-        _root.Children().Append(_treeView);
+        // _treeView = winrt::Microsoft::UI::Xaml::Controls::TreeView{};
+        // _root.Children().Append(_treeView);
         // _box.Margin({ 10, 10, 10, 10 });
         // _box.AcceptsReturn(true);
         // _box.TextWrapping(TextWrapping::Wrap);
 
-        UpdateSettings(settings);
-
-        settings;
+        // UpdateSettings(settings);
     }
     MUX::Controls::TreeViewNode _buildTreeViewNode(const Model::Command& task)
     {
@@ -53,18 +53,18 @@ namespace winrt::TerminalApp::implementation
     }
     void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
-        _treeView.RootNodes().Clear();
+        _treeView().RootNodes().Clear();
         const auto tasks = settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
         for (const auto& t : tasks)
         {
             const auto& treeNode = _buildTreeViewNode(t);
-            _treeView.RootNodes().Append(treeNode);
+            _treeView().RootNodes().Append(treeNode);
         }
     }
 
     winrt::Windows::UI::Xaml::FrameworkElement TasksPaneContent::GetRoot()
     {
-        return _root;
+        return *this;
     }
     winrt::Windows::Foundation::Size TasksPaneContent::MinSize()
     {
@@ -93,6 +93,6 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::Media::Brush TasksPaneContent::BackgroundBrush()
     {
-        return _root.Background();
+        return Background();
     }
 }

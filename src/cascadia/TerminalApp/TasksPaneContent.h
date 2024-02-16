@@ -8,7 +8,7 @@ namespace winrt::TerminalApp::implementation
 {
     struct TasksPaneContent : TasksPaneContentT<TasksPaneContent>
     {
-        TasksPaneContent(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        TasksPaneContent();
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
@@ -37,8 +37,8 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> FocusRequested;
 
     private:
-        winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::TreeView _treeView{ nullptr };
+        // winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+        // winrt::Microsoft::UI::Xaml::Controls::TreeView _treeView{ nullptr };
     };
 }
 
