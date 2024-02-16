@@ -1718,6 +1718,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _cachedSearchResultRows = {};
 
         _terminal->SetSearchHighlights({});
+        _terminal->SetSearchHighlightFocused({});
         _renderer->TriggerSearchHighlight();
     }
 

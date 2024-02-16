@@ -168,4 +168,8 @@ void Search::_setCurrentInData()
         auto bufferRects = buffer.GetTextRects(current->start, current->end, false, true);
         _renderData->SetSearchHighlightFocused(std::move(bufferRects));
     }
+    else
+    {
+        _renderData->SetSearchHighlightFocused({});
+    }
 }
