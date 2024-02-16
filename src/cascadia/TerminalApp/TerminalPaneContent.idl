@@ -28,6 +28,17 @@ namespace TerminalApp
         SettingsPaneContent(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
     }
 
+    [default_interface] runtimeclass TaskViewModel
+    {
+        TaskViewModel(Microsoft.Terminal.Settings.Model.Command command);
+        String Name{ get; };
+        String IconPath{ get; };
+        String Input{ get; };
+        Microsoft.Terminal.Settings.Model.Command Command{ get; };
+        Windows.Foundation.Collections.IObservableVector<TaskViewModel> Children { get; };
+
+    }
+
     [default_interface] runtimeclass TasksPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent
     {
         TasksPaneContent();

@@ -5,6 +5,7 @@
 #include "TasksPaneContent.h"
 #include "PaneArgs.h"
 #include "TasksPaneContent.g.cpp"
+#include "TaskViewModel.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -53,13 +54,21 @@ namespace winrt::TerminalApp::implementation
     }
     void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
-        _treeView().RootNodes().Clear();
+        // _treeView().RootNodes().Clear();
         const auto tasks = settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
+        // for (const auto& t : tasks)
+        // {
+        //     const auto& treeNode = _buildTreeViewNode(t);
+        //     _treeView().RootNodes().Append(treeNode);
+        // }
+
+        auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::TaskViewModel>();
         for (const auto& t : tasks)
         {
-            const auto& treeNode = _buildTreeViewNode(t);
-            _treeView().RootNodes().Append(treeNode);
+            // const auto& treeNode = _buildTreeViewNode(t);
+            itemSource.Append(winrt::make<TaskViewModel>(t));
         }
+        _treeView().ItemsSource(itemSource);
     }
 
     winrt::Windows::UI::Xaml::FrameworkElement TasksPaneContent::GetRoot()

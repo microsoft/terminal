@@ -3,6 +3,7 @@
 
 #pragma once
 #include "TasksPaneContent.g.h"
+#include "TaskViewModel.g.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -40,9 +41,43 @@ namespace winrt::TerminalApp::implementation
         // winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
         // winrt::Microsoft::UI::Xaml::Controls::TreeView _treeView{ nullptr };
     };
+
+    struct TaskViewModel : TaskViewModelT<TaskViewModel>
+    {
+        TaskViewModel(const winrt::Microsoft::Terminal::Settings::Model::Command& command) :
+            _command{ command }
+        {
+            _children = winrt::single_threaded_observable_vector<TerminalApp::TaskViewModel>();
+            if (_command.HasNestedCommands())
+            {
+                for (const auto& [_, child] : _command.NestedCommands())
+                {
+                    auto vm{ winrt::make<TaskViewModel>(child) };
+                    _children.Append(vm);
+                }
+            }
+        }
+        winrt::hstring Name() { return _command.Name(); }
+        winrt::hstring IconPath() { return _command.IconPath(); }
+        winrt::hstring Input()
+        {
+            if (const auto& sendInput{ _command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
+            {
+                return sendInput.Input();
+            }
+            return L"";
+        };
+        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TaskViewModel> Children() { return _children; }
+        winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
+
+    private:
+        winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TaskViewModel> _children{};
+    };
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(TasksPaneContent);
+    BASIC_FACTORY(TaskViewModel);
 }
