@@ -378,6 +378,7 @@
         { "command": "quit" },
         { "command": "restoreLastClosed" },
         { "command": "openAbout" },
+        { "command": "experimental.openTasks" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
