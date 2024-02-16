@@ -38,10 +38,17 @@ namespace winrt::TerminalApp::implementation
 
         settings;
     }
-    MUX::Controls::TreeViewNode _buildTreeViewNode(Model::Command task)
+    MUX::Controls::TreeViewNode _buildTreeViewNode(const Model::Command& task)
     {
         MUX::Controls::TreeViewNode item{};
         item.Content(winrt::box_value(task.Name()));
+        if (task.HasNestedCommands())
+        {
+            for (const auto& [name, nested] : task.NestedCommands())
+            {
+                item.Children().Append(_buildTreeViewNode(nested));
+            }
+        }
         return item;
     }
     void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
