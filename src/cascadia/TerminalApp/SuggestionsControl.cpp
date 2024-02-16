@@ -290,7 +290,7 @@ namespace winrt::TerminalApp::implementation
                 const auto description{ cmd.Description() };
 
                 if (SelectedItem())
-                SelectedItem().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+                    SelectedItem().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
 
                 if (!description.empty())
                 {
@@ -379,6 +379,7 @@ namespace winrt::TerminalApp::implementation
 
             _descriptionsView().Visibility(Visibility::Visible);
             _descriptionsBackdrop().Visibility(Visibility::Visible);
+            _recalculateTopMargin();
         }
         co_return;
     }
@@ -1124,11 +1125,41 @@ namespace winrt::TerminalApp::implementation
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             Controls::Grid::SetRow(_searchBox(), 0);
+            Controls::Grid::SetRow(_descriptionsBackdrop(), 2);
         }
         else // BottomUp
         {
             Controls::Grid::SetRow(_searchBox(), 4);
+            Controls::Grid::SetRow(_descriptionsBackdrop(), 0);
         }
+    }
+
+    void SuggestionsControl::_recalculateTopMargin()
+    {
+        auto currentMargin = Margin();
+
+        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        const til::size descriptionSize{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() };
+
+        // Now, position vertically.
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+        {
+            // The control should open right below the cursor, with the list
+            // extending below. This is easy, we can just use the cursor as the
+            // origin (more or less)
+            currentMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
+        }
+        else
+        {
+            // Bottom Up.
+
+            // TODO! This is all wrong. It just jumps around randomly.
+
+            // Position at the cursor. The suggestions UI itself will maintain
+            // its own offset such that it's always above its origin
+            currentMargin.Top = (_anchor.Y - actualSize.height /*+ descriptionSize.height*/);
+        }
+        Margin(currentMargin);
     }
 
     void SuggestionsControl::Open(TerminalApp::SuggestionsMode mode,
@@ -1149,6 +1180,7 @@ namespace winrt::TerminalApp::implementation
         _space = space;
 
         const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        const til::size descriptionSize{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() };
         // Is there space in the window below the cursor to open the menu downwards?
         const bool canOpenDownwards = (_anchor.Y + characterHeight + actualSize.height) < space.Height;
         _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
@@ -1175,13 +1207,13 @@ namespace winrt::TerminalApp::implementation
             // The control should open right below the cursor, with the list
             // extending below. This is easy, we can just use the cursor as the
             // origin (more or less)
-            newMargin.Top = (_anchor.Y);
+            newMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
         }
         else
         {
             // Position at the cursor. The suggestions UI itself will maintain
             // its own offset such that it's always above its origin
-            newMargin.Top = (_anchor.Y - actualSize.height);
+            newMargin.Top = (_anchor.Y - actualSize.height /* - descriptionSize.height*/);
         }
         Margin(newMargin);
 

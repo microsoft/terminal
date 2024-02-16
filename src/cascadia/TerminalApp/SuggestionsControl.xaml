@@ -112,14 +112,14 @@
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
+            <RowDefinition Height="2*" />
             <RowDefinition Height="7*" />
-            <RowDefinition Height="0" />
             <RowDefinition Height="2*" />
         </Grid.RowDefinitions>
 
         <Grid x:Name="_backdrop"
-              Grid.Row="0"
-              Grid.RowSpan="2"
+              Grid.Row="1"
+              Grid.RowSpan="1"
               Grid.Column="0"
               Grid.ColumnSpan="3"
               MinWidth="300"
@@ -213,7 +213,7 @@
         </Grid>
         <!-- <Border Height="1" Grid.Row="1" /> -->
         <Grid x:Name="_descriptionsBackdrop"
-              Grid.Row="2"
+              Grid.Row="0"
               Grid.RowSpan="1"
               Grid.Column="0"
               Grid.ColumnSpan="3"
