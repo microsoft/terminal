@@ -8,12 +8,12 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "ConnectionStateHolder.h"
+#include "BaseTerminalConnection.h"
 #include "AzureClient.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
+    struct AzureConnection : AzureConnectionT<AzureConnection>, BaseTerminalConnection<AzureConnection>
     {
         static winrt::guid ConnectionType() noexcept;
         static bool IsAzureConnectionAvailable() noexcept;

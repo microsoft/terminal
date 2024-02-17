@@ -157,7 +157,7 @@ class TextBufferTests
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
-    TEST_METHOD(GetText);
+    TEST_METHOD(GetPlainText);
 
     TEST_METHOD(HyperlinkTrim);
     TEST_METHOD(NoHyperlinkTrim);
@@ -2087,31 +2087,31 @@ void TextBufferTests::TestRowReplaceText()
 void TextBufferTests::TestAppendRTFText()
 {
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         const auto ascii = L"This is some Ascii \\ {}";
         TextBuffer::_AppendRTFText(contentStream, ascii);
-        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream.str());
+        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Low code units: á é í ó ú ⮁ ⮂" in UTF-16
         const auto lowCodeUnits = L"Low code units: \x00E1 \x00E9 \x00ED \x00F3 \x00FA \x2B81 \x2B82";
         TextBuffer::_AppendRTFText(contentStream, lowCodeUnits);
-        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream.str());
+        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "High code units: ꞵ ꞷ" in UTF-16
         const auto highCodeUnits = L"High code units: \xA7B5 \xA7B7";
         TextBuffer::_AppendRTFText(contentStream, highCodeUnits);
-        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream.str());
+        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Surrogates: 🍦 👾 👀" in UTF-16
         const auto surrogates = L"Surrogates: \xD83C\xDF66 \xD83D\xDC7E \xD83D\xDC40";
         TextBuffer::_AppendRTFText(contentStream, surrogates);
-        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream.str());
+        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream);
     }
 }
 
@@ -2535,9 +2535,9 @@ void TextBufferTests::GetTextRects()
     }
 }
 
-void TextBufferTests::GetText()
+void TextBufferTests::GetPlainText()
 {
-    // GetText() is used by...
+    // GetPlainText() is used by...
     //  - Copying text to the clipboard regularly
     //  - Copying text to the clipboard, with shift held (collapse to one line)
     //  - Extracting text from a UiaTextRange
@@ -2573,14 +2573,10 @@ void TextBufferTests::GetText()
         WriteLinesToBuffer(bufferText, *_buffer);
 
         // simulate a selection from origin to {4,4}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 4 } };
 
-        std::wstring result = L"";
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
-        for (auto& text : textData)
-        {
-            result += text;
-        }
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, false };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (includeCRLF)
@@ -2672,16 +2668,11 @@ void TextBufferTests::GetText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection, false);
-
-        std::wstring result = L"";
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 5 } };
 
         const auto formatWrappedRows = blockSelection;
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects, nullptr, formatWrappedRows).text;
-        for (auto& text : textData)
-        {
-            result += text;
-        }
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, formatWrappedRows };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (formatWrappedRows)

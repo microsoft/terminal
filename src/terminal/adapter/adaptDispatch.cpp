@@ -3200,18 +3200,7 @@ bool AdaptDispatch::_EraseScrollback()
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().y;
 
-    // Clear all the marks below the new viewport position.
-    textBuffer.ClearMarksInRange(til::point{ 0, height },
-                                 til::point{ bufferSize.width, bufferSize.height });
-    // Then scroll all the remaining marks up. This will trim ones that are now "outside" the buffer
-    textBuffer.ScrollMarks(-top);
-
-    // Scroll the viewport content to the top of the buffer.
-    textBuffer.ScrollRows(top, height, -top);
-    // Clear everything after the viewport.
-    _FillRect(textBuffer, { 0, height, bufferSize.width, bufferSize.height }, whitespace, {});
-    // Also reset the line rendition for all of the cleared rows.
-    textBuffer.ResetLineRenditionRange(height, bufferSize.height);
+    textBuffer.ClearScrollback(top, height);
     // Move the viewport
     _api.SetViewportPosition({ viewport.left, 0 });
     // Move the cursor to the same relative location.

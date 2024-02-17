@@ -17,6 +17,7 @@ CMMI
 copyable
 Counterintuitively
 CtrlDToClose
+CUI
 cybersecurity
 dalet
 Dcs
@@ -80,11 +81,13 @@ noreply
 ogonek
 ok'd
 overlined
+perlw
 pipeline
 postmodern
 Powerline
 powerline
 ptys
+pwshw
 qof
 qps
 rclt
@@ -93,6 +96,7 @@ reserialization
 reserialize
 reserializes
 rlig
+rubyw
 runtimes
 servicebus
 shcha
@@ -113,6 +117,7 @@ toolset
 truthiness
 tshe
 ubuntu
+UEFI
 uiatextrange
 UIs
 und

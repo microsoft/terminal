@@ -20,6 +20,7 @@ cpptools
 cppvsdbg
 CPRs
 cryptbase
+cscript
 DACL
 DACLs
 defaultlib
@@ -88,8 +89,10 @@ Virtualization
 visualstudio
 vscode
 VSTHRD
+WINBASEAPI
 winsdkver
 wlk
+wscript
 wslpath
 wtl
 wtt

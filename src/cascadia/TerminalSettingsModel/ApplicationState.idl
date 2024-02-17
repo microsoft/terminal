@@ -28,10 +28,8 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ApplicationState {
         static ApplicationState SharedInstance();
 
-        void Reload();
+        void Flush();
         void Reset();
-
-        Boolean IsStatePath(String filename);
 
         String SettingsHash;
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;

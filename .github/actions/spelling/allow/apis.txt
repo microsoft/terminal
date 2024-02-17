@@ -4,6 +4,7 @@ acl
 aclapi
 alignas
 alignof
+allocconsolewithoptions
 APPLYTOSUBMENUS
 appxrecipe
 bitfield
@@ -156,6 +157,7 @@ OUTLINETEXTMETRICW
 overridable
 PACL
 PAGESCROLL
+PALLOC
 PATINVERT
 PEXPLICIT
 PICKFOLDERS
