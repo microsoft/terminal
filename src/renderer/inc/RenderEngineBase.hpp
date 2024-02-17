@@ -34,7 +34,7 @@ namespace Microsoft::Console::Render
                                              const til::size cellSize,
                                              const size_t centeringHint) noexcept override;
 
-        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
+        [[nodiscard]] HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept override;
 
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,

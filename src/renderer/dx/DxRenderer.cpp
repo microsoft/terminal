@@ -1844,15 +1844,6 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT DxEngine::PaintSearchHighlight(const std::vector<til::rect>& highlights, const std::vector<til::rect>& highlightFocused) noexcept
-try
-{
-    UNREFERENCED_PARAMETER(highlights);
-    UNREFERENCED_PARAMETER(highlightFocused);
-    return S_OK;
-}
-CATCH_RETURN()
-
 // Routine Description:
 // - Does nothing. Our cursor is drawn in CustomTextRenderer::DrawGlyphRun,
 //   either above or below the text.
@@ -2314,7 +2305,7 @@ CATCH_RETURN();
 // - info - a RenderFrameInfo with information about the state of the cursor in this frame.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+[[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(RenderFrameInfo info) noexcept
 {
     _drawingContext->cursorInfo = info.cursorInfo;
     return S_OK;

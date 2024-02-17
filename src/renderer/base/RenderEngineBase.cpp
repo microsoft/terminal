@@ -42,7 +42,7 @@ HRESULT RenderEngineBase::UpdateSoftFont(const std::span<const uint16_t> /*bitPa
     return S_FALSE;
 }
 
-HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept
+HRESULT RenderEngineBase::PrepareRenderInfo(RenderFrameInfo /*info*/) noexcept
 {
     return S_FALSE;
 }

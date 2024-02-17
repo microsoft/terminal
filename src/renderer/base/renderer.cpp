@@ -157,19 +157,16 @@ try
     // 2. Paint Rows of Text
     _PaintBufferOutput(pEngine);
 
-    // 3. Paint Search Highlights
-    _PaintSearchHighlight(pEngine);
-
-    // 4. Paint overlays that reside above the text buffer
+    // 3. Paint overlays that reside above the text buffer
     _PaintOverlays(pEngine);
 
-    // 5. Paint Selection
+    // 4. Paint Selection
     _PaintSelection(pEngine);
 
-    // 6. Paint Cursor
+    // 5. Paint Cursor
     _PaintCursor(pEngine);
 
-    // 7. Paint window title
+    // 6. Paint window title
     RETURN_IF_FAILED(_PaintTitle(pEngine));
 
     // Force scope exit end paint to finish up collecting information and possibly painting
@@ -1154,7 +1151,12 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
     RenderFrameInfo info;
     info.cursorInfo = _GetCursorInfo();
-    return pEngine->PrepareRenderInfo(info);
+
+    auto [searchRects, searchFocusedRects] = _GetDirtySearchHighlights(pEngine);
+    info.searchHighlights = std::move(searchRects);
+    info.searchHighlightFocused = std::move(searchFocusedRects);
+
+    return pEngine->PrepareRenderInfo(std::move(info));
 }
 
 // Routine Description:
@@ -1253,39 +1255,35 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 }
 
 // Routine Description:
-// - Paint helper to draw search highlighted areas of the window.
-void Renderer::_PaintSearchHighlight(_In_ IRenderEngine* const pEngine)
+// - returns search highlighted areas within the dirty regions of the window
+std::pair<std::vector<til::rect>, std::vector<til::rect>> Renderer::_GetDirtySearchHighlights(IRenderEngine* const pEngine) const
 {
-    try
+    std::span<const til::rect> dirtyAreas;
+    LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
+
+    const auto [searchRects, searchFocusedRects] = _GetSearchHighlights();
+
+    std::vector<til::rect> dirtySearchRects, dirtySearchFocusedRects;
+    for (const auto& dirtyRect : dirtyAreas)
     {
-        std::span<const til::rect> dirtyAreas;
-        LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
-
-        const auto [searchRects, searchFocusedRects] = _GetSearchHighlights();
-
-        std::vector<til::rect> dirtySearchRects, dirtySearchFocusedRects;
-        for (const auto& dirtyRect : dirtyAreas)
+        for (const auto& sr : searchRects)
         {
-            for (const auto& sr : searchRects)
+            if (const auto rectCopy = sr & dirtyRect)
             {
-                if (const auto rectCopy = sr & dirtyRect)
-                {
-                    dirtySearchRects.emplace_back(rectCopy);
-                }
-            }
-
-            for (const auto& sfr : searchFocusedRects)
-            {
-                if (const auto rectCopy = sfr & dirtyRect)
-                {
-                    dirtySearchFocusedRects.emplace_back(rectCopy);
-                }
+                dirtySearchRects.emplace_back(rectCopy);
             }
         }
 
-        LOG_IF_FAILED(pEngine->PaintSearchHighlight(dirtySearchRects, dirtySearchFocusedRects));
+        for (const auto& sfr : searchFocusedRects)
+        {
+            if (const auto rectCopy = sfr & dirtyRect)
+            {
+                dirtySearchFocusedRects.emplace_back(rectCopy);
+            }
+        }
     }
-    CATCH_LOG();
+
+    return { std::move(dirtySearchRects), std::move(dirtySearchFocusedRects) };
 }
 
 // Routine Description:

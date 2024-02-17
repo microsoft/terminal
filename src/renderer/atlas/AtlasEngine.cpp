@@ -281,8 +281,12 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(RenderFrameInfo info) noexcept
 {
+    _api.searchHighlightsAll = std::move(info.searchHighlights);
+    _api.searchHighlightFocusedAll = std::move(info.searchHighlightFocused);
+    _api.searchHighlights = { _api.searchHighlightsAll };
+    _api.searchHighlightFocused = { _api.searchHighlightFocusedAll };
     return S_OK;
 }
 
@@ -303,6 +307,62 @@ CATCH_RETURN()
 {
     return S_OK;
 }
+
+// Method Description:
+//  - Applies highlighting colors to the columns of highlighted regions in a given range
+// Arguments:
+//  - highlights: the list of highlighted regions
+//  - row: the row for which highlighted regions are to be painted
+//  - end: the last (exclusive) column of the row to paint up to
+//  - fgColor: the foreground color to use for highlighting
+//  - bgColor: the background color to use for highlighting
+// Returns:
+//  - S_OK if we painted successfully, else an appropriate HRESULT error code
+[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::rect>& highlights, const u16 row, const u16 end, const u32 fgColor, const u32 bgColor) noexcept
+try
+{
+    const auto y = static_cast<til::CoordType>(row);
+    const auto colEnd = static_cast<til::CoordType>(end);
+    auto hi = highlights.begin();
+    const auto hiEnd = highlights.end();
+
+    // nothing to paint if it's empty or we haven't reached the point where the
+    // first highlighted region starts
+    if (hi == hiEnd || hi->top > y || hi->left >= colEnd)
+    {
+        return S_OK;
+    }
+
+    const auto bg = _p.backgroundBitmap.data() + _p.colorBitmapRowStride * y;
+    const auto fg = _p.foregroundBitmap.data() + _p.colorBitmapRowStride * y;
+
+    // paint the highlighted regions that lie before colEnd in the row
+    while (hi != hiEnd && y == hi->top && hi->right <= colEnd)
+    {
+        std::fill(bg + hi->left, bg + hi->right, bgColor);
+        std::fill(fg + hi->left, fg + hi->right, fgColor);
+        ++hi;
+    }
+
+    // draw the next region if some part of it still lies before colEnd
+    if (hi != hiEnd && hi->top == y && hi->left < colEnd)
+    {
+        std::fill(bg + hi->left, bg + colEnd, bgColor);
+        std::fill(fg + hi->left, fg + colEnd, fgColor);
+        // don't move the iterator, we still need to paint the rest of this region later
+    }
+
+    // shorten the list by removing processed regions
+    highlights = { hi, hiEnd };
+
+    for (int i = 0; i < 2; ++i)
+    {
+        _p.colorBitmapGenerations[i].bump();
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
@@ -370,6 +430,10 @@ try
         }
     }
 
+    // apply highlighting colors to columns in the (search) highlighted areas.
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, columnEnd, u32ColorPremultiply(highlightFg), highlightBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, columnEnd, u32ColorPremultiply(highlightFocusFg), highlightFocusBg));
+
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
 }
@@ -410,71 +474,6 @@ try
     _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
     _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
     _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
-    return S_OK;
-}
-CATCH_RETURN()
-
-[[nodiscard]] HRESULT AtlasEngine::PaintSearchHighlight(const std::vector<til::rect>& highlights, const std::vector<til::rect>& highlightFocused) noexcept
-try
-{
-    if (highlights.empty())
-    {
-        return S_OK;
-    }
-
-    // Make sure all the rows have been flushed and put into their ShapedRow(s)
-    // because we're going to be making changes in ShapedRow.
-    _flushBufferLine();
-
-    const auto highlightColumns = [&](const til::CoordType row, const til::CoordType beg, const til::CoordType end, const COLORREF fg, const COLORREF bg) {
-        if (row < 0 || row >= _p.s->viewportCellCount.y)
-        {
-            return;
-        }
-
-        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(row, 0, _p.s->viewportCellCount.y));
-        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(beg, 0, _p.s->viewportCellCount.x - 1));
-        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(end, from + 1, _p.s->viewportCellCount.x));
-
-        // paint bg
-        const auto bgBitmap = &_p.backgroundBitmap[_p.colorBitmapRowStride * y];
-        std::fill(bgBitmap + from, bgBitmap + to, bg);
-
-        // In order to paint foreground, we need to find the glyph range that
-        // corresponds to the text range [from, to), and modify the fg color
-        // for those glyphs in the ShapedRow.
-        const auto shift = gsl::narrow_cast<u8>(_p.rows[y]->lineRendition != LineRendition::SingleWidth);
-        const auto fromBC = gsl::narrow_cast<u16>(from >> shift);
-        const auto toBC = gsl::narrow_cast<u16>(to >> shift);
-        const auto glyphFrom = _p.rows[y]->clusterMap[fromBC];
-        const auto glyphTo = _p.rows[y]->clusterMap[toBC - 1] + 1; // toBC and glyphTo are exclusive
-        const auto fgColors = _p.rows[y]->colors.data();
-        std::fill(fgColors + glyphFrom, fgColors + glyphTo, fg);
-
-        // We also need to modify colors in the fg bitmap. The bitmap is used
-        // while splitting a ligature (glyph) into multiple colored segments,
-        // and the color is read from the bitmap instead of ShapedRow.
-        const auto fgBitmap = &_p.foregroundBitmap[_p.colorBitmapRowStride * y];
-        std::fill(fgBitmap + from, fgBitmap + to, fg);
-
-        for (int i = 0; i < 2; ++i)
-        {
-            _p.colorBitmapGenerations[i].bump();
-        }
-    };
-
-    for (const auto& highlight : highlights)
-    {
-        // all highlights bg: yellow
-        highlightColumns(highlight.top, highlight.left, highlight.right, 0xff000000, 0xff00ffff);
-    }
-
-    for (const auto& highlight : highlightFocused)
-    {
-        // focused highlight bg: orange
-        highlightColumns(highlight.top, highlight.left, highlight.right, 0xff000000, 0xff3296ff);
-    }
-
     return S_OK;
 }
 CATCH_RETURN()

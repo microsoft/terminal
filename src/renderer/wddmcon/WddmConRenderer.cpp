@@ -298,11 +298,6 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintSearchHighlight(const std::vector<til::rect>& /*highlights*/, const std::vector<til::rect>& /*highlightFocused*/) noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
 {
     return S_OK;

@@ -233,11 +233,6 @@ using namespace Microsoft::Console::Types;
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtEngine::PaintSearchHighlight(const std::vector<til::rect>& /*highlights*/, const std::vector<til::rect>& /*highlightFocused*/) noexcept
-{
-    return S_OK;
-}
-
 // Routine Description:
 // - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
