@@ -27,7 +27,7 @@ struct PSData
     float4 position : SV_Position;
     float2 texcoord : texcoord;
     nointerpolation uint shadingType : shadingType;
-    nointerpolation uint2 renditionScale : renditionScale;
+    nointerpolation float2 renditionScale : renditionScale;
     nointerpolation float4 color : color;
 };
 

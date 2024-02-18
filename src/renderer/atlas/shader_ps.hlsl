@@ -44,27 +44,13 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_TEXT_GRAYSCALE:
     {
-        // These are independent of the glyph texture and could be moved to the vertex shader or CPU side of things.
-        const float4 foreground = premultiplyColor(data.color);
-        const float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, data.color.rgb);
-        const float intensity = DWrite_CalcColorIntensity(data.color.rgb);
-        // These aren't.
-        const float4 glyph = glyphAtlas[data.texcoord];
-        const float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
-        const float alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
-        color = alphaCorrected * foreground;
+        color = glyphAtlas[data.texcoord].a * data.color;
         weights = color.aaaa;
         break;
     }
     case SHADING_TYPE_TEXT_CLEARTYPE:
     {
-        // These are independent of the glyph texture and could be moved to the vertex shader or CPU side of things.
-        const float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, data.color.rgb);
-        // These aren't.
-        const float4 glyph = glyphAtlas[data.texcoord];
-        const float3 contrasted = DWrite_EnhanceContrast3(glyph.rgb, blendEnhancedContrast);
-        const float3 alphaCorrected = DWrite_ApplyAlphaCorrection3(contrasted, data.color.rgb, gammaRatios);
-        weights = float4(alphaCorrected * data.color.a, 1);
+        weights = float4(glyphAtlas[data.texcoord].rgb * data.color.a, 1);
         color = weights * data.color;
         break;
     }
@@ -77,14 +63,14 @@ Output main(PSData data) : SV_Target
     case SHADING_TYPE_DOTTED_LINE:
     {
         const bool on = frac(data.position.x / (2.0f * underlineWidth * data.renditionScale.x)) < 0.5f;
-        color = on * premultiplyColor(data.color);
+        color = on * data.color;
         weights = color.aaaa;
         break;
     }
     case SHADING_TYPE_DASHED_LINE:
     {
         const bool on = frac(data.position.x / (backgroundCellSize.x * data.renditionScale.x)) < 0.5f;
-        color = on * premultiplyColor(data.color);
+        color = on * data.color;
         weights = color.aaaa;
         break;
     }
@@ -102,13 +88,13 @@ Output main(PSData data) : SV_Target
         const float s = sin(data.position.x * freq);
         const float d = abs(centerY - (s * amp) - data.position.y);
         const float a = 1 - saturate(d - strokeWidthHalf);
-        color = a * premultiplyColor(data.color);
+        color = a * data.color;
         weights = color.aaaa;
         break;
     }
     default:
     {
-        color = premultiplyColor(data.color);
+        color = data.color;
         weights = color.aaaa;
         break;
     }

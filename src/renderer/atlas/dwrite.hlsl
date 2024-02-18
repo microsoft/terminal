@@ -35,6 +35,7 @@ float3 DWrite_EnhanceContrast3(float3 alpha, float k)
     return alpha * (k + 1.0f) / (alpha * k + 1.0f);
 }
 
+// dwrite vs. gamma 1.8: https://www.desmos.com/calculator/6wocsr6vcq
 float DWrite_ApplyAlphaCorrection(float a, float f, float4 g)
 {
     return a + a * (1 - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));

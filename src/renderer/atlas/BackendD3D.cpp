@@ -265,7 +265,12 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     {
         wil::com_ptr<ID3D11Texture2D> buffer;
         THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
-        THROW_IF_FAILED(p.device->CreateRenderTargetView(buffer.get(), nullptr, _renderTargetView.put()));
+
+        static constexpr D3D11_RENDER_TARGET_VIEW_DESC desc{
+            .Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
+            .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+        };
+        THROW_IF_FAILED(p.device->CreateRenderTargetView(buffer.get(), &desc, _renderTargetView.put()));
     }
 
     const auto fontChanged = _fontGeneration != p.s->font.generation();
@@ -547,7 +552,7 @@ void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
         .Height = p.s->viewportCellCount.y,
         .MipLevels = 1,
         .ArraySize = 1,
-        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
         .SampleDesc = { 1, 0 },
         .Usage = D3D11_USAGE_DYNAMIC,
         .BindFlags = D3D11_BIND_SHADER_RESOURCE,

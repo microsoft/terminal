@@ -3,6 +3,8 @@
 
 #include "shader_common.hlsl"
 
+#pragma warning(disable: 3571) // pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values if you expect them
+
 cbuffer ConstBuffer : register(b0)
 {
     float2 positionScale;
@@ -13,7 +15,7 @@ PSData main(VSData data)
 // clang-format on
 {
     PSData output;
-    output.color = data.color;
+    output.color = float4(pow(data.color.rgb * data.color.a, 2.2), data.color.a);
     output.shadingType = data.shadingType;
     output.renditionScale = data.renditionScale;
     // positionScale is expected to be float2(2.0f / sizeInPixel.x, -2.0f / sizeInPixel.y). Together with the
