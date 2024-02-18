@@ -3390,8 +3390,10 @@ bool AdaptDispatch::_EraseAll()
     // terminal application. While we're in conpty mode, when the client
     // requests a Erase All operation, we need to manually tell the
     // connected terminal to do the same thing, so that the terminal will
-    // move it's own buffer contents into the scrollback.
-    return !inPtyMode;
+    // move it's own buffer contents into the scrollback. But this only
+    // applies if we're in the active buffer, since this should have no
+    // visible effect for an inactive buffer.
+    return !(inPtyMode && textBuffer.IsActiveBuffer());
 }
 
 //Routine Description:
