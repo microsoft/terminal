@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void DisplayPowerlineGlyphs(bool d) noexcept;
 
+        winrt::guid SessionId() const noexcept { return {}; }
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept { return winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Connected; }
 
         WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);

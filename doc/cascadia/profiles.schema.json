@@ -2782,6 +2782,11 @@
           "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
+        "experimental.repositionCursorWithMouse": {
+          "default": false,
+          "description": "When set to true, you can move the text cursor by clicking with the mouse on the current commandline. This is an experimental feature - there are lots of edge cases where this will not work as expected.",
+          "type": "boolean"
+        },
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"

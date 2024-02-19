@@ -62,8 +62,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, til::point coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
+        [[nodiscard]] HRESULT PaintSelections(const std::vector<til::rect>& rects) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
@@ -80,8 +81,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string_view str) noexcept;
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
         void SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const terminalOwner);
-        void BeginResizeRequest();
-        void EndResizeRequest();
         void SetResizeQuirk(const bool resizeQuirk);
         void SetPassthroughMode(const bool passthrough) noexcept;
         void SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept;
@@ -208,10 +207,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
         [[nodiscard]] HRESULT _ListenForDSR() noexcept;
 
-        [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
         [[nodiscard]] HRESULT _SwitchScreenBuffer(const bool useAltBuffer) noexcept;
-
-        [[nodiscard]] HRESULT _RequestFocusEventMode() noexcept;
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const til::point coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;

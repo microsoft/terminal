@@ -206,7 +206,7 @@ void HandleMenuEvent(const DWORD wParam)
         EventsWritten = gci.pInputBuffer->Write(SynthesizeMenuEvent(wParam));
         if (EventsWritten != 1)
         {
-            RIPMSG0(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1, 1 expected");
+            LOG_HR_MSG(E_FAIL, "PutInputInBuffer: EventsWritten != 1, 1 expected");
         }
     }
     catch (...)
@@ -230,7 +230,7 @@ void HandleCtrlEvent(const DWORD EventType)
         gci.CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
         break;
     default:
-        RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
+        LOG_HR_MSG(E_INVALIDARG, "Invalid EventType: 0x%x", EventType);
     }
 }
 

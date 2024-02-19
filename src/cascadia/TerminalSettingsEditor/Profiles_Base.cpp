@@ -52,7 +52,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 DeleteButton().Focus(FocusState::Programmatic);
                 _Profile.FocusDeleteButton(false);
-                ProfilesBase_ScrollView().ChangeView(nullptr, ProfilesBase_ScrollView().ScrollableHeight(), nullptr);
             }
         });
     }

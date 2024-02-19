@@ -33,6 +33,7 @@ public:
     void FindNext() noexcept;
 
     const til::point_span* GetCurrent() const noexcept;
+    void HighlightResults() const;
     bool SelectCurrent() const;
 
     const std::vector<til::point_span>& Results() const noexcept;
