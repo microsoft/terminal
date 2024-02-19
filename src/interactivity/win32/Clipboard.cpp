@@ -362,6 +362,13 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
         rtfData = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
     }
 
+    const auto clipboard = _openClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+    if (!clipboard)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
+
     EmptyClipboard();
     // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
     //   CF_UNICODETEXT: [...] A null character signals the end of the data.
