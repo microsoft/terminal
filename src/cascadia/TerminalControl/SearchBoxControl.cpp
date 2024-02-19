@@ -241,6 +241,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void SearchBoxControl::CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         _SearchChangedHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
+    }
 
     // Method Description:
     // - Handler for searchbox pointer-pressed.
