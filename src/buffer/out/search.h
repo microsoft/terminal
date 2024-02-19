@@ -50,5 +50,5 @@ private:
     ptrdiff_t _step = 0;
 
     void _setResultInData();
-    void _setCurrentInData();
+    void _setCurrentInData() noexcept;
 };

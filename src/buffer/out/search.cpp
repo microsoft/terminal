@@ -160,7 +160,8 @@ void Search::_setResultInData()
     _renderData->SetSearchHighlights(std::move(resultRects));
 }
 
-void Search::_setCurrentInData()
+void Search::_setCurrentInData() noexcept
+try
 {
     if (const auto current = GetCurrent())
     {
@@ -173,3 +174,4 @@ void Search::_setCurrentInData()
         _renderData->SetSearchHighlightFocused({});
     }
 }
+CATCH_LOG()
