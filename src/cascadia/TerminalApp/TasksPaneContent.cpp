@@ -39,6 +39,8 @@ namespace winrt::TerminalApp::implementation
 
         // UpdateSettings(settings);
     }
+
+
     MUX::Controls::TreeViewNode _buildTreeViewNode(const Model::Command& task)
     {
         MUX::Controls::TreeViewNode item{};
@@ -52,6 +54,7 @@ namespace winrt::TerminalApp::implementation
         }
         return item;
     }
+
     void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         // _treeView().RootNodes().Clear();
@@ -69,6 +72,22 @@ namespace winrt::TerminalApp::implementation
             itemSource.Append(winrt::make<TaskViewModel>(t));
         }
         _treeView().ItemsSource(itemSource);
+    }
+
+    void TasksPaneContent::_containerContentChanging(
+        const Windows::UI::Xaml::Controls::ListViewBase& /*sender*/,
+        const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args)
+    {
+        const auto itemContainer = args.ItemContainer();
+        if (args.InRecycleQueue() && itemContainer && itemContainer.ContentTemplate())
+        {
+            // _listViewItemsCache[itemContainer.ContentTemplate()].insert(itemContainer);
+            itemContainer.DataContext(nullptr);
+        }
+        else
+        {
+            itemContainer.DataContext(args.Item());
+        }
     }
 
     winrt::Windows::UI::Xaml::FrameworkElement TasksPaneContent::GetRoot()

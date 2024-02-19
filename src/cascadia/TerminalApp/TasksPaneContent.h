@@ -38,8 +38,12 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> FocusRequested;
 
     private:
+        friend struct TasksPaneContentT<TasksPaneContent>; // for Xaml to bind events
+
         // winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
         // winrt::Microsoft::UI::Xaml::Controls::TreeView _treeView{ nullptr };
+
+        void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
     };
 
     struct TaskViewModel : TaskViewModelT<TaskViewModel>
@@ -72,7 +76,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TaskViewModel> _children{};
+        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TaskViewModel> _children{ nullptr };
     };
 }
 
