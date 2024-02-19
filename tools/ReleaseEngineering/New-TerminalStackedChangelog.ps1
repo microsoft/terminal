@@ -62,7 +62,7 @@ ForEach ($RevisionRange in $RevisionRanges) {
     #   - %ae: author email
     #   - %x1C: another FS
     #   - %s: subject, the title of the commit
-    $NewEntries = & git log $RevisionRange "--pretty=format:%an%x1C%ae%x1C%s" |
+    $NewEntries = & git log $RevisionRange --first-parent "--pretty=format:%an%x1C%ae%x1C%s" |
         ConvertFrom-CSV -Delimiter "`u{001C}" -Header Author,Email,Subject
 
     $Entries += $NewEntries | % { [PSCustomObject]@{

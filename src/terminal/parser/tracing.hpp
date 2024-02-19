@@ -18,8 +18,6 @@ Abstract:
 #include <winmeta.h>
 #include <TraceLoggingProvider.h>
 
-TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider);
-
 namespace Microsoft::Console::VirtualTerminal
 {
     class ParserTracing sealed

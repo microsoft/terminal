@@ -91,7 +91,6 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
         std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
-        til::throttled_func_trailing<> _reloadState;
 
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{};
 

@@ -48,7 +48,7 @@ Abstract:
 #include <wil/cppwinrt.h>
 
 // Needed just for XamlIslands to work at all:
-#include <winrt/Windows.system.h>
+#include <winrt/Windows.System.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
@@ -63,7 +63,7 @@ Abstract:
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Data.h>
-#include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.UI.Composition.h>
@@ -90,6 +90,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 
 #include "til.h"
 #include "til/mutex.h"
+
+#include <SafeDispatcherTimer.h>
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

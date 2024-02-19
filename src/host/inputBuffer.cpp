@@ -4,13 +4,13 @@
 #include "precomp.h"
 #include "inputBuffer.hpp"
 
-#include "stream.h"
-#include "../types/inc/GlyphWidth.hpp"
-
 #include <til/bytes.h>
+#include <til/unicode.h>
 
 #include "misc.h"
+#include "stream.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
@@ -87,10 +87,10 @@ void InputBuffer::Consume(bool isUnicode, std::wstring_view& source, std::span<c
         {
             size_t read = 0;
 
-            for (const auto& wch : source)
+            for (const auto& s : til::utf16_iterator{ source })
             {
                 char buffer[8];
-                const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
+                const auto length = WideCharToMultiByte(cp, 0, s.data(), gsl::narrow_cast<int>(s.size()), &buffer[0], sizeof(buffer), nullptr, nullptr);
                 THROW_LAST_ERROR_IF(length <= 0);
 
                 std::string_view slice{ &buffer[0], gsl::narrow_cast<size_t>(length) };
@@ -98,10 +98,24 @@ void InputBuffer::Consume(bool isUnicode, std::wstring_view& source, std::span<c
 
                 ++read;
 
-                if (!slice.empty())
+                // The _cached members store characters in `target`'s encoding that didn't fit into
+                // the client's buffer. So, if slice.empty() == false, then we'll store `slice` there.
+                //
+                // But it would be incorrect to test for slice.empty() == false, because the exit
+                // condition is actually "if the target has no space left" and that's subtly different.
+                // This difference can be seen when `source` contains "abc" and `target` is 1 character large.
+                // Testing for `target.empty() will ensure we:
+                // * exit right after copying "a"
+                // * don't store anything in `_cachedTextA`
+                // * leave "bc" in the `source` string, for the caller to handle
+                // Otherwise we'll copy "a", store "b" and return "c", which is wrong. See GH#16223.
+                if (target.empty())
                 {
-                    _cachedTextA = slice;
-                    _cachedTextReaderA = _cachedTextA;
+                    if (!slice.empty())
+                    {
+                        _cachedTextA = slice;
+                        _cachedTextReaderA = _cachedTextA;
+                    }
                     break;
                 }
             }
@@ -588,6 +602,27 @@ size_t InputBuffer::Write(const std::span<const INPUT_RECORD>& inEvents)
     }
 }
 
+void InputBuffer::WriteString(const std::wstring_view& text)
+try
+{
+    if (text.empty())
+    {
+        return;
+    }
+
+    const auto initiallyEmptyQueue = _storage.empty();
+
+    _writeString(text);
+
+    if (initiallyEmptyQueue && !_storage.empty())
+    {
+        ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+    }
+
+    WakeUpReadersWaitingForData();
+}
+CATCH_LOG()
+
 // This can be considered a "privileged" variant of Write() which allows FOCUS_EVENTs to generate focus VT sequences.
 // If we didn't do this, someone could write a FOCUS_EVENT_RECORD with WriteConsoleInput, exit without flushing the
 // input buffer and the next application will suddenly get a "\x1b[I" sequence in their input. See GH#13238.
@@ -814,10 +849,7 @@ void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& 
             return;
         }
 
-        for (const auto& wch : text)
-        {
-            _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-        }
+        _writeString(text);
 
         if (!_vtInputShouldSuppress)
         {
@@ -828,6 +860,25 @@ void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& 
     catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
+    }
+}
+
+void InputBuffer::_writeString(const std::wstring_view& text)
+{
+    for (const auto& wch : text)
+    {
+        if (wch == UNICODE_NULL)
+        {
+            // Convert null byte back to input event with proper control state
+            const auto zeroKey = OneCoreSafeVkKeyScanW(0);
+            uint32_t ctrlState = 0;
+            WI_SetFlagIf(ctrlState, SHIFT_PRESSED, WI_IsFlagSet(zeroKey, 0x100));
+            WI_SetFlagIf(ctrlState, LEFT_CTRL_PRESSED, WI_IsFlagSet(zeroKey, 0x200));
+            WI_SetFlagIf(ctrlState, LEFT_ALT_PRESSED, WI_IsFlagSet(zeroKey, 0x400));
+            _storage.push_back(SynthesizeKeyEvent(true, 1, LOBYTE(zeroKey), 0, wch, ctrlState));
+            continue;
+        }
+        _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
     }
 }
 

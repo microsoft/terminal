@@ -19,6 +19,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="inc\SafeDispatcherTimer.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="inc\ScopedResourceLoader.h" />
     <ClInclude Include="inc\LibraryResources.h" />

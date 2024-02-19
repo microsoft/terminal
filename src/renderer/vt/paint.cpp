@@ -187,13 +187,15 @@ using namespace Microsoft::Console::Types;
 // - Draws up to one line worth of grid lines on top of characters.
 // Arguments:
 // - lines - Enum defining which edges of the rectangle to draw
-// - color - The color to use for drawing the edges.
+// - gridlineColor - The color to use for drawing the gridlines.
+// - underlineColor - The color to use for drawing the underlines.
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
-                                                     const COLORREF /*color*/,
+                                                     const COLORREF /*gridlineColor*/,
+                                                     const COLORREF /*underlineColor*/,
                                                      const size_t /*cchLine*/,
                                                      const til::point /*coordTarget*/) noexcept
 {
@@ -227,6 +229,11 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::PaintSelection(const til::rect& /*rect*/) noexcept
+{
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT VtEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
 {
     return S_OK;
 }

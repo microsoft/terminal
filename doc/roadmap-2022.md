@@ -115,7 +115,7 @@ Incoming issues/asks/etc. are triaged several times a week, labeled appropriatel
 [Up Next]: https://github.com/microsoft/terminal/milestone/37
 [Backlog]: https://github.com/microsoft/terminal/milestone/45
 
-[Terminal v2 Roadmap]: https://github.com/microsoft/terminal/tree/main/doc/terminal-v2-roadmap.md
+[Terminal v2 Roadmap]: ./terminal-v2-roadmap.md
 
 [Windows Terminal Preview 1.2 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-2-release/
 [Windows Terminal Preview 1.3 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-3-release/
@@ -131,4 +131,4 @@ Incoming issues/asks/etc. are triaged several times a week, labeled appropriatel
 [Windows Terminal Preview 1.13 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-13-release/
 [Windows Terminal Preview 1.14 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-14-release/
 
-[Terminal 2023 Roadmap]: https://github.com/microsoft/terminal/tree/main/doc/roadmap-2023.md
+[Terminal 2023 Roadmap]: ./roadmap-2023.md

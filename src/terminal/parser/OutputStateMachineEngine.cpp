@@ -23,6 +23,11 @@ OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch
     THROW_HR_IF_NULL(E_INVALIDARG, _dispatch.get());
 }
 
+bool OutputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
+{
+    return false;
+}
+
 const ITermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
 {
     return *_dispatch;
@@ -82,8 +87,8 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::SUB:
         // The SUB control is used to cancel a control sequence in the same
         // way as CAN, but unlike CAN it also displays an error character,
-        // typically a reverse question mark.
-        _dispatch->Print(L'\u2E2E');
+        // typically a reverse question mark (Unicode substitute form two).
+        _dispatch->Print(L'\u2426');
         break;
     case AsciiChars::DEL:
         // The DEL control can sometimes be translated into a printable glyph
@@ -559,6 +564,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::TBC_TabClear:
         success = parameters.for_each([&](const auto clearType) {
             return _dispatch->TabClear(clearType);
+        });
+        break;
+    case CsiActionCodes::DECST8C_SetTabEvery8Columns:
+        success = parameters.for_each([&](const auto setType) {
+            return _dispatch->TabSet(setType);
         });
         break;
     case CsiActionCodes::ECH_EraseCharacters:

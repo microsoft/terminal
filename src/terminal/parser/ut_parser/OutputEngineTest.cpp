@@ -2159,29 +2159,29 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        Log::Comment(L"Test 1: Check OS (operating status) case 5. Should succeed.");
+        Log::Comment(L"Test 1: Check operating status (case 5). Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'5');
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::OS_OperatingStatus, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::OperatingStatus, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 2: Check CPR (cursor position report) case 6. Should succeed.");
+        Log::Comment(L"Test 2: Check cursor position report (case 6). Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'6');
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::CursorPositionReport, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 3: Check DECXCPR (extended cursor position report) case ?6. Should succeed.");
+        Log::Comment(L"Test 3: Check extended cursor position report (case ?6). Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'?');
@@ -2189,7 +2189,124 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::ExtendedCursorPositionReport, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 4: Check printer status (case ?15). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'1');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::PrinterStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 5: Check user-defined keys (case ?25). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'2');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::UserDefinedKeys, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 6: Check keyboard status / dialect (case ?26). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'2');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::KeyboardStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 7: Check locator status (case ?55). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::LocatorStatus, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 8: Check locator identity (case ?56). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::LocatorIdentity, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 9: Check macro space report (case ?62). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'2');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::MacroSpaceReport, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 10: Check memory checksum (case ?63). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'3');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::MemoryChecksum, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 11: Check data integrity report (case ?75). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'7');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::DataIntegrity, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 12: Check multiple session status (case ?85). Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'8');
+        mach.ProcessCharacter(L'5');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::MultipleSessionStatus, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
     }

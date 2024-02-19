@@ -77,16 +77,6 @@
     </feature>
 
     <feature>
-        <name>Feature_AtlasEngine</name>
-        <description>If enabled, AtlasEngine is used by default</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>Release</brandingToken>
-            <brandingToken>WindowsInbox</brandingToken>
-        </alwaysDisabledBrandingTokens>
-    </feature>
-
-    <feature>
         <name>Feature_AtlasEnginePresentFallback</name>
         <description>We don't feel super confident in our usage of the Present1 API, so this settings adds a fallback to Present on error</description>
         <stage>AlwaysDisabled</stage>
@@ -181,6 +171,16 @@
         <name>Feature_VtChecksumReport</name>
         <description>Enables the DECRQCRA checksum report, which can be used to read the screen contents</description>
         <id>14974</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_KeypadModeEnabled</name>
+        <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
+        <id>16654</id>
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>

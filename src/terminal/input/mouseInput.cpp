@@ -11,12 +11,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 static constexpr int s_MaxDefaultCoordinate = 94;
 
-// Alternate scroll sequences
-static constexpr std::wstring_view CursorUpSequence{ L"\x1b[A" };
-static constexpr std::wstring_view CursorDownSequence{ L"\x1b[B" };
-static constexpr std::wstring_view ApplicationUpSequence{ L"\x1bOA" };
-static constexpr std::wstring_view ApplicationDownSequence{ L"\x1bOB" };
-
 // Routine Description:
 // - Determines if the input windows message code describes a button event
 //     (left, middle, right button and any of up, down or double click)
@@ -147,11 +141,11 @@ constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState 
 // - modifierKeyState - the modifier keys _in console format_
 // - delta - scroll wheel delta
 // Return value:
-// - the int representing the equivalent X button encoding.
-static constexpr int _windowsButtonToXEncoding(const unsigned int button,
-                                               const bool isHover,
-                                               const short modifierKeyState,
-                                               const short delta) noexcept
+// - the character representing the equivalent X button encoding.
+static constexpr wchar_t _windowsButtonToXEncoding(const unsigned int button,
+                                                   const bool isHover,
+                                                   const short modifierKeyState,
+                                                   const short delta) noexcept
 {
     auto xvalue = 0;
     switch (button)
@@ -191,7 +185,7 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
     WI_UpdateFlag(xvalue, 0x08, WI_IsAnyFlagSet(modifierKeyState, ALT_PRESSED));
     WI_UpdateFlag(xvalue, 0x10, WI_IsAnyFlagSet(modifierKeyState, CTRL_PRESSED));
 
-    return xvalue;
+    return gsl::narrow_cast<wchar_t>(L' ' + xvalue);
 }
 
 // Routine Description:
@@ -270,9 +264,9 @@ static constexpr til::point _winToVTCoord(const til::point coordWinCoordinate) n
 // - sCoordinateValue - the value to encode.
 // Return value:
 // - the encoded value.
-static constexpr til::CoordType _encodeDefaultCoordinate(const til::CoordType sCoordinateValue) noexcept
+static constexpr wchar_t _encodeDefaultCoordinate(const til::CoordType sCoordinateValue) noexcept
 {
-    return sCoordinateValue + 32;
+    return gsl::narrow_cast<wchar_t>(sCoordinateValue + 32);
 }
 
 // Routine Description:
@@ -334,11 +328,6 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
         _mouseInputState.accumulatedDelta = 0;
     }
 
-    if (ShouldSendAlternateScroll(button, delta))
-    {
-        return _makeAlternateScrollOutput(delta);
-    }
-
     if (IsTrackingMouseInput())
     {
         // isHover is only true for WM_MOUSEMOVE events
@@ -392,6 +381,11 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
         }
     }
 
+    if (ShouldSendAlternateScroll(button, delta))
+    {
+        return _makeAlternateScrollOutput(delta);
+    }
+
     return {};
 }
 
@@ -415,12 +409,9 @@ TerminalInput::OutputType TerminalInput::_GenerateDefaultSequence(const til::poi
         const auto vtCoords = _winToVTCoord(position);
         const auto encodedX = _encodeDefaultCoordinate(vtCoords.x);
         const auto encodedY = _encodeDefaultCoordinate(vtCoords.y);
+        const auto encodedButton = _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta);
 
-        StringType format{ L"\x1b[Mbxy" };
-        til::at(format, 3) = gsl::narrow_cast<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
-        til::at(format, 4) = gsl::narrow_cast<wchar_t>(encodedX);
-        til::at(format, 5) = gsl::narrow_cast<wchar_t>(encodedY);
-        return format;
+        return fmt::format(FMT_COMPILE(L"{}M{}{}{}"), _csi, encodedButton, encodedX, encodedY);
     }
 
     return {};
@@ -458,13 +449,9 @@ TerminalInput::OutputType TerminalInput::_GenerateUtf8Sequence(const til::point 
         const auto vtCoords = _winToVTCoord(position);
         const auto encodedX = _encodeDefaultCoordinate(vtCoords.x);
         const auto encodedY = _encodeDefaultCoordinate(vtCoords.y);
+        const auto encodedButton = _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta);
 
-        StringType format{ L"\x1b[Mbxy" };
-        // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
-        til::at(format, 3) = gsl::narrow_cast<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
-        til::at(format, 4) = gsl::narrow_cast<wchar_t>(encodedX);
-        til::at(format, 5) = gsl::narrow_cast<wchar_t>(encodedY);
-        return format;
+        return fmt::format(FMT_COMPILE(L"{}M{}{}{}"), _csi, encodedButton, encodedX, encodedY);
     }
 
     return {};
@@ -487,7 +474,7 @@ TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point p
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
     const auto xbutton = _windowsButtonToSGREncoding(button, isHover, modifierKeyState, delta);
-    return fmt::format(FMT_COMPILE(L"\x1b[<{};{};{}{}"), xbutton, position.x + 1, position.y + 1, isDown ? L'M' : L'm');
+    return fmt::format(FMT_COMPILE(L"{}<{};{};{}{}"), _csi, xbutton, position.x + 1, position.y + 1, isDown ? L'M' : L'm');
 }
 
 // Routine Description:
@@ -515,10 +502,10 @@ TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const short 
 {
     if (delta > 0)
     {
-        return MakeOutput(_inputMode.test(Mode::CursorKey) ? ApplicationUpSequence : CursorUpSequence);
+        return MakeOutput(_keyMap.at(VK_UP));
     }
     else
     {
-        return MakeOutput(_inputMode.test(Mode::CursorKey) ? ApplicationDownSequence : CursorDownSequence);
+        return MakeOutput(_keyMap.at(VK_DOWN));
     }
 }

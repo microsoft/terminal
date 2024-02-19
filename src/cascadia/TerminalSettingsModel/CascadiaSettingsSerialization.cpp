@@ -410,7 +410,7 @@ bool SettingsLoader::FixupUserSettings()
 {
     struct CommandlinePatch
     {
-        winrt::guid guid;
+        winrt::guid guid{};
         std::wstring_view before;
         std::wstring_view after;
     };
@@ -949,25 +949,6 @@ void CascadiaSettings::_researchOnLoad()
     // Only do this if we're actually being sampled
     if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        // GH#13936: We're interested in how many users opt out of useAtlasEngine,
-        // indicating major issues that would require us to disable it by default again.
-        {
-            size_t enabled[2]{};
-            for (const auto& profile : _activeProfiles)
-            {
-                enabled[profile.UseAtlasEngine()]++;
-            }
-
-            TraceLoggingWrite(
-                g_hSettingsModelProvider,
-                "AtlasEngine_Usage",
-                TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
-                TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
-                TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-        }
-
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
         const auto themeInUse = GlobalSettings().CurrentTheme().Name();

@@ -1,6 +1,7 @@
 ^attache$
 ^attacher$
 ^attachers$
+^bellow$
 benefitting
 occurences?
 ^dependan.*

@@ -157,7 +157,7 @@ class TextBufferTests
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
-    TEST_METHOD(GetText);
+    TEST_METHOD(GetPlainText);
 
     TEST_METHOD(HyperlinkTrim);
     TEST_METHOD(NoHyperlinkTrim);
@@ -2087,41 +2087,42 @@ void TextBufferTests::TestRowReplaceText()
 void TextBufferTests::TestAppendRTFText()
 {
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         const auto ascii = L"This is some Ascii \\ {}";
         TextBuffer::_AppendRTFText(contentStream, ascii);
-        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream.str());
+        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Low code units: á é í ó ú ⮁ ⮂" in UTF-16
         const auto lowCodeUnits = L"Low code units: \x00E1 \x00E9 \x00ED \x00F3 \x00FA \x2B81 \x2B82";
         TextBuffer::_AppendRTFText(contentStream, lowCodeUnits);
-        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream.str());
+        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "High code units: ꞵ ꞷ" in UTF-16
         const auto highCodeUnits = L"High code units: \xA7B5 \xA7B7";
         TextBuffer::_AppendRTFText(contentStream, highCodeUnits);
-        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream.str());
+        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Surrogates: 🍦 👾 👀" in UTF-16
         const auto surrogates = L"Surrogates: \xD83C\xDF66 \xD83D\xDC7E \xD83D\xDC40";
         TextBuffer::_AppendRTFText(contentStream, surrogates);
-        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream.str());
+        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream);
     }
 }
 
 void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer)
 {
     const auto bufferSize = buffer.GetSize();
-
+    int rowsWrapped{};
     for (size_t row = 0; row < text.size(); ++row)
     {
         auto line = text[row];
+
         if (!line.empty())
         {
             // TODO GH#780: writing up to (but not past) the end of the line
@@ -2133,7 +2134,12 @@ void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, 
             }
 
             OutputCellIterator iter{ line };
-            buffer.Write(iter, { 0, gsl::narrow<til::CoordType>(row) }, wrap);
+            buffer.Write(iter, { 0, gsl::narrow<til::CoordType>(row + rowsWrapped) }, wrap);
+            //prevent bug that overwrites wrapped rows
+            if (line.size() > static_cast<size_t>(bufferSize.RightExclusive()))
+            {
+                rowsWrapped += static_cast<int>(line.size()) / bufferSize.RightExclusive();
+            }
         }
     }
 }
@@ -2241,6 +2247,88 @@ void TextBufferTests::GetWordBoundaries()
     for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
+        auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
+        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        VERIFY_ARE_EQUAL(expected, result);
+    }
+
+    _buffer->Reset();
+    _buffer->ResizeTraditional({ 10, 5 });
+    const std::vector<std::wstring> secondText = { L"this wordiswrapped",
+                                                   L"spaces        wrapped reachEOB" };
+    //Buffer looks like:
+    //  this wordi
+    //  swrapped
+    //  spaces
+    //      wrappe
+    //  d reachEOB
+    WriteLinesToBuffer(secondText, *_buffer);
+    testData = {
+        { { 0, 0 }, { { 0, 0 }, { 0, 0 } } },
+        { { 1, 0 }, { { 0, 0 }, { 0, 0 } } },
+        { { 4, 0 }, { { 4, 0 }, { 0, 0 } } },
+        { { 5, 0 }, { { 5, 0 }, { 5, 0 } } },
+        { { 7, 0 }, { { 5, 0 }, { 5, 0 } } },
+
+        { { 4, 1 }, { { 5, 0 }, { 5, 0 } } },
+        { { 7, 1 }, { { 5, 0 }, { 5, 0 } } },
+        { { 9, 1 }, { { 8, 1 }, { 5, 0 } } },
+
+        { { 0, 2 }, { { 0, 2 }, { 0, 2 } } },
+        { { 7, 2 }, { { 6, 2 }, { 0, 2 } } },
+
+        { { 1, 3 }, { { 0, 3 }, { 0, 2 } } },
+        { { 4, 3 }, { { 4, 3 }, { 4, 3 } } },
+        { { 8, 3 }, { { 4, 3 }, { 4, 3 } } },
+
+        { { 0, 4 }, { { 4, 3 }, { 4, 3 } } },
+        { { 1, 4 }, { { 1, 4 }, { 4, 3 } } },
+        { { 9, 4 }, { { 2, 4 }, { 2, 4 } } },
+    };
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"Testing til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
+        const auto result = _buffer->GetWordStart(test.startPos, delimiters, accessibilityMode);
+        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        VERIFY_ARE_EQUAL(expected, result);
+    }
+
+    //GetWordEnd for Wrapping Text
+    //Buffer looks like:
+    //  this wordi
+    //  swrapped
+    //  spaces
+    //      wrappe
+    //  d reachEOB
+    testData = {
+        // tests for first line of text
+        { { 0, 0 }, { { 3, 0 }, { 5, 0 } } },
+        { { 1, 0 }, { { 3, 0 }, { 5, 0 } } },
+        { { 4, 0 }, { { 4, 0 }, { 5, 0 } } },
+        { { 5, 0 }, { { 7, 1 }, { 0, 2 } } },
+        { { 7, 0 }, { { 7, 1 }, { 0, 2 } } },
+
+        { { 4, 1 }, { { 7, 1 }, { 0, 2 } } },
+        { { 7, 1 }, { { 7, 1 }, { 0, 2 } } },
+        { { 9, 1 }, { { 9, 1 }, { 0, 2 } } },
+
+        { { 0, 2 }, { { 5, 2 }, { 4, 3 } } },
+        { { 7, 2 }, { { 9, 2 }, { 4, 3 } } },
+
+        { { 1, 3 }, { { 3, 3 }, { 4, 3 } } },
+        { { 4, 3 }, { { 0, 4 }, { 2, 4 } } },
+        { { 8, 3 }, { { 0, 4 }, { 2, 4 } } },
+
+        { { 0, 4 }, { { 0, 4 }, { 2, 4 } } },
+        { { 1, 4 }, { { 1, 4 }, { 2, 4 } } },
+        { { 4, 4 }, { { 9, 4 }, { 0, 5 } } },
+        { { 9, 4 }, { { 9, 4 }, { 0, 5 } } },
+    };
+    // clang-format on
+
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"TestEnd til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
         auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
@@ -2447,9 +2535,9 @@ void TextBufferTests::GetTextRects()
     }
 }
 
-void TextBufferTests::GetText()
+void TextBufferTests::GetPlainText()
 {
-    // GetText() is used by...
+    // GetPlainText() is used by...
     //  - Copying text to the clipboard regularly
     //  - Copying text to the clipboard, with shift held (collapse to one line)
     //  - Extracting text from a UiaTextRange
@@ -2485,14 +2573,10 @@ void TextBufferTests::GetText()
         WriteLinesToBuffer(bufferText, *_buffer);
 
         // simulate a selection from origin to {4,4}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 4 } };
 
-        std::wstring result = L"";
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
-        for (auto& text : textData)
-        {
-            result += text;
-        }
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, false };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (includeCRLF)
@@ -2571,9 +2655,7 @@ void TextBufferTests::GetText()
 
         // Setup: Write lines of text to the buffer
         const std::vector<std::wstring> bufferText = { L"1234567",
-                                                       L"",
-                                                       L"  345",
-                                                       L"123    ",
+                                                       L"  345123    ",
                                                        L"" };
         WriteLinesToBuffer(bufferText, *_buffer);
         // buffer should look like this:
@@ -2586,16 +2668,11 @@ void TextBufferTests::GetText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection, false);
-
-        std::wstring result = L"";
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 5 } };
 
         const auto formatWrappedRows = blockSelection;
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects, nullptr, formatWrappedRows).text;
-        for (auto& text : textData)
-        {
-            result += text;
-        }
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, formatWrappedRows };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (formatWrappedRows)
@@ -2653,7 +2730,7 @@ void TextBufferTests::GetText()
                     Log::Comment(L"Standard Copy to Clipboard");
                     expectedText += L"12345";
                     expectedText += L"67\r\n";
-                    expectedText += L"  345\r\n";
+                    expectedText += L"  345";
                     expectedText += L"123  \r\n";
                 }
                 else
@@ -2661,7 +2738,7 @@ void TextBufferTests::GetText()
                     Log::Comment(L"UI Automation");
                     expectedText += L"12345";
                     expectedText += L"67   \r\n";
-                    expectedText += L"  345\r\n";
+                    expectedText += L"  345";
                     expectedText += L"123  ";
                     expectedText += L"     \r\n";
                     expectedText += L"     ";
