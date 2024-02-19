@@ -78,6 +78,9 @@ extends:
     cloudvault: # https://aka.ms/obpipelines/cloudvault
       enabled: false
     globalSdl: # https://aka.ms/obpipelines/sdl
+      asyncSdl:
+        enabled: true
+        tsaOptionsFile: 'build/config/tsa.json'
       tsa:
         enabled: true
         configFile: '$(Build.SourcesDirectory)\build\config\tsa.json'
