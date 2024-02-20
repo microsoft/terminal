@@ -23,7 +23,7 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct TermControl : TermControlT<TermControl, winrt::Microsoft::Terminal::UI::IDirectKeyListener>
+    struct TermControl : TermControlT<TermControl>
     {
         TermControl(Control::ControlInteractivity content);
 
