@@ -58,14 +58,8 @@
                                     HorizontalAlignment="Center"
                                     Fill="{ThemeResource SystemControlBackgroundBaseMediumBrush}"/>-->
                         <Button Grid.Row="0"
-                                Grid.RowSpan="1"
                                 Grid.Column="0"
-                                Padding="3"
-                                VerticalAlignment="Bottom"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                Click="_runCommandButtonClicked"
-                                ToolTipService.ToolTip="Input this command">
+                                Click="_runCommandButtonClicked">
 
                             <Button.Content>
                                 <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -110,13 +104,11 @@
                         <TextBlock Grid.Column="1"
                                    Margin="12,6,0,0"
                                    Style="{ThemeResource BaseTextBlockStyle}"
-                                   Text="{x:Bind Name, Mode=OneWay}"
-                                   TextWrapping="WrapWholeWords" />
+                                   Text="{x:Bind Name, Mode=OneWay}" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
                                    Margin="12,0,0,6"
-                                   FontFamily="Cascadia Mono, Consolas"
-                                   IsTextSelectionEnabled="True"
+                                   MaxLines="1"
                                    Style="{ThemeResource BodyTextBlockStyle}"
                                    Text="{x:Bind Input}"
                                    Visibility="{Binding ElementName=rootItem, Path=IsSelected}" />
