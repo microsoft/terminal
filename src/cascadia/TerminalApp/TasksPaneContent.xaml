@@ -32,7 +32,8 @@
             </DataTemplate>
             <DataTemplate x:Key="TaskItemTemplate"
                           x:DataType="local:TaskViewModel">
-                <mux:TreeViewItem ItemsSource="{x:Bind Children}">
+                <mux:TreeViewItem x:Name="rootItem"
+                                  ItemsSource="{x:Bind Children}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -56,6 +57,12 @@
                                     VerticalAlignment="Center"
                                     HorizontalAlignment="Center"
                                     Fill="{ThemeResource SystemControlBackgroundBaseMediumBrush}"/>-->
+                        <Button Grid.Row="0"
+                                Grid.Column="0">
+                            <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                      FontSize="12"
+                                      Glyph="&#xE768;" />
+                        </Button>
                         <TextBlock Grid.Column="1"
                                    Margin="12,6,0,0"
                                    Style="{ThemeResource BaseTextBlockStyle}"
@@ -65,14 +72,15 @@
                                    Margin="12,0,0,6"
                                    MaxLines="1"
                                    Style="{ThemeResource BodyTextBlockStyle}"
-                                   Text="{x:Bind Input}" />
+                                   Text="{x:Bind Input}"
+                                   Visibility="{Binding ElementName=rootItem, Path=IsSelected}" />
                     </Grid>
                 </mux:TreeViewItem>
             </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Background="Red">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -87,11 +95,11 @@
 
         <TextBox x:Name="_filterBox"
                  Grid.Row="1"
-                 Margin="8" />
+                 Margin="8"
+                 PlaceholderText="Filter tasks..." />
 
         <mux:TreeView x:Name="_treeView"
                       Grid.Row="2"
-                      Background="Blue"
                       CanDragItems="False"
                       CanReorderItems="False"
                       ItemTemplate="{StaticResource TaskItemTemplate}" />

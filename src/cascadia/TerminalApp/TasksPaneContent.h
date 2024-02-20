@@ -39,11 +39,6 @@ namespace winrt::TerminalApp::implementation
 
     private:
         friend struct TasksPaneContentT<TasksPaneContent>; // for Xaml to bind events
-
-        // winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
-        // winrt::Microsoft::UI::Xaml::Controls::TreeView _treeView{ nullptr };
-
-        void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
     };
 
     struct TaskViewModel : TaskViewModelT<TaskViewModel>
@@ -51,6 +46,7 @@ namespace winrt::TerminalApp::implementation
         TaskViewModel(const winrt::Microsoft::Terminal::Settings::Model::Command& command) :
             _command{ command }
         {
+            // The Children() method must always return a non-null vector
             _children = winrt::single_threaded_observable_vector<TerminalApp::TaskViewModel>();
             if (_command.HasNestedCommands())
             {
