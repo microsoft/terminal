@@ -106,4 +106,26 @@ namespace winrt::TerminalApp::implementation
     {
         return Background();
     }
+
+    void TasksPaneContent::SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control)
+    {
+        _control = control;
+    }
+
+    void TasksPaneContent::_runCommandButtonClicked(const Windows::Foundation::IInspectable& sender,
+                                                   const Windows::UI::Xaml::RoutedEventArgs&)
+    {
+
+        if (const auto& taskVM{ sender.try_as<WUX::Controls::Button>().DataContext().try_as<TaskViewModel>() })
+        {
+            if (const auto& strongControl{ _control.get() })
+            {
+                // By using the last active control as the sender here, the
+                // actiopn dispatch will send this to the active control,
+                // thinking that it is the control that requested this event.
+                DispatchCommandRequested.raise(strongControl, taskVM->Command());
+            }
+        }
+    }
+
 }

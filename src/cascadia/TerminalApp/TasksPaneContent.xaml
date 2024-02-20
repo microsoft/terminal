@@ -58,7 +58,8 @@
                                     HorizontalAlignment="Center"
                                     Fill="{ThemeResource SystemControlBackgroundBaseMediumBrush}"/>-->
                         <Button Grid.Row="0"
-                                Grid.Column="0">
+                                Grid.Column="0"
+                                Click="_runCommandButtonClicked">
                             <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                       FontSize="12"
                                       Glyph="&#xE768;" />

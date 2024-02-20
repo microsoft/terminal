@@ -28,6 +28,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept { return nullptr; }
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
+        void SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control);
+
         til::typed_event<> CloseRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;
         til::typed_event<> TitleChanged;
@@ -37,8 +39,14 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> ReadOnlyChanged;
         til::typed_event<> FocusRequested;
 
+        til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
+
     private:
         friend struct TasksPaneContentT<TasksPaneContent>; // for Xaml to bind events
+
+        winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control;
+
+        void _runCommandButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);
     };
 
     struct TaskViewModel : TaskViewModelT<TaskViewModel>
