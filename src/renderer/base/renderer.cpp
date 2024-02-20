@@ -393,17 +393,11 @@ void Renderer::TriggerSearchHighlight()
         auto searchHighlights = _GetSearchHighlights();
         FOREACH_ENGINE(pEngine)
         {
-            for (const auto& rect : _previousSearchHighlights)
-            {
-                LOG_IF_FAILED(pEngine->Invalidate(&rect));
-            }
+            LOG_IF_FAILED(pEngine->InvalidateHighlight(_previousSearchHighlights));
 
             // we don't need to invalidate focused search highlight (.second) separately
             // because they are already part of "all" search highlights (.first)
-            for (const auto& rect : searchHighlights.first)
-            {
-                LOG_IF_FAILED(pEngine->Invalidate(&rect));
-            }
+            LOG_IF_FAILED(pEngine->InvalidateHighlight(searchHighlights.first));
         }
 
         _previousSearchHighlights = std::move(searchHighlights.first);

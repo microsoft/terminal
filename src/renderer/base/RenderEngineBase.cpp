@@ -7,6 +7,16 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateHighlight(const std::vector<til::rect>& rects) noexcept
+{
+    for (const auto& rect : rects)
+    {
+        RETURN_IF_FAILED(Invalidate(&rect));
+    }
+
+    return S_OK;
+}
+
 HRESULT RenderEngineBase::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
     if (proposedTitle != _lastFrameTitle)

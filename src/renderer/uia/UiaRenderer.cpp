@@ -147,6 +147,11 @@ CATCH_RETURN();
     return S_OK;
 }
 
+[[nodiscard]] HRESULT UiaEngine::InvalidateHighlight(const std::vector<til::rect>& /*rects*/) noexcept
+{
+    return S_OK;
+}
+
 // Routine Description:
 // - Scrolls the existing dirty region (if it exists) and
 //   invalidates the area that is uncovered in the window.

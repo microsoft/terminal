@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render
     class RenderEngineBase : public IRenderEngine
     {
     public:
+        [[nodiscard]] HRESULT InvalidateHighlight(const std::vector<til::rect>& rects) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
 
         [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;

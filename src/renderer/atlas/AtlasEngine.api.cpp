@@ -95,6 +95,17 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     return S_OK;
 }
 
+[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(const std::vector<til::rect>& rects) noexcept
+{
+    for (const auto& rect : rects)
+    {
+        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
+        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
+    }
+
+    return S_OK;
+}
+
 [[nodiscard]] HRESULT AtlasEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 {
     // InvalidateScroll() is a "synchronous" API. Any Invalidate()s after
