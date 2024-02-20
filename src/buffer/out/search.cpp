@@ -147,7 +147,7 @@ ptrdiff_t Search::CurrentMatch() const noexcept
     return _index;
 }
 
-void Search::_setResultInData()
+void Search::_setResultInData() const
 {
     const auto& buffer = _renderData->GetTextBuffer();
     std::vector<til::inclusive_rect> resultRects;
@@ -160,7 +160,7 @@ void Search::_setResultInData()
     _renderData->SetSearchHighlights(std::move(resultRects));
 }
 
-void Search::_setCurrentInData() noexcept
+void Search::_setCurrentInData() const noexcept
 try
 {
     if (const auto current = GetCurrent())

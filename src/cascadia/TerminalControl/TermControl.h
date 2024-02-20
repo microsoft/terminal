@@ -351,6 +351,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _UpdateSearchScrollMarks();
+        void _ClearSearch();
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
@@ -359,6 +360,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _hoveredHyperlinkChanged(const IInspectable& sender, const IInspectable& args);
         winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
+        winrt::fire_and_forget _automationTextChanged(const IInspectable& sender, const IInspectable& args);
 
         void _coreFontSizeChanged(const IInspectable& s, const Control::FontSizeChangedArgs& args);
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
@@ -414,6 +416,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
             Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
             Control::ControlInteractivity::ContextMenuRequested_revoker ContextMenuRequested;
+
+            Control::TermControlAutomationPeer::TextChanged_revoker TextChanged;
         } _revokers{};
     };
 }

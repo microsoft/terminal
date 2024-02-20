@@ -952,6 +952,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              margins.Right,
                                              margins.Bottom };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(get_strong(), padding, interactivityAutoPeer);
+
+                _revokers.TextChanged = _automationPeer.TextChanged(winrt::auto_revoke, { get_weak(), &TermControl::_automationTextChanged });
+
                 return _automationPeer;
             }
         }
@@ -1167,15 +1170,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TSFInputControl().ClearBuffer();
 
         _HidePointerCursorHandlers(*this, nullptr);
-
-        // since user has started entering text in the buffer, we should clear
-        // the search state.
-        _core.ClearSearch();
-        _UpdateSearchScrollMarks();
-        if (_searchBox)
-        {
-            _searchBox->ClearStatus();
-        }
 
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();
@@ -3367,6 +3361,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    winrt::fire_and_forget TermControl::_automationTextChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        co_await winrt::resume_foreground(Dispatcher());
+        auto weakThis{ get_weak() };
+        if (weakThis.get())
+        {
+            _ClearSearch();
+        }
+    }
+
     til::point TermControl::_toPosInDips(const Core::Point terminalCellPos)
     {
         const til::point terminalPos{ terminalCellPos };
@@ -3523,6 +3527,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             .newViewportSize = scrollBar.ViewportSize(),
         };
         _throttledUpdateScrollbar(update);
+    }
+
+    // Method Description:
+    // - Clears the search results, and updates relevant UI elements.
+    void TermControl::_ClearSearch()
+    {
+        _core.ClearSearch();
+        _UpdateSearchScrollMarks();
+        if (_searchBox)
+        {
+            _searchBox->ClearStatus();
+        }
     }
 
     // Method Description:

@@ -174,6 +174,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         });
+
+        _TextChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
