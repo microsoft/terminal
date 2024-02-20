@@ -1643,6 +1643,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _searcher.FindNext();
         }
 
+        // if we're using dx engine, do select the current match since highlighting is not supported.
+        // this will at least give a visual feedback of where the current match is to the user.
+        if (!_settings->UseAtlasEngine())
+        {
+            _searcher.SelectCurrent();
+        }
+
         const auto foundMatch = _searcher.GetCurrent() ? true : false;
         auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
         if (foundMatch)
