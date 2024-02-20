@@ -2,12 +2,14 @@
 #include "Converters.h"
 #include "Converters.g.cpp"
 
+#pragma warning(disable : 26497) // We will make these functions constexpr, as they are part of an ABI boundary.
+#pragma warning(disable : 26440) // The function ... can be declared as noexcept.
+
 namespace winrt::Microsoft::Terminal::UI::implementation
 {
     winrt::hstring Converters::AppendPercentageSign(double value)
     {
-        const auto number{ value };
-        return to_hstring((int)number) + L"%";
+        return to_hstring(static_cast<uint32_t>(std::lrint(value))) + L"%";
     }
 
     winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(const winrt::Windows::UI::Color& color)

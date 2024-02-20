@@ -18,7 +18,6 @@ namespace Microsoft.Terminal.Control
     };
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
-                                                   Microsoft.Terminal.UI.IDirectKeyListener,
                                                    IMouseWheelListener,
                                                    ICoreState,
                                                    Windows.UI.Xaml.Data.INotifyPropertyChanged
