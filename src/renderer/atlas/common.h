@@ -360,6 +360,7 @@ namespace Microsoft::Console::Render::Atlas
 
         u16 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
+        bool customGlyphs = false;
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
@@ -420,8 +421,8 @@ namespace Microsoft::Console::Render::Atlas
     struct FontMapping
     {
         wil::com_ptr<IDWriteFontFace2> fontFace;
-        u32 glyphsFrom = 0;
-        u32 glyphsTo = 0;
+        size_t glyphsFrom = 0;
+        size_t glyphsTo = 0;
     };
 
     struct GridLineRange
@@ -499,6 +500,7 @@ namespace Microsoft::Console::Render::Atlas
 
         //// Parameters which change seldom.
         GenerationalSettings s;
+        std::wstring userLocaleName;
 
         //// Parameters which change every frame.
         // This is the backing buffer for `rows`.

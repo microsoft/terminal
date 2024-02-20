@@ -86,6 +86,8 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateFontDependentResources();
         void _recreateCellCountDependentResources();
         void _flushBufferLine();
+        void _mapRegularText(size_t offBeg, size_t offEnd);
+        void _mapCustomGlyphs(size_t offBeg, size_t offEnd);
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
         ATLAS_ATTR_COLD void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
@@ -132,8 +134,6 @@ namespace Microsoft::Console::Render::Atlas
 
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
-
-            std::wstring userLocaleName;
 
             std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;

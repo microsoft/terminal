@@ -4,11 +4,14 @@
 #include "pch.h"
 #include "BackendD3D.h"
 
+#include <til/unicode.h>
+
 #include <custom_shader_ps.h>
 #include <custom_shader_vs.h>
 #include <shader_ps.h>
 #include <shader_vs.h>
 
+#include "CustomGlyphs.h"
 #include "dwrite.h"
 #include "../../types/inc/ColorFix.hpp"
 
@@ -42,45 +45,8 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
-template<>
-struct std::hash<u16>
-{
-    constexpr size_t operator()(u16 key) const noexcept
-    {
-        return til::flat_set_hash_integer(key);
-    }
-};
-
-template<>
-struct std::hash<BackendD3D::AtlasGlyphEntry>
-{
-    constexpr size_t operator()(u16 key) const noexcept
-    {
-        return til::flat_set_hash_integer(key);
-    }
-
-    constexpr size_t operator()(const BackendD3D::AtlasGlyphEntry& slot) const noexcept
-    {
-        return til::flat_set_hash_integer(slot.glyphIndex);
-    }
-};
-
-template<>
-struct std::hash<BackendD3D::AtlasFontFaceEntry>
-{
-    using T = BackendD3D::AtlasFontFaceEntry;
-
-    size_t operator()(const BackendD3D::AtlasFontFaceKey& key) const noexcept
-    {
-        return til::flat_set_hash_integer(std::bit_cast<uintptr_t>(key.fontFace) | static_cast<u8>(key.lineRendition));
-    }
-
-    size_t operator()(const BackendD3D::AtlasFontFaceEntry& slot) const noexcept
-    {
-        const auto& inner = *slot.inner;
-        return til::flat_set_hash_integer(std::bit_cast<uintptr_t>(inner.fontFace.get()) | static_cast<u8>(inner.lineRendition));
-    }
-};
+static constexpr D2D1_MATRIX_3X2_F identityTransform{ .m11 = 1, .m22 = 1 };
+static constexpr D2D1_COLOR_F whiteColor{ 1, 1, 1, 1 };
 
 BackendD3D::BackendD3D(const RenderingPayload& p)
 {
@@ -340,7 +306,11 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     _fontChangedResetGlyphAtlas = true;
     _textShadingType = font.antialiasingMode == AntialiasingMode::ClearType ? ShadingType::TextClearType : ShadingType::TextGrayscale;
 
+    // _ligatureOverhangTriggerLeft/Right are essentially thresholds for a glyph's width at
+    // which point we consider it wider than allowed and "this looks like a coding ligature".
+    // See _drawTextOverlapSplit for more information about what this does.
     {
+        // No ligatures -> No thresholds.
         auto ligaturesDisabled = false;
         for (const auto& feature : font.fontFeatures)
         {
@@ -764,10 +734,14 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // It's not great, but it's not terrible.
     for (auto& slot : _glyphAtlasMap.container())
     {
-        if (slot.inner)
+        for (auto& glyphs : slot.glyphs)
         {
-            slot.inner->glyphs.clear();
+            glyphs.clear();
         }
+    }
+    for (auto& glyphs : _customGlyphs.glyphs)
+    {
+        glyphs.clear();
     }
 
     _d2dBeginDrawing();
@@ -809,9 +783,6 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
         _d2dRenderTarget.try_query_to(_d2dRenderTarget4.addressof());
 
         _d2dRenderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
-        // We don't really use D2D for anything except DWrite, but it
-        // can't hurt to ensure that everything it does is pixel aligned.
-        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         // Ensure that D2D uses the exact same gamma as our shader uses.
         _d2dRenderTarget->SetTextRenderingParams(_textRenderingParams.get());
 
@@ -833,9 +804,8 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
     }
 
     {
-        static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
-        THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _emojiBrush.put()));
-        THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
+        THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&whiteColor, nullptr, _emojiBrush.put()));
+        THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&whiteColor, nullptr, _brush.put()));
     }
 
     ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
@@ -967,7 +937,7 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
     }
 
     _appendQuad() = {
-        .shadingType = ShadingType::Background,
+        .shadingType = static_cast<u16>(ShadingType::Background),
         .size = p.s->targetSize,
     };
 }
@@ -1025,58 +995,53 @@ void BackendD3D::_drawText(RenderingPayload& p)
         for (const auto& m : row->mappings)
         {
             auto x = m.glyphsFrom;
-            const AtlasFontFaceKey fontFaceKey{
-                .fontFace = m.fontFace.get(),
-                .lineRendition = row->lineRendition,
-            };
+            const auto glyphsTo = m.glyphsTo;
+            const auto fontFace = m.fontFace.get();
 
-        // This goto label exists to allow us to retry rendering a glyph if the glyph atlas was full.
-        // We need to goto here, because a retry will cause the atlas texture as well as the
-        // _glyphCache hashmap to be cleared, and so we'll have to call insert() again.
-        drawGlyphRetry:
-            const auto [fontFaceEntryOuter, fontFaceInserted] = _glyphAtlasMap.insert(fontFaceKey);
-            auto& fontFaceEntry = *fontFaceEntryOuter.inner;
-
-            if (fontFaceInserted)
+            // The lack of a fontFace indicates a soft font.
+            AtlasFontFaceEntry* fontFaceEntry = &_customGlyphs;
+            if (m.fontFace) [[likely]]
             {
-                _initializeFontFaceEntry(fontFaceEntry);
+                fontFaceEntry = _glyphAtlasMap.insert(m.fontFace.get()).first;
             }
 
-            while (x < m.glyphsTo)
-            {
-                const auto [glyphEntry, inserted] = fontFaceEntry.glyphs.insert(row->glyphIndices[x]);
+            const auto& glyphs = fontFaceEntry->glyphs[WI_EnumValue(row->lineRendition)];
 
-                if (inserted && !_drawGlyph(p, fontFaceEntry, glyphEntry))
+            while (x < glyphsTo)
+            {
+                u32 glyphIndex = row->glyphIndices[x];
+                if (!fontFace && til::is_leading_surrogate(glyphIndex))
                 {
-                    // A deadlock in this retry loop is detected in _drawGlyphPrepareRetry.
-                    //
-                    // Yes, I agree, avoid goto. Sometimes. It's not my fault that C++ still doesn't
-                    // have a `continue outerloop;` like other languages had it for decades. :(
-#pragma warning(suppress : 26438) // Avoid 'goto' (es.76).
-#pragma warning(suppress : 26448) // Consider using gsl::finally if final action is intended (gsl.util).
-                    goto drawGlyphRetry;
+                    glyphIndex = til::combine_surrogates(glyphIndex, row->glyphIndices[x + 1]);
                 }
 
-                if (glyphEntry.data.shadingType != ShadingType::Default)
+                auto glyphEntry = glyphs.lookup(glyphIndex);
+                if (!glyphEntry)
+                {
+                    glyphEntry = _drawGlyph(p, *row, *fontFaceEntry, glyphIndex);
+                }
+
+                // A shadingType of 0 (ShadingType::Default) indicates a glyph that is whitespace.
+                if (glyphEntry->shadingType != ShadingType::Default)
                 {
                     auto l = static_cast<til::CoordType>(lrintf((baselineX + row->glyphOffsets[x].advanceOffset) * scaleX));
                     auto t = static_cast<til::CoordType>(lrintf((baselineY - row->glyphOffsets[x].ascenderOffset) * scaleY));
 
-                    l += glyphEntry.data.offset.x;
-                    t += glyphEntry.data.offset.y;
+                    l += glyphEntry->offset.x;
+                    t += glyphEntry->offset.y;
 
                     row->dirtyTop = std::min(row->dirtyTop, t);
-                    row->dirtyBottom = std::max(row->dirtyBottom, t + glyphEntry.data.size.y);
+                    row->dirtyBottom = std::max(row->dirtyBottom, t + glyphEntry->size.y);
 
                     _appendQuad() = {
-                        .shadingType = glyphEntry.data.shadingType,
+                        .shadingType = static_cast<u16>(glyphEntry->shadingType),
                         .position = { static_cast<i16>(l), static_cast<i16>(t) },
-                        .size = glyphEntry.data.size,
-                        .texcoord = glyphEntry.data.texcoord,
+                        .size = glyphEntry->size,
+                        .texcoord = glyphEntry->texcoord,
                         .color = row->colors[x],
                     };
 
-                    if (glyphEntry.data.overlapSplit)
+                    if (glyphEntry->overlapSplit)
                     {
                         _drawTextOverlapSplit(p, y);
                     }
@@ -1201,70 +1166,21 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
     }
 }
 
-void BackendD3D::_initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry)
+BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex)
 {
+    // The lack of a fontFace indicates a soft font.
     if (!fontFaceEntry.fontFace)
     {
-        return;
+        return _drawCustomGlyph(p, row, fontFaceEntry, glyphIndex);
     }
 
-    ALLOW_UNINITIALIZED_BEGIN
-    std::array<u32, 0x100> codepoints;
-    std::array<u16, 0x100> indices;
-    ALLOW_UNINITIALIZED_END
-
-    for (u32 i = 0; i < codepoints.size(); ++i)
-    {
-        codepoints[i] = 0x2500 + i;
-    }
-
-    THROW_IF_FAILED(fontFaceEntry.fontFace->GetGlyphIndicesW(codepoints.data(), codepoints.size(), indices.data()));
-
-    for (u32 i = 0; i < indices.size(); ++i)
-    {
-        if (const auto idx = indices[i])
-        {
-            fontFaceEntry.boxGlyphs.insert(idx);
-        }
-    }
-}
-
-bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
-{
-    if (!fontFaceEntry.fontFace)
-    {
-        return _drawSoftFontGlyph(p, fontFaceEntry, glyphEntry);
-    }
-
+    const auto glyphIndexU16 = static_cast<u16>(glyphIndex);
     const DWRITE_GLYPH_RUN glyphRun{
         .fontFace = fontFaceEntry.fontFace.get(),
         .fontEmSize = p.s->font->fontSize,
         .glyphCount = 1,
-        .glyphIndices = &glyphEntry.glyphIndex,
+        .glyphIndices = &glyphIndexU16,
     };
-
-    // To debug issues with this function it may be helpful to know which file
-    // a given font face corresponds to. This code works for most cases.
-#if 0
-    wchar_t filePath[MAX_PATH]{};
-    {
-        UINT32 fileCount = 1;
-        wil::com_ptr<IDWriteFontFile> file;
-        if (SUCCEEDED(fontFaceEntry.fontFace->GetFiles(&fileCount, file.addressof())))
-        {
-            wil::com_ptr<IDWriteFontFileLoader> loader;
-            THROW_IF_FAILED(file->GetLoader(loader.addressof()));
-
-            if (const auto localLoader = loader.try_query<IDWriteLocalFontFileLoader>())
-            {
-                void const* fontFileReferenceKey;
-                UINT32 fontFileReferenceKeySize;
-                THROW_IF_FAILED(file->GetReferenceKey(&fontFileReferenceKey, &fontFileReferenceKeySize));
-                THROW_IF_FAILED(localLoader->GetFilePathFromKey(fontFileReferenceKey, fontFileReferenceKeySize, &filePath[0], MAX_PATH));
-            }
-        }
-    }
-#endif
 
     // It took me a while to figure out how to rasterize glyphs manually with DirectWrite without depending on Direct2D.
     // The benefits are a reduction in memory usage, an increase in performance under certain circumstances and most
@@ -1334,16 +1250,13 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
     // The buffer now contains a grayscale alpha mask.
 #endif
 
-    const auto lineRendition = static_cast<LineRendition>(fontFaceEntry.lineRendition);
-    const auto needsTransform = lineRendition != LineRendition::SingleWidth;
-
-    static constexpr D2D1_MATRIX_3X2_F identityTransform{ .m11 = 1, .m22 = 1 };
+    const int scale = row.lineRendition != LineRendition::SingleWidth;
     D2D1_MATRIX_3X2_F transform = identityTransform;
 
-    if (needsTransform)
+    if (scale)
     {
         transform.m11 = 2.0f;
-        transform.m22 = lineRendition >= LineRendition::DoubleHeightTop ? 2.0f : 1.0f;
+        transform.m22 = row.lineRendition >= LineRendition::DoubleHeightTop ? 2.0f : 1.0f;
         _d2dRenderTarget->SetTransform(&transform);
     }
 
@@ -1399,26 +1312,10 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         }
     }
 
-    // Overhangs for box glyphs can produce unsightly effects, where the antialiased edges of horizontal
-    // and vertical lines overlap between neighboring glyphs and produce "boldened" intersections.
-    // It looks a little something like this:
-    //   ---+---+---
-    // This avoids the issue in most cases by simply clipping the glyph to the size of a single cell.
-    // The downside is that it fails to work well for custom line heights, etc.
-    const auto isBoxGlyph = fontFaceEntry.boxGlyphs.lookup(glyphEntry.glyphIndex) != nullptr;
-    if (isBoxGlyph)
-    {
-        // NOTE: As mentioned above, the "origin" of a glyph's coordinate system is its baseline.
-        bounds.left = std::max(bounds.left, 0.0f);
-        bounds.top = std::max(bounds.top, static_cast<f32>(-p.s->font->baseline) * transform.m22);
-        bounds.right = std::min(bounds.right, static_cast<f32>(p.s->font->cellSize.x) * transform.m11);
-        bounds.bottom = std::min(bounds.bottom, static_cast<f32>(p.s->font->descender) * transform.m22);
-    }
-
     // The bounds may be empty if the glyph is whitespace.
     if (bounds.left >= bounds.right || bounds.top >= bounds.bottom)
     {
-        return true;
+        return _drawGlyphAllocateEntry(row, fontFaceEntry, glyphIndex);
     }
 
     const auto bl = lrintf(bounds.left);
@@ -1430,37 +1327,15 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         .w = br - bl,
         .h = bb - bt,
     };
-    if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
-    {
-        _drawGlyphPrepareRetry(p);
-        return false;
-    }
+    _drawGlyphAtlasAllocate(p, rect);
+    _d2dBeginDrawing();
 
     const D2D1_POINT_2F baselineOrigin{
         static_cast<f32>(rect.x - bl),
         static_cast<f32>(rect.y - bt),
     };
 
-    _d2dBeginDrawing();
-
-    if (isBoxGlyph)
-    {
-        const D2D1_RECT_F clipRect{
-            static_cast<f32>(rect.x) / transform.m11,
-            static_cast<f32>(rect.y) / transform.m22,
-            static_cast<f32>(rect.x + rect.w) / transform.m11,
-            static_cast<f32>(rect.y + rect.h) / transform.m22,
-        };
-        _d2dRenderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-    }
-    const auto boxGlyphCleanup = wil::scope_exit([&]() {
-        if (isBoxGlyph)
-        {
-            _d2dRenderTarget->PopAxisAlignedClip();
-        }
-    });
-
-    if (needsTransform)
+    if (scale)
     {
         transform.dx = (1.0f - transform.m11) * baselineOrigin.x;
         transform.dy = (1.0f - transform.m22) * baselineOrigin.y;
@@ -1486,56 +1361,85 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
     //
     // The former condition makes sure to exclude diacritics and such from being considered a ligature,
     // while the latter condition-pair makes sure to exclude regular BMP wide glyphs that overlap a little.
-    const auto horizontalScale = lineRendition != LineRendition::SingleWidth ? 2 : 1;
-    const auto triggerLeft = _ligatureOverhangTriggerLeft * horizontalScale;
-    const auto triggerRight = _ligatureOverhangTriggerRight * horizontalScale;
+    const auto triggerLeft = _ligatureOverhangTriggerLeft << scale;
+    const auto triggerRight = _ligatureOverhangTriggerRight << scale;
     const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= triggerLeft || br >= triggerRight);
 
-    glyphEntry.data.shadingType = isColorGlyph ? ShadingType::TextPassthrough : _textShadingType;
-    glyphEntry.data.overlapSplit = overlapSplit;
-    glyphEntry.data.offset.x = bl;
-    glyphEntry.data.offset.y = bt;
-    glyphEntry.data.size.x = rect.w;
-    glyphEntry.data.size.y = rect.h;
-    glyphEntry.data.texcoord.x = rect.x;
-    glyphEntry.data.texcoord.y = rect.y;
+    const auto glyphEntry = _drawGlyphAllocateEntry(row, fontFaceEntry, glyphIndex);
+    glyphEntry->shadingType = isColorGlyph ? ShadingType::TextPassthrough : _textShadingType;
+    glyphEntry->overlapSplit = overlapSplit;
+    glyphEntry->offset.x = bl;
+    glyphEntry->offset.y = bt;
+    glyphEntry->size.x = rect.w;
+    glyphEntry->size.y = rect.h;
+    glyphEntry->texcoord.x = rect.x;
+    glyphEntry->texcoord.y = rect.y;
 
-    if (lineRendition >= LineRendition::DoubleHeightTop)
+    if (row.lineRendition >= LineRendition::DoubleHeightTop)
     {
-        _splitDoubleHeightGlyph(p, fontFaceEntry, glyphEntry);
+        _splitDoubleHeightGlyph(p, row, fontFaceEntry, glyphEntry);
     }
 
-    return true;
+    return glyphEntry;
 }
 
-bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
+BackendD3D::AtlasGlyphEntry* BackendD3D::_drawCustomGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex)
 {
+    auto baseline = p.s->font->baseline;
     stbrp_rect rect{
         .w = p.s->font->cellSize.x,
         .h = p.s->font->cellSize.y,
     };
-
-    const auto lineRendition = static_cast<LineRendition>(fontFaceEntry.lineRendition);
-    auto baseline = p.s->font->baseline;
-
-    if (lineRendition != LineRendition::SingleWidth)
+    if (row.lineRendition != LineRendition::SingleWidth)
     {
-        const auto heightShift = static_cast<u8>(lineRendition >= LineRendition::DoubleHeightTop);
+        const auto heightShift = static_cast<u8>(row.lineRendition >= LineRendition::DoubleHeightTop);
         rect.w <<= 1;
         rect.h <<= heightShift;
         baseline <<= heightShift;
     }
 
-    if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
+    _drawGlyphAtlasAllocate(p, rect);
+    _d2dBeginDrawing();
+
+    if (CustomGlyphs::IsSoftFontChar(glyphIndex))
     {
-        _drawGlyphPrepareRetry(p);
-        return false;
+        _drawSoftFontGlyph(p, rect, glyphIndex);
+    }
+    else
+    {
+        const D2D1_RECT_F r{
+            static_cast<f32>(rect.x),
+            static_cast<f32>(rect.y),
+            static_cast<f32>(rect.x + rect.w),
+            static_cast<f32>(rect.y + rect.h),
+        };
+        CustomGlyphs::DrawCustomGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
     }
 
+    const auto glyphEntry = _drawGlyphAllocateEntry(row, fontFaceEntry, glyphIndex);
+    glyphEntry->shadingType = ShadingType::TextGrayscale;
+    glyphEntry->overlapSplit = 0;
+    glyphEntry->offset.x = 0;
+    glyphEntry->offset.y = -baseline;
+    glyphEntry->size.x = rect.w;
+    glyphEntry->size.y = rect.h;
+    glyphEntry->texcoord.x = rect.x;
+    glyphEntry->texcoord.y = rect.y;
+
+    if (row.lineRendition >= LineRendition::DoubleHeightTop)
+    {
+        _splitDoubleHeightGlyph(p, row, fontFaceEntry, glyphEntry);
+    }
+
+    return glyphEntry;
+}
+
+void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect& rect, u32 glyphIndex)
+{
     if (!_softFontBitmap)
     {
         // Allocating such a tiny texture is very wasteful (min. texture size on GPUs
-        // right now is 64kB), but this is a seldom used feature so it's fine...
+        // right now is 64kB), but this is a seldomly used feature so it's fine...
         const D2D1_SIZE_U size{
             static_cast<UINT32>(p.s->font->softFontCellSize.width),
             static_cast<UINT32>(p.s->font->softFontCellSize.height),
@@ -1548,6 +1452,30 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
         THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, _softFontBitmap.addressof()));
     }
 
+    {
+        const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
+        const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
+
+        auto bitmapData = Buffer<u32>{ width * height };
+        const auto softFontIndex = glyphIndex - 0xEF20u;
+        auto src = p.s->font->softFontPattern.begin() + height * softFontIndex;
+        auto dst = bitmapData.begin();
+
+        for (size_t y = 0; y < height; y++)
+        {
+            auto srcBits = *src++;
+            for (size_t x = 0; x < width; x++)
+            {
+                const auto srcBitIsSet = (srcBits & 0x8000) != 0;
+                *dst++ = srcBitIsSet ? 0xffffffff : 0x00000000;
+                srcBits <<= 1;
+            }
+        }
+
+        const auto pitch = static_cast<UINT32>(width * sizeof(u32));
+        THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
+    }
+
     const auto interpolation = p.s->font->antialiasingMode == AntialiasingMode::Aliased ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     const D2D1_RECT_F dest{
         static_cast<f32>(rect.x),
@@ -1557,118 +1485,67 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     };
 
     _d2dBeginDrawing();
-    _drawSoftFontGlyphInBitmap(p, glyphEntry);
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
-
-    glyphEntry.data.shadingType = ShadingType::TextGrayscale;
-    glyphEntry.data.overlapSplit = 0;
-    glyphEntry.data.offset.x = 0;
-    glyphEntry.data.offset.y = -baseline;
-    glyphEntry.data.size.x = rect.w;
-    glyphEntry.data.size.y = rect.h;
-    glyphEntry.data.texcoord.x = rect.x;
-    glyphEntry.data.texcoord.y = rect.y;
-
-    if (lineRendition >= LineRendition::DoubleHeightTop)
-    {
-        _splitDoubleHeightGlyph(p, fontFaceEntry, glyphEntry);
-    }
-
-    return true;
 }
 
-void BackendD3D::_drawSoftFontGlyphInBitmap(const RenderingPayload& p, const AtlasGlyphEntry& glyphEntry) const
+void BackendD3D::_drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect)
 {
-    if (!isSoftFontChar(glyphEntry.glyphIndex))
+    if (stbrp_pack_rects(&_rectPacker, &rect, 1))
     {
-        // AtlasEngine::_mapReplacementCharacter should have filtered inputs with isSoftFontChar already.
-        assert(false);
         return;
     }
 
-    const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
-    const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
-    const auto& softFontPattern = p.s->font->softFontPattern;
-
-    // The isSoftFontChar() range is [0xEF20,0xEF80).
-    const auto offset = glyphEntry.glyphIndex - 0xEF20u;
-    const auto offsetBeg = offset * height;
-    const auto offsetEnd = offsetBeg + height;
-
-    if (offsetEnd > softFontPattern.size())
-    {
-        // Out of range values should not occur, but they do and it's unknown why: GH#15553
-        assert(false);
-        return;
-    }
-
-    Buffer<u32> bitmapData{ width * height };
-    auto dst = bitmapData.begin();
-    auto it = softFontPattern.begin() + offsetBeg;
-    const auto end = softFontPattern.begin() + offsetEnd;
-
-    while (it != end)
-    {
-        auto srcBits = *it++;
-        for (size_t x = 0; x < width; x++)
-        {
-            const auto srcBitIsSet = (srcBits & 0x8000) != 0;
-            *dst++ = srcBitIsSet ? 0xffffffff : 0x00000000;
-            srcBits <<= 1;
-        }
-    }
-
-    const auto pitch = static_cast<UINT32>(width * sizeof(u32));
-    THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
-}
-
-void BackendD3D::_drawGlyphPrepareRetry(const RenderingPayload& p)
-{
-    THROW_HR_IF_MSG(E_UNEXPECTED, _glyphAtlasMap.empty(), "BackendD3D::_drawGlyph deadlock");
     _d2dEndDrawing();
     _flushQuads(p);
     _resetGlyphAtlas(p);
+
+    if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
+    {
+        THROW_HR(HRESULT_FROM_WIN32(ERROR_POSSIBLE_DEADLOCK));
+    }
+}
+
+BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyphAllocateEntry(const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex)
+{
+    const auto glyphEntry = fontFaceEntry.glyphs[WI_EnumValue(row.lineRendition)].insert(glyphIndex).first;
+    glyphEntry->shadingType = ShadingType::Default;
+    return glyphEntry;
 }
 
 // If this is a double-height glyph (DECDHL), we need to split it into 2 glyph entries:
 // One for the top/bottom half each, because that's how DECDHL works. This will clip the
 // `glyphEntry` to only contain the one specified by `fontFaceEntry.lineRendition`
 // and create a second entry in our glyph cache hashmap that contains the other half.
-void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
+void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, AtlasGlyphEntry* glyphEntry)
 {
     // Twice the line height, twice the descender gap. For both.
-    glyphEntry.data.offset.y -= p.s->font->descender;
+    glyphEntry->offset.y -= p.s->font->descender;
 
-    const auto isTop = fontFaceEntry.lineRendition == LineRendition::DoubleHeightTop;
+    const auto isTop = row.lineRendition == LineRendition::DoubleHeightTop;
+    const auto otherLineRendition = isTop ? LineRendition::DoubleHeightBottom : LineRendition::DoubleHeightTop;
+    const auto entry2 = fontFaceEntry.glyphs[WI_EnumValue(otherLineRendition)].insert(glyphEntry->glyphIndex).first;
 
-    const AtlasFontFaceKey key2{
-        .fontFace = fontFaceEntry.fontFace.get(),
-        .lineRendition = isTop ? LineRendition::DoubleHeightBottom : LineRendition::DoubleHeightTop,
-    };
+    *entry2 = *glyphEntry;
 
-    auto& glyphCache = _glyphAtlasMap.insert(key2).first.inner->glyphs;
-    auto& entry2 = glyphCache.insert(glyphEntry.glyphIndex).first;
-    entry2.data = glyphEntry.data;
+    const auto top = isTop ? glyphEntry : entry2;
+    const auto bottom = isTop ? entry2 : glyphEntry;
+    const auto topSize = clamp(-glyphEntry->offset.y - p.s->font->baseline, 0, static_cast<int>(glyphEntry->size.y));
 
-    auto& top = isTop ? glyphEntry : entry2;
-    auto& bottom = isTop ? entry2 : glyphEntry;
-
-    const auto topSize = clamp(-glyphEntry.data.offset.y - p.s->font->baseline, 0, static_cast<int>(glyphEntry.data.size.y));
-    top.data.offset.y += p.s->font->cellSize.y;
-    top.data.size.y = topSize;
-    bottom.data.offset.y += topSize;
-    bottom.data.size.y = std::max(0, bottom.data.size.y - topSize);
-    bottom.data.texcoord.y += topSize;
+    top->offset.y += p.s->font->cellSize.y;
+    top->size.y = topSize;
+    bottom->offset.y += topSize;
+    bottom->size.y = std::max(0, bottom->size.y - topSize);
+    bottom->texcoord.y += topSize;
 
     // Things like diacritics might be so small that they only exist on either half of the
     // double-height row. This effectively turns the other (unneeded) side into whitespace.
-    if (!top.data.size.y)
+    if (!top->size.y)
     {
-        top.data.shadingType = ShadingType::Default;
+        top->shadingType = ShadingType::Default;
     }
-    if (!bottom.data.size.y)
+    if (!bottom->size.y)
     {
-        bottom.data.shadingType = ShadingType::Default;
+        bottom->shadingType = ShadingType::Default;
     }
 }
 
@@ -1703,7 +1580,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         for (; posX < end; posX += textCellWidth)
         {
             _appendQuad() = {
-                .shadingType = ShadingType::SolidLine,
+                .shadingType = static_cast<u16>(ShadingType::SolidLine),
                 .position = { static_cast<i16>(posX), rowTop },
                 .size = { width, p.s->font->cellSize.y },
                 .color = r.gridlineColor,
@@ -1725,7 +1602,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         if (rt < rb)
         {
             _appendQuad() = {
-                .shadingType = shadingType,
+                .shadingType = static_cast<u16>(shadingType),
                 .renditionScale = { static_cast<u8>(1 << horizontalShift), static_cast<u8>(1 << verticalShift) },
                 .position = { left, static_cast<i16>(rt) },
                 .size = { width, static_cast<u16>(rb - rt) },
@@ -1815,8 +1692,8 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
         }
 
         const i16x2 position{
-            p.s->font->cellSize.x * x0,
-            p.s->font->cellSize.y * p.cursorRect.top,
+            static_cast<i16>(p.s->font->cellSize.x * x0),
+            static_cast<i16>(p.s->font->cellSize.y * p.cursorRect.top),
         };
         const u16x2 size{
             static_cast<u16>(p.s->font->cellSize.x * (x1 - x0)),
@@ -1899,7 +1776,7 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
     for (const auto& c : _cursorRects)
     {
         _appendQuad() = {
-            .shadingType = ShadingType::Cursor,
+            .shadingType = static_cast<u16>(ShadingType::Cursor),
             .position = c.position,
             .size = c.size,
             .color = c.background,
@@ -1923,7 +1800,7 @@ void BackendD3D::_drawCursorForeground()
     // start and end of this "block" here in advance.
     for (; instancesOffset < instancesCount; ++instancesOffset)
     {
-        const auto shadingType = _instances[instancesOffset].shadingType;
+        const auto shadingType = static_cast<ShadingType>(_instances[instancesOffset].shadingType);
         if (shadingType >= ShadingType::TextDrawingFirst && shadingType <= ShadingType::TextDrawingLast)
         {
             break;
@@ -1943,7 +1820,7 @@ void BackendD3D::_drawCursorForeground()
     // Now do the same thing as above, but backwards from the end.
     for (; instancesCount > instancesOffset; --instancesCount)
     {
-        const auto shadingType = _instances[instancesCount - 1].shadingType;
+        const auto shadingType = static_cast<ShadingType>(_instances[instancesCount - 1].shadingType);
         if (shadingType >= ShadingType::TextDrawingFirst && shadingType <= ShadingType::TextDrawingLast)
         {
             break;
@@ -2002,7 +1879,7 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     // There's one special exception to the rule: Emojis. We currently don't really support inverting
     // (or reversing) colored glyphs like that, so we can return early here and avoid cutting them up.
     // It'd be too expensive to check for these rare glyph types inside the _drawCursorForeground() loop.
-    if (it.shadingType == ShadingType::TextPassthrough)
+    if (static_cast<ShadingType>(it.shadingType) == ShadingType::TextPassthrough)
     {
         return 0;
     }
@@ -2133,14 +2010,14 @@ void BackendD3D::_drawSelection(const RenderingPayload& p)
             else
             {
                 _appendQuad() = {
-                    .shadingType = ShadingType::Selection,
+                    .shadingType = static_cast<u16>(ShadingType::Selection),
                     .position = {
-                        p.s->font->cellSize.x * row->selectionFrom,
-                        p.s->font->cellSize.y * y,
+                        static_cast<i16>(p.s->font->cellSize.x * row->selectionFrom),
+                        static_cast<i16>(p.s->font->cellSize.y * y),
                     },
                     .size = {
                         static_cast<u16>(p.s->font->cellSize.x * (row->selectionTo - row->selectionFrom)),
-                        p.s->font->cellSize.y,
+                        static_cast<u16>(p.s->font->cellSize.y),
                     },
                     .color = p.s->misc->selectionColor,
                 };

@@ -886,6 +886,14 @@
     <value>1.2</value>
     <comment>"1.2" is a decimal number.</comment>
   </data>
+  <data name="Profile_CustomGlyphs.Header" xml:space="preserve">
+    <value>Custom Glyphs</value>
+    <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
+  </data>
+  <data name="Profile_CustomGlyphs.HelpText" xml:space="preserve">
+    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font. This feature only works when GPU Acceleration is available.</value>
+    <comment>A longer description of the "Profile_CustomGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Font weight</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>

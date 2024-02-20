@@ -288,6 +288,15 @@
             </local:SettingContainer>
 
             <!--  Retro Terminal Effect  -->
+            <local:SettingContainer x:Uid="Profile_CustomGlyphs"
+                                    ClearSettingValue="{x:Bind Appearance.ClearCustomGlyphs}"
+                                    HasSettingValue="{x:Bind Appearance.HasCustomGlyphs, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.CustomGlyphsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.CustomGlyphs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Retro Terminal Effect  -->
             <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
                                     HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
