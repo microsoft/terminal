@@ -110,11 +110,13 @@
                         <TextBlock Grid.Column="1"
                                    Margin="12,6,0,0"
                                    Style="{ThemeResource BaseTextBlockStyle}"
-                                   Text="{x:Bind Name, Mode=OneWay}" />
+                                   Text="{x:Bind Name, Mode=OneWay}"
+                                   TextWrapping="WrapWholeWords" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
                                    Margin="12,0,0,6"
-                                   MaxLines="1"
+                                   FontFamily="Cascadia Mono, Consolas"
+                                   IsTextSelectionEnabled="True"
                                    Style="{ThemeResource BodyTextBlockStyle}"
                                    Text="{x:Bind Input}"
                                    Visibility="{Binding ElementName=rootItem, Path=IsSelected}" />
