@@ -77,7 +77,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw());
+    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw()) || _hackTriggerRedrawAll;
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -279,6 +279,13 @@ void AtlasEngine::_recreateBackend()
     // This ensures that the backends redraw their entire viewports whenever a new swap chain is created,
     // EVEN IF we got called when no actual settings changed (i.e. rendering failure, etc.).
     _p.MarkAllAsDirty();
+
+    const auto hackWantsCustomGlyphs = _p.s->font->customGlyphs && !d2dMode;
+    if (_hackWantsCustomGlyphs != hackWantsCustomGlyphs)
+    {
+        _hackWantsCustomGlyphs = hackWantsCustomGlyphs;
+        _hackTriggerRedrawAll = true;
+    }
 }
 
 void AtlasEngine::_handleSwapChainUpdate()

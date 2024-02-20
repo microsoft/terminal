@@ -85,25 +85,22 @@ GetConsoleKeyboardLayoutNameW(
 #define CONSOLE_REGISTRY_SCROLLSCALE                    L"ScrollScale"
 
 // V2 console settings
-#define CONSOLE_REGISTRY_FORCEV2                        L"ForceV2"
-#define CONSOLE_REGISTRY_LINESELECTION                  L"LineSelection"
-#define CONSOLE_REGISTRY_FILTERONPASTE                  L"FilterOnPaste"
-#define CONSOLE_REGISTRY_LINEWRAP                       L"LineWrap"
-#define CONSOLE_REGISTRY_CTRLKEYSHORTCUTS_DISABLED      L"CtrlKeyShortcutsDisabled"
 #define CONSOLE_REGISTRY_ALLOW_ALTF4_CLOSE              L"AllowAltF4Close"
-#define CONSOLE_REGISTRY_VIRTTERM_LEVEL                 L"VirtualTerminalLevel"
-
-#define CONSOLE_REGISTRY_CURSORTYPE                     L"CursorType"
-#define CONSOLE_REGISTRY_CURSORCOLOR                    L"CursorColor"
-
-#define CONSOLE_REGISTRY_INTERCEPTCOPYPASTE             L"InterceptCopyPaste"
-
 #define CONSOLE_REGISTRY_COPYCOLOR                      L"CopyColor"
+#define CONSOLE_REGISTRY_CTRLKEYSHORTCUTS_DISABLED      L"CtrlKeyShortcutsDisabled"
+#define CONSOLE_REGISTRY_CURSORCOLOR                    L"CursorColor"
+#define CONSOLE_REGISTRY_CURSORTYPE                     L"CursorType"
+#define CONSOLE_REGISTRY_CUSTOM_GLYPHS                  L"CustomGlyphs"
+#define CONSOLE_REGISTRY_DEFAULTBACKGROUND              L"DefaultBackground"
+#define CONSOLE_REGISTRY_DEFAULTFOREGROUND              L"DefaultForeground"
+#define CONSOLE_REGISTRY_FILTERONPASTE                  L"FilterOnPaste"
+#define CONSOLE_REGISTRY_FORCEV2                        L"ForceV2"
+#define CONSOLE_REGISTRY_INTERCEPTCOPYPASTE             L"InterceptCopyPaste"
+#define CONSOLE_REGISTRY_LINESELECTION                  L"LineSelection"
+#define CONSOLE_REGISTRY_LINEWRAP                       L"LineWrap"
+#define CONSOLE_REGISTRY_TERMINALSCROLLING              L"TerminalScrolling"
 #define CONSOLE_REGISTRY_USEDX                          L"UseDx"
-
-#define CONSOLE_REGISTRY_DEFAULTFOREGROUND             L"DefaultForeground"
-#define CONSOLE_REGISTRY_DEFAULTBACKGROUND             L"DefaultBackground"
-#define CONSOLE_REGISTRY_TERMINALSCROLLING             L"TerminalScrolling"
+#define CONSOLE_REGISTRY_VIRTTERM_LEVEL                 L"VirtualTerminalLevel"
 // end V2 console settings
 
     /*

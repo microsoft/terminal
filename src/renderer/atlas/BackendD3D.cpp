@@ -1000,9 +1000,9 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
             // The lack of a fontFace indicates a soft font.
             AtlasFontFaceEntry* fontFaceEntry = &_customGlyphs;
-            if (m.fontFace) [[likely]]
+            if (fontFace) [[likely]]
             {
-                fontFaceEntry = _glyphAtlasMap.insert(m.fontFace.get()).first;
+                fontFaceEntry = _glyphAtlasMap.insert(fontFace).first;
             }
 
             const auto& glyphs = fontFaceEntry->glyphs[WI_EnumValue(row->lineRendition)];

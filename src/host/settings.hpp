@@ -178,6 +178,7 @@ public:
 
     UseDx GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
+    bool GetCustomGlyphs() const noexcept;
 
 private:
     RenderSettings _renderSettings;
@@ -221,6 +222,7 @@ private:
     DWORD _dwVirtTermLevel;
     UseDx _fUseDx;
     bool _fCopyColor;
+    bool _fCustomGlyphs = true;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;

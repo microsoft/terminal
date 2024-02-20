@@ -32,10 +32,10 @@ static constexpr u32 InstructionsPerGlyph = 4;
 
 enum Shape : u32
 {
-    Shape_Filled100, // axis aligned rectangle, 100% filled
-    Shape_Filled075, // axis aligned rectangle, 75% filled
-    Shape_Filled050, // axis aligned rectangle, 50% filled
     Shape_Filled025, // axis aligned rectangle, 25% filled
+    Shape_Filled050, // axis aligned rectangle, 50% filled
+    Shape_Filled075, // axis aligned rectangle, 75% filled
+    Shape_Filled100, // axis aligned rectangle, 100% filled
     Shape_LightLine, // 1/8th wide line
     Shape_HeavyLine, // 1/4th wide line
     Shape_EmptyRect, // axis aligned hollow rectangle
@@ -1071,6 +1071,57 @@ static const Instruction* GetInstructions(char32_t codepoint) noexcept
     return nullptr;
 }
 
+static wil::com_ptr<ID2D1BitmapBrush> createShadedBitmapBrush(ID2D1DeviceContext* renderTarget, Shape shape)
+{
+    static constexpr u32 _ = 0;
+    static constexpr u32 w = 0xffffffff;
+    static constexpr u32 size = 4;
+    // clang-format off
+    static constexpr u32 shades[3][size * size] = {
+        {
+            _, _, _, w,
+            _, _, w, _,
+            _, w, _, _,
+            w, _, _, _,
+        },
+        {
+            w, _, w, _,
+            _, w, _, w,
+            w, _, w, _,
+            _, w, _, w,
+        },
+        {
+            w, w, w, _,
+            w, w, _, w,
+            w, _, w, w,
+            _, w, w, w,
+        },
+    };
+    // clang-format on
+
+    static constexpr D2D1_SIZE_U bitmapSize{ size, size };
+    static constexpr D2D1_BITMAP_PROPERTIES bitmapProps{
+        .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+        .dpiX = 96,
+        .dpiY = 96,
+    };
+    static constexpr D2D1_BITMAP_BRUSH_PROPERTIES bitmapBrushProps{
+        .extendModeX = D2D1_EXTEND_MODE_WRAP,
+        .extendModeY = D2D1_EXTEND_MODE_WRAP,
+        .interpolationMode = D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
+    };
+
+    assert(shape < ARRAYSIZE(shades));
+
+    wil::com_ptr<ID2D1Bitmap> bitmap;
+    THROW_IF_FAILED(renderTarget->CreateBitmap(bitmapSize, &shades[shape][0], sizeof(u32) * size, &bitmapProps, bitmap.addressof()));
+
+    wil::com_ptr<ID2D1BitmapBrush> bitmapBrush;
+    THROW_IF_FAILED(renderTarget->CreateBitmapBrush(bitmap.get(), &bitmapBrushProps, nullptr, bitmapBrush.addressof()));
+
+    return bitmapBrush;
+}
+
 void CustomGlyphs::DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint)
 {
     renderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
@@ -1103,10 +1154,10 @@ void CustomGlyphs::DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* re
         }
 
         const auto shape = static_cast<Shape>(instruction.shape);
-        auto begX = Pos_Lut[instruction.begX][0] * rectW + rectX;
-        auto begY = Pos_Lut[instruction.begY][0] * rectH + rectY;
-        auto endX = Pos_Lut[instruction.endX][0] * rectW + rectX;
-        auto endY = Pos_Lut[instruction.endY][0] * rectH + rectY;
+        auto begX = Pos_Lut[instruction.begX][0] * rectW;
+        auto begY = Pos_Lut[instruction.begY][0] * rectH;
+        auto endX = Pos_Lut[instruction.endX][0] * rectW;
+        auto endY = Pos_Lut[instruction.endY][0] * rectH;
 
         begX += Pos_Lut[instruction.begX][1] * lightLineWidth;
         begY += Pos_Lut[instruction.begY][1] * lightLineWidth;
@@ -1127,111 +1178,71 @@ void CustomGlyphs::DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* re
         endX = roundf(endX + lineOffsetX) - lineOffsetX;
         endY = roundf(endY + lineOffsetY) - lineOffsetY;
 
+        const auto begXabs = begX + rectX;
+        const auto begYabs = begY + rectY;
+        const auto endXabs = endX + rectX;
+        const auto endYabs = endY + rectY;
+
         switch (shape)
         {
+        case Shape_Filled025:
+        case Shape_Filled050:
+        case Shape_Filled075:
+        {
+            const D2D1_RECT_F r{ begXabs, begYabs, endXabs, endYabs };
+            const auto bitmapBrush = createShadedBitmapBrush(renderTarget, shape);
+            renderTarget->FillRectangle(&r, bitmapBrush.get());
+            break;
+        }
+        case Shape_Filled100:
+        {
+            const D2D1_RECT_F r{ begXabs, begYabs, endXabs, endYabs };
+            renderTarget->FillRectangle(&r, brush);
+            break;
+        }
         case Shape_LightLine:
         case Shape_HeavyLine:
         {
-            const D2D1_POINT_2F beg{ begX, begY };
-            const D2D1_POINT_2F end{ endX, endY };
+            const D2D1_POINT_2F beg{ begXabs, begYabs };
+            const D2D1_POINT_2F end{ endXabs, endYabs };
             renderTarget->DrawLine(beg, end, brush, lineWidth, nullptr);
             break;
         }
         case Shape_EmptyRect:
+        {
+            const D2D1_RECT_F r{ begXabs, begYabs, endXabs, endYabs };
+            renderTarget->DrawRectangle(&r, brush, lineWidth, nullptr);
+            break;
+        }
         case Shape_RoundRect:
         {
-            const D2D1_ROUNDED_RECT r{ { begX, begY, endX, endY }, lightLineWidth * 2, lightLineWidth * 2 };
-            if (shape == Shape_EmptyRect)
-            {
-                renderTarget->DrawRectangle(&r.rect, brush, lineWidth, nullptr);
-            }
-            else
-            {
-                renderTarget->DrawRoundedRectangle(&r, brush, lineWidth, nullptr);
-            }
+            const D2D1_ROUNDED_RECT rr{ { begXabs, begYabs, endXabs, endYabs }, lightLineWidth * 2, lightLineWidth * 2 };
+            renderTarget->DrawRoundedRectangle(&rr, brush, lineWidth, nullptr);
             break;
         }
         case Shape_FilledEllipsis:
+        {
+            const D2D1_ELLIPSE e{ { begXabs, begYabs }, endX, endY };
+            renderTarget->FillEllipse(&e, brush);
+            break;
+        }
         case Shape_EmptyEllipsis:
         {
-            const D2D1_ELLIPSE e{ { begX, begY }, endX, endY };
-            if (shape == Shape_FilledEllipsis)
-            {
-                renderTarget->FillEllipse(&e, brush);
-            }
-            else
-            {
-                renderTarget->DrawEllipse(&e, brush, lineWidth, nullptr);
-            }
+            const D2D1_ELLIPSE e{ { begXabs, begYabs }, endX, endY };
+            renderTarget->DrawEllipse(&e, brush, lineWidth, nullptr);
             break;
         }
         case Shape_ClosedFilledPath:
         case Shape_OpenLinePath:
             if (instruction.begX)
             {
-                geometryPoints[geometryPointsCount++] = { begX, begY };
+                geometryPoints[geometryPointsCount++] = { begXabs, begYabs };
             }
             if (instruction.endX)
             {
-                geometryPoints[geometryPointsCount++] = { endX, endY };
+                geometryPoints[geometryPointsCount++] = { endXabs, endYabs };
             }
             break;
-        default:
-        {
-            wil::com_ptr<ID2D1BitmapBrush> bitmapBrush;
-            ID2D1Brush* b = brush;
-
-            if (shape >= Shape_Filled075 && shape <= Shape_Filled025)
-            {
-                static constexpr u32 _ = 0;
-                static constexpr u32 w = 0xffffffff;
-                static constexpr u32 size = 4;
-                // clang-format off
-                static constexpr u32 shades[3][size * size] = {
-                    {
-                        w, w, w, _,
-                        w, w, _, w,
-                        w, _, w, w,
-                        _, w, w, w,
-                    },
-                    {
-                        w, _, w, _,
-                        _, w, _, w,
-                        w, _, w, _,
-                        _, w, _, w,
-                    },
-                    {
-                        _, _, _, w,
-                        _, _, w, _,
-                        _, w, _, _,
-                        w, _, _, _,
-                    },
-                };
-                // clang-format on
-
-                static constexpr D2D1_SIZE_U bitmapSize{ size, size };
-                static constexpr D2D1_BITMAP_PROPERTIES bitmapProps{
-                    .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
-                    .dpiX = 96,
-                    .dpiY = 96,
-                };
-                static constexpr D2D1_BITMAP_BRUSH_PROPERTIES bitmapBrushProps{
-                    .extendModeX = D2D1_EXTEND_MODE_WRAP,
-                    .extendModeY = D2D1_EXTEND_MODE_WRAP,
-                    .interpolationMode = D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
-                };
-
-                wil::com_ptr<ID2D1Bitmap> bitmap;
-                THROW_IF_FAILED(renderTarget->CreateBitmap(bitmapSize, &shades[shape - Shape_Filled075][0], sizeof(u32) * size, &bitmapProps, bitmap.addressof()));
-                THROW_IF_FAILED(renderTarget->CreateBitmapBrush(bitmap.get(), &bitmapBrushProps, nullptr, bitmapBrush.addressof()));
-
-                b = bitmapBrush.get();
-            }
-
-            const D2D1_RECT_F r{ begX, begY, endX, endY };
-            renderTarget->FillRectangle(&r, b);
-            break;
-        }
         }
     }
 

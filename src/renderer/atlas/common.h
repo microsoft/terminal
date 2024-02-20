@@ -451,11 +451,18 @@ namespace Microsoft::Console::Render::Atlas
             dirtyBottom = dirtyTop + cellHeight;
         }
 
+        // Each mappings from/to range indicates the range of indices/advances/offsets/colors this fontFace is to be used for.
         std::vector<FontMapping> mappings;
+        // Stores glyph indices of the corresponding mappings.fontFace, unless fontFace is nullptr,
+        // in which case this stores UTF16 because we're dealing with a custom glyph (box glyph, etc.).
         std::vector<u16> glyphIndices;
-        std::vector<f32> glyphAdvances; // same size as glyphIndices
-        std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
-        std::vector<u32> colors; // same size as glyphIndices
+        // Same size as glyphIndices.
+        std::vector<f32> glyphAdvances;
+        // Same size as glyphIndices.
+        std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets;
+        // Same size as glyphIndices.
+        std::vector<u32> colors;
+
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
         u16 selectionFrom = 0;

@@ -74,8 +74,9 @@ try
         _handleSettingsUpdate();
     }
 
-    if constexpr (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION)
+    if (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION || _hackTriggerRedrawAll)
     {
+        _hackTriggerRedrawAll = false;
         _api.invalidatedRows = invalidatedRowsAll;
         _api.scrollOffset = 0;
     }
@@ -676,7 +677,7 @@ void AtlasEngine::_flushBufferLine()
     size_t segmentEnd = 0;
     bool custom = false;
 
-    if (!_api.s->font->customGlyphs)
+    if (!_hackWantsCustomGlyphs)
     {
         _mapRegularText(0, len);
         return;
@@ -752,7 +753,7 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
 
-        if (_api.s->font->fontFeatures.empty())
+        if (_p.s->font->fontFeatures.empty())
         {
             // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
             for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
