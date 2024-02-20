@@ -58,12 +58,55 @@
                                     HorizontalAlignment="Center"
                                     Fill="{ThemeResource SystemControlBackgroundBaseMediumBrush}"/>-->
                         <Button Grid.Row="0"
+                                Grid.RowSpan="1"
                                 Grid.Column="0"
-                                Click="_runCommandButtonClicked">
-                            <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                      FontSize="12"
-                                      Glyph="&#xE768;" />
+                                Padding="3"
+                                VerticalAlignment="Bottom"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                Click="_runCommandButtonClicked"
+                                ToolTipService.ToolTip="Input this command">
+
+                            <Button.Content>
+                                <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                          FontSize="12"
+                                          Glyph="&#xE768;" />
+                            </Button.Content>
+
+                            <Button.Resources>
+                                <ResourceDictionary>
+                                    <ResourceDictionary.ThemeDictionaries>
+                                        <ResourceDictionary x:Key="Light">
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                        </ResourceDictionary>
+                                        <ResourceDictionary x:Key="Dark">
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                        </ResourceDictionary>
+                                        <ResourceDictionary x:Key="HighContrast">
+                                            <SolidColorBrush x:Key="ButtonBackground"
+                                                             Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                             Color="{ThemeResource SystemColorHighlightColor}" />
+                                            <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                             Color="{ThemeResource SystemColorHighlightColor}" />
+                                            <SolidColorBrush x:Key="ButtonForeground"
+                                                             Color="{ThemeResource SystemColorButtonTextColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                        </ResourceDictionary>
+                                    </ResourceDictionary.ThemeDictionaries>
+                                </ResourceDictionary>
+                            </Button.Resources>
                         </Button>
+
                         <TextBlock Grid.Column="1"
                                    Margin="12,6,0,0"
                                    Style="{ThemeResource BaseTextBlockStyle}"
