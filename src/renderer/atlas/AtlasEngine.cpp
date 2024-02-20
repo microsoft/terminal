@@ -746,7 +746,6 @@ void AtlasEngine::_flushBufferLine()
                         const size_t col2 = _api.bufferLineColumn[idx + i + 1];
                         const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
                         const auto fg = colors[col1 << shift];
-                        row.clusterMap.emplace_back(gsl::narrow_cast<u16>(row.glyphIndices.size()));
                         row.glyphIndices.emplace_back(_api.glyphIndices[i]);
                         row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
                         row.glyphOffsets.emplace_back();
@@ -975,15 +974,6 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             beg = i;
         }
 
-        // Values in clusterMap are relatively to the bufferLine being processed,
-        // which is a subset of the text in the row. We need to update the values
-        // to be relative to the total glyph count that is already present in
-        // the row.
-        const auto updateClusterMapItems = [indicesCount = gsl::narrow_cast<u16>(row.glyphIndices.size())](const u16 idx) {
-            return gsl::narrow_cast<u16>(idx + indicesCount);
-        };
-        std::transform(_api.clusterMap.begin(), _api.clusterMap.begin() + a.textLength, std::back_inserter(row.clusterMap), updateClusterMapItems);
-
         row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
         row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
         row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
@@ -1041,7 +1031,6 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         const auto ch = static_cast<u16>(_api.bufferLine[pos1]);
         const auto nowMappingSoftFont = isSoftFontChar(ch);
 
-        row.clusterMap.emplace_back(gsl::narrow_cast<u16>(row.glyphIndices.size()));
         row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
         row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
         row.glyphOffsets.emplace_back();

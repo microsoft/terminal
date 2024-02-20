@@ -395,7 +395,7 @@ void Renderer::TriggerSearchHighlight()
         {
             LOG_IF_FAILED(pEngine->InvalidateHighlight(_previousSearchHighlights));
 
-            // we don't need to invalidate focused search highlight (.second) separately
+            // no need to invalidate focused search highlight (.second) separately
             // because they are already part of "all" search highlights (.first)
             LOG_IF_FAILED(pEngine->InvalidateHighlight(searchHighlights.first));
         }
