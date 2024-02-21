@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
     void TasksPaneContent::_runCommandButtonClicked(const Windows::Foundation::IInspectable& sender,
                                                     const Windows::UI::Xaml::RoutedEventArgs&)
     {
-        if (const auto& taskVM{ sender.try_as<WUX::Controls::Button>().DataContext().try_as<TaskViewModel>() })
+        if (const auto& taskVM{ sender.try_as<WUX::Controls::Button>().DataContext().try_as<FilteredTask>() })
         {
             if (const auto& strongControl{ _control.get() })
             {

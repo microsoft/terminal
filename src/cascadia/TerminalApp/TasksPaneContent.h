@@ -151,7 +151,9 @@ namespace winrt::TerminalApp::implementation
             }
             return L"";
         };
+
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> Children() { return _children; }
+        winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
 
         winrt::Windows::UI::Xaml::Visibility Visibility()
         {

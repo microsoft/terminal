@@ -72,6 +72,7 @@
                                 <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                           FontSize="12"
                                           Glyph="&#xE768;" />
+                                <!--  xF5B0 is PlaySolid, also a good option. Seemed better to have a lightweight outline though  -->
                             </Button.Content>
 
                             <Button.Resources>
