@@ -24,6 +24,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
         return str;
     }
+    _TIL_INLINEPREFIX std::wstring visualize_nonspace_control_codes(std::wstring str) noexcept
+    {
+        for (auto& ch : str)
+        {
+            // NOT backspace!
+            if (ch < 0x20 && ch != 0x08)
+            {
+                ch += 0x2400;
+            }
+            // else if (ch == 0x20)
+            // {
+            //     ch = 0x2423; // replace space with ␣
+            // }
+            else if (ch == 0x7f)
+            {
+                ch = 0x2421; // replace del with ␡
+            }
+        }
+        return str;
+    }
 
     _TIL_INLINEPREFIX std::wstring visualize_control_codes(std::wstring_view str)
     {
