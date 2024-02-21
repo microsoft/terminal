@@ -74,7 +74,23 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         }
     }
 
-    const Remoting::CommandlineArgs eventArgs{ args, cwd, gsl::narrow_cast<uint32_t>(nCmdShow), GetEnvironmentStringsW() };
+    // GetEnvironmentStringsW() returns a double-null terminated string.
+    // The hstring(wchar_t*) constructor however only works for regular null-terminated strings.
+    // Due to that we need to manually search for the terminator.
+    winrt::hstring env;
+    {
+        const wil::unique_environstrings_ptr strings{ GetEnvironmentStringsW() };
+        const auto beg = strings.get();
+        auto end = beg;
+
+        for (; *end; end += wcsnlen(end, SIZE_T_MAX) + 1)
+        {
+        }
+
+        env = winrt::hstring{ beg, gsl::narrow<uint32_t>(end - beg) };
+    }
+
+    const Remoting::CommandlineArgs eventArgs{ args, cwd, gsl::narrow_cast<uint32_t>(nCmdShow), std::move(env) };
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
     const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
     int exitCode = 0;
@@ -111,6 +127,9 @@ void WindowEmperor::WaitForWindows()
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
+
+    _finalizeSessionPersistence();
+    TerminateProcess(GetCurrentProcess(), 0);
 }
 
 void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
@@ -557,6 +576,14 @@ winrt::fire_and_forget WindowEmperor::_close()
     // quit will go to the emperor's message pump.
     co_await wil::resume_foreground(_dispatcher);
     PostQuitMessage(0);
+}
+
+void WindowEmperor::_finalizeSessionPersistence() const
+{
+    const auto state = ApplicationState::SharedInstance();
+
+    // Ensure to write the state.json before we TerminateProcess()
+    state.Flush();
 }
 
 #pragma endregion

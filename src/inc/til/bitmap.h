@@ -23,7 +23,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using pointer = const til::rect*;
             using reference = const til::rect&;
 
-            _bitmap_const_iterator(const dynamic_bitset<unsigned long long, Allocator>& values, til::rect rc, ptrdiff_t pos) :
+            _bitmap_const_iterator(const dynamic_bitset<size_t, Allocator>& values, til::rect rc, ptrdiff_t pos) :
                 _values(values),
                 _rc(rc),
                 _pos(pos),
@@ -77,7 +77,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
         private:
-            const dynamic_bitset<unsigned long long, Allocator>& _values;
+            const dynamic_bitset<size_t, Allocator>& _values;
             const til::rect _rc;
             size_t _pos;
             size_t _nextPos;
@@ -133,7 +133,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         };
 
-        template<typename Allocator = std::allocator<unsigned long long>>
+        template<typename Allocator = std::allocator<size_t>>
         class bitmap
         {
         public:
@@ -538,7 +538,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             allocator_type _alloc;
             til::size _sz;
             til::rect _rc;
-            dynamic_bitset<unsigned long long, allocator_type> _bits;
+            dynamic_bitset<size_t, allocator_type> _bits;
 
             mutable std::optional<std::vector<til::rect, run_allocator_type>> _runs;
 
@@ -553,7 +553,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     namespace pmr
     {
-        using bitmap = ::til::details::bitmap<std::pmr::polymorphic_allocator<unsigned long long>>;
+        using bitmap = ::til::details::bitmap<std::pmr::polymorphic_allocator<size_t>>;
     }
 }
 
