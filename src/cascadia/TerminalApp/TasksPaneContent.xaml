@@ -33,7 +33,8 @@
             <DataTemplate x:Key="TaskItemTemplate"
                           x:DataType="local:FilteredTask">
                 <mux:TreeViewItem x:Name="rootItem"
-                                  ItemsSource="{x:Bind Children}">
+                                  ItemsSource="{x:Bind Children}"
+                                  Visibility="{x:Bind Visibility}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />

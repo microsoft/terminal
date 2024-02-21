@@ -117,7 +117,7 @@ namespace winrt::TerminalApp::implementation
         // FilteredCommand() = default;
         // FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        void UpdateFilter(const winrt::hstring& filter) override 
+        void UpdateFilter(const winrt::hstring& filter) override
         {
             TerminalApp::implementation::FilteredCommand::UpdateFilter(filter);
             for (const auto& c : _children)
@@ -150,9 +150,15 @@ namespace winrt::TerminalApp::implementation
         };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> Children() { return _children; }
 
+        winrt::Windows::UI::Xaml::Visibility Visibility()
+        {
+            return (_Filter.empty() || _Weight > 0) ? winrt::Windows::UI::Xaml::Visibility::Visible : winrt::Windows::UI::Xaml::Visibility::Collapsed;
+        };
+
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _children{ nullptr };
+
     };
 }
 
