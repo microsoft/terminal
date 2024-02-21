@@ -127,6 +127,7 @@ namespace Microsoft::Console::Render::Atlas
         //
         // The proper solution is to move text shaping into the backends.
         // Someone just needs to write a generic "TextBuffer to DWRITE_GLYPH_RUN" function.
+        bool _hackIsBackendD2D = false;
         bool _hackWantsBuiltinGlyphs = true;
         bool _hackTriggerRedrawAll = false;
 

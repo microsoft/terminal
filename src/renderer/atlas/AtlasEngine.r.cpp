@@ -281,11 +281,9 @@ void AtlasEngine::_recreateBackend()
     _p.MarkAllAsDirty();
 
     const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !d2dMode;
-    if (_hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs)
-    {
-        _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
-        _hackTriggerRedrawAll = true;
-    }
+    _hackTriggerRedrawAll = _hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs;
+    _hackIsBackendD2D = d2dMode;
+    _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
 }
 
 void AtlasEngine::_handleSwapChainUpdate()
