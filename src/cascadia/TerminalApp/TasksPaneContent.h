@@ -4,6 +4,9 @@
 #pragma once
 #include "TasksPaneContent.g.h"
 #include "TaskViewModel.g.h"
+#include "FilteredTask.g.h"
+#include "FilteredCommand.h"
+#include "ActionPaletteItem.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -70,6 +73,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
+
         winrt::hstring Name() { return _command.Name(); }
         winrt::hstring IconPath() { return _command.IconPath(); }
         winrt::hstring Input()
@@ -86,6 +90,62 @@ namespace winrt::TerminalApp::implementation
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TaskViewModel> _children{ nullptr };
+    };
+
+    // struct FilteredTask : public winrt::TerminalApp::implementation::FilteredCommand, FilteredTaskT<FilteredTask, FilteredCommand>
+    struct FilteredTask : FilteredTaskT<FilteredTask, TerminalApp::implementation::FilteredCommand>
+    {
+        FilteredTask() = default;
+
+        FilteredTask(const winrt::Microsoft::Terminal::Settings::Model::Command& command)
+        {
+            _command = command;
+            _Item = winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command);
+
+            // The Children() method must always return a non-null vector
+            _children = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
+            if (_command.HasNestedCommands())
+            {
+                for (const auto& [_, child] : _command.NestedCommands())
+                {
+                    auto vm{ winrt::make<FilteredTask>(child) };
+                    _children.Append(vm);
+                }
+            }
+        }
+
+        // FilteredCommand() = default;
+        // FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
+
+        // void UpdateFilter(const winrt::hstring& filter);
+
+        // static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
+
+        // WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        // WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::PaletteItem, Item, _PropertyChangedHandlers, nullptr);
+        // WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Filter, _PropertyChangedHandlers);
+        // WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
+        // WINRT_OBSERVABLE_PROPERTY(int, Weight, _PropertyChangedHandlers);
+
+        winrt::hstring Input()
+        {
+            if (const auto& actionItem{ _Item.try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            {
+                if (const auto& command{ actionItem.Command() })
+                {
+                    if (const auto& sendInput{ command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
+                    {
+                        return sendInput.Input();
+                    }
+                }
+            }
+            return L"";
+        };
+        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> Children() { return _children; }
+
+    private:
+        winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _children{ nullptr };
     };
 }
 

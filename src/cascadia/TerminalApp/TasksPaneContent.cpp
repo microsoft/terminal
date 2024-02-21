@@ -6,6 +6,7 @@
 #include "PaneArgs.h"
 #include "TasksPaneContent.g.cpp"
 #include "TaskViewModel.g.cpp"
+#include "FilteredTask.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -44,10 +45,10 @@ namespace winrt::TerminalApp::implementation
         // huh. now that's a thought.
 
         const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
-        auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::TaskViewModel>();
+        auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
         for (const auto& t : tasks)
         {
-            itemSource.Append(winrt::make<TaskViewModel>(t));
+            itemSource.Append(winrt::make<FilteredTask>(t));
         }
 
         _treeView().ItemsSource(itemSource);

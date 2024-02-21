@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IPaneContent.idl";
+import "FilteredCommand.idl";
 
 namespace TerminalApp
 {
@@ -37,6 +38,11 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.Model.Command Command{ get; };
         Windows.Foundation.Collections.IObservableVector<TaskViewModel> Children { get; };
 
+    }
+    [default_interface] runtimeclass FilteredTask : TerminalApp.FilteredCommand
+    {
+        String Input{ get; };
+        Windows.Foundation.Collections.IObservableVector<FilteredTask> Children { get; };
     }
 
     [default_interface] runtimeclass TasksPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent

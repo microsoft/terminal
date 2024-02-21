@@ -31,7 +31,7 @@
                               FontSize="12" />
             </DataTemplate>
             <DataTemplate x:Key="TaskItemTemplate"
-                          x:DataType="local:TaskViewModel">
+                          x:DataType="local:FilteredTask">
                 <mux:TreeViewItem x:Name="rootItem"
                                   ItemsSource="{x:Bind Children}">
                     <Grid>
@@ -46,7 +46,7 @@
                         <ContentPresenter Grid.Column="0">
                             <IconSourceElement Width="16"
                                                Height="16"
-                                               IconSource="{x:Bind IconPath, Converter={StaticResource IconSourceConverter}}"
+                                               IconSource="{x:Bind Item.Icon, Converter={StaticResource IconSourceConverter}}"
                                                Visibility="Collapsed" />
                         </ContentPresenter>
                         <!-- <Ellipse x:Name="Ellipse"
@@ -110,7 +110,7 @@
                         <TextBlock Grid.Column="1"
                                    Margin="12,6,0,0"
                                    Style="{ThemeResource BaseTextBlockStyle}"
-                                   Text="{x:Bind Name, Mode=OneWay}"
+                                   Text="{x:Bind Item.Name, Mode=OneWay}"
                                    TextWrapping="WrapWholeWords" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
