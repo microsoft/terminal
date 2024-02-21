@@ -602,6 +602,7 @@ FECF
 FEEF
 fesb
 FFAF
+ffd
 FFDE
 FFrom
 fgbg
@@ -763,6 +764,7 @@ hdr
 HDROP
 hdrstop
 HEIGHTSCROLL
+hfind
 hfont
 hfontresource
 hglobal

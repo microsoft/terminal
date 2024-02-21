@@ -58,6 +58,14 @@ struct PaneResources
     winrt::Windows::UI::Xaml::Media::SolidColorBrush broadcastBorderBrush{ nullptr };
 };
 
+enum class BuildStartupKind
+{
+    None,
+    Content,
+    MovePane,
+    Persist,
+};
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -99,8 +107,8 @@ public:
         std::optional<uint32_t> focusedPaneId;
         uint32_t panesCreated;
     };
-    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent = false, const bool asMovePane = false);
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(const bool asContent = false) const;
+    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, BuildStartupKind kind);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(BuildStartupKind kind) const;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);

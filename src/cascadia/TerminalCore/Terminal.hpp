@@ -126,6 +126,7 @@ public:
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
     std::wstring_view CurrentCommand() const;
+    TextBufferSerializer SerializeMainBuffer() const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp

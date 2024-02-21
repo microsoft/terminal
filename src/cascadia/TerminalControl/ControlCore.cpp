@@ -9,10 +9,10 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
+#include <LibraryResources.h>
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>
-#include <LibraryResources.h>
 
 #include "EventArgs.h"
 #include "../../buffer/out/search.h"
@@ -49,20 +49,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Core::OptionalColor result;
         result.Color = c;
         result.HasValue = true;
-        return result;
-    }
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
-    {
-        Core::OptionalColor result;
-        if (c.has_value())
-        {
-            result.Color = *c;
-            result.HasValue = true;
-        }
-        else
-        {
-            result.HasValue = false;
-        }
         return result;
     }
 
@@ -409,10 +395,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
-
-        // Start the connection outside of lock, because it could
-        // start writing output immediately.
-        _connection.Start();
 
         return true;
     }
@@ -1711,6 +1693,85 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _connectionStateChangedRevoker.revoke();
             _connection.Close();
         }
+    }
+
+    void ControlCore::PersistToPath(const wchar_t* path) const
+    {
+        const wil::unique_handle file{ CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+        THROW_LAST_ERROR_IF(!file);
+
+        static constexpr size_t writeThreshold = 32 * 1024;
+        std::wstring buffer;
+        buffer.reserve(writeThreshold + writeThreshold / 2);
+        buffer.push_back(L'\uFEFF');
+
+        auto lock = _terminal->LockForReading();
+        auto serializer = _terminal->SerializeMainBuffer();
+
+        for (;;)
+        {
+            const auto more = serializer.SerializeNextRow(buffer);
+
+            if (!more || buffer.size() >= writeThreshold)
+            {
+                // We should not hold locks across calls that may block indefinitely like WriteFile().
+                lock.unlock();
+
+                const auto fileSize = gsl::narrow<DWORD>(buffer.size() * sizeof(wchar_t));
+                DWORD bytesWritten = 0;
+                THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), buffer.data(), fileSize, &bytesWritten, nullptr));
+
+                if (bytesWritten != fileSize)
+                {
+                    THROW_WIN32_MSG(ERROR_WRITE_FAULT, "failed to write");
+                }
+
+                if (!more)
+                {
+                    break;
+                }
+
+                buffer.clear();
+                lock.lock();
+            }
+        }
+    }
+
+    void ControlCore::RestoreFromPath(const wchar_t* path) const
+    {
+        const wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        if (!file)
+        {
+            return;
+        }
+
+        wchar_t buffer[32 * 1024];
+        DWORD read = 0;
+
+        // Ensure the text file starts with a UTF-16 BOM.
+        if (!ReadFile(file.get(), &buffer[0], 2, &read, nullptr) || read < 2 || buffer[0] != L'\uFEFF')
+        {
+            return;
+        }
+
+        for (;;)
+        {
+            if (!ReadFile(file.get(), &buffer[0], sizeof(buffer), &read, nullptr))
+            {
+                break;
+            }
+
+            const auto lock = _terminal->LockForReading();
+            _terminal->Write({ &buffer[0], read / 2 });
+
+            if (read < sizeof(buffer))
+            {
+                break;
+            }
+        }
+
+        const auto lock = _terminal->LockForReading();
+        _terminal->Write(L"\x1b[2J");
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)

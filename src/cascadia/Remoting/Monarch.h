@@ -96,7 +96,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         bool DoesQuakeWindowExist();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
-        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
         void RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, const Windows::Foundation::IReference<Windows::Foundation::Rect>& windowBounds);
         void RequestSendContent(const Remoting::RequestReceiveContentArgs& args);
@@ -106,7 +105,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
 
         TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs);
 
@@ -146,8 +144,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
                               const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
-        winrt::fire_and_forget _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
-                                              const winrt::Windows::Foundation::IInspectable& args);
+        void _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Windows::Foundation::IInspectable& args);
 
         // Method Description:
         // - Helper for doing something on each and every peasant.

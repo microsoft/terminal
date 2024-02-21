@@ -692,25 +692,9 @@ namespace winrt::TerminalApp::implementation
         return _contentManager;
     }
 
-    bool AppLogic::ShouldUsePersistedLayout() const
+    bool AppLogic::SessionRestoreEnabled() const
     {
-        return _settings.GlobalSettings().ShouldUsePersistedLayout();
-    }
-
-    void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
-    {
-        std::vector<WindowLayout> converted;
-        converted.reserve(layouts.Size());
-
-        for (const auto& json : layouts)
-        {
-            if (json != L"")
-            {
-                converted.emplace_back(WindowLayout::FromJson(json));
-            }
-        }
-
-        ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
+        return _settings.GlobalSettings().SessionRestoreEnabled();
     }
 
     TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)

@@ -36,8 +36,7 @@ namespace TerminalApp
 
         Boolean HasSettingsStartupActions();
 
-        Boolean ShouldUsePersistedLayout();
-        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
+        Boolean SessionRestoreEnabled();
 
         void ReloadSettings();
 

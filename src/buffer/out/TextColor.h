@@ -119,6 +119,7 @@ public:
     }
 
     bool CanBeBrightened() const noexcept;
+    ColorType GetType() const noexcept;
     bool IsLegacy() const noexcept;
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;
@@ -133,11 +134,10 @@ public:
     COLORREF GetColor(const std::array<COLORREF, TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
-    constexpr BYTE GetIndex() const noexcept
-    {
-        return _index;
-    }
-
+    BYTE GetIndex() const noexcept;
+    BYTE GetR() const noexcept;
+    BYTE GetG() const noexcept;
+    BYTE GetB() const noexcept;
     COLORREF GetRGB() const noexcept;
 
     static constexpr BYTE TransposeLegacyIndex(const size_t index)

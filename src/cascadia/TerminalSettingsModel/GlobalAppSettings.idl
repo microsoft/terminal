@@ -114,6 +114,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(ThemePair, Theme);
         Theme CurrentTheme { get; };
 
-        Boolean ShouldUsePersistedLayout();
+        Boolean SessionRestoreEnabled();
     }
 }

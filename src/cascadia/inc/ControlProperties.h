@@ -56,6 +56,7 @@
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::hstring, ProfileName)                                                                                                                       \
     X(winrt::hstring, ProfileSource)                                                                                                                     \
+    X(winrt::guid, SessionId)                                                                                                                            \
     X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \

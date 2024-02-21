@@ -32,7 +32,8 @@ namespace Microsoft.Terminal.Control
         String ProfileName;
         String ProfileSource;
 
-        Boolean EnableUnfocusedAcrylic;
+        Boolean EnableUnfocusedAcrylic { get; };
+        Guid SessionId { get; };
         ScrollbarState ScrollState { get; };
 
         Boolean UseAtlasEngine { get; };
