@@ -172,7 +172,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _alloc{ allocator },
                 _sz(sz),
                 _rc(sz),
-                _bits(_sz.area(), fill ? std::numeric_limits<size_t>::max() : 0, _alloc),
+                _bits(_sz.area(), fill ? std::numeric_limits<unsigned long long>::max() : 0, _alloc),
                 _runs{ _alloc }
             {
             }
