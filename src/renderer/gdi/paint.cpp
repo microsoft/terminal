@@ -2,8 +2,9 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <vector>
 #include "gdirenderer.hpp"
+
+#include <til/small_vector.h>
 
 #include "../inc/unicode.hpp"
 
@@ -516,6 +517,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
 [[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
+try
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -531,35 +533,50 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
     const auto fontWidth = _GetFontSize().width;
     const auto fontHeight = _GetFontSize().height;
-    const auto widthOfAllCells = fontWidth * gsl::narrow_cast<unsigned>(cchLine);
+    const auto widthOfAllCells = fontWidth * gsl::narrow_cast<til::CoordType>(cchLine);
 
-    const auto DrawLine = [=](const auto x, const auto y, const auto w, const auto h) {
+    const auto DrawLine = [=](const til::CoordType x, const til::CoordType y, const til::CoordType w, const til::CoordType h) {
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
     };
-    const auto DrawStrokedLine = [&](const auto x, const auto y, const auto w) {
+    const auto DrawStrokedLine = [&](const til::CoordType x, const til::CoordType y, const til::CoordType w) {
         RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
         RETURN_HR_IF(E_FAIL, !LineTo(_hdcMemoryContext, x + w, y));
         return S_OK;
     };
-    const auto DrawCurlyLine = [&](const auto x, const auto y, const auto cCurlyLines) {
-        const auto curlyLineWidth = fontWidth;
-        const auto curlyLineHalfWidth = lrintf(curlyLineWidth / 2.0f);
-        const auto controlPointHeight = gsl::narrow_cast<long>(std::floor(3.5f * _lineMetrics.curlylinePeakHeight));
-        // Each curlyLine requires 3 `POINT`s
-        const auto cPoints = gsl::narrow<DWORD>(3 * cCurlyLines);
-        std::vector<POINT> points;
-        points.reserve(cPoints);
-        auto start = x;
-        for (auto i = 0u; i < cCurlyLines; i++)
+    const auto DrawCurlyLine = [&](const til::CoordType begX, const til::CoordType y, const til::CoordType width) {
+        const auto period = _lineMetrics.curlyLinePeriod;
+        const auto halfPeriod = period / 2;
+        const auto controlPointOffset = _lineMetrics.curlyLineControlPointOffset;
+
+        // To ensure proper continuity of the wavy line between cells of different line color
+        // this code starts/ends the line earlier/later than it should and then clips it.
+        // Clipping in GDI is expensive, but it was the easiest approach.
+        // I've noticed that subtracting -1px prevents missing pixels when GDI draws. They still
+        // occur at certain (small) font sizes, but I couldn't figure out how to prevent those.
+        const auto lineStart = ((begX - 1) / period) * period;
+        const auto lineEnd = begX + width;
+
+        IntersectClipRect(_hdcMemoryContext, begX, ptTarget.y, begX + width, ptTarget.y + fontHeight);
+        const auto restoreRegion = wil::scope_exit([&]() {
+            // Luckily no one else uses clip regions. They're weird to use.
+            SelectClipRgn(_hdcMemoryContext, nullptr);
+        });
+
+        // You can assume that each cell has roughly 5 POINTs on average. 128 POINTs is 1KiB.
+        til::small_vector<POINT, 128> points;
+
+        // This is the start point of the Bézier curve.
+        points.emplace_back(lineStart, y);
+
+        for (auto x = lineStart; x < lineEnd; x += period)
         {
-            points.emplace_back(start + curlyLineHalfWidth, y - controlPointHeight);
-            points.emplace_back(start + curlyLineHalfWidth, y + controlPointHeight);
-            points.emplace_back(start + curlyLineWidth, y);
-            start += curlyLineWidth;
+            points.emplace_back(x + halfPeriod, y - controlPointOffset);
+            points.emplace_back(x + halfPeriod, y + controlPointOffset);
+            points.emplace_back(x + period, y);
         }
-        RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
-        RETURN_HR_IF(E_FAIL, !PolyBezierTo(_hdcMemoryContext, points.data(), cPoints));
-        return S_OK;
+
+        const auto cpt = gsl::narrow_cast<DWORD>(points.size());
+        return PolyBezier(_hdcMemoryContext, points.data(), cpt);
     };
 
     if (lines.test(GridLines::Left))
@@ -602,7 +619,6 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
     }
 
-    // Create a pen matching the underline style.
     DWORD underlinePenType = PS_SOLID;
     if (lines.test(GridLines::DottedUnderline))
     {
@@ -612,39 +628,45 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     {
         underlinePenType = PS_DASH;
     }
+
+    DWORD underlineWidth = _lineMetrics.underlineWidth;
+    if (lines.any(GridLines::DoubleUnderline, GridLines::CurlyUnderline))
+    {
+        underlineWidth = _lineMetrics.thinLineWidth;
+    }
+
     const LOGBRUSH brushProp{ .lbStyle = BS_SOLID, .lbColor = underlineColor };
-    wil::unique_hpen hpen(ExtCreatePen(underlinePenType | PS_GEOMETRIC | PS_ENDCAP_FLAT, _lineMetrics.underlineWidth, &brushProp, 0, nullptr));
+    wil::unique_hpen hpen(ExtCreatePen(underlinePenType | PS_GEOMETRIC | PS_ENDCAP_FLAT, underlineWidth, &brushProp, 0, nullptr));
 
     // Apply the pen.
     const auto prevPen = wil::SelectObject(_hdcMemoryContext, hpen.get());
     RETURN_HR_IF_NULL(E_FAIL, prevPen.get());
 
-    const auto underlineMidY = std::lround(ptTarget.y + _lineMetrics.underlineOffset + _lineMetrics.underlineWidth / 2.0f);
     if (lines.test(GridLines::Underline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
     }
     else if (lines.test(GridLines::DoubleUnderline))
     {
-        const auto doubleUnderlineBottomLineMidY = std::lround(ptTarget.y + _lineMetrics.underlineOffset2 + _lineMetrics.underlineWidth / 2.0f);
-        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells));
-        return DrawStrokedLine(ptTarget.x, doubleUnderlineBottomLineMidY, widthOfAllCells);
+        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.doubleUnderlinePosTop, widthOfAllCells));
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.doubleUnderlinePosBottom, widthOfAllCells);
     }
     else if (lines.test(GridLines::CurlyUnderline))
     {
-        return DrawCurlyLine(ptTarget.x, underlineMidY, cchLine);
+        return DrawCurlyLine(ptTarget.x, ptTarget.y + _lineMetrics.curlyLineCenter, widthOfAllCells);
     }
     else if (lines.test(GridLines::DottedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
     }
     else if (lines.test(GridLines::DashedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
     }
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Draws the cursor on the screen
@@ -810,6 +832,13 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
 
     RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
+
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT GdiEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+{
+    UNREFERENCED_PARAMETER(rects);
 
     return S_OK;
 }

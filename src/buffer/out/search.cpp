@@ -111,6 +111,28 @@ const til::point_span* Search::GetCurrent() const noexcept
     return nullptr;
 }
 
+void Search::HighlightResults() const
+{
+    std::vector<til::inclusive_rect> toSelect;
+    const auto& textBuffer = _renderData->GetTextBuffer();
+
+    for (const auto& r : _results)
+    {
+        const auto rbStart = textBuffer.BufferToScreenPosition(r.start);
+        const auto rbEnd = textBuffer.BufferToScreenPosition(r.end);
+
+        til::inclusive_rect re;
+        re.top = rbStart.y;
+        re.bottom = rbEnd.y;
+        re.left = rbStart.x;
+        re.right = rbEnd.x;
+
+        toSelect.emplace_back(re);
+    }
+
+    _renderData->SelectSearchRegions(std::move(toSelect));
+}
+
 // Routine Description:
 // - Takes the found word and selects it in the screen buffer
 
@@ -127,6 +149,7 @@ bool Search::SelectCurrent() const
         return true;
     }
 
+    _renderData->ClearSelection();
     return false;
 }
 

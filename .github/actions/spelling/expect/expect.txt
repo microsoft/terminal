@@ -183,6 +183,7 @@ chh
 chshdng
 CHT
 Cic
+CLASSSTRING
 CLE
 cleartype
 CLICKACTIVE
@@ -294,7 +295,6 @@ CPPCORECHECK
 cppcorecheckrules
 cpprestsdk
 cppwinrt
-CProc
 cpx
 CREATESCREENBUFFER
 CREATESTRUCT
@@ -320,11 +320,11 @@ ctlseqs
 CTRLEVENT
 CTRLFREQUENCY
 CTRLKEYSHORTCUTS
+Ctrls
 CTRLVOLUME
 Ctxt
 CUF
 cupxy
-curlyline
 CURRENTFONT
 currentmode
 CURRENTPAGE
@@ -403,6 +403,7 @@ DECECM
 DECEKBD
 DECERA
 DECFI
+DECFNK
 DECFRA
 DECIC
 DECID
@@ -428,6 +429,7 @@ DECRQM
 DECRQPSR
 DECRQSS
 DECRQTSR
+DECRQUPSS
 DECRSPS
 decrst
 DECSACE
@@ -445,6 +447,7 @@ DECSLPP
 DECSLRM
 DECSMKR
 DECSR
+DECST
 DECSTBM
 DECSTGLT
 DECSTR
@@ -483,6 +486,7 @@ directio
 DIRECTX
 DISABLEDELAYEDEXPANSION
 DISABLENOSCROLL
+DISPATCHNOTIFY
 DISPLAYATTRIBUTE
 DISPLAYATTRIBUTEPROPERTY
 DISPLAYCHANGE
@@ -546,7 +550,6 @@ Edgium
 EDITKEYS
 EDITTEXT
 EDITUPDATE
-edputil
 Efast
 efghijklmn
 EHsc
@@ -583,7 +586,6 @@ EXETYPE
 exeuwp
 exewin
 exitwin
-expectedinput
 EXPUNGECOMMANDHISTORY
 EXSTYLE
 EXTENDEDEDITKEY
@@ -795,7 +797,6 @@ HPA
 hpcon
 HPCON
 hpen
-hpj
 HPR
 HProvider
 HREDRAW
@@ -978,7 +979,6 @@ logissue
 losslessly
 loword
 lparam
-LPCCH
 lpch
 LPCPLINFO
 LPCREATESTRUCT
@@ -1117,8 +1117,8 @@ msix
 msrc
 MSVCRTD
 MTSM
-munged
 munges
+Munged
 murmurhash
 muxes
 myapplet
@@ -1177,7 +1177,6 @@ NOMOVE
 NONALERT
 nonbreaking
 nonclient
-NONCONST
 NONINFRINGEMENT
 NONPREROTATED
 nonspace
@@ -1525,17 +1524,14 @@ rgbs
 rgci
 rgfae
 rgfte
-rgi
 rgn
 rgp
 rgpwsz
 rgrc
-rgui
 rgw
 RIGHTALIGN
 RIGHTBUTTON
 riid
-Rike
 RIS
 roadmap
 robomac
@@ -1685,7 +1681,6 @@ SOLIDBOX
 Solutiondir
 somefile
 sourced
-spammy
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -1831,7 +1826,6 @@ Tpp
 Tpqrst
 tracelog
 tracelogging
-traceloggingprovider
 traceviewpp
 trackbar
 TRACKCOMPOSITION
@@ -1880,7 +1874,12 @@ uiautomationcore
 uielem
 UIELEMENTENABLEDONLY
 UINTs
+ul
 ulcch
+uld
+uldb
+uldash
+ulwave
 Unadvise
 unattend
 UNCPRIORITY
@@ -1903,6 +1902,7 @@ UPDATEDISPLAY
 UPDOWN
 UPKEY
 UPSS
+upss
 uregex
 URegular
 usebackq
@@ -1915,7 +1915,6 @@ USEFILLATTRIBUTE
 USEGLYPHCHARS
 USEHICON
 USEPOSITION
-userbase
 USERDATA
 userdpiapi
 Userp
@@ -1956,8 +1955,6 @@ vpack
 vpackdirectory
 VPACKMANIFESTDIRECTORY
 VPR
-VProc
-VRaw
 VREDRAW
 vsc
 vsconfig
@@ -2001,7 +1998,6 @@ WCIA
 WCIW
 WCSHELPER
 wcsicmp
-wcsnicmp
 wcsrev
 wddm
 wddmcon

@@ -117,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::Profile _profile;
-        winrt::guid _originalProfileGuid;
+        winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;

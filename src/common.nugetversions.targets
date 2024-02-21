@@ -62,7 +62,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Microsoft.UI.Xaml.Additional.targets" Condition="'$(TerminalMUX)' == 'true'" />
 
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
-    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.230824.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.230824.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 
   </ImportGroup>
 
@@ -93,7 +93,7 @@
     <Error Condition="'$(TerminalMUX)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Web.WebView2.1.0.1661.34\build\native\Microsoft.Web.WebView2.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Web.WebView2.1.0.1661.34\build\native\Microsoft.Web.WebView2.targets'))" />
 
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
-    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.230824.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.230824.2\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
 
   </Target>
 
