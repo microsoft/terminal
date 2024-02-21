@@ -44,9 +44,14 @@ namespace winrt::TerminalApp::implementation
     private:
         friend struct TasksPaneContentT<TasksPaneContent>; // for Xaml to bind events
 
-        winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control;
+        winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
+        // std::vector<winrt::TerminalApp::TaskViewModel> _allCommands{};
+        winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         void _runCommandButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);
+        void _filterTextChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+
+        void _updateFilteredCommands();
     };
 
     struct TaskViewModel : TaskViewModelT<TaskViewModel>

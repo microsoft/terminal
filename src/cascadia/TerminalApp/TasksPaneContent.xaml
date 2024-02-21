@@ -142,7 +142,8 @@
         <TextBox x:Name="_filterBox"
                  Grid.Row="1"
                  Margin="8"
-                 PlaceholderText="Filter tasks..." />
+                 PlaceholderText="Filter tasks..."
+                 TextChanged="_filterTextChanged" />
 
         <mux:TreeView x:Name="_treeView"
                       Grid.Row="2"

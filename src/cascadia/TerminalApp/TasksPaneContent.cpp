@@ -24,53 +24,45 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        // _root = this; // winrt::Windows::UI::Xaml::Controls::Grid{};
-        // Vertical and HorizontalAlignment are Stretch by default
-
         auto res = Windows::UI::Xaml::Application::Current().Resources();
         auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
-        /*_root.*/ Background(bg.try_as<WUX::Media::Brush>());
-
-        // _treeView = winrt::Microsoft::UI::Xaml::Controls::TreeView{};
-        // _root.Children().Append(_treeView);
-        // _box.Margin({ 10, 10, 10, 10 });
-        // _box.AcceptsReturn(true);
-        // _box.TextWrapping(TextWrapping::Wrap);
-
-        // UpdateSettings(settings);
+        Background(bg.try_as<WUX::Media::Brush>());
     }
 
-    MUX::Controls::TreeViewNode _buildTreeViewNode(const Model::Command& task)
+    void TasksPaneContent::_updateFilteredCommands()
     {
-        MUX::Controls::TreeViewNode item{};
-        item.Content(winrt::box_value(task.Name()));
-        if (task.HasNestedCommands())
+        // const auto& queryString = _filterBox().Text();
+
+        // You'd think that `FilterToSendInput(queryString)` would work. It
+        // doesn't! That uses the queryString as the current command the user
+        // has typed, then relies on the sxnui to _also_ filter with that
+        // string.
+
+        // In the fullness of time, we'll actually want to filter things here.
+        // Probably with something that re-uses the suggestions control list
+        //
+        // huh. now that's a thought.
+
+        const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
+        auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::TaskViewModel>();
+        for (const auto& t : tasks)
         {
-            for (const auto& [name, nested] : task.NestedCommands())
-            {
-                item.Children().Append(_buildTreeViewNode(nested));
-            }
+            itemSource.Append(winrt::make<TaskViewModel>(t));
         }
-        return item;
+
+        _treeView().ItemsSource(itemSource);
     }
 
     void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
-        // _treeView().RootNodes().Clear();
-        const auto tasks = settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
-        // for (const auto& t : tasks)
-        // {
-        //     const auto& treeNode = _buildTreeViewNode(t);
-        //     _treeView().RootNodes().Append(treeNode);
-        // }
+        _settings = settings;
+        _updateFilteredCommands();
+    }
 
-        auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::TaskViewModel>();
-        for (const auto& t : tasks)
-        {
-            // const auto& treeNode = _buildTreeViewNode(t);
-            itemSource.Append(winrt::make<TaskViewModel>(t));
-        }
-        _treeView().ItemsSource(itemSource);
+    void TasksPaneContent::_filterTextChanged(const IInspectable& /*sender*/,
+                                              const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        _updateFilteredCommands();
     }
 
     winrt::Windows::UI::Xaml::FrameworkElement TasksPaneContent::GetRoot()
@@ -113,9 +105,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TasksPaneContent::_runCommandButtonClicked(const Windows::Foundation::IInspectable& sender,
-                                                   const Windows::UI::Xaml::RoutedEventArgs&)
+                                                    const Windows::UI::Xaml::RoutedEventArgs&)
     {
-
         if (const auto& taskVM{ sender.try_as<WUX::Controls::Button>().DataContext().try_as<TaskViewModel>() })
         {
             if (const auto& strongControl{ _control.get() })
