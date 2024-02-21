@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "CustomGlyphs.h"
+#include "BuiltinGlyphs.h"
 
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
@@ -12,7 +12,7 @@
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
 using namespace Microsoft::Console::Render::Atlas;
-using namespace Microsoft::Console::Render::Atlas::CustomGlyphs;
+using namespace Microsoft::Console::Render::Atlas::BuiltinGlyphs;
 
 union Instruction
 {
@@ -1053,7 +1053,7 @@ constexpr bool Powerline_IsMapped(char32_t codepoint)
 
 // How should I make this constexpr == inline, if it's an external symbol? Bad compiler!
 #pragma warning(suppress : 26497) // You can attempt to make '...' constexpr unless it contains any undefined behavior (f.4).
-bool CustomGlyphs::IsCustomGlyph(char32_t codepoint) noexcept
+bool BuiltinGlyphs::IsCustomGlyph(char32_t codepoint) noexcept
 {
     return BoxDrawing_IsMapped(codepoint) || Powerline_IsMapped(codepoint);
 }
@@ -1122,7 +1122,7 @@ static wil::com_ptr<ID2D1BitmapBrush> createShadedBitmapBrush(ID2D1DeviceContext
     return bitmapBrush;
 }
 
-void CustomGlyphs::DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint)
+void BuiltinGlyphs::DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint)
 {
     renderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
     const auto restoreD2D = wil::scope_exit([&]() {

@@ -11,7 +11,7 @@
 #include <shader_ps.h>
 #include <shader_vs.h>
 
-#include "CustomGlyphs.h"
+#include "BuiltinGlyphs.h"
 #include "dwrite.h"
 #include "../../types/inc/ColorFix.hpp"
 
@@ -739,7 +739,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
             glyphs.clear();
         }
     }
-    for (auto& glyphs : _customGlyphs.glyphs)
+    for (auto& glyphs : _builtinGlyphs.glyphs)
     {
         glyphs.clear();
     }
@@ -999,7 +999,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
             const auto fontFace = m.fontFace.get();
 
             // The lack of a fontFace indicates a soft font.
-            AtlasFontFaceEntry* fontFaceEntry = &_customGlyphs;
+            AtlasFontFaceEntry* fontFaceEntry = &_builtinGlyphs;
             if (fontFace) [[likely]]
             {
                 fontFaceEntry = _glyphAtlasMap.insert(fontFace).first;
@@ -1401,7 +1401,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawCustomGlyph(const RenderingPayload
     _drawGlyphAtlasAllocate(p, rect);
     _d2dBeginDrawing();
 
-    if (CustomGlyphs::IsSoftFontChar(glyphIndex))
+    if (BuiltinGlyphs::IsSoftFontChar(glyphIndex))
     {
         _drawSoftFontGlyph(p, rect, glyphIndex);
     }
@@ -1413,7 +1413,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawCustomGlyph(const RenderingPayload
             static_cast<f32>(rect.x + rect.w),
             static_cast<f32>(rect.y + rect.h),
         };
-        CustomGlyphs::DrawCustomGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
+        BuiltinGlyphs::DrawCustomGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
     }
 
     const auto glyphEntry = _drawGlyphAllocateEntry(row, fontFaceEntry, glyphIndex);

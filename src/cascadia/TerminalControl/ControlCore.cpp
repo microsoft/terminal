@@ -869,7 +869,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto lock = _terminal->LockForWriting();
 
-        _customGlyphs = _settings->CustomGlyphs();
+        _builtinGlyphs = _settings->EnableBuiltinGlyphs();
         _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
@@ -1048,7 +1048,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
 
-        _desiredFont.SetCustomGlyphs(_customGlyphs);
+        _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
         _desiredFont.SetCellSize(_cellWidth, _cellHeight);
 
         const auto before = _actualFont.GetSize();

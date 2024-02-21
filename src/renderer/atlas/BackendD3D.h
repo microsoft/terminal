@@ -11,7 +11,7 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
-    namespace CustomGlyphs
+    namespace BuiltinGlyphs
     {
         union Instruction;
     }
@@ -260,7 +260,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11Texture2D> _glyphAtlas;
         wil::com_ptr<ID3D11ShaderResourceView> _glyphAtlasView;
         til::linear_flat_set<AtlasFontFaceEntry, AtlasFontFaceEntryHashTrait> _glyphAtlasMap;
-        AtlasFontFaceEntry _customGlyphs;
+        AtlasFontFaceEntry _builtinGlyphs;
         Buffer<stbrp_node> _rectPackerData;
         stbrp_context _rectPacker{};
         til::CoordType _ligatureOverhangTriggerLeft = 0;

@@ -280,10 +280,10 @@ void AtlasEngine::_recreateBackend()
     // EVEN IF we got called when no actual settings changed (i.e. rendering failure, etc.).
     _p.MarkAllAsDirty();
 
-    const auto hackWantsCustomGlyphs = _p.s->font->customGlyphs && !d2dMode;
-    if (_hackWantsCustomGlyphs != hackWantsCustomGlyphs)
+    const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !d2dMode;
+    if (_hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs)
     {
-        _hackWantsCustomGlyphs = hackWantsCustomGlyphs;
+        _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
         _hackTriggerRedrawAll = true;
     }
 }

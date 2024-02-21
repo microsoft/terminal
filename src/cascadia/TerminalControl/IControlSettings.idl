@@ -43,7 +43,7 @@ namespace Microsoft.Terminal.Control
         String Padding { get; };
         Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
         Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
-        Boolean CustomGlyphs { get; };
+        Boolean EnableBuiltinGlyphs { get; };
         String CellWidth { get; };
         String CellHeight { get; };
 

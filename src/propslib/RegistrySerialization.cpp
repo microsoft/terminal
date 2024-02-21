@@ -63,7 +63,7 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMa
     { _RegPropertyType::Dword,          CONSOLE_REGISTRY_USEDX,                         SET_FIELD_AND_SIZE(_fUseDx)                      },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_COPYCOLOR,                     SET_FIELD_AND_SIZE(_fCopyColor)                  },
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
-    { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_CUSTOM_GLYPHS,                 SET_FIELD_AND_SIZE(_fCustomGlyphs)               },
+    { _RegPropertyType::Boolean,        L"EnableBuiltinGlyphs",                         SET_FIELD_AND_SIZE(_fEnableBuiltinGlyphs)        },
 #endif
 
     // Special cases that are handled manually in Registry::LoadFromRegistry:

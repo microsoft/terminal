@@ -29,9 +29,9 @@ void FontInfoDesired::SetCellSize(const CSSLengthPercentage& cellWidth, const CS
     _cellHeight = cellHeight;
 }
 
-void FontInfoDesired::SetCustomGlyphs(bool customGlyphs) noexcept
+void FontInfoDesired::SetEnableBuiltinGlyphs(bool builtinGlyphs) noexcept
 {
-    _customGlyphs = customGlyphs;
+    _builtinGlyphs = builtinGlyphs;
 }
 
 const CSSLengthPercentage& FontInfoDesired::GetCellWidth() const noexcept
@@ -44,9 +44,9 @@ const CSSLengthPercentage& FontInfoDesired::GetCellHeight() const noexcept
     return _cellHeight;
 }
 
-bool FontInfoDesired::GetCustomGlyphs() const noexcept
+bool FontInfoDesired::GetEnableBuiltinGlyphs() const noexcept
 {
-    return _customGlyphs;
+    return _builtinGlyphs;
 }
 
 float FontInfoDesired::GetFontSize() const noexcept

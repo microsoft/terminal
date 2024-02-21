@@ -7,7 +7,7 @@
 #include <til/unicode.h>
 
 #include "Backend.h"
-#include "CustomGlyphs.h"
+#include "BuiltinGlyphs.h"
 #include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
@@ -677,7 +677,7 @@ void AtlasEngine::_flushBufferLine()
     size_t segmentEnd = 0;
     bool custom = false;
 
-    if (!_hackWantsCustomGlyphs)
+    if (!_hackWantsBuiltinGlyphs)
     {
         _mapRegularText(0, len);
         return;
@@ -695,7 +695,7 @@ void AtlasEngine::_flushBufferLine()
                 codepoint = til::combine_surrogates(codepoint, beg[i++]);
             }
 
-            const auto c = CustomGlyphs::IsCustomGlyph(codepoint) || CustomGlyphs::IsSoftFontChar(codepoint);
+            const auto c = BuiltinGlyphs::IsCustomGlyph(codepoint) || BuiltinGlyphs::IsSoftFontChar(codepoint);
             if (custom != c)
             {
                 break;
@@ -708,7 +708,7 @@ void AtlasEngine::_flushBufferLine()
         {
             if (custom)
             {
-                _mapCustomGlyphs(segmentBeg, segmentEnd);
+                _mapBuiltinGlyphs(segmentBeg, segmentEnd);
             }
             else
             {
@@ -806,7 +806,7 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
     }
 }
 
-void AtlasEngine::_mapCustomGlyphs(size_t offBeg, size_t offEnd)
+void AtlasEngine::_mapBuiltinGlyphs(size_t offBeg, size_t offEnd)
 {
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
     auto initialIndicesCount = row.glyphIndices.size();

@@ -287,12 +287,12 @@
                 </StackPanel>
             </local:SettingContainer>
 
-            <!--  Custom Glyphs  -->
-            <local:SettingContainer x:Uid="Profile_CustomGlyphs"
-                                    ClearSettingValue="{x:Bind Appearance.ClearCustomGlyphs}"
-                                    HasSettingValue="{x:Bind Appearance.HasCustomGlyphs, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.CustomGlyphsOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.CustomGlyphs, Mode=TwoWay}"
+            <!--  Builtin Glyphs  -->
+            <local:SettingContainer x:Uid="Profile_EnableBuiltinGlyphs"
+                                    ClearSettingValue="{x:Bind Appearance.ClearEnableBuiltinGlyphs}"
+                                    HasSettingValue="{x:Bind Appearance.HasEnableBuiltinGlyphs, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.EnableBuiltinGlyphsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.EnableBuiltinGlyphs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
