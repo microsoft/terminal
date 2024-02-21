@@ -29,6 +29,9 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(int, Weight, _PropertyChangedHandlers);
 
+    protected:
+        void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
+
     private:
         winrt::TerminalApp::HighlightedText _computeHighlightedName();
         int _computeWeight();

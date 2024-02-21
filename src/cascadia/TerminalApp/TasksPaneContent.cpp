@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
 
     void TasksPaneContent::_updateFilteredCommands()
     {
-        // const auto& queryString = _filterBox().Text();
+        const auto& queryString = _filterBox().Text();
 
         // You'd think that `FilterToSendInput(queryString)` would work. It
         // doesn't! That uses the queryString as the current command the user
@@ -48,7 +48,9 @@ namespace winrt::TerminalApp::implementation
         auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
         for (const auto& t : tasks)
         {
-            itemSource.Append(winrt::make<FilteredTask>(t));
+            const auto& filtered{ winrt::make<FilteredTask>(t) };
+            filtered.UpdateFilter(queryString);
+            itemSource.Append(filtered);
         }
 
         _treeView().ItemsSource(itemSource);

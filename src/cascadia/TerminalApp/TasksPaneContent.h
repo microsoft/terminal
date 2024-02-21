@@ -99,8 +99,8 @@ namespace winrt::TerminalApp::implementation
 
         FilteredTask(const winrt::Microsoft::Terminal::Settings::Model::Command& command)
         {
+            _constructFilteredCommand(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command));
             _command = command;
-            _Item = winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command);
 
             // The Children() method must always return a non-null vector
             _children = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
@@ -117,7 +117,14 @@ namespace winrt::TerminalApp::implementation
         // FilteredCommand() = default;
         // FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        // void UpdateFilter(const winrt::hstring& filter);
+        void UpdateFilter(const winrt::hstring& filter)
+        {
+            TerminalApp::implementation::FilteredCommand::UpdateFilter(filter);
+            for (const auto& c : _children)
+            {
+                c.UpdateFilter(filter);
+            }
+        }
 
         // static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 

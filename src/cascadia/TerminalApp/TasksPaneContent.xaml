@@ -107,11 +107,15 @@
                             </Button.Resources>
                         </Button>
 
-                        <TextBlock Grid.Column="1"
+                        <!-- <TextBlock Grid.Column="1"
                                    Margin="12,6,0,0"
                                    Style="{ThemeResource BaseTextBlockStyle}"
                                    Text="{x:Bind Item.Name, Mode=OneWay}"
-                                   TextWrapping="WrapWholeWords" />
+                                   TextWrapping="WrapWholeWords" />-->
+
+                        <local:HighlightedTextControl Grid.Column="1"
+                                                      HorizontalAlignment="Left"
+                                                      Text="{x:Bind HighlightedName, Mode=OneWay}" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
                                    Margin="12,0,0,6"
