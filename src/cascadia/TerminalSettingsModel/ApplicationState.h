@@ -63,14 +63,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ~ApplicationState();
 
         // Methods
-        void Reload() const noexcept;
+        void Flush();
         void Reset() noexcept;
 
         void FromJson(const Json::Value& root, FileSource parseSource) const noexcept;
         Json::Value ToJson(FileSource parseSource) const noexcept;
-
-        // General getters/setters
-        bool IsStatePath(const winrt::hstring& filename);
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \

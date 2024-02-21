@@ -105,20 +105,21 @@ bool ShouldTakeOverKeyboardShortcuts()
 
 // Routine Description:
 // - handles key events without reference to Win32 elements.
-void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
+void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
 {
+    auto& keyEvent = event.Event.KeyEvent;
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto ContinueProcessing = true;
 
-    if (keyEvent.IsCtrlPressed() &&
-        !keyEvent.IsAltPressed() &&
-        keyEvent.IsKeyDown())
+    if (WI_IsAnyFlagSet(keyEvent.dwControlKeyState, CTRL_PRESSED) &&
+        WI_AreAllFlagsClear(keyEvent.dwControlKeyState, ALT_PRESSED) &&
+        keyEvent.bKeyDown)
     {
         // check for ctrl-c, if in line input mode.
-        if (keyEvent.GetVirtualKeyCode() == 'C' && IsInProcessedInputMode())
+        if (keyEvent.wVirtualKeyCode == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
-            if (gci.PopupCount == 0)
+            if (!gci.HasPendingPopup())
             {
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
@@ -130,11 +131,11 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
         }
 
         // Check for ctrl-break.
-        else if (keyEvent.GetVirtualKeyCode() == VK_CANCEL)
+        else if (keyEvent.wVirtualKeyCode == VK_CANCEL)
         {
             gci.pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
-            if (gci.PopupCount == 0)
+            if (!gci.HasPendingPopup())
             {
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
@@ -146,33 +147,25 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
         }
 
         // don't write ctrl-esc to the input buffer
-        else if (keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
+        else if (keyEvent.wVirtualKeyCode == VK_ESCAPE)
         {
             ContinueProcessing = false;
         }
     }
-    else if (keyEvent.IsAltPressed() &&
-             keyEvent.IsKeyDown() &&
-             keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
+    else if (WI_IsAnyFlagSet(keyEvent.dwControlKeyState, ALT_PRESSED) &&
+             keyEvent.bKeyDown &&
+             keyEvent.wVirtualKeyCode == VK_ESCAPE)
     {
         ContinueProcessing = false;
     }
 
     if (ContinueProcessing)
     {
-        size_t EventsWritten = 0;
-        try
+        gci.pInputBuffer->Write(event);
+        if (generateBreak)
         {
-            EventsWritten = gci.pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
-            if (EventsWritten && generateBreak)
-            {
-                keyEvent.SetKeyDown(false);
-                EventsWritten = gci.pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
-            }
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
+            keyEvent.bKeyDown = false;
+            gci.pInputBuffer->Write(event);
         }
     }
 }
@@ -210,10 +203,10 @@ void HandleMenuEvent(const DWORD wParam)
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci.pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
+        EventsWritten = gci.pInputBuffer->Write(SynthesizeMenuEvent(wParam));
         if (EventsWritten != 1)
         {
-            RIPMSG0(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1, 1 expected");
+            LOG_HR_MSG(E_FAIL, "PutInputInBuffer: EventsWritten != 1, 1 expected");
         }
     }
     catch (...)
@@ -237,7 +230,7 @@ void HandleCtrlEvent(const DWORD EventType)
         gci.CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
         break;
     default:
-        RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
+        LOG_HR_MSG(E_INVALIDARG, "Invalid EventType: 0x%x", EventType);
     }
 }
 

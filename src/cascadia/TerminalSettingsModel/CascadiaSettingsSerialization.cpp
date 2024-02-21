@@ -410,7 +410,7 @@ bool SettingsLoader::FixupUserSettings()
 {
     struct CommandlinePatch
     {
-        winrt::guid guid;
+        winrt::guid guid{};
         std::wstring_view before;
         std::wstring_view after;
     };
@@ -448,6 +448,17 @@ bool SettingsLoader::FixupUserSettings()
                 break;
             }
         }
+    }
+
+    // Terminal 1.19: Migrate the global
+    // `compatibility.reloadEnvironmentVariables` to being a per-profile
+    // setting. If the user had it disabled in 1.18, then set the
+    // profiles.defaults value to false to match.
+    if (!userSettings.globals->LegacyReloadEnvironmentVariables())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
     }
 
     return fixedUp;
@@ -837,7 +848,7 @@ try
     bool releaseSettingExists = false;
     if (firstTimeSetup && !IsPortableMode())
     {
-#if defined(WT_BRANDING_PREVIEW)
+#if defined(WT_BRANDING_PREVIEW) || defined(WT_BRANDING_CANARY)
         {
             try
             {
@@ -938,25 +949,6 @@ void CascadiaSettings::_researchOnLoad()
     // Only do this if we're actually being sampled
     if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        // GH#13936: We're interested in how many users opt out of useAtlasEngine,
-        // indicating major issues that would require us to disable it by default again.
-        {
-            size_t enabled[2]{};
-            for (const auto& profile : _activeProfiles)
-            {
-                enabled[profile.UseAtlasEngine()]++;
-            }
-
-            TraceLoggingWrite(
-                g_hSettingsModelProvider,
-                "AtlasEngine_Usage",
-                TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
-                TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
-                TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-        }
-
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
         const auto themeInUse = GlobalSettings().CurrentTheme().Name();
@@ -1227,6 +1219,15 @@ void CascadiaSettings::WriteSettingsToDisk()
     }
 }
 
+#ifndef NDEBUG
+[[maybe_unused]] static std::string _getDevPathToSchema()
+{
+    std::filesystem::path filePath{ __FILE__ };
+    auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";
+    return "file:///" + schemaPath.generic_string();
+}
+#endif
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
@@ -1238,7 +1239,17 @@ Json::Value CascadiaSettings::ToJson() const
     // top-level json object
     auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
-    json["$schema"] = "https://aka.ms/terminal-profiles-schema";
+    json["$schema"] =
+#if defined(WT_BRANDING_RELEASE)
+        "https://aka.ms/terminal-profiles-schema"
+#elif defined(WT_BRANDING_PREVIEW)
+        "https://aka.ms/terminal-profiles-schema-preview"
+#elif !defined(NDEBUG) // DEBUG mode
+        _getDevPathToSchema() // magic schema path that refers to the local source directory
+#else // All other brandings
+        "https://raw.githubusercontent.com/microsoft/terminal/main/doc/cascadia/profiles.schema.json"
+#endif
+        ;
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };

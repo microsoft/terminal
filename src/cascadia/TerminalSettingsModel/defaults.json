@@ -174,6 +174,7 @@
             "foreground": "#383A42",
             "background": "#FAFAFA",
             "cursorColor": "#4F525D",
+            "selectionBackground": "#4F525D",
             "black": "#383A42",
             "red": "#E45649",
             "green": "#50A14F",
@@ -218,6 +219,7 @@
             "foreground": "#657B83",
             "background": "#FDF6E3",
             "cursorColor": "#002B36",
+            "selectionBackground": "#073642",
             "black": "#002B36",
             "red": "#DC322F",
             "green": "#859900",
@@ -262,6 +264,7 @@
             "foreground": "#555753",
             "background": "#FFFFFF",
             "cursorColor": "#000000",
+            "selectionBackground": "#555753",
             "black": "#000000",
             "red": "#CC0000",
             "green": "#4E9A06",
@@ -373,7 +376,8 @@
         { "command": "quakeMode", "keys":"win+sc(41)" },
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
-        { "command": "restoreLastClosed"},
+        { "command": "restoreLastClosed" },
+        { "command": "openAbout" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -436,6 +440,7 @@
         { "command": { "action": "swapPane", "direction": "previousInOrder"} },
         { "command": { "action": "swapPane", "direction": "nextInOrder"} },
         { "command": { "action": "swapPane", "direction": "first" } },
+        { "command": "toggleBroadcastInput" },
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },

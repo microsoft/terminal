@@ -41,7 +41,6 @@ void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noe
 {
     try
     {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -368,17 +367,19 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
         }
 
-        const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
-
-        // Mouse input should be received when mouse mode is on and quick edit mode is off
-        // (for more information regarding the quirks of mouse mode and why/how it relates
-        //  to quick edit mode, see GH#9970)
-        const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
-        const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
-
-        if (oldMouseMode != newMouseMode)
+        if (gci.IsInVtIoMode())
         {
-            gci.GetActiveInputBuffer()->PassThroughWin32MouseRequest(newMouseMode);
+            // Mouse input should be received when mouse mode is on and quick edit mode is off
+            // (for more information regarding the quirks of mouse mode and why/how it relates
+            //  to quick edit mode, see GH#9970)
+            const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
+            const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
+            const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
+
+            if (oldMouseMode != newMouseMode)
+            {
+                LOG_IF_FAILED(gci.GetVtIo()->RequestMouseMode(newMouseMode));
+            }
         }
 
         context.InputMode = mode;
@@ -598,13 +599,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         const auto requestedBufferSize = til::wrap_coord_size(data.dwSize);
         if (requestedBufferSize != coordScreenBufferSize)
         {
-            auto& commandLine = CommandLine::Instance();
-
-            commandLine.Hide(FALSE);
-
             LOG_IF_FAILED(context.ResizeScreenBuffer(requestedBufferSize, TRUE));
-
-            commandLine.Show();
         }
         const auto newBufferSize = context.GetBufferSize().Dimensions();
 
@@ -655,15 +650,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         if (NewSize.width != context.GetViewport().Width() ||
             NewSize.height != context.GetViewport().Height())
         {
-            // GH#1856 - make sure to hide the commandline _before_ we execute
-            // the resize, and the re-display it after the resize. If we leave
-            // it displayed, we'll crash during the resize when we try to figure
-            // out if the bounds of the old commandline fit within the new
-            // window (it might not).
-            auto& commandLine = CommandLine::Instance();
-            commandLine.Hide(FALSE);
             context.SetViewportSize(&NewSize);
-            commandLine.Show();
 
             const auto pWindow = ServiceLocator::LocateConsoleWindow();
             if (pWindow != nullptr)

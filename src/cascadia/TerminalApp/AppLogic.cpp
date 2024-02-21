@@ -124,8 +124,7 @@ namespace winrt::TerminalApp::implementation
         return appLogic->GetSettings();
     }
 
-    AppLogic::AppLogic() :
-        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); } }
+    AppLogic::AppLogic()
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -326,10 +325,6 @@ namespace winrt::TerminalApp::implementation
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
-                }
-                else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename))
-                {
-                    _reloadState();
                 }
             });
     }
@@ -597,11 +592,11 @@ namespace winrt::TerminalApp::implementation
                 // use as a title though!
                 //
                 // First, check the reserved keywords:
-                if (parsedTarget == "new")
+                if (parsedTarget == NewWindow)
                 {
                     return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
                 }
-                else if (parsedTarget == "last")
+                else if (parsedTarget == MostRecentlyUsedWindow)
                 {
                     return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting);
                 }

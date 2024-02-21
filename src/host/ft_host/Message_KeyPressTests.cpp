@@ -86,7 +86,6 @@ class KeyPressTests
         expectedRecord.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         expectedRecord.Event.KeyEvent.bKeyDown = true;
         expectedRecord.Event.KeyEvent.dwControlKeyState = ENHANCED_KEY;
-        expectedRecord.Event.KeyEvent.dwControlKeyState |= (GetKeyState(VK_NUMLOCK) & KEY_STATE_TOGGLED) ? NUMLOCK_ON : 0;
         expectedRecord.Event.KeyEvent.wRepeatCount = SINGLE_KEY_REPEAT;
         expectedRecord.Event.KeyEvent.wVirtualKeyCode = VK_APPS;
         expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;
@@ -102,6 +101,100 @@ class KeyPressTests
         TEST_METHOD_PROPERTY(L"Ignore[@DevTest=true]", L"false")
         TEST_METHOD_PROPERTY(L"Ignore[default]", L"true")
     END_TEST_METHOD()
+
+    TEST_METHOD(TestInvalidKeyPressIsIgnored)
+    {
+        if (!OneCoreDelay::IsSendMessageWPresent())
+        {
+            Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
+        Log::Comment(L"Testing that key events with an invalid virtual keycode and an invalid scan code are properly ignored, and not put into the input buffer");
+        BOOL successBool;
+        auto hwnd = GetConsoleWindow();
+        VERIFY_IS_TRUE(!!IsWindow(hwnd));
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD events = 0;
+
+        // flush input buffer
+        FlushConsoleInputBuffer(inputHandle);
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+
+        WPARAM vKey = 0xFF;
+        BYTE scanCode = 0;
+        WORD repeatCount = 1;
+
+        LPARAM lParam = (scanCode << 16) | repeatCount;
+
+        // Send the keypress
+        SendMessage(hwnd, WM_KEYDOWN, vKey, lParam);
+
+        // make sure the keypress got ignored
+        events = 0;
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
+        PeekConsoleInput(inputHandle,
+                         inputBuffer.get(),
+                         1,
+                         &events);
+        VERIFY_ARE_EQUAL(events, 0u);
+    }
+
+    TEST_METHOD(TestKeyPressWithScanCodeZero)
+    {
+        if (!OneCoreDelay::IsSendMessageWPresent())
+        {
+            Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
+        Log::Comment(L"Testing that key events with a valid keycode and an invalid scancode (0) are properly processed.");
+        BOOL successBool;
+        auto hwnd = GetConsoleWindow();
+        VERIFY_IS_TRUE(!!IsWindow(hwnd));
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD events = 0;
+
+        // flush input buffer
+        FlushConsoleInputBuffer(inputHandle);
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+
+        WPARAM vKey = VK_LWIN;
+        BYTE scanCode = 0; // Conhost should convert this to the correct scan code
+        WORD repeatCount = 1;
+
+        LPARAM lParam = (scanCode << 16) | repeatCount;
+
+        // Send the keypress
+        SendMessage(hwnd, WM_KEYDOWN, vKey, lParam);
+
+        // Make sure the keypress got processed.
+        events = 0;
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 1u);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
+        PeekConsoleInput(inputHandle,
+                         inputBuffer.get(),
+                         1,
+                         &events);
+        VERIFY_ARE_EQUAL(events, 1u);
+        VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
+        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
+        // Scan code should be set to the correct value.
+        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wVirtualScanCode, VK_LWIN);
+        // 'VK_LWIN' is an enhanced key, so the ENHANCED_KEY bit should be set.
+        VERIFY_IS_TRUE(inputBuffer[0].Event.KeyEvent.dwControlKeyState & ENHANCED_KEY);
+    }
 
     TEST_METHOD(TestCoalesceSameKeyPress)
     {
@@ -125,7 +218,7 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // send a bunch of 'a' keypresses to the console
+        // send a bunch of 'a' keypresses to the console.
         DWORD repeatCount = 1;
         const unsigned int messageSendCount = 1000;
         for (unsigned int i = 0; i < messageSendCount; ++i)
@@ -133,7 +226,7 @@ class KeyPressTests
             SendMessage(hwnd,
                         WM_CHAR,
                         0x41,
-                        repeatCount);
+                        repeatCount); // WM_CHAR doesn't use scan code
         }
 
         // make sure the keypresses got processed and coalesced

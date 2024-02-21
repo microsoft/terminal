@@ -57,8 +57,9 @@ namespace
         HRESULT InvalidateCircling(_Out_ bool* /*pForcePaint*/) noexcept { return S_OK; }
         HRESULT PaintBackground() noexcept { return S_OK; }
         HRESULT PaintBufferLine(std::span<const Cluster> /*clusters*/, til::point /*coord*/, bool /*fTrimLeft*/, bool /*lineWrapped*/) noexcept { return S_OK; }
-        HRESULT PaintBufferGridLines(GridLineSet /*lines*/, COLORREF /*color*/, size_t /*cchLine*/, til::point /*coordTarget*/) noexcept { return S_OK; }
+        HRESULT PaintBufferGridLines(GridLineSet /*lines*/, COLORREF /*gridlineColor*/, COLORREF /*underlineColor*/, size_t /*cchLine*/, til::point /*coordTarget*/) noexcept { return S_OK; }
         HRESULT PaintSelection(const til::rect& /*rect*/) noexcept { return S_OK; }
+        HRESULT PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept { return S_OK; }
         HRESULT PaintCursor(const CursorOptions& /*options*/) noexcept { return S_OK; }
         HRESULT UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/, const RenderSettings& /*renderSettings*/, gsl::not_null<IRenderData*> /*pData*/, bool /*usingSoftFont*/, bool /*isSettingDefaultBrushes*/) noexcept { return S_OK; }
         HRESULT UpdateFont(const FontInfoDesired& /*FontInfoDesired*/, _Out_ FontInfo& /*FontInfo*/) noexcept { return S_OK; }
@@ -107,7 +108,7 @@ class TerminalCoreUnitTests::ScrollTest final
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        _term = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+        _term = std::make_unique<::Microsoft::Terminal::Core::Terminal>(Terminal::TestDummyMarker{});
 
         _scrollBarNotification = std::make_shared<std::optional<ScrollBarNotification>>();
         _term->SetScrollPositionChangedCallback([scrollBarNotification = _scrollBarNotification](const int top, const int height, const int bottom) {
@@ -154,6 +155,13 @@ void ScrollTest::TestNotifyScrolling()
     //   SHRT_MAX
     // - Have a selection
 
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:notifyOnCircling", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+    INIT_TEST_PROPERTY(bool, notifyOnCircling, L"Controls whether we should always request scroll notifications");
+
+    _term->AlwaysNotifyOnBufferRotation(notifyOnCircling);
+
     Log::Comment(L"Watch out - this test takes a while to run, and won't "
                  L"output anything unless in encounters an error. This is expected.");
 
@@ -180,10 +188,12 @@ void ScrollTest::TestNotifyScrolling()
         // causes the first scroll event
         auto scrolled = currentRow >= TerminalViewHeight - 1;
 
-        // When we circle the buffer, the scroll bar's position does not
-        // change.
+        // When we circle the buffer, the scroll bar's position does not change.
+        // However, as of GH#14045, we will send a notification IF the control
+        // requested on (by setting AlwaysNotifyOnBufferRotation)
         auto circledBuffer = currentRow >= totalBufferSize - 1;
-        auto expectScrollBarNotification = scrolled && !circledBuffer;
+        auto expectScrollBarNotification = (scrolled && !circledBuffer) || // If we scrolled, but didn't circle the buffer OR
+                                           (circledBuffer && notifyOnCircling); // we circled AND we asked for notifications.
 
         if (expectScrollBarNotification)
         {

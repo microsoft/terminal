@@ -282,6 +282,11 @@ public:
         return std::vector<Microsoft::Console::Types::Viewport>{};
     }
 
+    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override
+    {
+        return std::vector<Microsoft::Console::Types::Viewport>{};
+    }
+
     void LockConsole() noexcept override
     {
     }
@@ -363,6 +368,10 @@ public:
     {
     }
 
+    void SelectSearchRegions(std::vector<til::inclusive_rect> /*source*/) override
+    {
+    }
+
     const til::point GetSelectionAnchor() const noexcept
     {
         return {};
@@ -371,10 +380,6 @@ public:
     const til::point GetSelectionEnd() const noexcept
     {
         return {};
-    }
-
-    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
-    {
     }
 
     const bool IsUiaDataInitialized() const noexcept

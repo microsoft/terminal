@@ -36,8 +36,6 @@ SOURCES= \
     ..\MacroBuffer.cpp \
     ..\adaptDispatchGraphics.cpp \
     ..\terminalOutput.cpp \
-    ..\telemetry.cpp \
-    ..\tracing.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

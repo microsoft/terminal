@@ -39,9 +39,6 @@
     <ClCompile Include="..\precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utf8ToWideCharParserTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="InitTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,9 +60,6 @@
     <ClCompile Include="VtRendererTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <Clcompile Include="..\..\types\IInputEventStreams.cpp">
-      <Filter>Source Files</Filter>
-    </Clcompile>
     <ClCompile Include="AliasTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,25 +72,10 @@
     <ClCompile Include="CodepointWidthDetectorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CommandLineTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CommandNumberPopupTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CopyFromCharPopupTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CopyToCharPopupTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TextBufferIteratorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ViewportTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CommandListPopupTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OutputCellIteratorTests.cpp">
@@ -117,9 +96,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\CommonState.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PopupTestHelper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

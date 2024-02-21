@@ -61,6 +61,7 @@ public:
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
+    bool TabSet(const VTParameter /*setType*/) override { return false; } // DECST8C
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground
     bool SetDefaultBackground(const DWORD /*color*/) override { return false; } // OSCDefaultBackground
@@ -129,6 +130,8 @@ public:
     bool DoITerm2Action(const std::wstring_view /*string*/) override { return false; }
 
     bool DoFinalTermAction(const std::wstring_view /*string*/) override { return false; }
+
+    bool DoVsCodeAction(const std::wstring_view /*string*/) override { return false; }
 
     StringHandler DownloadDRCS(const VTInt /*fontNumber*/,
                                const VTParameter /*startChar*/,

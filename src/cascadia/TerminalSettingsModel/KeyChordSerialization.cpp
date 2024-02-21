@@ -123,6 +123,11 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
 // - a newly constructed KeyChord
 static KeyChord _fromString(std::wstring_view wstr)
 {
+    if (wstr.empty())
+    {
+        return nullptr;
+    }
+
     using nameToVkeyPair = std::pair<std::wstring_view, int32_t>;
     static constinit til::static_map nameToVkey{
     // The above VKEY_NAME_PAIRS macro contains a list of key-binding names for each virtual key.

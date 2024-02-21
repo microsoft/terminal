@@ -29,6 +29,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
 
+        bool EncounteredWin32InputModeSequence() const noexcept override;
+
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
 
@@ -119,6 +121,7 @@ namespace Microsoft::Console::VirtualTerminal
             DCH_DeleteCharacter = VTID("P"),
             SU_ScrollUp = VTID("S"),
             SD_ScrollDown = VTID("T"),
+            DECST8C_SetTabEvery8Columns = VTID("?W"),
             ECH_EraseCharacters = VTID("X"),
             CBT_CursorBackTab = VTID("Z"),
             HPA_HorizontalPositionAbsolute = VTID("`"),
@@ -214,6 +217,7 @@ namespace Microsoft::Console::VirtualTerminal
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112,
             FinalTermAction = 133,
+            VsCodeAction = 633,
             ITerm2Action = 1337,
         };
 

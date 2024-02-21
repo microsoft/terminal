@@ -4,6 +4,7 @@ advapi
 altform
 altforms
 appendwttlogging
+appinstaller
 appx
 appxbundle
 appxerror
@@ -19,6 +20,7 @@ cpptools
 cppvsdbg
 CPRs
 cryptbase
+cscript
 DACL
 DACLs
 defaultlib
@@ -59,12 +61,13 @@ PRIINFO
 propkey
 pscustomobject
 QWORD
+rdpclip
 regedit
 resfiles
 robocopy
 SACLs
-segoe
 sdkddkver
+segoe
 Shobjidl
 sid
 Skype
@@ -86,8 +89,10 @@ Virtualization
 visualstudio
 vscode
 VSTHRD
+WINBASEAPI
 winsdkver
 wlk
+wscript
 wslpath
 wtl
 wtt

@@ -73,6 +73,8 @@ void IslandWindow::Refrigerate() noexcept
     // This pointer will get re-set in _warmInitialize
     SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
 
+    _resetSystemMenu();
+
     _pfnCreateCallback = nullptr;
     _pfnSnapDimensionCallback = nullptr;
 
@@ -199,6 +201,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     UpdateWindow(_window.get());
 
     UpdateWindowIconForActiveMetrics(_window.get());
+
+    _currentSystemThemeIsDark = Theme::IsSystemInDarkTheme();
 }
 
 // Method Description:
@@ -745,7 +749,16 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             // themes, color schemes that might depend on the OS theme
             if (param == L"ImmersiveColorSet")
             {
-                _UpdateSettingsRequestedHandlers();
+                // GH#15732: Don't update the settings, unless the theme
+                // _actually_ changed. ImmersiveColorSet gets sent more often
+                // than just on a theme change. It notably gets sent when the PC
+                // is locked, or the UAC prompt opens.
+                auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
+                if (isCurrentlyDark != _currentSystemThemeIsDark)
+                {
+                    _currentSystemThemeIsDark = isCurrentlyDark;
+                    _UpdateSettingsRequestedHandlers();
+                }
             }
         }
         break;
@@ -1904,6 +1917,12 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
         return;
     }
     _systemMenuItems.erase(it->first);
+}
+
+void IslandWindow::_resetSystemMenu()
+{
+    // GetSystemMenu(..., true) will revert the menu to the default state.
+    GetSystemMenu(_window.get(), TRUE);
 }
 
 void IslandWindow::UseDarkTheme(const bool v)

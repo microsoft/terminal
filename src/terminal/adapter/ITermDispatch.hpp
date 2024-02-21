@@ -68,6 +68,7 @@ public:
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
+    virtual bool TabSet(const VTParameter setType) = 0; // DECST8C
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
@@ -136,6 +137,8 @@ public:
     virtual bool DoITerm2Action(const std::wstring_view string) = 0;
 
     virtual bool DoFinalTermAction(const std::wstring_view string) = 0;
+
+    virtual bool DoVsCodeAction(const std::wstring_view string) = 0;
 
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,

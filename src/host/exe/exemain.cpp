@@ -222,6 +222,8 @@ int CALLBACK wWinMain(
     _In_ PWSTR /*pwszCmdLine*/,
     _In_ int /*nCmdShow*/)
 {
+    TraceLoggingRegister(g_hConhostV2EventTraceProvider);
+    wil::SetResultLoggingCallback(&Tracing::TraceFailure);
     Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
@@ -276,7 +278,7 @@ int CALLBACK wWinMain(
     {
         // Only try to register as a handoff target if we are NOT a part of Windows.
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
-        if (args.ShouldRunAsComServer() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
+        if (args.ShouldRunAsComServer())
         {
             try
             {

@@ -278,6 +278,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Don't navigate to the same page again.
                 return;
             }
+            else
+            {
+                // If we are navigating to a new page, scroll to the top
+                SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+            }
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
@@ -332,12 +337,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance);
                     _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced);
                     _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
             }
         });
@@ -367,7 +374,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -655,6 +662,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _Navigate(newTag.as<hstring>(), BreadcrumbSubPage::None);
             }
+            // Since we are navigating to a new profile after deletion, scroll up to the top
+            SettingsMainPage_ScrollViewer().ChangeView(nullptr, 0.0, nullptr);
         }
     }
 

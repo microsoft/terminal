@@ -52,6 +52,7 @@ static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view SuggestionsKey{ "showSuggestions" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
@@ -95,6 +96,7 @@ static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
 static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
 static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
+static constexpr std::string_view OpenAboutKey{ "openAbout" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -386,6 +388,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, MustGenerate },
+                { ShortcutAction::Suggestions, MustGenerate },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::SetFocusMode, MustGenerate },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
@@ -428,6 +431,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
                 { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
                 { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
+                { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
             };
         }();
 
@@ -457,7 +461,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto data = winrt::to_string(content);
 
         std::string errs;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
         Json::Value root;
         if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
         {

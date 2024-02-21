@@ -33,6 +33,7 @@
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
@@ -706,6 +707,46 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_(L"ToggleCommandPaletteCommandKey");
     }
 
+    winrt::hstring SuggestionsArgs::GenerateName() const
+    {
+        std::wstringstream ss;
+        ss << RS_(L"SuggestionsCommandKey").c_str();
+
+        if (UseCommandline())
+        {
+            ss << L", useCommandline:true";
+        }
+
+        // All of the source values will leave a trailing ", " that we need to chop later:
+        ss << L", source: ";
+        const auto source = Source();
+        if (source == SuggestionsSource::All)
+        {
+            ss << L"all, ";
+        }
+        else if (source == static_cast<SuggestionsSource>(0))
+        {
+            ss << L"none, ";
+        }
+        else
+        {
+            if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+            {
+                ss << L"tasks, ";
+            }
+
+            if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
+            {
+                ss << L"commandHistory, ";
+            }
+        }
+        // Chop off the last ","
+        auto result = ss.str();
+        // use `resize`, to avoid duplicating the entire string. (substr doesn't create a view.)
+        result.resize(result.size() - 2);
+        return winrt::hstring{ result };
+    }
+
     winrt::hstring FindMatchArgs::GenerateName() const
     {
         switch (Direction())
@@ -773,10 +814,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SearchForTextArgs::GenerateName() const
     {
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
-                        Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
-        };
+        if (QueryUrl().empty())
+        {
+            // Return the default command name, because we'll just use the
+            // default search engine for this.
+            return RS_(L"SearchWebCommandKey");
+        }
+
+        try
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
+                            Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
+            };
+        }
+        CATCH_LOG();
+
+        // We couldn't parse a URL out of this. Return no string at all, so that
+        // we don't even put this into the command palette.
+        return L"";
     }
 
     winrt::hstring GlobalSummonArgs::GenerateName() const
