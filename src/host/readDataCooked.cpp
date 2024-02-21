@@ -442,10 +442,17 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
         // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
         // I went with insert mode.
         //
+        // The old implementation also failed to clear the end of the prompt if you pressed tab in the middle of it.
+        // You can reproduce this issue by launching cmd in an old conhost build and writing "<command that doesn't exist> foo",
+        // moving your cursor to the space past the <command> and pressing tab. Nothing will happen but the "foo" will be inaccessible.
+        // I've now fixed this behavior by adding an additional Replace() before the _flushBuffer() call that removes the tail end.
+        //
         // It is important that we don't actually print that character out though, as it's only for the calling application to see.
         // That's why we flush the contents before the insertion and then ensure that the _flushBuffer() call in Read() exits early.
+        const auto cursor = _buffer.GetCursorPosition();
+        _buffer.Replace(cursor, npos, nullptr, 0);
         _flushBuffer();
-        _buffer.Replace(_buffer.GetCursorPosition(), 0, &wch, 1);
+        _buffer.Replace(cursor, 0, &wch, 1);
         _buffer.MarkAsClean();
 
         _controlKeyState = modifiers;
