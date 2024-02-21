@@ -56,6 +56,7 @@ namespace Microsoft::Console::Host::BinaryLogging
         [[nodiscard]] ULONG_PTR PutHandle(const void* handle) override;
         [[nodiscard]] void* GetHandle(ULONG_PTR handleId) const override;
         void DestroyHandle(ULONG_PTR handleId) override;
+        [[nodiscard]] virtual HRESULT GetServerHandle(_Out_ HANDLE* pHandle) const { *pHandle = nullptr; return E_FAIL; }
 
     private:
         wil::unique_hfile _file;
@@ -91,6 +92,7 @@ namespace Microsoft::Console::Host::BinaryLogging
         [[nodiscard]] ULONG_PTR PutHandle(const void* handle) override;
         [[nodiscard]] void* GetHandle(ULONG_PTR handleId) const override;
         void DestroyHandle(ULONG_PTR handleId) override;
+        [[nodiscard]] virtual HRESULT GetServerHandle(_Out_ HANDLE* pHandle) const { *pHandle = nullptr; return E_FAIL; }
 
     private:
         wil::unique_hfile _file;
