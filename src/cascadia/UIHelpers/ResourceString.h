@@ -6,7 +6,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 {
     struct ResourceString : ResourceStringT<ResourceString>
     {
-        ResourceString() = default;
+        ResourceString() noexcept = default;
 
         hstring Tree()
         {

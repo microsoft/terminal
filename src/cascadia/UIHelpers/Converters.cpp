@@ -9,7 +9,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 {
     winrt::hstring Converters::AppendPercentageSign(double value)
     {
-        return to_hstring(static_cast<uint32_t>(std::lrint(value))) + L"%";
+        return to_hstring(gsl::narrow_cast<uint32_t>(std::lrint(value))) + L"%";
     }
 
     winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(const winrt::Windows::UI::Color& color)

@@ -140,7 +140,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
                 try
                 {
                     typename FontIconSource<TIconSource>::type icon;
-                    const auto ch = iconPath[0];
+                    const auto ch = til::at(iconPath, 0);
 
                     // The range of MDL2 Icons isn't explicitly defined, but
                     // we're using this based off the table on:
@@ -196,7 +196,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     static SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
                                                    BitmapPixelFormat pixelFormat,
                                                    BitmapAlphaMode alphaMode,
-                                                   IWICImagingFactory* imagingFactory)
+                                                   gsl::not_null<IWICImagingFactory*> imagingFactory)
     {
         // Load the icon into an IWICBitmap
         wil::com_ptr<IWICBitmap> iconBitmap;
