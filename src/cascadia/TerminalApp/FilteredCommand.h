@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
         FilteredCommand() = default;
         FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        void UpdateFilter(const winrt::hstring& filter);
+        virtual void UpdateFilter(const winrt::hstring& filter);
 
         static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 

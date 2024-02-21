@@ -117,7 +117,7 @@ namespace winrt::TerminalApp::implementation
         // FilteredCommand() = default;
         // FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        void UpdateFilter(const winrt::hstring& filter)
+        void UpdateFilter(const winrt::hstring& filter) override 
         {
             TerminalApp::implementation::FilteredCommand::UpdateFilter(filter);
             for (const auto& c : _children)
