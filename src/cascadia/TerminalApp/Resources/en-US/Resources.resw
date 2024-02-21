@@ -737,7 +737,7 @@
     <value>Command Palette</value>
   </data>
   <data name="AIChatMenuItem" xml:space="preserve">
-    <value>Terminal Chat (experimental)</value>
+    <value>Terminal Chat</value>
   </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
