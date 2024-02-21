@@ -1009,10 +1009,15 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
             while (x < glyphsTo)
             {
+                size_t dx = 1;
                 u32 glyphIndex = row->glyphIndices[x];
+
+                // Note: !fontFace is only nullptr for builtin glyphs which then use glyphIndices for UTF16 code points.
+                // In other words, this doesn't accidentally corrupt any actual glyph indices.
                 if (!fontFace && til::is_leading_surrogate(glyphIndex))
                 {
                     glyphIndex = til::combine_surrogates(glyphIndex, row->glyphIndices[x + 1]);
+                    dx = 2;
                 }
 
                 auto glyphEntry = glyphs.lookup(glyphIndex);
@@ -1048,7 +1053,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
                 }
 
                 baselineX += row->glyphAdvances[x];
-                ++x;
+                x += dx;
             }
         }
 
@@ -1171,7 +1176,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     // The lack of a fontFace indicates a soft font.
     if (!fontFaceEntry.fontFace)
     {
-        return _drawCustomGlyph(p, row, fontFaceEntry, glyphIndex);
+        return _drawBuiltinGlyph(p, row, fontFaceEntry, glyphIndex);
     }
 
     const auto glyphIndexU16 = static_cast<u16>(glyphIndex);
@@ -1383,7 +1388,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     return glyphEntry;
 }
 
-BackendD3D::AtlasGlyphEntry* BackendD3D::_drawCustomGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex)
+BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex)
 {
     auto baseline = p.s->font->baseline;
     stbrp_rect rect{
@@ -1413,7 +1418,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawCustomGlyph(const RenderingPayload
             static_cast<f32>(rect.x + rect.w),
             static_cast<f32>(rect.y + rect.h),
         };
-        BuiltinGlyphs::DrawCustomGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
+        BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
     }
 
     const auto glyphEntry = _drawGlyphAllocateEntry(row, fontFaceEntry, glyphIndex);

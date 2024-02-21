@@ -1053,7 +1053,7 @@ constexpr bool Powerline_IsMapped(char32_t codepoint)
 
 // How should I make this constexpr == inline, if it's an external symbol? Bad compiler!
 #pragma warning(suppress : 26497) // You can attempt to make '...' constexpr unless it contains any undefined behavior (f.4).
-bool BuiltinGlyphs::IsCustomGlyph(char32_t codepoint) noexcept
+bool BuiltinGlyphs::IsBuiltinGlyph(char32_t codepoint) noexcept
 {
     return BoxDrawing_IsMapped(codepoint) || Powerline_IsMapped(codepoint);
 }
@@ -1079,10 +1079,10 @@ static wil::com_ptr<ID2D1BitmapBrush> createShadedBitmapBrush(ID2D1DeviceContext
     // clang-format off
     static constexpr u32 shades[3][size * size] = {
         {
-            _, _, _, w,
-            _, _, w, _,
-            _, w, _, _,
             w, _, _, _,
+            w, _, _, _,
+            _, _, w, _,
+            _, _, w, _,
         },
         {
             w, _, w, _,
@@ -1091,10 +1091,10 @@ static wil::com_ptr<ID2D1BitmapBrush> createShadedBitmapBrush(ID2D1DeviceContext
             _, w, _, w,
         },
         {
-            w, w, w, _,
-            w, w, _, w,
-            w, _, w, w,
             _, w, w, w,
+            _, w, w, w,
+            w, w, _, w,
+            w, w, _, w,
         },
     };
     // clang-format on
@@ -1122,7 +1122,7 @@ static wil::com_ptr<ID2D1BitmapBrush> createShadedBitmapBrush(ID2D1DeviceContext
     return bitmapBrush;
 }
 
-void BuiltinGlyphs::DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint)
+void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint)
 {
     renderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
     const auto restoreD2D = wil::scope_exit([&]() {
@@ -1132,7 +1132,7 @@ void BuiltinGlyphs::DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* r
     const auto instructions = GetInstructions(codepoint);
     if (!instructions)
     {
-        assert(false); // If everything in AtlasEngine works correctly, then this function should not get called when !IsCustomGlyph(codepoint).
+        assert(false); // If everything in AtlasEngine works correctly, then this function should not get called when !IsBuiltinGlyph(codepoint).
         renderTarget->Clear(nullptr);
         return;
     }

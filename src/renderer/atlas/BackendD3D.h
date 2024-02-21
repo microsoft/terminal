@@ -11,11 +11,6 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
-    namespace BuiltinGlyphs
-    {
-        union Instruction;
-    }
-
     struct BackendD3D : IBackend
     {
         BackendD3D(const RenderingPayload& p);
@@ -218,7 +213,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawText(RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawTextOverlapSplit(const RenderingPayload& p, u16 y);
         [[nodiscard]] ATLAS_ATTR_COLD AtlasGlyphEntry* _drawGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
-        AtlasGlyphEntry* _drawCustomGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
+        AtlasGlyphEntry* _drawBuiltinGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         void _drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect& rect, u32 glyphIndex);
         void _drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect);
         static AtlasGlyphEntry* _drawGlyphAllocateEntry(const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);

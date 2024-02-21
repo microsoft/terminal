@@ -7,8 +7,8 @@
 
 namespace Microsoft::Console::Render::Atlas::BuiltinGlyphs
 {
-    bool IsCustomGlyph(char32_t codepoint) noexcept;
-    void DrawCustomGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint);
+    bool IsBuiltinGlyph(char32_t codepoint) noexcept;
+    void DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint);
 
     // This is just an extra. It's not actually implemented as part of BuiltinGlyphs.cpp.
     constexpr bool IsSoftFontChar(char32_t ch) noexcept

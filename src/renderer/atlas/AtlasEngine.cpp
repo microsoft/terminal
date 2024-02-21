@@ -697,7 +697,7 @@ void AtlasEngine::_flushBufferLine()
                 codepoint = til::combine_surrogates(codepoint, beg[i++]);
             }
 
-            const auto c = BuiltinGlyphs::IsCustomGlyph(codepoint) || BuiltinGlyphs::IsSoftFontChar(codepoint);
+            const auto c = BuiltinGlyphs::IsBuiltinGlyph(codepoint) || BuiltinGlyphs::IsSoftFontChar(codepoint);
             if (custom != c)
             {
                 break;
