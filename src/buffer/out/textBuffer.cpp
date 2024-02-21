@@ -3071,7 +3071,7 @@ bool TextBufferSerializer::SerializeNextRow(std::wstring& out)
                 {
                     if (WI_IsAnyFlagSet(attrDelta, mapping.attr))
                     {
-                        const auto n = mapping.change[WI_IsAnyFlagSet(attr, mapping.attr)];
+                        const auto n = til::at(mapping.change, WI_IsAnyFlagSet(attr, mapping.attr));
                         fmt::format_to(std::back_inserter(out), FMT_COMPILE(L"\x1b[{}m"), n);
                     }
                 }
@@ -3088,13 +3088,13 @@ bool TextBufferSerializer::SerializeNextRow(std::wstring& out)
                     L"\x1b[4:5m", // UnderlineStyle::DashedUnderlined
                 };
 
-                auto idx = it->value.GetUnderlineStyle();
-                if (idx > UnderlineStyle::DashedUnderlined)
+                auto idx = WI_EnumValue(it->value.GetUnderlineStyle());
+                if (idx >= std::size(mappings))
                 {
-                    idx = UnderlineStyle::SinglyUnderlined;
+                    idx = 1; // UnderlineStyle::SinglyUnderlined
                 }
 
-                out.append(mappings[WI_EnumValue(idx)]);
+                out.append(til::at(mappings, idx));
             }
 
             previousAttr = attr;
