@@ -93,6 +93,9 @@ namespace Microsoft::Console::VirtualTerminal
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
             DECAC1_AcceptC1Controls = VTID(" 7"),
+            ACS_AnsiLevel1 = VTID(" L"),
+            ACS_AnsiLevel2 = VTID(" M"),
+            ACS_AnsiLevel3 = VTID(" N"),
             DECDHL_DoubleHeightLineTop = VTID("#3"),
             DECDHL_DoubleHeightLineBottom = VTID("#4"),
             DECSWL_SingleWidthLine = VTID("#5"),
@@ -163,6 +166,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECERA_EraseRectangularArea = VTID("$z"),
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECRQUPSS_RequestUserPreferenceSupplementalSet = VTID("&u"),
             DECIC_InsertColumn = VTID("'}"),
             DECDC_DeleteColumn = VTID("'~"),
             DECSACE_SelectAttributeChangeExtent = VTID("*x"),
@@ -175,6 +179,7 @@ namespace Microsoft::Console::VirtualTerminal
         enum DcsActionCodes : uint64_t
         {
             DECDLD_DownloadDRCS = VTID("{"),
+            DECAUPSS_AssignUserPreferenceSupplementalSet = VTID("!u"),
             DECDMAC_DefineMacro = VTID("!z"),
             DECRSTS_RestoreTerminalState = VTID("$p"),
             DECRQSS_RequestSetting = VTID("$q"),
