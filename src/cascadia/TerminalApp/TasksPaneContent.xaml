@@ -20,16 +20,6 @@
         <ResourceDictionary>
             <model:IconPathConverter x:Key="IconSourceConverter" />
 
-            <DataTemplate x:Key="ListItemTemplate"
-                          x:DataType="local:FilteredCommand">
-                <ListViewItem Height="32"
-                              MinHeight="0"
-                              Padding="16,0,12,0"
-                              HorizontalContentAlignment="Stretch"
-                              AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"
-                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                              FontSize="12" />
-            </DataTemplate>
             <DataTemplate x:Key="TaskItemTemplate"
                           x:DataType="local:FilteredTask">
                 <mux:TreeViewItem x:Name="rootItem"
@@ -44,20 +34,14 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
+
                         <ContentPresenter Grid.Column="0">
                             <IconSourceElement Width="16"
                                                Height="16"
                                                IconSource="{x:Bind Item.Icon, Converter={StaticResource IconSourceConverter}}"
                                                Visibility="Collapsed" />
                         </ContentPresenter>
-                        <!-- <Ellipse x:Name="Ellipse"
-                                    Grid.RowSpan="2"
-                                    Width ="32"
-                                    Height="32"
-                                    Margin="6"
-                                    VerticalAlignment="Center"
-                                    HorizontalAlignment="Center"
-                                    Fill="{ThemeResource SystemControlBackgroundBaseMediumBrush}"/>-->
+
                         <Button Grid.Row="0"
                                 Grid.RowSpan="1"
                                 Grid.Column="0"
@@ -72,7 +56,11 @@
                                 <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                           FontSize="12"
                                           Glyph="&#xE768;" />
-                                <!--  xF5B0 is PlaySolid, also a good option. Seemed better to have a lightweight outline though  -->
+                                <!--
+                                    xE768 is Play, which is just an outline.
+                                    xF5B0 is PlaySolid, also a good option. Seemed
+                                    better to have a lightweight outline though
+                                -->
                             </Button.Content>
 
                             <Button.Resources>
@@ -108,12 +96,6 @@
                                 </ResourceDictionary>
                             </Button.Resources>
                         </Button>
-
-                        <!-- <TextBlock Grid.Column="1"
-                                   Margin="12,6,0,0"
-                                   Style="{ThemeResource BaseTextBlockStyle}"
-                                   Text="{x:Bind Item.Name, Mode=OneWay}"
-                                   TextWrapping="WrapWholeWords" />-->
 
                         <local:HighlightedTextControl Grid.Column="1"
                                                       HorizontalAlignment="Left"

@@ -23,7 +23,8 @@ namespace winrt::TerminalApp::implementation
         void Close();
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
 
-        winrt::hstring Title() { return L"Scratchpad"; }
+        // TODO! lots of strings here and in XAML that need RS_-ifying
+        winrt::hstring Title() { return L"Tasks"; }
         uint64_t TaskbarState() { return 0; }
         uint64_t TaskbarProgress() { return 0; }
         bool ReadOnly() { return false; }
@@ -58,42 +59,6 @@ namespace winrt::TerminalApp::implementation
         void _updateFilteredCommands();
     };
 
-    struct TaskViewModel : TaskViewModelT<TaskViewModel>
-    {
-        TaskViewModel(const winrt::Microsoft::Terminal::Settings::Model::Command& command) :
-            _command{ command }
-        {
-            // The Children() method must always return a non-null vector
-            _children = winrt::single_threaded_observable_vector<TerminalApp::TaskViewModel>();
-            if (_command.HasNestedCommands())
-            {
-                for (const auto& [_, child] : _command.NestedCommands())
-                {
-                    auto vm{ winrt::make<TaskViewModel>(child) };
-                    _children.Append(vm);
-                }
-            }
-        }
-
-        winrt::hstring Name() { return _command.Name(); }
-        winrt::hstring IconPath() { return _command.IconPath(); }
-        winrt::hstring Input()
-        {
-            if (const auto& sendInput{ _command.ActionAndArgs().Args().try_as<winrt::Microsoft::Terminal::Settings::Model::SendInputArgs>() })
-            {
-                return sendInput.Input();
-            }
-            return L"";
-        };
-        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TaskViewModel> Children() { return _children; }
-        winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
-
-    private:
-        winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TaskViewModel> _children{ nullptr };
-    };
-
-    // struct FilteredTask : public winrt::TerminalApp::implementation::FilteredCommand, FilteredTaskT<FilteredTask, FilteredCommand>
     struct FilteredTask : FilteredTaskT<FilteredTask, TerminalApp::implementation::FilteredCommand>
     {
         FilteredTask() = default;
@@ -115,9 +80,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // FilteredCommand() = default;
-        // FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
-
         void UpdateFilter(const winrt::hstring& filter) override
         {
             TerminalApp::implementation::FilteredCommand::UpdateFilter(filter);
@@ -128,14 +90,6 @@ namespace winrt::TerminalApp::implementation
 
             _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
         }
-
-        // static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
-
-        // WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        // WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::PaletteItem, Item, _PropertyChangedHandlers, nullptr);
-        // WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Filter, _PropertyChangedHandlers);
-        // WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
-        // WINRT_OBSERVABLE_PROPERTY(int, Weight, _PropertyChangedHandlers);
 
         winrt::hstring Input()
         {
@@ -155,12 +109,17 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> Children() { return _children; }
         winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
 
+        // Used to control if this item is visible in the TreeView. Turns out,
+        // TreeView is in fact sane enough to remove items entirely if they're
+        // Collapsed.
         winrt::Windows::UI::Xaml::Visibility Visibility()
         {
+            // Is there no filter, or do we match it?
             if (_Filter.empty() || _Weight > 0)
             {
                 return winrt::Windows::UI::Xaml::Visibility::Visible;
             }
+            // If we don't match, maybe one of our children does
             auto totalWeight = _Weight;
             for (const auto& c : _children)
             {

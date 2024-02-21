@@ -34,31 +34,23 @@ namespace winrt::TerminalApp::implementation
     {
         const auto& queryString = _filterBox().Text();
 
-        // You'd think that `FilterToSendInput(queryString)` would work. It
-        // doesn't! That uses the queryString as the current command the user
-        // has typed, then relies on the sxnui to _also_ filter with that
-        // string.
-
-        // In the fullness of time, we'll actually want to filter things here.
-        // Probably with something that re-uses the suggestions control list
-        //
-        // huh. now that's a thought.
-
-        // const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
-        // auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
+        // DON'T replace the itemSource here. If you do, it'll un-expand all the
+        // nested items the user has expanded. Instead, just update the filter.
+        // That'll also trigger a PropertyChanged for the Visibility property.
         for (const auto& t : _allTasks)
         {
-            // const auto& filtered{ winrt::make<FilteredTask>(t) };
             t.UpdateFilter(queryString);
-            // itemSource.Append(filtered);
         }
-
-        // _treeView().ItemsSource(itemSource);
     }
 
     void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         _settings = settings;
+
+        // You'd think that `FilterToSendInput(queryString)` would work. It
+        // doesn't! That uses the queryString as the current command the user
+        // has typed, then relies on the sxnui to _also_ filter with that
+        // string.
 
         const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
         _allTasks = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
