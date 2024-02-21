@@ -1197,11 +1197,10 @@ void BackendD3D::_initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry
     }
 
     ALLOW_UNINITIALIZED_BEGIN
-    std::array<u32, 0xA0> codepoints;
-    std::array<u16, 0xA0> indices;
+    std::array<u32, 0x100> codepoints;
+    std::array<u16, 0x100> indices;
     ALLOW_UNINITIALIZED_END
 
-    // U+2500 .. U+259F
     for (u32 i = 0; i < codepoints.size(); ++i)
     {
         codepoints[i] = 0x2500 + i;
@@ -1209,9 +1208,9 @@ void BackendD3D::_initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry
 
     THROW_IF_FAILED(fontFaceEntry.fontFace->GetGlyphIndicesW(codepoints.data(), codepoints.size(), indices.data()));
 
-    for (const auto idx : indices)
+    for (u32 i = 0; i < indices.size(); ++i)
     {
-        if (idx)
+        if (const auto idx = indices[i])
         {
             fontFaceEntry.boxGlyphs.insert(idx);
         }
