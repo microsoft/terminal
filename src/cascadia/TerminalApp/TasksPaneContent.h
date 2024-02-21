@@ -48,8 +48,9 @@ namespace winrt::TerminalApp::implementation
         friend struct TasksPaneContentT<TasksPaneContent>; // for Xaml to bind events
 
         winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
-        // std::vector<winrt::TerminalApp::TaskViewModel> _allCommands{};
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+
+        winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _allTasks{ nullptr };
 
         void _runCommandButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);
         void _filterTextChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
@@ -124,6 +125,8 @@ namespace winrt::TerminalApp::implementation
             {
                 c.UpdateFilter(filter);
             }
+
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
         }
 
         // static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
@@ -152,13 +155,22 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::Visibility Visibility()
         {
-            return (_Filter.empty() || _Weight > 0) ? winrt::Windows::UI::Xaml::Visibility::Visible : winrt::Windows::UI::Xaml::Visibility::Collapsed;
+            if (_Filter.empty() || _Weight > 0)
+            {
+                return winrt::Windows::UI::Xaml::Visibility::Visible;
+            }
+            auto totalWeight = _Weight;
+            for (const auto& c : _children)
+            {
+                totalWeight += c.Weight();
+            }
+
+            return totalWeight > 0 ? winrt::Windows::UI::Xaml::Visibility::Visible : winrt::Windows::UI::Xaml::Visibility::Collapsed;
         };
 
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _children{ nullptr };
-
     };
 }
 

@@ -34,7 +34,7 @@
                           x:DataType="local:FilteredTask">
                 <mux:TreeViewItem x:Name="rootItem"
                                   ItemsSource="{x:Bind Children}"
-                                  Visibility="{x:Bind Visibility}">
+                                  Visibility="{x:Bind Visibility, Mode=OneWay}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />

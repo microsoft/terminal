@@ -44,21 +44,31 @@ namespace winrt::TerminalApp::implementation
         //
         // huh. now that's a thought.
 
-        const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
-        auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
-        for (const auto& t : tasks)
+        // const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
+        // auto itemSource = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
+        for (const auto& t : _allTasks)
         {
-            const auto& filtered{ winrt::make<FilteredTask>(t) };
-            filtered.UpdateFilter(queryString);
-            itemSource.Append(filtered);
+            // const auto& filtered{ winrt::make<FilteredTask>(t) };
+            t.UpdateFilter(queryString);
+            // itemSource.Append(filtered);
         }
 
-        _treeView().ItemsSource(itemSource);
+        // _treeView().ItemsSource(itemSource);
     }
 
     void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         _settings = settings;
+
+        const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
+        _allTasks = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
+        for (const auto& t : tasks)
+        {
+            const auto& filtered{ winrt::make<FilteredTask>(t) };
+            _allTasks.Append(filtered);
+        }
+        _treeView().ItemsSource(_allTasks);
+
         _updateFilteredCommands();
     }
 
