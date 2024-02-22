@@ -43,6 +43,9 @@
     <AppxManifest Include="Package-Pre.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Preview'">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <AppxManifest Include="Package-Can.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Canary'">
+      <SubType>Designer</SubType>
+    </AppxManifest>
     <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">
       <SubType>Designer</SubType>
     </AppxManifest>
@@ -62,6 +65,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
     <WindowsTerminalAssetSuffix>-Pre</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Canary'">
+    <WindowsTerminalAssetSuffix>-Can</WindowsTerminalAssetSuffix>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
@@ -153,6 +159,8 @@
     <ItemGroup>
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs.Desktop'" />
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug.UWPDesktop'" />
     </ItemGroup>
   </Target>
 
@@ -161,6 +169,8 @@
     <ItemGroup>
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs.Desktop'" />
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug.UWPDesktop'" />
     </ItemGroup>
   </Target>
 

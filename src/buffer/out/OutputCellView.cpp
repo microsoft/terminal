@@ -40,20 +40,7 @@ OutputCellView::OutputCellView(const std::wstring_view view,
 // - Count of column cells on the screen
 til::CoordType OutputCellView::Columns() const noexcept
 {
-    if (DbcsAttr().IsSingle())
-    {
-        return 1;
-    }
-    else if (DbcsAttr().IsLeading())
-    {
-        return 2;
-    }
-    else if (DbcsAttr().IsTrailing())
-    {
-        return 1;
-    }
-
-    return 1;
+    return DbcsAttr() == DbcsAttribute::Leading ? 2 : 1;
 }
 
 // Routine Description:

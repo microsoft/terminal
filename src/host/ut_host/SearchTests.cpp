@@ -53,109 +53,109 @@ class SearchTests
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
         m_state->CleanupNewTextBufferInfo();
-
+        Selection::Instance().ClearSelection();
         return true;
     }
 
-    void DoFoundChecks(Search& s, til::point& coordStartExpected, til::CoordType lineDelta)
+    static void DoFoundChecks(Search& s, til::point coordStartExpected, til::CoordType lineDelta)
     {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
         auto coordEndExpected = coordStartExpected;
-        coordEndExpected.X += 1;
+        coordEndExpected.x += 1;
 
-        VERIFY_IS_TRUE(s.FindNext());
-        VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
-        VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);
+        VERIFY_IS_TRUE(s.SelectCurrent());
+        VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
 
-        coordStartExpected.Y += lineDelta;
-        coordEndExpected.Y += lineDelta;
-        VERIFY_IS_TRUE(s.FindNext());
-        VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
-        VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);
+        coordStartExpected.y += lineDelta;
+        coordEndExpected.y += lineDelta;
+        s.FindNext();
 
-        coordStartExpected.Y += lineDelta;
-        coordEndExpected.Y += lineDelta;
-        VERIFY_IS_TRUE(s.FindNext());
-        VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
-        VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);
+        VERIFY_IS_TRUE(s.SelectCurrent());
+        VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
 
-        coordStartExpected.Y += lineDelta;
-        coordEndExpected.Y += lineDelta;
-        VERIFY_IS_TRUE(s.FindNext());
-        VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
-        VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);
+        coordStartExpected.y += lineDelta;
+        coordEndExpected.y += lineDelta;
+        s.FindNext();
 
-        VERIFY_IS_FALSE(s.FindNext());
+        VERIFY_IS_TRUE(s.SelectCurrent());
+        VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
+
+        coordStartExpected.y += lineDelta;
+        coordEndExpected.y += lineDelta;
+        s.FindNext();
+
+        VERIFY_IS_TRUE(s.SelectCurrent());
+        VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
     }
 
     TEST_METHOD(ForwardCaseSensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        til::point coordStartExpected;
-        Search s(gci.renderData, L"AB", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
-        DoFoundChecks(s, coordStartExpected, 1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"AB", false, false);
+        DoFoundChecks(s, {}, 1);
     }
 
     TEST_METHOD(ForwardCaseSensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-        til::point coordStartExpected = { 2, 0 };
-        Search s(gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
-        DoFoundChecks(s, coordStartExpected, 1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"\x304b", false, false);
+        DoFoundChecks(s, { 2, 0 }, 1);
     }
 
     TEST_METHOD(ForwardCaseInsensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        til::point coordStartExpected;
-        Search s(gci.renderData, L"ab", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
-        DoFoundChecks(s, coordStartExpected, 1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"ab", false, true);
+        DoFoundChecks(s, {}, 1);
     }
 
     TEST_METHOD(ForwardCaseInsensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-        til::point coordStartExpected = { 2, 0 };
-        Search s(gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
-        DoFoundChecks(s, coordStartExpected, 1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"\x304b", false, true);
+        DoFoundChecks(s, { 2, 0 }, 1);
     }
 
     TEST_METHOD(BackwardCaseSensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-        til::point coordStartExpected = { 0, 3 };
-        Search s(gci.renderData, L"AB", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
-        DoFoundChecks(s, coordStartExpected, -1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"AB", true, false);
+        DoFoundChecks(s, { 0, 3 }, -1);
     }
 
     TEST_METHOD(BackwardCaseSensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-        til::point coordStartExpected = { 2, 3 };
-        Search s(gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
-        DoFoundChecks(s, coordStartExpected, -1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"\x304b", true, false);
+        DoFoundChecks(s, { 2, 3 }, -1);
     }
 
     TEST_METHOD(BackwardCaseInsensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-        til::point coordStartExpected = { 0, 3 };
-        Search s(gci.renderData, L"ab", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
-        DoFoundChecks(s, coordStartExpected, -1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"ab", true, true);
+        DoFoundChecks(s, { 0, 3 }, -1);
     }
 
     TEST_METHOD(BackwardCaseInsensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-        til::point coordStartExpected = { 2, 3 };
-        Search s(gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
-        DoFoundChecks(s, coordStartExpected, -1);
+        Search s;
+        s.ResetIfStale(gci.renderData, L"\x304b", true, true);
+        DoFoundChecks(s, { 2, 3 }, -1);
     }
 };

@@ -19,7 +19,7 @@ static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>>
     { 0x7, L"\a", CodepointWidth::Narrow }, // BEL
     { 0x20, L" ", CodepointWidth::Narrow },
     { 0x39, L"9", CodepointWidth::Narrow },
-    { 0x414, L"\x414", CodepointWidth::Ambiguous }, // U+0414 cyrillic capital de
+    { 0x414, L"\x414", CodepointWidth::Narrow }, // U+0414 cyrillic capital de
     { 0x1104, L"\x1104", CodepointWidth::Wide }, // U+1104 hangul choseong ssangtikeut
     { 0x306A, L"\x306A", CodepointWidth::Wide }, // U+306A hiragana na
     { 0x30CA, L"\x30CA", CodepointWidth::Wide }, // U+30CA katakana na
@@ -36,18 +36,6 @@ class CodepointWidthDetectorTests
     {
         CodepointWidthDetector widthDetector;
         VERIFY_IS_TRUE(widthDetector.IsWide(emoji));
-    }
-
-    TEST_METHOD(CanExtractCodepoint)
-    {
-        CodepointWidthDetector widthDetector;
-        for (const auto& data : testData)
-        {
-            const auto& expected = std::get<0>(data);
-            const auto& wstr = std::get<1>(data);
-            const auto result = widthDetector._extractCodepoint({ wstr.c_str(), wstr.size() });
-            VERIFY_ARE_EQUAL(result, expected);
-        }
     }
 
     TEST_METHOD(CanGetWidths)
@@ -91,8 +79,8 @@ class CodepointWidthDetectorTests
 
         // Cached item should match what we expect
         const auto it = widthDetector._fallbackCache.begin();
-        VERIFY_ARE_EQUAL(ambiguous, it->first);
-        VERIFY_ARE_EQUAL(FallbackMethod(ambiguous), it->second);
+        VERIFY_ARE_EQUAL(ambiguous[0], it->first);
+        VERIFY_ARE_EQUAL(FallbackMethod(ambiguous) ? 2u : 1u, it->second);
 
         // Cache should empty when font changes.
         widthDetector.NotifyFontChanged();

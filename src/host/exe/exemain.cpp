@@ -52,6 +52,27 @@ class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithReg
 // Holds the wwinmain open until COM tells us there are no more server connections
 wil::unique_event _comServerExitEvent;
 
+[[nodiscard]] static HRESULT ValidateServerHandle(const HANDLE handle)
+{
+    // Make sure this is a console file.
+    FILE_FS_DEVICE_INFORMATION DeviceInformation;
+    IO_STATUS_BLOCK IoStatusBlock;
+    const auto Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
+    if (FAILED_NTSTATUS(Status))
+    {
+        RETURN_NTSTATUS(Status);
+    }
+    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE)
+    {
+        return E_INVALIDARG;
+    }
+    else
+    {
+        return S_OK;
+    }
+}
+
+#if TIL_FEATURE_LEGACYCONHOST_ENABLED
 static bool useV2 = true;
 static bool ConhostV2ForcedInRegistry()
 {
@@ -66,7 +87,7 @@ static bool ConhostV2ForcedInRegistry()
 
     // open HKCU\Console
     wil::unique_hkey hConsoleSubKey;
-    LONG lStatus = NTSTATUS_FROM_WIN32(RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey));
+    LONG lStatus = RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey);
     if (ERROR_SUCCESS == lStatus)
     {
         // now get the value of the ForceV2 reg value, if it exists
@@ -99,26 +120,6 @@ static bool ConhostV2ForcedInRegistry()
     }
 
     return fShouldUseConhostV2;
-}
-
-[[nodiscard]] static HRESULT ValidateServerHandle(const HANDLE handle)
-{
-    // Make sure this is a console file.
-    FILE_FS_DEVICE_INFORMATION DeviceInformation;
-    IO_STATUS_BLOCK IoStatusBlock;
-    const auto Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
-    if (!NT_SUCCESS(Status))
-    {
-        RETURN_NTSTATUS(Status);
-    }
-    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE)
-    {
-        return E_INVALIDARG;
-    }
-    else
-    {
-        return S_OK;
-    }
 }
 
 static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
@@ -185,6 +186,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
     return hr;
 }
+#endif // TIL_FEATURE_LEGACYCONHOST_ENABLED
 
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
@@ -220,6 +222,8 @@ int CALLBACK wWinMain(
     _In_ PWSTR /*pwszCmdLine*/,
     _In_ int /*nCmdShow*/)
 {
+    TraceLoggingRegister(g_hConhostV2EventTraceProvider);
+    wil::SetResultLoggingCallback(&Tracing::TraceFailure);
     Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
@@ -274,7 +278,7 @@ int CALLBACK wWinMain(
     {
         // Only try to register as a handoff target if we are NOT a part of Windows.
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
-        if (args.ShouldRunAsComServer() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
+        if (args.ShouldRunAsComServer())
         {
             try
             {
@@ -303,6 +307,7 @@ int CALLBACK wWinMain(
         else
 #endif
         {
+#if TIL_FEATURE_LEGACYCONHOST_ENABLED
             if (ShouldUseLegacyConhost(args))
             {
                 useV2 = false;
@@ -321,6 +326,7 @@ int CALLBACK wWinMain(
                 }
             }
             if (useV2)
+#endif // TIL_FEATURE_LEGACYCONHOST_ENABLED
             {
                 if (args.ShouldCreateServerHandle())
                 {

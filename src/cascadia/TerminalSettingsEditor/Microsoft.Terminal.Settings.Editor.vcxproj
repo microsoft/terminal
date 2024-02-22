@@ -78,12 +78,12 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Profiles.h">
-      <DependentUpon>Profiles.idl</DependentUpon>
-      <SubType>Code</SubType>
-    </ClInclude>
     <ClInclude Include="ProfileViewModel.h">
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ActionsViewModel.h">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ColorSchemeViewModel.h">
@@ -229,6 +229,10 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="ActionsViewModel.cpp">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="ColorSchemeViewModel.cpp">
       <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -323,10 +327,8 @@
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Midl>
-    <Midl Include="Profiles.idl">
-      <SubType>Code</SubType>
-    </Midl>
     <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="ActionsViewModel.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
     <Midl Include="RenderingViewModel.idl" />
@@ -360,7 +362,6 @@
     </PRIResource>
     <OCResourceDirectory Include="Resources" />
     <None Include="$(ProjectName).def" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

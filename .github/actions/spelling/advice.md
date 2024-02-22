@@ -6,8 +6,6 @@
 
 By default the command suggestion will generate a file named based on your commit. That's generally ok as long as you add the file to your commit. Someone can reorganize it later.
 
-:warning: The command is written for posix shells. If it doesn't work for you, you can manually _add_ (one word per line) / _remove_ items to `expect.txt` and the `excludes.txt` files.
-
 If the listed items are:
 
 * ... **misspelled**, then please *correct* them instead of using the command.
@@ -21,7 +19,7 @@ See the `README.md` in each directory for more information.
 :microscope: You can test your commits **without** *appending* to a PR by creating a new branch with that extra change and pushing it to your fork. The [check-spelling](https://github.com/marketplace/actions/check-spelling) action will run in response to your **push** -- it doesn't require an open pull request. By using such a branch, you can limit the number of typos your peers see you make. :wink:
 
 
-<details><summary>:clamp: If the flagged items are false positives</summary>
+<details><summary>If the flagged items are :exploding_head: false positives</summary>
 
 If items relate to a ...
 * binary file (or some other file you wouldn't want to check at all).
@@ -36,7 +34,9 @@ https://www.regexplanet.com/advanced/perl/) yours before committing to verify it
 
 * well-formed pattern.
 
-  If you can write a [pattern](https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-patterns) that would match it,
+  If you can write a [pattern](
+https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-patterns
+) that would match it,
   try adding it to the `patterns.txt` file.
 
   Patterns are Perl 5 Regular Expressions - you can [test](

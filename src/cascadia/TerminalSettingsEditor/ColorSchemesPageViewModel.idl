@@ -27,5 +27,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean CanDeleteCurrentScheme { get; };
         ColorSchemesSubPage CurrentPage;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
+
+        void SchemeListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
     }
 }

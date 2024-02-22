@@ -28,6 +28,7 @@
     <AppContainerApplication>true</AppContainerApplication>
     <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
+    <UseCrtSDKReference Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReference> <!-- The SDK reference breaks the Hybrid CRT -->
   </PropertyGroup>
   <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='true'">
     <!-- Some of our projects include the cppwinrt build options to
@@ -62,7 +63,7 @@
   <!-- Overrides for common build settings -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- C++/WinRT hardcodes pch.h -->
+      <!-- C++/WinRT hard-codes pch.h -->
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
@@ -72,6 +73,8 @@
       <DisableSpecificWarnings>5104;28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
 
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+
+      <PreprocessorDefinitions>WINRT_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem Condition="'%(SubSystem)'==''">Console</SubSystem>

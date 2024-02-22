@@ -174,6 +174,7 @@
             "foreground": "#383A42",
             "background": "#FAFAFA",
             "cursorColor": "#4F525D",
+            "selectionBackground": "#4F525D",
             "black": "#383A42",
             "red": "#E45649",
             "green": "#50A14F",
@@ -218,6 +219,7 @@
             "foreground": "#657B83",
             "background": "#FDF6E3",
             "cursorColor": "#002B36",
+            "selectionBackground": "#073642",
             "black": "#002B36",
             "red": "#DC322F",
             "green": "#859900",
@@ -262,6 +264,7 @@
             "foreground": "#555753",
             "background": "#FFFFFF",
             "cursorColor": "#000000",
+            "selectionBackground": "#555753",
             "black": "#000000",
             "red": "#CC0000",
             "green": "#4E9A06",
@@ -316,6 +319,36 @@
                 "background": "terminalBackground",
                 "unfocusedBackground": "#00000000"
             }
+        },
+        {
+            "name": "legacyDark",
+            "tab": {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window": {
+                "applicationTheme": "dark"
+            }
+        },
+        {
+            "name": "legacyLight",
+            "tab": {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window": {
+                "applicationTheme": "light"
+            }
+        },
+        {
+            "name": "legacySystem",
+            "tab": {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window": {
+                "applicationTheme": "system"
+            },
         }
     ],
     "actions":
@@ -343,7 +376,8 @@
         { "command": "quakeMode", "keys":"win+sc(41)" },
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
-        { "command": "restoreLastClosed"},
+        { "command": "restoreLastClosed" },
+        { "command": "openAbout" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -375,6 +409,7 @@
         { "command": { "action": "switchToTab", "index": 6 }, "keys": "ctrl+alt+7" },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": "ctrl+alt+8" },
         { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
+        { "command": { "action": "moveTab", "window": "new" }, },
 
         // Pane Management
         { "command": "closeOtherPanes" },
@@ -405,9 +440,12 @@
         { "command": { "action": "swapPane", "direction": "previousInOrder"} },
         { "command": { "action": "swapPane", "direction": "nextInOrder"} },
         { "command": { "action": "swapPane", "direction": "first" } },
+        { "command": "toggleBroadcastInput" },
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
+        { "command": "enableReadOnlyMode" },
+        { "command": "disableReadOnlyMode" },
         { "command": { "action": "movePane", "index": 0 } },
         { "command": { "action": "movePane", "index": 1 } },
         { "command": { "action": "movePane", "index": 2 } },
@@ -417,6 +455,8 @@
         { "command": { "action": "movePane", "index": 6 } },
         { "command": { "action": "movePane", "index": 7 } },
         { "command": { "action": "movePane", "index": 8 } },
+        { "command": { "action": "movePane", "window": "new" }, },
+        { "command": "restartConnection" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -429,6 +469,10 @@
         { "command": "toggleBlockSelection" },
         { "command": "switchSelectionEndpoint" },
         { "command": "expandSelectionToWord" },
+        { "command": "showContextMenu", "keys": "menu" },
+
+        // Web Search
+        { "command": { "action": "searchWeb" }, "name": { "key": "SearchWebCommandKey" } },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

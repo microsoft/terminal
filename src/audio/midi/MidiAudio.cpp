@@ -5,10 +5,6 @@
 #include "MidiAudio.hpp"
 #include "../terminal/parser/stateMachine.hpp"
 
-#include <dsound.h>
-
-#pragma comment(lib, "dxguid.lib")
-
 using Microsoft::WRL::ComPtr;
 using namespace std::chrono_literals;
 
@@ -17,12 +13,13 @@ using namespace std::chrono_literals;
 constexpr auto WAVE_SIZE = 16u;
 constexpr auto WAVE_DATA = std::array<byte, WAVE_SIZE>{ 128, 159, 191, 223, 255, 223, 191, 159, 128, 96, 64, 32, 0, 32, 64, 96 };
 
-MidiAudio::MidiAudio(HWND windowHandle)
+void MidiAudio::_initialize(HWND windowHandle) noexcept
 {
+    _hwnd = windowHandle;
     _directSoundModule.reset(LoadLibraryExW(L"dsound.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
     if (_directSoundModule)
     {
-        if (auto createFunction = GetProcAddressByFunctionDeclaration(_directSoundModule.get(), DirectSoundCreate8))
+        if (const auto createFunction = GetProcAddressByFunctionDeclaration(_directSoundModule.get(), DirectSoundCreate8))
         {
             if (SUCCEEDED(createFunction(nullptr, &_directSound, nullptr)))
             {
@@ -35,55 +32,29 @@ MidiAudio::MidiAudio(HWND windowHandle)
     }
 }
 
-MidiAudio::~MidiAudio() noexcept
+void MidiAudio::BeginSkip() noexcept
 {
-    try
-    {
-#pragma warning(suppress : 26447)
-        // We acquire the lock here so the class isn't destroyed while in use.
-        // If this throws, we'll catch it, so the C26447 warning is bogus.
-        const auto lock = std::unique_lock{ _inUseMutex };
-    }
-    catch (...)
-    {
-        // If the lock fails, we'll just have to live with the consequences.
-    }
+    _skip.SetEvent();
 }
 
-void MidiAudio::Initialize()
+void MidiAudio::EndSkip() noexcept
 {
-    _shutdownFuture = _shutdownPromise.get_future();
+    _skip.ResetEvent();
 }
 
-void MidiAudio::Shutdown()
-{
-    // Once the shutdown promise is set, any note that is playing will stop
-    // immediately, and the Unlock call will exit the thread ASAP.
-    _shutdownPromise.set_value();
-}
-
-void MidiAudio::Lock()
-{
-    _inUseMutex.lock();
-}
-
-void MidiAudio::Unlock()
-{
-    // We need to check the shutdown status before releasing the mutex,
-    // because after that the class could be destroyed.
-    const auto shutdownStatus = _shutdownFuture.wait_for(0s);
-    _inUseMutex.unlock();
-    // If the wait didn't timeout, that means the shutdown promise was set,
-    // so we need to exit the thread ASAP by throwing an exception.
-    if (shutdownStatus != std::future_status::timeout)
-    {
-        throw Microsoft::Console::VirtualTerminal::StateMachine::ShutdownException{};
-    }
-}
-
-void MidiAudio::PlayNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) noexcept
+void MidiAudio::PlayNote(HWND windowHandle, const int noteNumber, const int velocity, const std::chrono::milliseconds duration) noexcept
 try
 {
+    if (_skip.is_signaled())
+    {
+        return;
+    }
+
+    if (_hwnd != windowHandle)
+    {
+        _initialize(windowHandle);
+    }
+
     const auto& buffer = _buffers.at(_activeBufferIndex);
     if (velocity && buffer)
     {
@@ -106,10 +77,10 @@ try
         buffer->SetCurrentPosition((_lastBufferPosition + 12) % WAVE_SIZE);
     }
 
-    // By waiting on the shutdown future with the duration of the note, we'll
-    // either be paused for the appropriate amount of time, or we'll break out
-    // of the wait early if we've been shutdown.
-    _shutdownFuture.wait_for(duration);
+    // By waiting on the skip event with a maximum duration of the note, we'll
+    // either be paused for the appropriate amount of time, or we'll break out early
+    // because BeginSkip() was called. This happens for Ctrl+C or during shutdown.
+    _skip.wait(::base::saturated_cast<DWORD>(duration.count()));
 
     if (velocity && buffer)
     {

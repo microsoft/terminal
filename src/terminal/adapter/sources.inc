@@ -33,10 +33,9 @@ SOURCES= \
     ..\adaptDispatch.cpp \
     ..\FontBuffer.cpp \
     ..\InteractDispatch.cpp \
+    ..\MacroBuffer.cpp \
     ..\adaptDispatchGraphics.cpp \
     ..\terminalOutput.cpp \
-    ..\telemetry.cpp \
-    ..\tracing.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

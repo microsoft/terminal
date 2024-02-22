@@ -2,8 +2,9 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <vector>
 #include "gdirenderer.hpp"
+
+#include <til/small_vector.h>
 
 #include "../inc/unicode.hpp"
 
@@ -79,7 +80,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 [[nodiscard]] HRESULT GdiEngine::ScrollFrame() noexcept
 {
     // If we don't have any scrolling to do, return early.
-    RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
+    RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.width && 0 == _szInvalidScroll.height);
 
     // If we have an inverted cursor, we have to see if we have to clean it before we scroll to prevent
     // left behind cursor copies in the scrolled region.
@@ -115,20 +116,20 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
     const auto coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
     til::size szGutter;
-    szGutter.cx = _szMemorySurface.cx % coordFontSize.X;
-    szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
+    szGutter.width = _szMemorySurface.width % coordFontSize.width;
+    szGutter.height = _szMemorySurface.height % coordFontSize.height;
 
     RECT rcScrollLimit{};
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cx, szGutter.cx, &rcScrollLimit.right));
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cy, szGutter.cy, &rcScrollLimit.bottom));
+    RETURN_IF_FAILED(LongSub(_szMemorySurface.width, szGutter.width, &rcScrollLimit.right));
+    RETURN_IF_FAILED(LongSub(_szMemorySurface.height, szGutter.height, &rcScrollLimit.bottom));
 
     // Scroll real window and memory buffer in-sync.
     LOG_LAST_ERROR_IF(!ScrollWindowEx(_hwndTargetWindow,
-                                      _szInvalidScroll.cx,
-                                      _szInvalidScroll.cy,
+                                      _szInvalidScroll.width,
+                                      _szInvalidScroll.height,
                                       &rcScrollLimit,
                                       &rcScrollLimit,
                                       nullptr,
@@ -136,7 +137,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
                                       0));
 
     til::rect rcUpdate;
-    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, rcUpdate.as_win32_rect())));
+    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.width, _szInvalidScroll.height, &rcScrollLimit, &rcScrollLimit, nullptr, rcUpdate.as_win32_rect())));
 
     LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
@@ -161,7 +162,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     // Only do work if the existing memory surface is a different size from the client area.
     // Return quickly if they're the same.
-    RETURN_HR_IF(S_OK, _szMemorySurface.cx == szClient.cx && _szMemorySurface.cy == szClient.cy);
+    RETURN_HR_IF(S_OK, _szMemorySurface.width == szClient.width && _szMemorySurface.height == szClient.height);
 
     wil::unique_hdc hdcRealWindow(GetDC(_hwndTargetWindow));
     RETURN_HR_IF_NULL(E_FAIL, hdcRealWindow.get());
@@ -174,7 +175,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
 
         // Make the new bitmap we'll use going forward with the new size.
-        wil::unique_hbitmap hbitmapNew(CreateCompatibleBitmap(hdcRealWindow.get(), szClient.cx, szClient.cy));
+        wil::unique_hbitmap hbitmapNew(CreateCompatibleBitmap(hdcRealWindow.get(), szClient.width, szClient.height));
         RETURN_HR_IF_NULL(E_FAIL, hbitmapNew.get());
 
         // Select it into the DC, but hold onto the junky one pixel bitmap (made by default) to give back when we need to Delete.
@@ -183,7 +184,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         hbitmapNew.release(); // if SelectBitmap worked, GDI took ownership. Detach from smart object.
 
         // Blt from the DC/bitmap we're already holding onto into the new one.
-        RETURN_HR_IF(E_FAIL, !(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY)));
+        RETURN_HR_IF(E_FAIL, !(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.width, _szMemorySurface.height, _hdcMemoryContext, 0, 0, SRCCOPY)));
 
         // Put the junky bitmap back into the temp DC and get our new one out.
         hbitmapNew.reset(SelectBitmap(hdcTemp.get(), hbitmapOnePixelJunk.get()));
@@ -199,7 +200,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     }
     else
     {
-        _hbitmapMemorySurface = CreateCompatibleBitmap(hdcRealWindow.get(), szClient.cx, szClient.cy);
+        _hbitmapMemorySurface = CreateCompatibleBitmap(hdcRealWindow.get(), szClient.width, szClient.height);
         RETURN_HR_IF_NULL(E_FAIL, _hbitmapMemorySurface);
 
         wil::unique_hbitmap hOldBitmap(SelectBitmap(_hdcMemoryContext, _hbitmapMemorySurface)); // DC has a default junk bitmap, take it and delete it.
@@ -228,7 +229,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     const auto pt = _GetInvalidRectPoint();
     const auto sz = _GetInvalidRectSize();
 
-    LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
+    LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.width, sz.height, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
     WHEN_DBG(_DebugBltAll());
 
     _rcInvalid = {};
@@ -322,7 +323,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                  const til::point coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept
@@ -361,7 +362,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             const auto text = cluster.GetText();
             polyString += text;
             polyString.back() &= softFontCharMask;
-            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X);
+            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
             cchCharWidths += polyWidth.back();
             polyWidth.append(text.size() - 1, 0);
         }
@@ -407,7 +408,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
         // If the line rendition is double height, we need to adjust the top or bottom
         // of the clipping rect to clip half the height of the rendered characters.
-        const auto halfHeight = coordFontSize.Y >> 1;
+        const auto halfHeight = coordFontSize.height >> 1;
         const auto topOffset = _currentLineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
         const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
 
@@ -419,12 +420,12 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         pPolyTextLine->rcl.left = pPolyTextLine->x;
         pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
         pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (til::CoordType)cchCharWidths;
-        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.Y - bottomOffset;
+        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.height - bottomOffset;
         pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
         {
-            pPolyTextLine->rcl.left += coordFontSize.X;
+            pPolyTextLine->rcl.left += coordFontSize.width;
         }
 
         _cPolyText++;
@@ -509,35 +510,73 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - Draws up to one line worth of grid lines on top of characters.
 // Arguments:
 // - lines - Enum defining which edges of the rectangle to draw
-// - color - The color to use for drawing the edges.
+// - gridlineColor - The color to use for drawing the gridlines.
+// - underlineColor - The color to use for drawing the underlines.
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
+try
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
     const auto ptTarget = coordTarget * _GetFontSize();
-    // Set the brush color as requested and save the previous brush to restore at the end.
-    wil::unique_hbrush hbr(CreateSolidBrush(color));
+
+    // Create a brush with the gridline color, and apply it.
+    wil::unique_hbrush hbr(CreateSolidBrush(gridlineColor));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
-
-    wil::unique_hbrush hbrPrev(SelectBrush(_hdcMemoryContext, hbr.get()));
-    RETURN_HR_IF_NULL(E_FAIL, hbrPrev.get());
-    hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
-
-    // On exit, be sure we try to put the brush back how it was originally.
-    auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
+    const auto prevBrush = wil::SelectObject(_hdcMemoryContext, hbr.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevBrush.get());
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
-    const auto fontWidth = _GetFontSize().X;
-    const auto fontHeight = _GetFontSize().Y;
-    const auto widthOfAllCells = fontWidth * gsl::narrow_cast<unsigned>(cchLine);
+    const auto fontWidth = _GetFontSize().width;
+    const auto fontHeight = _GetFontSize().height;
+    const auto widthOfAllCells = fontWidth * gsl::narrow_cast<til::CoordType>(cchLine);
 
-    const auto DrawLine = [=](const auto x, const auto y, const auto w, const auto h) {
+    const auto DrawLine = [=](const til::CoordType x, const til::CoordType y, const til::CoordType w, const til::CoordType h) {
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
+    };
+    const auto DrawStrokedLine = [&](const til::CoordType x, const til::CoordType y, const til::CoordType w) {
+        RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
+        RETURN_HR_IF(E_FAIL, !LineTo(_hdcMemoryContext, x + w, y));
+        return S_OK;
+    };
+    const auto DrawCurlyLine = [&](const til::CoordType begX, const til::CoordType y, const til::CoordType width) {
+        const auto period = _lineMetrics.curlyLinePeriod;
+        const auto halfPeriod = period / 2;
+        const auto controlPointOffset = _lineMetrics.curlyLineControlPointOffset;
+
+        // To ensure proper continuity of the wavy line between cells of different line color
+        // this code starts/ends the line earlier/later than it should and then clips it.
+        // Clipping in GDI is expensive, but it was the easiest approach.
+        // I've noticed that subtracting -1px prevents missing pixels when GDI draws. They still
+        // occur at certain (small) font sizes, but I couldn't figure out how to prevent those.
+        const auto lineStart = ((begX - 1) / period) * period;
+        const auto lineEnd = begX + width;
+
+        IntersectClipRect(_hdcMemoryContext, begX, ptTarget.y, begX + width, ptTarget.y + fontHeight);
+        const auto restoreRegion = wil::scope_exit([&]() {
+            // Luckily no one else uses clip regions. They're weird to use.
+            SelectClipRgn(_hdcMemoryContext, nullptr);
+        });
+
+        // You can assume that each cell has roughly 5 POINTs on average. 128 POINTs is 1KiB.
+        til::small_vector<POINT, 128> points;
+
+        // This is the start point of the Bézier curve.
+        points.emplace_back(lineStart, y);
+
+        for (auto x = lineStart; x < lineEnd; x += period)
+        {
+            points.emplace_back(x + halfPeriod, y - controlPointOffset);
+            points.emplace_back(x + halfPeriod, y + controlPointOffset);
+            points.emplace_back(x + period, y);
+        }
+
+        const auto cpt = gsl::narrow_cast<DWORD>(points.size());
+        return PolyBezier(_hdcMemoryContext, points.data(), cpt);
     };
 
     if (lines.test(GridLines::Left))
@@ -574,26 +613,60 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
-    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline))
-    {
-        const auto y = ptTarget.y + _lineMetrics.underlineOffset;
-        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.underlineWidth));
-
-        if (lines.test(GridLines::DoubleUnderline))
-        {
-            const auto y2 = ptTarget.y + _lineMetrics.underlineOffset2;
-            RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y2, widthOfAllCells, _lineMetrics.underlineWidth));
-        }
-    }
-
     if (lines.test(GridLines::Strikethrough))
     {
         const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
     }
 
+    DWORD underlinePenType = PS_SOLID;
+    if (lines.test(GridLines::DottedUnderline))
+    {
+        underlinePenType = PS_DOT;
+    }
+    else if (lines.test(GridLines::DashedUnderline))
+    {
+        underlinePenType = PS_DASH;
+    }
+
+    DWORD underlineWidth = _lineMetrics.underlineWidth;
+    if (lines.any(GridLines::DoubleUnderline, GridLines::CurlyUnderline))
+    {
+        underlineWidth = _lineMetrics.thinLineWidth;
+    }
+
+    const LOGBRUSH brushProp{ .lbStyle = BS_SOLID, .lbColor = underlineColor };
+    wil::unique_hpen hpen(ExtCreatePen(underlinePenType | PS_GEOMETRIC | PS_ENDCAP_FLAT, underlineWidth, &brushProp, 0, nullptr));
+
+    // Apply the pen.
+    const auto prevPen = wil::SelectObject(_hdcMemoryContext, hpen.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevPen.get());
+
+    if (lines.test(GridLines::Underline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DoubleUnderline))
+    {
+        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.doubleUnderlinePosTop, widthOfAllCells));
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.doubleUnderlinePosBottom, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::CurlyUnderline))
+    {
+        return DrawCurlyLine(ptTarget.x, ptTarget.y + _lineMetrics.curlyLineCenter, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DottedUnderline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DashedUnderline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
+    }
+
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Draws the cursor on the screen
@@ -611,19 +684,19 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     LOG_IF_FAILED(_FlushBufferLines());
 
     const auto coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
     // First set up a block cursor the size of the font.
     RECT rcBoundaries;
-    rcBoundaries.left = options.coordCursor.X * coordFontSize.X;
-    rcBoundaries.top = options.coordCursor.Y * coordFontSize.Y;
-    rcBoundaries.right = rcBoundaries.left + coordFontSize.X;
-    rcBoundaries.bottom = rcBoundaries.top + coordFontSize.Y;
+    rcBoundaries.left = options.coordCursor.x * coordFontSize.width;
+    rcBoundaries.top = options.coordCursor.y * coordFontSize.height;
+    rcBoundaries.right = rcBoundaries.left + coordFontSize.width;
+    rcBoundaries.bottom = rcBoundaries.top + coordFontSize.height;
 
     // If we're double-width cursor, make it an extra font wider.
     if (options.fIsDoubleWidth)
     {
-        rcBoundaries.right = rcBoundaries.right + coordFontSize.X;
+        rcBoundaries.right = rcBoundaries.right + coordFontSize.width;
     }
 
     // Make a set of RECTs to paint.
@@ -641,7 +714,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
         ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
-        ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+        ulHeight = MulDiv(coordFontSize.height, ulHeight, 100); // divide by 100 because percent.
 
         // Reduce the height of the top to be relative to the bottom by the height we want.
         rcInvert.top = rcInvert.bottom - ulHeight;
@@ -763,6 +836,13 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     return S_OK;
 }
 
+[[nodiscard]] HRESULT GdiEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+{
+    UNREFERENCED_PARAMETER(rects);
+
+    return S_OK;
+}
+
 #ifdef DBG
 
 void GdiEngine::_CreateDebugWindow()
@@ -851,7 +931,7 @@ void GdiEngine::_DebugBltAll() const
 {
     if (_fDebug)
     {
-        BitBlt(_debugContext, 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY);
+        BitBlt(_debugContext, 0, 0, _szMemorySurface.width, _szMemorySurface.height, _hdcMemoryContext, 0, 0, SRCCOPY);
         Sleep(100);
     }
 }

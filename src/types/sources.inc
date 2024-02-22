@@ -30,18 +30,10 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 SOURCES= \
     ..\CodepointWidthDetector.cpp \
     ..\ColorFix.cpp \
-    ..\IInputEvent.cpp \
-    ..\FocusEvent.cpp \
     ..\GlyphWidth.cpp \
-    ..\KeyEvent.cpp \
-    ..\MenuEvent.cpp \
-    ..\ModifierKeyState.cpp \
-    ..\MouseEvent.cpp \
     ..\Viewport.cpp \
-    ..\WindowBufferSizeEvent.cpp \
     ..\convert.cpp \
     ..\colorTable.cpp \
-    ..\Utf16Parser.cpp \
     ..\utils.cpp \
     ..\ThemeUtils.cpp \
     ..\ScreenInfoUiaProviderBase.cpp \

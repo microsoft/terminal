@@ -97,7 +97,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 }
 
 // Method Description:
-// - Calls App::exit() for the provided command, and collects it's output into
+// - Calls App::exit() for the provided command, and collects its output into
 //   our _exitMessage buffer.
 // Arguments:
 // - command: Either the root App object, or a subcommand for which to call exit() on.
@@ -340,7 +340,7 @@ void AppCommandlineArgs::_buildMovePaneParser()
             if (_movePaneTabIndex >= 0)
             {
                 movePaneAction.Action(ShortcutAction::MovePane);
-                MovePaneArgs args{ static_cast<unsigned int>(_movePaneTabIndex) };
+                MovePaneArgs args{ static_cast<unsigned int>(_movePaneTabIndex), L"" };
                 movePaneAction.Args(args);
                 _startupActions.push_back(movePaneAction);
             }
@@ -568,6 +568,14 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.colorSchemeOption = subcommand.subcommand->add_option("--colorScheme",
                                                                      _startingColorScheme,
                                                                      RS_A(L"CmdColorSchemeArgDesc"));
+
+    subcommand.appendCommandLineOption = subcommand.subcommand->add_flag("--appendCommandLine", _appendCommandLineOption, RS_A(L"CmdAppendCommandLineDesc"));
+
+    subcommand.inheritEnvOption = subcommand.subcommand->add_flag(
+        "--inheritEnvironment,!--reloadEnvironment",
+        _inheritEnvironment,
+        RS_A(L"CmdInheritEnvDesc"));
+
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -589,7 +597,8 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 {
     NewTerminalArgs args{};
 
-    if (!_commandline.empty())
+    const auto hasCommandline{ !_commandline.empty() };
+    if (hasCommandline)
     {
         std::ostringstream cmdlineBuffer;
 
@@ -654,6 +663,17 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     {
         args.ColorScheme(winrt::to_hstring(_startingColorScheme));
     }
+    if (*subcommand.appendCommandLineOption)
+    {
+        args.AppendCommandLine(_appendCommandLineOption);
+    }
+
+    bool inheritEnv = hasCommandline;
+    if (*subcommand.inheritEnvOption)
+    {
+        inheritEnv = _inheritEnvironment;
+    }
+    args.ReloadEnvironmentVariables(!inheritEnv);
 
     return args;
 }
@@ -699,6 +719,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _startingTabColor.clear();
     _commandline.clear();
     _suppressApplicationTitle = false;
+    _appendCommandLineOption = false;
 
     _splitVertical = false;
     _splitHorizontal = false;

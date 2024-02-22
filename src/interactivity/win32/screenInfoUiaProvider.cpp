@@ -12,7 +12,7 @@ using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::WRL;
 
-HRESULT ScreenInfoUiaProvider::RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+HRESULT ScreenInfoUiaProvider::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                                       _In_ WindowUiaProvider* const pUiaParent)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pUiaParent);

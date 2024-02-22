@@ -10,7 +10,6 @@ namespace Microsoft.Terminal.TerminalConnection
     [default_interface] runtimeclass ConptyConnection : ITerminalConnection
     {
         ConptyConnection();
-        Guid Guid { get; };
         String Commandline { get; };
         String StartingTitle { get; };
         UInt16 ShowWindow { get; };
@@ -28,9 +27,12 @@ namespace Microsoft.Terminal.TerminalConnection
         static Windows.Foundation.Collections.ValueSet CreateSettings(String cmdline,
                                                                       String startingDirectory,
                                                                       String startingTitle,
-                                                                      IMapView<String, String> environment,
+                                                                      Boolean reloadEnvironmentVariables,
+                                                                      String initialEnvironment,
+                                                                      IMapView<String, String> environmentOverrides,
                                                                       UInt32 rows,
                                                                       UInt32 columns,
-                                                                      Guid guid);
+                                                                      Guid guid,
+                                                                      Guid profileGuid);
     };
 }

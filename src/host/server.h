@@ -16,19 +16,18 @@ Revision History:
 
 #pragma once
 
-#include "IIoProvider.hpp"
-
-#include "settings.hpp"
-
 #include "conimeinfo.h"
-#include "VtIo.hpp"
 #include "CursorBlinker.hpp"
-
+#include "IIoProvider.hpp"
+#include "readDataCooked.hpp"
+#include "settings.hpp"
+#include "VtIo.hpp"
+#include "../audio/midi/MidiAudio.hpp"
+#include "../host/RenderData.hpp"
 #include "../server/ProcessList.h"
 #include "../server/WaitQueue.h"
 
-#include "../host/RenderData.hpp"
-#include "../audio/midi/MidiAudio.hpp"
+#include <til/ticket_lock.h>
 
 // clang-format off
 // Flags flags
@@ -77,36 +76,35 @@ class CONSOLE_INFORMATION :
     public Microsoft::Console::IIoProvider
 {
 public:
-    CONSOLE_INFORMATION();
+    CONSOLE_INFORMATION() = default;
     CONSOLE_INFORMATION(const CONSOLE_INFORMATION& c) = delete;
     CONSOLE_INFORMATION& operator=(const CONSOLE_INFORMATION& c) = delete;
 
     ConsoleProcessList ProcessHandleList;
-    InputBuffer* pInputBuffer;
+    InputBuffer* pInputBuffer = nullptr;
 
-    SCREEN_INFORMATION* ScreenBuffers; // singly linked list
+    SCREEN_INFORMATION* ScreenBuffers = nullptr; // singly linked list
     ConsoleWaitQueue OutputQueue;
 
-    DWORD Flags;
-
-    std::atomic<WORD> PopupCount;
+    DWORD Flags = 0;
 
     // the following fields are used for ansi-unicode translation
-    UINT CP;
-    UINT OutputCP;
+    UINT CP = 0;
+    UINT OutputCP = 0;
 
-    ULONG CtrlFlags; // indicates outstanding ctrl requests
-    ULONG LimitingProcessId;
+    ULONG CtrlFlags = 0; // indicates outstanding ctrl requests
+    ULONG LimitingProcessId = 0;
 
-    CPINFO CPInfo;
-    CPINFO OutputCPInfo;
+    CPINFO CPInfo = {};
+    CPINFO OutputCPInfo = {};
 
     ConsoleImeInfo ConsoleIme;
 
-    static void LockConsole();
-    static void UnlockConsole();
-    static bool IsConsoleLocked();
-    static ULONG GetCSRecursionCount();
+    void LockConsole() noexcept;
+    void UnlockConsole() noexcept;
+    til::recursive_ticket_lock_suspension SuspendLock() noexcept;
+    bool IsConsoleLocked() const noexcept;
+    ULONG GetCSRecursionCount() const noexcept;
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
 
@@ -115,13 +113,17 @@ public:
     void SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer);
     bool HasActiveOutputBuffer() const;
 
-    InputBuffer* const GetActiveInputBuffer() const;
+    InputBuffer* const GetActiveInputBuffer() const override;
 
     bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
+    bool HasPendingPopup() const noexcept;
     const COOKED_READ_DATA& CookedReadData() const noexcept;
     COOKED_READ_DATA& CookedReadData() noexcept;
     void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
+
+    bool GetBracketedPasteMode() const noexcept;
+    void SetBracketedPasteMode(const bool enabled) noexcept;
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring_view newTitlePrefix);
@@ -140,27 +142,27 @@ public:
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
     MidiAudio& GetMidiAudio();
-    void ShutdownMidiAudio();
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
     RenderData renderData;
 
 private:
+    til::recursive_ticket_lock _lock;
+
     std::wstring _Title;
     std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _TitleAndPrefix;
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle; // Path to .lnk file
-    SCREEN_INFORMATION* pCurrentScreenBuffer;
-    COOKED_READ_DATA* _cookedReadData; // non-ownership pointer
+    SCREEN_INFORMATION* pCurrentScreenBuffer = nullptr;
+    COOKED_READ_DATA* _cookedReadData = nullptr; // non-ownership pointer
+    bool _bracketedPasteMode = false;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
-    std::unique_ptr<MidiAudio> _midiAudio;
+    MidiAudio _midiAudio;
 };
-
-#define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
 
 #define CONSOLE_STATUS_WAIT 0xC0030001
 #define CONSOLE_STATUS_READ_COMPLETE 0xC0030002

@@ -6,20 +6,16 @@
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../VtIo.hpp"
+#include "../../interactivity/inc/ServiceLocator.hpp"
+#include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
-#include "../../renderer/base/Renderer.hpp"
-#include "../Settings.hpp"
-#include "../VtIo.hpp"
-
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-#include "../../renderer/dx/DxRenderer.hpp"
-#endif
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-using namespace std;
+using namespace Microsoft::Console::Interactivity;
 
 class Microsoft::Console::VirtualTerminal::VtIoTests
 {
@@ -37,10 +33,6 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestStackAllocMany);
 
     TEST_METHOD(RendererDtorAndThread);
-
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-    TEST_METHOD(RendererDtorAndThreadAndDx);
-#endif
 
     TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
 };
@@ -81,9 +73,9 @@ void VtIoTests::ModeParsingTest()
 Viewport SetUpViewport()
 {
     til::inclusive_rect view;
-    view.Top = view.Left = 0;
-    view.Bottom = 31;
-    view.Right = 79;
+    view.top = view.left = 0;
+    view.bottom = 31;
+    view.right = 79;
 
     return Viewport::FromInclusive(view);
 }
@@ -254,7 +246,7 @@ void VtIoTests::DtorTestStackAllocMany()
     }
 }
 
-class MockRenderData : public IRenderData, IUiaData
+class MockRenderData : public IRenderData
 {
 public:
     Microsoft::Console::Types::Viewport GetViewport() noexcept override
@@ -278,6 +270,11 @@ public:
     }
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override
+    {
+        return std::vector<Microsoft::Console::Types::Viewport>{};
+    }
+
+    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override
     {
         return std::vector<Microsoft::Console::Types::Viewport>{};
     }
@@ -363,6 +360,10 @@ public:
     {
     }
 
+    void SelectSearchRegions(std::vector<til::inclusive_rect> /*source*/) override
+    {
+    }
+
     const til::point GetSelectionAnchor() const noexcept
     {
         return {};
@@ -373,26 +374,22 @@ public:
         return {};
     }
 
-    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
-    {
-    }
-
     const bool IsUiaDataInitialized() const noexcept
     {
         return true;
     }
 
-    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
+    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const
     {
         return {};
     }
 
-    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const
     {
         return {};
     }
 
-    const std::vector<size_t> GetPatternId(const til::point /*location*/) const noexcept
+    const std::vector<size_t> GetPatternId(const til::point /*location*/) const
     {
         return {};
     }
@@ -423,37 +420,6 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-void VtIoTests::RendererDtorAndThreadAndDx()
-{
-    Log::Comment(NoThrowString().Format(
-        L"Test deleting a Renderer a bunch of times"));
-
-    for (auto i = 0; i < 16; ++i)
-    {
-        auto data = std::make_unique<MockRenderData>();
-        auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
-        auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
-        VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
-
-        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        pRenderer->AddRenderEngine(dxEngine.get());
-        // Sleep for a hot sec to make sure the thread starts before we enable painting
-        // If you don't, the thread might wait on the paint enabled event AFTER
-        // EnablePainting gets called, and if that happens, then the thread will
-        // never get destructed. This will only ever happen in the vstest test runner,
-        // which is what CI uses.
-        /*Sleep(500);*/
-
-        (void)dxEngine->Enable();
-        pThread->EnablePainting();
-        pRenderer->TriggerTeardown();
-        pRenderer.reset();
-    }
-}
-#endif
-
 void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
 {
     Log::Comment(L"Test using anonymous pipes for the input and adding a signal channel.");
@@ -472,6 +438,13 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     VERIFY_WIN32_BOOL_SUCCEEDED(CreatePipe(&signalPipeReadSide, &signalPipeWriteSide, nullptr, 0), L"Create anonymous signal pipe.");
 
     Log::Comment(L"\tinitializing vtio");
+
+    // CreateIoHandlers() assert()s on IsConsoleLocked() to guard against a race condition.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    const auto cleanup = wil::scope_exit([&]() {
+        gci.UnlockConsole();
+    });
 
     VtIo vtio;
     VERIFY_IS_FALSE(vtio.IsUsingVt());

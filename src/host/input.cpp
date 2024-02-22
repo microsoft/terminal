@@ -105,20 +105,21 @@ bool ShouldTakeOverKeyboardShortcuts()
 
 // Routine Description:
 // - handles key events without reference to Win32 elements.
-void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
+void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
 {
+    auto& keyEvent = event.Event.KeyEvent;
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto ContinueProcessing = true;
 
-    if (keyEvent.IsCtrlPressed() &&
-        !keyEvent.IsAltPressed() &&
-        keyEvent.IsKeyDown())
+    if (WI_IsAnyFlagSet(keyEvent.dwControlKeyState, CTRL_PRESSED) &&
+        WI_AreAllFlagsClear(keyEvent.dwControlKeyState, ALT_PRESSED) &&
+        keyEvent.bKeyDown)
     {
         // check for ctrl-c, if in line input mode.
-        if (keyEvent.GetVirtualKeyCode() == 'C' && IsInProcessedInputMode())
+        if (keyEvent.wVirtualKeyCode == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
-            if (gci.PopupCount == 0)
+            if (!gci.HasPendingPopup())
             {
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
@@ -130,11 +131,11 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
         }
 
         // Check for ctrl-break.
-        else if (keyEvent.GetVirtualKeyCode() == VK_CANCEL)
+        else if (keyEvent.wVirtualKeyCode == VK_CANCEL)
         {
             gci.pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
-            if (gci.PopupCount == 0)
+            if (!gci.HasPendingPopup())
             {
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
@@ -146,33 +147,25 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
         }
 
         // don't write ctrl-esc to the input buffer
-        else if (keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
+        else if (keyEvent.wVirtualKeyCode == VK_ESCAPE)
         {
             ContinueProcessing = false;
         }
     }
-    else if (keyEvent.IsAltPressed() &&
-             keyEvent.IsKeyDown() &&
-             keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
+    else if (WI_IsAnyFlagSet(keyEvent.dwControlKeyState, ALT_PRESSED) &&
+             keyEvent.bKeyDown &&
+             keyEvent.wVirtualKeyCode == VK_ESCAPE)
     {
         ContinueProcessing = false;
     }
 
     if (ContinueProcessing)
     {
-        size_t EventsWritten = 0;
-        try
+        gci.pInputBuffer->Write(event);
+        if (generateBreak)
         {
-            EventsWritten = gci.pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
-            if (EventsWritten && generateBreak)
-            {
-                keyEvent.SetKeyDown(false);
-                EventsWritten = gci.pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
-            }
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
+            keyEvent.bKeyDown = false;
+            gci.pInputBuffer->Write(event);
         }
     }
 }
@@ -195,8 +188,7 @@ void HandleFocusEvent(const BOOL fSetFocus)
 
     try
     {
-        const auto EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
-        FAIL_FAST_IF(EventsWritten != 1);
+        gci.pInputBuffer->WriteFocusEvent(fSetFocus);
     }
     catch (...)
     {
@@ -211,10 +203,10 @@ void HandleMenuEvent(const DWORD wParam)
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci.pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
+        EventsWritten = gci.pInputBuffer->Write(SynthesizeMenuEvent(wParam));
         if (EventsWritten != 1)
         {
-            RIPMSG0(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1, 1 expected");
+            LOG_HR_MSG(E_FAIL, "PutInputInBuffer: EventsWritten != 1, 1 expected");
         }
     }
     catch (...)
@@ -238,8 +230,26 @@ void HandleCtrlEvent(const DWORD EventType)
         gci.CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
         break;
     default:
-        RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
+        LOG_HR_MSG(E_INVALIDARG, "Invalid EventType: 0x%x", EventType);
     }
+}
+
+static void CALLBACK midiSkipTimerCallback(HWND, UINT, UINT_PTR idEvent, DWORD) noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
+
+    KillTimer(nullptr, idEvent);
+    midiAudio.EndSkip();
+}
+
+static void beginMidiSkip() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
+
+    midiAudio.BeginSkip();
+    SetTimer(nullptr, 0, 1000, midiSkipTimerCallback);
 }
 
 void ProcessCtrlEvents()
@@ -251,31 +261,27 @@ void ProcessCtrlEvents()
         return;
     }
 
+    beginMidiSkip();
+
     // Make our own copy of the console process handle list.
     const auto LimitingProcessId = gci.LimitingProcessId;
     gci.LimitingProcessId = 0;
 
-    ConsoleProcessTerminationRecord* rgProcessHandleList;
-    size_t cProcessHandleList;
+    std::vector<ConsoleProcessTerminationRecord> termRecords;
+    const auto hr = gci.ProcessHandleList
+                        .GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                        WI_IsFlagSet(gci.CtrlFlags,
+                                                                     CONSOLE_CTRL_CLOSE_FLAG),
+                                                        termRecords);
 
-    auto hr = gci.ProcessHandleList
-                  .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                                  WI_IsFlagSet(gci.CtrlFlags,
-                                                               CONSOLE_CTRL_CLOSE_FLAG),
-                                                  &rgProcessHandleList,
-                                                  &cProcessHandleList);
-
-    if (FAILED(hr) || cProcessHandleList == 0)
+    if (FAILED(hr) || termRecords.empty())
     {
         gci.UnlockConsole();
         return;
     }
 
     // Copy ctrl flags.
-    auto CtrlFlags = gci.CtrlFlags;
-    FAIL_FAST_IF(!(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG)))));
-
-    gci.CtrlFlags = 0;
+    const auto CtrlFlags = std::exchange(gci.CtrlFlags, 0);
 
     gci.UnlockConsole();
 
@@ -310,10 +316,13 @@ void ProcessCtrlEvents()
     case CONSOLE_CTRL_SHUTDOWN_FLAG:
         EventType = CTRL_SHUTDOWN_EVENT;
         break;
+
+    default:
+        return;
     }
 
     auto Status = STATUS_SUCCESS;
-    for (size_t i = 0; i < cProcessHandleList; i++)
+    for (const auto& r : termRecords)
     {
         /*
          * Status will be non-successful if a process attached to this console
@@ -324,23 +333,16 @@ void ProcessCtrlEvents()
          * query. In this case, use best effort to send the close event but
          * ignore any errors.
          */
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = ServiceLocator::LocateConsoleControl()
-                         ->EndTask(rgProcessHandleList[i].dwProcessID,
+                         ->EndTask(r.dwProcessID,
                                    EventType,
                                    CtrlFlags);
-            if (rgProcessHandleList[i].hProcess == nullptr)
+            if (!r.hProcess)
             {
                 Status = STATUS_SUCCESS;
             }
         }
-
-        if (rgProcessHandleList[i].hProcess != nullptr)
-        {
-            CloseHandle(rgProcessHandleList[i].hProcess);
-        }
     }
-
-    delete[] rgProcessHandleList;
 }

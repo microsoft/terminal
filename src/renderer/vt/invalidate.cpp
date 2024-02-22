@@ -69,9 +69,9 @@ CATCH_RETURN();
     // We should ignore the first one, but after that, if the client application
     //      is moving the cursor around in the viewport, move our virtual top
     //      up to meet their changes.
-    if (!_skipCursor && _virtualTop > psrRegion->Top)
+    if (!_skipCursor && _virtualTop > psrRegion->top)
     {
-        _virtualTop = psrRegion->Top;
+        _virtualTop = psrRegion->top;
     }
     _skipCursor = false;
 
@@ -106,22 +106,13 @@ CATCH_RETURN();
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept
 {
-    // If we're in the middle of a resize request, don't try to immediately start a frame.
-    if (_inResizeRequest)
-    {
-        *pForcePaint = false;
-    }
-    else
-    {
-        *pForcePaint = true;
+    *pForcePaint = true;
 
-        // Keep track of the fact that we circled, we'll need to do some work on
-        //      end paint to specifically handle this.
-        _circled = circled;
-    }
+    // Keep track of the fact that we circled, we'll need to do some work on
+    //      end paint to specifically handle this.
+    _circled = circled;
 
     _trace.TraceTriggerCircling(*pForcePaint);
-
     return S_OK;
 }
 
@@ -135,6 +126,14 @@ CATCH_RETURN();
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
+    // This must be kept in sync with RequestWin32Input().
+    // It ensures that we disable the modes that we requested on startup.
+    // Linux shells for instance don't understand the win32-input-mode 9001.
+    //
+    // This can be here, instead of being appended at the end of this final rendering pass,
+    // because these two states happen to have no influence on the caller's VT parsing.
+    std::ignore = _Write("\033[?9001l\033[?1004l");
+
     *pForcePaint = true;
     return S_OK;
 }

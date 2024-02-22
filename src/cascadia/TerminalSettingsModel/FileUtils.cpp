@@ -15,14 +15,34 @@
 static constexpr std::string_view Utf8Bom{ "\xEF\xBB\xBF", 3 };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 static constexpr std::wstring_view ReleaseSettingsFolder{ L"Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\" };
+static constexpr std::wstring_view PortableModeMarkerFile{ L".portable" };
+static constexpr std::wstring_view PortableModeSettingsFolder{ L"settings" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
     // Returns a path like C:\Users\<username>\AppData\Local\Packages\<packagename>\LocalState
     // You can put your settings.json or state.json in this directory.
+    bool IsPortableMode()
+    {
+        static auto portableMode = []() {
+            std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+            modulePath.replace_filename(PortableModeMarkerFile);
+            return std::filesystem::exists(modulePath);
+        }();
+        return portableMode;
+    }
+
     std::filesystem::path GetBaseSettingsPath()
     {
         static auto baseSettingsPath = []() {
+            if (!IsPackaged() && IsPortableMode())
+            {
+                std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+                modulePath.replace_filename(PortableModeSettingsFolder);
+                std::filesystem::create_directories(modulePath);
+                return modulePath;
+            }
+
             wil::unique_cotaskmem_string localAppDataFolder;
             // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
             // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
@@ -258,7 +278,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // Programs running in an elevated context will be free to write the
             // file, and unelevated processes will be able to read the file. An
             // unelevated process could always delete the file and rename a new
-            // file in it's place (a la the way `vim.exe` saves files), but if
+            // file in its place (a la the way `vim.exe` saves files), but if
             // they do that, the new file _won't_ be owned by Administrators,
             // failing the above check.
         }

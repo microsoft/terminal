@@ -19,6 +19,9 @@
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
+    <ClCompile Include="EnvTests.cpp" />
+    <ClCompile Include="FlatSetTests.cpp" />
+    <ClCompile Include="GenerationalTests.cpp" />
     <ClCompile Include="HashTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
@@ -35,15 +38,19 @@
     <ClCompile Include="string.cpp" />
     <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
+    <ClCompile Include="UnicodeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\til\at.h" />
     <ClInclude Include="..\..\inc\til\atomic.h" />
     <ClInclude Include="..\..\inc\til\bit.h" />
     <ClInclude Include="..\..\inc\til\bitmap.h" />
+    <ClInclude Include="..\..\inc\til\bytes.h" />
     <ClInclude Include="..\..\inc\til\coalesce.h" />
     <ClInclude Include="..\..\inc\til\color.h" />
     <ClInclude Include="..\..\inc\til\enumset.h" />
+    <ClInclude Include="..\..\inc\til\env.h" />
+    <ClInclude Include="..\..\inc\til\generational.h" />
     <ClInclude Include="..\..\inc\til\hash.h" />
     <ClInclude Include="..\..\inc\til\latch.h" />
     <ClInclude Include="..\..\inc\til\math.h" />
@@ -63,7 +70,9 @@
     <ClInclude Include="..\..\inc\til\string.h" />
     <ClInclude Include="..\..\inc\til\throttled_func.h" />
     <ClInclude Include="..\..\inc\til\ticket_lock.h" />
+    <ClInclude Include="..\..\inc\til\type_traits.h" />
     <ClInclude Include="..\..\inc\til\u8u16convert.h" />
+    <ClInclude Include="..\..\inc\til\unicode.h" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <ItemDefinitionGroup>
@@ -71,6 +80,12 @@
       <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <!-- subsume fmt, one of our dependencies, into contypes. -->
+    <ProjectReference Include="..\..\dep\fmt\fmt.vcxproj">
+      <Project>{6bae5851-50d5-4934-8d5e-30361a8a40f3}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />

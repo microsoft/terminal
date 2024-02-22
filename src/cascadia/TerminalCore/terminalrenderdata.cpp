@@ -29,11 +29,13 @@ const TextBuffer& Terminal::GetTextBuffer() const noexcept
 
 const FontInfo& Terminal::GetFontInfo() const noexcept
 {
+    _assertLocked();
     return _fontInfo;
 }
 
 void Terminal::SetFontInfo(const FontInfo& fontInfo)
 {
+    _assertLocked();
     _fontInfo = fontInfo;
 }
 
@@ -72,9 +74,9 @@ CursorType Terminal::GetCursorStyle() const noexcept
 
 bool Terminal::IsCursorDoubleWidth() const
 {
-    const auto position = _activeBuffer().GetCursor().GetPosition();
-    TextBufferTextIterator it(TextBufferCellIterator(_activeBuffer(), position));
-    return IsGlyphFullWidth(*it);
+    const auto& buffer = _activeBuffer();
+    const auto position = buffer.GetCursor().GetPosition();
+    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
@@ -87,12 +89,12 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
     return true;
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const
 {
     return _activeBuffer().GetHyperlinkUriFromId(id);
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const
 {
     return _activeBuffer().GetCustomIdFromId(id);
 }
@@ -103,10 +105,12 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The location
 // Return value:
 // - The pattern IDs of the location
-const std::vector<size_t> Terminal::GetPatternId(const til::point location) const noexcept
+const std::vector<size_t> Terminal::GetPatternId(const til::point location) const
 {
+    _assertLocked();
+
     // Look through our interval tree for this location
-    const auto intervals = _patternIntervalTree.findOverlapping({ location.X + 1, location.Y }, location);
+    const auto intervals = _patternIntervalTree.findOverlapping({ location.x + 1, location.y }, location);
     if (intervals.size() == 0)
     {
         return {};
@@ -125,7 +129,7 @@ const std::vector<size_t> Terminal::GetPatternId(const til::point location) cons
 
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    return _renderSettings.GetAttributeColors(attr);
+    return GetRenderSettings().GetAttributeColors(attr);
 }
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
@@ -134,6 +138,24 @@ try
     std::vector<Viewport> result;
 
     for (const auto& lineRect : _GetSelectionRects())
+    {
+        result.emplace_back(Viewport::FromInclusive(lineRect));
+    }
+
+    return result;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+
+std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSearchSelectionRects() noexcept
+try
+{
+    std::vector<Viewport> result;
+
+    for (const auto& lineRect : _GetSearchSelectionRects(_GetVisibleViewport()))
     {
         result.emplace_back(Viewport::FromInclusive(lineRect));
     }
@@ -155,19 +177,19 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
 #pragma warning(pop)
 
     auto notifyScrollChange = false;
-    if (coordStart.Y < _VisibleStartIndex())
+    if (coordStart.y < _VisibleStartIndex())
     {
         // recalculate the scrollOffset
-        _scrollOffset = ViewStartIndex() - coordStart.Y;
+        _scrollOffset = ViewStartIndex() - coordStart.y;
         notifyScrollChange = true;
     }
-    else if (coordEnd.Y > _VisibleEndIndex())
+    else if (coordEnd.y > _VisibleEndIndex())
     {
         // recalculate the scrollOffset, note that if the found text is
         // beneath the current visible viewport, it may be within the
         // current mutableViewport and the scrollOffset will be smaller
         // than 0
-        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.Y);
+        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.y);
         notifyScrollChange = true;
     }
 
@@ -177,26 +199,38 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
         _NotifyScrollEvent();
     }
 
-    realCoordStart.Y -= _VisibleStartIndex();
-    realCoordEnd.Y -= _VisibleStartIndex();
+    realCoordStart.y -= _VisibleStartIndex();
+    realCoordEnd.y -= _VisibleStartIndex();
 
     SetSelectionAnchor(realCoordStart);
     SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
 }
 
-const std::wstring_view Terminal::GetConsoleTitle() const noexcept
-try
+void Terminal::SelectSearchRegions(std::vector<til::inclusive_rect> rects)
 {
+    _searchSelections.clear();
+    for (auto& rect : rects)
+    {
+        rect.top -= _VisibleStartIndex();
+        rect.bottom -= _VisibleStartIndex();
+
+        const auto realStart = _ConvertToBufferCell(til::point{ rect.left, rect.top });
+        const auto realEnd = _ConvertToBufferCell(til::point{ rect.right, rect.bottom });
+
+        auto rr = til::inclusive_rect{ realStart.x, realStart.y, realEnd.x, realEnd.y };
+
+        _searchSelections.emplace_back(rr);
+    }
+}
+
+const std::wstring_view Terminal::GetConsoleTitle() const noexcept
+{
+    _assertLocked();
     if (_title.has_value())
     {
-        return _title.value();
+        return *_title;
     }
     return _startingTitle;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return {};
 }
 
 // Method Description:
@@ -208,9 +242,6 @@ catch (...)
 void Terminal::LockConsole() noexcept
 {
     _readWriteLock.lock();
-#ifndef NDEBUG
-    _lastLocker = GetCurrentThreadId();
-#endif
 }
 
 // Method Description:
@@ -226,5 +257,6 @@ const bool Terminal::IsUiaDataInitialized() const noexcept
     // when a screen reader requests it. However, the terminal might not be fully
     // initialized yet. So we use this to check if any crucial components of
     // UiaData are not yet initialized.
+    _assertLocked();
     return !!_mainBuffer;
 }

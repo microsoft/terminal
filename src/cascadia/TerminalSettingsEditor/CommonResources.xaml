@@ -115,7 +115,6 @@
     <!--  Used for disclaimers  -->
     <Style x:Key="DisclaimerStyle"
            TargetType="TextBlock">
-        <Setter Property="FontStyle" Value="Italic" />
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
         <Setter Property="MaxWidth" Value="1000" />
     </Style>
@@ -131,7 +130,7 @@
     <!--  Number Box  -->
     <Style x:Key="NumberBoxSettingStyle"
            TargetType="muxc:NumberBox">
-        <Setter Property="SpinButtonPlacementMode" Value="Inline" />
+        <Setter Property="SpinButtonPlacementMode" Value="Compact" />
         <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
 

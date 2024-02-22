@@ -237,12 +237,12 @@ MODULE_SETUP(ModuleSetup)
     // to the one that belongs to the CMD.exe in the new OpenConsole.exe window.
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FreeConsole());
 
-    // Wait a moment for the driver to be ready after freeing to attach.
-    Sleep(1000);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
-    auto tries = 0;
-    while (tries < 5)
+    int tries = 0;
+    DWORD delay;
+    // This will wait for up to 32s in total (from 10ms to 163840ms)
+    for (delay = 10; delay < 30000u; delay *= 2)
     {
         tries++;
         Log::Comment(NoThrowString().Format(L"Attempt #%d to confirm we've attached", tries));
@@ -268,17 +268,20 @@ MODULE_SETUP(ModuleSetup)
         auto succeeded = GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore);
         if (!succeeded)
         {
-            auto gle = GetLastError();
+            const auto gle = GetLastError();
             VERIFY_ARE_EQUAL(6u, gle, L"If we fail to set up the console, GetLastError should return 6 here.");
-            Sleep(1000);
+
+            // Sleep with a backoff, to give us longer to try next time.
+            WaitForSingleObject(GetCurrentThread(), delay);
         }
         else
         {
+            Log::Comment(NoThrowString().Format(L"Succeeded on try #%d", tries));
             break;
         }
     };
 
-    VERIFY_IS_LESS_THAN(tries, 5, L"Make sure we set up the new console in time");
+    VERIFY_IS_LESS_THAN(delay, 30000u, L"Make sure we set up the new console in time");
 
     return true;
 }

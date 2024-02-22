@@ -499,6 +499,17 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirecti
     };
 };
 
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSource)
+{
+    static constexpr std::array<pair_type, 5> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "tasks", ValueType::Tasks },
+        pair_type{ "commandHistory", ValueType::CommandHistory },
+        pair_type{ "directoryHistory", ValueType::DirectoryHistory },
+        pair_type{ "all", AllSet },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
 {
     JSON_MAPPINGS(3) = {
@@ -633,10 +644,20 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "always", ValueType::Always },
         pair_type{ "hover", ValueType::Hover },
         pair_type{ "never", ValueType::Never },
+        pair_type{ "activeOnly", ValueType::ActiveOnly },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IconStyle)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "default", ValueType::Default },
+        pair_type{ "hidden", ValueType::Hidden },
+        pair_type{ "monochrome", ValueType::Monochrome },
     };
 };
 
@@ -648,6 +669,35 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
         pair_type{ "next", ValueType::Next },
         pair_type{ "first", ValueType::First },
         pair_type{ "last", ValueType::Last },
+    };
+};
+
+// Possible NewTabMenuEntryType values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "profile", ValueType::Profile },
+        pair_type{ "separator", ValueType::Separator },
+        pair_type{ "folder", ValueType::Folder },
+        pair_type{ "remainingProfiles", ValueType::RemainingProfiles },
+        pair_type{ "matchProfiles", ValueType::MatchProfiles },
+    };
+};
+
+// Possible FolderEntryInlining values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FolderEntryInlining)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "auto", ValueType::Auto },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SelectOutputDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "prev", ValueType::Previous },
+        pair_type{ "next", ValueType::Next },
     };
 };
 

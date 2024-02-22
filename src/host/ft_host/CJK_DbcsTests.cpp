@@ -2,9 +2,11 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+
 #include <io.h>
 #include <fcntl.h>
-#include <iostream>
+
+#include "../../types/inc/IInputEvent.hpp"
 
 #define JAPANESE_CP 932u
 
@@ -80,8 +82,7 @@ namespace DbcsWriteRead
                         const bool fReadUnicode,
                         CharInfoPattern& rgChars);
 
-    void Verify(const CharInfoPattern& rgExpected,
-                const CharInfoPattern& rgActual);
+    void Verify(std::span<CHAR_INFO> rgExpected, std::span<CHAR_INFO> rgActual);
 
     void PrepExpected(
         const WORD wAttrWritten,
@@ -116,6 +117,7 @@ class DbcsTests
     // This test must come before ones that launch another process as launching another process can tamper with the codepage
     // in ways that this test is not expecting.
     TEST_METHOD(TestMultibyteInputRetrieval);
+    TEST_METHOD(TestMultibyteInputCoalescing);
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
@@ -152,6 +154,14 @@ class DbcsTests
     END_TEST_METHOD()
 
     BEGIN_TEST_METHOD(TestDbcsStdCoutScenario)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsBackupRestore)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestInvalidTrailer)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
 };
@@ -418,7 +428,7 @@ namespace PrepPattern
     static constexpr WORD leading = COMMON_LVB_LEADING_BYTE;
     static constexpr WORD trailing = COMMON_LVB_TRAILING_BYTE;
 
-    constexpr void replaceColorPlaceholders(CharInfoPattern& pattern, WORD attr)
+    constexpr void replaceColorPlaceholders(std::span<CHAR_INFO> pattern, WORD attr)
     {
         for (auto& info : pattern)
         {
@@ -1313,9 +1323,9 @@ void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
     }
 }
 
-void DbcsWriteRead::Verify(const CharInfoPattern& rgExpected,
-                           const CharInfoPattern& rgActual)
+void DbcsWriteRead::Verify(std::span<CHAR_INFO> rgExpected, std::span<CHAR_INFO> rgActual)
 {
+    VERIFY_ARE_EQUAL(rgExpected.size(), rgActual.size());
     // We will walk through for the number of CHAR_INFOs expected.
     for (size_t i = 0; i < rgExpected.size(); i++)
     {
@@ -1899,6 +1909,34 @@ void DbcsTests::TestMultibyteInputRetrieval()
     FlushConsoleInputBuffer(hIn);
 }
 
+// This test ensures that two separate WriteConsoleInputA with trailing/leading DBCS are joined (coalesced) into a single wide character.
+void DbcsTests::TestMultibyteInputCoalescing()
+{
+    SetConsoleCP(932);
+
+    const auto in = GetStdHandle(STD_INPUT_HANDLE);
+    FlushConsoleInputBuffer(in);
+
+    DWORD count;
+    {
+        const auto record = SynthesizeKeyEvent(true, 1, 123, 456, 0x82, 789);
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
+    }
+    {
+        const auto record = SynthesizeKeyEvent(true, 1, 234, 567, 0xA2, 890);
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
+    }
+
+    // Asking for 2 records and asserting we only got 1 ensures
+    // that we receive the exact number of expected records.
+    INPUT_RECORD actual[2];
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(in, &actual[0], 2, &count));
+    VERIFY_ARE_EQUAL(1u, count);
+
+    const auto expected = SynthesizeKeyEvent(true, 1, 123, 456, L'い', 789);
+    VERIFY_ARE_EQUAL(expected, actual[0]);
+}
+
 void DbcsTests::TestDbcsOneByOne()
 {
     const auto hOut = GetStdOutputHandle();
@@ -2037,4 +2075,111 @@ void DbcsTests::TestDbcsStdCoutScenario()
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, psReadBack.get(), cchReadBack, coordReadPos, &dwRead), L"Read back std::cout line.");
     VERIFY_ARE_EQUAL(cchReadBack, dwRead, L"We should have read as many characters as we expected (length of original printed line.)");
     VERIFY_ARE_EQUAL(String(test), String(psReadBack.get()), L"String should match what we wrote.");
+}
+
+// Read/WriteConsoleOutput allow a user to implement a restricted form of buffer "backup" and "restore".
+// But what if the saved region clips ("bisects") a wide character? This test ensures that we restore proper
+// wide characters when given an unpaired trailing/leading CHAR_INFO in the first/last column of the given region.
+// In other words, writing a trailing CHAR_INFO will also automatically write a leading CHAR_INFO in the preceding cell.
+void DbcsTests::TestDbcsBackupRestore()
+{
+    static_assert(PrepPattern::DoubledW.size() == 16);
+
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    // We backup/restore 2 lines at once to ensure that it works even then. After all, an incorrect implementation
+    // might ignore all but the absolutely first CHAR_INFO instead of handling the first CHAR_INFO *on each row*.
+    std::array<CHAR_INFO, 32> expected;
+    std::ranges::copy(PrepPattern::DoubledW, expected.begin() + 0);
+    std::ranges::copy(PrepPattern::DoubledW, expected.begin() + 16);
+
+    PrepPattern::replaceColorPlaceholders(expected, FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN);
+
+    // DoubledW will show up like this in the top/left corner of the terminal:
+    // +----------------
+    // |QいかなZYXWVUTに
+    // |QいかなZYXWVUTに
+    //
+    // Since those 4 Japanese characters probably aren't going to be monospace for you in your editor
+    // (as they most likely aren't exactly 2 ASCII characters wide), I'll continue referring to them like this:
+    // +----------------
+    // |QaabbccZYXWVUTdd
+    // |QaabbccZYXWVUTdd
+    {
+        SMALL_RECT region{ 0, 0, 15, 1 };
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, expected.data(), { 16, 2 }, {}, &region));
+    }
+
+    // Make a "backup" of the viewport. The twist is that our backup region only
+    // copies the trailing/leading half of the first/last glyph respectively like so:
+    // +----------------
+    // |  abbccZYXWVUTd
+    std::array<CHAR_INFO, 26> backup{};
+    constexpr COORD backupSize{ 13, 2 };
+    SMALL_RECT backupRegion{ 2, 0, 14, 1 };
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, backup.data(), backupSize, {}, &backupRegion));
+
+    // Destroy the text with some narrow ASCII characters, resulting in:
+    // +----------------
+    // |Qxxxxxxxxxxxxxxx
+    // |Qxxxxxxxxxxxxxxx
+    {
+        DWORD ignored;
+        VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterW(out, L'x', 15, { 1, 0 }, &ignored));
+        VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterW(out, L'x', 15, { 1, 1 }, &ignored));
+    }
+
+    // Restore our "backup". The trailing half of the first wide glyph (indicated as "a" above)
+    // as well as the leading half of the last wide glyph ("d"), will automatically get a
+    // matching leading/trailing half respectively. In other words, this:
+    // +----------------
+    // |  abbccZYXWVUTd
+    // |  abbccZYXWVUTd
+    //
+    // turns into this:
+    // +----------------
+    // | aabbccZYXWVUTdd
+    // | aabbccZYXWVUTdd
+    //
+    // and so we restore this, overwriting all the "x" characters in the process:
+    // +----------------
+    // |QいかなZYXWVUTに
+    // |QいかなZYXWVUTに
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, backup.data(), backupSize, {}, &backupRegion));
+
+    std::array<CHAR_INFO, 32> infos{};
+    {
+        SMALL_RECT region{ 0, 0, 15, 1 };
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, infos.data(), { 16, 2 }, {}, &region));
+    }
+    DbcsWriteRead::Verify(expected, infos);
+}
+
+// As tested by TestDbcsBackupRestore(), we do want to allow users to write trailers into the buffer, to allow
+// for an area of the buffer to be backed up and restored via Read/WriteConsoleOutput. But apart from that use
+// case, we'd generally do best to avoid trailers whenever possible, as conhost basically ignored them in the
+// past and only rendered leaders. Applications might now be relying on us effectively ignoring trailers.
+void DbcsTests::TestInvalidTrailer()
+{
+    auto expected = PrepPattern::DoubledW;
+    auto input = expected;
+    decltype(input) output{};
+
+    for (auto& v : input)
+    {
+        if (WI_IsFlagSet(v.Attributes, COMMON_LVB_TRAILING_BYTE))
+        {
+            v.Char.UnicodeChar = 0xfffd;
+        }
+    }
+
+    {
+        static constexpr COORD bufferSize{ 16, 1 };
+        SMALL_RECT region{ 0, 0, 15, 0 };
+        const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, input.data(), bufferSize, {}, &region));
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, output.data(), bufferSize, {}, &region));
+    }
+
+    DbcsWriteRead::Verify(expected, output);
 }

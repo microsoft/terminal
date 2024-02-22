@@ -4,6 +4,10 @@
 #include "precomp.h"
 #include <intsafe.h>
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include "misc.h"
 #include "output.h"
 #include "srvinit.h"
@@ -11,86 +15,34 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
 
-#include <til/ticket_lock.h>
-
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
-CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
-    // ProcessHandleList initializes itself
-    pInputBuffer(nullptr),
-    pCurrentScreenBuffer(nullptr),
-    ScreenBuffers(nullptr),
-    OutputQueue(),
-    // ExeAliasList initialized below
-    _OriginalTitle(),
-    _Title(),
-    _Prefix(),
-    _TitleAndPrefix(),
-    _LinkTitle(),
-    Flags(0),
-    PopupCount(0),
-    CP(0),
-    OutputCP(0),
-    CtrlFlags(0),
-    LimitingProcessId(0),
-    // ColorTable initialized below
-    // CPInfo initialized below
-    // OutputCPInfo initialized below
-    _cookedReadData(nullptr),
-    ConsoleIme{},
-    _vtIo(),
-    _blinker{},
-    renderData{}
+bool CONSOLE_INFORMATION::IsConsoleLocked() const noexcept
 {
-    ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
-    ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-}
-
-// Access to thread-local variables is thread-safe, because each thread
-// gets its own copy of this variable with a default value of 0.
-//
-// Whenever we want to acquire the lock we increment recursionCount and on
-// each release we decrement it again. We can then make the lock safe for
-// reentrancy by only acquiring/releasing the lock if the recursionCount is 0.
-// In a sense, recursionCount is counting the actual function
-// call recursion depth of the caller. This works as long as
-// the caller makes sure to properly call Unlock() once for each Lock().
-static thread_local ULONG recursionCount = 0;
-static til::ticket_lock lock;
-
-bool CONSOLE_INFORMATION::IsConsoleLocked()
-{
-    return recursionCount != 0;
+    return _lock.is_locked();
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-void CONSOLE_INFORMATION::LockConsole()
+void CONSOLE_INFORMATION::LockConsole() noexcept
 {
-    // See description of recursionCount a few lines above.
-    const auto rc = ++recursionCount;
-    FAIL_FAST_IF(rc == 0);
-    if (rc == 1)
-    {
-        lock.lock();
-    }
+    _lock.lock();
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-void CONSOLE_INFORMATION::UnlockConsole()
+void CONSOLE_INFORMATION::UnlockConsole() noexcept
 {
-    // See description of recursionCount a few lines above.
-    const auto rc = --recursionCount;
-    FAIL_FAST_IF(rc == ULONG_MAX);
-    if (rc == 0)
-    {
-        lock.unlock();
-    }
+    _lock.unlock();
 }
 
-ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
+til::recursive_ticket_lock_suspension CONSOLE_INFORMATION::SuspendLock() noexcept
 {
-    return recursionCount;
+    return _lock.suspend();
+}
+
+ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
+{
+    return _lock.recursion_depth();
 }
 
 // Routine Description:
@@ -141,7 +93,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
     }
 
     auto Status = DoCreateScreenBuffer();
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto ErrorExit2;
     }
@@ -152,12 +104,12 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 
     gci.ConsoleIme.RefreshAreaAttributes();
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         return STATUS_SUCCESS;
     }
 
-    RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
+    LOG_NTSTATUS_MSG(Status, "Console init failed");
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
@@ -183,6 +135,11 @@ bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
     return _cookedReadData != nullptr;
 }
 
+bool CONSOLE_INFORMATION::HasPendingPopup() const noexcept
+{
+    return _cookedReadData && _cookedReadData->PresentingPopup();
+}
+
 const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept
 {
     return *_cookedReadData;
@@ -196,6 +153,16 @@ COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() noexcept
 void CONSOLE_INFORMATION::SetCookedReadData(COOKED_READ_DATA* readData) noexcept
 {
     _cookedReadData = readData;
+}
+
+bool CONSOLE_INFORMATION::GetBracketedPasteMode() const noexcept
+{
+    return _bracketedPasteMode;
+}
+
+void CONSOLE_INFORMATION::SetBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
 }
 
 // Method Description:
@@ -373,38 +340,14 @@ Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexc
 }
 
 // Method Description:
-// - Returns the MIDI audio instance, created on demand.
+// - Returns the MIDI audio instance.
 // Arguments:
 // - <none>
 // Return Value:
 // - a reference to the MidiAudio instance.
 MidiAudio& CONSOLE_INFORMATION::GetMidiAudio()
 {
-    if (!_midiAudio)
-    {
-        const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-        _midiAudio = std::make_unique<MidiAudio>(windowHandle);
-        _midiAudio->Initialize();
-    }
-    return *_midiAudio;
-}
-
-// Method Description:
-// - Shuts down the MIDI audio system if previously instantiated.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CONSOLE_INFORMATION::ShutdownMidiAudio()
-{
-    if (_midiAudio)
-    {
-        // We lock the console here to make sure the shutdown promise is
-        // set before the audio is unlocked in the thread that is playing.
-        LockConsole();
-        _midiAudio->Shutdown();
-        UnlockConsole();
-    }
+    return _midiAudio;
 }
 
 // Method Description:
@@ -424,6 +367,6 @@ CHAR_INFO CONSOLE_INFORMATION::AsCharInfo(const OutputCellView& cell) const noex
     //    (for mapping RGB values to the nearest table value)
     const auto& attr = cell.TextAttr();
     ci.Attributes = attr.GetLegacyAttributes();
-    ci.Attributes |= cell.DbcsAttr().GeneratePublicApiAttributeFormat();
+    ci.Attributes |= GeneratePublicApiAttributeFormat(cell.DbcsAttr());
     return ci;
 }

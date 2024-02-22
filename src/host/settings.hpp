@@ -24,13 +24,6 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 #include "ConsoleArguments.hpp"
 #include "../renderer/inc/RenderSettings.hpp"
 
-enum class UseDx : DWORD
-{
-    Disabled = 0,
-    DxEngine,
-    AtlasEngine,
-};
-
 class Settings
 {
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
@@ -50,17 +43,11 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
-    DWORD GetVirtTermLevel() const;
-    void SetVirtTermLevel(const DWORD dwVirtTermLevel);
+    DWORD GetDefaultVirtTermLevel() const;
+    void SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel);
 
     bool IsAltF4CloseAllowed() const;
     void SetAltF4CloseAllowed(const bool fAllowAltF4Close);
-
-    bool IsReturnOnNewlineAutomatic() const;
-    void SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline);
-
-    bool IsGridRenderingAllowedWorldwide() const;
-    void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
@@ -182,7 +169,7 @@ public:
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    UseDx GetUseDx() const noexcept;
+    bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
 private:
@@ -225,9 +212,7 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
-    bool _fAutoReturnOnNewline;
-    bool _fRenderGridWorldwide;
-    UseDx _fUseDx;
+    bool _fUseDx;
     bool _fCopyColor;
 
     // this is used for the special STARTF_USESIZE mode.
