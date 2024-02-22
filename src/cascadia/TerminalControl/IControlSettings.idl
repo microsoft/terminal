@@ -35,8 +35,6 @@ namespace Microsoft.Terminal.Control
         Boolean EnableUnfocusedAcrylic;
         ScrollbarState ScrollState { get; };
 
-        Boolean UseAtlasEngine { get; };
-
         String FontFace { get; };
         Single FontSize { get; };
         Windows.UI.Text.FontWeight FontWeight { get; };
