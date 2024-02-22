@@ -42,6 +42,16 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
         fontInfo->_FontAxes = winrt::single_threaded_map(std::move(fontAxes));
     }
 
+    if (source->_FontFeatures)
+    {
+        std::map<winrt::hstring, uint32_t> fontFeatures;
+        for (const auto keyValuePair : source->_FontFeatures.value())
+        {
+            fontFeatures.insert(std::pair<winrt::hstring, uint32_t>(keyValuePair.Key(), keyValuePair.Value()));
+        }
+        fontInfo->_FontFeatures = winrt::single_threaded_map(std::move(fontFeatures));
+    }
+
     return fontInfo;
 }
 
