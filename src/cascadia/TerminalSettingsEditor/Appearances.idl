@@ -38,7 +38,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass FeatureKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        FeatureKeyValuePair(String featureKey, UInt32 featureValue, Windows.Foundation.Collections.IMap<String COMMA UInt32> baseMap, Windows.Foundation.Collections.IMap<String COMMA String> tagToNameMap);
+        FeatureKeyValuePair(String featureKey, UInt32 featureValue, Windows.Foundation.Collections.IMap<String, UInt32> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
         String FeatureKey;
         UInt32 FeatureValue;
         Int32 FeatureIndex;
