@@ -7,12 +7,12 @@
     <ProjectName>RendererAtlas</ProjectName>
     <TargetName>ConRenderAtlas</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <IncludePath>$(SolutionDir)\dep\DirectXTK\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\oss\DirectXTK\Inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\dep\DirectXTK\Src\WICTextureLoader.cpp" />
+    <ClCompile Include="$(SolutionDir)\oss\DirectXTK\Src\WICTextureLoader.cpp" />
     <ClCompile Include="AtlasEngine.api.cpp" />
     <ClCompile Include="AtlasEngine.r.cpp" />
     <ClCompile Include="Backend.cpp" />

@@ -1,6 +1,3 @@
 [submodule "dep/gsl"]
 	path = dep/gsl
 	url = https://github.com/microsoft/gsl
-[submodule "dep/DirectXTK"]
-	path = dep/DirectXTK
-	url = https://github.com/microsoft/DirectXTK.git
