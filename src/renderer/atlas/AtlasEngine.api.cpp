@@ -406,6 +406,7 @@ try
 CATCH_LOG()
 
 void AtlasEngine::SetPixelShaderImagePath(std::wstring_view value) noexcept
+try
 {
     if (_api.s->misc->customPixelShaderImagePath != value)
     {
@@ -413,6 +414,7 @@ void AtlasEngine::SetPixelShaderImagePath(std::wstring_view value) noexcept
         _resolveTransparencySettings();
     }
 }
+CATCH_LOG()
 
 void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
 {

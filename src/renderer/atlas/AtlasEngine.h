@@ -167,7 +167,6 @@ namespace Microsoft::Console::Render::Atlas
             u16r invalidatedCursorArea = invalidatedAreaNone;
             range<u16> invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
-
         } _api;
     };
 }

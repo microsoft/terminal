@@ -39,7 +39,6 @@
     <ClInclude Include="AtlasEngine.h" />
     <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="wic.h" />
-
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="custom_shader_ps.hlsl">

@@ -914,7 +914,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
-
             _renderEngine->SetPixelShaderImagePath(newAppearance->PixelShaderImagePath());
 
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
