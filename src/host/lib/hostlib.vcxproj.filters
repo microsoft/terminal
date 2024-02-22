@@ -99,9 +99,6 @@
     <ClCompile Include="..\stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\telemetry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\tracing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -109,9 +106,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\conimeinfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\utf8ToWideCharParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ntprivapi.cpp">
@@ -157,21 +151,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\conareainfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\popup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CommandNumberPopup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CommandListPopup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CopyFromCharPopup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CopyToCharPopup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\CursorBlinker.cpp">
@@ -281,9 +260,6 @@
     <ClInclude Include="..\outputStream.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\utf8ToWideCharParser.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\ApiRoutines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -329,21 +305,6 @@
     <ClInclude Include="..\conareainfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\popup.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommandNumberPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommandListPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CopyFromCharPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CopyToCharPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\CursorBlinker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -356,5 +317,6 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
 </Project>

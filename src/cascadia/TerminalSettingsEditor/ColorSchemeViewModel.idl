@@ -24,6 +24,9 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorTableEntry BackgroundColor;
         ColorTableEntry CursorColor;
         ColorTableEntry SelectionBackgroundColor;
+
+        void DeleteConfirmation_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void SetAsDefault_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
     }
 
     [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -31,5 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
         String Name { get; };
         IInspectable Tag;
         Windows.UI.Color Color;
+        String AccessibleName { get; };
     }
 }

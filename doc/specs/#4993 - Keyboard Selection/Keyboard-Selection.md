@@ -76,7 +76,7 @@ These are in accordance with ConHost's keyboard selection model.
 
 This idea was abandoned due to several reasons:
 1. Keyboard selection should be a standard way to interact with a terminal across all consumers (i.e. WPF control, etc.)
-2. There isn't really another set of key bindings that makes sense for this. We already hardcoded <kbd>ESC</kbd> as a way to clear the selection. This is just an extension of that.
+2. There isn't really another set of key bindings that makes sense for this. We already hard-coded <kbd>ESC</kbd> as a way to clear the selection. This is just an extension of that.
 3. Adding 12 conditionally effective key bindings takes the spot of 12 potential non-conditional key bindings. It would be nice if a different key binding could be set when the selection is not active, but that makes the settings design much more complicated.
 4. 12 new items in the command palette is also pretty excessive.
 5. If proven wrong when this is in WT Preview, we can revisit this and make them customizable then. It's better to add the ability to customize it later than take it away.

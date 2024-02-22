@@ -25,7 +25,9 @@ Abstract:
 #endif
 
 // Windows Header Files:
-#include <windows.h>
+#include <Windows.h>
+
 #include <mmeapi.h>
+#include <dsound.h>
 
 // clang-format on

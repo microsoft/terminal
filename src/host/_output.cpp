@@ -9,12 +9,9 @@
 #include "handle.h"
 #include "misc.h"
 
-#include "../buffer/out/CharRow.hpp"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/convert.hpp"
-#include "../types/inc/Utf16Parser.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -69,7 +66,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // Return Value:
 // - S_OK, E_INVALIDARG or similar HRESULT error.
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                   const gsl::span<const WORD> attrs,
+                                                                   const std::span<const WORD> attrs,
                                                                    const til::point target,
                                                                    size_t& used) noexcept
 {
@@ -230,7 +227,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
             // Notify accessibility
             auto endingCoordinate = startingCoordinate;
             bufferSize.MoveInBounds(cellsModifiedCoord, endingCoordinate);
-            screenBuffer.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+            screenBuffer.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
         }
     }
     CATCH_RETURN();
@@ -294,7 +291,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         {
             auto endingCoordinate = startingCoordinate;
             bufferSize.MoveInBounds(cellsModifiedCoord, endingCoordinate);
-            screenInfo.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+            screenInfo.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
         }
 
         // GH#3126 - This is a shim for powershell's `Clear-Host` function. In

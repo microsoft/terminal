@@ -14,7 +14,7 @@ The point of doing all this work in public is to ensure that we are holding ours
 
 The team triages new issues several times a week. During triage, the team uses labels to categorize, manage, and drive the project workflow.
 
-We employ [a bot engine](https://github.com/microsoft/terminal/blob/main/doc/bot.md) to help us automate common processes within our workflow.
+We employ [a bot engine](./doc/bot.md) to help us automate common processes within our workflow.
 
 We drive the bot by tagging issues with specific labels which cause the bot engine to close issues, merge branches, etc. This bot engine helps us keep the repo clean by automating the process of notifying appropriate parties if/when information/follow-up is needed, and closing stale issues/PRs after reminders have remained unanswered for several days.
 
@@ -101,7 +101,7 @@ If you don't have any additional info/context to add but would like to indicate 
 
 If you're able & willing to help fix issues and/or implement features, we'd love your contribution!
 
-The best place to start is the list of ["Easy Starter"](https://github.com/microsoft/terminal/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+Wanted%22+label%3A%22Easy+Starter%22+) issues. These are bugs or tasks that we on the team believe would be easier to implement for someone without any prior experience in the codebase. Once you're feeling more comfortable in the codebase, feel free to just use the ["Help Wanted"](https://github.com/microsoft/terminal/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+Wanted%22+) label, or just find an issue your interested in and hop in!
+The best place to start is the list of ["walkthroughs"](https://aka.ms/terminal-walkthroughs). This is a collection of issues where we've written a "walkthrough", little guides to help get started with a particular issue. These are usually good first issues, and are a great way to get familiar with the codebase. Additionally, the list of ["good first issue"](https://github.com/microsoft/terminal/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+Wanted%22++label%3A%22good+first+issue%22+)s is another set of issues that might be easier for first-time contributors. Once you're feeling more comfortable in the codebase, feel free to just use the ["Help Wanted"](https://github.com/microsoft/terminal/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+Wanted%22+) label, or just find any issue you're interested in and hop in!
 
 Generally, we categorize issues in the following way, which is largely derived from our old internal work tracking system:
 * ["Bugs"](https://github.com/microsoft/terminal/issues?q=is%3Aopen+is%3Aissue+label%3A%22Issue-Bug%22+) are parts of the Terminal & Console that are not quite working the right way. There's code to already support some scenario, but it's not quite working right. Fixing these is generally a matter of debugging the broken functionality and fixing the wrong code.

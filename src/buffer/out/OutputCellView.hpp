@@ -56,7 +56,7 @@ public:
 
 private:
     std::wstring_view _view;
-    DbcsAttribute _dbcsAttr;
+    DbcsAttribute _dbcsAttr = DbcsAttribute::Single;
     TextAttribute _textAttr;
     TextAttributeBehavior _behavior;
 };

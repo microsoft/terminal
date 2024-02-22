@@ -24,5 +24,6 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
         [[nodiscard]] virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
         [[nodiscard]] virtual NTSTATUS EndTask(DWORD dwProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
+        [[nodiscard]] virtual NTSTATUS SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) = 0;
     };
 }

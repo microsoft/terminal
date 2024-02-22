@@ -18,6 +18,7 @@ static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" 
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view OpacityKey{ "opacity" };
+static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 
 AppearanceConfig::AppearanceConfig(winrt::weak_ref<Profile> sourceProfile) :
     _sourceProfile(std::move(sourceProfile))
@@ -32,6 +33,9 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const Appearan
     appearance->_SelectionBackground = source->_SelectionBackground;
     appearance->_CursorColor = source->_CursorColor;
     appearance->_Opacity = source->_Opacity;
+
+    appearance->_DarkColorSchemeName = source->_DarkColorSchemeName;
+    appearance->_LightColorSchemeName = source->_LightColorSchemeName;
 
 #define APPEARANCE_SETTINGS_COPY(type, name, jsonKey, ...) \
     appearance->_##name = source->_##name;
@@ -50,6 +54,19 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
+    if (HasDarkColorSchemeName() || HasLightColorSchemeName())
+    {
+        // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed.
+        if (_LightColorSchemeName != _DarkColorSchemeName)
+        {
+            JsonUtils::SetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
+            JsonUtils::SetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+        }
+        else
+        {
+            JsonUtils::SetValueForKey(json, "colorScheme", _DarkColorSchemeName);
+        }
+    }
 
 #define APPEARANCE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
@@ -79,6 +96,18 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
     JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
+    if (json["colorScheme"].isString())
+    {
+        // to make the UI happy, set ColorSchemeName.
+        JsonUtils::GetValueForKey(json, ColorSchemeKey, _DarkColorSchemeName);
+        _LightColorSchemeName = _DarkColorSchemeName;
+    }
+    else if (json["colorScheme"].isObject())
+    {
+        // to make the UI happy, set ColorSchemeName to whatever the dark value is.
+        JsonUtils::GetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
+        JsonUtils::GetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+    }
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);

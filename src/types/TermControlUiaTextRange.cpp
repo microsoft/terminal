@@ -10,12 +10,12 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
 
 // degenerate range constructor.
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters);
 }
 
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const Cursor& cursor,
                                                         const std::wstring_view wordDelimiters) noexcept
@@ -23,7 +23,7 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, cursor, wordDelimiters);
 }
 
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const til::point start,
                                                         const til::point end,
@@ -35,7 +35,7 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 
 // returns a degenerate text range of the start of the row closest to the y value of point
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const UiaPoint point,
                                                         const std::wstring_view wordDelimiters)

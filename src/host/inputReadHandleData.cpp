@@ -20,7 +20,7 @@ bool INPUT_READ_HANDLE_DATA::IsInputPending() const
 
 bool INPUT_READ_HANDLE_DATA::IsMultilineInput() const
 {
-    FAIL_FAST_IF(!_isInputPending); // we shouldn't have multiline input without a pending input.
+    assert(_isInputPending); // we shouldn't have multiline input without a pending input.
     return _isMultilineInput;
 }
 

@@ -29,8 +29,8 @@ til::rect WindowMetrics::GetMinClientRectInPixels()
     // the values for that at the end.
     // If we don't... then at least we have a non-zero rectangle.
     til::size FontSize;
-    FontSize.X = HEADLESS_FONT_SIZE_WIDTH;
-    FontSize.Y = HEADLESS_FONT_SIZE_HEIGHT;
+    FontSize.width = HEADLESS_FONT_SIZE_WIDTH;
+    FontSize.height = HEADLESS_FONT_SIZE_HEIGHT;
 
     til::rect DisplaySize;
     DisplaySize.right = HEADLESS_DISPLAY_SIZE_WIDTH;
@@ -67,19 +67,19 @@ til::rect WindowMetrics::GetMinClientRectInPixels()
 
         auto Status = Server->RequestGetDisplaySize(&DisplaySizeIoctl);
 
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = Server->RequestGetFontSize(&FontSizeIoctl);
 
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;
                 DisplaySize.bottom = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Height);
                 DisplaySize.right = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Width);
 
-                FontSize.X = gsl::narrow_cast<SHORT>(FontSizeIoctl.Width);
-                FontSize.Y = gsl::narrow_cast<SHORT>(FontSizeIoctl.Height);
+                FontSize.width = gsl::narrow_cast<SHORT>(FontSizeIoctl.Width);
+                FontSize.height = gsl::narrow_cast<SHORT>(FontSizeIoctl.Height);
             }
         }
         else
@@ -106,8 +106,8 @@ til::rect WindowMetrics::GetMinClientRectInPixels()
     }
 
     // The result is expected to be in pixels, not rows/columns.
-    DisplaySize.right *= FontSize.X;
-    DisplaySize.bottom *= FontSize.Y;
+    DisplaySize.right *= FontSize.width;
+    DisplaySize.bottom *= FontSize.height;
 
     return DisplaySize;
 }

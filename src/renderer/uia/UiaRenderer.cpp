@@ -47,6 +47,12 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 [[nodiscard]] HRESULT UiaEngine::Disable() noexcept
 {
     _isEnabled = false;
+
+    // If we had buffered any text from NotifyNewText, dump it. When we do come
+    // back around to actually paint, we will just no-op. No sense in keeping
+    // the data buffered.
+    _newOutput = std::wstring{};
+
     return S_OK;
 }
 
@@ -126,7 +132,7 @@ CATCH_RETURN();
             const auto newRect = rectangles.at(i);
 
             // if any value is different, selection has changed
-            if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
+            if (prevRect.top != newRect.top || prevRect.right != newRect.right || prevRect.left != newRect.left || prevRect.bottom != newRect.bottom)
             {
                 _selectionChanged = true;
                 _prevSelection = rectangles;
@@ -171,10 +177,15 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
 try
 {
+    // GH#16217 - don't even buffer this text if we're disabled. We may never
+    // come around to write it out.
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
+
     if (!newText.empty())
     {
         _newOutput.append(newText);
         _newOutput.push_back(L'\n');
+        _textBufferChanged = true;
     }
     return S_OK;
 }
@@ -333,7 +344,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const gsl::span<const Cluster> /*clusters*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const std::span<const Cluster> /*clusters*/,
                                                  const til::point /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept
@@ -346,14 +357,16 @@ void UiaEngine::WaitUntilCanRender() noexcept
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - lines - <unused>
-// - color - <unused>
+// - gridlineColor - <unused>
+// - underlineColor - <unused>
 // - cchLine - <unused>
 // - coordTarget - <unused>
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                      COLORREF const /*color*/,
-                                                      size_t const /*cchLine*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                      const COLORREF /*gridlineColor*/,
+                                                      const COLORREF /*underlineColor*/,
+                                                      const size_t /*cchLine*/,
                                                       const til::point /*coordTarget*/) noexcept
 {
     return S_FALSE;
@@ -369,6 +382,11 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // Return Value:
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintSelection(const til::rect& /*rect*/) noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]] HRESULT UiaEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
 {
     return S_FALSE;
 }
@@ -462,7 +480,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK.
-[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     // Magic static is only valid because any instance of this object has the same behavior.
     // Use member variable instead if this ever changes.

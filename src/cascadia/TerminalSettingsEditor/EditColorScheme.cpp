@@ -34,6 +34,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ToolTipService::SetToolTip(NameBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
         Automation::AutomationProperties::SetName(RenameAcceptButton(), RS_(L"RenameAccept/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetName(RenameCancelButton(), RS_(L"RenameCancel/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(SetAsDefaultButton(), RS_(L"ColorScheme_SetAsDefault/Header"));
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton/Text"));
     }
 
     void EditColorScheme::OnNavigatedTo(const NavigationEventArgs& e)
@@ -45,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_ViewModel.IsInBoxScheme())
         {
             // load disclaimer for in-box profiles
-            disclaimer = RS_(L"ColorScheme_RenameDisclaimerInBox");
+            disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox/Text");
         }
         RenameContainer().HelpText(disclaimer);
 

@@ -21,6 +21,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static Editor::Font _FontObjectForDWriteFont(IDWriteFontFamily* family);
+
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
@@ -50,22 +52,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // notify listener that all starting directory related values might have changed
                 // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
-            }
-            else if (viewModelProperty == L"UseAcrylic")
-            {
-                // GH#11372: If we're on Windows 10, and someone turns off
-                // acrylic, we're going to disable opacity for them. Opacity
-                // doesn't work without acrylic on Windows 10.
-                //
-                // BODGY: CascadiaSettings's function IsDefaultTerminalAvailable
-                // is basically a "are we on Windows 11" check, because defterm
-                // only works on Win11. So we'll use that.
-                //
-                // Remove when we can remove the rest of GH#11285
-                if (!UseAcrylic() && !CascadiaSettings::IsDefaultTerminalAvailable())
-                {
-                    Opacity(1.0);
-                }
             }
             else if (viewModelProperty == L"AntialiasingMode")
             {
@@ -120,7 +106,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::vector<Editor::Font> monospaceFontList;
 
         // get the font collection; subscribe to updates
-        const auto fontCollection = ::Microsoft::Console::Render::FontCache::GetFresh();
+        wil::com_ptr<IDWriteFactory> factory;
+        THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
+
+        wil::com_ptr<IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.addressof(), TRUE));
 
         for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
         {
@@ -130,12 +120,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 com_ptr<IDWriteFontFamily> fontFamily;
                 THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
 
-                // get the font's localized names
-                com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
-                THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
-
                 // construct a font entry for tracking
-                if (const auto fontEntry{ _GetFont(localizedFamilyNames) })
+                if (const auto fontEntry{ _FontObjectForDWriteFont(fontFamily.get()) })
                 {
                     // check if the font is monospaced
                     try
@@ -171,7 +157,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     CATCH_LOG();
 
-    Editor::Font ProfileViewModel::_GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames)
+    Editor::Font ProfileViewModel::FindFontWithLocalizedName(const winrt::hstring& name) noexcept
+    {
+        // look for the current font in our shown list of fonts
+        Editor::Font fallbackFont{ nullptr };
+        try
+        {
+            const auto& currentFontList{ CompleteFontList() };
+            for (const auto& font : currentFontList)
+            {
+                if (font.LocalizedName() == name)
+                {
+                    return font;
+                }
+                else if (font.LocalizedName() == L"Cascadia Mono")
+                {
+                    fallbackFont = font;
+                }
+            }
+        }
+        CATCH_LOG();
+
+        // we couldn't find the desired font, set to "Cascadia Mono" if we found that since it ships by default
+        return fallbackFont;
+    }
+
+    static Editor::Font _FontObjectForDWriteFont(IDWriteFontFamily* family)
     {
         // used for the font's name as an identifier (i.e. text block's font family property)
         std::wstring nameID;
@@ -180,6 +191,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // used for the font's localized name
         std::wstring localizedName;
         UINT32 localizedNameIndex;
+
+        // get the font's localized names
+        winrt::com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
+        THROW_IF_FAILED(family->GetFamilyNames(localizedFamilyNames.put()));
 
         // use our current locale to find the localized name
         auto exists{ FALSE };
@@ -223,19 +238,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!nameID.empty() && !localizedName.empty())
         {
-            return make<Font>(nameID, localizedName);
+            return make<Font>(nameID, localizedName, family);
         }
         return nullptr;
-    }
-
-    Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ProfileViewModel::Schemes() const noexcept
-    {
-        return _Schemes;
-    }
-
-    void ProfileViewModel::Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) noexcept
-    {
-        _Schemes = val;
     }
 
     winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
@@ -273,8 +278,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile.CreateUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
-        _unfocusedAppearanceViewModel.Schemes(_Schemes);
-        _unfocusedAppearanceViewModel.WindowRoot(_WindowRoot);
+        _unfocusedAppearanceViewModel.SchemesList(DefaultAppearance().SchemesList());
 
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
     }
@@ -374,5 +378,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
+    }
+
+    void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList)
+    {
+        DefaultAppearance().SchemesList(schemesList);
+        if (UnfocusedAppearance())
+        {
+            UnfocusedAppearance().SchemesList(schemesList);
+        }
     }
 }

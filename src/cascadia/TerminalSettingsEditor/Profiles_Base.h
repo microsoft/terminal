@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        Editor::IHostedInWindow _windowRoot;
     };
 };
 

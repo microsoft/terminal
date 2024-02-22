@@ -5,6 +5,7 @@ acl
 aclapi
 alignas
 alignof
+allocconsolewithoptions
 APPLYTOSUBMENUS
 appxrecipe
 Bgra
@@ -32,14 +33,13 @@ CYICON
 Dacl
 dataobject
 dcomp
-DECARM
-DECXCPR
+debugbreak
+delayimp
 DERR
 dlldata
 DNE
 DONTADDTORECENT
 DWMSBT
-DWMWA
 DWMWA
 DWORDLONG
 endfor
@@ -61,10 +61,13 @@ GETDESKWALLPAPER
 GETHIGHCONTRAST
 GETKEYSTATE
 GETMOUSEHOVERTIME
+GETTEXTLENGTH
 Hashtable
 hicon
 HIGHCONTRASTON
 HIGHCONTRASTW
+hinternet
+HINTERNET
 hotkeys
 href
 hrgn
@@ -84,6 +87,7 @@ IConnection
 ICustom
 IDialog
 IDirect
+Idn
 IExplorer
 IFACEMETHOD
 IFile
@@ -96,7 +100,11 @@ IObject
 iosfwd
 IPackage
 IPeasant
+<<<<<<< HEAD
 IService
+=======
+isa
+>>>>>>> origin/main
 ISetup
 ISoftware
 isspace
@@ -121,13 +129,21 @@ lsass
 LSHIFT
 LTGRAY
 MAINWINDOW
+<<<<<<< HEAD
 MAPVIRTUALKEY
+=======
+MAXIMIZEBOX
+>>>>>>> origin/main
 memchr
 memicmp
 MENUCOMMAND
 MENUDATA
 MENUINFO
 MENUITEMINFOW
+<<<<<<< HEAD
+=======
+MINIMIZEBOX
+>>>>>>> origin/main
 mmeapi
 MOUSELEAVE
 mov
@@ -165,6 +181,7 @@ OUTLINETEXTMETRICW
 overridable
 PACL
 PAGESCROLL
+PALLOC
 PATINVERT
 PEXPLICIT
 PICKFOLDERS
@@ -175,11 +192,16 @@ rcx
 REGCLS
 RETURNCMD
 rfind
+<<<<<<< HEAD
+=======
+RLO
+>>>>>>> origin/main
 ROOTOWNER
 roundf
 RSHIFT
 SACL
 schandle
+SEH
 semver
 serializer
 SETVERSION
@@ -196,6 +218,7 @@ snprintf
 spsc
 sregex
 SRWLOC
+srwlock
 SRWLOCK
 STDCPP
 STDMETHOD
@@ -212,10 +235,12 @@ TABROW
 TASKBARCREATED
 TBPF
 THEMECHANGED
+THICKFRAME
 tlg
 TME
 tmp
 tmpdir
+tokeninfo
 tolower
 toupper
 TRACKMOUSEEVENT
@@ -226,8 +251,10 @@ UFIELD
 ULARGE
 UOI
 UPDATEINIFILE
+urlmon
 userenv
 USEROBJECTFLAGS
+<<<<<<< HEAD
 versionf
 Viewbox
 VKKEYSCAN
@@ -236,6 +263,18 @@ wcstoui
 wic
 WIC
 wincodec
+=======
+Vcpp
+Viewbox
+virtualalloc
+vsnwprintf
+wcsnlen
+wcsstr
+wcstoui
+WDJ
+winhttp
+wininet
+>>>>>>> origin/main
 winmain
 winsta
 winstamin
@@ -243,6 +282,7 @@ wmemcmp
 wpc
 WSF
 wsregex
+WWH
 wwinmain
 xchg
 XDocument
@@ -268,3 +308,4 @@ xtree
 xutility
 YIcon
 YMax
+zwstring

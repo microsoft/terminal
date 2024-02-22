@@ -11,10 +11,10 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
-        static CascadiaSettings LoadUniversal();
 
         static String SettingsPath { get; };
         static String DefaultSettingsPath { get; };
+        static Boolean IsPortableMode { get; };
 
         static String ApplicationDisplayName { get; };
         static String ApplicationVersion { get; };
@@ -45,7 +45,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile CreateNewProfile();
         Profile FindProfile(Guid profileGuid);
-        ColorScheme GetColorSchemeForProfile(Profile profile);
         void UpdateColorSchemeReferences(String oldName, String newName);
 
         Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
@@ -54,5 +53,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Boolean IsDefaultTerminalSet { get; };
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
+
+        void ExpandCommands();
     }
 }

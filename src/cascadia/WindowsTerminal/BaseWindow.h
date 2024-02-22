@@ -28,7 +28,7 @@ public:
             WINRT_ASSERT(!that->_window);
             that->_window = wil::unique_hwnd(window);
 
-            return that->_OnNcCreate(wparam, lparam);
+            return that->OnNcCreate(wparam, lparam);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -168,8 +168,8 @@ public:
     {
         const auto scale = GetCurrentDpiScale();
         // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
-        const auto logicalWidth = (physicalSize.cx / scale) + 0.5f;
-        const auto logicalHeight = (physicalSize.cy / scale) + 0.5f;
+        const auto logicalWidth = (physicalSize.width / scale) + 0.5f;
+        const auto logicalHeight = (physicalSize.height / scale) + 0.5f;
         return winrt::Windows::Foundation::Size(logicalWidth, logicalHeight);
     }
 
@@ -210,13 +210,17 @@ protected:
 
     bool _minimized = false;
 
+    void _setupUserData()
+    {
+        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+    }
     // Method Description:
     // - This method is called when the window receives the WM_NCCREATE message.
     // Return Value:
     // - The value returned from the window proc.
-    virtual [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+    [[nodiscard]] virtual LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
     {
-        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        _setupUserData();
 
         EnableNonClientDpiScaling(_window.get());
         _currentDpi = GetDpiForWindow(_window.get());

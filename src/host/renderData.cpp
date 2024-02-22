@@ -15,7 +15,6 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-#pragma region IBaseData
 // Routine Description:
 // - Retrieves the viewport that applies over the data available in the GetTextBuffer() call
 // Return Value:
@@ -81,6 +80,16 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 }
 
 // Method Description:
+// - Retrieves one rectangle per line describing the area of the viewport
+//   that should be highlighted in some way to represent a user-interactive selection
+// Return Value:
+// - Vector of Viewports describing the area selected
+std::vector<Viewport> RenderData::GetSearchSelectionRects() noexcept
+{
+    return {};
+}
+
+// Method Description:
 // - Lock the console for reading the contents of the buffer. Ensures that the
 //      contents of the console won't be changed in the middle of a paint
 //      operation.
@@ -88,19 +97,18 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 //      they're done with any querying they need to do.
 void RenderData::LockConsole() noexcept
 {
-    ::LockConsole();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
 }
 
 // Method Description:
 // - Unlocks the console after a call to RenderData::LockConsole.
 void RenderData::UnlockConsole() noexcept
 {
-    ::UnlockConsole();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.UnlockConsole();
 }
 
-#pragma endregion
-
-#pragma region IRenderData
 // Method Description:
 // - Gets the cursor's position in the buffer, relative to the buffer origin.
 // Arguments:
@@ -265,26 +273,20 @@ bool RenderData::IsCursorDoubleWidth() const
 const bool RenderData::IsGridLineDrawingAllowed() noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (WI_IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    const auto outputMode = gci.GetActiveOutputBuffer().OutputMode;
+    // If virtual terminal output is set, grid line drawing is a must. It is also enabled
+    // if someone explicitly asked for worldwide line drawing.
+    if (WI_IsAnyFlagSet(outputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_LVB_GRID_WORLDWIDE))
     {
         return true;
     }
     else
     {
-        // If someone explicitly asked for worldwide line drawing, enable it.
-        if (gci.IsGridRenderingAllowedWorldwide())
-        {
-            return true;
-        }
-        else
-        {
-            // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
-            // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
-            // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
-            //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
-            return !!IsAvailableEastAsianCodePage(gci.OutputCP);
-        }
+        // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
+        // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
+        // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
+        //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
+        return !!IsAvailableEastAsianCodePage(gci.OutputCP);
     }
 }
 
@@ -304,7 +306,7 @@ const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
+const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
@@ -316,20 +318,18 @@ const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The custom ID if there was one, empty string otherwise
-const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
+const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
 }
 
 // For now, we ignore regex patterns in conhost
-const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const noexcept
+const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const
 {
     return {};
 }
-#pragma endregion
 
-#pragma region IUiaData
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.
@@ -381,6 +381,10 @@ void RenderData::SelectNewRegion(const til::point coordStart, const til::point c
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
 }
 
+void RenderData::SelectSearchRegions(std::vector<til::inclusive_rect> source)
+{
+}
+
 // Routine Description:
 // - Gets the current selection anchor position
 // Arguments:
@@ -425,22 +429,8 @@ const til::point RenderData::GetSelectionEnd() const noexcept
     // Then choose the opposite corner.
     const auto anchor = Selection::Instance().GetSelectionAnchor();
 
-    const auto x_pos = (selectionRect.Left == anchor.X) ? selectionRect.Right : selectionRect.Left;
-    const auto y_pos = (selectionRect.Top == anchor.Y) ? selectionRect.Bottom : selectionRect.Top;
+    const auto x_pos = (selectionRect.left == anchor.x) ? selectionRect.right : selectionRect.left;
+    const auto y_pos = (selectionRect.top == anchor.y) ? selectionRect.bottom : selectionRect.top;
 
     return { x_pos, y_pos };
 }
-
-// Routine Description:
-// - Given two points in the buffer space, color the selection between the two with the given attribute.
-// - This will create an internal selection rectangle covering the two points, assume a line selection,
-//   and use the first point as the anchor for the selection (as if the mouse click started at that point)
-// Arguments:
-// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
-// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
-// - attr - Color to apply to region.
-void RenderData::ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr)
-{
-    Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
-}
-#pragma endregion

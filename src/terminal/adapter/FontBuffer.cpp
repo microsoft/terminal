@@ -153,14 +153,14 @@ bool FontBuffer::SetAttributes(const DispatchTypes::DrcsCellMatrix cellMatrix,
 }
 
 bool FontBuffer::SetStartChar(const VTParameter startChar,
-                              const DispatchTypes::DrcsCharsetSize charsetSize) noexcept
+                              const DispatchTypes::CharsetSize charsetSize) noexcept
 {
     switch (charsetSize)
     {
-    case DispatchTypes::DrcsCharsetSize::Size94:
+    case DispatchTypes::CharsetSize::Size94:
         _startChar = startChar.value_or(1);
         break;
-    case DispatchTypes::DrcsCharsetSize::Size96:
+    case DispatchTypes::CharsetSize::Size96:
         _startChar = startChar.value_or(0);
         break;
     default:
@@ -217,7 +217,7 @@ bool FontBuffer::FinalizeSixelData()
     return true;
 }
 
-gsl::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
+std::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
 {
     return { _buffer.data(), gsl::narrow_cast<size_t>(MAX_CHARS * _fullHeight) };
 }
