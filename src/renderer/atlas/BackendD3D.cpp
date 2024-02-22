@@ -599,12 +599,10 @@ void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
     p.deviceContext->RSSetViewports(1, &viewport);
 
     // PS: Pixel Shader
-    ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get(), _customShaderTexture.TextureView.get() };
+    ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
     p.deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
     p.deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
-    // Checking if customer shader texture is set
-    const UINT numViews = resources[2] ? 3 : 2;
-    p.deviceContext->PSSetShaderResources(0, numViews, &resources[0]);
+    p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
     // OM: Output Merger
     p.deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
@@ -2233,7 +2231,14 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
         // PS: Pixel Shader
         p.deviceContext->PSSetShader(_customPixelShader.get(), nullptr, 0);
         p.deviceContext->PSSetConstantBuffers(0, 1, _customShaderConstantBuffer.addressof());
-        p.deviceContext->PSSetShaderResources(0, 1, _customOffscreenTextureView.addressof());
+        ID3D11ShaderResourceView* const resourceViews[]{
+            _customOffscreenTextureView.get(), // The temrinal contents
+            _customShaderTexture.TextureView.get(), // the experimental.pixelShaderImagePath, if there is one
+        };
+        // Checking if customer shader texture is set
+        const UINT numViews = resourceViews[1] ? 2 : 1;
+        p.deviceContext->PSSetShaderResources(0, numViews, &resourceViews[0]);
+
         p.deviceContext->PSSetSamplers(0, 1, _customShaderSamplerState.addressof());
 
         // OM: Output Merger

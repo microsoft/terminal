@@ -1,8 +1,12 @@
-// Does nothing, serves as an example of a minimal pixel shader
-Texture2D shaderTexture;
+// Demo shader to show passing in an image using
+// experimental.pixelShaderImagePath. This shader simply displays the Terminal
+// contents on top of the given image.
+//
+// The image loaded by the terminal will be placed into the `image` texture.
+
 SamplerState samplerState;
-// SamplerState image;
-Texture2D image;
+Texture2D shaderTexture : register(t0);
+Texture2D image : register(t1);
 
 cbuffer PixelShaderSettings {
   float  Time;
@@ -13,11 +17,10 @@ cbuffer PixelShaderSettings {
 
 float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 {
-    // float4 color = shaderTexture.Sample(samplerState, tex);
-    // float4 color = shaderTexture.Sample(image, tex);
-    float4 color = image.Sample(samplerState, tex);
+    float4 terminalColor = shaderTexture.Sample(samplerState, tex);
+    float4 imageColor = image.Sample(samplerState, tex);
 
-    color.r = 0; // test we're on
+    float4 color = lerp(imageColor, terminalColor, terminalColor.a);
 
     return color;
 }
