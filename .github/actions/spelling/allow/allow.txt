@@ -4,6 +4,7 @@ allcolors
 Apc
 apc
 backpressure
+BGRA
 breadcrumb
 breadcrumbs
 bsd
