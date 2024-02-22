@@ -100,11 +100,8 @@ IObject
 iosfwd
 IPackage
 IPeasant
-<<<<<<< HEAD
 IService
-=======
 isa
->>>>>>> origin/main
 ISetup
 ISoftware
 isspace
@@ -129,21 +126,15 @@ lsass
 LSHIFT
 LTGRAY
 MAINWINDOW
-<<<<<<< HEAD
 MAPVIRTUALKEY
-=======
 MAXIMIZEBOX
->>>>>>> origin/main
 memchr
 memicmp
 MENUCOMMAND
 MENUDATA
 MENUINFO
 MENUITEMINFOW
-<<<<<<< HEAD
-=======
 MINIMIZEBOX
->>>>>>> origin/main
 mmeapi
 MOUSELEAVE
 mov
@@ -192,10 +183,7 @@ rcx
 REGCLS
 RETURNCMD
 rfind
-<<<<<<< HEAD
-=======
 RLO
->>>>>>> origin/main
 ROOTOWNER
 roundf
 RSHIFT
@@ -254,27 +242,19 @@ UPDATEINIFILE
 urlmon
 userenv
 USEROBJECTFLAGS
-<<<<<<< HEAD
-versionf
-Viewbox
-VKKEYSCAN
-wcsstr
-wcstoui
-wic
-WIC
-wincodec
-=======
 Vcpp
-Viewbox
+versionf
 virtualalloc
+VKKEYSCAN
 vsnwprintf
 wcsnlen
 wcsstr
-wcstoui
 WDJ
+wic
+WIC
+wincodec
 winhttp
 wininet
->>>>>>> origin/main
 winmain
 winsta
 winstamin
