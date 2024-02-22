@@ -3,11 +3,18 @@
 
 #include "pch.h"
 #include "HwndTerminal.hpp"
-#include <windowsx.h>
-#include <DefaultSettings.h>
-#include "../../types/viewport.cpp"
-#include "../../types/inc/GlyphWidth.hpp"
 
+#include <DefaultSettings.h>
+#include <windowsx.h>
+
+#include "HwndTerminalAutomationPeer.hpp"
+#include "../../cascadia/TerminalCore/Terminal.hpp"
+#include "../../renderer/atlas/AtlasEngine.h"
+#include "../../renderer/base/renderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
+#include "../../types/viewport.cpp"
+
+using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
@@ -102,25 +109,23 @@ try
             }
             break;
         case WM_RBUTTONDOWN:
-            if (publicTerminal->_terminal && publicTerminal->_terminal->IsSelectionActive())
+            try
             {
-                try
+                if (publicTerminal->_terminal)
                 {
-                    Terminal::TextCopyData bufferData;
+                    const auto lock = publicTerminal->_terminal->LockForWriting();
+                    if (publicTerminal->_terminal->IsSelectionActive())
                     {
-                        const auto lock = publicTerminal->_terminal->LockForWriting();
-                        bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                        LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
+                        publicTerminal->_ClearSelection();
+                        return 0;
                     }
-                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
-                    publicTerminal->_ClearSelection();
                 }
-                CATCH_LOG();
-            }
-            else
-            {
                 publicTerminal->_PasteTextFromClipboard();
+                return 0;
             }
-            return 0;
+            CATCH_LOG();
         case WM_DESTROY:
             // Release Terminal's hwnd so Teardown doesn't try to destroy it again
             publicTerminal->_hwnd.release();
@@ -210,10 +215,10 @@ HRESULT HwndTerminal::Initialize()
     RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
-    auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-    RETURN_IF_FAILED(dxEngine->SetHwnd(_hwnd.get()));
-    RETURN_IF_FAILED(dxEngine->Enable());
-    _renderer->AddRenderEngine(dxEngine.get());
+    auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+    RETURN_IF_FAILED(engine->SetHwnd(_hwnd.get()));
+    RETURN_IF_FAILED(engine->Enable());
+    _renderer->AddRenderEngine(engine.get());
 
     _UpdateFont(USER_DEFAULT_SCREEN_DPI);
     RECT windowRect;
@@ -224,9 +229,9 @@ HRESULT HwndTerminal::Initialize()
     // Fist set up the dx engine with the window size in pixels.
     // Then, using the font, get the number of characters that can fit.
     const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
-    RETURN_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+    RETURN_IF_FAILED(engine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-    _renderEngine = std::move(dxEngine);
+    _renderEngine = std::move(engine);
 
     _terminal->Create({ 80, 25 }, 9001, *_renderer);
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
@@ -749,7 +754,7 @@ try
         ScreenToClient(_hwnd.get(), cursorPosition.as_win32_point());
     }
 
-    const TerminalInput::MouseButtonState state{
+    const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state{
         WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
         WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
         WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
@@ -894,7 +899,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
             [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
 
-        publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));
+        publicTerminal->_terminal->SetCursorStyle(static_cast<Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle>(theme.CursorStyle));
 
         publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, static_cast<float>(fontSize), CP_UTF8 };
         publicTerminal->_UpdateFont(newDpi);
