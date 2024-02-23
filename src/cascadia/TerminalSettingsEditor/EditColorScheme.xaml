@@ -55,10 +55,10 @@
 
             <DataTemplate x:Key="ColorTableEntryTemplate"
                           x:DataType="local:ColorTableEntry">
-                <Button AutomationProperties.Name="{x:Bind Name}"
+                <Button AutomationProperties.Name="{x:Bind AccessibleName, Mode=OneWay}"
                         Background="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
                         Style="{StaticResource ColorSchemesColorButtonStyle}"
-                        ToolTipService.ToolTip="{x:Bind Name}">
+                        ToolTipService.ToolTip="{x:Bind AccessibleName, Mode=OneWay}">
                     <Button.Flyout>
                         <Flyout>
                             <muxc:ColorPicker ColorChanged="ColorPickerChanged"

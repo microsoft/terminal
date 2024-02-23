@@ -115,6 +115,7 @@
 ^src/terminal/parser/ut_parser/Base64Test.cpp$
 ^src/terminal/parser/ut_parser/run\.bat$
 ^src/tools/benchcat
+^src/tools/ConsoleBench
 ^src/tools/integrity/dirs$
 ^src/tools/integrity/packageuwp/ConsoleUWP\.appxSources$
 ^src/tools/RenderingTests/main\.cpp$

@@ -1154,10 +1154,6 @@
     <value>Controls what happens when the application emits a BEL character.</value>
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
-  <data name="Profile_UseAtlasEngine.Header" xml:space="preserve">
-    <value>Use the new text renderer ("AtlasEngine")</value>
-    <comment>{Locked="AtlasEngine"}</comment>
-  </data>
   <data name="Profile_ReloadEnvVars.Header" xml:space="preserve">
     <value>Launch this application with a new environment block</value>
     <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>

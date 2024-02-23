@@ -85,7 +85,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IMap<String COMMA String>, EnvironmentVariables);
 
-        INHERITABLE_PROFILE_SETTING(Boolean, UseAtlasEngine);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
 
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);

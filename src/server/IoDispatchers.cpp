@@ -12,7 +12,6 @@
 #include "../host/directio.h"
 #include "../host/handle.h"
 #include "../host/srvinit.h"
-#include "../host/telemetry.hpp"
 
 #include "../interactivity/base/HostSignalInputThread.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
