@@ -135,16 +135,6 @@ void HandleKeyEvent(const HWND hWnd,
     const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
     const bool IsCharacterMessage = (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR);
 
-    if (bKeyDown)
-    {
-        // Log a telemetry flag saying the user interacted with the Console
-        // Only log when the key is a down press.  Otherwise we're getting many calls with
-        // Message = WM_CHAR, VirtualKeyCode = VK_TAB, with bKeyDown = false
-        // when nothing is happening, or the user has merely clicked on the title bar, and
-        // this can incorrectly mark the session as being interactive.
-        Telemetry::Instance().SetUserInteractive();
-    }
-
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
     if (IsCharacterMessage)
@@ -213,38 +203,6 @@ void HandleKeyEvent(const HWND hWnd,
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
 
-    // Capture telemetry on Ctrl+Shift+ C or V commands
-    if (IsInProcessedInputMode())
-    {
-        // Capture telemetry data when a user presses ctrl+shift+c or v in processed mode
-        if (inputKeyInfo.IsShiftAndCtrlOnly())
-        {
-            if (VirtualKeyCode == 'V')
-            {
-                Telemetry::Instance().LogCtrlShiftVProcUsed();
-            }
-            else if (VirtualKeyCode == 'C')
-            {
-                Telemetry::Instance().LogCtrlShiftCProcUsed();
-            }
-        }
-    }
-    else
-    {
-        // Capture telemetry data when a user presses ctrl+shift+c or v in raw mode
-        if (inputKeyInfo.IsShiftAndCtrlOnly())
-        {
-            if (VirtualKeyCode == 'V')
-            {
-                Telemetry::Instance().LogCtrlShiftVRawUsed();
-            }
-            else if (VirtualKeyCode == 'C')
-            {
-                Telemetry::Instance().LogCtrlShiftCRawUsed();
-            }
-        }
-    }
-
     // If this is a key up message, should we ignore it? We do this so that if a process reads a line from the input
     // buffer, the key up event won't get put in the buffer after the read completes.
     if (gci.Flags & CONSOLE_IGNORE_NEXT_KEYUP)
@@ -265,7 +223,6 @@ void HandleKeyEvent(const HWND hWnd,
         {
         case 'V':
             // the user is attempting to paste from the clipboard
-            Telemetry::Instance().SetKeyboardTextEditingUsed();
             Clipboard::Instance().Paste();
             return;
         }
@@ -278,8 +235,6 @@ void HandleKeyEvent(const HWND hWnd,
             switch (VirtualKeyCode)
             {
             case 'A':
-                // Set Text Selection using keyboard to true for telemetry
-                Telemetry::Instance().SetKeyboardTextSelectionUsed();
                 // the user is asking to select all
                 pSelection->SelectAll();
                 return;
@@ -293,8 +248,6 @@ void HandleKeyEvent(const HWND hWnd,
                 Selection::Instance().InitializeMarkSelection();
                 return;
             case 'V':
-                // the user is attempting to paste from the clipboard
-                Telemetry::Instance().SetKeyboardTextEditingUsed();
                 Clipboard::Instance().Paste();
                 return;
             case VK_HOME:
@@ -306,10 +259,6 @@ void HandleKeyEvent(const HWND hWnd,
                 {
                     return;
                 }
-                break;
-            case VK_PRIOR:
-            case VK_NEXT:
-                Telemetry::Instance().SetCtrlPgUpPgDnUsed();
                 break;
             }
         }
@@ -469,9 +418,6 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
         VirtualKeyCode = LOWORD(wParam);
     }
 
-    // Log a telemetry flag saying the user interacted with the Console
-    Telemetry::Instance().SetUserInteractive();
-
     // check for ctrl-esc
     const auto bCtrlDown = OneCoreSafeGetKeyState(VK_CONTROL) & KEY_PRESSED;
 
@@ -568,12 +514,6 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                       const LPARAM lParam)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (Message != WM_MOUSEMOVE)
-    {
-        // Log a telemetry flag saying the user interacted with the Console
-        Telemetry::Instance().SetUserInteractive();
-    }
-
     const auto pSelection = &Selection::Instance();
 
     if (!(gci.Flags & CONSOLE_HAS_FOCUS) && !pSelection->IsMouseButtonDown())
@@ -804,31 +744,12 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
             {
                 if (pSelection->IsInSelectingState())
                 {
-                    // Capture data on when quick edit copy is used in proc or raw mode
-                    if (IsInProcessedInputMode())
-                    {
-                        Telemetry::Instance().LogQuickEditCopyProcUsed();
-                    }
-                    else
-                    {
-                        Telemetry::Instance().LogQuickEditCopyRawUsed();
-                    }
                     // If the ALT key is held, also select HTML as well as plain text.
                     const auto fAlsoCopyFormatting = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MENU), KEY_PRESSED);
                     Clipboard::Instance().Copy(fAlsoCopyFormatting);
                 }
                 else if (gci.Flags & CONSOLE_QUICK_EDIT_MODE)
                 {
-                    // Capture data on when quick edit paste is used in proc or raw mode
-                    if (IsInProcessedInputMode())
-                    {
-                        Telemetry::Instance().LogQuickEditPasteProcUsed();
-                    }
-                    else
-                    {
-                        Telemetry::Instance().LogQuickEditPasteRawUsed();
-                    }
-
                     Clipboard::Instance().Paste();
                 }
                 gci.Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
@@ -911,7 +832,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         EventFlags = MOUSE_HWHEELED;
         break;
     default:
-        RIPMSG1(RIP_ERROR, "Invalid message 0x%x", Message);
+        LOG_HR_MSG(E_INVALIDARG, "Invalid message 0x%x", Message);
         ButtonFlags = 0;
         EventFlags = 0;
         break;
@@ -968,7 +889,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 
     if (FAILED_NTSTATUS(Status))
     {
-        RIPMSG2(RIP_WARNING, "CreateWindowsWindow failed with status 0x%x, gle = 0x%x", Status, GetLastError());
+        LOG_NTSTATUS_MSG(Status, "CreateWindowsWindow failed");
         return Status;
     }
 

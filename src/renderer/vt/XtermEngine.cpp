@@ -555,7 +555,8 @@ CATCH_RETURN();
     {
         RETURN_IF_FAILED(_Write("\x1b[2t"));
     }
-    return _Flush();
+    _Flush();
+    return S_OK;
 }
 
 // Method Description:

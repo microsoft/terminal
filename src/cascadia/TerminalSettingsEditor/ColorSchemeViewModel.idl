@@ -34,5 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
         String Name { get; };
         IInspectable Tag;
         Windows.UI.Color Color;
+        String AccessibleName { get; };
     }
 }

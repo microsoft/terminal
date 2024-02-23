@@ -74,6 +74,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestInheritedCommand);
         TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
+        TEST_METHOD(MigrateReloadEnvVars);
+
     private:
         static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
         {
@@ -2019,5 +2021,41 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, loader.userSettings.profiles.size());
         // GH#12520: Fragments should be able to override the name of builtin profiles.
         VERIFY_ARE_EQUAL(L"NewName", loader.userSettings.profiles[0]->Name());
+    }
+
+    void DeserializationTests::MigrateReloadEnvVars()
+    {
+        static constexpr std::string_view settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "compatibility.reloadEnvironmentVariables": false,
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ settings1Json, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+
+        Log::Comment(L"Ensure that the profile defaults have the new setting added");
+        VERIFY_IS_TRUE(settings->ProfileDefaults().HasReloadEnvironmentVariables());
+        VERIFY_IS_FALSE(settings->ProfileDefaults().ReloadEnvironmentVariables());
     }
 }

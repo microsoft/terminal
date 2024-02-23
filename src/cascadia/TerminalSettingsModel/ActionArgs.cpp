@@ -814,10 +814,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SearchForTextArgs::GenerateName() const
     {
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
-                        Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
-        };
+        if (QueryUrl().empty())
+        {
+            // Return the default command name, because we'll just use the
+            // default search engine for this.
+            return RS_(L"SearchWebCommandKey");
+        }
+
+        try
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
+                            Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
+            };
+        }
+        CATCH_LOG();
+
+        // We couldn't parse a URL out of this. Return no string at all, so that
+        // we don't even put this into the command palette.
+        return L"";
     }
 
     winrt::hstring GlobalSummonArgs::GenerateName() const

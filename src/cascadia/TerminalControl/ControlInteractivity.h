@@ -155,7 +155,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta);
 
-        void _sendPastedTextToConnection(std::wstring_view wstr);
         til::point _getTerminalPosition(const til::point pixelPosition);
 
         bool _sendMouseEventHelper(const til::point terminalPosition,

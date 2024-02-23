@@ -63,6 +63,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorTableEntry(uint8_t index, Windows::UI::Color color);
         ColorTableEntry(std::wstring_view tag, Windows::UI::Color color);
 
+        hstring AccessibleName() const
+        {
+            return hstring{ fmt::format(FMT_COMPILE(L"{} RGB({}, {}, {})"), _Name, _Color.R, _Color.G, _Color.B) };
+        }
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
@@ -70,5 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::UI::Color _color;
+
+        void _PropertyChangedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
     };
 };

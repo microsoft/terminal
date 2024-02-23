@@ -4,6 +4,7 @@ acl
 aclapi
 alignas
 alignof
+allocconsolewithoptions
 APPLYTOSUBMENUS
 appxrecipe
 bitfield
@@ -28,6 +29,7 @@ CYICON
 Dacl
 dataobject
 dcomp
+debugbreak
 delayimp
 DERR
 dlldata
@@ -155,6 +157,7 @@ OUTLINETEXTMETRICW
 overridable
 PACL
 PAGESCROLL
+PALLOC
 PATINVERT
 PEXPLICIT
 PICKFOLDERS
@@ -209,6 +212,7 @@ tlg
 TME
 tmp
 tmpdir
+tokeninfo
 tolower
 toupper
 TRACKMOUSEEVENT
@@ -219,16 +223,19 @@ UFIELD
 ULARGE
 UOI
 UPDATEINIFILE
+urlmon
 userenv
 USEROBJECTFLAGS
 Vcpp
 Viewbox
 virtualalloc
 vsnwprintf
+wcsnlen
 wcsstr
 wcstoui
 WDJ
 winhttp
+wininet
 winmain
 winsta
 winstamin

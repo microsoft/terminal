@@ -607,7 +607,7 @@ class ApiRoutinesTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& si = gci.GetActiveOutputBuffer();
 
-        VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional({ 5, 5 }), L"Make the buffer small so this doesn't take forever.");
+        si.GetTextBuffer().ResizeTraditional({ 5, 5 });
 
         // Tests are run both with and without the DECSTBM margins set. This should not alter
         // the results, since ScrollConsoleScreenBuffer should not be affected by VT margins.

@@ -14,7 +14,6 @@
 #include "../../host/misc.h"
 #include "../../host/server.h"
 #include "../../host/scrolling.hpp"
-#include "../../host/telemetry.hpp"
 
 #include "../inc/ServiceLocator.hpp"
 

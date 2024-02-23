@@ -1,4 +1,4 @@
-![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)
+![terminal-logos](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
@@ -8,8 +8,8 @@ This repository contains the source code for:
 * [Windows Terminal Preview](https://aka.ms/terminal-preview)
 * The Windows console host (`conhost.exe`)
 * Components shared between the two projects
-* [ColorTool](https://github.com/microsoft/terminal/tree/main/src/tools/ColorTool)
-* [Sample projects](https://github.com/microsoft/terminal/tree/main/samples)
+* [ColorTool](./src/tools/ColorTool)
+* [Sample projects](./samples)
   that show how to consume the Windows Console APIs
 
 Related repositories include:
@@ -21,7 +21,7 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> **Note**\
+> [!NOTE]
 > Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
@@ -53,7 +53,7 @@ fails for any reason, you can try the following command at a PowerShell prompt:
 Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 ```
 
-> **Note**\
+> [!NOTE]
 > If you install Terminal manually:
 >
 > * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).
@@ -72,8 +72,8 @@ package:
 winget install --id Microsoft.WindowsTerminal -e
 ```
 
-> **Note**\
-> Due to [a dependency issue](https://github.com/microsoft/terminal/issues/15663), Terminal's current versions cannot be installed via the Windows Package Manager CLI. To install the stable release 1.17 or later, or the Preview release 1.18 or later, please use an alternative installation method.
+> [!NOTE]
+> Dependency support is available in WinGet version [1.6.2631 or later](https://github.com/microsoft/winget-cli/releases). To install the Terminal stable release 1.18 or later, please make sure you have the updated version of the WinGet client.
 
 #### Via Chocolatey (unofficial)
 
@@ -115,6 +115,28 @@ If you have any issues when installing/updating the package, please search for
 or report the same on the [issues
 page](https://github.com/lukesampson/scoop-extras/issues) of Scoop Extras bucket
 repository.
+
+---
+
+## Installing Windows Terminal Canary
+Windows Terminal Canary is a nightly build of Windows Terminal. This build has the latest code from our `main` branch, giving you an opportunity to try features before they make it to Windows Terminal Preview.
+
+Windows Terminal Canary is our least stable offering, so you may discover bugs before we have had a chance to find them.
+
+Windows Terminal Canary is available as an App Installer distribution and a Portable ZIP distribution.
+
+The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11.
+
+The Portable ZIP distribution is a portable application. It will not automatically update and will not automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11.
+
+| Distribution  | Architecture    | Link                                                 |
+|---------------|:---------------:|------------------------------------------------------|
+| App Installer | x64, arm64, x86 | [download](https://aka.ms/terminal-canary-installer) |
+| Portable ZIP  | x64             | [download](https://aka.ms/terminal-canary-zip-x64)   |
+| Portable ZIP  | ARM64           | [download](https://aka.ms/terminal-canary-zip-arm64) |
+| Portable ZIP  | x86             | [download](https://aka.ms/terminal-canary-zip-x86)   |
+
+_Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
 
 ---
 
@@ -240,7 +262,7 @@ Cause: You're launching the incorrect solution in Visual Studio.
 Solution: Make sure you're building & deploying the `CascadiaPackage` project in
 Visual Studio.
 
-> **Note**\
+> [!NOTE]
 > `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
 > Windows Console that hosts Windows' command-line infrastructure. OpenConsole
 > is used by Windows Terminal to connect to and communicate with command-line
@@ -264,7 +286,7 @@ enhance Windows Terminal\!
 
 ***BEFORE you start work on a feature/fix***, please read & follow our
 [Contributor's
-Guide](https://github.com/microsoft/terminal/blob/main/CONTRIBUTING.md) to
+Guide](./CONTRIBUTING.md) to
 help avoid any wasted or duplicate effort.
 
 ## Communicating with the Team
@@ -365,10 +387,10 @@ Please review these brief docs below about our coding practices.
 This is a work in progress as we learn what we'll need to provide people in
 order to be effective contributors to our project.
 
-* [Coding Style](https://github.com/microsoft/terminal/blob/main/doc/STYLE.md)
-* [Code Organization](https://github.com/microsoft/terminal/blob/main/doc/ORGANIZATION.md)
-* [Exceptions in our legacy codebase](https://github.com/microsoft/terminal/blob/main/doc/EXCEPTIONS.md)
-* [Helpful smart pointers and macros for interfacing with Windows in WIL](https://github.com/microsoft/terminal/blob/main/doc/WIL.md)
+* [Coding Style](./doc/STYLE.md)
+* [Code Organization](./doc/ORGANIZATION.md)
+* [Exceptions in our legacy codebase](./doc/EXCEPTIONS.md)
+* [Helpful smart pointers and macros for interfacing with Windows in WIL](./doc/WIL.md)
 
 ---
 
