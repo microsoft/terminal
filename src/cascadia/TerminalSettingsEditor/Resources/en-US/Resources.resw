@@ -135,6 +135,18 @@
     <value>Duplicate</value>
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
+  <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
+    <value>This color scheme is read-only</value>
+    <comment></comment>
+  </data>
+  <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
+    <value>To make changes to this color scheme, you must create a copy.</value>
+    <comment></comment>
+  </data>
+  <data name="ColorScheme_MakeACopyButton.Content" xml:space="preserve">
+    <value>Make a Copy</value>
+    <comment></comment>
+  </data>
   <data name="ColorScheme_SetAsDefault.Header" xml:space="preserve">
     <value>Set color scheme as default</value>
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>

@@ -192,6 +192,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ColorSchemesPageViewModel::RequestDuplicateCurrentScheme()
+    {
+        if (_CurrentScheme)
+        {
+            if (auto actualCurrentScheme = _viewModelToSchemeMap.TryLookup(_CurrentScheme))
+            {
+                auto scheme = _settings.GlobalSettings().DuplicateColorScheme(actualCurrentScheme);
+                // Construct the new color scheme VM
+                const auto schemeVM{ winrt::make<ColorSchemeViewModel>(scheme, *this, _settings) };
+                _AllColorSchemes.Append(schemeVM);
+                _viewModelToSchemeMap.Insert(schemeVM, scheme);
+                CurrentScheme(schemeVM);
+                CurrentPage(ColorSchemesSubPage::Base);
+                RequestEditSelectedScheme();
+            }
+        }
+    }
+
     bool ColorSchemesPageViewModel::CanDeleteCurrentScheme() const
     {
         if (_CurrentScheme)

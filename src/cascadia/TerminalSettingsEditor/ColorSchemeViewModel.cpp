@@ -131,6 +131,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ColorSchemeViewModel::Duplicate_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestDuplicateCurrentScheme();
+        }
+    }
+
     void ColorSchemeViewModel::DeleteConfirmation_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
     {
         if (const auto parentPageVM{ _parentPageVM.get() })
