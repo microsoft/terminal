@@ -20,7 +20,7 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-static std::unordered_set<std::wstring_view> DefaultFeatures{
+static constexpr std::array<std::wstring_view, 11> DefaultFeatures{
     L"rlig",
     L"locl",
     L"ccmp",
@@ -631,7 +631,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto featureKey = tagAndName.Key();
             if (!fontFeaturesMap.HasKey(featureKey))
             {
-                const auto featureDefaultValue = DefaultFeatures.contains(featureKey) ? 1 : 0;
+                const auto featureDefaultValue = _IsADefaultFeature(featureKey) ? 1 : 0;
                 fontFeaturesMap.Insert(featureKey, featureDefaultValue);
                 FontFeaturesVector().Append(_CreateFeatureKeyValuePairHelper(featureKey, featureDefaultValue, fontFeaturesMap, possibleFeaturesTagsAndNames));
                 break;
@@ -727,7 +727,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     const auto senderPair = sender.as<FeatureKeyValuePair>();
                     const auto senderKey = senderPair->FeatureKey();
-                    if (DefaultFeatures.contains(senderKey))
+                    if (appVM->_IsADefaultFeature(senderKey))
                     {
                         senderPair->FeatureValue(1);
                     }
@@ -739,6 +739,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
         return featureKeyValuePair;
+    }
+
+    bool AppearanceViewModel::_IsADefaultFeature(winrt::hstring featureKey)
+    {
+        for (const auto defaultFeature : DefaultFeatures)
+        {
+            if (defaultFeature == featureKey)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
