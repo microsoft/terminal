@@ -45,59 +45,62 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> Font::FontAxesTagsAndNames()
     {
-        auto fontAxesTagsAndNames = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
-
-        wil::com_ptr<IDWriteFont> font;
-        THROW_IF_FAILED(_family->GetFont(0, font.put()));
-        wil::com_ptr<IDWriteFontFace> fontFace;
-        THROW_IF_FAILED(font->CreateFontFace(fontFace.put()));
-        wil::com_ptr<IDWriteFontFace5> fontFace5;
-        if (fontFace5 = fontFace.try_query<IDWriteFontFace5>())
+        if (!_fontAxesTagsAndNames)
         {
-            wil::com_ptr<IDWriteFontResource> fontResource;
-            THROW_IF_FAILED(fontFace5->GetFontResource(fontResource.put()));
+            _fontAxesTagsAndNames = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
 
-            std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
-            const auto axesCount = fontFace5->GetFontAxisValueCount();
-            if (axesCount > 0)
+            wil::com_ptr<IDWriteFont> font;
+            THROW_IF_FAILED(_family->GetFont(0, font.put()));
+            wil::com_ptr<IDWriteFontFace> fontFace;
+            THROW_IF_FAILED(font->CreateFontFace(fontFace.put()));
+            wil::com_ptr<IDWriteFontFace5> fontFace5;
+            if (fontFace5 = fontFace.try_query<IDWriteFontFace5>())
             {
-                uint32_t localeIndex;
-                BOOL localeExists;
-                wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
-                const auto localeToTry = GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) ? localeName : L"en-US";
+                wil::com_ptr<IDWriteFontResource> fontResource;
+                THROW_IF_FAILED(fontFace5->GetFontResource(fontResource.put()));
 
-                axesVector.resize(axesCount);
-                fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
-                for (uint32_t i = 0; i < axesCount; ++i)
+                std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
+                const auto axesCount = fontFace5->GetFontAxisValueCount();
+                if (axesCount > 0)
                 {
-                    const auto tagString = _axisTagToString(axesVector[i].axisTag);
+                    uint32_t localeIndex;
+                    BOOL localeExists;
+                    wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+                    const auto localeToTry = GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) ? localeName : L"en-US";
 
-                    wil::com_ptr<IDWriteLocalizedStrings> names;
-                    THROW_IF_FAILED(fontResource->GetAxisNames(i, names.put()));
-
-                    if (!SUCCEEDED(names->FindLocaleName(localeToTry, &localeIndex, &localeExists)) || !localeExists)
+                    axesVector.resize(axesCount);
+                    fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
+                    for (uint32_t i = 0; i < axesCount; ++i)
                     {
-                        // default to the first locale in the list
-                        localeIndex = 0;
-                    }
+                        const auto tagString = _axisTagToString(axesVector[i].axisTag);
 
-                    uint32_t length;
-                    if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
-                    {
-                        // it is reasonable to assume that the name length is not going to exceed 512 chars
-                        wchar_t name[512];
-                        if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
+                        wil::com_ptr<IDWriteLocalizedStrings> names;
+                        THROW_IF_FAILED(fontResource->GetAxisNames(i, names.put()));
+
+                        if (!SUCCEEDED(names->FindLocaleName(localeToTry, &localeIndex, &localeExists)) || !localeExists)
                         {
-                            fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
-                            continue;
+                            // default to the first locale in the list
+                            localeIndex = 0;
                         }
+
+                        uint32_t length;
+                        if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
+                        {
+                            // it is reasonable to assume that the name length is not going to exceed 512 chars
+                            wchar_t name[512];
+                            if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
+                            {
+                                _fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
+                                continue;
+                            }
+                        }
+                        // if there was no name found, it means the font does not actually support this axis
+                        // don't insert anything into the vector in this case
                     }
-                    // if there was no name found, it means the font does not actually support this axis
-                    // don't insert anything into the vector in this case
                 }
             }
         }
-        return fontAxesTagsAndNames;
+        return _fontAxesTagsAndNames;
     }
 
     winrt::hstring Font::_axisTagToString(DWRITE_FONT_AXIS_TAG tag)
@@ -119,8 +122,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_tagToNameMap.HasKey(_AxisKey))
         {
             int32_t i{ 0 };
-            // this loop assumes that every time we iterate through the map
-            // we get the same ordering
+            // IMap guarantees that the iteration order is the same everytime
+            // so this conversion of key to index is safe
             for (const auto tagAndName : _tagToNameMap)
             {
                 if (tagAndName.Key() == _AxisKey)
@@ -150,35 +153,44 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AxisKeyValuePair::AxisValue(float axisValue)
     {
-        _baseMap.Remove(_AxisKey);
-        _AxisValue = axisValue;
-        _baseMap.Insert(_AxisKey, _AxisValue);
-        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisValue" });
+        if (axisValue != _AxisValue)
+        {
+            _baseMap.Remove(_AxisKey);
+            _AxisValue = axisValue;
+            _baseMap.Insert(_AxisKey, _AxisValue);
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisValue" });
+        }
     }
 
     void AxisKeyValuePair::AxisKey(winrt::hstring axisKey)
     {
-        _baseMap.Remove(_AxisKey);
-        _AxisKey = axisKey;
-        _baseMap.Insert(_AxisKey, _AxisValue);
-        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisKey" });
+        if (axisKey != _AxisKey)
+        {
+            _baseMap.Remove(_AxisKey);
+            _AxisKey = axisKey;
+            _baseMap.Insert(_AxisKey, _AxisValue);
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisKey" });
+        }
     }
 
     void AxisKeyValuePair::AxisIndex(int32_t axisIndex)
     {
-        _AxisIndex = axisIndex;
-
-        int32_t i{ 0 };
-        // same as in the constructor, this assumes that iterating through the map
-        // gives us the same order every time
-        for (const auto tagAndName : _tagToNameMap)
+        if (axisIndex != _AxisIndex)
         {
-            if (i == _AxisIndex)
+            _AxisIndex = axisIndex;
+
+            int32_t i{ 0 };
+            // same as in the constructor, iterating through IMap
+            // gives us the same order every time
+            for (const auto tagAndName : _tagToNameMap)
             {
-                AxisKey(tagAndName.Key());
-                break;
+                if (i == _AxisIndex)
+                {
+                    AxisKey(tagAndName.Key());
+                    break;
+                }
+                ++i;
             }
-            ++i;
         }
     }
 
