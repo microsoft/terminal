@@ -22,12 +22,6 @@
         <TextBlock x:Uid="Globals_RenderingDisclaimer"
                    Style="{StaticResource DisclaimerStyle}" />
 
-        <!--  AtlasEngine  -->
-        <local:SettingContainer x:Uid="Profile_UseAtlasEngine">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.UseAtlasEngine, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
-
         <!--  Force Full Repaint  -->
         <local:SettingContainer x:Uid="Globals_ForceFullRepaint">
             <ToggleSwitch IsOn="{x:Bind ViewModel.ForceFullRepaintRendering, Mode=TwoWay}"
