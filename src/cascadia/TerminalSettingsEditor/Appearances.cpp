@@ -122,7 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_tagToNameMap.HasKey(_AxisKey))
         {
             int32_t i{ 0 };
-            // IMap guarantees that the iteration order is the same everytime
+            // IMap guarantees that the iteration order is the same every time
             // so this conversion of key to index is safe
             for (const auto tagAndName : _tagToNameMap)
             {
