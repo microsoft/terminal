@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2023-02-13
-last updated: 2023-02-13
+last updated: 2023-02-23
 issue id: n/a
 ---
 
@@ -26,6 +26,7 @@ packages over a well-defined [App Service Connection].
       - [Note on responses](#note-on-responses)
       - [Prompting](#prompting)
       - [Explain this](#explain-this)
+  - [User Experience and Design](#user-experience-and-design)
   - [Potential Issues](#potential-issues)
     - [Tenents](#tenents)
   - [Future considerations](#future-considerations)
@@ -129,7 +130,9 @@ authenticated, before beginning to send queries to that connection. TODO! how?
 
 ### Connection "API"
 
-> [!NOTE] TODO!
+> [!IMPORTANT]
+>
+> TODO!
 >
 > This section was authored at the start of 2023. We since moved from
 > just "a list of commands" to a more chat-like experience. This section is
@@ -269,6 +272,17 @@ This could be used in two contexts:
   experience. The user wants to know more about something, with more context
   than just commands as responses.
 
+## User Experience and Design
+
+
+![](./img/llm-providers-settings-000.png)
+
+_programmer art mockup of settings page displaying list of available Terminal LLM providers_
+
+Presumably then each drill-in page would have individual settings Terminal can
+then control for each provider. For example, controlling permissions to what the
+plugin can or cannot do / access
+
 ## Potential Issues
 
 * [ ] TODO! Branding - how do we want to allow individual providers to specify
@@ -294,11 +308,26 @@ This could be used in two contexts:
 
 It's not good, that's for sure.
 
-<!-- Well, it'll be a lot easier for users to burn ridiculous amounts of electricity generating garbage. I don't believe that we should be encouraging such wanton disregard for the environment. That's just me.  -->
+<!-- Well, it'll be a lot easier for users to burn ridiculous amounts of
+electricity generating garbage. I don't believe that we should be encouraging
+such wanton disregard for the environment. That's just me.  -->
 
 <tr><td><strong>Privacy</strong></td><td>
 
 [comment]: # How will user data be handled? What data will be shared with extension providers?
+
+Terminal will present to users a number of settings to control how much context plugins are able to recieve from the Terminal.
+
+* Currently selected text
+* Currently typed commandline
+* Most recent (N) command(s)
+  * and errorlevels
+  * and output
+* Environment variables
+* profile commandline(?) (we may want to always provide the target exe, without args, as a bare min)
+* Other panes too?
+
+TODO! This list is incomplete; you can help by adding missing items
 
 </td></tr>
 
@@ -311,6 +340,11 @@ It's not good, that's for sure.
 <tr><td><strong>Security</strong></td><td>
 
 [comment]: # How will the proposed change impact security?
+
+Terminal will have per-provider settings that it controls OUTSIDE of
+`settings.json` that controls the permissions for each individual plugin. This
+will ensure that plugins do not grant themselves additional permissions by
+writing to the Terminal's settings themselves.
 
 </td></tr>
 
@@ -334,7 +368,19 @@ It's not good, that's for sure.
 
 </table>
 
+## Before spec is done TODO!s
+* [ ] TODO! PowerShell folks would like to have the connection be two-way. Can we have extensions invoke experiences in the Terminal?
+* [ ] TODO! add interface for Terminal to query what providers are available in each terminal extension
+  - I think we should do that within a single `uap3:AppExtension`, so that apps
+    can change the list of providers on the fly, without an update to the app
+    package
+* [ ] ...
+
 ## Future considerations
+
+* Maybe it'd be cool if profiles could specify a default LLM provider? So if you
+  opened the chat / whatever with that pane active, we'd default to that
+  provider, rather than the one that is otherwise selected as the default?
 
 ## Resources
 
