@@ -26,6 +26,7 @@
 TIL_FAST_MATH_BEGIN
 
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
+#pragma warning(disable : 26440) // Function '...' can be declared 'noexcept'(f.6).
 // This code packs various data into smaller-than-int types to save both CPU and GPU memory. This warning would force
 // us to add dozens upon dozens of gsl::narrow_cast<>s throughout the file which is more annoying than helpful.
 #pragma warning(disable : 4242) // '=': conversion from '...' to '...', possible loss of data
