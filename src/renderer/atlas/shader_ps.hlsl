@@ -67,6 +67,16 @@ Output main(PSData data) : SV_Target
         color = weights * data.color;
         break;
     }
+    case SHADING_TYPE_TEXT_BUILTIN_GLYPH:
+    {
+        const uint2 checkerboard = (uint2)(data.position.xy / (thinLineWidth * data.renditionScale)) & 1;
+        // There's no need to use the .a channel because glyphAtlas is in premultiplied alpha
+        // (= .rgb is already multiplied by .a) and we expect builtin glyphs to not use ClearType.
+        const float alpha = glyphAtlas[data.texcoord][checkerboard.x + checkerboard.y];
+        color = premultiplyColor(data.color) * alpha;
+        weights = color.aaaa;
+        break;
+    }
     case SHADING_TYPE_TEXT_PASSTHROUGH:
     {
         color = glyphAtlas[data.texcoord];

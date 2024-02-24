@@ -64,17 +64,18 @@ namespace Microsoft::Console::Render::Atlas
 
             // This block of values will be used for the TextDrawingFirst/Last range and need to stay together.
             // This is used to quickly check if an instance is related to a "text drawing primitive".
-            TextGrayscale = 1,
-            TextClearType = 2,
-            TextPassthrough = 3,
-            DottedLine = 4,
-            DashedLine = 5,
-            CurlyLine = 6,
+            TextGrayscale,
+            TextClearType,
+            TextBuiltinGlyph,
+            TextPassthrough,
+            DottedLine,
+            DashedLine,
+            CurlyLine,
             // All items starting here will be drawing as a solid RGBA color
-            SolidLine = 7,
+            SolidLine,
 
-            Cursor = 8,
-            Selection = 9,
+            Cursor,
+            Selection,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,
@@ -305,7 +306,7 @@ namespace Microsoft::Console::Render::Atlas
         size_t _colorizeGlyphAtlasCounter = 0;
 #endif
 
-#ifndef NDEBUG
+#if ATLAS_DEBUG_SHADER_HOT_RELOAD
         std::filesystem::path _sourceDirectory;
         wil::unique_folder_change_reader_nothrow _sourceCodeWatcher;
         std::atomic<int64_t> _sourceCodeInvalidationTime{ INT64_MAX };
