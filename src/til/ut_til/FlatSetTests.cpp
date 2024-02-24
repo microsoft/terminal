@@ -12,37 +12,34 @@ using namespace WEX::TestExecution;
 struct Data
 {
     static constexpr auto emptyMarker = std::numeric_limits<size_t>::max();
-
-    constexpr operator bool() const noexcept
-    {
-        return value != emptyMarker;
-    }
-
-    constexpr bool operator==(int key) const noexcept
-    {
-        return value == static_cast<size_t>(key);
-    }
-
-    constexpr Data& operator=(int key) noexcept
-    {
-        value = static_cast<size_t>(key);
-        return *this;
-    }
-
     size_t value = emptyMarker;
 };
 
-template<>
-struct ::std::hash<Data>
+struct DataHashTrait
 {
-    constexpr size_t operator()(int key) const noexcept
+    static constexpr bool occupied(const Data& d) noexcept
     {
-        return til::flat_set_hash_integer(static_cast<size_t>(key));
+        return d.value != Data::emptyMarker;
     }
 
-    constexpr size_t operator()(Data d) const noexcept
+    static constexpr size_t hash(const size_t key) noexcept
+    {
+        return til::flat_set_hash_integer(key);
+    }
+
+    static constexpr size_t hash(const Data& d) noexcept
     {
         return til::flat_set_hash_integer(d.value);
+    }
+
+    static constexpr bool equals(const Data& d, size_t key) noexcept
+    {
+        return d.value == key;
+    }
+
+    static constexpr void assign(Data& d, size_t key) noexcept
+    {
+        d.value = key;
     }
 };
 
@@ -52,7 +49,7 @@ class FlatSetTests
 
     TEST_METHOD(Basic)
     {
-        til::linear_flat_set<Data> set;
+        til::linear_flat_set<Data, DataHashTrait> set;
 
         // This simultaneously demonstrates how the class can't just do "heterogeneous lookups"
         // like STL does, but also insert items with a different type.
@@ -62,7 +59,7 @@ class FlatSetTests
         const auto [entry2, inserted2] = set.insert(123);
         VERIFY_IS_FALSE(inserted2);
 
-        VERIFY_ARE_EQUAL(&entry1, &entry2);
-        VERIFY_ARE_EQUAL(123u, entry2.value);
+        VERIFY_ARE_EQUAL(entry1, entry2);
+        VERIFY_ARE_EQUAL(123u, entry2->value);
     }
 };
