@@ -8,7 +8,6 @@ graph TD
     Renderer["Renderer (base/renderer.cpp)\n<small>breaks the text buffer down into GDI-oriented graphics\nprimitives (#quot;change brush to color X#quot;, #quot;draw string Y#quot;, ...)</small>"]
     RenderEngineBase[/"RenderEngineBase\n(base/RenderEngineBase.cpp)\n<small>abstracts 24 LOC 👻</small>"\]
     GdiEngine["GdiEngine (gdi/...)"]
-    DxEngine["DxEngine (dx/...)"]
 
     subgraph AtlasEngine["AtlasEngine (atlas/...)"]
         AtlasEngine.cpp["AtlasEngine.cpp\n<small>Implements IRenderEngine text rendering API\nbreaks GDI graphics primitives down into DWRITE_GLYPH_RUNs</small>"]
@@ -24,7 +23,6 @@ graph TD
     Renderer -.-> RenderEngineBase
     %% Mermaid.js has no support for backwards arrow at the moment
     RenderEngineBase <-.->|extends| GdiEngine
-    RenderEngineBase <-.->|extends| DxEngine
     Renderer ----> AtlasEngine
     AtlasEngine.cpp <--> AtlasEngine.api.cpp
     AtlasEngine.cpp <--> AtlasEngine.r.cpp

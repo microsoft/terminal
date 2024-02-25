@@ -63,6 +63,7 @@
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
+    X(bool, EnableBuiltinGlyphs, true)                                                                                                                   \
     X(winrt::hstring, CellWidth)                                                                                                                         \
     X(winrt::hstring, CellHeight)                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
@@ -72,7 +73,6 @@
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
-    X(bool, UseAtlasEngine, true)                                                                                                                        \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \

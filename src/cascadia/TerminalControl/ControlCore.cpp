@@ -17,7 +17,6 @@
 #include "EventArgs.h"
 #include "../../buffer/out/search.h"
 #include "../../renderer/atlas/AtlasEngine.h"
-#include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
@@ -335,15 +334,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            if (_settings->UseAtlasEngine())
-            {
-                _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
-            }
-            else
-            {
-                _renderEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            }
-
+            _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             _renderer->AddRenderEngine(_renderEngine.get());
 
             // Initialize our font with the renderer
@@ -359,7 +350,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
             LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-            // Update DxEngine's SelectionBackground
+            // Update AtlasEngine's SelectionBackground
             _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
@@ -869,6 +860,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto lock = _terminal->LockForWriting();
 
+        _builtinGlyphs = _settings->EnableBuiltinGlyphs();
         _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
@@ -915,10 +907,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(*newAppearance);
 
-        // Update DxEngine settings under the lock
+        // Update AtlasEngine settings under the lock
         if (_renderEngine)
         {
-            // Update DxEngine settings under the lock
+            // Update AtlasEngine settings under the lock
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
@@ -954,7 +946,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_updateAntiAliasingMode()
     {
         D2D1_TEXT_ANTIALIAS_MODE mode;
-        // Update DxEngine's AntialiasingMode
+        // Update AtlasEngine's AntialiasingMode
         switch (_settings->AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
@@ -1047,6 +1039,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
 
+        _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
         _desiredFont.SetCellSize(_cellWidth, _cellHeight);
 
         const auto before = _actualFont.GetSize();

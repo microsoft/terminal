@@ -74,11 +74,6 @@ namespace Microsoft::Console::Render::Atlas
         return val < min ? min : (max < val ? max : val);
     }
 
-    constexpr bool isSoftFontChar(wchar_t ch) noexcept
-    {
-        return ch >= 0xEF20 && ch < 0xEF80;
-    }
-
     inline constexpr D2D1_RECT_F GlyphRunEmptyBounds{ 1e38f, 1e38f, -1e38f, -1e38f };
     void GlyphRunAccumulateBounds(const ID2D1DeviceContext* d2dRenderTarget, D2D1_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, D2D1_RECT_F& bounds);
 
