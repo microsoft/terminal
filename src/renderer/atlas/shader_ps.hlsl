@@ -12,8 +12,9 @@ cbuffer ConstBuffer : register(b0)
     float4 gammaRatios;
     float enhancedContrast;
     float underlineWidth;
-    float thinLineWidth;
+    float doubleUnderlineWidth;
     float curlyLineHalfHeight;
+    float thinLineWidth;
 }
 
 Texture2D<float4> background : register(t0);
@@ -31,7 +32,7 @@ Output main(PSData data) : SV_Target
 {
     float4 color;
     float4 weights;
-
+    
     switch (data.shadingType)
     {
     case SHADING_TYPE_TEXT_BACKGROUND:
@@ -69,11 +70,50 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_TEXT_BUILTIN_GLYPH:
     {
-        const uint2 checkerboard = (uint2)(data.position.xy / (thinLineWidth * data.renditionScale)) & 1;
-        // There's no need to use the .a channel because glyphAtlas is in premultiplied alpha
-        // (= .rgb is already multiplied by .a) and we expect builtin glyphs to not use ClearType.
-        const float alpha = glyphAtlas[data.texcoord][checkerboard.x + checkerboard.y];
-        color = premultiplyColor(data.color) * alpha;
+        // The RGB components of builtin glyphs are used to control the generation of pixel patterns in this shader.
+        // Below you can see their intended effects where # indicates lit pixels.
+        //
+        // .r = stretch
+        //      0: #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //
+        //      1: #___#___
+        //         __#___#_
+        //         #___#___
+        //         __#___#_
+        //
+        // .g = invert
+        //      0: #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //
+        //      1: _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //
+        // .r = fill
+        //      0: #_#_#_#_
+        //         _#_#_#_#
+        //         #_#_#_#_
+        //         _#_#_#_#
+        //
+        //      1: ########
+        //         ########
+        //         ########
+        //         ########
+        //      
+        float4 glyph = glyphAtlas[data.texcoord];
+
+        float2 pos = floor(data.position.xy / (thinLineWidth * data.renditionScale));
+        float stretched = step(frac(dot(pos, float2(glyph.r * -0.25f + 0.5f, 0.5f))), 0) * glyph.a;
+        float inverted = abs(glyph.g - stretched);
+        float filled = max(glyph.b, inverted);
+
+        color = premultiplyColor(data.color) * filled;
         weights = color.aaaa;
         break;
     }
@@ -99,7 +139,7 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE:
     {
-        const float strokeWidthHalf = thinLineWidth * data.renditionScale.y * 0.5f;
+        const float strokeWidthHalf = doubleUnderlineWidth * data.renditionScale.y * 0.5f;
         const float amp = (curlyLineHalfHeight - strokeWidthHalf) * data.renditionScale.y;
         const float freq = data.renditionScale.x / curlyLineHalfHeight * 1.57079632679489661923f;
         const float s = sin(data.position.x * freq) * amp;
@@ -116,7 +156,7 @@ Output main(PSData data) : SV_Target
         break;
     }
     }
-
+    
     Output output;
     output.color = color;
     output.weights = weights;

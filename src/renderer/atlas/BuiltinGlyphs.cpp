@@ -1140,34 +1140,15 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         case Shape_Filled100:
         {
             // This code works in tandem with SHADING_TYPE_TEXT_BUILTIN_GLYPH in our pixel shader.
-            // The pixel shader splits the viewport into a 2x2 pixel checkerboard like this:
-            //       x
-            //    +----->
-            //    | +---+---+---+---+
-            //  y | | 0 | 1 | 0 | 1 |
-            //    v +---+---+---+---+
-            //      | 1 | 2 | 1 | 2 |
-            //      +---+---+---+---+
-            //      | 0 | 1 | 0 | 1 |
-            //      +---+---+---+---+
-            //      | 1 | 2 | 1 | 2 |
-            //      +---+---+---+---+
-            //
-            // When it then loads our glyph texture it only uses the RGB component of the given index above.
-            // This means we can produce solid colors by drawing plain white glyphs here (the default color anyway)
-            // and shaded glyphs by only setting select RGB channels that we want it to show.
+            // Unless someone removed it, it should have a lengthy comment visually explaining
+            // what each of the 3 RGB components do. The short version is:
+            //   R: stretch the checkerboard pattern (Shape_Filled050) horizontally
+            //   G: invert the pixels
+            //   B: overrides the above and fills it
             static constexpr D2D1_COLOR_F colors[] = {
-                // __
-                // _#
-                { 0, 0, 1, 1 }, // Shape_Filled025
-                // _#
-                // #_
-                { 0, 1, 0, 1 }, // Shape_Filled050
-                // ##
-                // #_
+                { 1, 0, 0, 1 }, // Shape_Filled025
+                { 0, 0, 0, 1 }, // Shape_Filled050
                 { 1, 1, 0, 1 }, // Shape_Filled075
-                // ##
-                // ##
                 { 1, 1, 1, 1 }, // Shape_Filled100
             };
 
