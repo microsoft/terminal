@@ -32,7 +32,7 @@ Output main(PSData data) : SV_Target
 {
     float4 color;
     float4 weights;
-    
+
     switch (data.shadingType)
     {
     case SHADING_TYPE_TEXT_BACKGROUND:
@@ -105,11 +105,43 @@ Output main(PSData data) : SV_Target
         //         ########
         //         ########
         //         ########
-        //      
+        //
         float4 glyph = glyphAtlas[data.texcoord];
-
         float2 pos = floor(data.position.xy / (thinLineWidth * data.renditionScale));
+
+        // A series of on/off/on/off/on/off pixels can be generated with:
+        //   step(frac(x * 0.5f), 0)
+        // The inner frac(x * 0.5f) will generate a series of
+        //   0, 0.5, 0, 0.5, 0, 0.5
+        // and the step() will transform that to
+        //   1,   0, 1,   0, 1,   0
+        //
+        // We can now turn that into a checkerboard pattern quite easily,
+        // if we imagine the fields of the checkerboard like this:
+        //   +---+---+---+
+        //   | 0 | 1 | 2 |
+        //   +---+---+---+
+        //   | 1 | 2 | 3 |
+        //   +---+---+---+
+        //   | 2 | 3 | 4 |
+        //   +---+---+---+
+        //
+        // Because this means we just need to set
+        //   x = pos.x + pos.y
+        // and so we end up with
+        //   step(frac(dot(pos, 0.5f)), 0)
+        //
+        // Finally, we need to implement the "stretch" explained above, which can
+        // be easily achieved by simply replacing the factor 0.5 with 0.25 like so
+        //   step(frac(x * 0.25f), 0)
+        // as this gets us
+        //   0, 0.25, 0.5, 0.75, 0, 0.25, 0.5, 0.75
+        // = 1,    0,   0,    0, 1,    0,   0,    0
+        //
+        // Of course we only want to apply that to the X axis, which means
+        // below we end up having 2 different multipliers for the dot().
         float stretched = step(frac(dot(pos, float2(glyph.r * -0.25f + 0.5f, 0.5f))), 0) * glyph.a;
+        // Thankfully the remaining 2 operations are a lot simpler.
         float inverted = abs(glyph.g - stretched);
         float filled = max(glyph.b, inverted);
 
@@ -156,7 +188,7 @@ Output main(PSData data) : SV_Target
         break;
     }
     }
-    
+
     Output output;
     output.color = color;
     output.weights = weights;
