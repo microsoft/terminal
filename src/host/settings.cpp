@@ -776,3 +776,8 @@ bool Settings::GetCopyColor() const noexcept
 {
     return _fCopyColor;
 }
+
+bool Settings::GetEnableBuiltinGlyphs() const noexcept
+{
+    return _fEnableBuiltinGlyphs;
+}
