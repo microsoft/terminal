@@ -85,7 +85,6 @@ Author(s):
     X(hstring, StartingDirectory, "startingDirectory")                                                                                                         \
     X(bool, SuppressApplicationTitle, "suppressApplicationTitle", false)                                                                                       \
     X(guid, ConnectionType, "connectionType")                                                                                                                  \
-    X(hstring, Icon, "icon", L"\uE756")                                                                                                                        \
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \

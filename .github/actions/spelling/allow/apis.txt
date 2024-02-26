@@ -24,8 +24,10 @@ COLORPROPERTY
 colspan
 COMDLG
 commandlinetoargv
+commoncontrols
 comparand
 cosf
+COPYFROMRESOURCE
 cstdint
 CUsers
 CXICON
@@ -46,6 +48,7 @@ endfor
 ENDSESSION
 enumset
 environstrings
+EXACTSIZEONLY
 EXPCMDFLAGS
 EXPCMDSTATE
 fenv
@@ -67,6 +70,7 @@ hicon
 HIGHCONTRASTON
 HIGHCONTRASTW
 hinternet
+HIGHQUALITYSCALE
 HINTERNET
 hotkeys
 href
@@ -83,6 +87,7 @@ IBox
 IClass
 IComparable
 IComparer
+ICONINFO
 IConnection
 ICustom
 IDialog
@@ -93,6 +98,7 @@ IFACEMETHOD
 IFile
 IFolder
 IGraphics
+IImage
 IInheritable
 IMap
 IMonarch
