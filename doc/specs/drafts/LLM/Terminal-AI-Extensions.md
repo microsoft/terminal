@@ -308,9 +308,19 @@ plugin can or cannot do / access
 
 It's not good, that's for sure.
 
-<!-- Well, it'll be a lot easier for users to burn ridiculous amounts of
-electricity generating garbage. I don't believe that we should be encouraging
-such wanton disregard for the environment. That's just me.  -->
+* This [source] estimated a single ChatGPT query at 6.79 Wh.
+  * An IPhone 15 has a 12.98 Wh battery
+  * So a single query is like, .5 phone batteries of power.
+* According to [the EIA], the US contributes 0.86 pounds of CO2 per kWh
+* Napkin math: We've got 1M users with one query a day. (Obviously, it might be
+  more users with fewer queries, or fewer with more.)
+  * That's (6.79Wh * 1000000/day) = 6790000 Wh = 6790 kWh / day
+  * That's (6790kWh * 0.86 lb CO2 / kWh) = 5839.4 lbs CO2 / day
+  * = 2.64870729 metric tons CO2 / day
+
+Author note: I'd rather not build a product that adds measurable tons of CO2 a
+day. Not sure how we can justify this until the power consumption of LLMs comes
+down dramatically.
 
 <tr><td><strong>Privacy</strong></td><td>
 
@@ -392,3 +402,5 @@ writing to the Terminal's settings themselves.
 
 
 [App Service Connection]: https://learn.microsoft.com/en-us/windows/uwp/launch-resume/how-to-create-and-consume-an-app-service
+[source]: https://medium.com/@zodhyatech/how-much-energy-does-chatgpt-consume-4cba1a7aef85
+[the EIA]: https://www.eia.gov/tools/faqs/faq.php?id=74&t=11
