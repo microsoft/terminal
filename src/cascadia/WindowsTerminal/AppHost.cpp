@@ -438,10 +438,7 @@ void AppHost::Close()
     // After calling _window->Close() we should avoid creating more WinUI related actions.
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
-    if (_frameTimer)
-    {
-        _frameTimer.Tick(_frameTimerToken);
-    }
+    _frameTimer.Destroy();
     _showHideWindowThrottler.reset();
 
     _revokeWindowCallbacks();
@@ -484,7 +481,7 @@ void AppHost::_revokeWindowCallbacks()
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
     _showHideWindowThrottler.reset();
-
+    _stopFrameTimer();
     _revokeWindowCallbacks();
 
     // DO NOT CLOSE THE WINDOW
@@ -538,23 +535,19 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     {
         _windowLogic.ClearPersistedWindowState();
     }
-
-    // If the user closes the last tab, in the last window, _by closing the tab_
-    // (not by closing the whole window), we need to manually persist an empty
-    // window state here. That will cause the terminal to re-open with the usual
-    // settings (not the persisted state)
-    if (args.ClearPersistedState() &&
-        _windowManager.GetNumberOfPeasants() == 1)
-    {
-        _windowLogic.ClearPersistedWindowState();
-    }
-
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
 
-    PostQuitMessage(0);
+    if (Utils::IsWindows11())
+    {
+        PostQuitMessage(0);
+    }
+    else
+    {
+        PostMessageW(_window->GetInteropHandle(), WM_REFRIGERATE, 0, 0);
+    }
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -931,7 +924,16 @@ winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
     const auto peasant = _peasant;
     const auto hwnd = _window->GetHandle();
 
+    auto weakThis{ weak_from_this() };
+
     co_await winrt::resume_background();
+
+    // If we're gone on the other side of this co_await, well, that's fine. Just bail.
+    const auto strongThis = weakThis.lock();
+    if (!strongThis)
+    {
+        co_return;
+    }
 
     GUID currentDesktopGuid{};
     if (FAILED_LOG(desktopManager->GetWindowDesktopId(hwnd, &currentDesktopGuid)))
@@ -963,8 +965,19 @@ winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
 winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
 {
     winrt::hstring layoutJson = L"";
+
+    auto weakThis{ weak_from_this() };
+
     // Use the main thread since we are accessing controls.
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
+
+    const auto strongThis = weakThis.lock();
+    // GH #16235: If we don't have a window logic, we're already refrigerating, and won't have our _window either.
+    if (!strongThis || _windowLogic == nullptr)
+    {
+        co_return layoutJson;
+    }
+
     try
     {
         const auto pos = _GetWindowLaunchPosition();
@@ -1021,9 +1034,18 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
 winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
                                                           const winrt::Windows::Foundation::IInspectable /*args*/)
 {
+    auto weakThis{ weak_from_this() };
+
     // We'll be raising an event that may result in a RPC call to the monarch -
     // make sure we're on the background thread, or this will silently fail
     co_await winrt::resume_background();
+
+    // If we're gone on the other side of this co_await, well, that's fine. Just bail.
+    const auto strongThis = weakThis.lock();
+    if (!strongThis)
+    {
+        co_return;
+    }
 
     if (_peasant)
     {
@@ -1161,12 +1183,8 @@ void AppHost::_startFrameTimer()
     // _updateFrameColor, which will actually handle setting the colors. If we
     // already have a timer, just start that one.
 
-    if (_frameTimer == nullptr)
-    {
-        _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
-        _frameTimer.Interval(FrameUpdateInterval);
-        _frameTimerToken = _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
-    }
+    _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
+    _frameTimer.Interval(FrameUpdateInterval);
     _frameTimer.Start();
 }
 
@@ -1234,8 +1252,16 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
                                                const winrt::Windows::Foundation::IInspectable&)
 {
+    auto weakThis{ weak_from_this() };
     // Need to be on the main thread to close out all of the tabs.
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
+
+    const auto strongThis = weakThis.lock();
+    // GH #16235: If we don't have a window logic, we're already refrigerating, and won't have our _window either.
+    if (!strongThis || _windowLogic == nullptr)
+    {
+        co_return;
+    }
 
     _windowLogic.Quit();
 }
@@ -1387,11 +1413,19 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
         nCmdShow = SW_MAXIMIZE;
     }
 
+    auto weakThis{ weak_from_this() };
     // For inexplicable reasons, again, hop to the BG thread, then back to the
     // UI thread. This is shockingly load bearing - without this, then
     // sometimes, we'll _still_ show the HWND before the XAML island actually
     // paints.
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
+
+    // If we're gone on the other side of this co_await, well, that's fine. Just bail.
+    const auto strongThis = weakThis.lock();
+    if (!strongThis || _window == nullptr)
+    {
+        co_return;
+    }
 
     ShowWindow(_window->GetHandle(), nCmdShow);
 

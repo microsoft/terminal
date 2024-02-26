@@ -4,11 +4,9 @@
 #include "pch.h"
 #include "TermControl.h"
 
-#include <unicode.hpp>
 #include <LibraryResources.h>
 
 #include "TermControlAutomationPeer.h"
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../renderer/atlas/AtlasEngine.h"
 
 #include "TermControl.g.cpp"
@@ -59,10 +57,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
-        _autoScrollTimer{},
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _cursorTimer{},
-        _blinkTimer{},
         _searchBox{ nullptr }
     {
         InitializeComponent();
@@ -361,9 +356,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto end = beg + pipHeight * stride;
                 for (; beg < end; beg += stride)
                 {
-                    // Coincidentally a til::color has the same RGBA format as the bitmap.
+                    // a til::color does NOT have the same RGBA format as the bitmap.
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                    std::fill_n(reinterpret_cast<til::color*>(beg), pipWidth, color);
+                    const DWORD c = 0xff << 24 | color.r << 16 | color.g << 8 | color.b;
+                    std::fill_n(reinterpret_cast<DWORD*>(beg), pipWidth, c);
                 }
             };
 
@@ -420,10 +416,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // Currently we populate the search box only if a single line is selected.
                     // Empirically, multi-line selection works as well on sample scenarios,
                     // but since code paths differ, extra work is required to ensure correctness.
-                    auto bufferText = _core.SelectedText(true);
-                    if (bufferText.Size() == 1)
+                    if (!_core.HasMultiLineSelection())
                     {
-                        const auto selectedLine{ bufferText.GetAt(0) };
+                        const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
                 }
@@ -1088,10 +1083,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (blinkTime != INFINITE)
         {
             // Create a timer
-            DispatcherTimer cursorTimer;
-            cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
-            cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
-            _cursorTimer.emplace(std::move(cursorTimer));
+            _cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
+            _cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
             // As of GH#6586, don't start the cursor timer immediately, and
             // don't show the cursor initially. We'll show the cursor and start
             // the timer when the control is first focused.
@@ -1106,13 +1099,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core.CursorOn(_focused || _displayCursorWhileBlurred());
             if (_displayCursorWhileBlurred())
             {
-                _cursorTimer->Start();
+                _cursorTimer.Start();
             }
         }
         else
         {
-            // The user has disabled cursor blinking
-            _cursorTimer = std::nullopt;
+            _cursorTimer.Destroy();
         }
 
         // Set up blinking attributes
@@ -1121,16 +1113,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (animationsEnabled && blinkTime != INFINITE)
         {
             // Create a timer
-            DispatcherTimer blinkTimer;
-            blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
-            blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
-            blinkTimer.Start();
-            _blinkTimer.emplace(std::move(blinkTimer));
+            _blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
+            _blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
+            _blinkTimer.Start();
         }
         else
         {
             // The user has disabled blinking
-            _blinkTimer = std::nullopt;
+            _blinkTimer.Destroy();
         }
 
         // Now that the renderer is set up, update the appearance for initialization
@@ -1346,7 +1336,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Alt, so we should be ignoring the individual keydowns. The character
         // will be sent through the TSFInputControl. See GH#1401 for more
         // details
-        if (modifiers.IsAltPressed() &&
+        if (modifiers.IsAltPressed() && !modifiers.IsCtrlPressed() &&
             (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9))
         {
             e.Handled(true);
@@ -1499,7 +1489,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
             _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer->Start();
+            _cursorTimer.Start();
         }
 
         return handled;
@@ -1974,12 +1964,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // When the terminal focuses, show the cursor immediately
             _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer->Start();
+            _cursorTimer.Start();
         }
 
         if (_blinkTimer)
         {
-            _blinkTimer->Start();
+            _blinkTimer.Start();
         }
 
         // Only update the appearance here if an unfocused config exists - if an
@@ -2022,13 +2012,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_cursorTimer && !_displayCursorWhileBlurred())
         {
-            _cursorTimer->Stop();
+            _cursorTimer.Stop();
             _core.CursorOn(false);
         }
 
         if (_blinkTimer)
         {
-            _blinkTimer->Stop();
+            _blinkTimer.Stop();
         }
 
         // Check if there is an unfocused config we should set the appearance to
@@ -2279,7 +2269,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
+
+            // At the time of writing, closing the last tab of a window inexplicably
+            // does not lead to the destruction of the remaining TermControl instance(s).
+            // On Win10 we don't destroy window threads due to bugs in DesktopWindowXamlSource.
+            // In turn, we leak TermControl instances. This results in constant HWND messages
+            // while the thread is supposed to be idle. Stop these timers avoids this.
             _autoScrollTimer.Stop();
+            _bellLightTimer.Stop();
+            _cursorTimer.Stop();
+            _blinkTimer.Stop();
 
             if (!_detached)
             {
@@ -2405,25 +2404,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then use it to measure how much space the requested rows and columns
         // will take up.
         // TODO: MSFT:21254947 - use a static function to do this instead of
-        // instantiating a DxEngine/AtlasEngine.
+        // instantiating a AtlasEngine.
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
-        float scale;
-        if (settings.UseAtlasEngine())
-        {
-            auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
-            LOG_IF_FAILED(engine->UpdateDpi(dpi));
-            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
-            scale = engine->GetScaling();
-        }
-        else
-        {
-            auto engine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            LOG_IF_FAILED(engine->UpdateDpi(dpi));
-            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
-            scale = engine->GetScaling();
-        }
+        const auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+        LOG_IF_FAILED(engine->UpdateDpi(dpi));
+        LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
 
+        const auto scale = engine->GetScaling();
         const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
@@ -2909,7 +2897,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // However, it's likely that the control layer may need to
                     // know about the source anyways in the future, to support
                     // GH#3158
-                    if (_interactivity.ManglePathsForWsl())
+                    const auto isWSL = _interactivity.ManglePathsForWsl();
+
+                    if (isWSL)
                     {
                         std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
 
@@ -2943,17 +2933,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         }
                     }
 
-                    const auto containsSpaces = std::find(fullPath.begin(),
-                                                          fullPath.end(),
-                                                          L' ') != fullPath.end();
+                    const auto quotesNeeded = isWSL || fullPath.find(L' ') != std::wstring::npos;
+                    const auto quotesChar = isWSL ? L'\'' : L'"';
 
-                    if (containsSpaces)
+                    // Append fullPath and also wrap it in quotes if needed
+                    if (quotesNeeded)
                     {
-                        fullPath.insert(0, L"\"");
-                        fullPath += L"\"";
+                        allPathsString.push_back(quotesChar);
                     }
-
-                    allPathsString += fullPath;
+                    allPathsString.append(fullPath);
+                    if (quotesNeeded)
+                    {
+                        allPathsString.push_back(quotesChar);
+                    }
                 }
 
                 _pasteTextWithBroadcast(winrt::hstring{ allPathsString });
@@ -3126,20 +3118,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _bellDarkAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 
-        // Similar to the animation, only initialize the timer here
-        if (!_bellLightTimer)
-        {
-            _bellLightTimer = {};
-            _bellLightTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
-            _bellLightTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
-        }
-
         Windows::Foundation::Numerics::float2 zeroSize{ 0, 0 };
         // If the grid has 0 size or if the bell timer is
         // already active, do nothing
         if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer.IsEnabled())
         {
-            // Start the timer, when the timer ticks we switch off the light
+            _bellLightTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
+            _bellLightTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
             _bellLightTimer.Start();
 
             // Switch on the light and animate the intensity to fade out
@@ -3159,15 +3144,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_BellLightOff(const Windows::Foundation::IInspectable& /* sender */,
                                     const Windows::Foundation::IInspectable& /* e */)
     {
-        if (_bellLightTimer)
-        {
-            // Stop the timer and switch off the light
-            _bellLightTimer.Stop();
+        // Stop the timer and switch off the light
+        _bellLightTimer.Stop();
 
-            if (!_IsClosing())
-            {
-                VisualBellLight::SetIsTarget(RootGrid(), false);
-            }
+        if (!_IsClosing())
+        {
+            VisualBellLight::SetIsTarget(RootGrid(), false);
         }
     }
 
@@ -3208,51 +3190,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ClearHoveredCell();
     }
 
-    // Attackers abuse Unicode characters that happen to look similar to ASCII characters. Cyrillic for instance has
-    // its own glyphs for а, с, е, о, р, х, and у that look practically identical to their ASCII counterparts.
-    // This is called an "IDN homoglyph attack".
-    //
-    // But outright showing Punycode URIs only is similarly flawed as they can end up looking similar to valid ASCII URIs.
-    // xn--cnn.com for instance looks confusingly similar to cnn.com, but actually represents U+407E.
-    //
-    // An optimal solution would detect any URI that contains homoglyphs and show them in their Punycode form.
-    // Such a detector however is not quite trivial and requires constant maintenance, which this project's
-    // maintainers aren't currently well equipped to handle. As such we do the next best thing and show the
-    // Punycode encoding side-by-side with the Unicode string for any IDN.
-    static winrt::hstring sanitizeURI(winrt::hstring uri)
-    {
-        if (uri.empty())
-        {
-            return uri;
-        }
-
-        wchar_t punycodeBuffer[256];
-        wchar_t unicodeBuffer[256];
-
-        // These functions return int, but are documented to only return positive numbers.
-        // Better make sure though. It allows us to pass punycodeLength right into IdnToUnicode.
-        const auto punycodeLength = std::max(0, IdnToAscii(0, uri.data(), gsl::narrow<int>(uri.size()), &punycodeBuffer[0], 256));
-        const auto unicodeLength = std::max(0, IdnToUnicode(0, &punycodeBuffer[0], punycodeLength, &unicodeBuffer[0], 256));
-
-        if (punycodeLength <= 0 || unicodeLength <= 0)
-        {
-            return RS_(L"InvalidUri");
-        }
-
-        const std::wstring_view punycode{ &punycodeBuffer[0], gsl::narrow_cast<size_t>(punycodeLength) };
-        const std::wstring_view unicode{ &unicodeBuffer[0], gsl::narrow_cast<size_t>(unicodeLength) };
-
-        // IdnToAscii/IdnToUnicode return the input string as is if it's all
-        // plain ASCII. But we don't know if the input URI is Punycode or not.
-        // --> It's non-Punycode and ASCII if it round-trips.
-        if (uri == punycode && uri == unicode)
-        {
-            return uri;
-        }
-
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}\n({})"), punycode, unicode) };
-    }
-
     void TermControl::_hoveredHyperlinkChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         const auto lastHoveredCell = _core.HoveredCell();
@@ -3261,10 +3198,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto uriText = sanitizeURI(_core.HoveredUriText());
+        auto uriText = _core.HoveredUriText();
         if (uriText.empty())
         {
             return;
+        }
+
+        // Attackers abuse Unicode characters that happen to look similar to ASCII characters. Cyrillic for instance has
+        // its own glyphs for а, с, е, о, р, х, and у that look practically identical to their ASCII counterparts.
+        // This is called an "IDN homoglyph attack".
+        //
+        // But outright showing Punycode URIs only is similarly flawed as they can end up looking similar to valid ASCII URIs.
+        // xn--cnn.com for instance looks confusingly similar to cnn.com, but actually represents U+407E.
+        //
+        // An optimal solution would detect any URI that contains homoglyphs and show them in their Punycode form.
+        // Such a detector however is not quite trivial and requires constant maintenance, which this project's
+        // maintainers aren't currently well equipped to handle. As such we do the next best thing and show the
+        // Punycode encoding side-by-side with the Unicode string for any IDN.
+        try
+        {
+            // DisplayUri/Iri drop authentication credentials, which is probably great, but AbsoluteCanonicalUri()
+            // is the only getter that returns a punycode encoding of the URL. AbsoluteUri() is the only possible
+            // counterpart, but as the name indicates, we'll end up hitting the != below for any non-canonical URL.
+            //
+            // This issue can be fixed by using the IUrl API from urlmon.h directly, which the WinRT API simply wraps.
+            // IUrl is a very complex system with a ton of useful functionality, but we don't rely on it (neither WinRT),
+            // so we could alternatively use its underlying API in wininet.h (InternetCrackUrlW, etc.).
+            // That API however is rather difficult to use for such seldom executed code.
+            const Windows::Foundation::Uri uri{ uriText };
+            const auto unicode = uri.AbsoluteUri();
+            const auto punycode = uri.AbsoluteCanonicalUri();
+
+            if (punycode != unicode)
+            {
+                const auto text = fmt::format(FMT_COMPILE(L"{}\n({})"), punycode, unicode);
+                uriText = winrt::hstring{ text };
+            }
+        }
+        catch (...)
+        {
+            uriText = RS_(L"InvalidUri");
         }
 
         const auto panel = SwapChainPanel();
@@ -3502,7 +3475,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.HasSelection();
     }
-    Windows::Foundation::Collections::IVector<winrt::hstring> TermControl::SelectedText(bool trimTrailingWhitespace) const
+    bool TermControl::HasMultiLineSelection() const
+    {
+        return _core.HasMultiLineSelection();
+    }
+    winrt::hstring TermControl::SelectedText(bool trimTrailingWhitespace) const
     {
         return _core.SelectedText(trimTrailingWhitespace);
     }
@@ -3735,9 +3712,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If we should be ALWAYS displaying the cursor, turn it on and start blinking.
             _core.CursorOn(true);
-            if (_cursorTimer.has_value())
+            if (_cursorTimer)
             {
-                _cursorTimer->Start();
+                _cursorTimer.Start();
             }
         }
         else
@@ -3746,9 +3723,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // blinking. (if we're focused, then we're already doing the right
             // thing)
             const auto focused = FocusState() != FocusState::Unfocused;
-            if (!focused && _cursorTimer.has_value())
+            if (!focused && _cursorTimer)
             {
-                _cursorTimer->Stop();
+                _cursorTimer.Stop();
             }
             _core.CursorOn(focused);
         }

@@ -90,7 +90,6 @@ Author(s):
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
     X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                   \
-    X(bool, UseAtlasEngine, "useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                                \
     X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
@@ -115,6 +114,7 @@ Author(s):
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, "weight", DEFAULT_FONT_WEIGHT) \
     X(IFontAxesMap, FontAxes, "axes")                                                  \
     X(IFontFeatureMap, FontFeatures, "features")                                       \
+    X(bool, EnableBuiltinGlyphs, "builtinGlyphs", true)                                \
     X(winrt::hstring, CellWidth, "cellWidth")                                          \
     X(winrt::hstring, CellHeight, "cellHeight")
 

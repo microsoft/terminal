@@ -60,6 +60,10 @@ class Microsoft::Terminal::Core::Terminal final :
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
 public:
+    struct TestDummyMarker
+    {
+    };
+
     static constexpr bool IsInputKey(WORD vkey)
     {
         return vkey != VK_CONTROL &&
@@ -77,6 +81,7 @@ public:
     }
 
     Terminal();
+    Terminal(TestDummyMarker);
 
     void Create(til::size viewportSize,
                 til::CoordType scrollbackLines,
@@ -98,9 +103,8 @@ public:
     // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
 
-    // WritePastedText comes from our input and goes back to the PTY's input channel
-    void WritePastedText(std::wstring_view stringView);
-
+    void _assertLocked() const noexcept;
+    void _assertUnlocked() const noexcept;
     [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForReading() const noexcept;
     [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting() noexcept;
     til::recursive_ticket_lock_suspension SuspendLock() noexcept;
@@ -167,9 +171,10 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
-    bool SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
-    bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType FocusChanged(const bool focused) override;
 
     [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
@@ -178,8 +183,6 @@ public:
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
     bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const noexcept;
-
-    void FocusChanged(const bool focused) override;
 
     std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
     std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);
@@ -212,10 +215,12 @@ public:
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override;
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
+    void SelectSearchRegions(std::vector<til::inclusive_rect> source) override;
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
@@ -288,6 +293,13 @@ public:
         End = 0x2
     };
 
+    struct TextCopyData
+    {
+        std::wstring plainText;
+        std::string html;
+        std::string rtf;
+    };
+
     void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const til::point position);
     void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
@@ -306,8 +318,12 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
+    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html = false, const bool rtf = false) const;
 #pragma endregion
+
+#ifndef NDEBUG
+    bool _suppressLockChecks = false;
+#endif
 
 private:
     std::function<void(std::wstring_view)> _pfnWriteInput;
@@ -370,6 +386,7 @@ private:
         til::point pivot;
     };
     std::optional<SelectionAnchors> _selection;
+    std::vector<til::inclusive_rect> _searchSelections;
     bool _blockSelection = false;
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
@@ -431,11 +448,9 @@ private:
     static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
-    [[maybe_unused]] bool _handleTerminalInputResult(::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType&& out) const;
     void _StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept;
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
-    void _assertLocked() const noexcept;
     Console::VirtualTerminal::TerminalInput& _getTerminalInput() noexcept;
     const Console::VirtualTerminal::TerminalInput& _getTerminalInput() const noexcept;
 
@@ -459,6 +474,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
+    std::vector<til::inclusive_rect> _GetSearchSelectionRects(Microsoft::Console::Types::Viewport viewport) const noexcept;
     std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const noexcept;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;

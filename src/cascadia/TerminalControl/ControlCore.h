@@ -5,7 +5,7 @@
 // - ControlCore.h
 //
 // Abstract:
-// - This encapsulates a `Terminal` instance, a `DxEngine` and `Renderer`, and
+// - This encapsulates a `Terminal` instance, a `AtlasEngine` and `Renderer`, and
 //   an `ITerminalConnection`. This is intended to be everything that someone
 //   might need to stand up a terminal instance in a control, but without any
 //   regard for how the UX works.
@@ -156,7 +156,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool HasSelection() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+        bool HasMultiLineSelection() const;
+        winrt::hstring SelectedText(bool trimTrailingWhitespace) const;
 
         bool BracketedPasteEnabled() const noexcept;
 
@@ -246,6 +247,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(double, FocusedOpacity, FocusedAppearance().Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -314,6 +316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;
+        bool _builtinGlyphs = true;
         CSSLengthPercentage _cellWidth;
         CSSLengthPercentage _cellHeight;
 
@@ -386,7 +389,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
-        void _setOpacity(const double opacity);
+        void _setOpacity(const double opacity, const bool focused = true);
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);

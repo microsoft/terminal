@@ -83,7 +83,7 @@ static void EnsureNativeArchitecture()
     }
 }
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nCmdShow)
 {
     TraceLoggingRegister(g_hWindowsTerminalProvider);
     ::Microsoft::Console::ErrorReporting::EnableFallbackFailureReporting(g_hWindowsTerminalProvider);
@@ -115,8 +115,5 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     const auto emperor = std::make_shared<::WindowEmperor>();
-    if (emperor->HandleCommandlineArgs())
-    {
-        emperor->WaitForWindows();
-    }
+    emperor->HandleCommandlineArgs(nCmdShow);
 }

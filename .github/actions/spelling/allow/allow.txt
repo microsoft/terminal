@@ -1,3 +1,4 @@
+aci
 admins
 allcolors
 Apc
@@ -8,6 +9,7 @@ breadcrumbs
 bsd
 calt
 ccmp
+ccon
 changelog
 clickable
 clig
@@ -15,6 +17,7 @@ CMMI
 copyable
 Counterintuitively
 CtrlDToClose
+CUI
 cybersecurity
 dalet
 Dcs
@@ -53,6 +56,7 @@ hyperlinks
 iconify
 img
 inlined
+issuetitle
 It'd
 kje
 libfuzzer
@@ -77,11 +81,13 @@ noreply
 ogonek
 ok'd
 overlined
+perlw
 pipeline
 postmodern
 Powerline
 powerline
 ptys
+pwshw
 qof
 qps
 rclt
@@ -90,11 +96,15 @@ reserialization
 reserialize
 reserializes
 rlig
+rubyw
 runtimes
+servicebus
 shcha
+similaritytolerance
 slnt
 Sos
 ssh
+sustainability
 stakeholders
 sxn
 timeline
@@ -107,6 +117,7 @@ toolset
 truthiness
 tshe
 ubuntu
+UEFI
 uiatextrange
 UIs
 und
@@ -116,7 +127,9 @@ vsdevcmd
 walkthrough
 walkthroughs
 We'd
+westus
 wildcards
+workarounds
 XBox
 YBox
 yeru

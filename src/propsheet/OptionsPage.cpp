@@ -174,6 +174,23 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         // Initialize the global handle to this dialog
         g_hOptionsDlg = hDlg;
 
+        {
+            // Do the check for conhostv1 early, so that we can propagate the new ForceV2 state to everyone.
+            wil::unique_hmodule conhostV1{ LoadLibraryExW(L"conhostv1.dll", nullptr, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_SYSTEM32) };
+            HWND hwndItemToShow, hwndItemToHide;
+            hwndItemToShow = GetDlgItem(hDlg, IDD_HELP_LEGACY_LINK);
+            hwndItemToHide = GetDlgItem(hDlg, IDD_HELP_LEGACY_LINK_MISSING);
+            if (!conhostV1)
+            {
+                g_fForceV2 = true;
+                EnableWindow(GetDlgItem(hDlg, IDD_FORCEV2), FALSE);
+                std::swap(hwndItemToShow, hwndItemToHide);
+            }
+
+            ShowWindow(hwndItemToShow, SW_SHOW);
+            ShowWindow(hwndItemToHide, SW_HIDE);
+        }
+
         CheckDlgButton(hDlg, IDD_HISTORY_NODUP, gpStateInfo->HistoryNoDup);
         CheckDlgButton(hDlg, IDD_QUICKEDIT, gpStateInfo->QuickEdit);
         CheckDlgButton(hDlg, IDD_INSERT, gpStateInfo->InsertMode);
@@ -250,7 +267,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 
     case WM_NOTIFY:
     {
-        if (lParam && (wParam == IDD_HELP_SYSLINK || wParam == IDD_HELP_LEGACY_LINK))
+        if (lParam && (wParam == IDD_HELP_SYSLINK || wParam == IDD_HELP_LEGACY_LINK || wParam == IDD_HELP_LEGACY_LINK_MISSING))
         {
             // handle hyperlink click or keyboard activation
             switch (((LPNMHDR)lParam)->code)

@@ -882,7 +882,11 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
     <value>Active pane moved to "{0}" tab in "{1}" window</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>Active pane moved to "{0}" window</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>Active pane moved to new window</value>

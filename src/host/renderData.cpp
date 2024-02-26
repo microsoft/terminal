@@ -80,6 +80,16 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 }
 
 // Method Description:
+// - Retrieves one rectangle per line describing the area of the viewport
+//   that should be highlighted in some way to represent a user-interactive selection
+// Return Value:
+// - Vector of Viewports describing the area selected
+std::vector<Viewport> RenderData::GetSearchSelectionRects() noexcept
+{
+    return {};
+}
+
+// Method Description:
 // - Lock the console for reading the contents of the buffer. Ensures that the
 //      contents of the console won't be changed in the middle of a paint
 //      operation.
@@ -87,14 +97,16 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 //      they're done with any querying they need to do.
 void RenderData::LockConsole() noexcept
 {
-    ::LockConsole();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
 }
 
 // Method Description:
 // - Unlocks the console after a call to RenderData::LockConsole.
 void RenderData::UnlockConsole() noexcept
 {
-    ::UnlockConsole();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.UnlockConsole();
 }
 
 // Method Description:
@@ -367,6 +379,10 @@ void RenderData::ClearSelection()
 void RenderData::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+}
+
+void RenderData::SelectSearchRegions(std::vector<til::inclusive_rect> source)
+{
 }
 
 // Routine Description:

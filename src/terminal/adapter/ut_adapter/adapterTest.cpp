@@ -1508,7 +1508,7 @@ public:
 
         Log::Comment(L"Test 1: Verify good operating condition.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OS_OperatingStatus, {}));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OperatingStatus, {}));
 
         _testGetSet->ValidateInputEvent(L"\x1b[0n");
     }
@@ -1531,7 +1531,7 @@ public:
             coordCursorExpected.x++;
             coordCursorExpected.y++;
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CursorPositionReport, {}));
 
             wchar_t pwszBuffer[50];
 
@@ -1555,7 +1555,7 @@ public:
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
             coordCursorExpectedFirst += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CursorPositionReport, {}));
 
             auto cursorPos = _testGetSet->_textBuffer->GetCursor().GetPosition();
             cursorPos.x++;
@@ -1565,7 +1565,7 @@ public:
             auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
             coordCursorExpectedSecond += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CursorPositionReport, {}));
 
             wchar_t pwszBuffer[50];
 
@@ -1594,7 +1594,7 @@ public:
         // Until we support paging (GH#13892) the reported page number should always be 1.
         const auto pageExpected = 1;
 
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport, {}));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExtendedCursorPositionReport, {}));
 
         wchar_t pwszBuffer[50];
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
@@ -1610,7 +1610,7 @@ public:
 
         Log::Comment(L"Test 1: Verify maximum space available");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MacroSpaceReport, {}));
 
         wchar_t pwszBuffer[50];
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
@@ -1623,7 +1623,7 @@ public:
         _stateMachine->ProcessString(L"\033P2;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P3;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P4;0;0!z12345678\033\\");
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MacroSpaceReport, {}));
 
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace - 2);
         _testGetSet->ValidateInputEvent(pwszBuffer);
@@ -1631,7 +1631,7 @@ public:
         Log::Comment(L"Test 3: Verify space reset");
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->HardReset());
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MacroSpaceReport, {}));
 
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
         _testGetSet->ValidateInputEvent(pwszBuffer);
@@ -1643,7 +1643,7 @@ public:
 
         Log::Comment(L"Test 1: Verify initial checksum is 0");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 12));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MemoryChecksum, 12));
 
         _testGetSet->ValidateInputEvent(L"\033P12!~0000\033\\");
 
@@ -1652,7 +1652,7 @@ public:
         // Define a couple of text macros
         _stateMachine->ProcessString(L"\033P1;0;0!zABCD\033\\");
         _stateMachine->ProcessString(L"\033P2;0;0!zabcd\033\\");
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 34));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MemoryChecksum, 34));
 
         // Checksum is a 16-bit negated sum of the macro buffer characters.
         const auto checksum = gsl::narrow_cast<uint16_t>(-('A' + 'B' + 'C' + 'D' + 'a' + 'b' + 'c' + 'd'));
@@ -1663,9 +1663,49 @@ public:
         Log::Comment(L"Test 3: Verify checksum resets to 0");
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->HardReset());
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 56));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MemoryChecksum, 56));
 
         _testGetSet->ValidateInputEvent(L"\033P56!~0000\033\\");
+    }
+
+    TEST_METHOD(DeviceStatus_PrivateStatusTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify printer is not connected.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::PrinterStatus, {}));
+        _testGetSet->ValidateInputEvent(L"\x1b[?13n");
+
+        Log::Comment(L"Test 2: Verify UDKs are not supported.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::UserDefinedKeys, {}));
+        _testGetSet->ValidateInputEvent(L"\x1b[?23n");
+
+        Log::Comment(L"Test 3: Verify PC keyboard with unknown dialect.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::KeyboardStatus, {}));
+        _testGetSet->ValidateInputEvent(L"\x1b[?27;0;0;5n");
+
+        Log::Comment(L"Test 4: Verify locator is not connected.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::LocatorStatus, {}));
+        _testGetSet->ValidateInputEvent(L"\x1b[?53n");
+
+        Log::Comment(L"Test 5: Verify locator type is unknown.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::LocatorIdentity, {}));
+        _testGetSet->ValidateInputEvent(L"\x1b[?57;0n");
+
+        Log::Comment(L"Test 6: Verify terminal is ready.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::DataIntegrity, {}));
+        _testGetSet->ValidateInputEvent(L"\x1b[?70n");
+
+        Log::Comment(L"Test 7: Verify multiple sessions are not supported.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MultipleSessionStatus, {}));
+        _testGetSet->ValidateInputEvent(L"\x1b[?83n");
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -1676,7 +1716,7 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
-        auto pwszExpectedResponse = L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c";
+        auto pwszExpectedResponse = L"\x1b[?61;1;6;7;14;21;22;23;24;28;32;42c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
@@ -2235,6 +2275,7 @@ public:
         _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;@;BBBB\033\\");
 
         Log::Comment(L"94 charset designations");
+        termOutput.AssignUserPreferenceCharset(VTID("%5"), false);
         _pDispatch->Designate94Charset(0, "%5");
         _pDispatch->Designate94Charset(1, "<");
         _pDispatch->Designate94Charset(2, "0");
@@ -2754,7 +2795,7 @@ public:
             const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
             RETURN_BOOL_IF_FALSE(fontBuffer.SetEraseControl(DispatchTypes::DrcsEraseControl::AllChars));
             RETURN_BOOL_IF_FALSE(fontBuffer.SetAttributes(cellMatrix, cmh, ss, u));
-            RETURN_BOOL_IF_FALSE(fontBuffer.SetStartChar(0, DispatchTypes::DrcsCharsetSize::Size94));
+            RETURN_BOOL_IF_FALSE(fontBuffer.SetStartChar(0, DispatchTypes::CharsetSize::Size94));
 
             fontBuffer.AddSixelData(L'B'); // Charset identifier
             for (auto ch : data)
@@ -2995,6 +3036,146 @@ public:
         _testGetSet->_expectedOutputCP = CP_UTF8;
         VERIFY_IS_TRUE(_pDispatch->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8));
         VERIFY_IS_FALSE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
+    }
+
+    TEST_METHOD(AssignUserPreferenceCharsets)
+    {
+        const auto assignCharset = [=](const auto charsetSize, const std::wstring_view charsetId = {}) {
+            const auto stringHandler = _pDispatch->AssignUserPreferenceCharset(charsetSize);
+            for (auto ch : charsetId)
+            {
+                stringHandler(ch);
+            }
+            stringHandler(L'\033'); // String terminator
+        };
+        auto& termOutput = _pDispatch->_termOutput;
+        termOutput.SoftReset();
+
+        Log::Comment(L"DECAUPSS: DEC Supplemental");
+        assignCharset(DispatchTypes::CharsetSize::Size94, L"%5");
+        VERIFY_ARE_EQUAL(VTID("%5"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: DEC Greek");
+        assignCharset(DispatchTypes::CharsetSize::Size94, L"\"?");
+        VERIFY_ARE_EQUAL(VTID("\"?"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: DEC Hebrew");
+        assignCharset(DispatchTypes::CharsetSize::Size94, L"\"4");
+        VERIFY_ARE_EQUAL(VTID("\"4"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: DEC Turkish");
+        assignCharset(DispatchTypes::CharsetSize::Size94, L"%0");
+        VERIFY_ARE_EQUAL(VTID("%0"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: DEC Cyrillic");
+        assignCharset(DispatchTypes::CharsetSize::Size94, L"&4");
+        VERIFY_ARE_EQUAL(VTID("&4"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: ISO Latin-1");
+        assignCharset(DispatchTypes::CharsetSize::Size96, L"A");
+        VERIFY_ARE_EQUAL(VTID("A"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: ISO Latin-2");
+        assignCharset(DispatchTypes::CharsetSize::Size96, L"B");
+        VERIFY_ARE_EQUAL(VTID("B"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: ISO Latin-Greek");
+        assignCharset(DispatchTypes::CharsetSize::Size96, L"F");
+        VERIFY_ARE_EQUAL(VTID("F"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: ISO Latin-Hebrew");
+        assignCharset(DispatchTypes::CharsetSize::Size96, L"H");
+        VERIFY_ARE_EQUAL(VTID("H"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: ISO Latin-Cyrillic");
+        assignCharset(DispatchTypes::CharsetSize::Size96, L"L");
+        VERIFY_ARE_EQUAL(VTID("L"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
+
+        Log::Comment(L"DECAUPSS: ISO Latin-5");
+        assignCharset(DispatchTypes::CharsetSize::Size96, L"M");
+        VERIFY_ARE_EQUAL(VTID("M"), termOutput.GetUserPreferenceCharsetId());
+        VERIFY_ARE_EQUAL(96u, termOutput.GetUserPreferenceCharsetSize());
+    }
+
+    TEST_METHOD(RequestUserPreferenceCharsets)
+    {
+        auto& termOutput = _pDispatch->_termOutput;
+
+        Log::Comment(L"DECRQUPSS: DEC Supplemental");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("%5"), false));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P0!u%5\033\\");
+
+        Log::Comment(L"DECRQUPSS: DEC Greek");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("\"?"), false));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P0!u\"?\033\\");
+
+        Log::Comment(L"DECRQUPSS: DEC Hebrew");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("\"4"), false));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P0!u\"4\033\\");
+
+        Log::Comment(L"DECRQUPSS: DEC Turkish");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("%0"), false));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P0!u%0\033\\");
+
+        Log::Comment(L"DECRQUPSS: DEC Cyrillic");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("&4"), false));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P0!u&4\033\\");
+
+        Log::Comment(L"DECRQUPSS: ISO Latin-1");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("A"), true));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P1!uA\033\\");
+
+        Log::Comment(L"DECRQUPSS: ISO Latin-2");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("B"), true));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P1!uB\033\\");
+
+        Log::Comment(L"DECRQUPSS: ISO Latin-Greek");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("F"), true));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P1!uF\033\\");
+
+        Log::Comment(L"DECRQUPSS: ISO Latin-Hebrew");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("H"), true));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P1!uH\033\\");
+
+        Log::Comment(L"DECRQUPSS: ISO Latin-Cyrillic");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("L"), true));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P1!uL\033\\");
+
+        Log::Comment(L"DECRQUPSS: ISO Latin-5");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(termOutput.AssignUserPreferenceCharset(VTID("M"), true));
+        _pDispatch->RequestUserPreferenceCharset();
+        _testGetSet->ValidateInputEvent(L"\033P1!uM\033\\");
     }
 
     TEST_METHOD(MacroDefinitions)

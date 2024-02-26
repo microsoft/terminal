@@ -25,7 +25,12 @@ Param(
     [Parameter(HelpMessage="Path to makeappx.exe", ParameterSetName='Layout')]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe"
+    $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe",
+
+    [Parameter(HelpMessage="Include the portable mode marker file by default", ParameterSetName='AppX')]
+    [Parameter(HelpMessage="Include the portable mode marker file by default", ParameterSetName='Layout')]
+    [switch]
+    $PortableMode = $PSCmdlet.ParameterSetName -eq 'Layout'
 )
 
 $filesToRemove = @("*.xml", "*.winmd", "Appx*", "Images/*Tile*", "Images/*Logo*") # Remove from Terminal
@@ -127,6 +132,11 @@ $finalTerminalPriFile = Join-Path $terminalAppPath "resources.pri"
 ########
 # Packaging
 ########
+
+$portableModeMarkerFile = Join-Path $terminalAppPath ".portable"
+If ($PortableMode) {
+	"" | Out-File $portableModeMarkerFile
+}
 
 If ($PSCmdlet.ParameterSetName -Eq "AppX") {
 	# We only produce a ZIP when we're combining two AppX directories.

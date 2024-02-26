@@ -16,6 +16,7 @@
     <ClCompile Include="Backend.cpp" />
     <ClCompile Include="BackendD2D.cpp" />
     <ClCompile Include="BackendD3D.cpp" />
+    <ClCompile Include="BuiltinGlyphs.cpp" />
     <ClCompile Include="dwrite.cpp" />
     <ClCompile Include="DWriteTextAnalysis.cpp" />
     <ClCompile Include="pch.cpp">
@@ -28,6 +29,7 @@
     <ClInclude Include="Backend.h" />
     <ClInclude Include="BackendD2D.h" />
     <ClInclude Include="BackendD3D.h" />
+    <ClInclude Include="BuiltinGlyphs.h" />
     <ClInclude Include="colorbrewer.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="dwrite.h" />

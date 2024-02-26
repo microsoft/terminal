@@ -73,7 +73,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <til/mutex.h>
 #include <til/winrt.h>
 
-#include "ThrottledFunc.h"
+#include <SafeDispatcherTimer.h>
+#include <ThrottledFunc.h>
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

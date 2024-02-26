@@ -61,9 +61,6 @@ BEGIN
 
     ID_CONSOLE_FMT_WINDOWTITLE, "%s%s"
 
-/* WIP Audit destination name */
-    ID_CONSOLE_WIP_DESTINATIONNAME, "console application"
-
 /* Menu items that replace the standard ones. These don't have the accelerators */
     SC_CLOSE,       "&Close"
 
