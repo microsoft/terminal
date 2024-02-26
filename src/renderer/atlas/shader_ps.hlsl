@@ -14,7 +14,7 @@ cbuffer ConstBuffer : register(b0)
     float underlineWidth;
     float doubleUnderlineWidth;
     float curlyLineHalfHeight;
-    float thinLineWidth;
+    float shadedGlyphDotSize;
 }
 
 Texture2D<float4> background : register(t0);
@@ -107,7 +107,7 @@ Output main(PSData data) : SV_Target
         //         ########
         //
         float4 glyph = glyphAtlas[data.texcoord];
-        float2 pos = floor(data.position.xy / (thinLineWidth * data.renditionScale));
+        float2 pos = floor(data.position.xy / (shadedGlyphDotSize * data.renditionScale));
 
         // A series of on/off/on/off/on/off pixels can be generated with:
         //   step(frac(x * 0.5f), 0)

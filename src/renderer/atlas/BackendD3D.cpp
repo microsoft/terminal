@@ -273,13 +273,15 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     // limited space to draw a curlyline, we apply a limit on the peak height.
     {
         const auto cellHeight = static_cast<f32>(font.cellSize.y);
-        const auto strokeWidth = static_cast<f32>(font.thinLineWidth);
+        const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
+        const auto duBottom = static_cast<f32>(font.doubleUnderline[1].position);
+        const auto duHeight = static_cast<f32>(font.doubleUnderline[0].height);
 
         // This gives it the same position and height as our double-underline. There's no particular reason for that, apart from
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
         // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom.
-        const auto height = std::max(3.0f, static_cast<f32>(font.doubleUnderline[1].position + font.doubleUnderline[1].height - font.doubleUnderline[0].position));
-        const auto top = std::min(static_cast<f32>(font.doubleUnderline[0].position), floorf(cellHeight - height - strokeWidth));
+        const auto height = std::max(3.0f, duBottom + duHeight - duTop);
+        const auto top = std::min(duTop, floorf(cellHeight - height - duHeight));
 
         _curlyLineHalfHeight = height * 0.5f;
         _curlyUnderline.position = gsl::narrow_cast<u16>(lrintf(top));
@@ -530,7 +532,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         data.underlineWidth = p.s->font->underline.height;
         data.doubleUnderlineWidth = p.s->font->doubleUnderline[0].height;
         data.curlyLineHalfHeight = _curlyLineHalfHeight;
-        data.thinLineWidth = p.s->font->thinLineWidth;
+        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 16.0f, p.s->font->cellSize.y / 32.0f)));
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }

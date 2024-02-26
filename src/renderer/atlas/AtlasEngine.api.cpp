@@ -689,7 +689,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
     const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
     const auto doubleUnderlineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
-    const auto thinLineWidth = std::max(1.0f, std::roundf(std::max(adjustedWidth / 8.0f, adjustedHeight / 16.0f)));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(std::max(adjustedWidth / 16.0f, adjustedHeight / 32.0f)));
 
     // For double underlines we loosely follow what Word does:
     // 1. The lines are half the width of an underline (= doubleUnderlineWidth)
@@ -750,6 +750,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(lrintf(strikethroughWidth));
         const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosTop));
         const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosBottom));
+        const auto doubleUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlineWidth));
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
@@ -772,8 +773,8 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
         fontMetrics->underline = { underlinePosU16, underlineWidthU16 };
         fontMetrics->strikethrough = { strikethroughPosU16, strikethroughWidthU16 };
-        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, thinLineWidthU16 };
-        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, thinLineWidthU16 };
+        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, doubleUnderlineWidthU16 };
+        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, doubleUnderlineWidthU16 };
         fontMetrics->overline = { 0, underlineWidthU16 };
 
         fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();

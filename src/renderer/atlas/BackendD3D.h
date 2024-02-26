@@ -44,7 +44,7 @@ namespace Microsoft::Console::Render::Atlas
             alignas(sizeof(f32)) f32 underlineWidth = 0;
             alignas(sizeof(f32)) f32 doubleUnderlineWidth = 0;
             alignas(sizeof(f32)) f32 curlyLineHalfHeight = 0;
-            alignas(sizeof(f32)) f32 thinLineWidth = 0;
+            alignas(sizeof(f32)) f32 shadedGlyphDotSize = 0;
 #pragma warning(suppress : 4324) // 'PSConstBuffer': structure was padded due to alignment specifier
         };
 
