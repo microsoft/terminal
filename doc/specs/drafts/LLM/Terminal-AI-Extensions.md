@@ -317,6 +317,7 @@ It's not good, that's for sure.
   * That's (6.79Wh * 1000000/day) = 6790000 Wh = 6790 kWh / day
   * That's (6790kWh * 0.86 lb CO2 / kWh) = 5839.4 lbs CO2 / day
   * = 2.64870729 metric tons CO2 / day
+  * = 966.77816085 tons/year
 
 Author note: I'd rather not build a product that adds measurable tons of CO2 a
 day. Not sure how we can justify this until the power consumption of LLMs comes
