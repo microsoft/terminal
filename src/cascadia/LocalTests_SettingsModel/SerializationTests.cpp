@@ -47,6 +47,7 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(RoundtripUserModifiedColorSchemeCollision);
         TEST_METHOD(RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles);
+        TEST_METHOD(RoundtripUserDeletedColorSchemeCollision);
 
     private:
         // Method Description:
@@ -845,6 +846,78 @@ namespace SettingsModelLocalTests
                     "yellow": "#111111"
                 },
             ]
+        })-" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripUserDeletedColorSchemeCollision()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "Tango Dark",
+                    "foreground": "#D3D7CF",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#CC0000",
+                    "green": "#4E9A06",
+                    "yellow": "#C4A000",
+                    "blue": "#3465A4",
+                    "purple": "#75507B",
+                    "cyan": "#06989A",
+                    "white": "#D3D7CF",
+                    "brightBlack": "#555753",
+                    "brightRed": "#EF2929",
+                    "brightGreen": "#8AE234",
+                    "brightYellow": "#FCE94F",
+                    "brightBlue": "#729FCF",
+                    "brightPurple": "#AD7FA8",
+                    "brightCyan": "#34E2E2",
+                    "brightWhite": "#EEEEEC"
+                }
+            ]
+        })" };
+
+        // Key differences: Tango Dark has been deleted, as it was identical to the inbox one.
+        static constexpr std::string_view newSettingsJson{ R"-(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles":
+            {
+                "list":
+                [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            },
+            "actions": [ ],
+            "schemes": [ ]
         })-" };
 
         implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
