@@ -664,6 +664,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 FontFeaturesVector().RemoveAt(i);
                 _appearance.SourceProfile().FontInfo().FontFeatures().Remove(key);
+                if (_FontFeaturesVector.Size() == 0)
+                {
+                    _appearance.SourceProfile().FontInfo().ClearFontFeatures();
+                }
                 break;
             }
         }
