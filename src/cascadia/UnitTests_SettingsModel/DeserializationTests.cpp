@@ -19,13 +19,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
-    // TODO:microsoft/terminal#3838:
-    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
-    // an updated TAEF that will let us install framework packages when the test
-    // package is deployed. Until then, these tests won't deploy in CI.
-
     class DeserializationTests : public JsonTestClass
     {
         TEST_CLASS(DeserializationTests);
