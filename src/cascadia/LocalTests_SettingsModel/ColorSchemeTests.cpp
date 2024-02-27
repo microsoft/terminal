@@ -137,29 +137,6 @@ namespace SettingsModelLocalTests
             ],
             "schemes": [
                 {
-                    "background": "#121314",
-                    "black": "#121314",
-                    "blue": "#121314",
-                    "brightBlack": "#121314",
-                    "brightBlue": "#121314",
-                    "brightCyan": "#121314",
-                    "brightGreen": "#121314",
-                    "brightPurple": "#121314",
-                    "brightRed": "#121314",
-                    "brightWhite": "#121314",
-                    "brightYellow": "#121314",
-                    "cursorColor": "#121314",
-                    "cyan": "#121314",
-                    "foreground": "#121314",
-                    "green": "#121314",
-                    "name": "Campbell",
-                    "purple": "#121314",
-                    "red": "#121314",
-                    "selectionBackground": "#121314",
-                    "white": "#121314",
-                    "yellow": "#121314"
-                },
-                {
                     "background": "#012456",
                     "black": "#0C0C0C",
                     "blue": "#0037DA",
@@ -191,8 +168,8 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(2u, colorSchemes.Size());
 
         const auto scheme0 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell"));
-        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Foreground());
-        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Background());
+        VERIFY_ARE_EQUAL(rgb(0xCC, 0xCC, 0xCC), scheme0->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x0C, 0x0C, 0x0C), scheme0->Background());
 
         const auto scheme1 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell Powershell"));
         VERIFY_ARE_EQUAL(rgb(0xCC, 0xCC, 0xCC), scheme1->Foreground());
