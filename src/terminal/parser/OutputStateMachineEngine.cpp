@@ -782,6 +782,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetIconAndWindowTitle:
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
+    case OscActionCodes::DECSWT_SetWindowTitle:
     {
         std::wstring title;
         success = _GetOscTitle(string, title);
