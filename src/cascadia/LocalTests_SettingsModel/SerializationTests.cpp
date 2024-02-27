@@ -45,6 +45,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(RoundtripReloadEnvVars);
         TEST_METHOD(DontRoundtripNoReloadEnvVars);
 
+        TEST_METHOD(RoundtripUserModifiedColorSchemeCollision);
+
     private:
         // Method Description:
         // - deserializes and reserializes a json string representing a settings object model of type T
@@ -629,5 +631,138 @@ namespace SettingsModelLocalTests
         const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
         VERIFY_IS_FALSE(newSettings->ProfileDefaults().HasReloadEnvironmentVariables(),
                         L"Ensure that the new settings object didn't find a reloadEnvironmentVariables");
+    }
+
+    void SerializationTests::RoundtripUserModifiedColorSchemeCollision()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name": "profile1",
+                    "colorScheme": "Tango Dark",
+                    "guid": "{d0a65a9d-8665-4128-97a4-a581aa747aa7}"
+                }
+            ],
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Campbell",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                },
+                {
+                    "background": "#000000",
+                    "black": "#000000",
+                    "blue": "#3465A4",
+                    "brightBlack": "#555753",
+                    "brightBlue": "#729FCF",
+                    "brightCyan": "#34E2E2",
+                    "brightGreen": "#8AE234",
+                    "brightPurple": "#AD7FA8",
+                    "brightRed": "#EF2929",
+                    "brightWhite": "#EEEEEC",
+                    "brightYellow": "#FCE94F",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#06989A",
+                    "foreground": "#D3D7CF",
+                    "green": "#4E9A06",
+                    "name": "Tango Dark",
+                    "purple": "#75507B",
+                    "red": "#CC0000",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#D3D7CF",
+                    "yellow": "#C4A000"
+                },
+            ]
+        })" };
+
+        // Key differences: one fewer color scheme (Tango Dark has been deleted) and defaults.colorScheme is set.
+        static constexpr std::string_view newSettingsJson{ R"-(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles":
+            {
+                "defaults": {
+                    "colorScheme": "Campbell (modified)"
+                },
+                "list":
+                [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    },
+                    {
+                        "name": "profile1",
+                        "colorScheme": "Tango Dark",
+                        "guid": "{d0a65a9d-8665-4128-97a4-a581aa747aa7}"
+                    }
+                ]
+            },
+            "actions": [ ],
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Campbell",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                }
+            ]
+        })-" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
     }
 }

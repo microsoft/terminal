@@ -414,31 +414,34 @@ bool SettingsLoader::DisableDeletedProfiles()
 bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
 {
     bool modified{ false };
-    auto remapForAppearance = [&](const IAppearanceConfig& appearance) {
-        if (auto schemeName{ appearance.LightColorSchemeName() }; !schemeName.empty())
-        {
-            if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
-            {
-                appearance.LightColorSchemeName(found->second);
-                modified = true;
-            }
-        }
 
-        if (auto schemeName{ appearance.DarkColorSchemeName() }; !schemeName.empty())
-        {
-            if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
-            {
-                appearance.DarkColorSchemeName(found->second);
-                modified = true;
-            }
-        }
+    const IAppearanceConfig appearances[] = {
+        profile->DefaultAppearance(),
+        profile->UnfocusedAppearance()
     };
 
-    remapForAppearance(profile->DefaultAppearance());
-
-    if (auto unfocusedAppearance{ profile->UnfocusedAppearance() })
+    for (auto&& appearance : appearances)
     {
-        remapForAppearance(unfocusedAppearance);
+        if (appearance)
+        {
+            if (auto schemeName{ appearance.LightColorSchemeName() }; !schemeName.empty())
+            {
+                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                {
+                    appearance.LightColorSchemeName(found->second);
+                    modified = true;
+                }
+            }
+
+            if (auto schemeName{ appearance.DarkColorSchemeName() }; !schemeName.empty())
+            {
+                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                {
+                    appearance.DarkColorSchemeName(found->second);
+                    modified = true;
+                }
+            }
+        }
     }
 
     return modified;
@@ -463,7 +466,10 @@ bool SettingsLoader::FixupUserSettings()
 
     auto fixedUp = false;
 
-    RemapColorSchemeForProfile(userSettings.baseLayerProfile);
+    // If any color schemes had to be remapped, we need to re-save the settings.
+    fixedUp = !userSettings.colorSchemeRemappings.empty() || fixedUp;
+
+    fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
     {
         fixedUp = RemapColorSchemeForProfile(profile) || fixedUp;
@@ -688,9 +694,9 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 if (const auto scheme = ColorScheme::FromJson(schemeJson))
                 {
                     scheme->Origin(OriginTag::Fragment);
-		    // Don't add the color scheme to the Fragment's GlobalSettings; that will
-		    // cause layering issues later. Add them to a staging area for later processing.
-		    // (search for STAGED COLORS to find the next step)
+                    // Don't add the color scheme to the Fragment's GlobalSettings; that will
+                    // cause layering issues later. Add them to a staging area for later processing.
+                    // (search for STAGED COLORS to find the next step)
                     settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
                 }
             }
@@ -864,11 +870,11 @@ void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
             it->second = newScheme; // Stomp the user's existing scheme with the one we just got (to make sure the right Origin is set)
             if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
             {
-                hstring newName{ fmt::format(L"{} (modified)", existingScheme->Name()) };
+                hstring newName{ fmt::format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name()) };
                 int differentiator = 2;
                 while (userSettings.colorSchemes.contains(newName))
                 {
-                    newName = hstring{ fmt::format(L"{} (modified {})", existingScheme->Name(), differentiator++) };
+                    newName = hstring{ fmt::format(FMT_COMPILE(L"{} (modified {})"), existingScheme->Name(), differentiator++) };
                 }
                 // Rename the user's scheme.
                 existingScheme->Name(newName);

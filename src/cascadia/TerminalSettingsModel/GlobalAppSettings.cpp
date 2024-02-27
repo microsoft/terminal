@@ -182,14 +182,14 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme GlobalAppSettings::Dupl
 {
     THROW_HR_IF_NULL(E_INVALIDARG, source);
 
-    auto newName = fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix"));
+    auto newName = fmt::format(FMT_COMPILE(L"{} ({})"), source.Name(), RS_(L"CopySuffix"));
     auto nextCandidateIndex = 2;
 
     // Check if this name already exists and if so, append a number
     while (_colorSchemes.HasKey(newName))
     {
         // There is a theoretical unsigned integer wraparound, which is OK
-        newName = fmt::format(L"{} ({} {})", source.Name(), RS_(L"CopySuffix"), nextCandidateIndex++);
+        newName = fmt::format(FMT_COMPILE(L"{} ({} {})"), source.Name(), RS_(L"CopySuffix"), nextCandidateIndex++);
     }
 
     auto duplicated{ winrt::get_self<ColorScheme>(source)->Copy() };
