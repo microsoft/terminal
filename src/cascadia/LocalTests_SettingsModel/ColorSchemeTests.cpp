@@ -587,6 +587,14 @@ namespace SettingsModelLocalTests
                         "unfocusedAppearance": {
                             "colorScheme": "Campbell" // Direct specification should be replaced
                         }
+                    },
+                    {
+                        "name" : "profile4",
+                        "unfocusedAppearance": {
+                            "colorScheme": {
+                                "dark": "Campbell" // Direct specification should be replaced
+                            }
+                        }
                     }
                 ],
             },
@@ -632,22 +640,30 @@ namespace SettingsModelLocalTests
         const auto defaults{ settings->ProfileDefaults() };
         VERIFY_IS_TRUE(defaults.DefaultAppearance().HasLightColorSchemeName());
         VERIFY_ARE_EQUAL(L"Campbell (modified)", defaults.DefaultAppearance().LightColorSchemeName());
+        VERIFY_IS_TRUE(defaults.DefaultAppearance().HasDarkColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell (modified)", defaults.DefaultAppearance().DarkColorSchemeName());
 
         const auto& profiles{ settings->AllProfiles() };
         {
             const auto& prof0{ profiles.GetAt(0) };
             VERIFY_IS_FALSE(prof0.DefaultAppearance().HasLightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Campbell (modified)", prof0.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_FALSE(prof0.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof0.DefaultAppearance().DarkColorSchemeName());
         }
         {
             const auto& prof1{ profiles.GetAt(1) };
             VERIFY_IS_TRUE(prof1.DefaultAppearance().HasLightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Antique", prof1.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Antique", prof1.DefaultAppearance().DarkColorSchemeName());
         }
         {
             const auto& prof2{ profiles.GetAt(2) };
             VERIFY_IS_TRUE(prof2.DefaultAppearance().HasLightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Campbell (modified)", prof2.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof2.DefaultAppearance().DarkColorSchemeName());
         }
         {
             const auto& prof3{ profiles.GetAt(3) };
@@ -655,6 +671,25 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(prof3.UnfocusedAppearance().HasLightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Campbell (modified)", prof3.DefaultAppearance().LightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Campbell (modified)", prof3.UnfocusedAppearance().LightColorSchemeName());
+
+            VERIFY_IS_FALSE(prof3.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(prof3.UnfocusedAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof3.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof3.UnfocusedAppearance().DarkColorSchemeName());
+        }
+        {
+            const auto& prof4{ profiles.GetAt(4) };
+
+            VERIFY_IS_FALSE(prof4.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof4.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_FALSE(prof4.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof4.DefaultAppearance().DarkColorSchemeName());
+
+            VERIFY_IS_FALSE(prof4.UnfocusedAppearance().HasLightColorSchemeName()); // Inherited, did not specify
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof4.UnfocusedAppearance().LightColorSchemeName());
+
+            VERIFY_IS_TRUE(prof4.UnfocusedAppearance().HasDarkColorSchemeName()); // Locally overridden, locally overwritten
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof4.UnfocusedAppearance().DarkColorSchemeName());
         }
     }
 
@@ -715,7 +750,10 @@ namespace SettingsModelLocalTests
                 {
                     "guid": "{347a67b5-b3a3-4484-9f96-a92d68f6e787}",
                     "name": "fragment profile 0",
-                    "colorScheme": "Mango Light"
+                    "colorScheme": {
+                        "light": "Mango Light",
+                        "dark": "Mango Dark"
+                    }
                 }
             ],
             "schemes": [
@@ -839,7 +877,8 @@ namespace SettingsModelLocalTests
         // 2. Antique is unmodified.
         // 3. Mango Light needs a modified fork, which contains the user's modified copy
         // 4. Mango Dark does not need a modified fork.
-        // The fragment also comes with a profile that uses Mango Light; it should be redirected to Mango Light (modified)
+        // The fragment also comes with a profile that uses Mango Light; its light theme should be redirected to Mango Light (modified),
+        // but its dark theme should remain the same.
 
         SettingsLoader loader{ userSettings, inboxSettings };
         loader.MergeInboxIntoUserSettings();
@@ -876,26 +915,37 @@ namespace SettingsModelLocalTests
         const auto defaults{ settings->ProfileDefaults() };
         VERIFY_IS_FALSE(defaults.DefaultAppearance().HasLightColorSchemeName()); // User did not specify Campbell, Fragment edited it
         VERIFY_ARE_EQUAL(L"Campbell", defaults.DefaultAppearance().LightColorSchemeName());
+        VERIFY_IS_FALSE(defaults.DefaultAppearance().HasDarkColorSchemeName()); // User did not specify Campbell, Fragment edited it
+        VERIFY_ARE_EQUAL(L"Campbell", defaults.DefaultAppearance().DarkColorSchemeName());
 
         const auto& profiles{ settings->AllProfiles() };
         {
             const auto& prof0{ profiles.GetAt(0) };
             VERIFY_ARE_EQUAL(L"Campbell", prof0.DefaultAppearance().LightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell", prof0.DefaultAppearance().DarkColorSchemeName());
         }
         {
             const auto& prof1{ profiles.GetAt(1) };
             VERIFY_IS_TRUE(prof1.DefaultAppearance().HasLightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Antique", prof1.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Antique", prof1.DefaultAppearance().DarkColorSchemeName());
         }
         {
             const auto& prof2{ profiles.GetAt(2) };
             VERIFY_IS_TRUE(prof2.DefaultAppearance().HasLightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Mango Light (modified)", prof2.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Mango Light (modified)", prof2.DefaultAppearance().DarkColorSchemeName());
         }
         {
             const auto& prof3{ profiles.GetAt(3) };
             VERIFY_IS_TRUE(prof3.DefaultAppearance().HasLightColorSchemeName());
             VERIFY_ARE_EQUAL(L"Mango Light (modified)", prof3.DefaultAppearance().LightColorSchemeName());
+
+            // The leaf profile should *not* specify a dark scheme itself, but it should inherit one.
+            VERIFY_IS_FALSE(prof3.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Mango Dark", prof3.DefaultAppearance().DarkColorSchemeName());
         }
     }
 
