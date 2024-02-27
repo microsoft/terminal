@@ -68,6 +68,19 @@ namespace SettingsModelLocalTests
             // written alphabetically.
             VERIFY_ARE_EQUAL(toString(json), toString(result));
         }
+
+        // Helper to remove the `$schema` property from a json object. We
+        // populate that based off the local path to the settings file. Of
+        // course, that's entirely unpredictable in tests. So cut it out before
+        // we do any sort of roundtrip testing.
+        static Json::Value removeSchema(Json::Value json)
+        {
+            if (json.isMember("$schema"))
+            {
+                json.removeMember("$schema");
+            }
+            return json;
+        }
     };
 
     void SerializationTests::GlobalSettings()
@@ -262,15 +275,6 @@ namespace SettingsModelLocalTests
                                                 { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+c" },
                                                 { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+d" }
                                             ])" };
-        // GH#13323 - these can be fragile. In the past, the order these get
-        // re-serialized as has been not entirely stable. We don't really care
-        // about the order they get re-serialized in, but the tests aren't
-        // clever enough to compare the structure, only the literal string
-        // itself. Feel free to change as needed.
-        static constexpr std::string_view actionsString4B{ R"([
-                                                { "command": { "action": "findMatch", "direction": "prev" }, "keys": "ctrl+shift+r" },
-                                                { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+d" }
-                                            ])" };
 
         // command with name and icon and multiple key chords
         static constexpr std::string_view actionsString5{ R"([
@@ -384,7 +388,6 @@ namespace SettingsModelLocalTests
 
         Log::Comment(L"complex commands with key chords");
         RoundtripTest<implementation::ActionMap>(actionsString4A);
-        RoundtripTest<implementation::ActionMap>(actionsString4B);
 
         Log::Comment(L"command with name and icon and multiple key chords");
         RoundtripTest<implementation::ActionMap>(actionsString5);
@@ -483,7 +486,8 @@ namespace SettingsModelLocalTests
         const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsString) };
 
         const auto result{ settings->ToJson() };
-        VERIFY_ARE_EQUAL(toString(VerifyParseSucceeded(settingsString)), toString(result));
+        VERIFY_ARE_EQUAL(toString(removeSchema(VerifyParseSucceeded(settingsString))),
+                         toString(removeSchema(result)));
     }
 
     void SerializationTests::LegacyFontSettings()

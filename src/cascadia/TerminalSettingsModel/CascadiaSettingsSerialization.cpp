@@ -629,7 +629,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
 void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
 {
-    const auto json = _parseJson(content);
+    auto json = _parseJson(content);
 
     settings.clear();
 
@@ -647,6 +647,11 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             }
             CATCH_LOG()
         }
+
+        // Parse out actions from the fragment. Manually opt-out of keybinding
+        // parsing - fragments shouldn't be allowed to bind actions to keys
+        // directly. We may want to revisit circa GH#2205
+        settings.globals->LayerActionsFrom(json.root, false);
     }
 
     {
@@ -688,10 +693,10 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
     }
 
-    for (const auto& kv : settings.globals->ColorSchemes())
-    {
-        userSettings.globals->AddColorScheme(kv.Value());
-    }
+    // Add the parsed fragment globals as a parent of the user's settings.
+    // Later, in FinalizeInheritance, this will result in the action map from
+    // the fragments being applied before the user's own settings.
+    userSettings.globals->AddLeastImportantParent(settings.globals);
 }
 
 SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)

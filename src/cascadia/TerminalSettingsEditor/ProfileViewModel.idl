@@ -67,6 +67,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ProfileSubPage CurrentPage;
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };
+        Boolean HideIcon;
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
@@ -74,6 +75,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
         Boolean VtPassthroughAvailable { get; };
+
+        String EvaluatedIcon { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();

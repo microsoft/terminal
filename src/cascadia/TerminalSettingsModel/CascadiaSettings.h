@@ -136,7 +136,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring GetSerializationErrorMessage() const;
 
         // defterm
-        static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
         static bool IsDefaultTerminalAvailable() noexcept;
         static bool IsDefaultTerminalSet() noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
