@@ -200,7 +200,7 @@
         <local:SettingContainer x:Uid="ColorScheme_InboxSchemeDuplicate"
                                 Visibility="{x:Bind ViewModel.IsInBoxScheme, Mode=OneWay}">
             <Button x:Name="DuplicateSchemeButton"
-                    x:Uid="ColorScheme_MakeACopyButton"
+                    x:Uid="ColorScheme_DuplicateButton"
                     Click="{x:Bind ViewModel.Duplicate_Click}"
                     Style="{StaticResource BrowseButtonStyle}" />
         </local:SettingContainer>
