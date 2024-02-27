@@ -41,13 +41,14 @@
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
-        <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <StackPanel Grid.Row="1"
+                    Style="{StaticResource SettingsStackStyle}">
             <!--  Control Preview  -->
             <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
                 <Border x:Name="ControlPreview"
                         Width="400"
                         Height="180"
-                        Margin="0,0,0,12"
+                        Margin="0,12,0,12"
                         HorizontalAlignment="Left"
                         BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1" />

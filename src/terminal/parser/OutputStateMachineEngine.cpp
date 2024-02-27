@@ -87,8 +87,8 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::SUB:
         // The SUB control is used to cancel a control sequence in the same
         // way as CAN, but unlike CAN it also displays an error character,
-        // typically a reverse question mark.
-        _dispatch->Print(L'\u2E2E');
+        // typically a reverse question mark (Unicode substitute form two).
+        _dispatch->Print(L'\u2426');
         break;
     case AsciiChars::DEL:
         // The DEL control can sometimes be translated into a printable glyph
@@ -273,6 +273,15 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         break;
     case EscActionCodes::DECAC1_AcceptC1Controls:
         success = _dispatch->AcceptC1Controls(true);
+        break;
+    case EscActionCodes::ACS_AnsiLevel1:
+        success = _dispatch->AnnounceCodeStructure(1);
+        break;
+    case EscActionCodes::ACS_AnsiLevel2:
+        success = _dispatch->AnnounceCodeStructure(2);
+        break;
+    case EscActionCodes::ACS_AnsiLevel3:
+        success = _dispatch->AnnounceCodeStructure(3);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
         success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
@@ -566,6 +575,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
             return _dispatch->TabClear(clearType);
         });
         break;
+    case CsiActionCodes::DECST8C_SetTabEvery8Columns:
+        success = parameters.for_each([&](const auto setType) {
+            return _dispatch->TabSet(setType);
+        });
+        break;
     case CsiActionCodes::ECH_EraseCharacters:
         success = _dispatch->EraseCharacters(parameters.at(0));
         break;
@@ -630,6 +644,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
         success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         break;
+    case CsiActionCodes::DECRQUPSS_RequestUserPreferenceSupplementalSet:
+        success = _dispatch->RequestUserPreferenceCharset();
+        break;
     case CsiActionCodes::DECIC_InsertColumn:
         success = _dispatch->InsertColumn(parameters.at(0));
         break;
@@ -693,6 +710,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(5),
                                           parameters.at(6),
                                           parameters.at(7));
+        break;
+    case DcsActionCodes::DECAUPSS_AssignUserPreferenceSupplementalSet:
+        handler = _dispatch->AssignUserPreferenceCharset(parameters.at(0));
         break;
     case DcsActionCodes::DECDMAC_DefineMacro:
         handler = _dispatch->DefineMacro(parameters.at(0).value_or(0), parameters.at(1), parameters.at(2));

@@ -23,6 +23,7 @@ namespace ControlUnitTests
         void Resize(uint32_t /*rows*/, uint32_t /*columns*/) noexcept {}
         void Close() noexcept {}
 
+        winrt::guid SessionId() const noexcept { return {}; }
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept { return winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Connected; }
 
         WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);

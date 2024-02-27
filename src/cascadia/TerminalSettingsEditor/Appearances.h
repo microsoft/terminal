@@ -57,8 +57,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::com_ptr<IDWriteFontFamily> _family;
         std::optional<bool> _hasPowerlineCharacters;
+
         winrt::hstring _tagToString(DWRITE_FONT_AXIS_TAG tag);
         winrt::hstring _tagToString(DWRITE_FONT_FEATURE_TAG tag);
+
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> _fontAxesTagsAndNames;
     };
 
     struct AxisKeyValuePair : AxisKeyValuePairT<AxisKeyValuePair>, ViewModelHelper<AxisKeyValuePair>

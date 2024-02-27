@@ -30,7 +30,7 @@ namespace Microsoft.Terminal.Settings.Editor
     // So instead we make an IObservableVector of these AxisKeyValuePair objects
     runtimeclass AxisKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        AxisKeyValuePair(String axisKey, Single axisValue, Windows.Foundation.Collections.IMap<String COMMA Single> baseMap, Windows.Foundation.Collections.IMap<String COMMA String> tagToNameMap);
+        AxisKeyValuePair(String axisKey, Single axisValue, Windows.Foundation.Collections.IMap<String, Single> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
         String AxisKey;
         Single AxisValue;
         Int32 AxisIndex;

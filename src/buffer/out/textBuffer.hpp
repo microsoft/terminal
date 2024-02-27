@@ -194,6 +194,7 @@ public:
     til::point BufferToScreenPosition(const til::point position) const;
 
     void Reset() noexcept;
+    void ClearScrollback(const til::CoordType start, const til::CoordType height);
 
     void ResizeTraditional(const til::size newSize);
 
@@ -229,33 +230,94 @@ public:
     std::wstring GetCustomIdFromId(uint16_t id) const;
     void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
 
-    class TextAndColor
-    {
-    public:
-        std::vector<std::wstring> text;
-        std::vector<std::vector<COLORREF>> FgAttr;
-        std::vector<std::vector<COLORREF>> BkAttr;
-    };
-
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
-
-    const TextAndColor GetText(const bool includeCRLF,
-                               const bool trimTrailingWhitespace,
-                               const std::vector<til::inclusive_rect>& textRects,
-                               std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
-                               const bool formatWrappedRows = false) const;
 
     std::wstring GetPlainText(const til::point& start, const til::point& end) const;
 
-    static std::string GenHTML(const TextAndColor& rows,
-                               const int fontHeightPoints,
-                               const std::wstring_view fontFaceName,
-                               const COLORREF backgroundColor);
+    struct CopyRequest
+    {
+        // beg and end coordinates are inclusive
+        til::point beg;
+        til::point end;
 
-    static std::string GenRTF(const TextAndColor& rows,
-                              const int fontHeightPoints,
-                              const std::wstring_view fontFaceName,
-                              const COLORREF backgroundColor);
+        til::CoordType minX;
+        til::CoordType maxX;
+        bool blockSelection = false;
+        bool trimTrailingWhitespace = true;
+        bool includeLineBreak = true;
+        bool formatWrappedRows = false;
+
+        // whether beg, end coordinates are in buffer coordinates or screen coordinates
+        bool bufferCoordinates = false;
+
+        CopyRequest() = default;
+
+        constexpr CopyRequest(const TextBuffer& buffer, const til::point& beg, const til::point& end, const bool blockSelection, const bool includeLineBreak, const bool trimTrailingWhitespace, const bool formatWrappedRows, const bool bufferCoordinates = false) noexcept :
+            beg{ std::max(beg, til::point{ 0, 0 }) },
+            end{ std::min(end, til::point{ buffer._width - 1, buffer._height - 1 }) },
+            minX{ std::min(this->beg.x, this->end.x) },
+            maxX{ std::max(this->beg.x, this->end.x) },
+            blockSelection{ blockSelection },
+            includeLineBreak{ includeLineBreak },
+            trimTrailingWhitespace{ trimTrailingWhitespace },
+            formatWrappedRows{ formatWrappedRows },
+            bufferCoordinates{ bufferCoordinates }
+        {
+        }
+
+        static CopyRequest FromConfig(const TextBuffer& buffer,
+                                      const til::point& beg,
+                                      const til::point& end,
+                                      const bool singleLine,
+                                      const bool blockSelection,
+                                      const bool trimBlockSelection,
+                                      const bool bufferCoordinates = false) noexcept
+        {
+            return {
+                buffer,
+                beg,
+                end,
+                blockSelection,
+
+                /* includeLineBreak */
+                // - SingleLine mode collapses all rows into one line, unless we're in
+                //   block selection mode.
+                // - Block selection should preserve the visual structure by including
+                //   line breaks on all rows (together with `formatWrappedRows`).
+                //   (Selects like a box, pastes like a box)
+                !singleLine || blockSelection,
+
+                /* trimTrailingWhitespace */
+                // Trim trailing whitespace if we're not in single line mode and — either
+                // we're not in block selection mode or, we're in block selection mode and
+                // trimming is allowed.
+                !singleLine && (!blockSelection || trimBlockSelection),
+
+                /* formatWrappedRows */
+                // In block selection, we should apply formatting to wrapped rows as well.
+                // (Otherwise, they're only applied to non-wrapped rows.)
+                blockSelection,
+
+                bufferCoordinates
+            };
+        }
+    };
+
+    std::wstring GetPlainText(const CopyRequest& req) const;
+
+    std::string GenHTML(const CopyRequest& req,
+                        const int fontHeightPoints,
+                        const std::wstring_view fontFaceName,
+                        const COLORREF backgroundColor,
+                        const bool isIntenseBold,
+                        std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
+
+    std::string GenRTF(const CopyRequest& req,
+                       const int fontHeightPoints,
+                       const std::wstring_view fontFaceName,
+                       const COLORREF backgroundColor,
+                       const bool isIntenseBold,
+                       std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
     struct PositionInformation
     {
@@ -303,8 +365,9 @@ private:
     til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     void _PruneHyperlinks();
     void _trimMarksOutsideBuffer();
+    std::tuple<til::CoordType, til::CoordType, bool> _RowCopyHelper(const CopyRequest& req, const til::CoordType iRow, const ROW& row) const;
 
-    static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
+    static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
 
     Microsoft::Console::Render::Renderer& _renderer;
 

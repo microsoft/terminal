@@ -1210,7 +1210,7 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
-        winrt::guid sessionGuid{};
+        Windows::Foundation::Collections::ValueSet valueSet;
 
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
@@ -1226,23 +1226,16 @@ namespace winrt::TerminalApp::implementation
                 connection = TerminalConnection::ConptyConnection{};
             }
 
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
-                                                                                 L".",
-                                                                                 L"Azure",
-                                                                                 false,
-                                                                                 L"",
-                                                                                 nullptr,
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid(),
-                                                                                 profile.Guid());
-
-            if constexpr (Feature_VtPassthroughMode::IsEnabled())
-            {
-                valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-            }
-
-            connection.Initialize(valueSet);
+            valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
+                                                                            L".",
+                                                                            L"Azure",
+                                                                            false,
+                                                                            L"",
+                                                                            nullptr,
+                                                                            settings.InitialRows(),
+                                                                            settings.InitialCols(),
+                                                                            winrt::guid(),
+                                                                            profile.Guid());
         }
 
         else
@@ -1267,30 +1260,30 @@ namespace winrt::TerminalApp::implementation
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
             auto newWorkingDirectory{ _evaluatePathForCwd(settings.StartingDirectory()) };
-            auto conhostConn = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                 newWorkingDirectory,
-                                                                                 settings.StartingTitle(),
-                                                                                 settings.ReloadEnvironmentVariables(),
-                                                                                 _WindowProperties.VirtualEnvVars(),
-                                                                                 environment,
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid(),
-                                                                                 profile.Guid());
-
-            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            connection = TerminalConnection::ConptyConnection{};
+            valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                            newWorkingDirectory,
+                                                                            settings.StartingTitle(),
+                                                                            settings.ReloadEnvironmentVariables(),
+                                                                            _WindowProperties.VirtualEnvVars(),
+                                                                            environment,
+                                                                            settings.InitialRows(),
+                                                                            settings.InitialCols(),
+                                                                            winrt::guid(),
+                                                                            profile.Guid());
 
             if (inheritCursor)
             {
                 valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
             }
-
-            conhostConn.Initialize(valueSet);
-
-            sessionGuid = conhostConn.Guid();
-            connection = conhostConn;
         }
+
+        if constexpr (Feature_VtPassthroughMode::IsEnabled())
+        {
+            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+        }
+
+        connection.Initialize(valueSet);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -1298,7 +1291,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingDescription("Event emitted upon the creation of a connection"),
             TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
             TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
-            TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
+            TraceLoggingGuid(connection.SessionId(), "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
@@ -2593,12 +2586,9 @@ namespace winrt::TerminalApp::implementation
         auto dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
 
-        // The EventArgs.Formats() is an override for the global setting "copyFormatting"
-        //   iff it is set
-        auto useGlobal = copiedData.Formats() == nullptr;
-        auto copyFormats = useGlobal ?
-                               _settings.GlobalSettings().CopyFormatting() :
-                               copiedData.Formats().Value();
+        const auto copyFormats = copiedData.Formats() != nullptr ?
+                                     copiedData.Formats().Value() :
+                                     static_cast<CopyFormat>(0);
 
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
@@ -2631,6 +2621,75 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
+    static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
+    {
+        bool success = false;
+
+        // OpenClipboard may fail to acquire the internal lock --> retry.
+        for (DWORD sleep = 10;; sleep *= 2)
+        {
+            if (OpenClipboard(hwnd))
+            {
+                success = true;
+                break;
+            }
+            // 10 iterations
+            if (sleep > 10000)
+            {
+                break;
+            }
+            Sleep(sleep);
+        }
+
+        return wil::unique_close_clipboard_call{ success };
+    }
+
+    static winrt::hstring _extractClipboard()
+    {
+        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
+        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto str = static_cast<const wchar_t*>(lock.get());
+            if (!str)
+            {
+                return {};
+            }
+
+            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
+            const auto len = wcsnlen(str, maxLen);
+            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
+        }
+
+        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
+        if (const auto handle = GetClipboardData(CF_HDROP))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto drop = static_cast<HDROP>(lock.get());
+            if (!drop)
+            {
+                return {};
+            }
+
+            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
+            if (cap == 0)
+            {
+                return {};
+            }
+
+            auto buffer = winrt::impl::hstring_builder{ cap };
+            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
+            if (len == 0)
+            {
+                return {};
+            }
+
+            return buffer.to_hstring();
+        }
+
+        return {};
+    }
+
     // Function Description:
     // - This function is called when the `TermControl` requests that we send
     //   it the clipboard's content.
@@ -2650,53 +2709,14 @@ namespace winrt::TerminalApp::implementation
         const auto weakThis = get_weak();
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
-        winrt::hstring text;
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
+        winrt::hstring text;
+        if (const auto clipboard = _openClipboard(nullptr))
         {
-            // According to various reports on the internet, OpenClipboard might
-            // fail to acquire the internal lock, for instance due to rdpclip.exe.
-            for (int attempts = 1;;)
-            {
-                if (OpenClipboard(nullptr))
-                {
-                    break;
-                }
-
-                if (attempts > 5)
-                {
-                    co_return;
-                }
-
-                attempts++;
-                Sleep(10 * attempts);
-            }
-
-            const auto clipboardCleanup = wil::scope_exit([]() {
-                CloseClipboard();
-            });
-
-            const auto data = GetClipboardData(CF_UNICODETEXT);
-            if (!data)
-            {
-                co_return;
-            }
-
-            const auto str = static_cast<const wchar_t*>(GlobalLock(data));
-            if (!str)
-            {
-                co_return;
-            }
-
-            const auto dataCleanup = wil::scope_exit([&]() {
-                GlobalUnlock(data);
-            });
-
-            const auto maxLength = GlobalSize(data) / sizeof(wchar_t);
-            const auto length = wcsnlen(str, maxLength);
-            text = winrt::hstring{ str, gsl::narrow_cast<uint32_t>(length) };
+            text = _extractClipboard();
         }
 
         if (globalSettings.TrimPaste())

@@ -6,7 +6,6 @@
 #include "ProcessHandle.h"
 
 #include "../host/globals.h"
-#include "../host/telemetry.hpp"
 
 // Routine Description:
 // - Constructs an instance of the ConsoleProcessHandle Class

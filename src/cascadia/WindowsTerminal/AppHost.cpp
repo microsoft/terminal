@@ -438,10 +438,7 @@ void AppHost::Close()
     // After calling _window->Close() we should avoid creating more WinUI related actions.
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
-    if (_frameTimer)
-    {
-        _frameTimer.Tick(_frameTimerToken);
-    }
+    _frameTimer.Destroy();
     _showHideWindowThrottler.reset();
 
     _revokeWindowCallbacks();
@@ -538,23 +535,19 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     {
         _windowLogic.ClearPersistedWindowState();
     }
-
-    // If the user closes the last tab, in the last window, _by closing the tab_
-    // (not by closing the whole window), we need to manually persist an empty
-    // window state here. That will cause the terminal to re-open with the usual
-    // settings (not the persisted state)
-    if (args.ClearPersistedState() &&
-        _windowManager.GetNumberOfPeasants() == 1)
-    {
-        _windowLogic.ClearPersistedWindowState();
-    }
-
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
 
-    PostQuitMessage(0);
+    if (Utils::IsWindows11())
+    {
+        PostQuitMessage(0);
+    }
+    else
+    {
+        PostMessageW(_window->GetInteropHandle(), WM_REFRIGERATE, 0, 0);
+    }
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -1190,12 +1183,8 @@ void AppHost::_startFrameTimer()
     // _updateFrameColor, which will actually handle setting the colors. If we
     // already have a timer, just start that one.
 
-    if (_frameTimer == nullptr)
-    {
-        _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
-        _frameTimer.Interval(FrameUpdateInterval);
-        _frameTimerToken = _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
-    }
+    _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
+    _frameTimer.Interval(FrameUpdateInterval);
     _frameTimer.Start();
 }
 

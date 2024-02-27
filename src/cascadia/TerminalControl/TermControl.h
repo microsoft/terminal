@@ -7,7 +7,6 @@
 #include "XamlLights.h"
 #include "EventArgs.h"
 #include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
@@ -72,7 +71,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool HasSelection() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+        bool HasMultiLineSelection() const;
+        winrt::hstring SelectedText(bool trimTrailingWhitespace) const;
 
         bool BracketedPasteEnabled() const noexcept;
 
@@ -236,16 +236,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
-        Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
+        SafeDispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
-        Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
+        SafeDispatcherTimer _bellLightTimer;
 
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
+        SafeDispatcherTimer _cursorTimer;
+        SafeDispatcherTimer _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         bool _showMarksInScrollbar{ false };

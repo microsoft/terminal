@@ -3,14 +3,31 @@
 
 #pragma once
 
-#include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
-#include "../../renderer/uia/UiaRenderer.hpp"
-#include "../../cascadia/TerminalCore/Terminal.hpp"
+#include "../../buffer/out/textBuffer.hpp"
+#include "../../renderer/inc/FontInfoDesired.hpp"
 #include "../../types/IControlAccessibilityInfo.h"
-#include "HwndTerminalAutomationPeer.hpp"
 
-using namespace Microsoft::Console::VirtualTerminal;
+namespace Microsoft::Console::Render::Atlas
+{
+    class AtlasEngine;
+}
+
+namespace Microsoft::Console::Render
+{
+    using AtlasEngine = Atlas::AtlasEngine;
+    class IRenderData;
+    class Renderer;
+    class UiaEngine;
+}
+
+namespace Microsoft::Terminal::Core
+{
+    class Terminal;
+}
+
+class FontInfo;
+class FontInfoDesired;
+class HwndTerminalAutomationPeer;
 
 // Keep in sync with TerminalTheme.cs
 typedef struct _TerminalTheme
@@ -79,7 +96,7 @@ private:
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
-    std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+    std::unique_ptr<::Microsoft::Console::Render::AtlasEngine> _renderEngine;
     std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
     bool _focused{ false };
@@ -109,8 +126,8 @@ private:
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring_view text) noexcept;
-    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting);
-    HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
+    HRESULT _CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const;
+    HRESULT _CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const;
     void _PasteTextFromClipboard() noexcept;
 
     const unsigned int _NumberOfClicks(til::point clickPos, std::chrono::steady_clock::time_point clickTime) noexcept;
