@@ -120,39 +120,43 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     IMap<hstring, hstring> Font::FontFeaturesTagsAndNames()
     {
-        auto fontFeaturesTagsAndNames = winrt::single_threaded_map<hstring, hstring>();
-
-        wil::com_ptr<IDWriteFont> font;
-        THROW_IF_FAILED(_family->GetFont(0, font.put()));
-        wil::com_ptr<IDWriteFontFace> fontFace;
-        THROW_IF_FAILED(font->CreateFontFace(fontFace.put()));
-
-        wil::com_ptr<IDWriteFactory2> factory;
-        THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
-        wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
-        factory->CreateTextAnalyzer(textAnalyzer.addressof());
-        wil::com_ptr<IDWriteTextAnalyzer2> textAnalyzer2 = textAnalyzer.query<IDWriteTextAnalyzer2>();
-
-        DWRITE_SCRIPT_ANALYSIS scriptAnalysis{};
-        UINT32 tagCount;
-        // we have to call GetTypographicFeatures twice, first to get the actual count then to get the features
-        std::ignore = textAnalyzer2->GetTypographicFeatures(fontFace.get(), DWRITE_SCRIPT_ANALYSIS{}, L"en-us", 0, &tagCount, nullptr);
-        std::vector<DWRITE_FONT_FEATURE_TAG> tags{ tagCount };
-        textAnalyzer2->GetTypographicFeatures(fontFace.get(), scriptAnalysis, L"en-us", tagCount, &tagCount, tags.data());
-
-        for (auto tag : tags)
+        if (!_fontFeaturesTagsAndNames)
         {
-            const auto tagString = _tagToString(tag);
-            hstring formattedResourceString{ fmt::format(L"Profile_FontFeature_{}", tagString) };
-            hstring localizedName{ tagString };
-            // we have resource strings for common font features, see if one for this feature exists
-            if (HasLibraryResourceWithName(formattedResourceString))
+            std::unordered_map<winrt::hstring, winrt::hstring> fontFeaturesTagsAndNames;
+
+            wil::com_ptr<IDWriteFont> font;
+            THROW_IF_FAILED(_family->GetFont(0, font.put()));
+            wil::com_ptr<IDWriteFontFace> fontFace;
+            THROW_IF_FAILED(font->CreateFontFace(fontFace.put()));
+
+            wil::com_ptr<IDWriteFactory2> factory;
+            THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
+            wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
+            factory->CreateTextAnalyzer(textAnalyzer.addressof());
+            wil::com_ptr<IDWriteTextAnalyzer2> textAnalyzer2 = textAnalyzer.query<IDWriteTextAnalyzer2>();
+
+            DWRITE_SCRIPT_ANALYSIS scriptAnalysis{};
+            UINT32 tagCount;
+            // we have to call GetTypographicFeatures twice, first to get the actual count then to get the features
+            std::ignore = textAnalyzer2->GetTypographicFeatures(fontFace.get(), DWRITE_SCRIPT_ANALYSIS{}, L"en-us", 0, &tagCount, nullptr);
+            std::vector<DWRITE_FONT_FEATURE_TAG> tags{ tagCount };
+            textAnalyzer2->GetTypographicFeatures(fontFace.get(), scriptAnalysis, L"en-us", tagCount, &tagCount, tags.data());
+
+            for (auto tag : tags)
             {
-                localizedName = GetLibraryResourceString(formattedResourceString);
+                const auto tagString = _tagToString(tag);
+                hstring formattedResourceString{ fmt::format(L"Profile_FontFeature_{}", tagString) };
+                hstring localizedName{ tagString };
+                // we have resource strings for common font features, see if one for this feature exists
+                if (HasLibraryResourceWithName(formattedResourceString))
+                {
+                    localizedName = GetLibraryResourceString(formattedResourceString);
+                }
+                fontFeaturesTagsAndNames.insert(std::pair<winrt::hstring, winrt::hstring>(tagString, localizedName));
             }
-            fontFeaturesTagsAndNames.Insert(tagString, localizedName);
+            _fontFeaturesTagsAndNames = winrt::single_threaded_map<winrt::hstring, winrt::hstring>(std::move(fontFeaturesTagsAndNames));
         }
-        return fontFeaturesTagsAndNames;
+        return _fontFeaturesTagsAndNames;
     }
 
     winrt::hstring Font::_tagToString(DWRITE_FONT_AXIS_TAG tag)
@@ -643,7 +647,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto featureKey = tagAndName.Key();
             if (!fontFeaturesMap.HasKey(featureKey))
             {
-                const auto featureDefaultValue = _IsADefaultFeature(featureKey) ? 1 : 0;
+                const auto featureDefaultValue = _IsDefaultFeature(featureKey) ? 1 : 0;
                 fontFeaturesMap.Insert(featureKey, featureDefaultValue);
                 FontFeaturesVector().Append(_CreateFeatureKeyValuePairHelper(featureKey, featureDefaultValue, fontFeaturesMap, possibleFeaturesTagsAndNames));
                 break;
@@ -739,7 +743,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     const auto senderPair = sender.as<FeatureKeyValuePair>();
                     const auto senderKey = senderPair->FeatureKey();
-                    if (appVM->_IsADefaultFeature(senderKey))
+                    if (appVM->_IsDefaultFeature(senderKey))
                     {
                         senderPair->FeatureValue(1);
                     }
@@ -753,7 +757,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return featureKeyValuePair;
     }
 
-    bool AppearanceViewModel::_IsADefaultFeature(winrt::hstring featureKey)
+    bool AppearanceViewModel::_IsDefaultFeature(winrt::hstring featureKey)
     {
         for (const auto defaultFeature : DefaultFeatures)
         {

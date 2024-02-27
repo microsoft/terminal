@@ -62,6 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _tagToString(DWRITE_FONT_FEATURE_TAG tag);
 
         Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> _fontAxesTagsAndNames;
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> _fontFeaturesTagsAndNames;
     };
 
     struct AxisKeyValuePair : AxisKeyValuePairT<AxisKeyValuePair>, ViewModelHelper<AxisKeyValuePair>
@@ -181,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::AxisKeyValuePair _CreateAxisKeyValuePairHelper(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap);
         Editor::FeatureKeyValuePair _CreateFeatureKeyValuePairHelper(winrt::hstring axisKey, uint32_t axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap);
 
-        bool _IsADefaultFeature(winrt::hstring featureTag);
+        bool _IsDefaultFeature(winrt::hstring featureTag);
     };
 
     struct Appearances : AppearancesT<Appearances>
