@@ -2644,7 +2644,7 @@ bool AdaptDispatch::ForwardIndex()
 // Routine Description:
 // - OSC Set Window Title - Sets the title of the window
 // Arguments:
-// - title - The string to set the title to. Must be null terminated.
+// - title - The string to set the title to.
 // Return Value:
 // - True.
 bool AdaptDispatch::SetWindowTitle(std::wstring_view title)

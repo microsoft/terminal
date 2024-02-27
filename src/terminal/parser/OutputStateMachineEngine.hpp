@@ -227,9 +227,6 @@ namespace Microsoft::Console::VirtualTerminal
             ITerm2Action = 1337,
         };
 
-        bool _GetOscTitle(const std::wstring_view string,
-                          std::wstring& title) const;
-
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   std::vector<size_t>& tableIndexes,
                                   std::vector<DWORD>& rgbs) const;
