@@ -674,7 +674,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
 void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
 {
-    const auto json = _parseJson(content);
+    auto json = _parseJson(content);
 
     settings.clear();
 
@@ -688,11 +688,19 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 if (const auto scheme = ColorScheme::FromJson(schemeJson))
                 {
                     scheme->Origin(OriginTag::Fragment);
+		    // Don't add the color scheme to the Fragment's GlobalSettings; that will
+		    // cause layering issues later. Add them to a staging area for later processing.
+		    // (search for STAGED COLORS to find the next step)
                     settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
                 }
             }
             CATCH_LOG()
         }
+
+        // Parse out actions from the fragment. Manually opt-out of keybinding
+        // parsing - fragments shouldn't be allowed to bind actions to keys
+        // directly. We may want to revisit circa GH#2205
+        settings.globals->LayerActionsFrom(json.root, false);
     }
 
     {
@@ -734,10 +742,18 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
     }
 
+    // STAGED COLORS are processed here: we merge them into the partially-loaded
+    // settings directly so that we can resolve conflicts between user-generated
+    // color schemes and fragment-originated ones.
     for (const auto& fragmentColorScheme : settings.colorSchemes)
     {
         _addOrMergeUserColorScheme(fragmentColorScheme.second);
     }
+
+    // Add the parsed fragment globals as a parent of the user's settings.
+    // Later, in FinalizeInheritance, this will result in the action map from
+    // the fragments being applied before the user's own settings.
+    userSettings.globals->AddLeastImportantParent(settings.globals);
 }
 
 SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)

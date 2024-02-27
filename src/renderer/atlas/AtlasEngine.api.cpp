@@ -295,8 +295,8 @@ CATCH_RETURN()
         /* fontStyle      */ DWRITE_FONT_STYLE_NORMAL,
         /* fontStretch    */ DWRITE_FONT_STRETCH_NORMAL,
         /* fontSize       */ _api.s->font->fontSize,
-        /* localeName     */ L"",
-        /* textFormat     */ textFormat.put()));
+        /* localeName     */ _p.userLocaleName.c_str(),
+        /* textFormat     */ textFormat.addressof()));
 
     wil::com_ptr<IDWriteTextLayout> textLayout;
     RETURN_IF_FAILED(_p.dwriteFactory->CreateTextLayout(glyph.data(), gsl::narrow_cast<uint32_t>(glyph.size()), textFormat.get(), FLT_MAX, FLT_MAX, textLayout.addressof()));
@@ -774,5 +774,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, thinLineWidthU16 };
         fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, thinLineWidthU16 };
         fontMetrics->overline = { 0, underlineWidthU16 };
+
+        fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();
     }
 }

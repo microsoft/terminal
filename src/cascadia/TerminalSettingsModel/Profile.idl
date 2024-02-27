@@ -42,6 +42,10 @@ namespace Microsoft.Terminal.Settings.Model
         // True if the user explicitly removed this Profile from settings.json.
         Boolean Deleted { get; };
 
+        // Helper for magically using a commandline for an icon for a profile
+        // without an explicit icon.
+        String EvaluatedIcon { get; };
+
         INHERITABLE_PROFILE_SETTING(Guid, Guid);
         INHERITABLE_PROFILE_SETTING(String, Name);
         INHERITABLE_PROFILE_SETTING(String, Source);
