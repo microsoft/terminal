@@ -114,6 +114,7 @@ void ParsedSettings::clear()
     profiles.clear();
     profilesByGuid.clear();
     colorSchemes.clear();
+    fixupsAppliedDuringLoad = false;
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -464,10 +465,7 @@ bool SettingsLoader::FixupUserSettings()
         CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
     };
 
-    auto fixedUp = false;
-
-    // If any color schemes had to be remapped, we need to re-save the settings.
-    fixedUp = !userSettings.colorSchemeRemappings.empty() || fixedUp;
+    auto fixedUp = userSettings.fixupsAppliedDuringLoad;
 
     fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
@@ -871,6 +869,7 @@ void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
         if (existingScheme->Origin() == OriginTag::User) // we only want to impose ordering on User schemes
         {
             it->second = newScheme; // Stomp the user's existing scheme with the one we just got (to make sure the right Origin is set)
+            userSettings.fixupsAppliedDuringLoad = true; // Make sure we save the settings.
             if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
             {
                 hstring newName{ fmt::format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name()) };

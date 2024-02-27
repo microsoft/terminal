@@ -198,7 +198,7 @@
         </Border>
 
         <local:SettingContainer x:Uid="ColorScheme_InboxSchemeDuplicate"
-                                Visibility="{x:Bind ViewModel.IsInBoxScheme, Mode=OneWay}">
+                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
             <Button x:Name="DuplicateSchemeButton"
                     x:Uid="ColorScheme_DuplicateButton"
                     Click="{x:Bind ViewModel.Duplicate_Click}"
@@ -208,7 +208,7 @@
         <local:SettingContainer x:Uid="ColorScheme_ColorsHeader"
                                 StartExpanded="True"
                                 Style="{StaticResource ExpanderSettingContainerStyle}"
-                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsInBoxScheme), Mode=OneWay}">
+                                Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <Grid x:Name="ColorTableGrid"
                   Style="{StaticResource ColorTableGridStyle}"
                   XYFocusKeyboardNavigation="Enabled">
@@ -434,7 +434,7 @@
         <local:SettingContainer x:Name="RenameContainer"
                                 x:Uid="ColorScheme_Rename"
                                 Style="{StaticResource ExpanderSettingContainerStyle}"
-                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsInBoxScheme), Mode=OneWay}">
+                                Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <StackPanel Orientation="Horizontal"
                         XYFocusKeyboardNavigation="Enabled">
                 <!--  Shown when color scheme name is already in use  -->
@@ -470,7 +470,7 @@
         <Grid MaxWidth="1000"
               Margin="2,6,0,0"
               ColumnSpacing="4"
-              Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsInBoxScheme), Mode=OneWay}">
+              Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -497,13 +497,6 @@
                     </Flyout>
                 </Button.Flyout>
             </Button>
-            <TextBlock x:Name="SelectedSchemeDisclaimer"
-                       x:Uid="ColorScheme_DeleteButtonDisclaimerInBox"
-                       Grid.Column="1"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource DisclaimerStyle}"
-                       TextWrapping="Wrap"
-                       Visibility="{x:Bind ViewModel.IsInBoxScheme}" />
         </Grid>
     </StackPanel>
 </Page>

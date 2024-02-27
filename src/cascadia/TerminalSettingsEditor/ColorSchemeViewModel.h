@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
         bool IsDefaultScheme();
         void RefreshIsDefault();
-        bool IsInBoxScheme() const;
+        bool IsEditable() const;
 
         void DeleteConfirmation_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void SetAsDefault_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);

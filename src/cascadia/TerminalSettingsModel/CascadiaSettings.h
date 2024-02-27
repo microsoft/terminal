@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
         std::unordered_map<winrt::hstring, winrt::com_ptr<implementation::ColorScheme>> colorSchemes;
         std::unordered_map<winrt::hstring, winrt::hstring> colorSchemeRemappings;
+        bool fixupsAppliedDuringLoad{ false };
 
         void clear();
     };
