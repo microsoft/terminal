@@ -3,7 +3,7 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    // This tag is used to identify the context in which the Profile was created
+    // This tag is used to identify the context in which this object was created
     enum OriginTag
     {
         None = 0,

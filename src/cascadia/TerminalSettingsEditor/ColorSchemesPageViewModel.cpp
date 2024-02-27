@@ -214,8 +214,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (_CurrentScheme)
         {
-            // Only allow this color scheme to be deleted if it's not provided in-box
-            return !_CurrentScheme.IsInBoxScheme();
+            return _CurrentScheme.IsEditable();
         }
         return false;
     }
