@@ -164,7 +164,8 @@ void ConhostInternalGetSet::WarningBell()
 // - <none>
 void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 {
-    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTitle(title.empty() ? gci.GetOriginalTitle() : title);
 }
 
 // Routine Description:
