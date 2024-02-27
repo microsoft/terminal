@@ -42,6 +42,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollision);
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionRetargetsAllProfiles);
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionWithFragments);
+        TEST_METHOD(LayerColorSchemesWithUserOwnedMultipleCollisions);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -920,4 +921,116 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"Mango Light (modified)", prof3.DefaultAppearance().LightColorSchemeName());
         }
     }
+
+    void ColorSchemeTests::LayerColorSchemesWithUserOwnedMultipleCollisions()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "schemes": [
+                {
+                    "background": "#111111",
+                    "black": "#111111",
+                    "blue": "#111111",
+                    "brightBlack": "#111111",
+                    "brightBlue": "#111111",
+                    "brightCyan": "#111111",
+                    "brightGreen": "#111111",
+                    "brightPurple": "#111111",
+                    "brightRed": "#111111",
+                    "brightWhite": "#111111",
+                    "brightYellow": "#111111",
+                    "cursorColor": "#111111",
+                    "cyan": "#111111",
+                    "foreground": "#111111",
+                    "green": "#111111",
+                    "name": "Campbell",
+                    "purple": "#111111",
+                    "red": "#111111",
+                    "selectionBackground": "#111111",
+                    "white": "#111111",
+                    "yellow": "#111111"
+                }
+            ]
+        })" };
+        static constexpr std::string_view userSettings{ R"-({
+            "profiles": [
+                {
+                    "name" : "profile0"
+                }
+            ],
+            "schemes": [
+                {
+                    "background": "#222222",
+                    "black": "#222222",
+                    "blue": "#222222",
+                    "brightBlack": "#222222",
+                    "brightBlue": "#222222",
+                    "brightCyan": "#222222",
+                    "brightGreen": "#222222",
+                    "brightPurple": "#222222",
+                    "brightRed": "#222222",
+                    "brightWhite": "#222222",
+                    "brightYellow": "#222222",
+                    "cursorColor": "#222222",
+                    "cyan": "#222222",
+                    "foreground": "#222222",
+                    "green": "#222222",
+                    "name": "Campbell",
+                    "purple": "#222222",
+                    "red": "#222222",
+                    "selectionBackground": "#222222",
+                    "white": "#222222",
+                    "yellow": "#222222"
+                },
+                {
+                    "background": "#333333",
+                    "black": "#333333",
+                    "blue": "#333333",
+                    "brightBlack": "#333333",
+                    "brightBlue": "#333333",
+                    "brightCyan": "#333333",
+                    "brightGreen": "#333333",
+                    "brightPurple": "#333333",
+                    "brightRed": "#333333",
+                    "brightWhite": "#333333",
+                    "brightYellow": "#333333",
+                    "cursorColor": "#333333",
+                    "cyan": "#333333",
+                    "foreground": "#333333",
+                    "green": "#333333",
+                    "name": "Campbell (modified)",
+                    "purple": "#333333",
+                    "red": "#333333",
+                    "selectionBackground": "#333333",
+                    "white": "#333333",
+                    "yellow": "#333333"
+                }
+            ]
+        })-" };
+
+        // In this test, The user has a copy of Campbell which they have modified and a copy of Antique which they
+        // have not. Campbell should be renamed to Campbell (modified) and copied while Antique should simply
+        // be demoted to "Inbox" status.
+
+        const auto settings = winrt::make_self<CascadiaSettings>(userSettings, inboxSettings);
+
+        const auto colorSchemes = settings->GlobalSettings().ColorSchemes();
+        VERIFY_ARE_EQUAL(3u, colorSchemes.Size()); // There should be three: Campbell, Campbell (modified), Campbell (modified 2)
+
+        const auto scheme0 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell (modified 2)"));
+        VERIFY_ARE_EQUAL(rgb(0x22, 0x22, 0x22), scheme0->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x22, 0x22, 0x22), scheme0->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::User, scheme0->Origin());
+
+        const auto scheme1 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell (modified)"));
+        VERIFY_ARE_EQUAL(rgb(0x33, 0x33, 0x33), scheme1->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x33, 0x33, 0x33), scheme1->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::User, scheme1->Origin());
+
+        // Stock Campbell is now untouched
+        const auto scheme2 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell"));
+        VERIFY_ARE_EQUAL(rgb(0x11, 0x11, 0x11), scheme2->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x11, 0x11, 0x11), scheme2->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme2->Origin());
+    }
+
 }

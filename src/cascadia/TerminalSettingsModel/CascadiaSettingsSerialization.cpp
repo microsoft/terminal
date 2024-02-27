@@ -848,11 +848,17 @@ void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
             it->second = newScheme; // Stomp the user's existing scheme with the one we just got (to make sure the right Origin is set)
             if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
             {
+                hstring newName{ fmt::format(L"{} (modified)", existingScheme->Name()) };
+                int differentiator = 2;
+                while (userSettings.colorSchemes.contains(newName))
+                {
+                    newName = hstring{ fmt::format(L"{} (modified {})", existingScheme->Name(), differentiator++) };
+                }
                 // Rename the user's scheme.
-                existingScheme->Name(hstring{ fmt::format(L"{} (modified)", existingScheme->Name()) });
-                userSettings.colorSchemeRemappings.emplace(newScheme->Name(), existingScheme->Name());
+                existingScheme->Name(newName);
+                userSettings.colorSchemeRemappings.emplace(newScheme->Name(), newName);
                 // And re-add it to the end.
-                userSettings.colorSchemes.emplace(existingScheme->Name(), std::move(existingScheme));
+                userSettings.colorSchemes.emplace(newName, std::move(existingScheme));
             }
         }
     }
