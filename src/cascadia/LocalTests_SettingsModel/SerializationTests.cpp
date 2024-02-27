@@ -46,6 +46,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(DontRoundtripNoReloadEnvVars);
 
         TEST_METHOD(RoundtripUserModifiedColorSchemeCollision);
+        TEST_METHOD(RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles);
 
     private:
         // Method Description:
@@ -746,6 +747,103 @@ namespace SettingsModelLocalTests
                     "white": "#121314",
                     "yellow": "#121314"
                 }
+            ]
+        })-" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "schemes": [
+                {
+                    "background": "#111111",
+                    "black": "#111111",
+                    "blue": "#111111",
+                    "brightBlack": "#111111",
+                    "brightBlue": "#111111",
+                    "brightCyan": "#111111",
+                    "brightGreen": "#111111",
+                    "brightPurple": "#111111",
+                    "brightRed": "#111111",
+                    "brightWhite": "#111111",
+                    "brightYellow": "#111111",
+                    "cursorColor": "#111111",
+                    "cyan": "#111111",
+                    "foreground": "#111111",
+                    "green": "#111111",
+                    "name": "Tango Dark",
+                    "purple": "#111111",
+                    "red": "#111111",
+                    "selectionBackground": "#111111",
+                    "white": "#111111",
+                    "yellow": "#111111"
+                },
+            ]
+        })" };
+
+        // Key differences: Tango Dark has been renamed; nothing else has changed
+        static constexpr std::string_view newSettingsJson{ R"-(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles":
+            {
+                "list":
+                [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            },
+            "actions": [ ],
+            "schemes": [
+                {
+                    "background": "#111111",
+                    "black": "#111111",
+                    "blue": "#111111",
+                    "brightBlack": "#111111",
+                    "brightBlue": "#111111",
+                    "brightCyan": "#111111",
+                    "brightGreen": "#111111",
+                    "brightPurple": "#111111",
+                    "brightRed": "#111111",
+                    "brightWhite": "#111111",
+                    "brightYellow": "#111111",
+                    "cursorColor": "#111111",
+                    "cyan": "#111111",
+                    "foreground": "#111111",
+                    "green": "#111111",
+                    "name": "Tango Dark (modified)",
+                    "purple": "#111111",
+                    "red": "#111111",
+                    "selectionBackground": "#111111",
+                    "white": "#111111",
+                    "yellow": "#111111"
+                },
             ]
         })-" };
 
