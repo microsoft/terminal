@@ -849,7 +849,7 @@ void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
             if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
             {
                 // Rename the user's scheme.
-                existingScheme->Name(hstring{ fmt::format(L"{} (Modified)", existingScheme->Name()) });
+                existingScheme->Name(hstring{ fmt::format(L"{} (modified)", existingScheme->Name()) });
                 userSettings.colorSchemeRemappings.emplace(newScheme->Name(), existingScheme->Name());
                 // And re-add it to the end.
                 userSettings.colorSchemes.emplace(existingScheme->Name(), std::move(existingScheme));

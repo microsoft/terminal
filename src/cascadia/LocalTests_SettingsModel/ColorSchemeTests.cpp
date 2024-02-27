@@ -435,7 +435,7 @@ namespace SettingsModelLocalTests
                     "yellow": "#C19C00"
                 },
                 {
-                    "name": "Vintage",
+                    "name": "Antique",
                     "foreground": "#C0C0C0",
                     "background": "#000000",
                     "cursorColor": "#FFFFFF",
@@ -489,7 +489,7 @@ namespace SettingsModelLocalTests
                     "yellow": "#121314"
                 },
                 {
-                    "name": "Vintage",
+                    "name": "Antique",
                     "foreground": "#C0C0C0",
                     "background": "#000000",
                     "cursorColor": "#FFFFFF",
@@ -513,16 +513,16 @@ namespace SettingsModelLocalTests
             ]
         })" };
 
-        // In this test, The user has a copy of Campbell which they have modified and a copy of Vintage which they
-        // have not. Campbell should be renamed to Campbell (Modified) and copied while Vintage should simply
+        // In this test, The user has a copy of Campbell which they have modified and a copy of Antique which they
+        // have not. Campbell should be renamed to Campbell (modified) and copied while Antique should simply
         // be demoted to "Inbox" status.
 
         const auto settings = winrt::make_self<CascadiaSettings>(userSettings, inboxSettings);
 
         const auto colorSchemes = settings->GlobalSettings().ColorSchemes();
-        VERIFY_ARE_EQUAL(3u, colorSchemes.Size()); // There should be three: Campbell, Campbell Edited, Vintage
+        VERIFY_ARE_EQUAL(3u, colorSchemes.Size()); // There should be three: Campbell, Campbell Edited, Antique
 
-        const auto scheme0 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell (Modified)"));
+        const auto scheme0 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell (modified)"));
         VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Foreground());
         VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Background());
         VERIFY_ARE_EQUAL(Model::OriginTag::User, scheme0->Origin());
@@ -533,7 +533,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(rgb(0x0c, 0x0c, 0x0c), scheme1->Background());
         VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme1->Origin());
 
-        const auto scheme2 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Vintage"));
+        const auto scheme2 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Antique"));
         VERIFY_ARE_EQUAL(rgb(0xc0, 0xc0, 0xc0), scheme2->Foreground());
         VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme2->Origin());
     }
@@ -566,7 +566,7 @@ namespace SettingsModelLocalTests
                     "yellow": "#C19C00"
                 },
                 {
-                    "name": "Vintage",
+                    "name": "Antique",
                     "foreground": "#C0C0C0",
                     "background": "#000000",
                     "cursorColor": "#FFFFFF",
@@ -598,7 +598,7 @@ namespace SettingsModelLocalTests
                     },
                     {
                         "name" : "profile1",
-                        "colorScheme": "Vintage" // This should not be changed
+                        "colorScheme": "Antique" // This should not be changed
                     },
                     {
                         "name" : "profile2",
@@ -647,36 +647,36 @@ namespace SettingsModelLocalTests
         //
         // Critically, we need to make sure that we do this at the lowest layer that will apply
         // to the most profiles... otherwise we'll make the settings really annoying by putting
-        // in so many references to Campbell (Modified)
+        // in so many references to Campbell (modified)
 
         const auto settings = winrt::make_self<CascadiaSettings>(userSettings, inboxSettings);
 
         const auto defaults{ settings->ProfileDefaults() };
-        VERIFY_IS_TRUE(defaults.DefaultAppearance().HasColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell (Modified)", defaults.DefaultAppearance().ColorSchemeName());
+        VERIFY_IS_TRUE(defaults.DefaultAppearance().HasLightColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell (modified)", defaults.DefaultAppearance().LightColorSchemeName());
 
         const auto& profiles{ settings->AllProfiles() };
         {
             const auto& prof0{ profiles.GetAt(0) };
-            VERIFY_IS_FALSE(prof0.DefaultAppearance().HasColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof0.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_FALSE(prof0.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof0.DefaultAppearance().LightColorSchemeName());
         }
         {
             const auto& prof1{ profiles.GetAt(1) };
-            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Vintage", prof1.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Antique", prof1.DefaultAppearance().LightColorSchemeName());
         }
         {
             const auto& prof2{ profiles.GetAt(2) };
-            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof2.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof2.DefaultAppearance().LightColorSchemeName());
         }
         {
             const auto& prof3{ profiles.GetAt(3) };
-            VERIFY_IS_FALSE(prof3.DefaultAppearance().HasColorSchemeName());
-            VERIFY_IS_TRUE(prof3.UnfocusedAppearance().HasColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof3.DefaultAppearance().ColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof3.UnfocusedAppearance().ColorSchemeName());
+            VERIFY_IS_FALSE(prof3.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_IS_TRUE(prof3.UnfocusedAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof3.DefaultAppearance().LightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (modified)", prof3.UnfocusedAppearance().LightColorSchemeName());
         }
     }
 
@@ -708,7 +708,7 @@ namespace SettingsModelLocalTests
                     "yellow": "#C19C00"
                 },
                 {
-                    "name": "Vintage",
+                    "name": "Antique",
                     "foreground": "#C0C0C0",
                     "background": "#000000",
                     "cursorColor": "#FFFFFF",
@@ -737,7 +737,7 @@ namespace SettingsModelLocalTests
                 {
                     "guid": "{347a67b5-b3a3-4484-9f96-a92d68f6e787}",
                     "name": "fragment profile 0",
-                    "colorScheme": "Tango Light"
+                    "colorScheme": "Mango Light"
                 }
             ],
             "schemes": [
@@ -764,7 +764,7 @@ namespace SettingsModelLocalTests
                     "brightWhite": "#999999"
                 },
                 {
-                    "name": "Tango Dark",
+                    "name": "Mango Dark",
                     "foreground": "#D3D7CF",
                     "background": "#000000",
                     "cursorColor": "#FFFFFF",
@@ -786,7 +786,7 @@ namespace SettingsModelLocalTests
                     "brightWhite": "#EEEEEC"
                 },
                 {
-                    "name": "Tango Light",
+                    "name": "Mango Light",
                     "foreground": "#555753",
                     "background": "#FFFFFF",
                     "cursorColor": "#000000",
@@ -819,11 +819,11 @@ namespace SettingsModelLocalTests
                     },
                     {
                         "name" : "profile1",
-                        "colorScheme": "Vintage"
+                        "colorScheme": "Antique"
                     },
                     {
                         "name" : "profile2",
-                        "colorScheme": "Tango Light"
+                        "colorScheme": "Mango Light"
                     }
                 ],
             },
@@ -844,7 +844,7 @@ namespace SettingsModelLocalTests
                     "cyan": "#121314",
                     "foreground": "#121314",
                     "green": "#121314",
-                    "name": "Tango Light",
+                    "name": "Mango Light",
                     "purple": "#121314",
                     "red": "#121314",
                     "selectionBackground": "#121314",
@@ -854,14 +854,14 @@ namespace SettingsModelLocalTests
             ]
         })" };
 
-        // In this case, we have a fragment that overrides Campbell and adds Tango Light and Dark.
-        // The user is overriding Tango Light.
+        // In this case, we have a fragment that overrides Campbell and adds Mango Light and Dark.
+        // The user is overriding Mango Light.
         // We'll want to make sure that:
         // 1. Campbell has the final modified settings, but does not have a user-owned modified fork.
-        // 2. Vintage is unmodified.
-        // 3. Tango Light needs a modified fork, which contains the user's modified copy
-        // 4. Tango Dark does not need a modified fork.
-        // The fragment also comes with a profile that uses Tango Light; it should be redirected to Tango Light (modified)
+        // 2. Antique is unmodified.
+        // 3. Mango Light needs a modified fork, which contains the user's modified copy
+        // 4. Mango Dark does not need a modified fork.
+        // The fragment also comes with a profile that uses Mango Light; it should be redirected to Mango Light (modified)
 
         SettingsLoader loader{ userSettings, inboxSettings };
         loader.MergeInboxIntoUserSettings();
@@ -877,47 +877,47 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(rgb(0x44, 0x44, 0x44), scheme0->Background());
         VERIFY_ARE_EQUAL(Model::OriginTag::Fragment, scheme0->Origin());
 
-        // Stock Vintage is untouched
-        const auto scheme1 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Vintage"));
+        // Stock Antique is untouched
+        const auto scheme1 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Antique"));
         VERIFY_ARE_EQUAL(rgb(0xc0, 0xc0, 0xc0), scheme1->Foreground());
         VERIFY_ARE_EQUAL(rgb(0x00, 0x00, 0x00), scheme1->Background());
         VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme1->Origin());
 
-        // Stock Tango Light is untouched as well
-        const auto scheme2 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Tango Light"));
+        // Stock Mango Light is untouched as well
+        const auto scheme2 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Mango Light"));
         VERIFY_ARE_EQUAL(rgb(0x55, 0x57, 0x53), scheme2->Foreground());
         VERIFY_ARE_EQUAL(rgb(0xff, 0xff, 0xff), scheme2->Background());
         VERIFY_ARE_EQUAL(Model::OriginTag::Fragment, scheme2->Origin());
 
-        const auto scheme3 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Tango Light (Modified)"));
+        const auto scheme3 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Mango Light (modified)"));
         VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme3->Foreground());
         VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme3->Background());
         VERIFY_ARE_EQUAL(Model::OriginTag::User, scheme3->Origin());
 
         // VERIFY PROFILES
         const auto defaults{ settings->ProfileDefaults() };
-        VERIFY_IS_FALSE(defaults.DefaultAppearance().HasColorSchemeName()); // User did not specify Campbell, Fragment edited it
-        VERIFY_ARE_EQUAL(L"Campbell", defaults.DefaultAppearance().ColorSchemeName());
+        VERIFY_IS_FALSE(defaults.DefaultAppearance().HasLightColorSchemeName()); // User did not specify Campbell, Fragment edited it
+        VERIFY_ARE_EQUAL(L"Campbell", defaults.DefaultAppearance().LightColorSchemeName());
 
         const auto& profiles{ settings->AllProfiles() };
         {
             const auto& prof0{ profiles.GetAt(0) };
-            VERIFY_ARE_EQUAL(L"Campbell", prof0.DefaultAppearance().ColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell", prof0.DefaultAppearance().LightColorSchemeName());
         }
         {
             const auto& prof1{ profiles.GetAt(1) };
-            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Vintage", prof1.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Antique", prof1.DefaultAppearance().LightColorSchemeName());
         }
         {
             const auto& prof2{ profiles.GetAt(2) };
-            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Tango Light (Modified)", prof2.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Mango Light (modified)", prof2.DefaultAppearance().LightColorSchemeName());
         }
         {
             const auto& prof3{ profiles.GetAt(3) };
-            VERIFY_IS_TRUE(prof3.DefaultAppearance().HasColorSchemeName());
-            VERIFY_ARE_EQUAL(L"Tango Light (Modified)", prof3.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof3.DefaultAppearance().HasLightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Mango Light (modified)", prof3.DefaultAppearance().LightColorSchemeName());
         }
     }
 }
