@@ -1007,9 +1007,8 @@ namespace SettingsModelLocalTests
             ]
         })-" };
 
-        // In this test, The user has a copy of Campbell which they have modified and a copy of Antique which they
-        // have not. Campbell should be renamed to Campbell (modified) and copied while Antique should simply
-        // be demoted to "Inbox" status.
+        // In this test, The user has a copy of Campbell which they have modified, and another scheme annoyingly named
+        // Campbell (modified). Ha. Let's make sure we don't stomp their (modified) with ours.
 
         const auto settings = winrt::make_self<CascadiaSettings>(userSettings, inboxSettings);
 
