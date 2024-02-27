@@ -136,16 +136,16 @@
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
-    <value>This color scheme is read-only</value>
+    <value>This color scheme is part of the built-in settings or an installed extension</value>
     <comment></comment>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
-    <value>To make changes to this color scheme, you must create a copy.</value>
+    <value>To make changes to this color scheme, you must make a copy of it.</value>
     <comment></comment>
   </data>
   <data name="ColorScheme_MakeACopyButton.Content" xml:space="preserve">
-    <value>Make a Copy</value>
-    <comment></comment>
+    <value>Make a copy</value>
+    <comment>This is a call to action; the user can click the button to make a copy of the current color scheme.</comment>
   </data>
   <data name="ColorScheme_SetAsDefault.Header" xml:space="preserve">
     <value>Set color scheme as default</value>
