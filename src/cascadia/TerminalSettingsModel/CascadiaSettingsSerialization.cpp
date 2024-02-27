@@ -861,6 +861,9 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
 
 void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& newScheme)
 {
+    // On entry, all the user color schemes have been loaded. Therefore, any insertions of inbox or fragment schemes
+    // will fail; we can leverage this to detect when they are equivalent and delete the user's duplicate copies.
+    // If the user has changed the otherwise "duplicate" scheme, though, we will move it aside.
     if (const auto [it, inserted] = userSettings.colorSchemes.emplace(newScheme->Name(), newScheme); !inserted)
     {
         // This scheme was not inserted because one already existed.
