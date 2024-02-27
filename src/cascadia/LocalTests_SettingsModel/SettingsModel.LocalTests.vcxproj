@@ -14,9 +14,9 @@
   <PropertyGroup>
     <ProjectGuid>{CA5CAD1A-9B68-456A-B13E-C8218070DC42}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>SettingsModelLocalTests</RootNamespace>
-    <ProjectName>LocalTests_SettingsModel</ProjectName>
-    <TargetName>SettingsModel.LocalTests</TargetName>
+    <RootNamespace>SettingsModelUnitTests</RootNamespace>
+    <ProjectName>UnitTests_SettingsModel</ProjectName>
+    <TargetName>SettingsModel.Unit.Tests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
     <!-- TerminalCppWinrt is not set intentionally -->
@@ -64,7 +64,6 @@
     _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->
@@ -98,4 +97,16 @@
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <ItemGroup>
+    <ProjectPriFiles Include="$(TargetDir)\Microsoft.Terminal.Settings.Model.pri" />
+    <OutputPriFiles Include="$(TargetDir)\resources.pri" />
+  </ItemGroup>
+
+  <Target Name="AfterBuild" Inputs="@(ProjectPriFiles)" Outputs="@(OutputPriFiles)">
+    <Copy SourceFiles="@(ProjectPriFiles)"
+          DestinationFiles="@(OutputPriFiles)"
+          UseHardLinksIfPossible="true"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>

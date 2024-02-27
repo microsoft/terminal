@@ -26,15 +26,7 @@ namespace SettingsModelLocalTests
 
     class ThemeTests : public JsonTestClass
     {
-        // Use a custom AppxManifest to ensure that we can activate winrt types
-        // from our test. This property will tell taef to manually use this as
-        // the AppxManifest for this test class.
-        // This does not yet work for anything XAML-y. See TabTests.cpp for more
-        // details on that.
-        BEGIN_TEST_CLASS(ThemeTests)
-            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
-        END_TEST_CLASS()
+        TEST_CLASS(ThemeTests);
 
         TEST_METHOD(ParseSimpleTheme);
         TEST_METHOD(ParseEmptyTheme);
