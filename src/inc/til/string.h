@@ -378,7 +378,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // This function is appropriate for case-insensitive equivalence testing of file paths and other "system" strings.
     // Similar to memcmp, this returns <0, 0 or >0.
-    [[nodiscard]] inline int compare_ordinal_insensitive(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    inline int compare_ordinal_insensitive(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
     {
         const auto lhsLen = ::base::saturated_cast<int>(lhs.size());
         const auto rhsLen = ::base::saturated_cast<int>(rhs.size());
@@ -394,7 +394,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // This function is appropriate for sorting strings primarily used for human consumption, like a list of file names.
     // Similar to memcmp, this returns <0, 0 or >0.
-    [[nodiscard]] inline int compare_linguistic_insensitive(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    inline int compare_linguistic_insensitive(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
     {
         const auto lhsLen = ::base::saturated_cast<int>(lhs.size());
         const auto rhsLen = ::base::saturated_cast<int>(rhs.size());
@@ -406,11 +406,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // > * ERROR_INVALID_FLAGS. The values supplied for flags were invalid.
         // > * ERROR_INVALID_PARAMETER. Any of the parameter values was invalid.
         // -> We can just subtract 2.
+#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
         return CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE, lhs.data(), lhsLen, rhs.data(), rhsLen, nullptr, nullptr, 0) - 2;
     }
 
     // This function is appropriate for strings primarily used for human consumption, like a list of file names.
-    [[nodiscard]] inline bool contains_linguistic_insensitive(const std::wstring_view& str, const std::wstring_view& needle) noexcept
+    inline bool contains_linguistic_insensitive(const std::wstring_view& str, const std::wstring_view& needle) noexcept
     {
         const auto strLen = ::base::saturated_cast<int>(str.size());
         const auto needleLen = ::base::saturated_cast<int>(needle.size());
@@ -422,6 +423,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // > * ERROR_INVALID_PARAMETER. Any of the parameter values was invalid.
         // > * ERROR_SUCCESS. The action completed successfully but yielded no results.
         // -> We can just check for -1.
+#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
         return FindNLSStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE, str.data(), strLen, needle.data(), needleLen, nullptr, nullptr, nullptr, 0) != -1;
     }
 
