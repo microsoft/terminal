@@ -122,8 +122,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (!_fontFeaturesTagsAndNames)
         {
-            std::unordered_map<winrt::hstring, winrt::hstring> fontFeaturesTagsAndNames;
-
             wil::com_ptr<IDWriteFont> font;
             THROW_IF_FAILED(_family->GetFont(0, font.put()));
             wil::com_ptr<IDWriteFontFace> fontFace;
@@ -138,10 +136,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             DWRITE_SCRIPT_ANALYSIS scriptAnalysis{};
             UINT32 tagCount;
             // we have to call GetTypographicFeatures twice, first to get the actual count then to get the features
-            std::ignore = textAnalyzer2->GetTypographicFeatures(fontFace.get(), DWRITE_SCRIPT_ANALYSIS{}, L"en-us", 0, &tagCount, nullptr);
+            std::ignore = textAnalyzer2->GetTypographicFeatures(fontFace.get(), scriptAnalysis, L"en-us", 0, &tagCount, nullptr);
             std::vector<DWRITE_FONT_FEATURE_TAG> tags{ tagCount };
             textAnalyzer2->GetTypographicFeatures(fontFace.get(), scriptAnalysis, L"en-us", tagCount, &tagCount, tags.data());
 
+            std::unordered_map<winrt::hstring, winrt::hstring> fontFeaturesTagsAndNames;
             for (auto tag : tags)
             {
                 const auto tagString = _tagToString(tag);
