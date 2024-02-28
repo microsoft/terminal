@@ -5,7 +5,7 @@
 // - ControlCore.h
 //
 // Abstract:
-// - This encapsulates a `Terminal` instance, a `DxEngine` and `Renderer`, and
+// - This encapsulates a `Terminal` instance, a `AtlasEngine` and `Renderer`, and
 //   an `ITerminalConnection`. This is intended to be everything that someone
 //   might need to stand up a terminal instance in a control, but without any
 //   regard for how the UX works.
@@ -316,6 +316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;
+        bool _builtinGlyphs = true;
         CSSLengthPercentage _cellWidth;
         CSSLengthPercentage _cellHeight;
 

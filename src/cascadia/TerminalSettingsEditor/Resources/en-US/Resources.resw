@@ -135,6 +135,18 @@
     <value>Duplicate</value>
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
+  <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
+    <value>This color scheme is part of the built-in settings or an installed extension</value>
+    <comment></comment>
+  </data>
+  <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
+    <value>To make changes to this color scheme, you must make a copy of it.</value>
+    <comment></comment>
+  </data>
+  <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
+    <value>Make a copy</value>
+    <comment>This is a call to action; the user can click the button to make a copy of the current color scheme.</comment>
+  </data>
   <data name="ColorScheme_SetAsDefault.Header" xml:space="preserve">
     <value>Set color scheme as default</value>
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
@@ -886,6 +898,14 @@
     <value>1.2</value>
     <comment>"1.2" is a decimal number.</comment>
   </data>
+  <data name="Profile_EnableBuiltinGlyphs.Header" xml:space="preserve">
+    <value>Builtin Glyphs</value>
+    <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
+  </data>
+  <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
+    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font. This feature only works when GPU Acceleration is available.</value>
+    <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Font weight</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -1034,6 +1054,14 @@
     <value>If enabled, this profile will spawn in the directory from which Terminal was launched.</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
   </data>
+  <data name="Profile_HideIconCheckbox.Content" xml:space="preserve">
+    <value>Hide icon</value>
+    <comment>A supplementary setting to the "icon" setting.</comment>
+  </data>
+  <data name="Profile_HideIconCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>If enabled, this profile will have no icon.</value>
+    <comment>A description for what the supplementary "Hide icon" setting does. Presented near "Profile_HideIconCheckbox".</comment>
+  </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>Suppress title changes</value>
     <comment>Header for a control to toggle changes in the app title.</comment>
@@ -1137,10 +1165,6 @@
   <data name="Profile_BellStyle.HelpText" xml:space="preserve">
     <value>Controls what happens when the application emits a BEL character.</value>
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
-  </data>
-  <data name="Profile_UseAtlasEngine.Header" xml:space="preserve">
-    <value>Use the new text renderer ("AtlasEngine")</value>
-    <comment>{Locked="AtlasEngine"}</comment>
   </data>
   <data name="Profile_ReloadEnvVars.Header" xml:space="preserve">
     <value>Launch this application with a new environment block</value>

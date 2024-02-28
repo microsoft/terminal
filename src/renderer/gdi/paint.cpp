@@ -632,7 +632,7 @@ try
     DWORD underlineWidth = _lineMetrics.underlineWidth;
     if (lines.any(GridLines::DoubleUnderline, GridLines::CurlyUnderline))
     {
-        underlineWidth = _lineMetrics.thinLineWidth;
+        underlineWidth = _lineMetrics.doubleUnderlineWidth;
     }
 
     const LOGBRUSH brushProp{ .lbStyle = BS_SOLID, .lbColor = underlineColor };

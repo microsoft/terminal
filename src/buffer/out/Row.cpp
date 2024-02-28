@@ -97,7 +97,7 @@ til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t offset) noexcept
     offset = clamp(offset, 0, _lastCharOffset);
 
     auto col = _currentColumn;
-    const auto currentOffset = _charOffsets[col];
+    const auto currentOffset = _charOffsets[col] & CharOffsetsMask;
 
     // Goal: Move the _currentColumn cursor to a cell which contains the given target offset.
     // Depending on where the target offset is we have to either search forward or backward.
