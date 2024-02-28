@@ -35,7 +35,7 @@ set _EarlyTestFail=%ERRORLEVEL%
     %*
 
 if %_EarlyTestFail% NEQ 0 (
-    exit %_EarlyTestFail%
+    exit /b %_EarlyTestFail%
 )
 
-exit %ERRORLEVEL%
+exit /b %ERRORLEVEL%
