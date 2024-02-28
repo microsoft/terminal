@@ -62,8 +62,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (!_fontAxesTagsAndNames)
         {
-            _fontAxesTagsAndNames = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
-
             wil::com_ptr<IDWriteFont> font;
             THROW_IF_FAILED(_family->GetFont(0, font.put()));
             wil::com_ptr<IDWriteFontFace> fontFace;
@@ -74,21 +72,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 wil::com_ptr<IDWriteFontResource> fontResource;
                 THROW_IF_FAILED(fontFace5->GetFontResource(fontResource.put()));
 
-                std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
                 const auto axesCount = fontFace5->GetFontAxisValueCount();
                 if (axesCount > 0)
                 {
+                    std::vector<DWRITE_FONT_AXIS_VALUE> axesVector(axesCount);
+                    fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
+
                     uint32_t localeIndex;
                     BOOL localeExists;
                     wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
                     const auto localeToTry = GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) ? localeName : L"en-US";
 
-                    axesVector.resize(axesCount);
-                    fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
+                    std::unordered_map<winrt::hstring, winrt::hstring> fontAxesTagsAndNames;
                     for (uint32_t i = 0; i < axesCount; ++i)
                     {
-                        const auto tagString = _tagToString(axesVector[i].axisTag);
-
                         wil::com_ptr<IDWriteLocalizedStrings> names;
                         THROW_IF_FAILED(fontResource->GetAxisNames(i, names.put()));
 
@@ -98,20 +95,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             localeIndex = 0;
                         }
 
-                        uint32_t length;
+                        UINT32 length = 0;
                         if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
                         {
-                            // it is reasonable to assume that the name length is not going to exceed 512 chars
-                            wchar_t name[512];
-                            if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
+                            winrt::impl::hstring_builder builder{ length };
+                            if (SUCCEEDED(names->GetString(localeIndex, builder.data(), length + 1)))
                             {
-                                _fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
+                                fontAxesTagsAndNames.insert(std::pair<winrt::hstring, winrt::hstring>(_tagToString(axesVector[i].axisTag), builder.to_hstring()));
                                 continue;
                             }
                         }
                         // if there was no name found, it means the font does not actually support this axis
                         // don't insert anything into the vector in this case
                     }
+                    _fontAxesTagsAndNames = winrt::single_threaded_map(std::move(fontAxesTagsAndNames));
                 }
             }
         }
@@ -550,6 +547,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 FontAxesVector().RemoveAt(i);
                 _appearance.SourceProfile().FontInfo().FontAxes().Remove(key);
+                if (_FontAxesVector.Size() == 0)
+                {
+                    _appearance.SourceProfile().FontInfo().ClearFontAxes();
+                }
                 break;
             }
         }
