@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (!_fontAxesTagsAndNames)
         {
-            _fontAxesTagsAndNames = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+            std::unordered_map<winrt::hstring, winrt::hstring> fontAxesTagsAndNames;
 
             wil::com_ptr<IDWriteFont> font;
             THROW_IF_FAILED(_family->GetFont(0, font.put()));
@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             wchar_t name[512];
                             if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
                             {
-                                _fontAxesTagsAndNames.Insert(tagString, winrt::hstring{ name });
+                                fontAxesTagsAndNames.insert(std::pair<winrt::hstring, winrt::hstring>(tagString, winrt::hstring{ name }));
                                 continue;
                             }
                         }
@@ -99,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
             }
+            _fontAxesTagsAndNames = winrt::single_threaded_map(std::move(fontAxesTagsAndNames));
         }
         return _fontAxesTagsAndNames;
     }
@@ -398,6 +399,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 FontAxesVector().RemoveAt(i);
                 _appearance.SourceProfile().FontInfo().FontAxes().Remove(key);
+                if (_FontAxesVector.Size() == 0)
+                {
+                    _appearance.SourceProfile().FontInfo().ClearFontAxes();
+                }
                 break;
             }
         }
