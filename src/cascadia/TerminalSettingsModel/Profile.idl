@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IAppearanceConfig.idl";
+import "ISettingsModelObject.idl";
 import "FontConfig.idl";
 #include "IInheritable.idl.h"
 
@@ -13,17 +14,6 @@ import "FontConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    // This tag is used to identify the context in which the Profile was created
-    enum OriginTag
-    {
-        None = 0,
-        User,
-        InBox,
-        Generated,
-        Fragment,
-        ProfilesDefaults
-    };
-
     enum CloseOnExitMode
     {
         Never = 0,
@@ -42,7 +32,7 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff
     };
 
-    [default_interface] runtimeclass Profile : Windows.Foundation.IStringable {
+    [default_interface] runtimeclass Profile : Windows.Foundation.IStringable, ISettingsModelObject {
         Profile();
         Profile(Guid guid);
 
@@ -51,7 +41,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         // True if the user explicitly removed this Profile from settings.json.
         Boolean Deleted { get; };
-        OriginTag Origin { get; };
 
         // Helper for magically using a commandline for an icon for a profile
         // without an explicit icon.

@@ -113,6 +113,8 @@ void ParsedSettings::clear()
     baseLayerProfile = {};
     profiles.clear();
     profilesByGuid.clear();
+    colorSchemes.clear();
+    fixupsAppliedDuringLoad = false;
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -123,6 +125,7 @@ SettingsLoader SettingsLoader::Default(const std::string_view& userJSON, const s
     SettingsLoader loader{ userJSON, inboxJSON };
     loader.MergeInboxIntoUserSettings();
     loader.FinalizeLayering();
+    loader.FixupUserSettings();
     return loader;
 }
 
@@ -210,6 +213,7 @@ void SettingsLoader::ApplyRuntimeInitialSettings()
 // Adds profiles from .inboxSettings as parents of matching profiles in .userSettings.
 // That way the user profiles will get appropriate defaults from the generators (like icons and such).
 // If a matching profile doesn't exist yet in .userSettings, one will be created.
+// Additionally, produces a final view of the color schemes from the inbox + user settings
 void SettingsLoader::MergeInboxIntoUserSettings()
 {
     for (const auto& profile : inboxSettings.profiles)
@@ -333,6 +337,11 @@ void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source,
 // by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
 void SettingsLoader::FinalizeLayering()
 {
+    for (const auto& colorScheme : inboxSettings.colorSchemes)
+    {
+        _addOrMergeUserColorScheme(colorScheme.second);
+    }
+
     // Layer default globals -> user globals
     userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
 
@@ -403,6 +412,42 @@ bool SettingsLoader::DisableDeletedProfiles()
     return newGeneratedProfiles;
 }
 
+bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
+{
+    bool modified{ false };
+
+    const IAppearanceConfig appearances[] = {
+        profile->DefaultAppearance(),
+        profile->UnfocusedAppearance()
+    };
+
+    for (auto&& appearance : appearances)
+    {
+        if (appearance)
+        {
+            if (auto schemeName{ appearance.LightColorSchemeName() }; !schemeName.empty())
+            {
+                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                {
+                    appearance.LightColorSchemeName(found->second);
+                    modified = true;
+                }
+            }
+
+            if (auto schemeName{ appearance.DarkColorSchemeName() }; !schemeName.empty())
+            {
+                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                {
+                    appearance.DarkColorSchemeName(found->second);
+                    modified = true;
+                }
+            }
+        }
+    }
+
+    return modified;
+}
+
 // Runs migrations and fixups on user settings.
 // Returns true if something got changed and
 // the settings need to be saved to disk.
@@ -420,10 +465,13 @@ bool SettingsLoader::FixupUserSettings()
         CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
     };
 
-    auto fixedUp = false;
+    auto fixedUp = userSettings.fixupsAppliedDuringLoad;
 
+    fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
     {
+        fixedUp = RemapColorSchemeForProfile(profile) || fixedUp;
+
         if (!profile->HasCommandline())
         {
             continue;
@@ -574,7 +622,8 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         {
             if (const auto scheme = ColorScheme::FromJson(schemeJson))
             {
-                settings.globals->AddColorScheme(*scheme);
+                scheme->Origin(origin);
+                settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
             }
         }
     }
@@ -642,7 +691,11 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             {
                 if (const auto scheme = ColorScheme::FromJson(schemeJson))
                 {
-                    settings.globals->AddColorScheme(*scheme);
+                    scheme->Origin(OriginTag::Fragment);
+                    // Don't add the color scheme to the Fragment's GlobalSettings; that will
+                    // cause layering issues later. Add them to a staging area for later processing.
+                    // (search for STAGED COLORS to find the next step)
+                    settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
                 }
             }
             CATCH_LOG()
@@ -691,6 +744,14 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         {
             _addUserProfileParent(fragmentProfile);
         }
+    }
+
+    // STAGED COLORS are processed here: we merge them into the partially-loaded
+    // settings directly so that we can resolve conflicts between user-generated
+    // color schemes and fragment-originated ones.
+    for (const auto& fragmentColorScheme : settings.colorSchemes)
+    {
+        _addOrMergeUserColorScheme(fragmentColorScheme.second);
     }
 
     // Add the parsed fragment globals as a parent of the user's settings.
@@ -793,6 +854,37 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
 
         it->second = child;
         userSettings.profiles.emplace_back(std::move(child));
+    }
+}
+
+void SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& newScheme)
+{
+    // On entry, all the user color schemes have been loaded. Therefore, any insertions of inbox or fragment schemes
+    // will fail; we can leverage this to detect when they are equivalent and delete the user's duplicate copies.
+    // If the user has changed the otherwise "duplicate" scheme, though, we will move it aside.
+    if (const auto [it, inserted] = userSettings.colorSchemes.emplace(newScheme->Name(), newScheme); !inserted)
+    {
+        // This scheme was not inserted because one already existed.
+        auto existingScheme{ it->second };
+        if (existingScheme->Origin() == OriginTag::User) // we only want to impose ordering on User schemes
+        {
+            it->second = newScheme; // Stomp the user's existing scheme with the one we just got (to make sure the right Origin is set)
+            userSettings.fixupsAppliedDuringLoad = true; // Make sure we save the settings.
+            if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
+            {
+                hstring newName{ fmt::format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name()) };
+                int differentiator = 2;
+                while (userSettings.colorSchemes.contains(newName))
+                {
+                    newName = hstring{ fmt::format(FMT_COMPILE(L"{} (modified {})"), existingScheme->Name(), differentiator++) };
+                }
+                // Rename the user's scheme.
+                existingScheme->Name(newName);
+                userSettings.colorSchemeRemappings.emplace(newScheme->Name(), newName);
+                // And re-add it to the end.
+                userSettings.colorSchemes.emplace(newName, std::move(existingScheme));
+            }
+        }
     }
 }
 
@@ -1064,6 +1156,16 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     allProfiles.reserve(loader.userSettings.profiles.size());
     activeProfiles.reserve(loader.userSettings.profiles.size());
 
+    for (const auto& colorScheme : loader.userSettings.colorSchemes)
+    {
+        loader.userSettings.globals->AddColorScheme(*colorScheme.second);
+    }
+
+    // SettingsLoader and ParsedSettings are supposed to always
+    // create these two members. We don't want null-pointer exceptions.
+    assert(loader.userSettings.globals != nullptr);
+    assert(loader.userSettings.baseLayerProfile != nullptr);
+
     for (const auto& profile : loader.userSettings.profiles)
     {
         // If a generator stops producing a certain profile (e.g. WSL or PowerShell were removed) or
@@ -1100,11 +1202,6 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     {
         warnings.emplace_back(Model::SettingsLoadWarnings::DuplicateProfile);
     }
-
-    // SettingsLoader and ParsedSettings are supposed to always
-    // create these two members. We don't want null-pointer exceptions.
-    assert(loader.userSettings.globals != nullptr);
-    assert(loader.userSettings.baseLayerProfile != nullptr);
 
     _globals = loader.userSettings.globals;
     _baseLayerProfile = loader.userSettings.baseLayerProfile;
@@ -1271,14 +1368,14 @@ Json::Value CascadiaSettings::ToJson() const
     profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;
 
-    // TODO GH#8100:
-    // "schemes" will be an accumulation of _all_ the color schemes
-    // including all of the ones from defaults.json
     Json::Value schemes{ Json::ValueType::arrayValue };
     for (const auto& entry : _globals->ColorSchemes())
     {
         const auto scheme{ winrt::get_self<ColorScheme>(entry.Value()) };
-        schemes.append(scheme->ToJson());
+        if (scheme->Origin() == OriginTag::User)
+        {
+            schemes.append(scheme->ToJson());
+        }
     }
     json[JsonKey(SchemesKey)] = schemes;
 

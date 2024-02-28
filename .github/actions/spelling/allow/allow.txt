@@ -93,6 +93,8 @@ pwshw
 qof
 qps
 quarternary
+Remappings
+Retargets
 rclt
 reimplementation
 reserialization
