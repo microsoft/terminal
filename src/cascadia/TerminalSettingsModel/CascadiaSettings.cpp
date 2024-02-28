@@ -13,9 +13,8 @@
 #include <WtExeUtils.h>
 
 #include <shellapi.h>
-#include <shlwapi.h>
 #include <til/latch.h>
-#include <til/string.h>
+#include <til/env.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -555,7 +554,7 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
 {
     for (const auto& profile : _allProfiles)
     {
-        std::set<std::wstring, til::wstring_case_insensitive_compare> envVarNames{};
+        std::set<std::wstring, til::env_key_sorter> envVarNames{};
         if (profile.EnvironmentVariables() == nullptr)
         {
             continue;
