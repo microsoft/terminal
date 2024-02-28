@@ -140,7 +140,7 @@ namespace SettingsModelUnitTests
                 g.Data4[7]);
         }
 
-        const auto tmpdir = std::filesystem::temp_directory_path();
+        const auto tmpdir = std::filesystem::canonical(std::filesystem::temp_directory_path());
         const auto dir1 = tmpdir / guid;
         const auto dir2 = tmpdir / (guid + L" two");
         const auto file1 = dir1 / L"file 1.exe";
