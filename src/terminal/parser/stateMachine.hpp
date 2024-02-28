@@ -132,7 +132,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
         void _EventCsiSubParam(const wchar_t wch);
-        void _EventOscParam(const wchar_t wch) noexcept;
+        void _EventOscParam(const wchar_t wch);
         void _EventOscString(const wchar_t wch);
         void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);
