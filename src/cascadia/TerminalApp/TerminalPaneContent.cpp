@@ -78,7 +78,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPaneContent::Icon() const
     {
-        return _profile.Icon();
+        return _profile.EvaluatedIcon();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept

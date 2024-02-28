@@ -239,6 +239,7 @@ namespace winrt::TerminalApp::implementation
             const auto& icon{ content.Icon() };
             const auto theme = _settings.GlobalSettings().CurrentTheme();
             const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
+
             tab.UpdateIcon(icon, iconStyle);
         }
     }

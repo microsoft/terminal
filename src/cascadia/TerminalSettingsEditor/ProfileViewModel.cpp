@@ -5,6 +5,7 @@
 #include "ProfileViewModel.h"
 #include "ProfileViewModel.g.cpp"
 #include "EnumEntry.h"
+#include "Appearances.h"
 
 #include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
@@ -25,6 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
+
+    static constexpr std::wstring_view HideIconValue{ L"none" };
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
@@ -68,6 +71,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"ScrollState")
             {
                 _NotifyChanges(L"CurrentScrollState");
+            }
+            else if (viewModelProperty == L"Icon")
+            {
+                _NotifyChanges(L"HideIcon");
             }
         });
 
@@ -148,11 +155,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             CATCH_LOG();
         }
 
+        const auto comparator = [&](const Editor::Font& lhs, const Editor::Font& rhs) {
+            const auto a = lhs.LocalizedName();
+            const auto b = rhs.LocalizedName();
+            return til::compare_linguistic_insensitive(a, b) < 0;
+        };
+
         // sort and save the lists
-        std::sort(begin(fontList), end(fontList), FontComparator());
+        std::sort(begin(fontList), end(fontList), comparator);
         _FontList = single_threaded_observable_vector<Editor::Font>(std::move(fontList));
 
-        std::sort(begin(monospaceFontList), end(monospaceFontList), FontComparator());
+        std::sort(begin(monospaceFontList), end(monospaceFontList), comparator);
         _MonospaceFontList = single_threaded_observable_vector<Editor::Font>(std::move(monospaceFontList));
     }
     CATCH_LOG();
@@ -345,6 +358,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 StartingDirectory(_lastStartingDirectoryPath);
             }
+        }
+    }
+
+    bool ProfileViewModel::HideIcon()
+    {
+        return Icon() == HideIconValue;
+    }
+    void ProfileViewModel::HideIcon(const bool hide)
+    {
+        if (hide)
+        {
+            // Stash the current value of Icon. If the user
+            // checks and un-checks the "Hide Icon" checkbox, we want
+            // the path that we display in the text box to remain unchanged.
+            _lastIcon = Icon();
+            Icon(HideIconValue);
+        }
+        else
+        {
+            Icon(_lastIcon);
         }
     }
 

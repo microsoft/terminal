@@ -43,7 +43,7 @@ jobs:
 
   - template: steps-ensure-nuget-version.yml
 
-  - task: NuGetAuthenticate@0
+  - task: NuGetAuthenticate@1
     inputs:
       nuGetServiceConnections: 'Terminal Public Artifact Feed'
 

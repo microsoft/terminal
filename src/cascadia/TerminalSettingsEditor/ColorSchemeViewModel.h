@@ -32,14 +32,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
         bool IsDefaultScheme();
         void RefreshIsDefault();
+        bool IsEditable() const;
 
         void DeleteConfirmation_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void SetAsDefault_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void Duplicate_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ColorSchemeViewModel>::PropertyChanged;
 
-        WINRT_PROPERTY(bool, IsInBoxScheme);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);
 

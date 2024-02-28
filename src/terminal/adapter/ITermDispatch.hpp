@@ -114,6 +114,7 @@ public:
     virtual bool LockingShiftRight(const VTInt gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual bool SingleShift(const VTInt gsetNumber) = 0; // SS2, SS3
     virtual bool AcceptC1Controls(const bool enabled) = 0; // DECAC1
+    virtual bool AnnounceCodeStructure(const VTInt ansiLevel) = 0; // ACS
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS
@@ -147,7 +148,10 @@ public:
                                        const DispatchTypes::DrcsFontSet fontSet,
                                        const DispatchTypes::DrcsFontUsage fontUsage,
                                        const VTParameter cellHeight,
-                                       const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
+                                       const DispatchTypes::CharsetSize charsetSize) = 0; // DECDLD
+
+    virtual bool RequestUserPreferenceCharset() = 0; // DECRQUPSS
+    virtual StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) = 0; // DECAUPSS
 
     virtual StringHandler DefineMacro(const VTInt macroId,
                                       const DispatchTypes::MacroDeleteControl deleteControl,

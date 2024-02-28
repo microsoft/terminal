@@ -129,6 +129,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, EnableBuiltinGlyphs, true);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, CellWidth);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, CellHeight);
 
@@ -149,7 +150,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, IEnvironmentVariableMap, EnvironmentVariables);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, true);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 

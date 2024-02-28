@@ -360,6 +360,7 @@ namespace Microsoft::Console::Render::Atlas
 
         u16 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
+        bool builtinGlyphs = false;
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
@@ -420,8 +421,8 @@ namespace Microsoft::Console::Render::Atlas
     struct FontMapping
     {
         wil::com_ptr<IDWriteFontFace2> fontFace;
-        u32 glyphsFrom = 0;
-        u32 glyphsTo = 0;
+        size_t glyphsFrom = 0;
+        size_t glyphsTo = 0;
     };
 
     struct GridLineRange
@@ -450,11 +451,18 @@ namespace Microsoft::Console::Render::Atlas
             dirtyBottom = dirtyTop + cellHeight;
         }
 
+        // Each mappings from/to range indicates the range of indices/advances/offsets/colors this fontFace is to be used for.
         std::vector<FontMapping> mappings;
+        // Stores glyph indices of the corresponding mappings.fontFace, unless fontFace is nullptr,
+        // in which case this stores UTF16 because we're dealing with a custom glyph (box glyph, etc.).
         std::vector<u16> glyphIndices;
-        std::vector<f32> glyphAdvances; // same size as glyphIndices
-        std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
-        std::vector<u32> colors; // same size as glyphIndices
+        // Same size as glyphIndices.
+        std::vector<f32> glyphAdvances;
+        // Same size as glyphIndices.
+        std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets;
+        // Same size as glyphIndices.
+        std::vector<u32> colors;
+
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
         u16 selectionFrom = 0;
@@ -499,6 +507,7 @@ namespace Microsoft::Console::Render::Atlas
 
         //// Parameters which change seldom.
         GenerationalSettings s;
+        std::wstring userLocaleName;
 
         //// Parameters which change every frame.
         // This is the backing buffer for `rows`.
