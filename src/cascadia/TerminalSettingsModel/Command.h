@@ -39,7 +39,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
-                                                std::vector<SettingsLoadWarnings>& warnings);
+                                                std::vector<SettingsLoadWarnings>& warnings,
+                                                const bool parseKeys = true);
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                    Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
