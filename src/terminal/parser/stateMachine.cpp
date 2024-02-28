@@ -685,17 +685,17 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 }
 
 // Routine Description:
-// - Triggers the CsiDispatch action to indicate that the listener should handle a control sequence.
+// - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
-void StateMachine::_ActionOscDispatch(const wchar_t wch)
+void StateMachine::_ActionOscDispatch()
 {
     _trace.TraceOnAction(L"OscDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
-        return _engine->ActionOscDispatch(wch, _oscParameter, _oscString);
+        return _engine->ActionOscDispatch(_oscParameter, _oscString);
     }));
 }
 
@@ -1449,7 +1449,7 @@ void StateMachine::_EventOscParam(const wchar_t wch)
     _trace.TraceOnEvent(L"OscParam");
     if (_isOscTerminator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else if (_isEscape(wch))
@@ -1487,7 +1487,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
     _trace.TraceOnEvent(L"OscString");
     if (_isOscTerminator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else if (_isEscape(wch))
@@ -1519,7 +1519,7 @@ void StateMachine::_EventOscTermination(const wchar_t wch)
     _trace.TraceOnEvent(L"OscTermination");
     if (_isStringTerminatorIndicator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else

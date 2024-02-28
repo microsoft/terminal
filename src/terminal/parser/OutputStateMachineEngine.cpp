@@ -766,14 +766,11 @@ bool OutputStateMachineEngine::ActionIgnore() noexcept
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch. This will be a BEL or ST char.
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
-                                                 const size_t parameter,
-                                                 const std::wstring_view string)
+bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const std::wstring_view string)
 {
     auto success = false;
 
