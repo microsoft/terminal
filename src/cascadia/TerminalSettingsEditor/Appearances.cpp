@@ -83,14 +83,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             localeIndex = 0;
                         }
 
-                        uint32_t length;
+                        UINT32 length = 0;
                         if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
                         {
-                            // it is reasonable to assume that the name length is not going to exceed 512 chars
-                            wchar_t name[512];
-                            if (SUCCEEDED(names->GetString(localeIndex, name, length + 1)))
+                            winrt::impl::hstring_builder builder{ length };
+                            if (SUCCEEDED(names->GetString(localeIndex, builder.data(), length + 1)))
                             {
-                                fontAxesTagsAndNames.insert(std::pair<winrt::hstring, winrt::hstring>(tagString, winrt::hstring{ name }));
+                                fontAxesTagsAndNames.insert(std::pair<winrt::hstring, winrt::hstring>(tagString, builder.to_hstring()));
                                 continue;
                             }
                         }
