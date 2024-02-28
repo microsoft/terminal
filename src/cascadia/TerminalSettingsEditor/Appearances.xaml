@@ -287,6 +287,15 @@
                 </StackPanel>
             </local:SettingContainer>
 
+            <!--  Builtin Glyphs  -->
+            <local:SettingContainer x:Uid="Profile_EnableBuiltinGlyphs"
+                                    ClearSettingValue="{x:Bind Appearance.ClearEnableBuiltinGlyphs}"
+                                    HasSettingValue="{x:Bind Appearance.HasEnableBuiltinGlyphs, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.EnableBuiltinGlyphsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.EnableBuiltinGlyphs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Retro Terminal Effect  -->
             <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"

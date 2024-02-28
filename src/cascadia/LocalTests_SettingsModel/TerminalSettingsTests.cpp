@@ -173,13 +173,13 @@ namespace SettingsModelLocalTests
         {
             const auto commandLine = file2.native() + LR"( -foo "bar1 bar2" -baz)"s;
             const auto expected = file2.native() + L"\0-foo\0bar1 bar2\0-baz"s;
-            const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine.c_str());
+            const auto actual = implementation::Profile::NormalizeCommandLine(commandLine.c_str());
             VERIFY_ARE_EQUAL(expected, actual);
         }
         {
             const auto commandLine = L"C:\\";
             const auto expected = L"C:\\";
-            const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine);
+            const auto actual = implementation::Profile::NormalizeCommandLine(commandLine);
             VERIFY_ARE_EQUAL(expected, actual);
         }
     }
