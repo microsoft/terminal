@@ -5,7 +5,7 @@
   <test name="terminalCore" type="unit" binary="UnitTests_TerminalCore\Terminal.Core.Unit.Tests.dll" />
   <test name="terminalApp" type="unit" binary="UnitTests_TerminalApp\Terminal.App.Unit.Tests.dll" />
   <test name="localTerminalApp" type="unit" binary="TestHostApp\TerminalApp.LocalTests.dll" />
-  <test name="localSettingsModel" type="unit" binary="TestHostApp\SettingsModel.LocalTests.dll" />
+  <test name="unitSettingsModel" type="unit" binary="UnitTests_SettingsModel\SettingsModel.Unit.Tests.dll" isolatedTaef="true" />
   <test name="unitRemoting" type="unit" binary="UnitTests_Remoting\Remoting.Unit.Tests.dll" />
   <test name="unitControl" type="unit" binary="UnitTests_Control\Control.Unit.Tests.dll" />
   <test name="interactivityWin32" type="unit" binary="Conhost.Interactivity.Win32.Unit.Tests.dll" />

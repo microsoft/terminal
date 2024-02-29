@@ -16,24 +16,11 @@ using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
-    // TODO:microsoft/terminal#3838:
-    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
-    // an updated TAEF that will let us install framework packages when the test
-    // package is deployed. Until then, these tests won't deploy in CI.
-
     class SerializationTests : public JsonTestClass
     {
-        // Use a custom AppxManifest to ensure that we can activate winrt types
-        // from our test. This property will tell taef to manually use this as
-        // the AppxManifest for this test class.
-        // This does not yet work for anything XAML-y. See TabTests.cpp for more
-        // details on that.
-        BEGIN_TEST_CLASS(SerializationTests)
-            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
-        END_TEST_CLASS()
+        TEST_CLASS(SerializationTests);
 
         TEST_METHOD(GlobalSettings);
         TEST_METHOD(Profile);
@@ -212,9 +199,34 @@ namespace SettingsModelLocalTests
                 "source": "local"
             })" };
 
+        static constexpr std::string_view profileWithIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithIcon",
+                "hidden": false,
+                "icon": "foo.png"
+            })" };
+        static constexpr std::string_view profileWithNullIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithNullIcon",
+                "hidden": false,
+                "icon": null
+            })" };
+        static constexpr std::string_view profileWithNoIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithNoIcon",
+                "hidden": false,
+                "icon": "none"
+            })" };
+
         RoundtripTest<implementation::Profile>(profileString);
         RoundtripTest<implementation::Profile>(smallProfileString);
         RoundtripTest<implementation::Profile>(weirdProfileString);
+        RoundtripTest<implementation::Profile>(profileWithIcon);
+        RoundtripTest<implementation::Profile>(profileWithNullIcon);
+        RoundtripTest<implementation::Profile>(profileWithNoIcon);
     }
 
     void SerializationTests::ColorScheme()
