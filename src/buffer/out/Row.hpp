@@ -71,7 +71,7 @@ struct CharToColumnMapper
 {
     CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept;
 
-    til::CoordType GetLeadingColumnAt(ptrdiff_t offset) noexcept;
+    til::CoordType GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept;
     til::CoordType GetTrailingColumnAt(ptrdiff_t offset) noexcept;
     til::CoordType GetLeadingColumnAt(const wchar_t* str) noexcept;
     til::CoordType GetTrailingColumnAt(const wchar_t* str) noexcept;
