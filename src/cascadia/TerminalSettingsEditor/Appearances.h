@@ -28,9 +28,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Font : FontT<Font>
     {
     public:
-        Font(std::wstring name, std::wstring localizedName, IDWriteFontFamily* family) :
-            _Name{ name },
-            _LocalizedName{ localizedName }
+        Font(winrt::hstring name, winrt::hstring localizedName, IDWriteFontFamily* family) :
+            _Name{ std::move(name) },
+            _LocalizedName{ std::move(localizedName) }
         {
             _family.copy_from(family);
         }
