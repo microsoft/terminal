@@ -5,6 +5,7 @@
 #include "ProfileViewModel.h"
 #include "ProfileViewModel.g.cpp"
 #include "EnumEntry.h"
+#include "Appearances.h"
 
 #include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
@@ -154,11 +155,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             CATCH_LOG();
         }
 
+        const auto comparator = [&](const Editor::Font& lhs, const Editor::Font& rhs) {
+            const auto a = lhs.LocalizedName();
+            const auto b = rhs.LocalizedName();
+            return til::compare_linguistic_insensitive(a, b) < 0;
+        };
+
         // sort and save the lists
-        std::sort(begin(fontList), end(fontList), FontComparator());
+        std::sort(begin(fontList), end(fontList), comparator);
         _FontList = single_threaded_observable_vector<Editor::Font>(std::move(fontList));
 
-        std::sort(begin(monospaceFontList), end(monospaceFontList), FontComparator());
+        std::sort(begin(monospaceFontList), end(monospaceFontList), comparator);
         _MonospaceFontList = single_threaded_observable_vector<Editor::Font>(std::move(monospaceFontList));
     }
     CATCH_LOG();

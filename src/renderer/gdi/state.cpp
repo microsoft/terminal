@@ -389,20 +389,20 @@ GdiEngine::~GdiEngine()
     // (Additional notes below.)
 
     // 1.
-    const auto thinLineWidth = std::max(1.0f, roundf(idealUnderlineWidth / 2.0f));
+    const auto doubleUnderlineWidth = std::max(1.0f, roundf(idealUnderlineWidth / 2.0f));
     // 2.
-    auto doubleUnderlinePosBottom = underlineCenter + underlineWidth - thinLineWidth;
+    auto doubleUnderlinePosBottom = underlineCenter + underlineWidth - doubleUnderlineWidth;
     // 3. Since we don't align the center of our two lines, but rather the top borders
     //    we need to subtract half a line width from our center point.
-    auto doubleUnderlinePosTop = roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f);
+    auto doubleUnderlinePosTop = roundf((baseline + doubleUnderlinePosBottom - doubleUnderlineWidth) / 2.0f);
     // 4.
-    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + thinLineWidth);
+    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + doubleUnderlineWidth);
     // 5. The gap is only the distance _between_ the lines, but we need the distance from the
     //    top border of the top and bottom lines, which includes an additional line width.
     const auto doubleUnderlineGap = std::max(1.0f, roundf(1.2f / 72.0f * _iCurrentDpi));
-    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
+    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + doubleUnderlineWidth);
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
-    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, cellHeight - thinLineWidth);
+    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, cellHeight - doubleUnderlineWidth);
 
     // The wave line is drawn using a cubic Bézier curve (PolyBezier), because that happens to be cheap with GDI.
     // We use a Bézier curve where, if the start (a) and end (c) points are at (0,0) and (1,0), the control points are
@@ -431,13 +431,13 @@ GdiEngine::~GdiEngine()
     const auto curlyLineControlPointOffset = roundf(curlyLineIdealAmplitude * (1.0f / 0.140625f) * 0.5f);
     const auto curlyLinePeriod = curlyLineControlPointOffset * 2.0f;
     // We can reverse the above to get back the actual amplitude of our Bézier curve. The line
-    // will be drawn with a width of thinLineWidth in the center of the curve (= 0.5x padding).
-    const auto curlyLineAmplitude = 0.140625f * curlyLinePeriod + 0.5f * thinLineWidth;
+    // will be drawn with a width of doubleUnderlineWidth in the center of the curve (= 0.5x padding).
+    const auto curlyLineAmplitude = 0.140625f * curlyLinePeriod + 0.5f * doubleUnderlineWidth;
     // To make the wavy line with its double-underline amplitude look consistent with the double-underline we position it at its center.
     const auto curlyLineOffset = std::min(roundf(doubleUnderlineCenter), floorf(cellHeight - curlyLineAmplitude));
 
     _lineMetrics.gridlineWidth = lroundf(idealGridlineWidth);
-    _lineMetrics.thinLineWidth = lroundf(thinLineWidth);
+    _lineMetrics.doubleUnderlineWidth = lroundf(doubleUnderlineWidth);
     _lineMetrics.underlineCenter = lroundf(underlineCenter);
     _lineMetrics.underlineWidth = lroundf(underlineWidth);
     _lineMetrics.doubleUnderlinePosTop = lroundf(doubleUnderlinePosTop);
