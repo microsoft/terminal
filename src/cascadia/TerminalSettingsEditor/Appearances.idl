@@ -23,6 +23,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String LocalizedName { get; };
         Boolean HasPowerlineCharacters { get; };
         Windows.Foundation.Collections.IMap<String, String> FontAxesTagsAndNames { get; };
+        Windows.Foundation.Collections.IMap<String, String> FontFeaturesTagsAndNames { get; };
     }
 
     // We have to make this because we cannot bind an IObservableMap to a ListView in XAML (in c++)
@@ -33,6 +34,14 @@ namespace Microsoft.Terminal.Settings.Editor
         String AxisKey;
         Single AxisValue;
         Int32 AxisIndex;
+    }
+
+    runtimeclass FeatureKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        FeatureKeyValuePair(String featureKey, UInt32 featureValue, Windows.Foundation.Collections.IMap<String, UInt32> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
+        String FeatureKey;
+        UInt32 FeatureValue;
+        Int32 FeatureIndex;
     }
 
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -57,6 +66,14 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean CanFontAxesBeAdded { get; };
         Windows.Foundation.Collections.IObservableVector<AxisKeyValuePair> FontAxesVector;
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
+
+        void AddNewFeatureKeyValuePair();
+        void DeleteFeatureKeyValuePair(String key);
+        void InitializeFontFeaturesVector();
+        Boolean AreFontFeaturesAvailable { get; };
+        Boolean CanFontFeaturesBeAdded { get; };
+        Windows.Foundation.Collections.IObservableVector<FeatureKeyValuePair> FontFeaturesVector;
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);
