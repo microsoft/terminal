@@ -199,9 +199,34 @@ namespace SettingsModelUnitTests
                 "source": "local"
             })" };
 
+        static constexpr std::string_view profileWithIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithIcon",
+                "hidden": false,
+                "icon": "foo.png"
+            })" };
+        static constexpr std::string_view profileWithNullIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithNullIcon",
+                "hidden": false,
+                "icon": null
+            })" };
+        static constexpr std::string_view profileWithNoIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithNoIcon",
+                "hidden": false,
+                "icon": "none"
+            })" };
+
         RoundtripTest<implementation::Profile>(profileString);
         RoundtripTest<implementation::Profile>(smallProfileString);
         RoundtripTest<implementation::Profile>(weirdProfileString);
+        RoundtripTest<implementation::Profile>(profileWithIcon);
+        RoundtripTest<implementation::Profile>(profileWithNullIcon);
+        RoundtripTest<implementation::Profile>(profileWithNoIcon);
     }
 
     void SerializationTests::ColorScheme()
