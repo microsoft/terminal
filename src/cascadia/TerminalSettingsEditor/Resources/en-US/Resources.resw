@@ -722,6 +722,10 @@
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_AddNewFontAxis.Text" xml:space="preserve">
+    <value>Add new</value>
+    <comment>Button label that adds a new font axis for the current font.</comment>
+  </data>
   <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background image opacity</value>
     <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>
@@ -921,6 +925,18 @@
   <data name="Profile_FontWeight.HelpText" xml:space="preserve">
     <value>Sets the weight (lightness or heaviness of the strokes) for the given font.</value>
     <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
+  </data>
+  <data name="Profile_FontAxes.Header" xml:space="preserve">
+    <value>Variable font axes</value>
+    <comment>Header for a control to allow editing the font axes.</comment>
+  </data>
+  <data name="Profile_FontAxesAvailable.Text" xml:space="preserve">
+    <value>Add or remove font axes for the given font.</value>
+    <comment>A description for what the "font axes" setting does. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontAxesUnavailable.Text" xml:space="preserve">
+    <value>The selected font has no variable font axes.</value>
+    <comment>A description provided when the font axes setting is disabled. Presented near "Profile_FontAxes".</comment>
   </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>General</value>

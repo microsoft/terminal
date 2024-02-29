@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Appearances.h"
 #include "Appearances.g.cpp"
+#include "AxisKeyValuePair.g.cpp"
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
@@ -42,6 +43,154 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _hasPowerlineCharacters.value_or(false);
     }
 
+    Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring> Font::FontAxesTagsAndNames()
+    {
+        if (!_fontAxesTagsAndNames)
+        {
+            wil::com_ptr<IDWriteFont> font;
+            THROW_IF_FAILED(_family->GetFont(0, font.put()));
+            wil::com_ptr<IDWriteFontFace> fontFace;
+            THROW_IF_FAILED(font->CreateFontFace(fontFace.put()));
+            wil::com_ptr<IDWriteFontFace5> fontFace5;
+            if (fontFace5 = fontFace.try_query<IDWriteFontFace5>())
+            {
+                wil::com_ptr<IDWriteFontResource> fontResource;
+                THROW_IF_FAILED(fontFace5->GetFontResource(fontResource.put()));
+
+                const auto axesCount = fontFace5->GetFontAxisValueCount();
+                if (axesCount > 0)
+                {
+                    std::vector<DWRITE_FONT_AXIS_VALUE> axesVector(axesCount);
+                    fontFace5->GetFontAxisValues(axesVector.data(), axesCount);
+
+                    uint32_t localeIndex;
+                    BOOL localeExists;
+                    wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+                    const auto localeToTry = GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) ? localeName : L"en-US";
+
+                    std::unordered_map<winrt::hstring, winrt::hstring> fontAxesTagsAndNames;
+                    for (uint32_t i = 0; i < axesCount; ++i)
+                    {
+                        wil::com_ptr<IDWriteLocalizedStrings> names;
+                        THROW_IF_FAILED(fontResource->GetAxisNames(i, names.put()));
+
+                        if (!SUCCEEDED(names->FindLocaleName(localeToTry, &localeIndex, &localeExists)) || !localeExists)
+                        {
+                            // default to the first locale in the list
+                            localeIndex = 0;
+                        }
+
+                        UINT32 length = 0;
+                        if (SUCCEEDED(names->GetStringLength(localeIndex, &length)))
+                        {
+                            winrt::impl::hstring_builder builder{ length };
+                            if (SUCCEEDED(names->GetString(localeIndex, builder.data(), length + 1)))
+                            {
+                                fontAxesTagsAndNames.insert(std::pair<winrt::hstring, winrt::hstring>(_axisTagToString(axesVector[i].axisTag), builder.to_hstring()));
+                                continue;
+                            }
+                        }
+                        // if there was no name found, it means the font does not actually support this axis
+                        // don't insert anything into the vector in this case
+                    }
+                    _fontAxesTagsAndNames = winrt::single_threaded_map(std::move(fontAxesTagsAndNames));
+                }
+            }
+        }
+        return _fontAxesTagsAndNames;
+    }
+
+    winrt::hstring Font::_axisTagToString(DWRITE_FONT_AXIS_TAG tag)
+    {
+        std::wstring result;
+        for (int i = 0; i < 4; ++i)
+        {
+            result.push_back((tag >> (i * 8)) & 0xFF);
+        }
+        return winrt::hstring{ result };
+    }
+
+    AxisKeyValuePair::AxisKeyValuePair(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap) :
+        _AxisKey{ axisKey },
+        _AxisValue{ axisValue },
+        _baseMap{ baseMap },
+        _tagToNameMap{ tagToNameMap }
+    {
+        if (_tagToNameMap.HasKey(_AxisKey))
+        {
+            int32_t i{ 0 };
+            // IMap guarantees that the iteration order is the same every time
+            // so this conversion of key to index is safe
+            for (const auto tagAndName : _tagToNameMap)
+            {
+                if (tagAndName.Key() == _AxisKey)
+                {
+                    _AxisIndex = i;
+                    break;
+                }
+                ++i;
+            }
+        }
+    }
+
+    winrt::hstring AxisKeyValuePair::AxisKey()
+    {
+        return _AxisKey;
+    }
+
+    float AxisKeyValuePair::AxisValue()
+    {
+        return _AxisValue;
+    }
+
+    int32_t AxisKeyValuePair::AxisIndex()
+    {
+        return _AxisIndex;
+    }
+
+    void AxisKeyValuePair::AxisValue(float axisValue)
+    {
+        if (axisValue != _AxisValue)
+        {
+            _baseMap.Remove(_AxisKey);
+            _AxisValue = axisValue;
+            _baseMap.Insert(_AxisKey, _AxisValue);
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisValue" });
+        }
+    }
+
+    void AxisKeyValuePair::AxisKey(winrt::hstring axisKey)
+    {
+        if (axisKey != _AxisKey)
+        {
+            _baseMap.Remove(_AxisKey);
+            _AxisKey = axisKey;
+            _baseMap.Insert(_AxisKey, _AxisValue);
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisKey" });
+        }
+    }
+
+    void AxisKeyValuePair::AxisIndex(int32_t axisIndex)
+    {
+        if (axisIndex != _AxisIndex)
+        {
+            _AxisIndex = axisIndex;
+
+            int32_t i{ 0 };
+            // same as in the constructor, iterating through IMap
+            // gives us the same order every time
+            for (const auto tagAndName : _tagToNameMap)
+            {
+                if (i == _AxisIndex)
+                {
+                    AxisKey(tagAndName.Key());
+                    break;
+                }
+                ++i;
+            }
+        }
+    }
+
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
@@ -60,7 +209,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // box, prevent it from ever being changed again.
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
+            else if (viewModelProperty == L"FontAxes")
+            {
+                // this is a weird one
+                // we manually make the observable vector based on the map in the settings model
+                // (this is due to xaml being unable to bind a list view to a map)
+                // so when the FontAxes change (say from the reset button), reinitialize the observable vector
+                InitializeFontAxesVector();
+            }
         });
+
+        InitializeFontAxesVector();
 
         // Cache the original BG image path. If the user clicks "Use desktop
         // wallpaper", then un-checks it, this is the string we'll restore to
@@ -205,6 +364,119 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         LightColorSchemeName(val.Name());
     }
 
+    void AppearanceViewModel::AddNewAxisKeyValuePair()
+    {
+        if (!_appearance.SourceProfile().FontInfo().FontAxes())
+        {
+            _appearance.SourceProfile().FontInfo().FontAxes(winrt::single_threaded_map<winrt::hstring, float>());
+        }
+        auto fontAxesMap = _appearance.SourceProfile().FontInfo().FontAxes();
+
+        // find one axis that does not already exist, and add that
+        // if there are no more possible axes to add, the button is disabled so there shouldn't be a way to get here
+        const auto possibleAxesTagsAndNames = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames();
+        for (const auto tagAndName : possibleAxesTagsAndNames)
+        {
+            if (!fontAxesMap.HasKey(tagAndName.Key()))
+            {
+                fontAxesMap.Insert(tagAndName.Key(), gsl::narrow<float>(0));
+                FontAxesVector().Append(_CreateAxisKeyValuePairHelper(tagAndName.Key(), gsl::narrow<float>(0), fontAxesMap, possibleAxesTagsAndNames));
+                break;
+            }
+        }
+        _NotifyChanges(L"CanFontAxesBeAdded");
+    }
+
+    void AppearanceViewModel::DeleteAxisKeyValuePair(winrt::hstring key)
+    {
+        for (uint32_t i = 0; i < _FontAxesVector.Size(); i++)
+        {
+            if (_FontAxesVector.GetAt(i).AxisKey() == key)
+            {
+                FontAxesVector().RemoveAt(i);
+                _appearance.SourceProfile().FontInfo().FontAxes().Remove(key);
+                if (_FontAxesVector.Size() == 0)
+                {
+                    _appearance.SourceProfile().FontInfo().ClearFontAxes();
+                }
+                break;
+            }
+        }
+        _NotifyChanges(L"CanFontAxesBeAdded");
+    }
+
+    void AppearanceViewModel::InitializeFontAxesVector()
+    {
+        if (!_FontAxesVector)
+        {
+            _FontAxesVector = winrt::single_threaded_observable_vector<Editor::AxisKeyValuePair>();
+        }
+
+        _FontAxesVector.Clear();
+        if (const auto fontAxesMap = _appearance.SourceProfile().FontInfo().FontAxes())
+        {
+            const auto fontAxesTagToNameMap = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames();
+            for (const auto axis : fontAxesMap)
+            {
+                // only show the axes that the font supports
+                // any axes that the font doesn't support continue to be stored in the json, we just don't show them in the UI
+                if (fontAxesTagToNameMap.HasKey(axis.Key()))
+                {
+                    _FontAxesVector.Append(_CreateAxisKeyValuePairHelper(axis.Key(), axis.Value(), fontAxesMap, fontAxesTagToNameMap));
+                }
+            }
+        }
+        _NotifyChanges(L"AreFontAxesAvailable", L"CanFontAxesBeAdded");
+    }
+
+    // Method Description:
+    // - Determines whether the currently selected font has any variable font axes
+    bool AppearanceViewModel::AreFontAxesAvailable()
+    {
+        return ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames().Size() > 0;
+    }
+
+    // Method Description:
+    // - Determines whether the currently selected font has any variable font axes that have not already been set
+    bool AppearanceViewModel::CanFontAxesBeAdded()
+    {
+        if (const auto fontAxesTagToNameMap = ProfileViewModel::FindFontWithLocalizedName(FontFace()).FontAxesTagsAndNames(); fontAxesTagToNameMap.Size() > 0)
+        {
+            if (const auto fontAxesMap = _appearance.SourceProfile().FontInfo().FontAxes())
+            {
+                for (const auto tagAndName : fontAxesTagToNameMap)
+                {
+                    if (!fontAxesMap.HasKey(tagAndName.Key()))
+                    {
+                        // we found an axis that has not been set
+                        return true;
+                    }
+                }
+                // all possible axes have been set already
+                return false;
+            }
+            // the font supports font axes but the profile has none set
+            return true;
+        }
+        // the font does not support any font axes
+        return false;
+    }
+
+    // Method Description:
+    // - Creates an AxisKeyValuePair and sets up an event handler for it
+    Editor::AxisKeyValuePair AppearanceViewModel::_CreateAxisKeyValuePairHelper(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap, const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& tagToNameMap)
+    {
+        const auto axisKeyValuePair = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::AxisKeyValuePair>(axisKey, axisValue, baseMap, tagToNameMap);
+        // when either the key or the value changes, send an event for the preview control to catch
+        axisKeyValuePair.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& /*e*/) {
+            if (auto appVM{ weakThis.get() })
+            {
+                appVM->_NotifyChanges(L"AxisKeyValuePair");
+            }
+        });
+        return axisKeyValuePair;
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
@@ -271,6 +543,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
 
+        _FontAxesNames = winrt::single_threaded_observable_vector<winrt::hstring>();
+        FontAxesNamesCVS().Source(_FontAxesNames);
+
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
@@ -330,6 +605,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             ShowProportionalFontWarning(false);
         }
+
+        _FontAxesNames.Clear();
+        const auto axesTagsAndNames = newFontFace.FontAxesTagsAndNames();
+        for (const auto tagAndName : axesTagsAndNames)
+        {
+            _FontAxesNames.Append(tagAndName.Value());
+        }
+
+        // when the font face changes, we have to tell the view model to update the font axes vector
+        // since the new font may not have the same possible axes as the previous one
+        Appearance().InitializeFontAxesVector();
+        if (!Appearance().AreFontAxesAvailable())
+        {
+            // if the previous font had available font axes and the expander was expanded,
+            // at this point the expander would be set to disabled so manually collapse it
+            FontAxesContainer().SetExpanded(false);
+            FontAxesContainer().HelpText(RS_(L"Profile_FontAxesUnavailable/Text"));
+        }
+        else
+        {
+            FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text"));
+        }
     }
 
     void Appearances::_ViewModelChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
@@ -347,6 +644,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
             }
+
+            FontAxesCVS().Source(Appearance().FontAxesVector());
+            Appearance().AreFontAxesAvailable() ? FontAxesContainer().HelpText(RS_(L"Profile_FontAxesAvailable/Text")) : FontAxesContainer().HelpText(RS_(L"Profile_FontAxesUnavailable/Text"));
 
             _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
                 const auto settingName{ args.PropertyName() };
@@ -468,6 +768,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 biButton.IsChecked(biButtonAlignment == val);
             }
         }
+    }
+
+    void Appearances::DeleteAxisKeyValuePair_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        if (const auto& button{ sender.try_as<Controls::Button>() })
+        {
+            if (const auto& tag{ button.Tag().try_as<winrt::hstring>() })
+            {
+                Appearance().DeleteAxisKeyValuePair(tag.value());
+            }
+        }
+    }
+
+    void Appearances::AddNewAxisKeyValuePair_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        Appearance().AddNewAxisKeyValuePair();
     }
 
     bool Appearances::IsVintageCursor() const
