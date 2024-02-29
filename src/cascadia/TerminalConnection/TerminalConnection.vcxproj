@@ -17,6 +17,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="BaseTerminalConnection.h" />
     <ClInclude Include="ConnectionInformation.h">
       <DependentUpon>ConnectionInformation.idl</DependentUpon>
     </ClInclude>

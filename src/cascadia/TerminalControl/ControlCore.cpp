@@ -17,7 +17,6 @@
 #include "EventArgs.h"
 #include "../../buffer/out/search.h"
 #include "../../renderer/atlas/AtlasEngine.h"
-#include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
@@ -335,15 +334,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            if (_settings->UseAtlasEngine())
-            {
-                _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
-            }
-            else
-            {
-                _renderEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            }
-
+            _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             _renderer->AddRenderEngine(_renderEngine.get());
 
             // Initialize our font with the renderer
@@ -359,7 +350,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
             LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-            // Update DxEngine's SelectionBackground
+            // Update AtlasEngine's SelectionBackground
             _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
@@ -869,6 +860,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto lock = _terminal->LockForWriting();
 
+        _builtinGlyphs = _settings->EnableBuiltinGlyphs();
         _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
@@ -915,10 +907,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(*newAppearance);
 
-        // Update DxEngine settings under the lock
+        // Update AtlasEngine settings under the lock
         if (_renderEngine)
         {
-            // Update DxEngine settings under the lock
+            // Update AtlasEngine settings under the lock
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
@@ -954,7 +946,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_updateAntiAliasingMode()
     {
         D2D1_TEXT_ANTIALIAS_MODE mode;
-        // Update DxEngine's AntialiasingMode
+        // Update AtlasEngine's AntialiasingMode
         switch (_settings->AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
@@ -1047,6 +1039,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
 
+        _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
         _desiredFont.SetCellSize(_cellWidth, _cellHeight);
 
         const auto before = _actualFont.GetSize();
@@ -1250,44 +1243,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
+        // use action's copyFormatting if it's present, else fallback to globally
+        // set copyFormatting.
+        const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
+
+        const auto copyHtml = WI_IsFlagSet(copyFormats, CopyFormat::HTML);
+        const auto copyRtf = WI_IsFlagSet(copyFormats, CopyFormat::RTF);
+
         // extract text from buffer
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
-
-        // convert text: vector<string> --> string
-        std::wstring textData;
-        for (const auto& text : bufferData.text)
-        {
-            textData += text;
-        }
-
-        const auto bgColor = _terminal->GetAttributeColors({}).second;
-
-        // convert text to HTML format
-        // GH#5347 - Don't provide a title for the generated HTML, as many
-        // web applications will paste the title first, followed by the HTML
-        // content, which is unexpected.
-        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
-                                  TextBuffer::GenHTML(bufferData,
-                                                      _actualFont.GetUnscaledSize().height,
-                                                      _actualFont.GetFaceName(),
-                                                      bgColor) :
-                                  "";
-
-        // convert to RTF format
-        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
-                                 TextBuffer::GenRTF(bufferData,
-                                                    _actualFont.GetUnscaledSize().height,
-                                                    _actualFont.GetFaceName(),
-                                                    bgColor) :
-                                 "";
+        const auto& [textData, htmlData, rtfData] = _terminal->RetrieveSelectedTextFromBuffer(singleLine, copyHtml, copyRtf);
 
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,
                                  winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
                                                                        winrt::to_hstring(htmlData),
                                                                        winrt::to_hstring(rtfData),
-                                                                       formats));
+                                                                       copyFormats));
         return true;
     }
 
@@ -1612,24 +1584,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->IsSelectionActive();
     }
 
+    // Method Description:
+    // - Checks if the currently active selection spans multiple lines
+    // Return Value:
+    // - true if selection is multi-line
+    bool ControlCore::HasMultiLineSelection() const
+    {
+        const auto lock = _terminal->LockForReading();
+        assert(_terminal->IsSelectionActive()); // should only be called when selection is active
+        return _terminal->GetSelectionAnchor().y != _terminal->GetSelectionEnd().y;
+    }
+
     bool ControlCore::CopyOnSelect() const
     {
         return _settings->CopyOnSelect();
     }
 
-    Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    winrt::hstring ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
         const auto lock = _terminal->LockForReading();
-        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
-
-        auto result = winrt::single_threaded_vector<winrt::hstring>();
-
-        for (const auto& row : internalResult)
-        {
-            result.Append(winrt::hstring{ row });
-        }
-        return result;
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(!trimTrailingWhitespace) };
+        return winrt::hstring{ internalResult.plainText };
     }
 
     ::Microsoft::Console::Render::IRenderData* ControlCore::GetRenderData() const

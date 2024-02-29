@@ -4,14 +4,14 @@
 #pragma once
 
 #include "ConptyConnection.g.h"
-#include "ConnectionStateHolder.h"
+#include "BaseTerminalConnection.h"
 
 #include "ITerminalHandoff.h"
 #include <til/env.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct ConptyConnection : ConptyConnectionT<ConptyConnection>, ConnectionStateHolder<ConptyConnection>
+    struct ConptyConnection : ConptyConnectionT<ConptyConnection>, BaseTerminalConnection<ConptyConnection>
     {
         ConptyConnection(const HANDLE hSig,
                          const HANDLE hIn,
@@ -36,7 +36,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void ReparentWindow(const uint64_t newParent);
 
-        winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
         WORD ShowWindow() const noexcept;
@@ -77,7 +76,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingTitle{};
         bool _initialVisibility{ true };
         Windows::Foundation::Collections::ValueSet _environment{ nullptr };
-        guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 
         bool _receivedFirstByte{ false };

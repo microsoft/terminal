@@ -56,6 +56,7 @@ jobs:
   - task: PowerShell@2
     displayName: 'Run PGO Tests'
     inputs:
+      pwsh: true
       targetType: filePath
       filePath: build\scripts\Run-Tests.ps1
       arguments: >-

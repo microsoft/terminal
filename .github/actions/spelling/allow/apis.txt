@@ -4,6 +4,7 @@ acl
 aclapi
 alignas
 alignof
+allocconsolewithoptions
 APPLYTOSUBMENUS
 appxrecipe
 bitfield
@@ -21,7 +22,9 @@ COLORPROPERTY
 colspan
 COMDLG
 commandlinetoargv
+commoncontrols
 comparand
+COPYFROMRESOURCE
 cstdint
 CXICON
 CYICON
@@ -41,6 +44,7 @@ endfor
 ENDSESSION
 enumset
 environstrings
+EXACTSIZEONLY
 EXPCMDFLAGS
 EXPCMDSTATE
 filetime
@@ -58,6 +62,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 hinternet
+HIGHQUALITYSCALE
 HINTERNET
 hotkeys
 href
@@ -74,6 +79,7 @@ IBox
 IClass
 IComparable
 IComparer
+ICONINFO
 IConnection
 ICustom
 IDialog
@@ -83,6 +89,7 @@ IExplorer
 IFACEMETHOD
 IFile
 IGraphics
+IImage
 IInheritable
 IMap
 IMonarch
@@ -156,6 +163,7 @@ OUTLINETEXTMETRICW
 overridable
 PACL
 PAGESCROLL
+PALLOC
 PATINVERT
 PEXPLICIT
 PICKFOLDERS

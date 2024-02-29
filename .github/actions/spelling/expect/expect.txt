@@ -19,6 +19,7 @@ AFew
 AFill
 AFX
 AHelper
+ahicon
 ahz
 AImpl
 AInplace
@@ -183,6 +184,7 @@ chh
 chshdng
 CHT
 Cic
+CLASSSTRING
 CLE
 cleartype
 CLICKACTIVE
@@ -319,6 +321,7 @@ ctlseqs
 CTRLEVENT
 CTRLFREQUENCY
 CTRLKEYSHORTCUTS
+Ctrls
 CTRLVOLUME
 Ctxt
 CUF
@@ -401,6 +404,7 @@ DECECM
 DECEKBD
 DECERA
 DECFI
+DECFNK
 DECFRA
 DECIC
 DECID
@@ -426,6 +430,7 @@ DECRQM
 DECRQPSR
 DECRQSS
 DECRQTSR
+DECRQUPSS
 DECRSPS
 decrst
 DECSACE
@@ -443,6 +448,7 @@ DECSLPP
 DECSLRM
 DECSMKR
 DECSR
+DECST
 DECSTBM
 DECSTGLT
 DECSTR
@@ -481,6 +487,7 @@ directio
 DIRECTX
 DISABLEDELAYEDEXPANSION
 DISABLENOSCROLL
+DISPATCHNOTIFY
 DISPLAYATTRIBUTE
 DISPLAYATTRIBUTEPROPERTY
 DISPLAYCHANGE
@@ -838,6 +845,9 @@ IGNORELANGUAGE
 IHosted
 iid
 IIo
+ILC
+ILCo
+ILD
 ime
 IMPEXP
 inbox
@@ -1111,8 +1121,8 @@ msix
 msrc
 MSVCRTD
 MTSM
-munged
 munges
+Munged
 murmurhash
 muxes
 myapplet
@@ -1335,11 +1345,14 @@ pgomgr
 PGONu
 pguid
 phhook
+phico
+phicon
 phwnd
 pidl
 PIDLIST
 pids
 pii
+piml
 pinvoke
 pipename
 pipestr
@@ -1671,6 +1684,8 @@ slpit
 SManifest
 SMARTQUOTE
 SMTO
+snapcx
+snapcy
 SOLIDBOX
 Solutiondir
 somefile
@@ -1868,7 +1883,12 @@ uiautomationcore
 uielem
 UIELEMENTENABLEDONLY
 UINTs
+ul
 ulcch
+uld
+uldb
+uldash
+ulwave
 Unadvise
 unattend
 UNCPRIORITY
@@ -1891,6 +1911,7 @@ UPDATEDISPLAY
 UPDOWN
 UPKEY
 UPSS
+upss
 uregex
 URegular
 usebackq

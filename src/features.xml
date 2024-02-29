@@ -27,26 +27,8 @@
     </feature>
 
     <feature>
-        <name>Feature_ConhostDxEngine</name>
-        <description>Controls whether conhost supports the DX engine and the UseDx registry key</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>WindowsInbox</brandingToken>
-        </alwaysDisabledBrandingTokens>
-    </feature>
-
-    <feature>
         <name>Feature_ConhostAtlasEngine</name>
         <description>Controls whether conhost supports the Atlas engine</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>WindowsInbox</brandingToken>
-        </alwaysDisabledBrandingTokens>
-    </feature>
-
-    <feature>
-        <name>Feature_DxEngineShaderSupport</name>
-        <description>Controls whether the DX engine is built with shader support.</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledBrandingTokens>
             <brandingToken>WindowsInbox</brandingToken>
@@ -171,6 +153,16 @@
         <name>Feature_VtChecksumReport</name>
         <description>Enables the DECRQCRA checksum report, which can be used to read the screen contents</description>
         <id>14974</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_KeypadModeEnabled</name>
+        <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
+        <id>16654</id>
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>

@@ -3,6 +3,7 @@
 
 import "IKeyBindings.idl";
 import "IControlAppearance.idl";
+import "EventArgs.idl";
 
 namespace Microsoft.Terminal.Control
 {
@@ -34,20 +35,20 @@ namespace Microsoft.Terminal.Control
         Boolean EnableUnfocusedAcrylic;
         ScrollbarState ScrollState { get; };
 
-        Boolean UseAtlasEngine { get; };
-
         String FontFace { get; };
         Single FontSize { get; };
         Windows.UI.Text.FontWeight FontWeight { get; };
         String Padding { get; };
         Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
         Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
+        Boolean EnableBuiltinGlyphs { get; };
         String CellWidth { get; };
         String CellHeight { get; };
 
         Microsoft.Terminal.Control.IKeyBindings KeyBindings { get; };
 
         Boolean CopyOnSelect { get; };
+        Microsoft.Terminal.Control.CopyFormat CopyFormatting { get; };
         Boolean FocusFollowMouse { get; };
 
         String Commandline { get; };
