@@ -228,10 +228,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         wil::com_ptr<IDWriteLocalizedStrings> familyNames;
         THROW_IF_FAILED(family->GetFamilyNames(familyNames.addressof()));
 
+        // If en-us is missing we fall back to whatever is at index 0.
         const auto ci = getLocalizedStringIndex(familyNames.get(), L"en-us", 0);
+        // If our locale is missing we fall back to en-us.
         const auto li = getLocalizedStringIndex(familyNames.get(), locale, ci);
 
         auto canonical = getLocalizedStringByIndex(familyNames.get(), ci);
+        // If the canonical/localized indices are the same, there's no need to get the other string.
         auto localized = ci == li ? canonical : getLocalizedStringByIndex(familyNames.get(), li);
 
         return make<Font>(std::move(canonical), std::move(localized), family);
