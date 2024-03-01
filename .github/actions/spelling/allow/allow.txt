@@ -17,6 +17,7 @@ CMMI
 copyable
 Counterintuitively
 CtrlDToClose
+CVS
 CUI
 cybersecurity
 dalet

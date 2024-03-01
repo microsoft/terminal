@@ -54,7 +54,7 @@ Author(s):
 #include "FontConfig.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class ProfileTests;
@@ -147,10 +147,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring _evaluateIcon() const;
 
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::ProfileTests;
-        friend class SettingsModelLocalTests::ColorSchemeTests;
-        friend class SettingsModelLocalTests::KeyBindingsTests;
+        friend class SettingsModelUnitTests::DeserializationTests;
+        friend class SettingsModelUnitTests::ProfileTests;
+        friend class SettingsModelUnitTests::ColorSchemeTests;
+        friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class TerminalAppUnitTests::DynamicProfileTests;
         friend class TerminalAppUnitTests::JsonTests;
     };
