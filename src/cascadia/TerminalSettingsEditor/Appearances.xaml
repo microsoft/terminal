@@ -329,7 +329,7 @@
                                             HorizontalAlignment="Right"
                                             Click="DeleteAxisKeyValuePair_Click"
                                             Style="{StaticResource DeleteButtonStyle}"
-                                            Tag="{x:Bind AxisKey}">
+                                            Tag="{x:Bind AxisKey, Mode=OneWay}">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE74D;" />
                                     </Button>
@@ -390,7 +390,7 @@
                                             HorizontalAlignment="Right"
                                             Click="DeleteFeatureKeyValuePair_Click"
                                             Style="{StaticResource DeleteButtonStyle}"
-                                            Tag="{x:Bind FeatureKey}">
+                                            Tag="{x:Bind FeatureKey, Mode=OneWay}">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE74D;" />
                                     </Button>
