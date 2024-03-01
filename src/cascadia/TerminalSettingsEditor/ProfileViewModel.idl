@@ -67,6 +67,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ProfileSubPage CurrentPage;
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };
+        Boolean HideIcon;
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
@@ -74,6 +75,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
         Boolean VtPassthroughAvailable { get; };
+
+        String EvaluatedIcon { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -103,7 +106,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAtlasEngine);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, VtPassthrough);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);

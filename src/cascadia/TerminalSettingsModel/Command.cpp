@@ -258,7 +258,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
-                                              std::vector<SettingsLoadWarnings>& warnings)
+                                              std::vector<SettingsLoadWarnings>& warnings,
+                                              const bool parseKeys)
     {
         auto result = winrt::make_self<Command>();
 
@@ -313,20 +314,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 result->_ActionAndArgs = make<implementation::ActionAndArgs>();
             }
 
-            // GH#4239 - If the user provided more than one key
-            // chord to a "keys" array, warn the user here.
-            // TODO: GH#1334 - remove this check.
-            const auto keysJson{ json[JsonKey(KeysKey)] };
-            if (keysJson.isArray() && keysJson.size() > 1)
+            if (parseKeys)
             {
-                warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
-            }
-            else
-            {
-                Control::KeyChord keys{ nullptr };
-                if (JsonUtils::GetValueForKey(json, KeysKey, keys))
+                // GH#4239 - If the user provided more than one key
+                // chord to a "keys" array, warn the user here.
+                // TODO: GH#1334 - remove this check.
+                const auto keysJson{ json[JsonKey(KeysKey)] };
+                if (keysJson.isArray() && keysJson.size() > 1)
                 {
-                    result->RegisterKey(keys);
+                    warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
+                }
+                else
+                {
+                    Control::KeyChord keys{ nullptr };
+                    if (JsonUtils::GetValueForKey(json, KeysKey, keys))
+                    {
+                        result->RegisterKey(keys);
+                    }
                 }
             }
         }
@@ -602,7 +606,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon()));
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.EvaluatedIcon()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);

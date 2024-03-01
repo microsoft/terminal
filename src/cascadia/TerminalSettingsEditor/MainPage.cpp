@@ -602,7 +602,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
-        profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.Icon()));
+        profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
 
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };

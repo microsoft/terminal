@@ -1033,9 +1033,10 @@ namespace winrt::TerminalApp::implementation
 
         // If there's an icon set for this profile, set it as the icon for
         // this flyout item
-        if (!profile.Icon().empty())
+        const auto& iconPath = profile.EvaluatedIcon();
+        if (!iconPath.empty())
         {
-            const auto icon = _CreateNewTabFlyoutIcon(profile.Icon());
+            const auto icon = _CreateNewTabFlyoutIcon(iconPath);
             profileMenuItem.Icon(icon);
         }
 

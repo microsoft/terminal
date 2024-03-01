@@ -2791,11 +2791,6 @@
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
-        "useAtlasEngine": {
-          "description": "Windows Terminal 1.16 and later ship with a new, performant text renderer. Set this to false to revert back to the old text renderer.",
-          "type": "boolean",
-          "default": true
-        },
         "fontFace": {
           "default": "Cascadia Mono",
           "description": "[deprecated] Define 'face' within the 'font' object instead.",

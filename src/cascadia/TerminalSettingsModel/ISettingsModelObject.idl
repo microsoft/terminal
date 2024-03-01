@@ -1,0 +1,20 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    // This tag is used to identify the context in which this object was created
+    enum OriginTag
+    {
+        None = 0,
+        User,
+        InBox,
+        Generated,
+        Fragment,
+        ProfilesDefaults
+    };
+
+    interface ISettingsModelObject {
+        OriginTag Origin { get; };
+    }
+}

@@ -7,7 +7,6 @@
 #include "XamlLights.h"
 #include "EventArgs.h"
 #include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"

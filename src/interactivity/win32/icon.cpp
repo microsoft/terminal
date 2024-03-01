@@ -11,6 +11,254 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
+// This region contains excerpts from ExtractIconExW and all callees, tuned for the Console use case.
+// Including this here helps us avoid a load-time dependency on shell32 or Windows.Storage.dll.
+static constexpr uint32_t ILD_HIGHQUALITYSCALE{ 0x10000 };
+static constexpr uint32_t LR_EXACTSIZEONLY{ 0x10000 };
+
+// System icons come in several standard sizes.
+// This function returns the snap size best suited for an arbitrary size. Note that
+// larger than 256 returns the input value, which would result in the 256px icon being used.
+static int SnapIconSize(int cx)
+{
+    static constexpr int rgSizes[] = { 16, 32, 48, 256 };
+    for (auto sz : rgSizes)
+    {
+        if (cx <= sz)
+        {
+            return sz;
+        }
+    }
+    return cx;
+}
+
+static HRESULT GetIconSize(HICON hIcon, PSIZE pSize)
+{
+    pSize->cx = pSize->cy = 32;
+
+    // If it's a cursor, we'll fail so that we end up using our fallback case instead.
+    ICONINFO iconInfo;
+    if (GetIconInfo(hIcon, &iconInfo))
+    {
+        auto cleanup = wil::scope_exit([&] {
+            DeleteObject(iconInfo.hbmMask);
+            if (iconInfo.hbmColor)
+            {
+                DeleteObject(iconInfo.hbmColor);
+            }
+        });
+
+        if (iconInfo.fIcon)
+        {
+            BITMAP bmp;
+            if (GetObject(iconInfo.hbmColor, sizeof(bmp), &bmp))
+            {
+                pSize->cx = bmp.bmWidth;
+                pSize->cy = bmp.bmHeight;
+                return S_OK;
+            }
+        }
+    }
+
+    return E_FAIL;
+}
+
+#define SET_HR_AND_BREAK_IF_FAILED(_hr) \
+    {                                   \
+        const auto __hrRet = (_hr);     \
+        hr = __hrRet;                   \
+        if (FAILED(hr))                 \
+        {                               \
+            break;                      \
+        }                               \
+    }
+
+static HRESULT CreateSmallerIcon(HICON hicon, UINT cx, UINT cy, HICON* phico)
+{
+    *phico = nullptr;
+    HRESULT hr = S_OK;
+
+    do
+    {
+        SIZE size;
+        SET_HR_AND_BREAK_IF_FAILED(GetIconSize(hicon, &size));
+
+        if ((size.cx == (int)cx) && (size.cy == (int)cy))
+        {
+            *phico = hicon;
+            hr = S_FALSE;
+            break;
+        }
+
+        if ((size.cx < (int)cx) || (size.cy < (int)cy))
+        {
+            // If we're passed in a smaller icon than desired, we have a choice; we can either fail altogether, or we could scale it up.
+            // Failing would make it the client's responsibility to figure out what to do, which sounds like more work
+            // So instead, we just create an icon the best we can.
+            // We'll use the fallback below for this.
+            break;
+        }
+
+        wil::unique_hmodule comctl32{ LoadLibraryExW(L"comctl32.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+        if (auto ILCoCreateInstance = GetProcAddressByFunctionDeclaration(comctl32.get(), ImageList_CoCreateInstance))
+        {
+            wil::com_ptr_nothrow<IImageList2> pimlOriginal;
+            wil::com_ptr_nothrow<IImageList2> pimlIcon;
+            int fRet = -1;
+
+            SET_HR_AND_BREAK_IF_FAILED(ILCoCreateInstance(CLSID_ImageList, NULL, IID_PPV_ARGS(&pimlOriginal)));
+            SET_HR_AND_BREAK_IF_FAILED(pimlOriginal->Initialize(size.cx, size.cy, ILC_COLOR32 | ILC_MASK | ILC_HIGHQUALITYSCALE, 1, 1));
+            SET_HR_AND_BREAK_IF_FAILED(pimlOriginal->ReplaceIcon(-1, hicon, &fRet));
+            SET_HR_AND_BREAK_IF_FAILED(ILCoCreateInstance(CLSID_ImageList, NULL, IID_PPV_ARGS(&pimlIcon)));
+            SET_HR_AND_BREAK_IF_FAILED(pimlIcon->Initialize(cx, cy, ILC_COLOR32 | ILC_MASK | ILC_HIGHQUALITYSCALE, 1, 1));
+            SET_HR_AND_BREAK_IF_FAILED(pimlIcon->SetImageCount(1));
+            SET_HR_AND_BREAK_IF_FAILED(pimlIcon->ReplaceFromImageList(0, pimlOriginal.get(), 0, NULL, 0));
+            SET_HR_AND_BREAK_IF_FAILED(pimlIcon->GetIcon(0, ILD_HIGHQUALITYSCALE, phico));
+        }
+    } while (0);
+
+    if (!*phico)
+    {
+        // For whatever reason, we still don't have an icon. Maybe we have a cursor. At any rate,
+        // we'll use CopyImage as a last-ditch effort.
+        *phico = (HICON)CopyImage(hicon, IMAGE_ICON, cx, cy, LR_COPYFROMRESOURCE);
+        hr = *phico ? S_OK : E_FAIL;
+    }
+
+    return hr;
+}
+
+static UINT ConExtractIcons(PCWSTR szFileName, int nIconIndex, int cxIcon, int cyIcon, HICON* phicon, UINT nIcons, UINT lrFlags)
+{
+    UINT result = (UINT)-1;
+    std::wstring expandedPath, finalPath;
+
+    std::fill_n(phicon, nIcons, nullptr);
+
+    if (FAILED(wil::ExpandEnvironmentStringsW(szFileName, expandedPath)))
+    {
+        return result;
+    }
+
+    if (FAILED(wil::SearchPathW(nullptr, expandedPath.c_str(), nullptr, finalPath)))
+    {
+        return result;
+    }
+
+    int snapcx = SnapIconSize(LOWORD(cxIcon));
+    int snapcy = SnapIconSize(LOWORD(cyIcon));
+
+    // PrivateExtractIconsW can extract two sizes of icons, and does this by having the client
+    // pass in both in one argument. If that's the case, we have to compute the snap sizes for
+    // both requested sizes.
+
+    if (nIcons == 2)
+    {
+        snapcx = MAKELONG(snapcx, SnapIconSize(HIWORD(cxIcon)));
+        snapcy = MAKELONG(snapcy, SnapIconSize(HIWORD(cyIcon)));
+    }
+
+    // When we're in high dpi mode, we need to get larger icons and scale them down, rather than
+    // the default user32 behaviour of taking the smaller icon and scaling it up.
+    if ((cxIcon != 0) && (cyIcon != 0) && (nIcons <= 2) && (!((snapcx == cxIcon) && (snapcy == cyIcon))))
+    {
+        // The icon asked for doesn't match one of the standard snap sizes but the file may have
+        // that size in it anyway - eg 20x20, 64x64, etc.  Try to get the requested size and if
+        // it's not present get the snap size and scale it down to the requested size.
+
+        // PrivateExtractIconsW will fail if you ask for 2 icons and only 1 size if there is only 1 icon in the
+        // file, even if the one in there matches the one you want.  So, if the caller only specified one
+        // size, only ask for 1 icon.
+        UINT nIconsActual = (HIWORD(cxIcon)) ? nIcons : 1;
+        result = PrivateExtractIconsW(finalPath.c_str(), nIconIndex, cxIcon, cyIcon, phicon, nullptr, nIconsActual, lrFlags | LR_EXACTSIZEONLY);
+        if (nIconsActual != result)
+        {
+            HICON ahTempIcon[2] = { 0 };
+
+            // If there is no exact match the API can return 0 but phicon[0] set to a valid hicon.  In that
+            // case destroy the icon and reset the entry.
+            UINT i;
+            for (i = 0; i < nIcons; i++)
+            {
+                if (phicon[i])
+                {
+                    DestroyIcon(phicon[i]);
+                    phicon[i] = nullptr;
+                }
+            }
+
+            // The size we want is not present, go ahead and scale the image.
+            result = PrivateExtractIconsW(finalPath.c_str(), nIconIndex, snapcx, snapcy, ahTempIcon, nullptr, nIcons, lrFlags | LR_EXACTSIZEONLY);
+
+            if ((int)result > 0)
+            {
+                // If CreateSmallerIcon returns S_FALSE, it means the passed in copy is already the correct size
+                // We don't want to destroy it, so null it out as appropriate
+                HRESULT hr = CreateSmallerIcon(ahTempIcon[0], LOWORD(cxIcon), LOWORD(cyIcon), phicon);
+                if (FAILED(hr))
+                {
+                    result = (UINT)-1;
+                }
+                else if (hr == S_FALSE)
+                {
+                    ahTempIcon[0] = nullptr;
+                }
+
+                if (SUCCEEDED(hr) && ((int)result > 1))
+                {
+                    __analysis_assume(result < nIcons); // if PrivateExtractIconsW could be annotated with a range + error value(-1) this wouldn't be needed
+                    hr = CreateSmallerIcon(ahTempIcon[1], HIWORD(cxIcon), HIWORD(cyIcon), phicon + 1);
+                    if (FAILED(hr))
+                    {
+                        DestroyIcon(phicon[0]);
+                        phicon[0] = nullptr;
+
+                        result = (UINT)-1;
+                    }
+                    else if (hr == S_FALSE)
+                    {
+                        ahTempIcon[1] = nullptr;
+                    }
+                }
+            }
+            if (ahTempIcon[0])
+            {
+                DestroyIcon(ahTempIcon[0]);
+            }
+            if (ahTempIcon[1])
+            {
+                DestroyIcon(ahTempIcon[1]);
+            }
+        }
+    }
+
+    if (phicon[0] == nullptr)
+    {
+        // Okay, now get USER to do the extraction if all else failed
+        result = PrivateExtractIconsW(finalPath.c_str(), nIconIndex, cxIcon, cyIcon, phicon, nullptr, nIcons, lrFlags);
+    }
+    return result;
+}
+
+static UINT ConExtractIconInBothSizesW(PCWSTR szFileName, int nIconIndex, HICON* phiconLarge, HICON* phiconSmall)
+{
+    HICON ahicon[2] = { nullptr, nullptr };
+    auto result = ConExtractIcons(
+        szFileName,
+        nIconIndex,
+        MAKELONG(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CXSMICON)),
+        MAKELONG(GetSystemMetrics(SM_CYICON), GetSystemMetrics(SM_CYSMICON)),
+        ahicon,
+        2,
+        0);
+
+    *phiconLarge = ahicon[0];
+    *phiconSmall = ahicon[1];
+
+    return result;
+}
+// Excerpted Region Ends
+
 Icon::Icon() :
     _fInitialized(false),
     _hDefaultIcon(nullptr),
@@ -123,7 +371,7 @@ Icon& Icon::Instance()
 
     // Return value is count of icons extracted, which is redundant with filling the pointers.
     // http://msdn.microsoft.com/en-us/library/windows/desktop/ms648069(v=vs.85).aspx
-    ExtractIconExW(pwszIconLocation, nIconIndex, &_hIcon, &_hSmIcon, 1);
+    ConExtractIconInBothSizesW(pwszIconLocation, nIconIndex, &_hIcon, &_hSmIcon);
 
     // If the large icon failed, then ensure that we use the defaults.
     if (_hIcon == nullptr)

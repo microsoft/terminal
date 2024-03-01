@@ -117,15 +117,6 @@
                 </StackPanel>
             </local:SettingContainer>
 
-            <!--  AtlasEngine  -->
-            <local:SettingContainer x:Uid="Profile_UseAtlasEngine"
-                                    ClearSettingValue="{x:Bind Profile.ClearUseAtlasEngine}"
-                                    HasSettingValue="{x:Bind Profile.HasUseAtlasEngine, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
-
             <!--  VtPassthrough  -->
             <local:SettingContainer x:Uid="Profile_VtPassthrough"
                                     ClearSettingValue="{x:Bind Profile.ClearVtPassthrough}"
