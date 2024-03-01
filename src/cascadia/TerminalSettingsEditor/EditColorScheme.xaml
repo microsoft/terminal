@@ -199,7 +199,7 @@
         </Border>
 
         <local:SettingContainer x:Uid="ColorScheme_InboxSchemeDuplicate"
-                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
+                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
             <Button x:Name="DuplicateSchemeButton"
                     x:Uid="ColorScheme_DuplicateButton"
                     Click="{x:Bind ViewModel.Duplicate_Click}"
