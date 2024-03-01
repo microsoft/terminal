@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -43,7 +44,7 @@
             <local:SettingContainer x:Uid="Profile_Name"
                                     CurrentValue="{x:Bind Profile.Name, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}"
-                                    Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                 <TextBox Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind Profile.Name, Mode=TwoWay}" />
             </local:SettingContainer>
@@ -56,7 +57,7 @@
                                     HasSettingValue="{x:Bind Profile.HasCommandline, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.CommandlineOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}"
-                                    Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                 <StackPanel>
                     <TextBox x:Uid="Profile_CommandlineBox"
                              IsSpellCheckEnabled="False"
@@ -108,16 +109,16 @@
                 <StackPanel>
                     <TextBox x:Uid="Profile_IconBox"
                              FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                             IsEnabled="{x:Bind local:Converters.InvertBoolean(Profile.HideIcon), Mode=OneWay}"
+                             IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.HideIcon), Mode=OneWay}"
                              IsSpellCheckEnabled="False"
                              Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.Icon, Mode=TwoWay}"
-                             Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
+                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
                     <Button x:Uid="Profile_IconBrowse"
                             Margin="0,10,0,0"
                             Click="Icon_Click"
                             Style="{StaticResource BrowseButtonStyle}"
-                            Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
+                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HideIcon), Mode=OneWay}" />
                     <CheckBox x:Name="HideIconCheckbox"
                               x:Uid="Profile_HideIconCheckbox"
                               Margin="0,5,0,0"
@@ -147,7 +148,7 @@
 
             <!--  Hidden  -->
             <local:SettingContainer x:Uid="Profile_Hidden"
-                                    Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                 <ToggleSwitch IsOn="{x:Bind Profile.Hidden, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
