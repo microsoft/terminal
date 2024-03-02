@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2017 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -136,7 +136,7 @@ struct ClampedMulFastOp {
 
 template <typename T>
 struct ClampedNegFastOp {
-  static const bool is_supported = std::is_signed<T>::value;
+  static const bool is_supported = std::is_signed_v<T>;
   __attribute__((always_inline)) static T Do(T value) {
     // Use this when there is no assembler path available.
     if (!ClampedSubFastAsmOp<T, T>::is_supported) {
