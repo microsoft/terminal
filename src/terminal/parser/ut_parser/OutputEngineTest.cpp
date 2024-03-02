@@ -1156,6 +1156,7 @@ public:
         _lineFeed{ false },
         _lineFeedType{ (DispatchTypes::LineFeedType)-1 },
         _reverseLineFeed{ false },
+        _setWindowTitle{ false },
         _forwardTab{ false },
         _numTabs{ 0 },
         _tabClear{ false },
@@ -1406,6 +1407,13 @@ public:
         return true;
     }
 
+    bool SetWindowTitle(std::wstring_view title) override
+    {
+        _setWindowTitle = true;
+        _setWindowTitleText = title;
+        return true;
+    }
+
     bool ForwardTab(const VTInt numTabs) noexcept override
     {
         _forwardTab = true;
@@ -1419,6 +1427,7 @@ public:
         _tabClearTypes.push_back(clearType);
         return true;
     }
+
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
     {
         _setColorTableEntry = true;
@@ -1517,6 +1526,8 @@ public:
     bool _lineFeed;
     DispatchTypes::LineFeedType _lineFeedType;
     bool _reverseLineFeed;
+    bool _setWindowTitle;
+    std::wstring _setWindowTitleText;
     bool _forwardTab;
     size_t _numTabs;
     bool _tabClear;
@@ -3166,6 +3177,49 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(0));
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(16));
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(64));
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscSetWindowTitle)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:oscNumber", L"{0, 1, 2, 21}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt oscNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"oscNumber", oscNumber));
+
+        const auto oscPrefix = wil::str_printf<std::wstring>(L"\x1b]%d", oscNumber);
+        const auto stringTerminator = L"\033\\";
+
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(oscPrefix);
+        mach.ProcessString(L";Title Text");
+        mach.ProcessString(stringTerminator);
+        VERIFY_IS_TRUE(pDispatch->_setWindowTitle);
+        VERIFY_ARE_EQUAL(L"Title Text", pDispatch->_setWindowTitleText);
+
+        pDispatch->ClearState();
+        pDispatch->_setWindowTitleText = L"****"; // Make sure this is cleared
+
+        mach.ProcessString(oscPrefix);
+        mach.ProcessString(L";");
+        mach.ProcessString(stringTerminator);
+        VERIFY_IS_TRUE(pDispatch->_setWindowTitle);
+        VERIFY_ARE_EQUAL(L"", pDispatch->_setWindowTitleText);
+
+        pDispatch->ClearState();
+        pDispatch->_setWindowTitleText = L"****"; // Make sure this is cleared
+
+        mach.ProcessString(oscPrefix);
+        mach.ProcessString(stringTerminator);
+        VERIFY_IS_TRUE(pDispatch->_setWindowTitle);
+        VERIFY_ARE_EQUAL(L"", pDispatch->_setWindowTitleText);
 
         pDispatch->ClearState();
     }
