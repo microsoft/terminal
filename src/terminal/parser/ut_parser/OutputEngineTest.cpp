@@ -61,9 +61,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        // The OscString state shouldn't escape out after an ESC.
-        // Same for DcsPassThrough and SosPmApcString state.
-        auto shouldEscapeOut = true;
+        auto expectedEscapeState = StateMachine::VTStates::Escape;
 
         switch (uiTest)
         {
@@ -109,17 +107,21 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach._state = StateMachine::VTStates::CsiIntermediate;
             break;
         }
+        // The OscParam and OscString states shouldn't escape out after an ESC.
+        // They enter the OscTermination state to wait for the `\` char of the
+        // string terminator, without which the OSC operation won't be executed.
         case 7:
         {
             Log::Comment(L"Escape from OscParam");
             mach._state = StateMachine::VTStates::OscParam;
+            expectedEscapeState = StateMachine::VTStates::OscTermination;
             break;
         }
         case 8:
         {
             Log::Comment(L"Escape from OscString");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::OscString;
+            expectedEscapeState = StateMachine::VTStates::OscTermination;
             break;
         }
         case 9:
@@ -167,7 +169,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         case 16:
         {
             Log::Comment(L"Escape from DcsPassThrough");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::DcsPassThrough;
             mach._dcsStringHandler = [](const auto) { return true; };
             break;
@@ -175,17 +176,13 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         case 17:
         {
             Log::Comment(L"Escape from SosPmApcString");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::SosPmApcString;
             break;
         }
         }
 
         mach.ProcessCharacter(AsciiChars::ESC);
-        if (shouldEscapeOut)
-        {
-            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        }
+        VERIFY_ARE_EQUAL(expectedEscapeState, mach._state);
     }
 
     TEST_METHOD(TestEscapeImmediatePath)
