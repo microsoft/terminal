@@ -1,4 +1,4 @@
-# Copyright (c) 2017 The Chromium Authors. All rights reserved.
+# Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -9,6 +9,7 @@
 source_set("base_numerics") {
   visibility = [ "//base/*" ]
   sources = [
+    "basic_ops_impl.h",
     "checked_math_impl.h",
     "clamped_math_impl.h",
     "safe_conversions_arm_impl.h",
@@ -18,11 +19,25 @@ source_set("base_numerics") {
     "safe_math_shared_impl.h",
   ]
   public = [
+    "angle_conversions.h",
+    "byte_conversions.h",
     "checked_math.h",
     "clamped_math.h",
     "math_constants.h",
+    "ostream_operators.h",
     "ranges.h",
     "safe_conversions.h",
     "safe_math.h",
+    "wrapping_math.h",
+  ]
+}
+
+source_set("unittests") {
+  testonly = true
+  visibility = [ "//base/*" ]
+  sources = [ "byte_conversions_unittest.cc" ]
+  deps = [
+    "//base/numerics:base_numerics",
+    "//testing/gtest",
   ]
 }
