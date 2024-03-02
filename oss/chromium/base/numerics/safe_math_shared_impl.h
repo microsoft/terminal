@@ -17,7 +17,7 @@
 #include <type_traits>
 
 #include "base/numerics/safe_conversions.h"
-#include "build/Chromium/build_config.h"
+#include "base/numerics/build/build_config.h"
 
 #if BUILDFLAG(IS_ASMJS)
 // Optimized safe math instructions are incompatible with asmjs.
