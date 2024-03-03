@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -78,10 +79,10 @@
                             <Slider x:Name="OpacitySlider"
                                     x:Uid="Profile_OpacitySlider"
                                     Grid.Column="0"
-                                    Value="{x:Bind local:Converters.PercentageToPercentageValue(Profile.Opacity), BindBack=Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
+                                    Value="{x:Bind mtu:Converters.PercentageToPercentageValue(Profile.Opacity), BindBack=Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
                             <TextBlock Grid.Column="1"
                                        Style="{StaticResource SliderValueLabelStyle}"
-                                       Text="{x:Bind local:Converters.AppendPercentageSign(OpacitySlider.Value), Mode=OneWay}" />
+                                       Text="{x:Bind mtu:Converters.AppendPercentageSign(OpacitySlider.Value), Mode=OneWay}" />
                         </Grid>
                     </StackPanel>
                 </local:SettingContainer>
@@ -116,7 +117,7 @@
                         <Slider x:Name="PaddingSlider"
                                 x:Uid="Profile_PaddingSlider"
                                 Grid.Column="0"
-                                Value="{x:Bind local:Converters.MaxValueFromPaddingString(Profile.Padding), BindBack=Profile.SetPadding, Mode=TwoWay}" />
+                                Value="{x:Bind mtu:Converters.MaxValueFromPaddingString(Profile.Padding), BindBack=Profile.SetPadding, Mode=TwoWay}" />
                         <TextBlock Grid.Column="1"
                                    Style="{StaticResource SliderValueLabelStyle}"
                                    Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}" />
@@ -144,7 +145,7 @@
                             Margin="10,0,0,0"
                             Click="CreateUnfocusedAppearance_Click"
                             Style="{StaticResource BaseButtonStyle}"
-                            Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
+                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Margin="0,3,0,0"
