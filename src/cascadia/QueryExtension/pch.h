@@ -45,6 +45,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hQueryExtensionProvider);
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Microsoft.Terminal.UI.h>
 
 #include <winrt/Windows.Web.Http.h>
 #include <winrt/Windows.Web.Http.Headers.h>
