@@ -81,7 +81,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool ShowUnfocusedAppearance();
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
+
         bool VtPassthroughAvailable() const noexcept;
+        bool ShowMarksAvailable() const noexcept;
+        bool AutoMarkPromptsAvailable() const noexcept;
+        bool RepositionCursorWithMouseAvailable() const noexcept;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
 
@@ -113,6 +117,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
         OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough);
         OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
+        OBSERVABLE_PROJECTED_SETTING(_profile, RightClickContextMenu);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ShowMarks);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AutoMarkPrompts);
+        OBSERVABLE_PROJECTED_SETTING(_profile, RepositionCursorWithMouse);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
