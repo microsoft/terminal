@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void SearchBoxControl::_UpdateSizeDependents()
     {
-        const winrt::Windows::Foundation::Size infiniteSize{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
+        const winrt::Windows::Foundation::Size infiniteSize{ std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity() };
         Measure(infiniteSize);
         const auto desiredSize = DesiredSize();
         _EntryAnimationStartPoint(-desiredSize.Height);
