@@ -319,13 +319,15 @@ namespace winrt::TerminalApp::implementation
         // Do nothing. We'll later be updated manually by
         // UpdateTerminalSettings, which we need for profile and
         // focused/unfocused settings.
+        assert(false); // If you hit this, you done goofed.
     }
 
-    void TerminalPaneContent::UpdateTerminalSettings(const TerminalSettingsCreateResult& settings,
-                                                     const Profile& profile)
+    void TerminalPaneContent::UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache)
     {
-        _profile = profile;
-        _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        if (const auto& settings{ cache.TryLookup(_profile) })
+        {
+            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        }
     }
 
     // Method Description:

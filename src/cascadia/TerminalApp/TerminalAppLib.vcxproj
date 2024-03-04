@@ -171,6 +171,9 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
+    <ClInclude Include="TerminalSettingsCache.h">
+      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
@@ -288,6 +291,9 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="TerminalSettingsCache.cpp">
+      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
@@ -361,6 +367,7 @@
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="IPaneContent.idl" />
     <Midl Include="TerminalPaneContent.idl" />
+    <Midl Include="TerminalSettingsCache.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

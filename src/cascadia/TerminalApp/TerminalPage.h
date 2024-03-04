@@ -272,6 +272,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
+        TerminalApp::TerminalSettingsCache _terminalSettingsCache{ nullptr };
+
         struct StashedDragData
         {
             winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> draggedTab{ nullptr };

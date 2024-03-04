@@ -1285,28 +1285,21 @@ void Pane::_FocusFirstChild()
     }
 }
 
-void Pane::UpdateSettings(const CascadiaSettings& settings)
+void Pane::UpdateSettings(const CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache)
 {
     if (_content)
     {
-        _content.UpdateSettings(settings);
-    }
-}
-
-// Method Description:
-// - Updates the settings of this pane, presuming that it is a leaf.
-// Arguments:
-// - settings: The new TerminalSettings to apply to any matching controls
-// - profile: The profile from which these settings originated.
-// Return Value:
-// - <none>
-void Pane::UpdateTerminalSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
-{
-    assert(_IsLeaf());
-
-    if (const auto& terminalPane{ _getTerminalContent() })
-    {
-        return terminalPane.UpdateTerminalSettings(settings, profile);
+        // We need to do a bit more work here for terminal
+        // panes. They need to know about the profile that was used for
+        // them, and about the focused/unfocused settings.
+        if (const auto& terminalPaneContent{ _content.try_as<TerminalPaneContent>() })
+        {
+            terminalPaneContent.UpdateTerminalSettings(cache);
+        }
+        else
+        {
+            _content.UpdateSettings(settings);
+        }
     }
 }
 

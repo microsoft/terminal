@@ -333,7 +333,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // (The window has a min. size that ensures that there's always a scrollbar thumb.)
             if (drawableRange < 0)
             {
-                assert(false);
+                // assert(false);
                 return;
             }
 
