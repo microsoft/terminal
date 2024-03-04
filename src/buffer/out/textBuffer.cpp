@@ -1298,7 +1298,8 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 // - the delimiter class for the given char
 DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const
 {
-    return GetRowByOffset(pos.y).DelimiterClassAt(pos.x, wordDelimiters);
+    const auto realPos = ScreenToBufferPosition(pos);
+    return GetRowByOffset(realPos.y).DelimiterClassAt(realPos.x, wordDelimiters);
 }
 
 // Method Description:
