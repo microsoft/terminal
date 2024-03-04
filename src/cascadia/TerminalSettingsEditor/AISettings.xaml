@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -58,7 +59,7 @@
                             </Button>
                         </Grid>
                         <Grid RowSpacing="8"
-                              Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.AreAIKeyAndEndpointSet), Mode=OneWay}">
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AreAIKeyAndEndpointSet), Mode=OneWay}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />

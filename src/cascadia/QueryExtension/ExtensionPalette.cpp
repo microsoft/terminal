@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         // We don't need to store the path - just create the icon and set it,
         // Xaml will get the change notification
-        ResolvedIcon(winrt::Microsoft::Terminal::Settings::Model::IconPathConverter::IconWUX(iconPath));
+        ResolvedIcon(winrt::Microsoft::Terminal::UI::IconPathConverter::IconWUX(iconPath));
     }
 
     winrt::fire_and_forget ExtensionPalette::_getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime)
