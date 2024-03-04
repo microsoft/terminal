@@ -3306,24 +3306,11 @@ namespace winrt::TerminalApp::implementation
 
         // Refresh UI elements
 
+        // Recreate the TerminalSettings cache here. We'll use that as we're
+        // updating terminal panes, so that we don't have to build a _new_
+        // TerminalSettings for every profile we update - we can just look them
+        // up the previous ones we built.
         _terminalSettingsCache = TerminalApp::TerminalSettingsCache{ _settings, *_bindings };
-
-        // // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
-        // // when we stabilize its guid this will become fully safe.
-        // std::unordered_map<winrt::guid, std::pair<Profile, TerminalSettingsCreateResult>> profileGuidSettingsMap;
-        // const auto profileDefaults{ _settings.ProfileDefaults() };
-        // const auto allProfiles{ _settings.AllProfiles() };
-
-        // profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
-
-        // // Include the Defaults profile for consideration
-        // profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, nullptr });
-        // for (const auto& newProfile : allProfiles)
-        // {
-        //     // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
-        //     // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
-        //     profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
-        // }
 
         for (const auto& tab : _tabs)
         {
@@ -3331,33 +3318,6 @@ namespace winrt::TerminalApp::implementation
             {
                 // Let the tab know that there are new settings. It's up to each content to decide what to do with them.
                 terminalTab->UpdateSettings(_settings, _terminalSettingsCache);
-
-                // // FURTHERMORE We need to do a bit more work here for terminal
-                // // panes. They need to know about the profile that was used for
-                // // them, and about the focused/unfocused settings.
-
-                // // Manually enumerate the panes in each tab; this will let us recycle TerminalSettings
-                // // objects but only have to iterate one time.
-                // terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
-                //     // If the pane isn't a terminal pane, it won't have a profile.
-                //     if (const auto profile{ pane->GetProfile() })
-                //     {
-                //         const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
-                //         // GH#2455: If there are any panes with controls that had been
-                //         // initialized with a Profile that no longer exists in our list of
-                //         // profiles, we'll leave it unmodified. The profile doesn't exist
-                //         // anymore, so we can't possibly update its settings.
-                //         if (found != profileGuidSettingsMap.cend())
-                //         {
-                //             auto& pair{ found->second };
-                //             if (!pair.second)
-                //             {
-                //                 pair.second = TerminalSettings::CreateWithProfile(_settings, pair.first, *_bindings);
-                //             }
-                //             pane->UpdateTerminalSettings(pair.second, pair.first);
-                //         }
-                //     }
-                // });
 
                 // Update the icon of the tab for the currently focused profile in that tab.
                 // Only do this for TerminalTabs. Other types of tabs won't have multiple panes
