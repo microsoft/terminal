@@ -17,6 +17,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
+        _initialLoadedRevoker = Loaded(winrt::auto_revoke, [this](auto&&, auto&&) {
+            VisualStateManager::GoToState(*this, L"Hidden", false);
+            _initialLoadedRevoker.revoke();
+        });
+
+        SizeChanged([this](auto&&, auto&&) {
+            _UpdateSizeDependents();
+        });
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
         this->RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
@@ -39,6 +47,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _focusableElements.insert(GoBackwardButton());
 
         StatusBox().Width(_GetStatusMaxWidth());
+    }
+
+    winrt::Windows::Foundation::Rect SearchBoxControl::ContentClipRect() const noexcept
+    {
+        return _contentClipRect;
+    }
+
+    void SearchBoxControl::_ContentClipRect(const winrt::Windows::Foundation::Rect& rect)
+    {
+        if (rect != _contentClipRect)
+        {
+            _contentClipRect = rect;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"ContentClipRect" });
+        }
+    }
+
+    double SearchBoxControl::EntryAnimationStartPoint() const noexcept
+    {
+        return _entryAnimationStartPoint;
+    }
+
+    void SearchBoxControl::_EntryAnimationStartPoint(double y)
+    {
+        if (y != _entryAnimationStartPoint)
+        {
+            _entryAnimationStartPoint = y;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"EntryAnimationStartPoint" });
+        }
+    }
+
+    void SearchBoxControl::_UpdateSizeDependents()
+    {
+        const winrt::Windows::Foundation::Size infiniteSize{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
+        Measure(infiniteSize);
+        const auto desiredSize = DesiredSize();
+        _EntryAnimationStartPoint(-desiredSize.Height);
+        _ContentClipRect({ 0, 0, desiredSize.Width, desiredSize.Height });
     }
 
     // Method Description:

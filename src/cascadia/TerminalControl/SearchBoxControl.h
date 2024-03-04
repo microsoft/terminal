@@ -28,6 +28,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         SearchBoxControl();
 
+        winrt::Windows::Foundation::Rect ContentClipRect() const noexcept;
+        double EntryAnimationStartPoint() const noexcept;
+
         void TextBoxKeyDown(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 
         void SetFocusOnTextbox();
@@ -44,12 +47,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
+        WINRT_CALLBACK(PropertyChanged, winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_CALLBACK(Search, SearchHandler);
         WINRT_CALLBACK(SearchChanged, SearchHandler);
         TYPED_EVENT(Closed, Control::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
+        winrt::Windows::Foundation::Rect _contentClipRect{ 0, 0, 0, 0 };
+        double _entryAnimationStartPoint = 0;
+        winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _initialLoadedRevoker;
+
+        void _UpdateSizeDependents();
+        void _ContentClipRect(const winrt::Windows::Foundation::Rect& rect);
+        void _EntryAnimationStartPoint(double y);
 
         static winrt::hstring _FormatStatus(int32_t totalMatches, int32_t currentMatch);
         static double _TextWidth(winrt::hstring text, double fontSize);

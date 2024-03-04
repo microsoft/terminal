@@ -142,8 +142,13 @@
                     </Style>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
+            <Duration x:Key="SearchBoxAnimationDuration">0:0:0.3</Duration>
         </ResourceDictionary>
     </UserControl.Resources>
+
+    <UserControl.Clip>
+        <RectangleGeometry Rect="{x:Bind ContentClipRect, Mode=OneWay}" />
+    </UserControl.Clip>
 
     <StackPanel Margin="8"
                 Padding="4,8"
@@ -154,6 +159,10 @@
                 Orientation="Horizontal"
                 Shadow="{StaticResource SharedShadow}"
                 Translation="0,0,16">
+        <StackPanel.RenderTransform>
+            <TranslateTransform x:Name="TranslateTransform" />
+        </StackPanel.RenderTransform>
+
         <TextBox x:Name="TextBox"
                  x:Uid="SearchBox_TextBox"
                  Width="160"
@@ -220,5 +229,48 @@
                       FontSize="12"
                       Glyph="&#xE711;" />
         </Button>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="SearchBoxStates">
+
+                <VisualState x:Name="Visible">
+                    <VisualState.Setters>
+                        <Setter Target="Root.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="TranslateTransform"
+                                         Storyboard.TargetProperty="Y"
+                                         From="{x:Bind EntryAnimationStartPoint, Mode=OneWay}"
+                                         To="0"
+                                         Duration="{StaticResource SearchBoxAnimationDuration}">
+                            <DoubleAnimation.EasingFunction>
+                                <QuarticEase EasingMode="EaseOut" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="Hidden">
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="TranslateTransform"
+                                         Storyboard.TargetProperty="Y"
+                                         To="{x:Bind EntryAnimationStartPoint, Mode=OneWay}"
+                                         Duration="{StaticResource SearchBoxAnimationDuration}">
+                            <DoubleAnimation.EasingFunction>
+                                <QuarticEase EasingMode="EaseIn" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <ObjectAnimationUsingKeyFrames BeginTime="{StaticResource SearchBoxAnimationDuration}"
+                                                       Storyboard.TargetName="Root"
+                                                       Storyboard.TargetProperty="Visibility"
+                                                       Duration="0">
+                            <DiscreteObjectKeyFrame KeyTime="0:0:0"
+                                                    Value="Collapsed" />
+                        </ObjectAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </StackPanel>
 </UserControl>
