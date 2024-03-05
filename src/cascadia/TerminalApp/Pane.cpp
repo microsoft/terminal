@@ -363,6 +363,21 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
                                      const winrt::Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs& args)
 {
     auto delta = args.Delta().Translation;
+
+    const auto weAreVertical = _splitState == SplitState::Vertical;
+    const winrt::Windows::Foundation::Point translationForUs = (weAreVertical) ? Point{ delta.X, 0 } : Point{ 0, delta.Y };
+    const winrt::Windows::Foundation::Point translationForParent = (weAreVertical) ? Point{ 0, delta.Y } : Point{ delta.X, 0 };
+
+    if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
+    {
+        ManipulationRequested.raise(weAreVertical ? SplitState::Horizontal : SplitState::Vertical,
+                                    translationForParent);
+    }
+
+    _handleManipulation(translationForUs);
+}
+void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
+{
     const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
     // Decide on direction based on delta
@@ -1928,7 +1943,7 @@ void Pane::_ApplySplitDefinitions()
         _secondChild->_ApplySplitDefinitions();
 
         // Only allow x-axis resizing
-        _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX);
+        // _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX);
     }
     else if (_splitState == SplitState::Horizontal)
     {
@@ -1943,8 +1958,9 @@ void Pane::_ApplySplitDefinitions()
         _secondChild->_ApplySplitDefinitions();
 
         // Only allow y-axis resizing
-        _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
+        // _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
     }
+    _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX | Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
     _UpdateBorders();
 }
 
@@ -2365,6 +2381,21 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _root.Children().Append(_borderSecond);
 
     _ApplySplitDefinitions();
+
+    const auto handler = [this](const auto& direction, const auto& delta) {
+        if (direction == this->_splitState)
+        {
+            // delta;
+            _handleManipulation(delta);
+        }
+        else
+        {
+            ManipulationRequested.raise(direction, delta);
+        }
+    };
+
+    _firstChild->ManipulationRequested(handler);
+    _secondChild->ManipulationRequested(handler);
 
     // Register event handlers on our children to handle their Close events
     _SetupChildCloseHandlers();
