@@ -254,6 +254,9 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
 
+    winrt::event_token _firstManipulatedToken{ 0 };
+    winrt::event_token _secondManipulatedToken{ 0 };
+
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _manipulationDeltaRevoker;
@@ -283,6 +286,7 @@ private:
     Borders _GetCommonBorders();
     winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
+    void _handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta);
     void _handleManipulation(const winrt::Windows::Foundation::Point delta);
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction, float amount);
 

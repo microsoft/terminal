@@ -359,14 +359,38 @@ bool Pane::ResizePane(const ResizeDirection& direction, float amount)
     return false;
 }
 
+void Pane::_handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta)
+{
+    if (direction == _splitState)
+    {
+        _handleManipulation(delta);
+    }
+    else
+    {
+        ManipulationRequested.raise(direction, delta);
+    }
+}
+
 void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs& args)
 {
+    if (args.Handled())
+    {
+        return;
+    }
+     if (_IsLeaf())
+     {
+         return;
+     }
     auto delta = args.Delta().Translation;
 
     const auto weAreVertical = _splitState == SplitState::Vertical;
     const winrt::Windows::Foundation::Point translationForUs = (weAreVertical) ? Point{ delta.X, 0 } : Point{ 0, delta.Y };
     const winrt::Windows::Foundation::Point translationForParent = (weAreVertical) ? Point{ 0, delta.Y } : Point{ delta.X, 0 };
+
+    _handleManipulation(translationForUs);
+
+
 
     if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
     {
@@ -374,7 +398,7 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
                                     translationForParent);
     }
 
-    _handleManipulation(translationForUs);
+    args.Handled(true);
 }
 void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
 {
@@ -2326,6 +2350,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 {
     auto actualSplitType = _convertAutomaticOrDirectionalSplitState(splitType);
 
+    // _manipulationDeltaRevoker.revoke();
+
     if (_IsLeaf())
     {
         // Remove our old GotFocus handler from the control. We don't want the
@@ -2344,6 +2370,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     // Create a new pane from ourself
     if (!_IsLeaf())
     {
+        _firstChild->ManipulationRequested(_firstManipulatedToken);
+        _secondChild->ManipulationRequested(_secondManipulatedToken);
+
         // Since we are a parent we don't have borders normally,
         // so set them temporarily for when we update our split definition.
         _borders = _GetCommonBorders();
@@ -2382,20 +2411,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 
     _ApplySplitDefinitions();
 
-    const auto handler = [this](const auto& direction, const auto& delta) {
-        if (direction == this->_splitState)
-        {
-            // delta;
-            _handleManipulation(delta);
-        }
-        else
-        {
-            ManipulationRequested.raise(direction, delta);
-        }
-    };
-
-    _firstChild->ManipulationRequested(handler);
-    _secondChild->ManipulationRequested(handler);
+    _firstManipulatedToken = _firstChild->ManipulationRequested({ this, &Pane::_handleOrBubbleManipulation });
+    _secondManipulatedToken = _secondChild->ManipulationRequested({ this, &Pane::_handleOrBubbleManipulation });
+    // _secondChild->ManipulationRequested(handler);
 
     // Register event handlers on our children to handle their Close events
     _SetupChildCloseHandlers();
