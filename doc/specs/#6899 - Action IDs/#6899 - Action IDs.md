@@ -37,19 +37,19 @@ be even better, as a way of making the meaning of the "list of actions" more
 obvious.
 
 We will then restructure `defaults.json`, and also users' settings files (via `fixUpUserSettings`), in the following manner:
-* Instead of each `command` json block containing both the `action` (along with additional arguments) and the `keys`, these will now be split up
-* There will now be one json block for just the `command`/`action`, which will also contain the `id`. These json blocks will be in their own list called `actions`.
-* There will be another json block for the `keys`, which will refer to the action to be invoked by `id`. These json blocks will be in their own list called `keybindings`.
+* Instead of each `command` json block containing both the `action` (along with additional arguments) and the `keys`, these will now be split up -
+    * There will now be one json block for just the `command`/`action`, which will also contain the `id`. These json blocks will be in their own list called `actions`.
+    * There will be another json block for the `keys`, which will refer to the action to be invoked by `id`. These json blocks will be in their own list called `keybindings`.
 
 For example, let's take a look at the `split pane right` action in `defaults.json` as we currently have it:
 
-`{ "command": { "action": "splitPane", "split": "right" }, "keys": "alt+shift+plus" }`
+`"actions": [..., { "command": { "action": "splitPane", "split": "right" }, "keys": "alt+shift+plus" }, ...]`
 
 This will now become:
 
-In the `actions` list: `{ "command": { "action": "splitPane", "split": "right" }, "id": "Terminal.SplitPaneRight" }`
+`"actions": [..., { "command": { "action": "splitPane", "split": "right" }, "id": "Terminal.SplitPaneRight" }, ...]`
 
-In the `keybindings` list: `{ "keys": "alt+shift+plus", "id": "Terminal.SplitPaneRight" }`
+`"keybindings": [..., { "keys": "alt+shift+plus", "id": "Terminal.SplitPaneRight" }, ...]`
 
 Here is how we will parse settings file and construct the relevant settings model objects:
 * We will first scan the `actions` list. We'll
@@ -59,20 +59,7 @@ Here is how we will parse settings file and construct the relevant settings mode
 * Next we will scan the `keybindings` list. These entries will
   create a `KeyChord->ActionAndArgs` entry in the keybindings map. Since these objects should all contain an `id`, we will simply use the `id->ActionAndArgs` map we created in the previous step. Any object with `keys` set but no `id` will be ignored.
 
-For a visual representation, let's assume the user has the following in their
-`actions`:
-
-![figure 2](data-mockup-actions.png)
-
-We'll first parse the `actions` to generate the mapping of `id`->`Actions`:
-
-![figure 3](data-mockup-actions-and-ids.png)
-
-Then, we'll parse the `actions` to generate the mapping of keys to actions, with
-some actions already being defined in the map of `id`->`Actions`:
-
-![figure 4](data-mockup-actions-and-ids-and-keys.png)
-
+### Layering
 
 When layering `actions`, if a later settings file contains an action with the
 same `id`, it will replace the current value. In this way, users can redefine
@@ -92,6 +79,7 @@ As we add additional menus to the Terminal, like the customization for the new
 tab dropdown, or the tab context menu, or the `TermControl` context menu, they
 could all refer to these actions by `id`, rather than duplicating the same json.
 
+As for fragments, all actions in fragments _must_ have an `id`. If a fragment provides an action without an `id`, or provides an `id` that clashes with one of the actions in `defaults.json`, that action will be ignored.
 
 ### Existing Scenarios
 
