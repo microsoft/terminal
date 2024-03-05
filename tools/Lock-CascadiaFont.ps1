@@ -1,5 +1,5 @@
 # This script is a failed attempt to lock the Cascadia Mono/Code font files in order to reproduce an issue with the font
-# cache service, where it says a font exists, but then failes to use it (see GH#9375). The script doesn't work because
+# cache service, where it says a font exists, but then fails to use it (see GH#9375). The script doesn't work because
 # for some reason DirectWrite is still able to fully use the fonts. It's left here for reference.
 
 #Requires -RunAsAdministrator
@@ -51,7 +51,7 @@ function Lock-File {
 }
 
 $fonts = Get-ItemProperty "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts\*"
-    | ForEach-Object { $_.psobject.Properties }
+    | ForEach-Object { $_.PSobject.Properties }
     | Where-Object { $_.Name.StartsWith("Cascadia") }
     | ForEach-Object { $_.Value }
 
