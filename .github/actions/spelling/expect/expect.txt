@@ -1122,8 +1122,8 @@ msix
 msrc
 MSVCRTD
 MTSM
-munges
 Munged
+munges
 murmurhash
 muxes
 myapplet
@@ -1172,6 +1172,7 @@ NOCONTEXTHELP
 NOCOPYBITS
 NODUP
 noexcepts
+NOFONT
 NOINTEGRALHEIGHT
 NOINTERFACE
 NOLINKINFO
@@ -1887,8 +1888,8 @@ UINTs
 ul
 ulcch
 uld
-uldb
 uldash
+uldb
 ulwave
 Unadvise
 unattend
@@ -1911,8 +1912,8 @@ untextured
 UPDATEDISPLAY
 UPDOWN
 UPKEY
-UPSS
 upss
+UPSS
 uregex
 URegular
 usebackq

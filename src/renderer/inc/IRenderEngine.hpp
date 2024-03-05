@@ -111,7 +111,7 @@ namespace Microsoft::Console::Render
         virtual void SetRetroTerminalEffect(bool enable) noexcept {}
         virtual void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept {}
         virtual void SetSoftwareRendering(bool enable) noexcept {}
-        virtual void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept {}
+        virtual void SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept {}
         [[nodiscard]] virtual HRESULT SetWindowSize(const til::size pixels) noexcept { return E_NOTIMPL; }
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept { return E_NOTIMPL; }
         virtual void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept {}

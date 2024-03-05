@@ -75,7 +75,7 @@ namespace Microsoft::Console::Render::Atlas
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;
-        void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
+        void SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept override;
         [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
@@ -94,8 +94,8 @@ namespace Microsoft::Console::Render::Atlas
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
-        void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
-        void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
+        void _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
+        void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
         ATLAS_ATTR_COLD void _recreateAdapter();
@@ -156,6 +156,7 @@ namespace Microsoft::Console::Render::Atlas
             Buffer<f32> glyphAdvances;
             Buffer<DWRITE_GLYPH_OFFSET> glyphOffsets;
 
+            wil::com_ptr<IDWriteFontFallback> systemFontFallback;
             wil::com_ptr<IDWriteFontFace2> replacementCharacterFontFace;
             u16 replacementCharacterGlyphIndex = 0;
             bool replacementCharacterLookedUp = false;

@@ -1757,12 +1757,12 @@
     <value>Learn more.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
   </data>
-	<data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
-    <value>Warning:</value>
-    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+	<data name="Profile_FontFace_MissingFontWarning.Title" xml:space="preserve">
+    <value>Missing fonts:</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
   </data>
-	<data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
-    <value>Choosing a non-monospaced font will likely result in visual artifacts. Use at your own discretion.</value>
-    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+	<data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
+    <value>Non-monospace fonts detected:</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
 </root>

@@ -337,6 +337,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             _renderer->AddRenderEngine(_renderEngine.get());
 
+            // Hook up the warnings callback as early as possible so that we catch everything.
+            _renderEngine->SetWarningCallback([this](HRESULT hr, wil::zwstring_view parameter) {
+                _rendererWarning(hr, parameter);
+            });
+
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
@@ -371,12 +376,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _settings->InitialRows(height);
 
             _terminal->CreateFromSettings(*_settings, *_renderer);
-
-            // IMPORTANT! Set this callback up sooner than later. If we do it
-            // after Enable, then it'll be possible to paint the frame once
-            // _before_ the warning handler is set up, and then warnings from
-            // the first paint will be ignored!
-            _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
 
             // Tell the render engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid
@@ -1005,18 +1004,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //      actually fail. We need a way to gracefully fallback.
             LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
             LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
-        }
-
-        // If the actual font isn't what was requested...
-        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
-        {
-            // Then warn the user that we picked something because we couldn't find their font.
-            // Format message with user's choice of font and the font that was chosen instead.
-            const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") },
-                                                      _desiredFont.GetFaceName(),
-                                                      _actualFont.GetFaceName()) };
-            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, message);
-            _RaiseNoticeHandlers(*this, std::move(noticeArgs));
         }
 
         const auto actualNewSize = _actualFont.GetSize();
@@ -1706,9 +1693,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_rendererWarning(const HRESULT hr)
+    void ControlCore::_rendererWarning(const HRESULT hr, wil::zwstring_view parameter)
     {
-        _RendererWarningHandlers(*this, winrt::make<RendererWarningArgs>(hr));
+        _RendererWarningHandlers(*this, winrt::make<RendererWarningArgs>(hr, winrt::hstring{ parameter }));
     }
 
     winrt::fire_and_forget ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)

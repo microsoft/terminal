@@ -65,7 +65,7 @@ catch (const wil::ResultException& exception)
     {
         try
         {
-            _p.warningCallback(hr);
+            _p.warningCallback(hr, {});
         }
         CATCH_LOG()
     }

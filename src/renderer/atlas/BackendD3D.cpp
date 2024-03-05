@@ -433,7 +433,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             }
             if (p.warningCallback)
             {
-                p.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
+                p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, p.s->misc->customPixelShaderPath);
             }
         }
     }
@@ -1412,7 +1412,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
 
     if (BuiltinGlyphs::IsSoftFontChar(glyphIndex))
     {
-        _drawSoftFontGlyph(p, rect, glyphIndex);
+        shadingType = _drawSoftFontGlyph(p, rect, glyphIndex);
     }
     else
     {
@@ -1444,8 +1444,14 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     return glyphEntry;
 }
 
-void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect& rect, u32 glyphIndex)
+BackendD3D::ShadingType BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect& rect, u32 glyphIndex)
 {
+    // This happens if someone wrote a U+EF2x character (by accident), but we don't even have soft fonts enabled yet.
+    if (p.s->font->softFontPattern.empty())
+    {
+        return ShadingType::Default;
+    }
+
     if (!_softFontBitmap)
     {
         // Allocating such a tiny texture is very wasteful (min. texture size on GPUs
@@ -1496,6 +1502,7 @@ void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect&
 
     _d2dBeginDrawing();
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
+    return ShadingType::TextGrayscale;
 }
 
 void BackendD3D::_drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect)

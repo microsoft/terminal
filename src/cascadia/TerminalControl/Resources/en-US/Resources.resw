@@ -195,12 +195,8 @@
     <comment>Whenever we encounter an invalid URI or URL we show this string as a warning.</comment>
   </data>
   <data name="NoticeFontNotFound" xml:space="preserve">
-    <value>Unable to find the selected font "{0}".
-
-"{1}" has been selected instead.
-
-Please either install the missing font or choose another one.</value>
-    <comment>0 and 1 are names of fonts provided by the user and system respectively.</comment>
+    <value>Unable to find the following fonts: {0}. Please either install the missing or choose different fonts.</value>
+    <comment>This is a warning dialog shown when the user selects a font that isn't installed.</comment>
   </data>
   <data name="PixelShaderNotFound" xml:space="preserve">
     <value>Unable to find the provided shader "{0}".</value>
@@ -210,8 +206,8 @@ Please either install the missing font or choose another one.</value>
     <value>Unable to compile the specified pixel shader.</value>
   </data>
   <data name="UnexpectedRendererError" xml:space="preserve">
-    <value>Renderer encountered an unexpected error: {0}</value>
-    <comment>{0} is an error code.</comment>
+    <value>Renderer encountered an unexpected error {0:#8x}: {1}</value>
+    <comment>{0:#8x} is a placeholder for a Windows error code (e.g. 0x88985002) and {1} is the corresponding message.</comment>
   </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Read-only mode is enabled.</value>

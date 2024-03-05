@@ -379,7 +379,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
 #pragma region RendererCallbacks
-        void _rendererWarning(const HRESULT hr);
+        void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
         winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
