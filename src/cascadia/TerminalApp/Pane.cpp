@@ -272,14 +272,14 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
 //   decreasing the size of our first child.
 // Return Value:
 // - false if we couldn't resize this pane in the given direction, else true.
-bool Pane::_Resize(const ResizeDirection& direction)
+bool Pane::_Resize(const ResizeDirection& direction, float amount)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
         return false;
     }
 
-    auto amount = .05f;
+    // auto amount = .05f;
     if (direction == ResizeDirection::Right || direction == ResizeDirection::Down)
     {
         amount = -amount;
@@ -313,7 +313,7 @@ bool Pane::_Resize(const ResizeDirection& direction)
 // - direction: The direction to move the separator in.
 // Return Value:
 // - true if we or a child handled this resize request.
-bool Pane::ResizePane(const ResizeDirection& direction)
+bool Pane::ResizePane(const ResizeDirection& direction, float amount)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -330,7 +330,7 @@ bool Pane::ResizePane(const ResizeDirection& direction)
     const auto secondIsFocused = _secondChild->_lastActive;
     if (firstIsFocused || secondIsFocused)
     {
-        return _Resize(direction);
+        return _Resize(direction, amount);
     }
 
     // If neither of our children were the focused pane, then recurse into
@@ -344,12 +344,12 @@ bool Pane::ResizePane(const ResizeDirection& direction)
     // either.
     if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
     {
-        return _firstChild->ResizePane(direction) || _Resize(direction);
+        return _firstChild->ResizePane(direction, amount) || _Resize(direction, amount);
     }
 
     if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
     {
-        return _secondChild->ResizePane(direction) || _Resize(direction);
+        return _secondChild->ResizePane(direction, amount) || _Resize(direction, amount);
     }
 
     return false;
@@ -1866,6 +1866,9 @@ void Pane::_ApplySplitDefinitions()
 
         _firstChild->_ApplySplitDefinitions();
         _secondChild->_ApplySplitDefinitions();
+
+        // Only allow x-axis resizing
+        _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX);
     }
     else if (_splitState == SplitState::Horizontal)
     {
@@ -1878,8 +1881,64 @@ void Pane::_ApplySplitDefinitions()
 
         _firstChild->_ApplySplitDefinitions();
         _secondChild->_ApplySplitDefinitions();
+
+        // Only allow y-axis resizing
+        _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
     }
     _UpdateBorders();
+
+    _root.ManipulationDelta([this](auto&&, auto& args) {
+        auto delta = args.Delta().Translation;
+
+        // Decide on direction based on delta
+        ResizeDirection dir = ResizeDirection::None;
+        if (_splitState == SplitState::Vertical)
+        {
+            if (delta.X < 0)
+            {
+                dir = ResizeDirection::Left;
+            }
+            else if (delta.X > 0)
+            {
+                dir = ResizeDirection::Right;
+            }
+        }
+        else if (_splitState == SplitState::Horizontal)
+        {
+            if (delta.Y < 0)
+            {
+                dir = ResizeDirection::Up;
+            }
+            else if (delta.Y > 0)
+            {
+                dir = ResizeDirection::Down;
+            }
+        }
+
+        // Resize in the given direction
+        if (dir != ResizeDirection::None)
+        {
+            // turn delta into a percentage
+            base::ClampedNumeric<float> amount;
+            base::ClampedNumeric<float> actualDimension;
+            if (dir == ResizeDirection::Left || dir == ResizeDirection::Right)
+            {
+                amount = delta.X;
+                // TODO CARLOS: something is wrong here
+                actualDimension = base::ClampedNumeric<float>(_root.ActualWidth());
+            }
+            else if (dir == ResizeDirection::Up || dir == ResizeDirection::Down)
+            {
+                amount = delta.Y;
+                // TODO CARLOS: something is wrong here
+                actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
+            }
+
+            const auto percentDelta = amount / actualDimension;
+
+            ResizePane(dir, percentDelta.Abs());
+        }
+    });
 }
 
 // Method Description:
