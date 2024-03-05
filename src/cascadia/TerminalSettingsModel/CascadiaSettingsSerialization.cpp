@@ -350,8 +350,7 @@ void SettingsLoader::FinalizeLayering()
     if (userSettings.globals->EnableColorSelection())
     {
         const auto json = _parseJson(EnableColorSelectionSettingsJson);
-        // todo: figure out the correct origin tag here
-        const auto globals = GlobalAppSettings::FromJson(json.root, OriginTag::None);
+        const auto globals = GlobalAppSettings::FromJson(json.root, OriginTag::Generated);
         userSettings.globals->AddLeastImportantParent(globals);
     }
 
