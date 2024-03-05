@@ -7,6 +7,7 @@ import "ActionArgs.idl";
 import "Profile.idl";
 import "ColorScheme.idl";
 import "TerminalWarnings.idl";
+import "ISettingsModelObject.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -36,6 +37,7 @@ namespace Microsoft.Terminal.Settings.Model
         Command();
 
         String Name { get; };
+        OriginTag Origin;
         ActionAndArgs ActionAndArgs { get; };
         Microsoft.Terminal.Control.KeyChord Keys { get; };
         void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);

@@ -259,9 +259,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
                                               std::vector<SettingsLoadWarnings>& warnings,
+                                              const OriginTag origin,
                                               const bool parseKeys)
     {
         auto result = winrt::make_self<Command>();
+        result->_Origin = origin;
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
@@ -274,7 +276,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Initialize our list of subcommands.
             result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             result->_nestedCommand = true;
-            auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
+            auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson, origin);
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
 
@@ -362,7 +364,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - A vector containing any warnings detected while parsing
     std::vector<SettingsLoadWarnings> Command::LayerJson(IMap<winrt::hstring, Model::Command>& commands,
-                                                         const Json::Value& json)
+                                                         const Json::Value& json,
+                                                         const OriginTag origin)
     {
         std::vector<SettingsLoadWarnings> warnings;
 
@@ -372,7 +375,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 try
                 {
-                    const auto result = Command::FromJson(value, warnings);
+                    const auto result = Command::FromJson(value, warnings, origin);
                     if (result->ActionAndArgs().Action() == ShortcutAction::Invalid && !result->HasNestedCommands())
                     {
                         // If there wasn't a parsed command, then try to get the
@@ -583,7 +586,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // warnings, but ultimately, we don't care about warnings during
             // expansion.
             std::vector<SettingsLoadWarnings> unused;
-            if (auto newCmd{ Command::FromJson(newJsonValue, unused) })
+            if (auto newCmd{ Command::FromJson(newJsonValue, unused, expandable->_Origin) })
             {
                 newCommands.push_back(*newCmd);
             }

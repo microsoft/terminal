@@ -350,7 +350,8 @@ void SettingsLoader::FinalizeLayering()
     if (userSettings.globals->EnableColorSelection())
     {
         const auto json = _parseJson(EnableColorSelectionSettingsJson);
-        const auto globals = GlobalAppSettings::FromJson(json.root);
+        // todo: figure out the correct origin tag here
+        const auto globals = GlobalAppSettings::FromJson(json.root, OriginTag::None);
         userSettings.globals->AddLeastImportantParent(globals);
     }
 
@@ -616,7 +617,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     settings.clear();
 
     {
-        settings.globals = GlobalAppSettings::FromJson(json.root);
+        settings.globals = GlobalAppSettings::FromJson(json.root, origin);
 
         for (const auto& schemeJson : json.colorSchemes)
         {
@@ -704,7 +705,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         // Parse out actions from the fragment. Manually opt-out of keybinding
         // parsing - fragments shouldn't be allowed to bind actions to keys
         // directly. We may want to revisit circa GH#2205
-        settings.globals->LayerActionsFrom(json.root, false);
+        settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
     }
 
     {
