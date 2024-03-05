@@ -12,7 +12,7 @@ namespace Microsoft.Terminal.UI
         static Windows.UI.Xaml.Visibility InvertedBooleanToVisibility(Boolean value);
 
         // Numbers
-        static Int32 PercentageToPercentageValue(Double value);
+        static Double PercentageToPercentageValue(Double value);
         static Double PercentageValueToPercentage(Double value);
 
         // Strings
