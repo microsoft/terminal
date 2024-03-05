@@ -49,6 +49,8 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
         _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
     }
 
+    _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
+
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
@@ -84,6 +86,8 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
     _root.Children().Append(_borderFirst);
     _root.Children().Append(_borderSecond);
+
+    _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
 
     _ApplySplitDefinitions();
 
@@ -353,6 +357,62 @@ bool Pane::ResizePane(const ResizeDirection& direction, float amount)
     }
 
     return false;
+}
+
+void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs& args)
+{
+    auto delta = args.Delta().Translation;
+    const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+    // Decide on direction based on delta
+    ResizeDirection dir = ResizeDirection::None;
+    if (_splitState == SplitState::Vertical)
+    {
+        if (delta.X < 0)
+        {
+            dir = ResizeDirection::Left;
+        }
+        else if (delta.X > 0)
+        {
+            dir = ResizeDirection::Right;
+        }
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        if (delta.Y < 0)
+        {
+            dir = ResizeDirection::Up;
+        }
+        else if (delta.Y > 0)
+        {
+            dir = ResizeDirection::Down;
+        }
+    }
+
+    // Resize in the given direction
+    if (dir != ResizeDirection::None)
+    {
+        // turn delta into a percentage
+        base::ClampedNumeric<float> amount;
+        base::ClampedNumeric<float> actualDimension;
+        if (dir == ResizeDirection::Left || dir == ResizeDirection::Right)
+        {
+            amount = delta.X;
+            // TODO CARLOS: something is wrong here
+            actualDimension = base::ClampedNumeric<float>(_root.ActualWidth());
+        }
+        else if (dir == ResizeDirection::Up || dir == ResizeDirection::Down)
+        {
+            amount = delta.Y;
+            // TODO CARLOS: something is wrong here
+            actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
+        }
+        const auto scaledAmount = amount * scaleFactor;
+        const auto percentDelta = scaledAmount / actualDimension;
+
+        ResizePane(dir, percentDelta.Abs());
+    }
 }
 
 // Method Description:
@@ -1886,60 +1946,6 @@ void Pane::_ApplySplitDefinitions()
         _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
     }
     _UpdateBorders();
-
-    _root.ManipulationDelta([this](auto&&, auto& args) {
-        auto delta = args.Delta().Translation;
-        const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-
-        // Decide on direction based on delta
-        ResizeDirection dir = ResizeDirection::None;
-        if (_splitState == SplitState::Vertical)
-        {
-            if (delta.X < 0)
-            {
-                dir = ResizeDirection::Left;
-            }
-            else if (delta.X > 0)
-            {
-                dir = ResizeDirection::Right;
-            }
-        }
-        else if (_splitState == SplitState::Horizontal)
-        {
-            if (delta.Y < 0)
-            {
-                dir = ResizeDirection::Up;
-            }
-            else if (delta.Y > 0)
-            {
-                dir = ResizeDirection::Down;
-            }
-        }
-
-        // Resize in the given direction
-        if (dir != ResizeDirection::None)
-        {
-            // turn delta into a percentage
-            base::ClampedNumeric<float> amount;
-            base::ClampedNumeric<float> actualDimension;
-            if (dir == ResizeDirection::Left || dir == ResizeDirection::Right)
-            {
-                amount = delta.X;
-                // TODO CARLOS: something is wrong here
-                actualDimension = base::ClampedNumeric<float>(_root.ActualWidth());
-            }
-            else if (dir == ResizeDirection::Up || dir == ResizeDirection::Down)
-            {
-                amount = delta.Y;
-                // TODO CARLOS: something is wrong here
-                actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
-            }
-            const auto scaledAmount = amount * scaleFactor;
-            const auto percentDelta = scaledAmount / actualDimension;
-
-            ResizePane(dir, percentDelta.Abs());
-        }
-    });
 }
 
 // Method Description:
