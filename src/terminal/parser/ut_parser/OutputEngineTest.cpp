@@ -61,9 +61,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        // The OscString state shouldn't escape out after an ESC.
-        // Same for DcsPassThrough and SosPmApcString state.
-        auto shouldEscapeOut = true;
+        auto expectedEscapeState = StateMachine::VTStates::Escape;
 
         switch (uiTest)
         {
@@ -109,17 +107,21 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach._state = StateMachine::VTStates::CsiIntermediate;
             break;
         }
+        // The OscParam and OscString states shouldn't escape out after an ESC.
+        // They enter the OscTermination state to wait for the `\` char of the
+        // string terminator, without which the OSC operation won't be executed.
         case 7:
         {
             Log::Comment(L"Escape from OscParam");
             mach._state = StateMachine::VTStates::OscParam;
+            expectedEscapeState = StateMachine::VTStates::OscTermination;
             break;
         }
         case 8:
         {
             Log::Comment(L"Escape from OscString");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::OscString;
+            expectedEscapeState = StateMachine::VTStates::OscTermination;
             break;
         }
         case 9:
@@ -167,7 +169,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         case 16:
         {
             Log::Comment(L"Escape from DcsPassThrough");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::DcsPassThrough;
             mach._dcsStringHandler = [](const auto) { return true; };
             break;
@@ -175,17 +176,13 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         case 17:
         {
             Log::Comment(L"Escape from SosPmApcString");
-            shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::SosPmApcString;
             break;
         }
         }
 
         mach.ProcessCharacter(AsciiChars::ESC);
-        if (shouldEscapeOut)
-        {
-            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        }
+        VERIFY_ARE_EQUAL(expectedEscapeState, mach._state);
     }
 
     TEST_METHOD(TestEscapeImmediatePath)
@@ -1156,6 +1153,7 @@ public:
         _lineFeed{ false },
         _lineFeedType{ (DispatchTypes::LineFeedType)-1 },
         _reverseLineFeed{ false },
+        _setWindowTitle{ false },
         _forwardTab{ false },
         _numTabs{ 0 },
         _tabClear{ false },
@@ -1406,6 +1404,13 @@ public:
         return true;
     }
 
+    bool SetWindowTitle(std::wstring_view title) override
+    {
+        _setWindowTitle = true;
+        _setWindowTitleText = title;
+        return true;
+    }
+
     bool ForwardTab(const VTInt numTabs) noexcept override
     {
         _forwardTab = true;
@@ -1419,6 +1424,7 @@ public:
         _tabClearTypes.push_back(clearType);
         return true;
     }
+
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
     {
         _setColorTableEntry = true;
@@ -1517,6 +1523,8 @@ public:
     bool _lineFeed;
     DispatchTypes::LineFeedType _lineFeedType;
     bool _reverseLineFeed;
+    bool _setWindowTitle;
+    std::wstring _setWindowTitleText;
     bool _forwardTab;
     size_t _numTabs;
     bool _tabClear;
@@ -3166,6 +3174,49 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(0));
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(16));
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(64));
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscSetWindowTitle)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:oscNumber", L"{0, 1, 2, 21}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt oscNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"oscNumber", oscNumber));
+
+        const auto oscPrefix = wil::str_printf<std::wstring>(L"\x1b]%d", oscNumber);
+        const auto stringTerminator = L"\033\\";
+
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(oscPrefix);
+        mach.ProcessString(L";Title Text");
+        mach.ProcessString(stringTerminator);
+        VERIFY_IS_TRUE(pDispatch->_setWindowTitle);
+        VERIFY_ARE_EQUAL(L"Title Text", pDispatch->_setWindowTitleText);
+
+        pDispatch->ClearState();
+        pDispatch->_setWindowTitleText = L"****"; // Make sure this is cleared
+
+        mach.ProcessString(oscPrefix);
+        mach.ProcessString(L";");
+        mach.ProcessString(stringTerminator);
+        VERIFY_IS_TRUE(pDispatch->_setWindowTitle);
+        VERIFY_ARE_EQUAL(L"", pDispatch->_setWindowTitleText);
+
+        pDispatch->ClearState();
+        pDispatch->_setWindowTitleText = L"****"; // Make sure this is cleared
+
+        mach.ProcessString(oscPrefix);
+        mach.ProcessString(stringTerminator);
+        VERIFY_IS_TRUE(pDispatch->_setWindowTitle);
+        VERIFY_ARE_EQUAL(L"", pDispatch->_setWindowTitleText);
 
         pDispatch->ClearState();
     }

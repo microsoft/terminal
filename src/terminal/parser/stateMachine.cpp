@@ -685,17 +685,17 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 }
 
 // Routine Description:
-// - Triggers the CsiDispatch action to indicate that the listener should handle a control sequence.
+// - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
-void StateMachine::_ActionOscDispatch(const wchar_t wch)
+void StateMachine::_ActionOscDispatch()
 {
     _trace.TraceOnAction(L"OscDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
-        return _engine->ActionOscDispatch(wch, _oscParameter, _oscString);
+        return _engine->ActionOscDispatch(_oscParameter, _oscString);
     }));
 }
 
@@ -1434,19 +1434,27 @@ void StateMachine::_EventCsiSubParam(const wchar_t wch)
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the OscParam state.
 //   Events in this state will:
-//   1. Collect numeric values into an Osc Param
-//   2. Move to the OscString state on a delimiter
-//   3. Ignore everything else.
+//   1. Trigger the OSC action associated with the param on an OscTerminator
+//   2. If we see a ESC, enter the OscTermination state. We'll wait for one
+//      more character before we dispatch the (empty) string.
+//   3. Collect numeric values into an Osc Param
+//   4. Move to the OscString state on a delimiter
+//   5. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventOscParam(const wchar_t wch) noexcept
+void StateMachine::_EventOscParam(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"OscParam");
     if (_isOscTerminator(wch))
     {
+        _ActionOscDispatch();
         _EnterGround();
+    }
+    else if (_isEscape(wch))
+    {
+        _EnterOscTermination();
     }
     else if (_isNumericParamValue(wch))
     {
@@ -1479,7 +1487,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
     _trace.TraceOnEvent(L"OscString");
     if (_isOscTerminator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else if (_isEscape(wch))
@@ -1511,7 +1519,7 @@ void StateMachine::_EventOscTermination(const wchar_t wch)
     _trace.TraceOnEvent(L"OscTermination");
     if (_isStringTerminatorIndicator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else
@@ -1856,8 +1864,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             ProcessCharacter(_c1To7Bit(wch));
         }
     }
-    // Don't go to escape from the OSC string state - ESC can be used to terminate OSC strings.
-    else if (_isEscape(wch) && _state != VTStates::OscString)
+    // Don't go to escape from the OSC string/param states - ESC can be used to terminate OSC strings.
+    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::OscParam)
     {
         _ActionInterrupt();
         _EnterEscape();
