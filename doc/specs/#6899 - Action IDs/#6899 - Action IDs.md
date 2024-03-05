@@ -59,6 +59,10 @@ Here is how we will parse settings file and construct the relevant settings mode
 * Next we will scan the `keybindings` list. These entries will
   create a `KeyChord->ActionAndArgs` entry in the keybindings map. Since these objects should all contain an `id`, we will simply use the `id->ActionAndArgs` map we created in the previous step. Any object with `keys` set but no `id` will be ignored.
 
+For a visual represenation:
+
+![figure 2](data-mockup-actions-ids-keys-maps.png)
+
 ### Layering
 
 When layering `actions`, if a later settings file contains an action with the
