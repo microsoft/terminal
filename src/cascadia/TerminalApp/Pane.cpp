@@ -378,25 +378,104 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     {
         return;
     }
-     if (_IsLeaf())
-     {
-         return;
-     }
+    if (_IsLeaf())
+    {
+        //args.Handled(true);
+        return;
+    }
+    auto container = args.Container();
+    /*if (container == _firstChild->GetRootElement() || container == _secondChild->GetRootElement())
+    {
+        return;
+    }*/
+
+    //auto sendingBorder = (sender == _borderFirst) ? _borderFirst : (sender == _borderSecond) ? _borderSecond :
+    //                                                                                           nullptr;
+    //if (sendingBorder == nullptr)
+    //{
+    //    return;
+    //}
+    //auto sendersElement = (sender == _borderFirst) ?
+    //                          _firstChild->GetRootElement() :
+    //                      (sender == _borderSecond) ? _secondChild->GetRootElement() :
+    //                                                  nullptr;
+    //if (sendersElement == nullptr)
+    //{
+    //    return;
+    //}
+
+    //const auto borderPosition_transform = sendingBorder.TransformToVisual(sendingBorder.XamlRoot().Content());
+    //const auto childPos_transform = sendingBorder.Child().TransformToVisual(sendingBorder.XamlRoot().Content());
+    //const auto childRelativeToBorder_transform = sendingBorder.Child().TransformToVisual(sendingBorder);
+    //const auto senderToRoot_transform = sendingBorder.TransformToVisual(_root);
+    //const auto sendersElemToRoot_transform = sendersElement.TransformToVisual(_root);
+    //const auto sendersElemToBorder_transform = sendersElement.TransformToVisual(sendingBorder);
+
     auto delta = args.Delta().Translation;
+    auto transformOrigin = args.Position();
+    auto ourOrigin = _root.ActualOffset();
+    ourOrigin;
+
+    const auto o0 = Point{ 0, 0 };
+
+    //const auto borderPosition_delta = borderPosition_transform.TransformPoint(o0);
+    //const auto childPos_delta = childPos_transform.TransformPoint(o0);
+    //const auto childRelativeToBorder_delta = childRelativeToBorder_transform.TransformPoint(o0);
+    //const auto senderToRoot_delta = senderToRoot_transform.TransformPoint(o0);
+    //const auto sendersElemToRoot_delta = sendersElemToRoot_transform.TransformPoint(o0);
+    //const auto sendersElemToBorder_delta = sendersElemToBorder_transform.TransformPoint(o0);
+    //borderPosition_delta;
+    //childPos_delta;
+    //childRelativeToBorder_delta;
+    //senderToRoot_delta;
+    //sendersElemToRoot_delta;
+    //sendersElemToBorder_delta;
+    //const auto transformFromBorder = childRelativeToBorder_transform.TransformPoint(transformOrigin);
+    //transformFromBorder;
 
     const auto weAreVertical = _splitState == SplitState::Vertical;
+    const auto oppositeSplit = weAreVertical ? SplitState::Horizontal : SplitState::Vertical;
+
+    //const auto senderSize = sendingBorder.ActualSize(); // This seems to be the size of the half of the pane where the drag originated
+    //const auto childSize = sendingBorder.Child().ActualSize();
+    //const auto rootSize = _root.ActualSize(); // This is the combined size of both child panes. That makes sense.
+    //const auto sendersElemSize = sendersElement.ActualSize();
+    //senderSize;
+    //childSize;
+    //rootSize;
+    //sendersElemSize;
+
+    if (transformOrigin.X <= 0 || transformOrigin.Y <= 0)
+    {
+        ManipulationRequested.raise(oppositeSplit, delta);
+        return;
+    }
+    //const auto pastTopLeft = transformOrigin.X > PaneBorderSize && transformOrigin.Y > PaneBorderSize;
+    //const auto beforeRight = transformOrigin.X < (2 * PaneBorderSize + childSize.x);
+    //const auto beforeBottom = transformOrigin.Y < (2 * PaneBorderSize + childSize.y);
+    //if (pastTopLeft || (beforeRight && beforeBottom))
+    //{
+    //    //  return;
+    //}
+
     const winrt::Windows::Foundation::Point translationForUs = (weAreVertical) ? Point{ delta.X, 0 } : Point{ 0, delta.Y };
     const winrt::Windows::Foundation::Point translationForParent = (weAreVertical) ? Point{ 0, delta.Y } : Point{ delta.X, 0 };
 
+    // if (transformOrigin.X > ourOrigin.x || transformOrigin.Y > ourOrigin.y)
+    // {
     _handleManipulation(translationForUs);
-
-
 
     if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
     {
-        ManipulationRequested.raise(weAreVertical ? SplitState::Horizontal : SplitState::Vertical,
+        ManipulationRequested.raise(oppositeSplit,
                                     translationForParent);
     }
+    // }
+    // else
+    // {
+    // ManipulationRequested.raise(_splitState,
+    // delta);
+    // }
 
     args.Handled(true);
 }
@@ -2405,6 +2484,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 
     _borderFirst.Child(_firstChild->GetRootElement());
     _borderSecond.Child(_secondChild->GetRootElement());
+
+    // _firstManipulationDeltaRevoker = _borderFirst.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
+    // _secondManipulationDeltaRevoker = _borderSecond.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
 
     _root.Children().Append(_borderFirst);
     _root.Children().Append(_borderSecond);

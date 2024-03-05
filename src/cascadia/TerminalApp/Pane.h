@@ -260,6 +260,8 @@ private:
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _manipulationDeltaRevoker;
+    winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _firstManipulationDeltaRevoker;
+    winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _secondManipulationDeltaRevoker;
 
     Borders _borders{ Borders::None };
 
