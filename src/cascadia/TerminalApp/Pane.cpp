@@ -1889,6 +1889,7 @@ void Pane::_ApplySplitDefinitions()
 
     _root.ManipulationDelta([this](auto&&, auto& args) {
         auto delta = args.Delta().Translation;
+        const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
         // Decide on direction based on delta
         ResizeDirection dir = ResizeDirection::None;
@@ -1933,8 +1934,8 @@ void Pane::_ApplySplitDefinitions()
                 // TODO CARLOS: something is wrong here
                 actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
             }
-
-            const auto percentDelta = amount / actualDimension;
+            const auto scaledAmount = amount * scaleFactor;
+            const auto percentDelta = scaledAmount / actualDimension;
 
             ResizePane(dir, percentDelta.Abs());
         }
