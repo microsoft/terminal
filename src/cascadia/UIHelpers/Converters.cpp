@@ -29,6 +29,11 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return value / 100.0;
     }
 
+    winrt::hstring Converters::PercentageToPercentageString(double value)
+    {
+        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{:.0f}%"), value * 100.0) };
+    }
+
     // Strings
     bool Converters::StringsAreNotEqual(const winrt::hstring& expected, const winrt::hstring& actual)
     {
@@ -46,11 +51,6 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     }
 
     // Misc
-    winrt::hstring Converters::AppendPercentageSign(double value)
-    {
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}%"), value) };
-    }
-
     winrt::Windows::UI::Text::FontWeight Converters::DoubleToFontWeight(double value)
     {
         return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };

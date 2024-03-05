@@ -16,6 +16,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         // Numbers
         static double PercentageToPercentageValue(double value);
         static double PercentageValueToPercentage(double value);
+        static winrt::hstring PercentageToPercentageString(double value);
 
         // Strings
         static bool StringsAreNotEqual(const winrt::hstring& expected, const winrt::hstring& actual);
@@ -23,7 +24,6 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         static winrt::hstring StringOrEmptyIfPlaceholder(const winrt::hstring& placeholder, const winrt::hstring& value);
 
         // Misc
-        static winrt::hstring AppendPercentageSign(double value);
         static winrt::Windows::UI::Text::FontWeight DoubleToFontWeight(double value);
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush ColorToBrush(winrt::Windows::UI::Color color);
         static double FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight);
