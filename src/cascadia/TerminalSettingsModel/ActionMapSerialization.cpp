@@ -19,13 +19,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    com_ptr<ActionMap> ActionMap::FromJson(const Json::Value& json)
-    {
-        auto result = make_self<ActionMap>();
-        result->LayerJson(json);
-        return result;
-    }
-
     // Method Description:
     // - Deserialize an ActionMap from the array `json`. The json array should contain
     //   an array of serialized `Command` objects.
@@ -35,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - json: an array of Json::Value's to deserialize into our ActionMap.
     // Return value:
     // - a list of warnings encountered while deserializing the json
-    std::vector<SettingsLoadWarnings> ActionMap::LayerJson(const Json::Value& json, const bool withKeybindings)
+    std::vector<SettingsLoadWarnings> ActionMap::LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
     {
         // It's possible that the user provided keybindings have some warnings in
         // them - problems that we should alert the user to, but we can recover
@@ -50,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 continue;
             }
 
-            AddAction(*Command::FromJson(cmdJson, warnings, withKeybindings));
+            AddAction(*Command::FromJson(cmdJson, warnings, origin, withKeybindings));
         }
 
         return warnings;
