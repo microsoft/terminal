@@ -63,6 +63,26 @@ For a visual representation:
 
 ![figure 2](data-mockup-actions-ids-keys-maps.png)
 
+### Nested actions
+
+We allow certain actions that take a form like this:
+
+```
+        {
+            // Select color scheme...
+            "name": { "key": "SetColorSchemeParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "schemes",
+                    "name": "${scheme.name}",
+                    "command": { "action": "setColorScheme", "colorScheme": "${scheme.name}" }
+                }
+            ]
+        }
+```
+
+For this case, having an `id` on the top level could potentially make sense when it comes to using that `id` in a menu, but not in the case of using that `id` for a keybinding. For the initial implementation, we will not support an `id` for these types of actions, which leaves us open to revisiting this in the future.
+
 ### Layering
 
 When layering `actions`, if a later settings file contains an action with the
@@ -84,6 +104,8 @@ tab dropdown, or the tab context menu, or the `TermControl` context menu, they
 could all refer to these actions by `id`, rather than duplicating the same json.
 
 As for fragments, all actions in fragments _must_ have an `id`. If a fragment provides an action without an `id`, or provides an `id` that clashes with one of the actions in `defaults.json`, that action will be ignored.
+
+> 👉 NOTE: This will mean that actions will now need an `OriginTag`, similar to profiles and color schemes
 
 ### Existing Scenarios
 
