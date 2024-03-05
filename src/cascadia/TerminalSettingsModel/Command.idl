@@ -31,12 +31,11 @@ namespace Microsoft.Terminal.Settings.Model
         ShortcutAction Action;
     };
 
-    [default_interface] runtimeclass Command
+    [default_interface] runtimeclass Command : ISettingsModelObject
     {
         Command();
 
         String Name { get; };
-        OriginTag Origin;
         ActionAndArgs ActionAndArgs { get; };
         Microsoft.Terminal.Control.KeyChord Keys { get; };
         void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);
