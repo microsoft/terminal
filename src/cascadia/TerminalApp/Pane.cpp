@@ -361,7 +361,7 @@ bool Pane::ResizePane(const ResizeDirection& direction, float amount)
 
 void Pane::_handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta)
 {
-    if (direction == _splitState)
+    if (direction == _splitState || direction == SplitState::None)
     {
         _handleManipulation(delta);
     }
@@ -374,14 +374,18 @@ void Pane::_handleOrBubbleManipulation(const SplitState direction, const winrt::
 void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs& args)
 {
+    // sender is ORIGINALLY the root Grid of a leaf, and the leaf may or may not have a border.
     if (args.Handled())
     {
         return;
     }
+
+    assert(_IsLeaf());
+    // If we early return out of it, because we're a leaf, then this event will bubble. I think
     if (_IsLeaf())
     {
         //args.Handled(true);
-        return;
+        // return;
     }
     auto container = args.Container();
     /*if (container == _firstChild->GetRootElement() || container == _secondChild->GetRootElement())
@@ -413,8 +417,8 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
 
     auto delta = args.Delta().Translation;
     auto transformOrigin = args.Position();
-    auto ourOrigin = _root.ActualOffset();
-    ourOrigin;
+    // auto ourOrigin = _root.ActualOffset();
+    // ourOrigin;
 
     const auto o0 = Point{ 0, 0 };
 
@@ -432,6 +436,25 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     //sendersElemToBorder_delta;
     //const auto transformFromBorder = childRelativeToBorder_transform.TransformPoint(transformOrigin);
     //transformFromBorder;
+
+    const auto contentSize = _content.GetRoot().ActualSize();
+    // const auto transform_contentFromOurRoot = _content.GetRoot().TransformToVisual(_root);
+    const auto transform_contentFromOurRoot = _root.TransformToVisual(_content.GetRoot());
+    const auto delta_contentFromOurRoot = transform_contentFromOurRoot.TransformPoint(o0);
+    delta_contentFromOurRoot;
+    const auto transformInControlSpace = transform_contentFromOurRoot.TransformPoint(transformOrigin);
+
+    if ((transformInControlSpace.X > 0 && transformInControlSpace.X < contentSize.x) &&
+        (transformInControlSpace.Y > 0 && transformInControlSpace.Y < contentSize.y))
+    {
+        // clicked on control. bail.
+        return;
+    }
+    else
+    {
+        ManipulationRequested.raise(_splitState, delta);
+        return;
+    }
 
     const auto weAreVertical = _splitState == SplitState::Vertical;
     const auto oppositeSplit = weAreVertical ? SplitState::Horizontal : SplitState::Vertical;
@@ -2033,6 +2056,9 @@ Borders Pane::_GetCommonBorders()
 // - <none>
 void Pane::_ApplySplitDefinitions()
 {
+    // Remove our old handler, if we had one.
+    _manipulationDeltaRevoker.revoke();
+
     if (_splitState == SplitState::Vertical)
     {
         Controls::Grid::SetColumn(_borderFirst, 0);
@@ -2063,6 +2089,13 @@ void Pane::_ApplySplitDefinitions()
         // Only allow y-axis resizing
         // _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
     }
+    else
+    {
+        assert(_IsLeaf());
+        // If we're a leaf, then add a ManipulationDelta handler.
+        _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
+    }
+
     _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX | Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
     _UpdateBorders();
 }
