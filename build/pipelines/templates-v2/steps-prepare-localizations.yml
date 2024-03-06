@@ -1,4 +1,0 @@
-steps:
-  - pwsh: |-
-      ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
-    displayName: Copy the Context Menu Loc Resources to CascadiaPackage
