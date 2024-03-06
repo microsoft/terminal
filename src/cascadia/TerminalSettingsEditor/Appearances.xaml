@@ -205,15 +205,15 @@
                               IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
-            <muxc:InfoBar x:Uid="Profile_FontFace_MissingFontWarning"
+            <muxc:InfoBar x:Uid="Profile_MissingFontFaces"
                           IsClosable="False"
-                          IsOpen="{x:Bind mtu:Converters.StringNotEmpty(Appearance.MissingFontWarningMessage), Mode=OneWay}"
-                          Message="{x:Bind Appearance.MissingFontWarningMessage, Mode=OneWay}"
+                          IsOpen="{x:Bind mtu:Converters.StringNotEmpty(Appearance.MissingFontFaces), Mode=OneWay}"
+                          Message="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
                           Severity="Error" />
-            <muxc:InfoBar x:Uid="Profile_FontFace_ProportionalFontWarning"
+            <muxc:InfoBar x:Uid="Profile_ProportionalFontFaces"
                           IsClosable="False"
-                          IsOpen="{x:Bind mtu:Converters.StringNotEmpty(Appearance.ProportionalFontWarningMessage), Mode=OneWay}"
-                          Message="{x:Bind Appearance.ProportionalFontWarningMessage, Mode=OneWay}"
+                          IsOpen="{x:Bind mtu:Converters.StringNotEmpty(Appearance.ProportionalFontFaces), Mode=OneWay}"
+                          Message="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
                           Severity="Warning" />
 
             <!--  Font Size  -->

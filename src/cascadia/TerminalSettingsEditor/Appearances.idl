@@ -58,8 +58,8 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
 
-        String MissingFontWarningMessage { get; };
-        String ProportionalFontWarningMessage { get; };
+        String MissingFontFaces { get; };
+        String ProportionalFontFaces { get; };
         Boolean HasPowerlineCharacters { get; };
 
         void AddNewAxisKeyValuePair();

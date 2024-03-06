@@ -469,8 +469,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
 
         _primaryFontName = std::move(primaryFontName);
-        MissingFontWarningMessage(winrt::hstring{ missingFonts });
-        ProportionalFontWarningMessage(winrt::hstring{ proportionalFonts });
+        MissingFontFaces(winrt::hstring{ missingFonts });
+        ProportionalFontFaces(winrt::hstring{ proportionalFonts });
         HasPowerlineCharacters(hasPowerlineCharacters);
     }
 

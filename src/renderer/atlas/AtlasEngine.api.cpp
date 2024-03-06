@@ -478,7 +478,11 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_v
         // before falling back to using the system font collection. This way we can inject our custom one.
         // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
         // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
-        _api.s.write()->font.write()->fontCollection = FontCache::GetCached();
+        try
+        {
+            _api.s.write()->font.write()->fontCollection = FontCache::GetCached();
+        }
+        CATCH_LOG();
     }
 
     try

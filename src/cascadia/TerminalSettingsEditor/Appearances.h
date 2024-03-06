@@ -168,8 +168,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, MissingFontWarningMessage, _propertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ProportionalFontWarningMessage, _propertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, MissingFontFaces, _propertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ProportionalFontFaces, _propertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::AxisKeyValuePair>, FontAxesVector, _propertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::FeatureKeyValuePair>, FontFeaturesVector, _propertyChangedHandlers, nullptr);
 
