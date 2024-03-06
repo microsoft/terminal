@@ -98,7 +98,7 @@ steps:
     Import-Module PSGitHub
     $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
     $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
-    $PSDefaultParameterValues['*GitHub*:Token'] = ("$(System.AccessToken)" | ConvertTo-SecureString -AsPlainText -Force)
+    $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
     $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}"
     If ($null -Eq $existingPr) {
       $Now = Get-Date
