@@ -63,7 +63,7 @@ steps:
     outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
-    localizationTarget: false
+    localizationTarget: true
 
 - pwsh: |-
     Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
