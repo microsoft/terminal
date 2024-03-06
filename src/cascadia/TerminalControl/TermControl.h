@@ -165,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        til::property_changed_event PropertyChanged;
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if

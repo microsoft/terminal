@@ -43,6 +43,8 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_METHOD(TestEvent);
 
     TEST_METHOD(TestTypedEvent);
+
+    TEST_METHOD(TestPropertyChanged);
 };
 
 void TilWinRtHelpersTests::TestPropertySimple()
@@ -242,4 +244,25 @@ void TilWinRtHelpersTests::TestTypedEvent()
     MyEvent.raise(L"sure", 42);
     VERIFY_ARE_EQUAL(true, handledOne);
     VERIFY_ARE_EQUAL(true, handledTwo);
+}
+
+void TilWinRtHelpersTests::TestPropertyChanged()
+{
+
+    auto handler = [&](const auto& sender, const auto& args) -> void {
+        // VERIFY_ARE_EQUAL(L"sure", sender);
+        // VERIFY_ARE_EQUAL(42, v);
+        // handledOne = true;
+        sender;
+        args;
+    };
+    
+    til::property_changed_event PropertyChanged;
+    PropertyChanged(handler);
+    PropertyChanged.raise(nullptr, winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
+    /*MyEvent(handler);
+    MyEvent([&](winrt::hstring, int) { handledTwo = true; });
+    MyEvent.raise(L"sure", 42);
+    VERIFY_ARE_EQUAL(true, handledOne);
+    VERIFY_ARE_EQUAL(true, handledTwo);*/
 }

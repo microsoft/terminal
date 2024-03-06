@@ -87,10 +87,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         winrt::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>> _handlers;
     };
 #endif
-#ifdef WINRT_Windows_UI_Xaml_DataH
+#ifdef WINRT_Windows_UI_Xaml_Data_H
 
-    using property_changed_event = event<winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler>;
-
+    using property_changed_event = til::event<winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler>;
     // Making a til::observable_property unfortunately doesn't seem feasible.
     // It's gonna just result in more macros, which no one wants.
     //
