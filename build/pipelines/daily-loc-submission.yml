@@ -72,7 +72,7 @@ steps:
     Get-ChildItem LocOutput -R -Filter '*.resw' | % {
       ((Get-Content $_.FullName) -join "`r`n") + "`r`n" | Set-Content -NoNewline $_.FullName
     }
-    & tar.exe -c -f LocOutputMunged.tar -C LocOutput
+    & tar.exe -c -f LocOutputMunged.tar -C LocOutput .
     & tar.exe -x -v -f LocOutputMunged.tar
     rm LocOutputMunged.tar
     rm -r -fo LocOutput
