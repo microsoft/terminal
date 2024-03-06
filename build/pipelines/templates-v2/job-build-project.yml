@@ -144,6 +144,8 @@ jobs:
 
   - ${{ parameters.beforeBuildSteps }}
 
+  - template: .\steps-prepare-localizations.yml
+
   - task: VSBuild@1
     displayName: Build OpenConsole.sln
     inputs:
