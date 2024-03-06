@@ -30,7 +30,7 @@
 // GetConsoleAlias
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 
 class AliasTests
 {
@@ -55,12 +55,12 @@ void ConvertWToA(_In_ PCWSTR pwsz,
 {
     *ppsz = nullptr;
 
-    UINT const cp = CP_ACP;
+    const auto cp = CP_ACP;
 
-    DWORD const dwBytesNeeded = WideCharToMultiByte(cp, 0, pwsz, -1, nullptr, 0, nullptr, nullptr);
+    const auto dwBytesNeeded = WideCharToMultiByte(cp, 0, pwsz, -1, nullptr, 0, nullptr, nullptr);
     VERIFY_WIN32_BOOL_SUCCEEDED(dwBytesNeeded, L"Verify that WC2MB could detect bytes needed for conversion.");
 
-    char* psz = new char[dwBytesNeeded];
+    auto psz = new char[dwBytesNeeded];
     VERIFY_IS_NOT_NULL(psz, L"Verify we could allocate necessary bytes for conversion.");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(cp, 0, pwsz, -1, psz, dwBytesNeeded, nullptr, nullptr), L"Verify that WC2MB did the conversion successfully.");

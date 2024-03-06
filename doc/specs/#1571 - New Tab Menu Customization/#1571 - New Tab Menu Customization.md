@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2020-08-04
+last updated: 2022-11-18
 issue id: 1571
 ---
 
@@ -76,6 +76,34 @@ There are five `type`s of objects in this menu:
   - The `"entries"` property specifies a list of menu entries that will appear
     nested under this entry. This can contain other `"type":"folder"` groups as
     well!
+  - The `"inline"` property accepts two values
+    - `auto`: When the folder only has one entry in it, don't actually create a
+      nested layer to then menu. Just place the single entry in the layer that
+      folder would occupy. (Useful for dynamic profile sources with only a
+      single entry).
+    - `never`: (**default**) Always create a nested entry, even for a single
+      sub-item.
+  - The `allowEmpty` property will force this entry to show up in the menu, even
+    if it doesn't have any profiles in it. This defaults to `false`, meaning
+    that folders without any entries in them will just be ignored when
+    generating the menu. This will be more useful with the `matchProfile` entry,
+    below.
+
+    When this is true, and the folder is empty, we should add a
+    placeholder `<empty>` entry to the menu, to indicate that no profiles were
+    in that folder.
+    - _This setting is probably pretty niche, and not a requirement_. More of a
+      theoretical suggestion than anything.
+    - In the case of no entries for this folder, we should make sure to also
+      reflect the `inline` property:
+      - `allowEmpty:true`, `inline:auto`: just ignore the entry at all. Don't
+        add a placeholder to the parent list.
+      - `allowEmpty:true`, `inline:never`: Add a nested entry, with an
+        `<empty>` placeholder.
+      - `allowEmpty:false`, `inline:auto`: just ignore the entry at all. Don't
+        add a placeholder to the parent list.
+      - `allowEmpty:false`, `inline:never`: just ignore the entry at all. Don't
+        add a placeholder to the parent list.
 * `"type":"action"`: This represents a menu entry that should execute a specific
   `ShortcutAction`.
   - the `id` property will specify the global action ID (see [#6899], [#7175])
@@ -97,6 +125,16 @@ There are five `type`s of objects in this menu:
     enabling all other profiles to also be accessible.
   - The "name" of these entries will simply be the name of the profile
   - The "icon" of these entries will simply be the profile's icon
+  - This won't include any profiles that have been included via `matchProfile`
+    entries (below)
+* `"type": "matchProfile"`: Expands to all the profiles that match a given
+  string. This lets the user easily specify a whole collection of profiles for a
+  folder, without needing to add them all manually.
+  - `"name"`, `"commandline"` or `"source"`: These three properties are used to
+    filter the list of profiles, based on the matching property in the profile
+    itself. The value is a string to compare with the corresponding property in
+    the profile. A full string comparison is done - not a regex or partial
+    string match.
 
 The "default" new tab menu could be imagined as the following blob of json:
 
@@ -107,6 +145,42 @@ The "default" new tab menu could be imagined as the following blob of json:
     ]
 }
 ```
+
+Alternatively, we could consider something like the following. This would place
+CMD, PowerShell, and all PowerShell cores in the root at the top, followed by
+nested entries for each subsequent dynamic profile generator.
+
+```jsonc
+{
+    "newTabMenu": [
+        { "type":"profile", "profile": "cmd" },
+        { "type":"profile", "profile": "Windows PowerShell" },
+        { "type": "matchProfile", "source": "Microsoft.Terminal.PowerShellCore" }
+        {
+            "type": "folder",
+            "name": "WSL",
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" } ]
+        },
+        {
+            "type": "folder",
+            "name": "Visual Studio",
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.VisualStudio" } ]
+        },
+        // ... etc for other profile generators
+        { "type": "remainingProfiles" }
+    ]
+}
+```
+
+I might only recommend that for `userDefaults.json`, which is the json files
+used as a template for a user's new settings file. This would prevent us from
+moving the user's cheese too much, if they're already using the Terminal and
+happy with their list as is. Especially consider someone who's default profile
+is a WSL distro, which would now need two clicks to get to.
+
+> _note_: We will also want to support the same `{ "key": "SomeResourceString"}`
+> syntax used by the Command Palette commands
+> for specifying localizable names, if we chose to pursue this route.
 
 ### Other considerations
 
@@ -153,6 +227,42 @@ with the profiles.
 The design chosen in this spec more cleanly separates the responsibilities of
 the list of profiles and the contents of the new tab menu. This way, each object
 can be defined independent of the structure of the other.
+
+Regarding implementation of `matchProfile` entries: In order to build the menu,
+we'll evaluate the entries in the following order:
+
+* all explicit `profile` entries
+* then all `matchProfile` entries, using profiles not already specified
+* then expand out `remainingProfiles` with anything not found above.
+
+As an example:
+
+```jsonc
+{
+    "newTabMenu": [
+        { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" }
+        {
+            "type": "folder",
+            "name": "WSLs",
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" } ]
+        },
+        { "type": "remainingProfiles" }
+    ]
+}
+```
+
+For profiles { "Profile A", "Profile B (WSL)", "Profile C (WSL)" }, This would
+expand to:
+
+```
+New Tab Button ▽
+├─ Profile A
+├─ Profile B (WSL)
+├─ Profile C (WSL)
+└─ WSLs
+   └─ Profile B (WSL)
+   └─ Profile C (WSL)
+```
 
 ## UI/UX Design
 
@@ -289,12 +399,46 @@ And assuming the user has bound:
     - Close Tab: `{ "action": "closeTab", "index": "${selectedTab.index}" }`
     - Close Other Tabs: `{ "action": "closeTabs", "otherThan": "${selectedTab.index}" }`
     - Close Tabs to the Right: `{ "action": "closeTabs", "after": "${selectedTab.index}" }`
+* We may want to consider regex, tag-based, or some other type of matching for
+  `matchProfile` entries in the future. We originally considered using regex for
+  `matchProfile` by default, but decided instead on full string matches to leave
+  room for regex matching in the future. Should we chose to pursue something
+  like that, we should use a settings structure like:
 
+  ```json
+  "type": "profileMatch",
+  "source": { "type": "regex", "value": ".*wsl.*" }
+  ```
+* We may want to expand `matchProfile` to match on other properties too. (`title`?)
+* We may want to consider adding support for capture groups, e.g.
+  ```json
+  {
+    "type": "profileMatch",
+    "name": { "type": "regex", "value": "^ssh: (.*)" }
+  }
+  ```
+  for matching to all your `ssh: ` profiles, but populate the name in the entry
+  with that first capture group. So, ["ssh: foo", "ssh: bar"] would just expand
+  to a "foo" and "bar" entry.
+
+## Updates
+
+_February 2022_: Doc updated in response to some discussion in [#11326] and
+[#7774]. In those PRs, it became clear that there needs to be a simple way of
+collecting up a whole group of profiles automatically for sorting in these
+menus. Although discussion centered on how hard it would be for extensions to
+provide that customization themselves, the `match` statement was added as a way
+to allow the user to easily filter those profiles themselves.
+
+This was something we had originally considered as a "future consideration", but
+ultimately deemed it to be out of scope for the initial spec review.
 
 <!-- Footnotes -->
 [#2046]: https://github.com/microsoft/terminal/issues/2046
-[Command Palette, Addendum 1]: https://github.com/microsoft/terminal/blob/main/doc/specs/%232046%20-%20Unified%20keybindings%20and%20commands%2C%20and%20synthesized%20action%20names.md
+[Command Palette, Addendum 1]: ../%232046%20-%20Unified%20keybindings%20and%20commands%2C%20and%20synthesized%20action%20names.md
 
 [#3337]: https://github.com/microsoft/terminal/issues/3337
 [#6899]: https://github.com/microsoft/terminal/issues/6899
 [#7175]: https://github.com/microsoft/terminal/issues/7175
+[#11326]: https://github.com/microsoft/terminal/issues/11326
+[#7774]: https://github.com/microsoft/terminal/issues/7774

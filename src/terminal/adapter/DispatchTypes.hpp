@@ -5,9 +5,13 @@
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    class VTID
+    using VTInt = int32_t;
+
+    union VTID
     {
     public:
+        VTID() = default;
+
         template<size_t Length>
         constexpr VTID(const char (&s)[Length]) :
             _value{ _FromString(s) }
@@ -15,13 +19,18 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
         constexpr VTID(const uint64_t value) :
-            _value{ value }
+            _value{ value & 0x00FFFFFFFFFFFFFF }
         {
         }
 
         constexpr operator uint64_t() const
         {
             return _value;
+        }
+
+        constexpr const std::string_view ToString() const
+        {
+            return &_string[0];
         }
 
         constexpr char operator[](const size_t offset) const
@@ -38,7 +47,7 @@ namespace Microsoft::Console::VirtualTerminal
         template<size_t Length>
         static constexpr uint64_t _FromString(const char (&s)[Length])
         {
-            static_assert(Length - 1 <= sizeof(_value));
+            static_assert(Length <= sizeof(_value));
             uint64_t value = 0;
             for (auto i = Length - 1; i-- > 0;)
             {
@@ -47,7 +56,12 @@ namespace Microsoft::Console::VirtualTerminal
             return value;
         }
 
-        uint64_t _value;
+        // In order for the _string to hold the correct representation of the
+        // ID stored in _value, we must be on a little endian architecture.
+        static_assert(std::endian::native == std::endian::little);
+
+        uint64_t _value = 0;
+        char _string[sizeof(_value)];
     };
 
     class VTIDBuilder
@@ -61,13 +75,13 @@ namespace Microsoft::Console::VirtualTerminal
 
         void AddIntermediate(const wchar_t intermediateChar) noexcept
         {
-            if (_idShift + CHAR_BIT >= sizeof(_idAccumulator) * CHAR_BIT)
+            if (_idShift + CHAR_BIT * 2 >= sizeof(_idAccumulator) * CHAR_BIT)
             {
                 // If there is not enough space in the accumulator to add
-                // the intermediate and still have room left for the final,
-                // then we reset the accumulator to zero. This will result
-                // in an id with all zero intermediates, which shouldn't
-                // match anything.
+                // the intermediate and still have room left for the final
+                // and null terminator, then we reset the accumulator to zero.
+                // This will result in an id with all zero intermediates,
+                // which shouldn't match anything.
                 _idAccumulator = 0;
             }
             else
@@ -98,8 +112,8 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        constexpr VTParameter(const size_t rhs) noexcept :
-            _value{ gsl::narrow_cast<decltype(_value)>(rhs) }
+        constexpr VTParameter(const VTInt rhs) noexcept :
+            _value{ rhs }
         {
         }
 
@@ -109,31 +123,78 @@ namespace Microsoft::Console::VirtualTerminal
             return _value >= 0;
         }
 
-        constexpr size_t value() const noexcept
+        constexpr VTInt value() const noexcept
         {
             return _value;
         }
 
-        constexpr size_t value_or(size_t defaultValue) const noexcept
+        constexpr VTInt value_or(VTInt defaultValue) const noexcept
         {
-            return has_value() ? _value : defaultValue;
+            // A negative value indicates that the parameter was omitted.
+            return _value < 0 ? defaultValue : _value;
         }
 
-        template<typename T, std::enable_if_t<sizeof(T) == sizeof(size_t), int> = 0>
+        template<typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
         constexpr operator T() const noexcept
         {
             // For most selective parameters, omitted values will default to 0.
             return static_cast<T>(value_or(0));
         }
 
-        constexpr operator size_t() const noexcept
+        constexpr operator VTInt() const noexcept
         {
             // For numeric parameters, both 0 and omitted values will default to 1.
-            return has_value() && _value != 0 ? _value : 1;
+            // The parameter is omitted if _value is less than 0.
+            return _value <= 0 ? 1 : _value;
         }
 
     private:
-        std::make_signed<size_t>::type _value;
+        VTInt _value;
+    };
+
+    class VTSubParameters
+    {
+    public:
+        constexpr VTSubParameters() noexcept
+        {
+        }
+
+        constexpr VTSubParameters(const std::span<const VTParameter> subParams) noexcept :
+            _subParams{ subParams }
+        {
+        }
+
+        constexpr VTParameter at(const size_t index) const noexcept
+        {
+            // If the index is out of range, we return a sub parameter with no value.
+            return index < _subParams.size() ? til::at(_subParams, index) : defaultParameter;
+        }
+
+        VTSubParameters subspan(const size_t offset, const size_t count) const noexcept
+        {
+            const auto subParamsSpan = _subParams.subspan(offset, count);
+            return { subParamsSpan };
+        }
+
+        bool empty() const noexcept
+        {
+            return _subParams.empty();
+        }
+
+        size_t size() const noexcept
+        {
+            return _subParams.size();
+        }
+
+        constexpr operator std::span<const VTParameter>() const noexcept
+        {
+            return _subParams;
+        }
+
+    private:
+        static constexpr VTParameter defaultParameter{};
+
+        std::span<const VTParameter> _subParams;
     };
 
     class VTParameters
@@ -143,50 +204,108 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        constexpr VTParameters(const VTParameter* ptr, const size_t count) noexcept :
-            _values{ ptr, count }
+        constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount) noexcept :
+            _params{ paramsPtr, paramsCount },
+            _subParams{},
+            _subParamRanges{}
+        {
+        }
+
+        constexpr VTParameters(const std::span<const VTParameter> params,
+                               const std::span<const VTParameter> subParams,
+                               const std::span<const std::pair<BYTE, BYTE>> subParamRanges) noexcept :
+            _params{ params },
+            _subParams{ subParams },
+            _subParamRanges{ subParamRanges }
         {
         }
 
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _values.size() ? _values[index] : VTParameter{};
+            return index < _params.size() ? til::at(_params, index) : defaultParameter;
         }
 
         constexpr bool empty() const noexcept
         {
-            return _values.empty();
+            return _params.empty();
         }
 
         constexpr size_t size() const noexcept
         {
             // We always return a size of at least 1, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            return std::max<size_t>(_values.size(), 1);
+            return std::max<size_t>(_params.size(), 1);
         }
 
         VTParameters subspan(const size_t offset) const noexcept
         {
-            const auto subValues = _values.subspan(offset);
-            return { subValues.data(), subValues.size() };
+            // We need sub parameters to always be in their original index
+            // because we store their indexes in subParamRanges. So we pass
+            // _subParams as is and create new span for others.
+            const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
+            const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
+            return { newParamsSpan, _subParams, newSubParamRangesSpan };
+        }
+
+        VTSubParameters subParamsFor(const size_t index) const noexcept
+        {
+            if (index < _subParamRanges.size())
+            {
+                const auto& range = til::at(_subParamRanges, index);
+                return _subParams.subspan(range.first, range.second - range.first);
+            }
+            else
+            {
+                return VTSubParameters{};
+            }
+        }
+
+        bool hasSubParams() const noexcept
+        {
+            return !_subParams.empty();
+        }
+
+        bool hasSubParamsFor(const size_t index) const noexcept
+        {
+            if (index < _subParamRanges.size())
+            {
+                const auto& range = til::at(_subParamRanges, index);
+                return range.second > range.first;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         template<typename T>
         bool for_each(const T&& predicate) const
         {
+            auto params = _params;
+
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            auto success = predicate(at(0));
-            for (auto i = 1u; i < _values.size(); i++)
+            if (params.empty())
             {
-                success = predicate(_values[i]) && success;
+                params = defaultParameters;
+            }
+
+            auto success = true;
+            for (const auto& v : params)
+            {
+                success = predicate(v) && success;
             }
             return success;
         }
 
     private:
-        gsl::span<const VTParameter> _values;
+        static constexpr VTParameter defaultParameter{};
+        static constexpr std::span defaultParameters{ &defaultParameter, 1 };
+
+        std::span<const VTParameter> _params;
+        VTSubParameters _subParams;
+        std::span<const std::pair<BYTE, BYTE>> _subParamRanges;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
@@ -201,19 +320,13 @@ namespace Microsoft::Console::VirtualTerminal
     // };
     //
     // It will produce an error if the provided flag value sets multiple bits.
-    template<typename T, T Flag>
+    template<VTInt Flag>
     class FlaggedEnumValue
     {
-        template<T Value>
-        struct ZeroOrOneBitChecker
-        {
-            static_assert(Value == 0 || (((Value - 1) & Value) == 0), "zero or one flags expected");
-            static constexpr T value = Value;
-        };
-
     public:
-        static constexpr T mask{ ZeroOrOneBitChecker<Flag>::value };
-        constexpr FlaggedEnumValue(const T value) :
+        static constexpr VTInt mask{ Flag };
+
+        constexpr FlaggedEnumValue(const VTInt value) :
             _value{ value }
         {
         }
@@ -223,25 +336,37 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        template<typename U, std::enable_if_t<sizeof(U) == sizeof(size_t), int> = 0>
-        constexpr operator U() const noexcept
+        template<typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
+        constexpr operator T() const noexcept
         {
-            return static_cast<U>(_value | mask);
+            return static_cast<T>(_value | mask);
         }
 
-        constexpr operator T() const noexcept
+        constexpr operator VTInt() const noexcept
         {
             return _value | mask;
         }
 
     private:
-        T _value;
+        VTInt _value;
     };
 }
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
-    enum class EraseType : size_t
+    enum class ColorItem : VTInt
+    {
+        NormalText = 1,
+        WindowFrame = 2,
+    };
+
+    enum class ColorModel : VTInt
+    {
+        HLS = 1,
+        RGB = 2,
+    };
+
+    enum class EraseType : VTInt
     {
         ToEnd = 0,
         FromBeginning = 1,
@@ -249,22 +374,38 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
-    enum GraphicsOptions : size_t
+    enum class ChangeExtent : VTInt
+    {
+        Default = 0,
+        Stream = 1,
+        Rectangle = 2
+    };
+
+    enum class TaskbarState : VTInt
+    {
+        Clear = 0,
+        Set = 1,
+        Error = 2,
+        Indeterminate = 3,
+        Paused = 4
+    };
+
+    enum GraphicsOptions : VTInt
     {
         Off = 0,
-        BoldBright = 1,
+        Intense = 1,
         // The 2 and 5 entries here are for BOTH the extended graphics options,
         // as well as the Faint/Blink options.
         RGBColorOrFaint = 2, // 2 is also Faint, decreased intensity (ISO 6429).
         Italics = 3,
-        Underline = 4,
-        BlinkOrXterm256Index = 5, // 5 is also Blink (appears as Bold).
+        Underline = 4, // same for extended underline styles `SGR 4:x`.
+        BlinkOrXterm256Index = 5, // 5 is also Blink.
         RapidBlink = 6,
         Negative = 7,
         Invisible = 8,
         CrossedOut = 9,
         DoublyUnderlined = 21,
-        NotBoldOrFaint = 22,
+        NotIntenseOrFaint = 22,
         NotItalics = 23,
         NoUnderline = 24,
         Steady = 25, // _not_ blink
@@ -293,6 +434,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundDefault = 49,
         Overline = 53,
         NoOverline = 55,
+        UnderlineColor = 58,
+        UnderlineColorDefault = 59,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,
@@ -311,33 +454,96 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundWhite = 107,
     };
 
-    enum class AnsiStatusType : size_t
+    enum LogicalAttributeOptions : VTInt
     {
-        OS_OperatingStatus = 5,
-        CPR_CursorPositionReport = 6,
+        Default = 0,
+        Protected = 1,
+        Unprotected = 2
     };
 
-    using ANSIStandardMode = FlaggedEnumValue<size_t, 0x00000000>;
-    using DECPrivateMode = FlaggedEnumValue<size_t, 0x01000000>;
-
-    enum ModeParams : size_t
+    // Many of these correspond directly to SGR parameters (the GraphicsOptions enum), but
+    // these are distinct (notably 10 and 11, which as SGR parameters would select fonts,
+    // are used here to indicate that the foreground/background colors should be saved).
+    // From xterm's ctlseqs doc for XTPUSHSGR:
+    //
+    //      Ps = 1    =>  Intense.
+    //      Ps = 2    =>  Faint.
+    //      Ps = 3    =>  Italicized.
+    //      Ps = 4    =>  Underlined.
+    //      Ps = 5    =>  Blink.
+    //      Ps = 7    =>  Inverse.
+    //      Ps = 8    =>  Invisible.
+    //      Ps = 9    =>  Crossed-out characters.
+    //      Ps = 2 1  =>  Doubly-underlined.
+    //      Ps = 3 0  =>  Foreground color.
+    //      Ps = 3 1  =>  Background color.
+    //
+    enum class SgrSaveRestoreStackOptions : VTInt
     {
+        All = 0,
+        Intense = 1,
+        Faintness = 2,
+        Italics = 3,
+        Underline = 4,
+        Blink = 5,
+        Negative = 7,
+        Invisible = 8,
+        CrossedOut = 9,
+        DoublyUnderlined = 21,
+        SaveForegroundColor = 30,
+        SaveBackgroundColor = 31,
+        Max = SaveBackgroundColor
+    };
+
+    using ANSIStandardStatus = FlaggedEnumValue<0x00000000>;
+    using DECPrivateStatus = FlaggedEnumValue<0x01000000>;
+
+    enum class StatusType : VTInt
+    {
+        OperatingStatus = ANSIStandardStatus(5),
+        CursorPositionReport = ANSIStandardStatus(6),
+        ExtendedCursorPositionReport = DECPrivateStatus(6),
+        PrinterStatus = DECPrivateStatus(15),
+        UserDefinedKeys = DECPrivateStatus(25),
+        KeyboardStatus = DECPrivateStatus(26),
+        LocatorStatus = DECPrivateStatus(55),
+        LocatorIdentity = DECPrivateStatus(56),
+        MacroSpaceReport = DECPrivateStatus(62),
+        MemoryChecksum = DECPrivateStatus(63),
+        DataIntegrity = DECPrivateStatus(75),
+        MultipleSessionStatus = DECPrivateStatus(85),
+    };
+
+    using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
+    using DECPrivateMode = FlaggedEnumValue<0x01000000>;
+
+    enum ModeParams : VTInt
+    {
+        IRM_InsertReplaceMode = ANSIStandardMode(4),
+        LNM_LineFeedNewLineMode = ANSIStandardMode(20),
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),
         DECSCNM_ScreenMode = DECPrivateMode(5),
         DECOM_OriginMode = DECPrivateMode(6),
         DECAWM_AutoWrapMode = DECPrivateMode(7),
+        DECARM_AutoRepeatMode = DECPrivateMode(8),
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECNKM_NumericKeypadMode = DECPrivateMode(66),
+        DECBKM_BackarrowKeyMode = DECPrivateMode(67),
+        DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
+        DECECM_EraseColorMode = DECPrivateMode(117),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
         ANY_EVENT_MOUSE_MODE = DECPrivateMode(1003),
+        FOCUS_EVENT_MODE = DECPrivateMode(1004),
         UTF8_EXTENDED_MODE = DECPrivateMode(1005),
         SGR_EXTENDED_MODE = DECPrivateMode(1006),
         ALTERNATE_SCROLL = DECPrivateMode(1007),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
+        XTERM_BracketedPasteMode = DECPrivateMode(2004),
         W32IM_Win32InputMode = DECPrivateMode(9001),
     };
 
@@ -353,20 +559,28 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         UTF8 = VTID("G")
     };
 
-    enum TabClearType : size_t
+    enum TabClearType : VTInt
     {
         ClearCurrentColumn = 0,
         ClearAllColumns = 3
     };
 
-    enum WindowManipulationType : size_t
+    enum TabSetType : VTInt
     {
-        Invalid = 0,
-        RefreshWindow = 7,
-        ResizeWindowInCharacters = 8,
+        SetEvery8Columns = 5
     };
 
-    enum class CursorStyle : size_t
+    enum WindowManipulationType : VTInt
+    {
+        Invalid = 0,
+        DeIconifyWindow = 1,
+        IconifyWindow = 2,
+        RefreshWindow = 7,
+        ResizeWindowInCharacters = 8,
+        ReportTextSizeInCharacters = 18
+    };
+
+    enum class CursorStyle : VTInt
     {
         UserDefault = 0, // Implemented as "restore cursor to user default".
         BlinkingBlock = 1,
@@ -377,20 +591,84 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SteadyBar = 6
     };
 
-    enum class ReportingPermission : size_t
+    enum class ReportingPermission : VTInt
     {
         Unsolicited = 0,
         Solicited = 1
     };
 
-    enum class LineFeedType : unsigned int
+    enum class LineFeedType : VTInt
     {
         WithReturn,
         WithoutReturn,
         DependsOnMode
     };
 
-    constexpr short s_sDECCOLMSetColumns = 132;
-    constexpr short s_sDECCOLMResetColumns = 80;
+    enum class DrcsEraseControl : VTInt
+    {
+        AllChars = 0,
+        ReloadedChars = 1,
+        AllRenditions = 2
+    };
+
+    enum class DrcsCellMatrix : VTInt
+    {
+        Default = 0,
+        Invalid = 1,
+        Size5x10 = 2,
+        Size6x10 = 3,
+        Size7x10 = 4
+    };
+
+    enum class DrcsFontSet : VTInt
+    {
+        Default = 0,
+        Size80x24 = 1,
+        Size132x24 = 2,
+        Size80x36 = 11,
+        Size132x36 = 12,
+        Size80x48 = 21,
+        Size132x48 = 22
+    };
+
+    enum class DrcsFontUsage : VTInt
+    {
+        Default = 0,
+        Text = 1,
+        FullCell = 2
+    };
+
+    enum class CharsetSize : VTInt
+    {
+        Size94 = 0,
+        Size96 = 1
+    };
+
+    enum class MacroDeleteControl : VTInt
+    {
+        DeleteId = 0,
+        DeleteAll = 1
+    };
+
+    enum class MacroEncoding : VTInt
+    {
+        Text = 0,
+        HexPair = 1
+    };
+
+    enum class ReportFormat : VTInt
+    {
+        TerminalStateReport = 1,
+        ColorTableReport = 2
+    };
+
+    enum class PresentationReportFormat : VTInt
+    {
+        CursorInformationReport = 1,
+        TabulationStopReport = 2
+    };
+
+    constexpr VTInt s_sDECCOLMSetColumns = 132;
+    constexpr VTInt s_sDECCOLMResetColumns = 80;
 
 }

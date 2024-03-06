@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Microsoft.Windows.Console.ConPTY</id>
+    <version>0.0.1</version>
+    <authors>Microsoft</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/microsoft/terminal</projectUrl>
+    <description>This package allows applications to host Windows Console sessions. It should work on all versions of Windows 10.0.17763.0 and above.</description>
+    <copyright>© Microsoft Corporation</copyright>
+    <dependencies />
+  </metadata>
+  <files>
+    <file src="managed/Microsoft.Windows.Console.ConPTY.props" target="build" />
+    <file src="managed/Microsoft.Windows.Console.ConPTY.targets" target="build" />
+    <file src="native/Microsoft.Windows.Console.ConPTY.props" target="build/native" />
+    <file src="native/Microsoft.Windows.Console.ConPTY.targets" target="build/native" />
+
+    <file src="../../../src/inc/conpty-static.h" target="inc/conpty.h" />
+
+    <file src="../../../bin/Win32/Release/conpty.dll" target="runtimes/win10-x86/native" />
+    <file src="../../../bin/Win32/Release/conpty.lib" target="runtimes/win10-x86/lib/uap10.0" />
+    <file src="../../../bin/Win32/Release/OpenConsole.exe" target="build/native/runtimes/x86" />
+
+    <file src="../../../bin/x64/Release/conpty.dll" target="runtimes/win10-x64/native" />
+    <file src="../../../bin/x64/Release/conpty.lib" target="runtimes/win10-x64/lib/uap10.0" />
+    <file src="../../../bin/x64/Release/OpenConsole.exe" target="build/native/runtimes/x64" />
+
+    <file src="../../../bin/ARM64/Release/conpty.lib" target="runtimes/win10-arm64/lib/uap10.0" />
+    <file src="../../../bin/ARM64/Release/conpty.dll" target="runtimes/win10-arm64/native" />
+    <file src="../../../bin/ARM64/Release/OpenConsole.exe" target="build/native/runtimes/arm64" />
+  </files>
+</package>

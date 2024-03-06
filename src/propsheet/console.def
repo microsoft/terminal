@@ -2,5 +2,5 @@ LIBRARY     Console
 
 EXPORTS
             CPlApplet
-            DllGetClassObject private
-            DllCanUnloadNow private
+            DllGetClassObject PRIVATE
+            DllCanUnloadNow PRIVATE

@@ -32,7 +32,7 @@ class RgbColorTests
         CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
         sbiex.cbSize = sizeof(sbiex);
 
-        BOOL fSuccess = GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
+        auto fSuccess = GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
         if (fSuccess)
         {
             sbiex.srWindow.Bottom++; // hack because the API is not good at roundtrip
@@ -81,10 +81,10 @@ class RgbColorTests
 // Takes windows 16 color table index, and returns a int for the equivalent SGR sequence
 WORD WinToVTColor(int winColor, bool isForeground)
 {
-    bool red = (winColor & FOREGROUND_RED) > 0;
-    bool green = (winColor & FOREGROUND_GREEN) > 0;
-    bool blue = (winColor & FOREGROUND_BLUE) > 0;
-    bool bright = (winColor & FOREGROUND_INTENSITY) > 0;
+    auto red = (winColor & FOREGROUND_RED) > 0;
+    auto green = (winColor & FOREGROUND_GREEN) > 0;
+    auto blue = (winColor & FOREGROUND_BLUE) > 0;
+    auto bright = (winColor & FOREGROUND_INTENSITY) > 0;
 
     WORD result = isForeground ? 30 : 40;
     result += bright ? 60 : 0;
@@ -104,11 +104,11 @@ WORD MakeAttribute(int fg, int bg)
 //   (also in [0,15])
 int WinToXtermIndex(int iWinColor)
 {
-    bool fRed = (iWinColor & 0x04) > 0;
-    bool fGreen = (iWinColor & 0x02) > 0;
-    bool fBlue = (iWinColor & 0x01) > 0;
-    bool fBright = (iWinColor & 0x08) > 0;
-    int iXtermTableEntry = (fRed ? 0x1 : 0x0) | (fGreen ? 0x2 : 0x0) | (fBlue ? 0x4 : 0x0) | (fBright ? 0x8 : 0x0);
+    auto fRed = (iWinColor & 0x04) > 0;
+    auto fGreen = (iWinColor & 0x02) > 0;
+    auto fBlue = (iWinColor & 0x01) > 0;
+    auto fBright = (iWinColor & 0x08) > 0;
+    auto iXtermTableEntry = (fRed ? 0x1 : 0x0) | (fGreen ? 0x2 : 0x0) | (fBlue ? 0x4 : 0x0) | (fBright ? 0x8 : 0x0);
     return iXtermTableEntry;
 }
 
@@ -139,7 +139,7 @@ int WriteVT256TestChars(int fg, int bg)
 int WriteVT256GridTestChars(int fg, int bg)
 {
     DWORD numWritten = 0;
-    WORD index = MakeAttribute(fg, bg);
+    auto index = MakeAttribute(fg, bg);
     wprintf(L"\x1b[38;5;%d;48;5;%dm", index, index);
     WriteConsole(g_hOut, L"*", 1, &numWritten, nullptr);
     return numWritten;
@@ -150,8 +150,8 @@ int WriteVTRGBTestChars(int fg, int bg)
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
     sbiex.cbSize = sizeof(sbiex);
     GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
-    COLORREF fgColor = sbiex.ColorTable[fg];
-    COLORREF bgColor = sbiex.ColorTable[bg];
+    auto fgColor = sbiex.ColorTable[fg];
+    auto bgColor = sbiex.ColorTable[bg];
 
     int fgRed = GetRValue(fgColor);
     int fgBlue = GetBValue(fgColor);
@@ -170,7 +170,7 @@ int WriteVTRGBTestChars(int fg, int bg)
 BOOL CreateColorGrid(int iColorMode)
 {
     COORD coordCursor = { 0 };
-    BOOL fSuccess = SetConsoleCursorPosition(g_hOut, coordCursor);
+    auto fSuccess = SetConsoleCursorPosition(g_hOut, coordCursor);
 
     if (fSuccess)
     {
@@ -180,12 +180,12 @@ BOOL CreateColorGrid(int iColorMode)
         if (fSuccess)
         {
             DWORD totalWritten = 0;
-            COORD writeSize = g_cWriteSize;
-            COORD cursorPosInitial = sbiex.dwCursorPosition;
-            for (int fg = 0; fg < writeSize.Y; fg++)
+            auto writeSize = g_cWriteSize;
+            auto cursorPosInitial = sbiex.dwCursorPosition;
+            for (auto fg = 0; fg < writeSize.Y; fg++)
             {
                 DWORD numWritten = 0;
-                for (int bg = 0; bg < writeSize.X; bg++)
+                for (auto bg = 0; bg < writeSize.X; bg++)
                 {
                     switch (iColorMode)
                     {
@@ -252,7 +252,7 @@ BOOL ValidateLegacyColorGrid(COORD cursorPosInitial)
     actualWriteSize.X = 16;
     actualWriteSize.Y = 16;
 
-    CHAR_INFO* rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
+    auto rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
 
     SMALL_RECT srReadRegion = { 0 };
     srReadRegion.Top = cursorPosInitial.Y;
@@ -260,16 +260,16 @@ BOOL ValidateLegacyColorGrid(COORD cursorPosInitial)
     srReadRegion.Right = srReadRegion.Left + actualWriteSize.X;
     srReadRegion.Bottom = srReadRegion.Top + actualWriteSize.Y;
 
-    BOOL fSuccess = ReadConsoleOutput(g_hOut, rOutputBuffer, actualWriteSize, { 0 }, &srReadRegion);
+    auto fSuccess = ReadConsoleOutput(g_hOut, rOutputBuffer, actualWriteSize, { 0 }, &srReadRegion);
     VERIFY_WIN32_BOOL_SUCCEEDED(fSuccess, L"Read the output back");
     if (fSuccess)
     {
-        CHAR_INFO* pInfo = rOutputBuffer;
-        for (int fg = 0; fg < g_cWriteSize.Y; fg++)
+        auto pInfo = rOutputBuffer;
+        for (auto fg = 0; fg < g_cWriteSize.Y; fg++)
         {
-            for (int bg = 0; bg < g_cWriteSize.X; bg++)
+            for (auto bg = 0; bg < g_cWriteSize.X; bg++)
             {
-                WORD wExpected = MakeAttribute(fg, bg);
+                auto wExpected = MakeAttribute(fg, bg);
                 VERIFY_ARE_EQUAL(pInfo->Attributes, wExpected, NoThrowString().Format(L"fg, bg = (%d,%d)", fg, bg));
                 fSuccess &= pInfo->Attributes == wExpected;
                 pInfo += 1; // We wrote one character each time
@@ -287,7 +287,7 @@ BOOL Validate256GridToLegacy(COORD cursorPosInitial)
     actualWriteSize.X = 16;
     actualWriteSize.Y = 16;
 
-    CHAR_INFO* rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
+    auto rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
 
     SMALL_RECT srReadRegion = { 0 };
     srReadRegion.Top = cursorPosInitial.Y;
@@ -295,7 +295,7 @@ BOOL Validate256GridToLegacy(COORD cursorPosInitial)
     srReadRegion.Right = srReadRegion.Left + actualWriteSize.X;
     srReadRegion.Bottom = srReadRegion.Top + actualWriteSize.Y;
 
-    BOOL fSuccess = ReadConsoleOutput(g_hOut, rOutputBuffer, actualWriteSize, { 0 }, &srReadRegion);
+    auto fSuccess = ReadConsoleOutput(g_hOut, rOutputBuffer, actualWriteSize, { 0 }, &srReadRegion);
     VERIFY_WIN32_BOOL_SUCCEEDED(fSuccess, L"Read the output back");
     if (fSuccess)
     {
@@ -363,7 +363,7 @@ void RgbColorTests::TestPureLegacy()
     if (fSuccess)
     {
         GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
-        COORD actualPos = sbiex.dwCursorPosition;
+        auto actualPos = sbiex.dwCursorPosition;
         // Subtract the size of the grid to get back to the top of it.
         actualPos.Y -= g_cWriteSize.Y;
         fSuccess = ValidateLegacyColorGrid(actualPos);
@@ -380,7 +380,7 @@ void RgbColorTests::TestVTSimpleToLegacy()
     if (fSuccess)
     {
         GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
-        COORD actualPos = sbiex.dwCursorPosition;
+        auto actualPos = sbiex.dwCursorPosition;
         // Subtract the size of the grid to get back to the top of it.
         actualPos.Y -= g_cWriteSize.Y;
         fSuccess = ValidateLegacyColorGrid(actualPos);
@@ -397,7 +397,7 @@ void RgbColorTests::TestVT256ToLegacy()
     if (fSuccess)
     {
         GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
-        COORD actualPos = sbiex.dwCursorPosition;
+        auto actualPos = sbiex.dwCursorPosition;
         // Subtract the size of the grid to get back to the top of it.
         actualPos.Y -= g_cWriteSize.Y;
         fSuccess = ValidateLegacyColorGrid(actualPos);
@@ -414,7 +414,7 @@ void RgbColorTests::TestVTRGBToLegacy()
     if (fSuccess)
     {
         GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
-        COORD actualPos = sbiex.dwCursorPosition;
+        auto actualPos = sbiex.dwCursorPosition;
         // Subtract the size of the grid to get back to the top of it.
         actualPos.Y -= g_cWriteSize.Y;
         fSuccess = ValidateLegacyColorGrid(actualPos);
@@ -431,7 +431,7 @@ void RgbColorTests::TestVT256Grid()
     if (fSuccess)
     {
         GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
-        COORD actualPos = sbiex.dwCursorPosition;
+        auto actualPos = sbiex.dwCursorPosition;
         // Subtract the size of the grid to get back to the top of it.
         actualPos.Y -= g_cWriteSize.Y;
         fSuccess = Validate256GridToLegacy(actualPos);

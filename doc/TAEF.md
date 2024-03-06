@@ -12,11 +12,11 @@ Use the [TAEF Verify Macros for C++](https://docs.microsoft.com/en-us/windows-ha
 
 ### Running Tests
 
-If you have Visual Studio and related C++ components installed, and you have successfully restored NuGets, you should have the TAEF test runner `te.exe` available locally as part of the `Taef.Redist.Wlk` package.
+If you have Visual Studio and related C++ components installed, and you have successfully restored NuGets, you should have the TAEF test runner `te.exe` available locally as part of the `Microsoft.Taef` package.
 
-> Note that you cannot easily run TAEF tests directly through Visual Studio. The `Taef.Redist.Wlk` NuGet package comes with an adapter that will let you browse and execute TAEF tests inside of Visual Studio, but its performance and reliability prevent us from recommending it here.
+> Note that you cannot easily run TAEF tests directly through Visual Studio. The `Microsoft.Taef` NuGet package comes with an adapter that will let you browse and execute TAEF tests inside of Visual Studio, but its performance and reliability prevent us from recommending it here.
 
-In a "normal" CMD environment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
+In a "normal" CMD environment, `te.exe` may not be directly available. Try the following command to set up the development environment first:
 
 ```shell
 .\tools\razzle.cmd
@@ -48,3 +48,17 @@ Invoke-OpenConsoleTests
 ```
 
 `Invoke-OpenConsoleTests` supports a number of options, which you can enumerate by running `Invoke-OpenConsoleTests -?`.
+
+
+### Debugging Tests
+
+If you want to debug a test, you can do so by using the TAEF /waitForDebugger flag, such as:
+
+	runut *Tests.dll /name:TextBufferTests::TestInsertCharacter /waitForDebugger
+
+Replace the test name with the one you want to debug.  Then, TAEF will begin executing the test and output something like this:
+
+	TAEF: Waiting for debugger - PID <some PID> @ IP <some IP address>
+
+You can then attach to that PID in your debugger of choice.  In Visual Studio, you can use Debug -> Attach To Process, or you could use WinDbg or whatever you want.
+Once the debugger attaches, the test will execute and your breakpoints will be hit.

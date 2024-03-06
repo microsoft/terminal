@@ -1,0 +1,40 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/features.xml
+      - build/pipelines/feature-flag-ci.yml
+
+variables:
+  - name: runCodesignValidationInjectionBG
+    value: false
+
+parameters:
+  - name: buildBrandings
+    type: object
+    default:
+      - Release
+      - Preview
+      # Dev is built automatically
+      # WindowsInbox does not typically build with VS.
+
+stages:
+  - ${{ each branding in parameters.buildBrandings }}:
+    - stage: Build_${{ branding }}
+      dependsOn: []
+      displayName: Build ${{ branding }}
+      jobs:
+        - template: ./templates-v2/job-build-project.yml
+          parameters:
+            pool: # This only runs in CI
+                name: SHINE-OSS-L
+            buildPlatforms: [x64]
+            buildConfigurations: [Release]
+            buildEverything: true
+            branding: ${{ branding }}
+            keepAllExpensiveBuildOutputs: false
+            artifactStem: -${{ branding }} # Disambiguate artifacts with the same config/platform

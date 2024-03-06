@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- PGO -->
+  <Import Condition="'$(PgoTarget)' == 'true' And ('$(Platform)'=='x64' or '$(Platform)'=='arm64') And '$(PGOBuildMode)'!='' And Exists('$(SolutionDir)\build\PGO\Terminal.PGO.props')" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
+
+  <!-- CppWinrt -->
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props')" />
+
+  <!-- TAEF -->
+  <PropertyGroup>
+    <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002</TAEFPackagePathRoot>
+  </PropertyGroup>
+
+  <!-- AppiumWebDriver -->
+  <PropertyGroup>
+    <AppiumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Appium.WebDriver.3.0.0.2</AppiumWebDriverPathRoot>
+  </PropertyGroup>
+
+  <!-- CastleCore -->
+  <PropertyGroup>
+    <CastleCorePathRoot>$(MSBuildThisFileDirectory)..\packages\Castle.Core.4.1.1</CastleCorePathRoot>
+  </PropertyGroup>
+
+  <!-- NewtonsoftJSON -->
+  <PropertyGroup>
+    <NewtonsoftJSONPathRoot>$(MSBuildThisFileDirectory)..\packages\Newtonsoft.Json.13.0.1</NewtonsoftJSONPathRoot>
+  </PropertyGroup>
+
+  <!-- SeleniumWebDriver -->
+  <PropertyGroup>
+    <SeleniumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Selenium.WebDriver.3.5.0</SeleniumWebDriverPathRoot>
+  </PropertyGroup>
+
+  <!-- SeleniumSupport -->
+  <PropertyGroup>
+    <SeleniumSupportPathRoot>$(MSBuildThisFileDirectory)..\packages\Selenium.Support.3.5.0</SeleniumSupportPathRoot>
+  </PropertyGroup>
+
+  <!-- WinUI (which depends on WebView2 as of 2.8.0) -->
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.2.8.4\build\native\Microsoft.UI.Xaml.props" Condition="'$(TerminalMUX)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.2.8.4\build\native\Microsoft.UI.Xaml.props')" />
+
+</Project>

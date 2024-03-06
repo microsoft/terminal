@@ -1,0 +1,62 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+
+typedef struct _TERMINAL_STARTUP_INFO
+{
+    // In STARTUPINFO
+    BSTR pszTitle;
+
+    // Also wanted
+    BSTR pszIconPath;
+    LONG iconIndex;
+
+    // The rest of STARTUPINFO
+    DWORD dwX;
+    DWORD dwY;
+    DWORD dwXSize;
+    DWORD dwYSize;
+    DWORD dwXCountChars;
+    DWORD dwYCountChars;
+    DWORD dwFillAttribute;
+    DWORD dwFlags;
+    WORD wShowWindow;
+} TERMINAL_STARTUP_INFO;
+
+// LOAD BEARING!
+//
+// There is only ever one OpenConsoleProxy.dll loaded by COM for _ALL_ terminal
+// instances, across Dev, Preview, Stable, whatever. So we have to keep all old
+// versions of interfaces in the file here, even if the old version is no longer
+// in use.
+
+[
+    object,
+    uuid(59D55CCE-FC8A-48B4-ACE8-0A9286C6557F)
+] interface ITerminalHandoff : IUnknown
+{
+    // DEPRECATED!
+    HRESULT EstablishPtyHandoff([in, system_handle(sh_pipe)] HANDLE in,
+                                [in, system_handle(sh_pipe)] HANDLE out,
+                                [in, system_handle(sh_pipe)] HANDLE signal,
+                                [in, system_handle(sh_file)] HANDLE ref,
+                                [in, system_handle(sh_process)] HANDLE server,
+                                [in, system_handle(sh_process)] HANDLE client);
+};
+
+[
+    object,
+    uuid(AA6B364F-4A50-4176-9002-0AE755E7B5EF)
+] interface ITerminalHandoff2 : IUnknown
+{
+    HRESULT EstablishPtyHandoff([in, system_handle(sh_pipe)] HANDLE in,
+                                [in, system_handle(sh_pipe)] HANDLE out,
+                                [in, system_handle(sh_pipe)] HANDLE signal,
+                                [in, system_handle(sh_file)] HANDLE ref,
+                                [in, system_handle(sh_process)] HANDLE server,
+                                [in, system_handle(sh_process)] HANDLE client,
+                                [in] TERMINAL_STARTUP_INFO startupInfo);
+};

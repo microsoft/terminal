@@ -19,18 +19,35 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 //      color sequences.
 // Arguments:
 // - textAttributes - Text attributes to use for the colors and character rendition
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
+// - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const RenderSettings& /*renderSettings*/,
                                                            const gsl::not_null<IRenderData*> pData,
-                                                           const bool /*isSettingDefaultBrushes*/) noexcept
+                                                           const bool usingSoftFont,
+                                                           const bool isSettingDefaultBrushes) noexcept
 {
+    RETURN_HR_IF(S_FALSE, _passthrough && isSettingDefaultBrushes);
+
     RETURN_IF_FAILED(VtEngine::_RgbUpdateDrawingBrushes(textAttributes));
 
     RETURN_IF_FAILED(_UpdateHyperlinkAttr(textAttributes, pData));
+
+    // If we're using a soft font, it should have already been mapped into the
+    // G1 table, so we just need to switch between G0 and G1 when turning the
+    // soft font on and off. We don't want to do this when setting the default
+    // brushes, though, because that could result in an unnecessary G0 switch
+    // at the start of every frame.
+    if (usingSoftFont != _usingSoftFont && !isSettingDefaultBrushes)
+    {
+        RETURN_IF_FAILED(_Write(usingSoftFont ? "\x0E" : "\x0F"));
+        _usingSoftFont = usingSoftFont;
+    }
 
     // Only do extended attributes in xterm-256color, as to not break telnet.exe.
     return _UpdateExtendedAttrs(textAttributes);
@@ -39,28 +56,28 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Routine Description:
 // - Write a VT sequence to update the character rendition attributes.
 // Arguments:
-// - textAttributes - text attributes (bold, italic, underline, etc.) to use.
+// - textAttributes - text attributes (intense, italic, underline, etc.) to use.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::_UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept
 {
-    // Turning off Bold and Faint must be handled at the same time,
+    // Turning off Intense and Faint must be handled at the same time,
     // since there is only one sequence that resets both of them.
-    const auto boldTurnedOff = !textAttributes.IsBold() && _lastTextAttributes.IsBold();
+    const auto intenseTurnedOff = !textAttributes.IsIntense() && _lastTextAttributes.IsIntense();
     const auto faintTurnedOff = !textAttributes.IsFaint() && _lastTextAttributes.IsFaint();
-    if (boldTurnedOff || faintTurnedOff)
+    if (intenseTurnedOff || faintTurnedOff)
     {
-        RETURN_IF_FAILED(_SetBold(false));
-        _lastTextAttributes.SetBold(false);
+        RETURN_IF_FAILED(_SetIntense(false));
+        _lastTextAttributes.SetIntense(false);
         _lastTextAttributes.SetFaint(false);
     }
 
     // Once we've handled the cases where they need to be turned off,
     // we can then check if either should be turned back on again.
-    if (textAttributes.IsBold() && !_lastTextAttributes.IsBold())
+    if (textAttributes.IsIntense() && !_lastTextAttributes.IsIntense())
     {
-        RETURN_IF_FAILED(_SetBold(true));
-        _lastTextAttributes.SetBold(true);
+        RETURN_IF_FAILED(_SetIntense(true));
+        _lastTextAttributes.SetIntense(true);
     }
     if (textAttributes.IsFaint() && !_lastTextAttributes.IsFaint())
     {
@@ -68,28 +85,22 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
         _lastTextAttributes.SetFaint(true);
     }
 
-    // Turning off the underline styles must be handled at the same time,
-    // since there is only one sequence that resets both of them.
-    const auto singleTurnedOff = !textAttributes.IsUnderlined() && _lastTextAttributes.IsUnderlined();
-    const auto doubleTurnedOff = !textAttributes.IsDoublyUnderlined() && _lastTextAttributes.IsDoublyUnderlined();
-    if (singleTurnedOff || doubleTurnedOff)
+    // We check the singly, doubly underlined and extended styling together,
+    // since only one of them can be active at a time.
+    const auto ulStyle = textAttributes.GetUnderlineStyle();
+    const auto lastUlStyle = _lastTextAttributes.GetUnderlineStyle();
+    if (ulStyle != lastUlStyle)
     {
-        RETURN_IF_FAILED(_SetUnderlined(false));
-        _lastTextAttributes.SetUnderlined(false);
-        _lastTextAttributes.SetDoublyUnderlined(false);
-    }
-
-    // Once we've handled the cases where they need to be turned off,
-    // we can then check if either should be turned back on again.
-    if (textAttributes.IsUnderlined() && !_lastTextAttributes.IsUnderlined())
-    {
-        RETURN_IF_FAILED(_SetUnderlined(true));
-        _lastTextAttributes.SetUnderlined(true);
-    }
-    if (textAttributes.IsDoublyUnderlined() && !_lastTextAttributes.IsDoublyUnderlined())
-    {
-        RETURN_IF_FAILED(_SetDoublyUnderlined(true));
-        _lastTextAttributes.SetDoublyUnderlined(true);
+        // Reset doubly underlined if it was previously set. Avoids an edge case
+        // where a pty client tracks doubly underlined and singly underlined separately,
+        // and setting single underlined would leave the text doubly underlined
+        // because it was never turned-off.
+        if (lastUlStyle == UnderlineStyle::DoublyUnderlined && ulStyle != UnderlineStyle::NoUnderline)
+        {
+            RETURN_IF_FAILED(_SetUnderlined(false));
+        }
+        RETURN_IF_FAILED(_SetUnderlineExtended(ulStyle));
+        _lastTextAttributes.SetUnderlineStyle(ulStyle);
     }
 
     if (textAttributes.IsOverlined() != _lastTextAttributes.IsOverlined())

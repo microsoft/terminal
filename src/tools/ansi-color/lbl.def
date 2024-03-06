@@ -1,0 +1,64 @@
+:: Demonstrates how to use the #LBL# feature for definition files
+:: Requires 107 columns
+__DATA__
+__TABLE__
+:: The test text
+SET "CELL= gYw "
+REM SET "SPINNER.DISABLED=#TRUE#"
+:: Alignment properties for the cells and headers
+SET "ALIGN.CELL=C"
+SET "ALIGN.BOXHEAD=C"
+SET "ALIGN.STUB=L"
+:: Table spacing
+SET "SEPARATOR.CELL= "
+SET "SEPARATOR.STUB=   "
+:: Formatting
+SET "INV=!CSI!7m"
+SET "HIGH=!CSI!1m"
+SET "LOW=!CSI!2m"
+__TABLE:END__
+__COLS__
+#NUL#
+40m
+41m
+42m
+43m
+44m
+45m
+46m
+47m
+100m
+101m
+102m
+103m
+104m
+105m
+106m
+107m
+__COLS:END__
+__ROWS__
+#LBL# NUL:
+#NUL#
+#LBL#.SPC:
+#SPC#
+#LBL# !INV!Foreground
+#LBL#.  !LOW!Low Intensity
+30m
+31m
+32m
+33m
+34m
+35m
+36m
+37m
+#LBL#   !HIGH!High Intensity
+90m
+91m
+92m
+93m
+94m
+95m
+96m
+97m
+__ROWS:END__
+__DATA:END__

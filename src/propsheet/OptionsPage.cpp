@@ -174,6 +174,23 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         // Initialize the global handle to this dialog
         g_hOptionsDlg = hDlg;
 
+        {
+            // Do the check for conhostv1 early, so that we can propagate the new ForceV2 state to everyone.
+            wil::unique_hmodule conhostV1{ LoadLibraryExW(L"conhostv1.dll", nullptr, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_SYSTEM32) };
+            HWND hwndItemToShow, hwndItemToHide;
+            hwndItemToShow = GetDlgItem(hDlg, IDD_HELP_LEGACY_LINK);
+            hwndItemToHide = GetDlgItem(hDlg, IDD_HELP_LEGACY_LINK_MISSING);
+            if (!conhostV1)
+            {
+                g_fForceV2 = true;
+                EnableWindow(GetDlgItem(hDlg, IDD_FORCEV2), FALSE);
+                std::swap(hwndItemToShow, hwndItemToHide);
+            }
+
+            ShowWindow(hwndItemToShow, SW_SHOW);
+            ShowWindow(hwndItemToHide, SW_HIDE);
+        }
+
         CheckDlgButton(hDlg, IDD_HISTORY_NODUP, gpStateInfo->HistoryNoDup);
         CheckDlgButton(hDlg, IDD_QUICKEDIT, gpStateInfo->QuickEdit);
         CheckDlgButton(hDlg, IDD_INSERT, gpStateInfo->InsertMode);
@@ -221,18 +238,18 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         {
             // On non-CJK systems, we show the codepage on a non-default propsheet, but don't allow the user to view or
             // change it on the defaults propsheet
-            const HWND hwndLanguageGroupbox = GetDlgItem(hDlg, IDD_LANGUAGE_GROUPBOX);
+            const auto hwndLanguageGroupbox = GetDlgItem(hDlg, IDD_LANGUAGE_GROUPBOX);
             if (hwndLanguageGroupbox)
             {
                 if (gpStateInfo->Defaults)
                 {
-                    const HWND hwndLanguageList = GetDlgItem(hDlg, IDD_LANGUAGELIST);
+                    const auto hwndLanguageList = GetDlgItem(hDlg, IDD_LANGUAGELIST);
                     ShowWindow(hwndLanguageList, SW_HIDE);
                     ShowWindow(hwndLanguageGroupbox, SW_HIDE);
                 }
                 else
                 {
-                    const HWND hwndLanguage = GetDlgItem(hDlg, IDD_LANGUAGE);
+                    const auto hwndLanguage = GetDlgItem(hDlg, IDD_LANGUAGE);
                     LanguageDisplay(hDlg, gpStateInfo->CodePage);
                     ShowWindow(hwndLanguage, SW_SHOW);
                     ShowWindow(hwndLanguageGroupbox, SW_SHOW);
@@ -250,7 +267,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 
     case WM_NOTIFY:
     {
-        if (lParam && (wParam == IDD_HELP_SYSLINK || wParam == IDD_HELP_LEGACY_LINK))
+        if (lParam && (wParam == IDD_HELP_SYSLINK || wParam == IDD_HELP_LEGACY_LINK || wParam == IDD_HELP_LEGACY_LINK_MISSING))
         {
             // handle hyperlink click or keyboard activation
             switch (((LPNMHDR)lParam)->code)
@@ -258,7 +275,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
             case NM_CLICK:
             case NM_RETURN:
             {
-                PNMLINK pnmLink = (PNMLINK)lParam;
+                auto pnmLink = (PNMLINK)lParam;
                 if (0 == pnmLink->item.iLink)
                 {
                     ShellExecute(nullptr,
@@ -326,7 +343,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 }
 
 // enables or disables options page dialog controls depending on whether V2 is enabled or not
-void ToggleV2OptionsControls(__in const HWND hDlg)
+void ToggleV2OptionsControls(const __in HWND hDlg)
 {
     EnableWindow(GetDlgItem(hDlg, IDD_LINE_SELECTION), g_fForceV2);
     CheckDlgButton(hDlg, IDD_LINE_SELECTION, g_fForceV2 ? gpStateInfo->fLineSelection : FALSE);

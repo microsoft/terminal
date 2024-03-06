@@ -1,0 +1,124 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    [flags]
+    enum CopyFormat
+    {
+        HTML = 0x1,
+        RTF = 0x2,
+        All = 0xffffffff
+    };
+
+
+    runtimeclass FontSizeChangedArgs
+    {
+        Int32 Width { get; };
+        Int32 Height { get; };
+    }
+
+    runtimeclass CopyToClipboardEventArgs
+    {
+        String Text { get; };
+        String Html { get; };
+        String Rtf { get; };
+        Windows.Foundation.IReference<CopyFormat> Formats { get; };
+    }
+
+    runtimeclass ContextMenuRequestedEventArgs
+    {
+        Windows.Foundation.Point Position { get; };
+    }
+
+    runtimeclass TitleChangedEventArgs
+    {
+        String Title;
+    }
+
+    runtimeclass PasteFromClipboardEventArgs
+    {
+        void HandleClipboardData(String data);
+        Boolean BracketedPasteEnabled { get; };
+    }
+
+    runtimeclass OpenHyperlinkEventArgs
+    {
+        OpenHyperlinkEventArgs(String uri);
+        String Uri { get; };
+    }
+
+    enum NoticeLevel
+    {
+        Debug = 10,
+        Info = 20,
+        Warning = 30,
+        Error = 40,
+    };
+
+    runtimeclass NoticeEventArgs
+    {
+        NoticeLevel Level { get; };
+        String Message { get; };
+    }
+
+    runtimeclass ScrollPositionChangedArgs
+    {
+        Int32 ViewTop { get; };
+        Int32 ViewHeight { get; };
+        Int32 BufferSize { get; };
+    }
+
+    runtimeclass RendererWarningArgs
+    {
+        UInt64 Result { get; };
+    }
+
+    runtimeclass TransparencyChangedEventArgs
+    {
+        Double Opacity { get; };
+    }
+
+    runtimeclass FoundResultsArgs
+    {
+        Boolean FoundMatch { get; };
+        Int32 TotalMatches { get; };
+        Int32 CurrentMatch { get; };
+    }
+
+    runtimeclass ShowWindowArgs
+    {
+        Boolean ShowOrHide { get; };
+    }
+    
+    runtimeclass UpdateSelectionMarkersEventArgs
+    {
+        Boolean ClearMarkers { get; };
+    }
+
+    runtimeclass CompletionsChangedEventArgs
+    {
+        String MenuJson { get; };
+        UInt32 ReplacementLength { get; };
+    }
+
+    runtimeclass KeySentEventArgs
+    {
+        UInt16 VKey { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+        Boolean KeyDown { get; };
+    }
+
+    runtimeclass CharSentEventArgs
+    {
+        Char Character { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+    }
+
+    runtimeclass StringSentEventArgs
+    {
+        String Text { get; };
+    }
+}

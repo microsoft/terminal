@@ -4,7 +4,7 @@
 // This test class creates an in-proc conpty host as well as a Terminal, to
 // validate that strings written to the conpty create the same response on the
 // terminal end. Tests can be written that validate both the contents of the
-// host buffer as well as the terminal buffer. Everytime that
+// host buffer as well as the terminal buffer. Every time that
 // `renderer.PaintFrame()` is called, the tests will validate the expected
 // output, and then flush the output of the VtEngine straight to the Terminal.
 
@@ -12,22 +12,20 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/convert.hpp"
 
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
 
-class InputBuffer; // This for some reason needs to be fwd-decl'd
 #include "../host/inputBuffer.hpp"
 #include "../host/readDataCooked.hpp"
 #include "../host/output.h"
 #include "../host/_stream.h" // For WriteCharsLegacy
-#include "../host/cmdline.h" // For WC_LIMIT_BACKSPACE
 #include "test/CommonState.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 
-#include "TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -53,8 +51,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
     // to be 80x32. If you change these, you'll probably inadvertently break a
     // bunch of tests !!!
-    static const SHORT TerminalViewWidth = 80;
-    static const SHORT TerminalViewHeight = 32;
+    static const til::CoordType TerminalViewWidth = 80;
+    static const til::CoordType TerminalViewHeight = 32;
 
     // This test class is for tests that are supposed to emit something in the PTY layer
     // and then check that they've been staged for presentation correctly inside
@@ -67,8 +65,9 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalRenderer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
 
         return true;
     }
@@ -76,6 +75,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
@@ -87,8 +87,9 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD_SETUP(MethodSetup)
     {
         // STEP 1: Set up the Terminal
-        term = std::make_unique<Terminal>();
-        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, emptyRT);
+        term = std::make_unique<Terminal>(Terminal::TestDummyMarker{});
+        emptyRenderer = std::make_unique<DummyRenderer>(term.get());
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, *emptyRenderer);
 
         // STEP 2: Set up the Conpty
 
@@ -96,22 +97,21 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
 
-        gci.SetDefaultForegroundColor(INVALID_COLOR);
-        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
+        gci.CalculateDefaultColorIndices();
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
-        VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
-
-        g.pRender = new Renderer(&gci.renderData, nullptr, 0, nullptr);
+        VERIFY_ARE_EQUAL(til::point{}, currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
         // Set up an xterm-256 renderer for conpty
-        wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        Viewport initialViewport = currentBuffer.GetViewport();
+        auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto initialViewport = currentBuffer.GetViewport();
 
         auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
                                                                initialViewport);
@@ -153,11 +153,12 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     {
         m_state->CleanupNewTextBufferInfo();
 
-        auto& g = ServiceLocator::LocateGlobals();
-        delete g.pRender;
+        auto& engines = ServiceLocator::LocateGlobals().pRender->_engines;
+        std::fill(engines.begin(), engines.end(), nullptr);
 
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Tests should drain all the output they push into the expected output buffer.");
 
+        emptyRenderer = nullptr;
         term = nullptr;
 
         return true;
@@ -175,6 +176,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(PassthroughHardReset);
 
     TEST_METHOD(PassthroughCursorShapeImmediately);
+
+    TEST_METHOD(PassthroughDECCTR);
 
     TEST_METHOD(TestWrappingALongString);
     TEST_METHOD(TestAdvancedWrapping);
@@ -216,31 +219,46 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(HyperlinkIdConsistency);
 
-private:
-    bool _writeCallback(const char* const pch, size_t const cch);
-    void _flushFirstFrame();
-    void _resizeConpty(const unsigned short sx, const unsigned short sy);
+    TEST_METHOD(ResizeInitializeBufferWithDefaultAttrs);
 
-    [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> _performResize(const til::size& newSize);
+    TEST_METHOD(ClearBufferSignal);
+
+    TEST_METHOD(SimpleAltBufferTest);
+    TEST_METHOD(AltBufferToAltBufferTest);
+
+    TEST_METHOD(TestPowerLineFirstFrame);
+
+    TEST_METHOD(AltBufferResizeCrash);
+
+    TEST_METHOD(TestNoExtendedAttrsOptimization);
+    TEST_METHOD(TestNoBackgroundAttrsOptimization);
+
+private:
+    bool _writeCallback(const char* const pch, const size_t cch);
+    void _flushFirstFrame();
+    void _resizeConpty(const til::CoordType sx, const til::CoordType sy);
+    void _clearConpty();
+
+    [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> _performResize(const til::size newSize);
 
     std::deque<std::string> expectedOutput;
 
     std::unique_ptr<CommonState> m_state;
-    std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+    std::unique_ptr<Microsoft::Console::VirtualTerminal::ITerminalApi> _pConApi;
 
     // Tests can set these variables how they link to configure the behavior of the test harness.
     bool _checkConptyOutput{ true }; // If true, the test class will check that the output from conpty was expected
     bool _logConpty{ false }; // If true, the test class will log all the output from conpty. Helpful for debugging.
 
-    DummyRenderTarget emptyRT;
+    std::unique_ptr<DummyRenderer> emptyRenderer;
     std::unique_ptr<Terminal> term;
 
     ApiRoutines _apiRoutines;
 };
 
-bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cch)
+bool ConptyRoundtripTests::_writeCallback(const char* const pch, const size_t cch)
 {
-    std::string actualString = std::string(pch, cch);
+    auto actualString = std::string(pch, cch);
 
     if (_checkConptyOutput)
     {
@@ -248,7 +266,7 @@ bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cc
                                static_cast<size_t>(0),
                                NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", TestUtils::ReplaceEscapes(actualString).c_str(), expectedOutput.size()));
 
-        std::string first = expectedOutput.front();
+        auto first = expectedOutput.front();
         expectedOutput.pop_front();
 
         Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", TestUtils::ReplaceEscapes(first).c_str()));
@@ -283,11 +301,11 @@ void ConptyRoundtripTests::_flushFirstFrame()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
 
-void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
-                                         const unsigned short sy)
+void ConptyRoundtripTests::_resizeConpty(const til::CoordType sx,
+                                         const til::CoordType sy)
 {
     // Largely taken from implementation in PtySignalInputThread::_InputThread
-    if (DispatchCommon::s_ResizeWindow(*_pConApi, sx, sy))
+    if (_pConApi->ResizeWindow(sx, sy))
     {
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
@@ -295,7 +313,14 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
     }
 }
 
-[[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size& newSize)
+void ConptyRoundtripTests::_clearConpty()
+{
+    // Taken verbatim from implementation in PtySignalInputThread::_DoClearBuffer
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
+}
+
+[[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size newSize)
 {
     // IMPORTANT! Anyone calling this should make sure that the test is running
     // in IsolationLevel: Method. If you don't add that, then it might secretly
@@ -305,11 +330,11 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
 
     auto resizeResult = term->UserResize(newSize);
     VERIFY_SUCCEEDED(resizeResult);
-    _resizeConpty(newSize.width<unsigned short>(), newSize.height<unsigned short>());
+    _resizeConpty(newSize.width, newSize.height);
 
     // After we resize, make sure to get the new textBuffers
     return { &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer(),
-             term->_buffer.get() };
+             term->_mainBuffer.get() };
 }
 
 void ConptyRoundtripTests::ConptyOutputTestCanary()
@@ -331,7 +356,7 @@ void ConptyRoundtripTests::SimpleWriteOutputTest()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -354,7 +379,7 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -381,7 +406,7 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
 void ConptyRoundtripTests::WriteAFewSimpleLines()
 {
     Log::Comment(NoThrowString().Format(
-        L"Write more lines of outout. We should use \r\n to move the cursor"));
+        L"Write more lines of output. We should use \r\n to move the cursor"));
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -389,7 +414,7 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -430,14 +455,14 @@ void ConptyRoundtripTests::TestWrappingALongString()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
     _checkConptyOutput = false;
 
     const auto initialTermView = term->GetViewport();
 
-    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
     VERIFY_ARE_EQUAL(100, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialTermView.Top());
@@ -453,15 +478,15 @@ void ConptyRoundtripTests::TestWrappingALongString()
     auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
-        VERIFY_ARE_EQUAL(charsToWrite % initialTermView.Width(), cursor.GetPosition().X);
-        VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(charsToWrite % initialTermView.Width(), cursor.GetPosition().x);
+        VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
 
         // Verify that we marked the 0th row as _wrapped_
         const auto& row0 = tb.GetRowByOffset(0);
-        VERIFY_IS_TRUE(row0.GetCharRow().WasWrapForced());
+        VERIFY_IS_TRUE(row0.WasWrapForced());
 
         const auto& row1 = tb.GetRowByOffset(1);
-        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row1.WasWrapForced());
 
         TestUtils::VerifyExpectedString(tb, TestUtils::Test100CharsString, { 0, 0 });
     };
@@ -481,12 +506,12 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto initialTermView = term->GetViewport();
 
     _flushFirstFrame();
 
-    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
     VERIFY_ARE_EQUAL(100, charsToWrite);
 
     hostSm.ProcessString(TestUtils::Test100CharsString);
@@ -497,15 +522,15 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
     auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
-        VERIFY_ARE_EQUAL(2, cursor.GetPosition().Y);
-        VERIFY_ARE_EQUAL(20, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(2, cursor.GetPosition().y);
+        VERIFY_ARE_EQUAL(20, cursor.GetPosition().x);
 
         // Verify that we marked the 0th row as _wrapped_
         const auto& row0 = tb.GetRowByOffset(0);
-        VERIFY_IS_TRUE(row0.GetCharRow().WasWrapForced());
+        VERIFY_IS_TRUE(row0.WasWrapForced());
 
         const auto& row1 = tb.GetRowByOffset(1);
-        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row1.WasWrapForced());
 
         TestUtils::VerifyExpectedString(tb, TestUtils::Test100CharsString, { 0, 0 });
         TestUtils::VerifyExpectedString(tb, L"          1234567890", { 0, 2 });
@@ -546,7 +571,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     const auto initialTermView = term->GetViewport();
 
@@ -559,7 +584,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     {
         // This is a handy way of just printing the printable characters that
         // _aren't_ the space character.
-        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        const auto wch = static_cast<wchar_t>(33 + (i % 94));
         hostSm.ProcessCharacter(wch);
     }
 
@@ -569,15 +594,15 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
-        VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
-        VERIFY_ARE_EQUAL(10, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
+        VERIFY_ARE_EQUAL(10, cursor.GetPosition().x);
 
         // Verify that we marked the 0th row as _not wrapped_
         const auto& row0 = tb.GetRowByOffset(0);
-        VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row0.WasWrapForced());
 
         const auto& row1 = tb.GetRowByOffset(1);
-        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row1.WasWrapForced());
 
         TestUtils::VerifyExpectedString(tb, LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)", { 0, 0 });
         TestUtils::VerifyExpectedString(tb, L"1234567890", { 0, 1 });
@@ -608,7 +633,7 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto initialTermView = term->GetViewport();
 
     _flushFirstFrame();
@@ -620,7 +645,7 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     {
         // This is a handy way of just printing the printable characters that
         // _aren't_ the space character.
-        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        const auto wch = static_cast<wchar_t>(33 + (i % 94));
         hostSm.ProcessCharacter(wch);
     }
 
@@ -631,15 +656,15 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
-        VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
-        VERIFY_ARE_EQUAL(20, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
+        VERIFY_ARE_EQUAL(20, cursor.GetPosition().x);
 
         // Verify that we marked the 0th row as _not wrapped_
         const auto& row0 = tb.GetRowByOffset(0);
-        VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row0.WasWrapForced());
 
         const auto& row1 = tb.GetRowByOffset(1);
-        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row1.WasWrapForced());
 
         TestUtils::VerifyExpectedString(tb, LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)", { 0, 0 });
         TestUtils::VerifyExpectedString(tb, L"          1234567890", { 0, 1 });
@@ -670,7 +695,7 @@ void ConptyRoundtripTests::MoveCursorAtEOL()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     _flushFirstFrame();
 
     Log::Comment(NoThrowString().Format(
@@ -709,8 +734,8 @@ void ConptyRoundtripTests::MoveCursorAtEOL()
         TestUtils::VerifySpanOfText(L" ", iter, 0, TerminalViewWidth);
 
         auto& cursor = tb.GetCursor();
-        VERIFY_ARE_EQUAL(TerminalViewWidth - 1, cursor.GetPosition().X);
-        VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(TerminalViewWidth - 1, cursor.GetPosition().x);
+        VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
     };
 
     verifyData1(hostTb);
@@ -749,7 +774,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
     const auto initialHostView = si.GetViewport();
     const auto initialTermView = term->GetViewport();
     const auto initialTerminalBufferHeight = term->GetTextBuffer().GetSize().Height();
@@ -772,7 +797,7 @@ void ConptyRoundtripTests::TestResizeHeight()
         hostSm.ProcessString(L"\r\n");
     }
 
-    // Conpty doesn't have a scrollback, it's view's origin is always 0,0
+    // Conpty doesn't have a scrollback, its view's origin is always 0,0
     const auto secondHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, secondHostView.Top());
     VERIFY_ARE_EQUAL(TerminalViewHeight, secondHostView.BottomExclusive());
@@ -783,9 +808,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     // If we've printed more lines than the height of the buffer, then we're
     // expecting the viewport to have moved down. Otherwise, the terminal's
     // viewport will stay at 0,0.
-    const auto expectedTerminalViewBottom = std::max(std::min(::base::saturated_cast<short>(printedRows + 1),
-                                                              term->GetBufferHeight()),
-                                                     term->GetViewport().Height());
+    const auto expectedTerminalViewBottom = std::max(std::min(printedRows + 1, term->GetBufferHeight()), term->GetViewport().Height());
 
     VERIFY_ARE_EQUAL(expectedTerminalViewBottom, secondTermView.BottomExclusive());
     VERIFY_ARE_EQUAL(expectedTerminalViewBottom - initialTermView.Height(), secondTermView.Top());
@@ -797,11 +820,9 @@ void ConptyRoundtripTests::TestResizeHeight()
         const auto numLostRows = std::max(0,
                                           printedRows - std::min(term->GetTextBuffer().GetSize().Height(), initialTerminalBufferHeight) + 1);
 
-        const auto rowsWithText = std::min(::base::saturated_cast<short>(printedRows),
-                                           expectedTerminalViewBottom) -
-                                  1 + std::min(resizeDy, 0);
+        const auto rowsWithText = std::min(printedRows, expectedTerminalViewBottom) - 1 + std::min(resizeDy, 0);
 
-        for (short row = 0; row < rowsWithText; row++)
+        for (til::CoordType row = 0; row < rowsWithText; row++)
         {
             SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = termTb.GetCellDataAt({ 0, row });
@@ -835,11 +856,9 @@ void ConptyRoundtripTests::TestResizeHeight()
         //   characters, but then we'll want to look for more blank rows at the
         //   bottom. The characters in the initial viewport won't have moved.
 
-        const short originalViewHeight = ::base::saturated_cast<short>(resizeDy < 0 ?
-                                                                           initialHostView.Height() + resizeDy :
-                                                                           initialHostView.Height());
+        const auto originalViewHeight = resizeDy < 0 ? initialHostView.Height() + resizeDy : initialHostView.Height();
         const auto rowsWithText = std::min(originalViewHeight - 1, printedRows);
-        const bool scrolled = printedRows > initialHostView.Height();
+        const auto scrolled = printedRows > initialHostView.Height();
         // The last row of the viewport should be empty
         // The second last row will have '0'+50
         // The third last row will have '0'+49
@@ -849,7 +868,7 @@ void ConptyRoundtripTests::TestResizeHeight()
                                                         (printedRows - originalViewHeight + 1) :
                                                         0);
 
-        short row = 0;
+        til::CoordType row = 0;
         // Don't include the last row of the viewport in this check, since it'll
         // be blank. We'll check it in the below loop.
         for (; row < rowsWithText; row++)
@@ -885,10 +904,10 @@ void ConptyRoundtripTests::TestResizeHeight()
     // After we resize, make sure to get the new textBuffers
     std::tie(hostTb, termTb) = _performResize(newViewportSize);
 
-    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    // Conpty's doesn't have a scrollback, its view's origin is always 0,0
     const auto thirdHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, thirdHostView.Top());
-    VERIFY_ARE_EQUAL(newViewportSize.height(), thirdHostView.BottomExclusive());
+    VERIFY_ARE_EQUAL(newViewportSize.height, thirdHostView.BottomExclusive());
 
     // The Terminal should be stuck to the top of the viewport, unless dy<0,
     // rows=50. In that set of cases, we _didn't_ pin the top of the Terminal to
@@ -913,10 +932,10 @@ void ConptyRoundtripTests::TestResizeHeight()
     Log::Comment(NoThrowString().Format(L"Paint a frame to update the Terminal"));
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    // Conpty's doesn't have a scrollback, its view's origin is always 0,0
     const auto fourthHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, fourthHostView.Top());
-    VERIFY_ARE_EQUAL(newViewportSize.height(), fourthHostView.BottomExclusive());
+    VERIFY_ARE_EQUAL(newViewportSize.height, fourthHostView.BottomExclusive());
 
     // The Terminal should be stuck to the top of the viewport, unless dy<0,
     // rows=50. In that set of cases, we _didn't_ pin the top of the Terminal to
@@ -949,7 +968,7 @@ void ConptyRoundtripTests::PassthroughCursorShapeImmediately()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -976,7 +995,7 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
 
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1010,7 +1029,7 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
 
     // Verify that we've printed height*2 lines of X's to the Terminal
     const auto termFirstView = term->GetViewport();
-    for (short y = 0; y < 2 * termFirstView.Height(); y++)
+    for (til::CoordType y = 0; y < 2 * termFirstView.Height(); y++)
     {
         TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
     }
@@ -1027,13 +1046,13 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
     VERIFY_ARE_EQUAL(0, termSecondView.Top());
 
     // Verify the top of the Terminal viewport contains the contents of the old viewport
-    for (short y = 0; y < termSecondView.BottomInclusive(); y++)
+    for (til::CoordType y = 0; y < termSecondView.BottomInclusive(); y++)
     {
         TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
     }
 
     // Verify below the new viewport (the old viewport) has been cleared out
-    for (short y = termSecondView.BottomInclusive(); y < termFirstView.BottomInclusive(); y++)
+    for (auto y = termSecondView.BottomInclusive(); y < termFirstView.BottomInclusive(); y++)
     {
         TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
     }
@@ -1053,7 +1072,7 @@ void ConptyRoundtripTests::PassthroughClearAll()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     auto& sm = si.GetStateMachine();
 
@@ -1074,17 +1093,16 @@ void ConptyRoundtripTests::PassthroughClearAll()
         sm.ProcessString(L"~");
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool afterClear = false) {
-        const auto firstRow = viewport.top<short>();
-        const auto width = viewport.width<short>();
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool afterClear = false) {
+        const auto width = viewport.width();
 
         // "~" rows
-        for (short row = 0; row < viewport.bottom<short>(); row++)
+        for (til::CoordType row = 0; row < viewport.bottom; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
-            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).WasWrapForced());
             auto iter = tb.GetCellDataAt({ 0, row });
-            if (afterClear && row >= viewport.top<short>())
+            if (afterClear && row >= viewport.top)
             {
                 TestUtils::VerifySpanOfText(L" ", iter, 0, width);
             }
@@ -1097,15 +1115,15 @@ void ConptyRoundtripTests::PassthroughClearAll()
     };
 
     Log::Comment(L"========== Checking the host buffer state (before) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 
-    const til::rectangle originalTerminalView{ term->_mutableViewport.ToInclusive() };
+    const til::rect originalTerminalView{ term->_mutableViewport.ToInclusive() };
 
     // Here, we'll emit the 2J to EraseAll, and move the viewport contents into
     // the scrollback.
@@ -1116,12 +1134,12 @@ void ConptyRoundtripTests::PassthroughClearAll()
 
     // Make sure that the terminal's new viewport is actually just lower than it
     // used to be.
-    const til::rectangle newTerminalView{ term->_mutableViewport.ToInclusive() };
-    VERIFY_ARE_EQUAL(end, newTerminalView.top<short>());
-    VERIFY_IS_GREATER_THAN(newTerminalView.top(), originalTerminalView.top());
+    const til::rect newTerminalView{ term->_mutableViewport.ToInclusive() };
+    VERIFY_ARE_EQUAL(end, newTerminalView.top);
+    VERIFY_IS_GREATER_THAN(newTerminalView.top, originalTerminalView.top);
 
     Log::Comment(L"========== Checking the host buffer state (after) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -1141,7 +1159,7 @@ void ConptyRoundtripTests::PassthroughHardReset()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
 
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1175,23 +1193,61 @@ void ConptyRoundtripTests::PassthroughHardReset()
 
     // Verify that we've printed height*2 lines of X's to the Terminal
     const auto termFirstView = term->GetViewport();
-    for (short y = 0; y < 2 * termFirstView.Height(); y++)
+    for (til::CoordType y = 0; y < 2 * termFirstView.Height(); y++)
     {
         TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
     }
 
     // Write a Hard Reset VT sequence to the host, it should come through to the Terminal
+    // along with a DECSET sequence to re-enable win32 input and focus events.
     expectedOutput.push_back("\033c");
+    expectedOutput.push_back("\033[?9001h\033[?1004h");
     hostSm.ProcessString(L"\033c");
 
     const auto termSecondView = term->GetViewport();
     VERIFY_ARE_EQUAL(0, termSecondView.Top());
 
     // Verify everything has been cleared out
-    for (short y = 0; y < termFirstView.BottomInclusive(); y++)
+    for (til::CoordType y = 0; y < termFirstView.BottomInclusive(); y++)
     {
         TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
     }
+}
+
+void ConptyRoundtripTests::PassthroughDECCTR()
+{
+    Log::Comment(L"Update the color table with DECCTR. This should immediately be flushed to the Terminal.");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& termRenderSettings = term->GetRenderSettings();
+
+    _flushFirstFrame();
+
+    _logConpty = true;
+
+    // We're going to update color table entries 101 through 103, so we start by
+    // initializing those entries to black in the Terminal render settings.
+    termRenderSettings.SetColorTableEntry(101, RGB(0, 0, 0));
+    termRenderSettings.SetColorTableEntry(102, RGB(0, 0, 0));
+    termRenderSettings.SetColorTableEntry(103, RGB(0, 0, 0));
+
+    // DECCTR is expected to arrive in two parts. The control sequence comes
+    // first, and the string content follows in the second packet.
+    expectedOutput.push_back("\x1bP2$p");
+    expectedOutput.push_back("101;2;100;0;0/102;2;0;100;0/103;2;0;0;100\x1b\\");
+
+    // Send the control sequence to the host.
+    hostSm.ProcessString(L"\x1bP2$p101;2;100;0;0/102;2;0;100;0/103;2;0;0;100\x1b\\");
+
+    // Verify that the color table entries have been updated in the Terminal.
+    VERIFY_ARE_EQUAL(RGB(255, 0, 0), termRenderSettings.GetColorTableEntry(101));
+    VERIFY_ARE_EQUAL(RGB(0, 255, 0), termRenderSettings.GetColorTableEntry(102));
+    VERIFY_ARE_EQUAL(RGB(0, 0, 255), termRenderSettings.GetColorTableEntry(103));
+
+    termRenderSettings.ResetColorTable();
 }
 
 void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
@@ -1205,7 +1261,7 @@ void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1223,8 +1279,8 @@ void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
         // |AAAAA_  ...    | (b) (There are 20 'A's on this line.)
         // |        ...    | (b)
 
-        VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
-        VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
+        VERIFY_IS_TRUE(tb.GetRowByOffset(0).WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(1).WasWrapForced());
         auto iter0 = tb.GetCellDataAt({ 0, 0 });
         TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
         auto iter1 = tb.GetCellDataAt({ 0, 1 });
@@ -1253,7 +1309,7 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1341,7 +1397,7 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
 
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));
 
-    auto verifyBuffer = [](const TextBuffer& tb, const short wrappedRow) {
+    auto verifyBuffer = [](const TextBuffer& tb, const til::CoordType wrappedRow) {
         // Buffer contents should look like the following: (80 wide)
         // (w) means we hard wrapped the line
         // (b) means the line is _not_ wrapped (it's broken, the default state.)
@@ -1354,8 +1410,8 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
         // |AAAAAAAA...AAAA| (w)
         // |AAAAA_  ...    | (b) (There are 20 'A's on this line.)
 
-        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
-        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).GetCharRow().WasWrapForced());
+        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).WasWrapForced());
 
         auto iter0 = tb.GetCellDataAt({ 0, wrappedRow });
         TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
@@ -1386,7 +1442,7 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1446,17 +1502,17 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
                          L"8"); // Restore
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A')); // Print 100 'A's
 
-    auto verifyBuffer = [](const TextBuffer& tb, const til::rectangle viewport) {
-        const short wrappedRow = viewport.bottom<short>() - 2;
-        const short start = viewport.top<short>();
-        for (short i = start; i < wrappedRow; i++)
+    auto verifyBuffer = [](const TextBuffer& tb, const til::rect& viewport) {
+        const auto wrappedRow = viewport.bottom - 2;
+        const auto start = viewport.top;
+        for (auto i = start; i < wrappedRow; i++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", i));
             TestUtils::VerifyExpectedString(tb, i == start + 13 ? L"Y" : L"X", { 0, i });
         }
 
-        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
-        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).GetCharRow().WasWrapForced());
+        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).WasWrapForced());
 
         auto iter0 = tb.GetCellDataAt({ 0, wrappedRow });
         TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
@@ -1468,13 +1524,13 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
     };
 
     Log::Comment(NoThrowString().Format(L"Checking the host buffer..."));
-    verifyBuffer(hostTb, hostView.ToInclusive());
+    verifyBuffer(hostTb, hostView.ToExclusive());
     Log::Comment(NoThrowString().Format(L"... Done"));
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(NoThrowString().Format(L"Checking the terminal buffer..."));
-    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(termTb, term->_mutableViewport.ToExclusive());
     Log::Comment(NoThrowString().Format(L"... Done"));
 }
 
@@ -1487,7 +1543,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto initialTermView = term->GetViewport();
 
     Log::Comment(L"Flush first frame.");
@@ -1512,7 +1568,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     // For all lines but the last one, write out a few of a letter.
     for (auto i = 0; i < rowsToWrite; ++i)
     {
-        const wchar_t wch = static_cast<wchar_t>(L'A' + i);
+        const auto wch = static_cast<wchar_t>(L'A' + i);
         hostSm.ProcessCharacter(wch);
         hostSm.ProcessCharacter(wch);
         hostSm.ProcessCharacter(wch);
@@ -1533,20 +1589,20 @@ void ConptyRoundtripTests::ScrollWithMargins()
     auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor is waiting in the bottom right corner
-        VERIFY_ARE_EQUAL(initialTermView.Height() - 1, cursor.GetPosition().Y);
-        VERIFY_ARE_EQUAL(initialTermView.Width() - 1, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(initialTermView.Height() - 1, cursor.GetPosition().y);
+        VERIFY_ARE_EQUAL(initialTermView.Width() - 1, cursor.GetPosition().x);
 
         // For all rows except the last one, verify that we have a run of four letters.
         for (auto i = 0; i < rowsToWrite; ++i)
         {
             const std::wstring expectedString(4, static_cast<wchar_t>(L'A' + i));
-            const COORD expectedPos{ 0, gsl::narrow<SHORT>(i) };
+            const til::point expectedPos{ 0, i };
             TestUtils::VerifyExpectedString(tb, expectedString, expectedPos);
         }
 
         // For the last row, verify we have an entire row of asterisks for the mode line.
         const std::wstring expectedModeLine(initialTermView.Width() - 1, L'*');
-        const COORD expectedPos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
+        const til::point expectedPos{ 0, rowsToWrite };
         TestUtils::VerifyExpectedString(tb, expectedModeLine, expectedPos);
     };
 
@@ -1645,56 +1701,59 @@ void ConptyRoundtripTests::ScrollWithMargins()
     hostSm.ProcessString(completeCursorAtPromptLine);
 
     // Set up the verifications like above.
-    auto verifyBufferAfter = [&](const TextBuffer& tb) {
+    auto verifyBufferAfter = [&](const TextBuffer& tb, const auto panOffset) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor is waiting on the freshly revealed line (1 above mode line)
         // and in the left most column.
-        VERIFY_ARE_EQUAL(initialTermView.Height() - 2, cursor.GetPosition().Y);
-        VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+        const auto bottomLine = initialTermView.BottomInclusive() + panOffset;
+        VERIFY_ARE_EQUAL(bottomLine - 1, cursor.GetPosition().y);
+        VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
 
         // For all rows except the last two, verify that we have a run of four letters.
         for (auto i = 0; i < rowsToWrite - 1; ++i)
         {
             // Start with B this time because the A line got scrolled off the top.
             const std::wstring expectedString(4, static_cast<wchar_t>(L'B' + i));
-            const COORD expectedPos{ 0, gsl::narrow<SHORT>(i) };
+            const til::point expectedPos{ 0, panOffset + i };
             TestUtils::VerifyExpectedString(tb, expectedString, expectedPos);
         }
 
         // For the second to last row, verify that it is blank.
         {
             const std::wstring expectedBlankLine(initialTermView.Width(), L' ');
-            const COORD blankLinePos{ 0, gsl::narrow<SHORT>(rowsToWrite - 1) };
+            const til::point blankLinePos{ 0, panOffset + rowsToWrite - 1 };
             TestUtils::VerifyExpectedString(tb, expectedBlankLine, blankLinePos);
         }
 
         // For the last row, verify we have an entire row of asterisks for the mode line.
         {
             const std::wstring expectedModeLine(initialTermView.Width() - 1, L'*');
-            const COORD modeLinePos{ 0, gsl::narrow<SHORT>(rowsToWrite) };
+            const til::point modeLinePos{ 0, panOffset + rowsToWrite };
             TestUtils::VerifyExpectedString(tb, expectedModeLine, modeLinePos);
         }
     };
 
     // This will verify the text emitted from the PTY.
 
-    expectedOutput.push_back("\x1b[H"); // cursor returns to top left corner.
-    for (auto i = 0; i < rowsToWrite - 1; ++i)
+    expectedOutput.push_back("\r\n"); // cursor moved to bottom left corner
+    expectedOutput.push_back("\n"); // linefeed pans the viewport down
     {
-        const std::string expectedString(4, static_cast<char>('B' + i));
+        // Cursor gets reset into second line from bottom, left most column
+        std::stringstream ss;
+        ss << "\x1b[" << initialTermView.Height() - 1 << ";1H";
+        expectedOutput.push_back(ss.str());
+    }
+    {
+        // Bottom of the scroll region is replaced with a blank line
+        const std::string expectedString(initialTermView.Width(), ' ');
         expectedOutput.push_back(expectedString);
-        expectedOutput.push_back("\x1b[K"); // erase the rest of the line.
-        expectedOutput.push_back("\r\n");
     }
+    expectedOutput.push_back("\r\n"); // cursor moved to bottom left corner
     {
-        expectedOutput.push_back(""); // nothing for the empty line
-        expectedOutput.push_back("\x1b[K"); // erase the rest of the line.
-        expectedOutput.push_back("\r\n");
-    }
-    {
+        // Mode line is redrawn at the bottom of the viewport
         const std::string expectedString(initialTermView.Width() - 1, '*');
-        // There will be one extra blank space at the end of the line, to prevent delayed EOL wrapping
-        expectedOutput.push_back(expectedString + " ");
+        expectedOutput.push_back(expectedString);
+        expectedOutput.push_back(" ");
     }
     {
         // Cursor gets reset into second line from bottom, left most column
@@ -1706,15 +1765,15 @@ void ConptyRoundtripTests::ScrollWithMargins()
 
     Log::Comment(L"Verify host buffer contains pattern moved up one and mode line still in place.");
     // Verify the host side.
-    verifyBufferAfter(hostTb);
+    verifyBufferAfter(hostTb, 0);
 
     Log::Comment(L"Emit PTY frame and validate it transmits the right data.");
     // Paint the frame
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"Verify terminal buffer contains pattern moved up one and mode line still in place.");
-    // Verify the terminal side.
-    verifyBufferAfter(termTb);
+    // Verify the terminal side. Note the viewport has panned down a line.
+    verifyBufferAfter(termTb, 1);
 }
 
 void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
@@ -1731,7 +1790,7 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1739,7 +1798,7 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
         // Simple verification: Make sure the cursor is in the correct place,
         // and that it's visible. We don't care so much about the buffer
         // contents in this test.
-        const COORD expectedCursor{ 8, 3 };
+        const til::point expectedCursor{ 8, 3 };
         VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
     };
@@ -1777,9 +1836,8 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
         TEST_METHOD_PROPERTY(L"Data:useLongSpaces", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:printTextAfterSpaces", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int PaintEveryNewline = 0;
-    constexpr int PaintAfterAllNewlines = 1;
-    constexpr int DontPaintAfterNewlines = 2;
+    constexpr auto PaintEveryNewline = 0;
+    constexpr auto PaintAfterAllNewlines = 1;
 
     INIT_TEST_PROPERTY(int, paintEachNewline, L"Any of: manually PaintFrame after each newline is emitted, once at the end of all newlines, or not at all");
     INIT_TEST_PROPERTY(bool, cursorOnNextLine, L"Either leave the cursor on the first line, or place it on the second line of the buffer");
@@ -1825,20 +1883,20 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
     auto verifyBuffer = [&cursorOnNextLine, &useLongSpaces, &printTextAfterSpaces](const TextBuffer& tb,
-                                                                                   const til::rectangle viewport) {
+                                                                                   const til::rect viewport) {
         // We _would_ expect the Terminal's cursor to be on { 8, 0 }, but this
         // is currently broken due to #381/#4676. So we'll use the viewport
         // provided to find the actual Y position of the cursor.
-        const short viewTop = viewport.origin().y<short>();
-        const short cursorRow = viewTop + (cursorOnNextLine ? 1 : 0);
-        const short cursorCol = (cursorOnNextLine ? 5 :
-                                                    (10 + (useLongSpaces ? 5 : 0) + (printTextAfterSpaces ? 5 : 0)));
-        const COORD expectedCursor{ cursorCol, cursorRow };
+        const auto viewTop = viewport.origin().y;
+        const auto cursorRow = viewTop + (cursorOnNextLine ? 1 : 0);
+        const auto cursorCol = (cursorOnNextLine ? 5 :
+                                                   (10 + (useLongSpaces ? 5 : 0) + (printTextAfterSpaces ? 5 : 0)));
+        const til::point expectedCursor{ cursorCol, cursorRow };
 
         VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
@@ -1911,13 +1969,13 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     hostSm.ProcessString(L"\x1b[?1049l");
 
     Log::Comment(L"Checking the host buffer state");
-    verifyBuffer(hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"Checking the terminal buffer state");
-    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
@@ -1933,20 +1991,20 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
     auto verifyBuffer = [](const TextBuffer& tb,
-                           const til::rectangle viewport) {
-        const auto lastRow = viewport.bottom<short>() - 1;
+                           const til::rect viewport) {
+        const auto lastRow = viewport.bottom - 1;
         const til::point expectedCursor{ 0, lastRow - 1 };
-        VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
+        VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
 
-        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA          DDDDDDDDDD", til::point{ 0, lastRow - 2 });
-        TestUtils::VerifyExpectedString(tb, L"BBBBBBBBBB", til::point{ 0, lastRow - 1 });
-        TestUtils::VerifyExpectedString(tb, L"FFFFFFFFFE", til::point{ 0, lastRow });
+        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA          DDDDDDDDDD", { 0, lastRow - 2 });
+        TestUtils::VerifyExpectedString(tb, L"BBBBBBBBBB", { 0, lastRow - 1 });
+        TestUtils::VerifyExpectedString(tb, L"FFFFFFFFFE", { 0, lastRow });
     };
 
     _logConpty = true;
@@ -1983,14 +2041,14 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
     hostSm.ProcessString(L"\n");
 
     Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
 
-    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::MarginsWithStatusLine()
@@ -2011,22 +2069,22 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
     auto verifyBuffer = [](const TextBuffer& tb,
-                           const til::rectangle viewport) {
-        const auto lastRow = viewport.bottom<short>() - 1;
+                           const til::rect viewport) {
+        const auto lastRow = viewport.bottom - 1;
         const til::point expectedCursor{ 1, lastRow };
-        VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
+        VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
 
-        TestUtils::VerifyExpectedString(tb, L"EEEEEEEEEE", til::point{ 0, lastRow - 4 });
-        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA", til::point{ 0, lastRow - 3 });
-        TestUtils::VerifyExpectedString(tb, L"          ", til::point{ 0, lastRow - 2 });
-        TestUtils::VerifyExpectedString(tb, L"XBBBBBBBBB", til::point{ 0, lastRow - 1 });
-        TestUtils::VerifyExpectedString(tb, L"YCCCCCCCCC", til::point{ 0, lastRow });
+        TestUtils::VerifyExpectedString(tb, L"EEEEEEEEEE", { 0, lastRow - 4 });
+        TestUtils::VerifyExpectedString(tb, L"AAAAAAAAAA", { 0, lastRow - 3 });
+        TestUtils::VerifyExpectedString(tb, L"          ", { 0, lastRow - 2 });
+        TestUtils::VerifyExpectedString(tb, L"XBBBBBBBBB", { 0, lastRow - 1 });
+        TestUtils::VerifyExpectedString(tb, L"YCCCCCCCCC", { 0, lastRow });
     };
 
     // We're _not_ checking the conpty output during this test, only the side effects.
@@ -2035,7 +2093,7 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     // Use DECALN to fill the buffer with 'E's.
     hostSm.ProcessString(L"\x1b#8");
 
-    const short originalBottom = si.GetViewport().BottomInclusive();
+    const auto originalBottom = si.GetViewport().BottomInclusive();
     // Print 3 lines into the bottom of the buffer:
     // AAAAAAAAAA
     // BBBBBBBBBB
@@ -2056,17 +2114,17 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     // After printing the 'C' line, the cursor is on the bottom line of the viewport.
     // Emit a newline here to get a new line at the bottom of the viewport.
     hostSm.ProcessString(L"\n");
-    const short newBottom = si.GetViewport().BottomInclusive();
+    const auto newBottom = si.GetViewport().BottomInclusive();
 
     {
         // Emulate calling ScrollConsoleScreenBuffer to scroll the B and C lines
         // down one line.
-        SMALL_RECT src;
-        src.Top = newBottom - 2;
-        src.Left = 0;
-        src.Right = si.GetViewport().Width();
-        src.Bottom = originalBottom;
-        COORD tgt = { 0, newBottom - 1 };
+        til::inclusive_rect src;
+        src.top = newBottom - 2;
+        src.left = 0;
+        src.right = si.GetViewport().Width();
+        src.bottom = originalBottom;
+        til::point tgt{ 0, newBottom - 1 };
         TextAttribute useThisAttr(0x07); // We don't terribly care about the attributes so this is arbitrary
         ScrollRegion(si, src, std::nullopt, tgt, L' ', useThisAttr);
     }
@@ -2080,14 +2138,14 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     hostSm.ProcessString(L"Y");
 
     Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
 
-    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::OutputWrappedLineWithSpace()
@@ -2102,7 +2160,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpace()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -2123,8 +2181,8 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpace()
         // | B_ ...    | (b) (cursor is on the '_')
         // |    ...    | (b)
 
-        VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
-        VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
+        VERIFY_IS_TRUE(tb.GetRowByOffset(0).WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(1).WasWrapForced());
 
         // First row
         auto iter0 = tb.GetCellDataAt({ 0, 0 });
@@ -2141,7 +2199,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpace()
     Log::Comment(L"========== Checking the host buffer state ==========");
     verifyBuffer(hostTb);
 
-    std::string firstLine = std::string(firstTextLength, 'A');
+    auto firstLine = std::string(firstTextLength, 'A');
     firstLine += "  ";
     std::string secondLine{ " B" };
 
@@ -2168,7 +2226,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -2201,7 +2259,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     const auto spacesLength = 3;
     const auto secondTextLength = 1;
 
-    std::string firstLine = std::string(firstTextLength, 'A');
+    auto firstLine = std::string(firstTextLength, 'A');
     firstLine += "  ";
     std::string secondLine{ " B" };
 
@@ -2263,7 +2321,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     sm.ProcessString(std::wstring(spacesLength, L' '));
     sm.ProcessString(std::wstring(secondTextLength, L'B'));
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
         // Buffer contents should look like the following: (80 wide)
         // (w) means we hard wrapped the line
         // (b) means the line is _not_ wrapped (it's broken, the default state.)
@@ -2272,9 +2330,9 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
         // | B_ ...    | (b) (cursor is on the '_')
         // |    ...    | (b)
 
-        const short wrappedRow = viewport.bottom<short>() - 2;
-        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
-        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).GetCharRow().WasWrapForced());
+        const auto wrappedRow = viewport.bottom - 2;
+        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).WasWrapForced());
 
         // First row
         auto iter0 = tb.GetCellDataAt({ 0, wrappedRow });
@@ -2289,13 +2347,13 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     };
 
     Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(hostTb, hostView.ToInclusive());
+    verifyBuffer(hostTb, hostView.ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
-    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::BreakLinesOnCursorMovement()
@@ -2303,13 +2361,13 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2, 3, 4, 5, 6}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int MoveCursorWithCUP = 0;
-    constexpr int MoveCursorWithCR_LF = 1;
-    constexpr int MoveCursorWithLF_CR = 2;
-    constexpr int MoveCursorWithVPR_CR = 3;
-    constexpr int MoveCursorWithCUB_LF = 4;
-    constexpr int MoveCursorWithCUD_CR = 5;
-    constexpr int MoveCursorWithNothing = 6;
+    constexpr auto MoveCursorWithCUP = 0;
+    constexpr auto MoveCursorWithCR_LF = 1;
+    constexpr auto MoveCursorWithLF_CR = 2;
+    constexpr auto MoveCursorWithVPR_CR = 3;
+    constexpr auto MoveCursorWithCUB_LF = 4;
+    constexpr auto MoveCursorWithCUD_CR = 5;
+    constexpr auto MoveCursorWithNothing = 6;
     INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP, newline/carriage-return, or some other VT sequence");
 
     Log::Comment(L"This is a test for GH#5291. WSL vim uses spaces to clear the"
@@ -2323,33 +2381,31 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
 
-    auto& termTb = *term->_buffer;
-
     _flushFirstFrame();
 
     // Any of the cursor movements that use a LF will actually hard break the
     // line - everything else will leave it marked as wrapped.
-    const bool expectHardBreak = (cursorMovementMode == MoveCursorWithLF_CR) ||
+    const auto expectHardBreak = (cursorMovementMode == MoveCursorWithLF_CR) ||
                                  (cursorMovementMode == MoveCursorWithCR_LF) ||
                                  (cursorMovementMode == MoveCursorWithCUB_LF);
 
     auto verifyBuffer = [&](const TextBuffer& tb,
-                            const til::rectangle viewport) {
-        const auto lastRow = viewport.bottom<short>() - 1;
+                            const til::rect viewport) {
+        const auto lastRow = viewport.bottom - 1;
         const til::point expectedCursor{ 5, lastRow };
-        VERIFY_ARE_EQUAL(expectedCursor, til::point{ tb.GetCursor().GetPosition() });
+        VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
         VERIFY_IS_TRUE(tb.GetCursor().IsVisible());
 
-        for (auto y = viewport.top<short>(); y < lastRow; y++)
+        for (auto y = viewport.top; y < lastRow; y++)
         {
             // We're using CUP to move onto the status line _always_, so the
             // second-last row will always be marked as wrapped.
             const auto rowWrapped = (!expectHardBreak) || (y == lastRow - 1);
-            VERIFY_ARE_EQUAL(rowWrapped, tb.GetRowByOffset(y).GetCharRow().WasWrapForced());
-            TestUtils::VerifyExpectedString(tb, L"~    ", til::point{ 0, y });
+            VERIFY_ARE_EQUAL(rowWrapped, tb.GetRowByOffset(y).WasWrapForced());
+            TestUtils::VerifyExpectedString(tb, L"~    ", { 0, y });
         }
 
-        TestUtils::VerifyExpectedString(tb, L"AAAAA", til::point{ 0, lastRow });
+        TestUtils::VerifyExpectedString(tb, L"AAAAA", { 0, lastRow });
     };
 
     // We're _not_ checking the conpty output during this test, only the side effects.
@@ -2458,14 +2514,15 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     hostSm.ProcessString(L"AAAAA");
 
     Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(altTextBuffer, altBuffer.GetViewport().ToInclusive());
+    verifyBuffer(altTextBuffer, altBuffer.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
-
-    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+    // GH#3492: Now that we support the alt buffer, make sure to validate the
+    // _alt buffer's_ contents.
+    verifyBuffer(*term->_altBuffer, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
@@ -2477,7 +2534,7 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto termView = term->GetViewport();
 
     _flushFirstFrame();
@@ -2488,7 +2545,7 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
     // fill width-1 with "A", then add one space and another character..
     hostSm.ProcessString(std::wstring(gsl::narrow_cast<size_t>(TerminalViewWidth) - 1, L'A') + L" B");
 
-    auto verifyBuffer = [&](const TextBuffer& tb, SHORT bottomRow) {
+    auto verifyBuffer = [&](const TextBuffer& tb, til::CoordType bottomRow) {
         // Buffer contents should look like the following: (80 wide)
         // (w) means we hard wrapped the line
         // (b) means the line is _not_ wrapped (it's broken, the default state.)
@@ -2501,12 +2558,12 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
 
         til::point cursorPos{ tb.GetCursor().GetPosition() };
         // The cursor should be on the second char of the last line
-        VERIFY_ARE_EQUAL((til::point{ 1, bottomRow }), cursorPos);
+        VERIFY_ARE_EQUAL(til::point(1, bottomRow), cursorPos);
 
         const auto& secondToLastRow = tb.GetRowByOffset(bottomRow - 1);
         const auto& lastRow = tb.GetRowByOffset(bottomRow);
-        VERIFY_IS_TRUE(secondToLastRow.GetCharRow().WasWrapForced());
-        VERIFY_IS_FALSE(lastRow.GetCharRow().WasWrapForced());
+        VERIFY_IS_TRUE(secondToLastRow.WasWrapForced());
+        VERIFY_IS_FALSE(lastRow.WasWrapForced());
 
         auto expectedStringSecondToLastRow{ std::wstring(gsl::narrow_cast<size_t>(tb.GetSize().Width()) - 1, L'A') + L" " };
         TestUtils::VerifyExpectedString(tb, expectedStringSecondToLastRow, { 0, bottomRow - 1 });
@@ -2538,7 +2595,7 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -2560,7 +2617,6 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
         sm.ProcessString(L"BBB");
         sm.ProcessString(L"\r\n");
 
-        const auto end = 2 * hostView.Height();
         for (auto i = 2; i < hostView.BottomInclusive(); i++)
         {
             // IMPORTANT! The way vim writes these blank lines is as '~' followed by
@@ -2579,31 +2635,27 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
     drawVim();
 
-    const auto firstTextLength = TerminalViewWidth - 2;
-    const auto spacesLength = 3;
-    const auto secondTextLength = 1;
-
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
-        const auto firstRow = viewport.top<short>();
-        const auto width = viewport.width<short>();
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
+        const auto firstRow = viewport.top;
+        const auto width = viewport.width();
 
         // First row
-        VERIFY_IS_FALSE(tb.GetRowByOffset(firstRow).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(firstRow).WasWrapForced());
         auto iter0 = tb.GetCellDataAt({ 0, firstRow });
         TestUtils::VerifySpanOfText(L"A", iter0, 0, 3);
         TestUtils::VerifySpanOfText(L" ", iter0, 0, width - 3);
 
         // Second row
-        VERIFY_IS_FALSE(tb.GetRowByOffset(firstRow + 1).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(firstRow + 1).WasWrapForced());
         auto iter1 = tb.GetCellDataAt({ 0, firstRow + 1 });
         TestUtils::VerifySpanOfText(L"B", iter1, 0, 3);
         TestUtils::VerifySpanOfText(L" ", iter1, 0, width - 3);
 
         // "~" rows
-        for (short row = firstRow + 2; row < viewport.bottom<short>() - 1; row++)
+        for (auto row = firstRow + 2; row < viewport.bottom - 1; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
-            VERIFY_IS_TRUE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_IS_TRUE(tb.GetRowByOffset(row).WasWrapForced());
             auto iter = tb.GetCellDataAt({ 0, row });
             TestUtils::VerifySpanOfText(L"~", iter, 0, 1);
             TestUtils::VerifySpanOfText(L" ", iter, 0, width - 1);
@@ -2611,9 +2663,9 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
         // Last row
         {
-            short row = viewport.bottom<short>() - 1;
+            const auto row = viewport.bottom - 1;
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
-            VERIFY_IS_TRUE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_IS_TRUE(tb.GetRowByOffset(row).WasWrapForced());
             auto iter = tb.GetCellDataAt({ 0, row });
             TestUtils::VerifySpanOfText(L"X", iter, 0, width - 1);
             TestUtils::VerifySpanOfText(L" ", iter, 0, 1);
@@ -2621,13 +2673,13 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
     };
 
     Log::Comment(L"========== Checking the host buffer state (before) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 
     // After we resize, make sure to get the new textBuffers
     std::tie(hostTb, termTb) = _performResize({ TerminalViewWidth - 1,
@@ -2641,13 +2693,13 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
     drawVim();
 
     Log::Comment(L"========== Checking the host buffer state (after) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
@@ -2657,9 +2709,9 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:clearBufferMethod", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int ClearLikeCls = 0;
-    constexpr int ClearLikeClearHost = 1;
-    constexpr int ClearWithVT = 2;
+    constexpr auto ClearLikeCls = 0;
+    constexpr auto ClearLikeClearHost = 1;
+    constexpr auto ClearWithVT = 2;
     INIT_TEST_PROPERTY(int, clearBufferMethod, L"Controls whether we clear the buffer like cmd or like powershell");
 
     Log::Comment(L"This test checks the shims for cmd.exe and powershell.exe. "
@@ -2672,7 +2724,7 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     auto& sm = si.GetStateMachine();
 
@@ -2693,15 +2745,14 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
         sm.ProcessString(L"~");
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool afterClear = false) {
-        const auto firstRow = viewport.top<short>();
-        const auto width = viewport.width<short>();
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool afterClear = false) {
+        const auto width = viewport.width();
 
         // "~" rows
-        for (short row = 0; row < viewport.bottom<short>(); row++)
+        for (til::CoordType row = 0; row < viewport.bottom; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
-            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).WasWrapForced());
             auto iter = tb.GetCellDataAt({ 0, row });
             if (afterClear)
             {
@@ -2716,13 +2767,13 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     };
 
     Log::Comment(L"========== Checking the host buffer state (before) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 
     VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
     VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
@@ -2735,13 +2786,13 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
         _apiRoutines.GetConsoleScreenBufferInfoExImpl(si, csbiex);
 
-        SMALL_RECT src{ 0 };
-        src.Top = 0;
-        src.Left = 0;
-        src.Right = csbiex.dwSize.X;
-        src.Bottom = csbiex.dwSize.Y;
+        til::inclusive_rect src{ 0 };
+        src.top = 0;
+        src.left = 0;
+        src.right = csbiex.dwSize.X;
+        src.bottom = csbiex.dwSize.Y;
 
-        COORD tgt{ 0, -csbiex.dwSize.Y };
+        til::point tgt{ 0, -csbiex.dwSize.Y };
         VERIFY_SUCCEEDED(_apiRoutines.ScrollConsoleScreenBufferWImpl(si,
                                                                      src,
                                                                      tgt,
@@ -2786,12 +2837,12 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the host buffer state (after) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true);
 }
 
 void ConptyRoundtripTests::TestResizeWithCookedRead()
@@ -2816,7 +2867,7 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     // Don't let the cooked read pollute other tests
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, -10}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, 10}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
     END_TEST_METHOD_PROPERTIES()
 
@@ -2828,7 +2879,7 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -2839,8 +2890,7 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     m_state->PrepareReadHandle();
     // TODO GH#5618: This string will get mangled, but we don't really care
     // about the buffer contents in this test, so it doesn't really matter.
-    const std::string_view cookedReadContents{ "This is some cooked read data" };
-    m_state->PrepareCookedReadData(cookedReadContents);
+    m_state->PrepareCookedReadData(L"This is some cooked read data");
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -2853,6 +2903,145 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     // By simply reaching the end of this test, we know that we didn't crash. Hooray!
+}
+
+void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
+{
+    // See https://github.com/microsoft/terminal/issues/3848
+    Log::Comment(L"This test checks that the attributes in the text buffer are "
+                 L"initialized to a sensible value during a resize. The entire "
+                 L"buffer shouldn't be filled with _whatever the current "
+                 L"attributes are_, it should be filled with the default "
+                 L"attributes (however the application defines that). Then, "
+                 L"after the resize, we should still be able to print to the "
+                 L"buffer with the old \"current attributes\"");
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:leaveTrailingChar", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES()
+
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+    INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
+    INIT_TEST_PROPERTY(bool, leaveTrailingChar, L"If true, we'll print one additional '#' on row 3");
+
+    // Do nothing if the resize would just be a no-op.
+    if (dx == 0 && dy == 0)
+    {
+        return;
+    }
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    auto defaultAttrs = si.GetAttributes();
+    auto conhostGreenAttrs = TextAttribute();
+    conhostGreenAttrs.SetIndexedBackground(TextColor::DARK_GREEN);
+    auto terminalGreenAttrs = TextAttribute();
+    terminalGreenAttrs.SetIndexedBackground(TextColor::DARK_GREEN);
+
+    // Use an initial ^[[m to start printing with default-on-default
+    sm.ProcessString(L"\x1b[m");
+
+    // Print three lines with "# #", where the first "# " are in
+    // default-on-green.
+    for (auto i = 0; i < 3; i++)
+    {
+        sm.ProcessString(L"\x1b[42m");
+        sm.ProcessString(L"# ");
+        sm.ProcessString(L"\x1b[m");
+        sm.ProcessString(L"#");
+        sm.ProcessString(L"\r\n");
+    }
+
+    // Now, leave the active attributes as default-on-green. When we resize the
+    // buffers, we don't want them initialized with default-on-green, we want
+    // them to use whatever the set default attributes are.
+    sm.ProcessString(L"\x1b[42m");
+
+    // If leaveTrailingChar is true, we'll leave one default-on-green '#' on row
+    // 3. This will force conpty to change the Terminal's colors to
+    // default-on-green, so we can check that not only conhost initialize the
+    // buffer colors correctly, but so does the Terminal.
+    if (leaveTrailingChar)
+    {
+        sm.ProcessString(L"#");
+    }
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool isTerminal, const bool afterResize) {
+        const auto width = viewport.width();
+
+        // Conhost and Terminal attributes are potentially different.
+        const auto greenAttrs = isTerminal ? terminalGreenAttrs : conhostGreenAttrs;
+
+        for (til::CoordType row = 0; row < tb.GetSize().Height(); row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d...", row));
+
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).WasWrapForced());
+
+            const auto hasChar = row < 3;
+            const auto actualDefaultAttrs = isTerminal ? TextAttribute() : defaultAttrs;
+
+            if (hasChar)
+            {
+                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'#', greenAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L' ', greenAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L'#', TextAttribute(), 1u);
+                // After the resize, the default attrs of the last char will
+                // extend to fill the rest of the row. This is GH#32. If that
+                // bug ever gets fixed, this test will break, but that's
+                // ABSOLUTELY OKAY.
+                TestUtils::VerifyLineContains(iter, L' ', (afterResize ? TextAttribute() : actualDefaultAttrs), static_cast<size_t>(width - 3));
+            }
+            else if (leaveTrailingChar && row == 3)
+            {
+                auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'#', greenAttrs, 1u);
+                TestUtils::VerifyLineContains(iter, L' ', (actualDefaultAttrs), static_cast<size_t>(width - 1));
+            }
+            else
+            {
+                TestUtils::VerifyLineContains(tb, { 0, row }, L' ', actualDefaultAttrs, viewport.narrow_width<size_t>());
+            }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), false, false);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true, false);
+
+    // After we resize, make sure to get the new textBuffers
+    std::tie(hostTb, termTb) = _performResize({ TerminalViewWidth + dx,
+                                                TerminalViewHeight + dy });
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), false, true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true, true);
 }
 
 void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
@@ -2877,7 +3066,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -2886,15 +3075,11 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
     auto defaultAttrs = si.GetAttributes();
     auto conhostBlueAttrs = defaultAttrs;
-
-    // Conhost and Terminal store attributes in different bits.
-    conhostBlueAttrs.SetIndexedForeground(FOREGROUND_GREEN);
-    conhostBlueAttrs.SetIndexedBackground(FOREGROUND_BLUE);
+    conhostBlueAttrs.SetIndexedForeground(TextColor::DARK_GREEN);
+    conhostBlueAttrs.SetIndexedBackground(TextColor::DARK_BLUE);
     auto terminalBlueAttrs = TextAttribute();
-    terminalBlueAttrs.SetIndexedForeground(XTERM_GREEN_ATTR);
-    terminalBlueAttrs.SetIndexedBackground(XTERM_BLUE_ATTR);
-
-    const size_t width = static_cast<size_t>(TerminalViewWidth);
+    terminalBlueAttrs.SetIndexedForeground(TextColor::DARK_GREEN);
+    terminalBlueAttrs.SetIndexedBackground(TextColor::DARK_BLUE);
 
     // We're going to print 4 more rows than the entire height of the viewport,
     // causing the buffer to circle 4 times. This is 2 extra iterations of the
@@ -2909,7 +3094,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         // Line 2 chars: ____#_________#___ (break)
         // Line 2 attrs: BBBBBBBBBBBBBBDDDD (First spacesToPrint+5 are blue BG, then default attrs)
         //                    [<----->]
-        //                      This number of spaces controled by spacesToPrint
+        //                      This number of spaces controlled by spacesToPrint
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");
@@ -2933,20 +3118,20 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         }
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
-        const auto width = viewport.width<short>();
-        const auto isTerminal = viewport.top() != 0;
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
+        const auto width = viewport.width();
+        const auto isTerminal = viewport.top != 0;
 
-        // Conhost and Terminal store attributes in different bits.
+        // Conhost and Terminal attributes are potentially different.
         const auto blueAttrs = isTerminal ? terminalBlueAttrs : conhostBlueAttrs;
 
-        for (short row = 0; row < viewport.bottom<short>() - 2; row++)
+        for (til::CoordType row = 0; row < viewport.bottom - 2; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
-            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).WasWrapForced());
 
             const auto isBlank = (row % 2) == 0;
-            const auto rowCircled = row > (viewport.bottom<short>() - 1 - circledRows);
+            const auto rowCircled = row > (viewport.bottom - 1 - circledRows);
             // When the buffer circles, new lines will be initialized using the
             // current text attributes. Those will be the default-on-default
             // attributes. All of the Terminal's buffer will use
@@ -2956,7 +3141,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
             if (isBlank)
             {
-                TestUtils::VerifyLineContains(tb, { 0, row }, L' ', actualDefaultAttrs, viewport.width<size_t>());
+                TestUtils::VerifyLineContains(tb, { 0, row }, L' ', actualDefaultAttrs, viewport.narrow_width<size_t>());
             }
             else
             {
@@ -2970,27 +3155,13 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     };
 
     Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
-}
-
-void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view string, DWORD flags = 0)
-{
-    size_t dwNumBytes = string.size() * sizeof(wchar_t);
-    VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(screenInfo,
-                                             string.data(),
-                                             string.data(),
-                                             string.data(),
-                                             &dwNumBytes,
-                                             nullptr,
-                                             screenInfo.GetTextBuffer().GetCursor().GetPosition().X,
-                                             flags,
-                                             nullptr));
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::WrapNewLineAtBottom()
@@ -3013,12 +3184,11 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     // timings for the frame affect the results. In this test we'll be printing
     // a bunch of paired lines. These values control when the PaintFrame calls
     // will occur:
-    constexpr int DontPaint = 0; // Only paint at the end of all the output
-    constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
-    constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
+    constexpr auto PaintAfterBothLines = 1; // Paint after each pair of lines is output
+    constexpr auto PaintEveryLine = 2; // Paint after each and every line is output.
 
-    constexpr int PrintWithPrintString = 0;
-    constexpr int PrintWithWriteCharsLegacy = 1;
+    constexpr auto PrintWithPrintString = 0;
+    constexpr auto PrintWithWriteCharsLegacy = 1;
 
     INIT_TEST_PROPERTY(int, writingMethod, L"Controls using either ProcessString or WriteCharsLegacy to write to the buffer");
     INIT_TEST_PROPERTY(int, circledRows, L"Controls the number of lines we output.");
@@ -3026,7 +3196,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
 
     // GH#5839 -
     // This test does expose a real bug when using WriteCharsLegacy to emit
-    // wrapped lines in conpty without WC_DELAY_EOL_WRAP. However, this fix has
+    // wrapped lines in conpty without delayed EOL wrap. However, this fix has
     // not yet been made, so for now, we need to just skip the cases that cause
     // this.
     if (writingMethod == PrintWithWriteCharsLegacy && paintEachNewline == PaintEveryLine)
@@ -3034,11 +3204,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         Log::Result(WEX::Logging::TestResults::Skipped);
         return;
     }
-
-    // I've tested this with 0x0, 0x4, 0x80, 0x84, and 0-8, and none of these
-    // flags seem to make a difference. So we're just assuming 0 here, so we
-    // don't test a bunch of redundant cases.
-    const auto writeCharsLegacyMode = 0;
 
     // This test was originally written for
     //   https://github.com/microsoft/terminal/issues/5691
@@ -3052,14 +3217,14 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
     _checkConptyOutput = false;
     _logConpty = true;
 
-    const size_t width = static_cast<size_t>(TerminalViewWidth);
+    const auto width = static_cast<size_t>(TerminalViewWidth);
 
     const auto charsInFirstLine = width;
     const auto numCharsFirstColor = 30;
@@ -3078,7 +3243,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            doWriteCharsLegacy(si, str, writeCharsLegacyMode);
+            WriteCharsLegacy(si, str, nullptr);
         }
     };
 
@@ -3134,43 +3299,43 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     // row[4]: |~~~~~~~~~~~~~~~~~~~| <wrap>
     // row[5]: |~~~~~~             | <break>
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
-        const auto width = viewport.width<short>();
-        const auto isTerminal = viewport.top() != 0;
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
+        const auto width = viewport.width();
+        const auto isTerminal = viewport.top != 0;
 
-        for (short row = 0; row < viewport.bottom<short>(); row++)
+        for (til::CoordType row = 0; row < viewport.bottom; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
 
             // The first line wrapped, the second didn't, so on and so forth
             const auto isWrapped = (row % 2) == 0;
-            const auto rowCircled = row >= (viewport.bottom<short>() - circledRows);
+            const auto rowCircled = row >= (viewport.bottom - circledRows);
 
             const auto actualNonSpacesAttrs = defaultAttrs;
             const auto actualSpacesAttrs = rowCircled || isTerminal ? defaultAttrs : conhostDefaultAttrs;
 
-            VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).WasWrapForced());
             if (isWrapped)
             {
-                TestUtils::VerifyExpectedString(tb, std::wstring(charsInFirstLine, L'~'), til::point{ 0, row });
+                TestUtils::VerifyExpectedString(tb, std::wstring(charsInFirstLine, L'~'), { 0, row });
             }
             else
             {
-                auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(charsInSecondLine, L'~'), til::point{ 0, row });
+                auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(charsInSecondLine, L'~'), { 0, row });
                 TestUtils::VerifyExpectedString(std::wstring(width - charsInSecondLine, L' '), iter);
             }
         }
     };
 
     Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
     VERIFY_ARE_EQUAL(circledRows, term->_mutableViewport.Top());
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
@@ -3194,12 +3359,11 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     // timings for the frame affect the results. In this test we'll be printing
     // a bunch of paired lines. These values control when the PaintFrame calls
     // will occur:
-    constexpr int DontPaint = 0; // Only paint at the end of all the output
-    constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
-    constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
+    constexpr auto PaintAfterBothLines = 1; // Paint after each pair of lines is output
+    constexpr auto PaintEveryLine = 2; // Paint after each and every line is output.
 
-    constexpr int PrintWithPrintString = 0;
-    constexpr int PrintWithWriteCharsLegacy = 1;
+    constexpr auto PrintWithPrintString = 0;
+    constexpr auto PrintWithWriteCharsLegacy = 1;
 
     INIT_TEST_PROPERTY(int, writingMethod, L"Controls using either ProcessString or WriteCharsLegacy to write to the buffer");
     INIT_TEST_PROPERTY(int, circledRows, L"Controls the number of lines we output.");
@@ -3211,14 +3375,14 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
     _checkConptyOutput = false;
     _logConpty = true;
 
-    const size_t width = static_cast<size_t>(TerminalViewWidth);
+    const auto width = static_cast<size_t>(TerminalViewWidth);
 
     const auto charsInFirstLine = width;
     const auto numCharsFirstColor = 30;
@@ -3237,7 +3401,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            doWriteCharsLegacy(si, str, WC_LIMIT_BACKSPACE);
+            WriteCharsLegacy(si, str, nullptr);
         }
     };
 
@@ -3250,7 +3414,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     //
     // The last line of the buffer will be used as a "prompt" line, with a
     // single ':' in it. This is similar to the way `less` typically displays
-    // it's prompt at the bottom of the buffer.
+    // its prompt at the bottom of the buffer.
 
     // First, print a whole viewport full of text.
     for (auto i = 0; i < (TerminalViewHeight) / 2; i++)
@@ -3337,11 +3501,11 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
-        const auto width = viewport.width<short>();
-        const auto isTerminal = viewport.top() != 0;
-        auto lastRow = viewport.bottom<short>() - 1;
-        for (short row = 0; row < lastRow; row++)
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
+        const auto width = viewport.width();
+        const auto isTerminal = viewport.top != 0;
+        auto lastRow = viewport.bottom - 1;
+        for (til::CoordType row = 0; row < lastRow; row++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
 
@@ -3352,36 +3516,36 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
             // buffer, then the top line of the conpty will _not_ be wrapped,
             // when the 0th line of the terminal buffer _is_.
             const auto isWrapped = (row % 2) == (isTerminal ? 0 : 1);
-            const auto rowCircled = row >= (viewport.bottom<short>() - circledRows);
+            const auto rowCircled = row >= (viewport.bottom - circledRows);
 
             const auto actualNonSpacesAttrs = defaultAttrs;
             const auto actualSpacesAttrs = rowCircled || isTerminal ? defaultAttrs : conhostDefaultAttrs;
 
-            VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_ARE_EQUAL(isWrapped, tb.GetRowByOffset(row).WasWrapForced());
             if (isWrapped)
             {
-                TestUtils::VerifyExpectedString(tb, std::wstring(charsInFirstLine, L'~'), til::point{ 0, row });
+                TestUtils::VerifyExpectedString(tb, std::wstring(charsInFirstLine, L'~'), { 0, row });
             }
             else
             {
-                auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(charsInSecondLine, L'~'), til::point{ 0, row });
+                auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(charsInSecondLine, L'~'), { 0, row });
                 TestUtils::VerifyExpectedString(std::wstring(width - charsInSecondLine, L' '), iter);
             }
         }
-        VERIFY_IS_FALSE(tb.GetRowByOffset(lastRow).GetCharRow().WasWrapForced());
-        auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(1, L':'), til::point{ 0, lastRow });
+        VERIFY_IS_FALSE(tb.GetRowByOffset(lastRow).WasWrapForced());
+        auto iter = TestUtils::VerifyExpectedString(tb, std::wstring(1, L':'), { 0, lastRow });
         TestUtils::VerifyExpectedString(std::wstring(width - 1, L' '), iter);
     };
 
     Log::Comment(L"========== Checking the host buffer state ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive());
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
     VERIFY_ARE_EQUAL(circledRows + 1, term->_mutableViewport.Top());
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive());
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 }
 
 void ConptyRoundtripTests::DeleteWrappedWord()
@@ -3395,7 +3559,7 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -3413,8 +3577,8 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     sm.ProcessString(std::wstring(50, L'B'));
     sm.ProcessString(L"\x1b[?25h");
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool after) {
-        const auto width = viewport.width<short>();
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool after) {
+        const auto width = viewport.width();
 
         auto iter1 = tb.GetCellDataAt({ 0, 0 });
         TestUtils::VerifySpanOfText(L"A", iter1, 0, 50);
@@ -3437,12 +3601,12 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     };
 
     Log::Comment(L"========== Checking the host buffer state (before) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), false);
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), false);
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), false);
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), false);
 
     // Now, go back and erase all the 'B's, as if the user executed a
     // backward-kill-word in PowerShell. Afterwards, the buffer will look like:
@@ -3466,12 +3630,12 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     sm.ProcessString(L"\x1b[?25h");
 
     Log::Comment(L"========== Checking the host buffer state (after) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToInclusive(), true);
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true);
 }
 
 // This test checks that upon conpty rendering again, terminal still maintains
@@ -3487,7 +3651,7 @@ void ConptyRoundtripTests::HyperlinkIdConsistency()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -3529,14 +3693,625 @@ void ConptyRoundtripTests::HyperlinkIdConsistency()
 
     auto verifyData = [](TextBuffer& tb) {
         // Check that all the linked cells still have the same ID
-        auto attrRow = tb.GetRowByOffset(0).GetAttrRow();
-        auto id = attrRow.GetAttrByColumn(0).GetHyperlinkId();
-        for (auto i = 1; i < 4; ++i)
+        auto& row = tb.GetRowByOffset(0);
+        auto id = row.GetAttrByColumn(0).GetHyperlinkId();
+        for (uint16_t i = 1; i < 4; ++i)
         {
-            VERIFY_ARE_EQUAL(id, attrRow.GetAttrByColumn(i).GetHyperlinkId());
+            VERIFY_ARE_EQUAL(id, row.GetAttrByColumn(i).GetHyperlinkId());
         }
     };
 
     verifyData(hostTb);
     verifyData(termTb);
+}
+
+void ConptyRoundtripTests::ClearBufferSignal()
+{
+    Log::Comment(L"Write some text to the conpty buffer. Send a ClearBuffer "
+                 L"signal, and check that all but the cursor line is removed "
+                 L"from the host and the terminal.");
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // Print two lines of text:
+    // |AAAAAAAAAAAAA BBBBBB| <wrap>
+    // |BBBBBBBB_           | <break>
+    // (cursor on the '_')
+    // A's are in blue-on-green,
+    // B's are in red-on-yellow
+
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(L"\x1b[34;42m");
+    sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L" ");
+    sm.ProcessString(L"\x1b[31;43m");
+    sm.ProcessString(std::wstring(50, L'B'));
+    sm.ProcessString(L"\x1b[?25h");
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool before) {
+        const auto width = viewport.width();
+        const auto numCharsOnSecondLine = 50 - (width - 51);
+        auto iter1 = tb.GetCellDataAt({ 0, 0 });
+        if (before)
+        {
+            TestUtils::VerifySpanOfText(L"A", iter1, 0, 50);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, 1);
+            TestUtils::VerifySpanOfText(L"B", iter1, 0, 50);
+            til::point expectedCursor{ numCharsOnSecondLine, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+        }
+        else
+        {
+            TestUtils::VerifySpanOfText(L"B", iter1, 0, numCharsOnSecondLine);
+            til::point expectedCursor{ numCharsOnSecondLine, 0 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true);
+
+    Log::Comment(L"========== Clear the ConPTY buffer with the signal ==========");
+    _clearConpty();
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), false);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), false);
+}
+
+void ConptyRoundtripTests::SimpleAltBufferTest()
+{
+    Log::Comment(L"A test for entering and exiting the alt buffer, via conpty. "
+                 L"Ensures cursor is in the right place, and contents are "
+                 L"restored accordingly.");
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // Print two lines of text:
+    // |AAAAAAAA            | <break>
+    // |BBBBBBBB_           | <break>
+    // (cursor on the '_')
+    // A's are in blue-on-green,
+    // B's are in red-on-yellow
+
+    // A one line version: (more or less)
+    //
+    // printf "\x1b[2J\x1b[H" ; printf
+    // "\x1b[?25l\x1b[34;42mAAAAA\n\x1b[31;43mBBBBB\x1b[?25h" ; sleep 2 ; printf
+    // "\x1b[?1049h" ; sleep 2 ; printf "CCCCC" ; sleep 2 ; printf "\x1b[?1049l"
+    // ; sleep 2
+
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(L"\x1b[34;42m");
+    sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L"\n");
+    sm.ProcessString(L"\x1b[31;43m");
+    sm.ProcessString(std::wstring(50, L'B'));
+    sm.ProcessString(L"\x1b[?25h");
+
+    // Four frames here:
+    // * After text is printed to main buffer
+    // * after we go to the alt buffer
+    // * print more to the alt buffer
+    // * after we go back to the buffer
+
+    enum class Frame : int
+    {
+        InMainBufferBefore = 0,
+        InAltBufferBefore,
+        InAltBufferAfter,
+        InMainBufferAfter
+    };
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const Frame frame) {
+        const auto width = viewport.width();
+        auto iter0 = tb.GetCellDataAt({ 0, 0 });
+        auto iter1 = tb.GetCellDataAt({ 0, 1 });
+        switch (frame)
+        {
+        case Frame::InMainBufferBefore:
+        case Frame::InMainBufferAfter:
+        {
+            TestUtils::VerifySpanOfText(L"A", iter0, 0, 50);
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, static_cast<size_t>(width - 50));
+
+            TestUtils::VerifySpanOfText(L"B", iter1, 0, 50);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, static_cast<size_t>(width - 50));
+            til::point expectedCursor{ 50, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+            break;
+        }
+        case Frame::InAltBufferBefore:
+        {
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, width);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, width);
+
+            til::point expectedCursor{ 50, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+            break;
+        }
+        case Frame::InAltBufferAfter:
+        {
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, width);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, 50u);
+            TestUtils::VerifySpanOfText(L"C", iter1, 0, 5u);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, static_cast<size_t>(width - 55));
+
+            til::point expectedCursor{ 55, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+            break;
+        }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (InMainBufferBefore) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), Frame::InMainBufferBefore);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (InMainBufferBefore) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
+    verifyBuffer(*termTb, term->_GetMutableViewport().ToExclusive(), Frame::InMainBufferBefore);
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    auto& siAlt = gci.GetActiveOutputBuffer();
+    auto* hostAltTb = &siAlt.GetTextBuffer();
+    auto* termAltTb = &term->_activeBuffer();
+
+    VERIFY_IS_TRUE(term->_inAltBuffer());
+    VERIFY_ARE_NOT_EQUAL(termAltTb, termTb);
+
+    Log::Comment(L"========== Checking the host buffer state (InAltBufferBefore) ==========");
+    verifyBuffer(*hostAltTb, siAlt.GetViewport().ToExclusive(), Frame::InAltBufferBefore);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (InAltBufferBefore) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
+    verifyBuffer(*termAltTb, term->_GetMutableViewport().ToExclusive(), Frame::InAltBufferBefore);
+
+    Log::Comment(L"========== Add some text to the alt buffer ==========");
+
+    sm.ProcessString(L"CCCCC");
+    Log::Comment(L"========== Checking the host buffer state (InAltBufferAfter) ==========");
+    verifyBuffer(*hostAltTb, siAlt.GetViewport().ToExclusive(), Frame::InAltBufferAfter);
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (InAltBufferAfter) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
+    verifyBuffer(*termAltTb, term->_GetMutableViewport().ToExclusive(), Frame::InAltBufferAfter);
+
+    Log::Comment(L"========== Back to the main buffer ==========");
+
+    sm.ProcessString(L"\x1b[?1049l");
+    Log::Comment(L"========== Checking the host buffer state (InMainBufferAfter) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), Frame::InMainBufferAfter);
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (InMainBufferAfter) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
+    verifyBuffer(*termTb, term->_GetMutableViewport().ToExclusive(), Frame::InMainBufferAfter);
+}
+
+void ConptyRoundtripTests::AltBufferToAltBufferTest()
+{
+    Log::Comment(L"When we request the alt buffer when we're already in the alt buffer, we should still clear it out and replace it.");
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // Print two lines of text:
+    // |AAAAAAAA            | <break>
+    // |BBBBBBBB_           | <break>
+    // (cursor on the '_')
+    // A's are in blue-on-green,
+    // B's are in red-on-yellow
+
+    // A one line version: (more or less)
+    //
+    // printf "\x1b[2J\x1b[H" ; printf
+    // "\x1b[?25l\x1b[34;42mAAAAA\n\x1b[31;43mBBBBB\x1b[?25h" ; sleep 2 ; printf
+    // "\x1b[?1049h" ; sleep 2 ; printf "CCCCC" ; sleep 2 ; printf "\x1b[?1049h"
+    // ; sleep 2
+
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(L"\x1b[34;42m");
+    sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L"\n");
+    sm.ProcessString(L"\x1b[31;43m");
+    sm.ProcessString(std::wstring(50, L'B'));
+    sm.ProcessString(L"\x1b[?25h");
+
+    // Four frames here:
+    // * After text is printed to main buffer
+    // * after we go to the alt buffer
+    // * print more to the alt buffer
+    // * after we go back to the buffer
+
+    enum class Frame : int
+    {
+        InMainBufferBefore = 0,
+        InAltBufferBefore,
+        InAltBufferAfter,
+        StillInAltBuffer
+    };
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const Frame frame) {
+        const auto width = viewport.width();
+        auto iter0 = tb.GetCellDataAt({ 0, 0 });
+        auto iter1 = tb.GetCellDataAt({ 0, 1 });
+        switch (frame)
+        {
+        case Frame::InMainBufferBefore:
+        {
+            TestUtils::VerifySpanOfText(L"A", iter0, 0, 50);
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, static_cast<size_t>(width - 50));
+
+            TestUtils::VerifySpanOfText(L"B", iter1, 0, 50);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, static_cast<size_t>(width - 50));
+            til::point expectedCursor{ 50, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+            break;
+        }
+        case Frame::InAltBufferBefore:
+        {
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, width);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, width);
+
+            til::point expectedCursor{ 50, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+            break;
+        }
+        case Frame::InAltBufferAfter:
+        {
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, width);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, 50u);
+            TestUtils::VerifySpanOfText(L"C", iter1, 0, 5u);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, static_cast<size_t>(width - 55));
+
+            til::point expectedCursor{ 55, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+            break;
+        }
+        case Frame::StillInAltBuffer:
+        {
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, width);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, width);
+
+            til::point expectedCursor{ 55, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+            break;
+        }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (InMainBufferBefore) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), Frame::InMainBufferBefore);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (InMainBufferBefore) ==========");
+    verifyBuffer(*termTb, term->_GetMutableViewport().ToExclusive(), Frame::InMainBufferBefore);
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    auto* siAlt = &gci.GetActiveOutputBuffer();
+    auto* hostAltTb = &siAlt->GetTextBuffer();
+    auto* termAltTb = &term->_activeBuffer();
+
+    VERIFY_IS_TRUE(term->_inAltBuffer());
+    VERIFY_ARE_NOT_EQUAL(termAltTb, termTb);
+
+    Log::Comment(L"========== Checking the host buffer state (InAltBufferBefore) ==========");
+    verifyBuffer(*hostAltTb, siAlt->GetViewport().ToExclusive(), Frame::InAltBufferBefore);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (InAltBufferBefore) ==========");
+    verifyBuffer(*termAltTb, term->_GetMutableViewport().ToExclusive(), Frame::InAltBufferBefore);
+
+    Log::Comment(L"========== Add some text to the alt buffer ==========");
+
+    sm.ProcessString(L"CCCCC");
+    Log::Comment(L"========== Checking the host buffer state (InAltBufferAfter) ==========");
+    verifyBuffer(*hostAltTb, siAlt->GetViewport().ToExclusive(), Frame::InAltBufferAfter);
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (InAltBufferAfter) ==========");
+    verifyBuffer(*termAltTb, term->_GetMutableViewport().ToExclusive(), Frame::InAltBufferAfter);
+
+    Log::Comment(L"========== Stay in the alt buffer, what happens? ==========");
+
+    sm.ProcessString(L"\x1b[?1049h");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    siAlt = &gci.GetActiveOutputBuffer();
+    hostAltTb = &siAlt->GetTextBuffer();
+    termAltTb = &term->_activeBuffer();
+
+    Log::Comment(L"========== Checking the host buffer state (StillInAltBuffer) ==========");
+    verifyBuffer(*hostAltTb, siAlt->GetViewport().ToExclusive(), Frame::StillInAltBuffer);
+
+    Log::Comment(L"========== Checking the terminal buffer state (StillInAltBuffer) ==========");
+    verifyBuffer(*termAltTb, term->_GetMutableViewport().ToExclusive(), Frame::StillInAltBuffer);
+}
+
+void ConptyRoundtripTests::TestPowerLineFirstFrame()
+{
+    Log::Comment(L"This is a test for GH#8341. If we received colored spaces "
+                 L"BEFORE the first frame, we should still emit them!");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _checkConptyOutput = false;
+
+    TextAttribute whiteOnGreen{};
+    whiteOnGreen.SetIndexedForeground(TextColor::DARK_WHITE);
+    whiteOnGreen.SetIndexedBackground(TextColor::BRIGHT_GREEN);
+
+    TextAttribute greenOnBlack{};
+    greenOnBlack.SetIndexedForeground(TextColor::BRIGHT_GREEN);
+    greenOnBlack.SetIndexedBackground(TextColor::BRIGHT_BLACK);
+
+    TextAttribute whiteOnBlack{};
+    whiteOnBlack.SetIndexedForeground(TextColor::DARK_WHITE);
+    whiteOnBlack.SetIndexedBackground(TextColor::BRIGHT_BLACK);
+
+    TextAttribute blackOnDefault{};
+    blackOnDefault.SetIndexedForeground(TextColor::BRIGHT_BLACK);
+
+    TextAttribute defaultOnDefault{};
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    // As a pwsh one-liner:
+    //
+    //  "`e[37m`e[102m foo\bar `e[92m`e[100m▶ `e[37mBar `e[90m`e[49m▶ `e[m"
+    //
+    // Generally taken from
+    // https://github.com/microsoft/terminal/issues/8341#issuecomment-731310022,
+    // but minimized for easier testing.
+
+    sm.ProcessString(L"\x1b[37m\x1b[102m" // dark white on bright green
+                     L" foo\\bar ");
+    sm.ProcessString(L"\x1b[92m\x1b[100m" // bright green on bright black
+                     L"▶ ");
+    sm.ProcessString(L"\x1b[37m" // dark white on bright black
+                     L"Bar ");
+    sm.ProcessString(L"\x1b[90m\x1b[49m" // bright black on default
+                     L"▶ ");
+    sm.ProcessString(L"\x1b[m\n"); // default on default
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        // If this test fails on character 8, then it's because we didn't emit the space, we just moved ahead.
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, whiteOnGreen, 9u);
+        TestUtils::VerifyLineContains(iter0, OutputCellIterator{ greenOnBlack, 2u });
+        TestUtils::VerifyLineContains(iter0, OutputCellIterator{ whiteOnBlack, 4u });
+        TestUtils::VerifyLineContains(iter0, OutputCellIterator{ blackOnDefault, 2u });
+    };
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+
+    Log::Comment(L"========== Paint first frame ==========");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void ConptyRoundtripTests::AltBufferResizeCrash()
+{
+    Log::Comment(L"During the review for GH#12719, it was noticed that this "
+                 L"particular combination of resizing could crash the terminal."
+                 L" This test makes sure we don't.");
+
+    // Anything that resizes the buffer needs IsolationLevel:Method
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
+
+    // Note: we really don't care about the output in this test. We could, but
+    // mostly we care to ensure we don't crash. If we make it through this test,
+    // then it's a success.
+
+    Log::Comment(L"========== Resize to 132x24 ==========");
+    sm.ProcessString(L"\x1b[8;24;132t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Move cursor to (99,11) ==========");
+    sm.ProcessString(L"\x1b[12;100H");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+    sm.ProcessString(L"\x1b[?1049h");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Resize to 80x10 ==========");
+    sm.ProcessString(L"\x1b[8;10;80t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyRoundtripTests::TestNoExtendedAttrsOptimization()
+{
+    Log::Comment(L"We don't want conpty to optimize out runs of spaces that DO "
+                 L"have extended attrs, because EL / ECH don't fill space with "
+                 L"those attributes");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    TextAttribute reverseAttrs{};
+    reverseAttrs.SetReverseVideo(true);
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L' ', reverseAttrs, 9u);
+        TestUtils::VerifyExpectedString(L"test", iter0);
+        TestUtils::VerifyLineContains(iter0, L' ', reverseAttrs, 9u);
+
+        TestUtils::VerifyLineContains(tb, { 0, 1 }, L' ', reverseAttrs, static_cast<uint32_t>(TerminalViewWidth));
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+    sm.ProcessString(L"\x1b[7m         test         \x1b[m\n");
+    sm.ProcessString(L"\x1b[7m");
+    sm.ProcessString(std::wstring(TerminalViewWidth, L' '));
+    sm.ProcessString(L"\x1b[m\n");
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void ConptyRoundtripTests::TestNoBackgroundAttrsOptimization()
+{
+    Log::Comment(L"Same as above, with BG attrs");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    TextAttribute bgAttrs{};
+    bgAttrs.SetIndexedBackground(TextColor::DARK_WHITE);
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L' ', bgAttrs, 9u);
+        TestUtils::VerifyExpectedString(L"test", iter0);
+        TestUtils::VerifyLineContains(iter0, L' ', bgAttrs, 9u);
+
+        TestUtils::VerifyLineContains(tb, { 0, 1 }, L' ', bgAttrs, static_cast<uint32_t>(TerminalViewWidth));
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+    sm.ProcessString(L"\x1b[47m         test         \x1b[m\n");
+    sm.ProcessString(L"\x1b[47m");
+    sm.ProcessString(std::wstring(TerminalViewWidth, L' '));
+    sm.ProcessString(L"\x1b[m\n");
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
 }

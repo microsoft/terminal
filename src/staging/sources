@@ -1,0 +1,7 @@
+_NEED_BUILDBRANCH=1
+TARGETTYPE=NOTARGET
+
+NTTARGETFILE0=\
+    $(OBJ_PATH)\$(O)\TilFeatureStaging.h
+
+# See build rules in makefile.inc

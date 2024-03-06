@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!--
     We're explicitly telling our references to be non-private so that they won't
     be copied into our folder. In the case of Microsoft.Ui.Xaml, it seems to copy
@@ -20,9 +20,10 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
       Unfortunately for us, we need it to be 3. When the namespace merging
-      depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+      depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
       and our WinMD file becomes "Microsoft". Because WinRT is very
       namespace-driven, this winmd is considered to contain the entire
       Microsoft namespace. This is, obviously, not great. None of our other
@@ -31,21 +32,20 @@
     <CppWinRTNamespaceMergeDepth>4</CppWinRTNamespaceMergeDepth>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
   </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="ColorToBrushConverter.h">
-      <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
+    <ClInclude Include="Actions.h">
+      <DependentUpon>Actions.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ColorToHexConverter.h">
-      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="FontWeightConverter.h">
-      <DependentUpon>FontWeightConverter.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="PercentageConverter.h">
-      <DependentUpon>PercentageConverter.idl</DependentUpon>
+    <ClInclude Include="AddProfile.h">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
@@ -57,8 +57,15 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="EditColorScheme.h">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="KeyChordListener.h">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Launch.h">
       <DependentUpon>Launch.xaml</DependentUpon>
@@ -67,17 +74,71 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Profiles.h">
-      <DependentUpon>Profiles.xaml</DependentUpon>
+    <ClInclude Include="ProfileViewModel.h">
+      <DependentUpon>ProfileViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ActionsViewModel.h">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ColorSchemeViewModel.h">
+      <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ColorSchemesPageViewModel.h">
+      <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="RenderingViewModel.h">
+      <DependentUpon>RenderingViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="InteractionViewModel.h">
+      <DependentUpon>InteractionViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="GlobalAppearanceViewModel.h">
+      <DependentUpon>GlobalAppearanceViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="LaunchViewModel.h">
+      <DependentUpon>LaunchViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Profiles_Base.h">
+      <DependentUpon>Profiles_Base.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Profiles_Advanced.h">
+      <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Profiles_Appearance.h">
+      <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Appearances.h">
+      <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingContainer.h">
+      <DependentUpon>SettingContainer.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="PreviewConnection.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
+    <Page Include="Actions.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="AddProfile.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -87,7 +148,13 @@
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="EditColorScheme.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Interaction.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="KeyChordListener.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Launch.xaml">
@@ -96,26 +163,32 @@
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Profiles.xaml">
+    <Page Include="Profiles_Base.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles_Advanced.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles_Appearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Appearances.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SettingContainerStyle.xaml">
+      <Type>DefaultStyle</Type>
+    </Page>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="ColorToBrushConverter.cpp">
-      <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
+    <ClCompile Include="Actions.cpp">
+      <DependentUpon>Actions.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="ColorToHexConverter.cpp">
-      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="FontWeightConverter.cpp">
-      <DependentUpon>FontWeightConverter.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="PercentageConverter.cpp">
-      <DependentUpon>PercentageConverter.idl</DependentUpon>
+    <ClCompile Include="AddProfile.cpp">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -124,8 +197,15 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="EditColorScheme.cpp">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="KeyChordListener.cpp">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="Launch.cpp">
       <DependentUpon>Launch.xaml</DependentUpon>
@@ -137,21 +217,75 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="Profiles.cpp">
-      <DependentUpon>Profiles.xaml</DependentUpon>
+    <ClCompile Include="ProfileViewModel.cpp">
+      <DependentUpon>ProfileViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ActionsViewModel.cpp">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ColorSchemeViewModel.cpp">
+      <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ColorSchemesPageViewModel.cpp">
+      <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="RenderingViewModel.cpp">
+      <DependentUpon>RenderingViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="InteractionViewModel.cpp">
+      <DependentUpon>InteractionViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="GlobalAppearanceViewModel.cpp">
+      <DependentUpon>GlobalAppearanceViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="LaunchViewModel.cpp">
+      <DependentUpon>LaunchViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles_Base.cpp">
+      <DependentUpon>Profiles_Base.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles_Advanced.cpp">
+      <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles_Appearance.cpp">
+      <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Appearances.cpp">
+      <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="SettingContainer.cpp">
+      <DependentUpon>SettingContainer.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="PreviewConnection.cpp">
+      <DependentUpon>PreviewConnection.h</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="ColorToBrushConverter.idl" />
-    <Midl Include="ColorToHexConverter.idl" />
-    <Midl Include="FontWeightConverter.idl" />
-    <Midl Include="PercentageConverter.idl" />
+    <Midl Include="Actions.idl">
+      <DependentUpon>Actions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="AddProfile.idl">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -159,6 +293,14 @@
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="EditColorScheme.idl">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="KeyChordListener.idl">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Launch.idl">
@@ -176,8 +318,31 @@
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Midl>
-    <Midl Include="Profiles.idl">
-      <DependentUpon>Profiles.xaml</DependentUpon>
+    <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="ActionsViewModel.idl" />
+    <Midl Include="ColorSchemeViewModel.idl" />
+    <Midl Include="ColorSchemesPageViewModel.idl" />
+    <Midl Include="RenderingViewModel.idl" />
+    <Midl Include="InteractionViewModel.idl" />
+    <Midl Include="GlobalAppearanceViewModel.idl" />
+    <Midl Include="LaunchViewModel.idl" />
+    <Midl Include="Profiles_Base.idl">
+      <DependentUpon>Profiles_Base.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Profiles_Advanced.idl">
+      <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Profiles_Appearance.idl">
+      <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Appearances.idl">
+      <DependentUpon>Appearances.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingContainer.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
@@ -187,9 +352,7 @@
       <SubType>Designer</SubType>
     </PRIResource>
     <OCResourceDirectory Include="Resources" />
-    <None Include="TerminalSettingsEditor.def" />
-    <None Include="packages.config" />
-    <None Include="PropertySheet.props" />
+    <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -205,23 +368,55 @@
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
-      <Private>false</Private>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
+      <!-- Private:false and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Manually add a reference to TerminalControl here. We need this so
+    MDMERGE will know where the TermControl types are defined. However, we need
+    to do it exactly like this so the packaging project won't roll up
+    TermControl's .xbf's from both the TermControl project and this one. -->
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

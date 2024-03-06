@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -15,34 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\ColorFix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\convert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\colorTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\MouseEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\FocusEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\IInputEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\KeyEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\MenuEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ModifierKeyState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Viewport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\WindowBufferSizeEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\precomp.cpp">
@@ -52,9 +34,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\GlyphWidth.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Utf16Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\utils.cpp">
@@ -69,7 +48,7 @@
     <ClCompile Include="..\ThemeUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Environment.cpp">
+    <ClCompile Include="..\sgrStack.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\UiaTracing.cpp">
@@ -89,6 +68,9 @@
     <ClInclude Include="..\inc\Viewport.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\inc\ColorFix.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\inc\convert.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -101,9 +83,6 @@
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\inc\Utf16Parser.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\inc\GlyphWidth.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -111,27 +90,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\UiaTextRangeBase.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\inc\CodepointWidthDetector.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\inc\convert.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\inc\GlyphWidth.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\inc\IInputEvent.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\inc\Viewport.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\inc\Utf16Parser.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ScreenInfoUiaProviderBase.h">
@@ -143,12 +101,6 @@
     <ClInclude Include="..\TermControlUiaTextRange.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\IUiaData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\IBaseData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\IUiaEventDispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -158,7 +110,7 @@
     <ClInclude Include="..\inc\ThemeUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\inc\Environment.hpp">
+    <ClInclude Include="..\inc\sgrStack.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\UiaTracing.h">

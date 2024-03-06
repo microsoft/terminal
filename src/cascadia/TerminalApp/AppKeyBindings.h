@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
 
 #include "AppKeyBindings.g.h"
 #include "ShortcutActionDispatch.h"
-#include "../inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -19,13 +18,14 @@ namespace winrt::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(winrt::Microsoft::Terminal::TerminalControl::KeyChord const& kc);
+        bool TryKeyChord(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
+        bool IsKeyChordExplicitlyUnbound(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
-        void SetKeyMapping(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
+        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
     private:
-        winrt::Microsoft::Terminal::Settings::Model::KeyMapping _keymap{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
 

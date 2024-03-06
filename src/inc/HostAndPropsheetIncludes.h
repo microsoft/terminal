@@ -14,16 +14,10 @@
 #include <windows.h>
 #undef WIN32_NO_STATUS
 
-// From ntdef.h, but that can't be included or it'll fight over PROBE_ALIGNMENT and other such arch specific defs
-typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
-/*lint -save -e624 */  // Don't complain about different typedefs.
-typedef NTSTATUS *PNTSTATUS;
-/*lint -restore */  // Resume checking for different typedefs.
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+#ifndef NO_WINTERNL_INBOX_BUILD
+#include <winternl.h>
+#endif
 
-// End From ntdef.h
-
-#define INLINE_NTSTATUS_FROM_WIN32 1 // Must use inline NTSTATUS or it will call the wrapped function twice.
 #pragma warning(push)
 #pragma warning(disable:4430) // Must disable 4430 "default int" warning for C++ because ntstatus.h is inflexible SDK definition.
 #include <ntstatus.h>
@@ -38,6 +32,14 @@ typedef NTSTATUS *PNTSTATUS;
 #endif
 
 #include <winuser.h>
+
+#define VkKeyScanW DO_NOT_USE_VkKeyScanW_USE_OneCoreSafeVkKeyScanW
+#define MapVirtualKeyW DO_NOT_USE_MapVirtualKeyW_USE_OneCoreSafeMapVirtualKeyW
+#define GetKeyState DO_NOT_USE_GetKeyState_USE_OneCoreSafeGetKeyState
+
+// This header contains some overrides for win32 APIs
+// that cannot exist on OneCore
+#include "../interactivity/inc/VtApiRedirection.hpp"
 
 #include <cwchar>
 

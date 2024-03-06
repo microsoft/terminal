@@ -21,11 +21,11 @@ Author(s):
 #include "Command.g.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
-#include "../inc/cppwinrt_utils.h"
+#include "ActionAndArgs.h"
 #include "SettingsTypes.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class CommandTests;
@@ -39,38 +39,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
-                                                std::vector<SettingsLoadWarnings>& warnings);
+                                                std::vector<SettingsLoadWarnings>& warnings,
+                                                const bool parseKeys = true);
 
-        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> commands,
+        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                    Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
-                                   Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
-                                   Windows::Foundation::Collections::IVector<SettingsLoadWarnings> warnings);
+                                   Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
 
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                                            const Json::Value& json);
+        Json::Value ToJson() const;
+
         bool HasNestedCommands() const;
+        bool IsNestedCommand() const noexcept;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
+        void NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested);
 
-        winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
+        bool HasName() const noexcept;
+        hstring Name() const noexcept;
+        void Name(const hstring& name);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
+        Control::KeyChord Keys() const noexcept;
+        hstring KeyChordText() const noexcept;
+        std::vector<Control::KeyChord> KeyMappings() const noexcept;
+        void RegisterKey(const Control::KeyChord& keys);
+        void EraseKey(const Control::KeyChord& keys);
 
-        GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
+        hstring IconPath() const noexcept;
+        void IconPath(const hstring& val);
+
+        static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
+        static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
+                                                                                           winrt::hstring currentCommandline,
+                                                                                           bool directories);
+
+        WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
+        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
 
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
+        std::vector<Control::KeyChord> _keyMappings;
+        std::optional<std::wstring> _name;
+        std::optional<std::wstring> _iconPath;
+        bool _nestedCommand{ false };
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
-                                                          Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
-                                                          Windows::Foundation::Collections::IVector<SettingsLoadWarnings>& warnings);
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::CommandTests;
+                                                          Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
+        friend class SettingsModelUnitTests::DeserializationTests;
+        friend class SettingsModelUnitTests::CommandTests;
     };
 }
 

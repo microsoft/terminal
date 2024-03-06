@@ -14,7 +14,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+C_DEFINES               = $(C_DEFINES)
 
 # -------------------------------------
 # Build System Settings
@@ -33,7 +33,6 @@ SOURCES = \
     ..\stateMachine.cpp \
     ..\InputStateMachineEngine.cpp \
     ..\OutputStateMachineEngine.cpp \
-    ..\telemetry.cpp \
     ..\tracing.cpp \
     ..\base64.cpp \
 

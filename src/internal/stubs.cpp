@@ -21,10 +21,6 @@ using namespace Microsoft::Console::Internal;
     return S_OK;
 }
 
-void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noexcept
-{
-}
-
 [[nodiscard]] HRESULT Theming::TrySetDarkMode(HWND /*hwnd*/) noexcept
 {
     return S_FALSE;

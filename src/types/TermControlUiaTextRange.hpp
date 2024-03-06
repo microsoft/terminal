@@ -16,6 +16,7 @@ Author(s):
 
 #pragma once
 
+#include "../renderer/inc/IRenderData.hpp"
 #include "../types/UiaTextRangeBase.hpp"
 
 namespace Microsoft::Terminal
@@ -26,26 +27,26 @@ namespace Microsoft::Terminal
         TermControlUiaTextRange() = default;
 
         // degenerate range
-        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+        HRESULT RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // degenerate range at cursor position
-        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+        HRESULT RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Cursor& cursor,
                                        const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // specific endpoint range
-        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+        HRESULT RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const COORD start,
-                                       const COORD end,
+                                       const til::point start,
+                                       const til::point end,
                                        bool blockRange = false,
                                        const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // range from a UiaPoint
-        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+        HRESULT RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const UiaPoint point,
                                        const std::wstring_view wordDelimiters = DefaultWordDelimiter);
@@ -55,8 +56,8 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
-        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
-        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
-        const COORD _getScreenFontSize() const override;
+        void _TranslatePointToScreen(til::point* clientPoint) const override;
+        void _TranslatePointFromScreen(til::point* screenPoint) const override;
+        til::size _getScreenFontSize() const noexcept override;
     };
 }

@@ -25,7 +25,7 @@ typedef void (*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 class VtConsole
 {
 public:
-    VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless, bool const fUseConpty, COORD const initialSize);
+    VtConsole(const PipeReadCallback pfnReadCallback, const bool fHeadless, const bool fUseConpty, const COORD initialSize);
     void spawn();
     void spawn(const std::wstring& command);
 

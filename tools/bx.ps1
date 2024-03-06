@@ -2,7 +2,7 @@
 # in this directory. Parses the solution's .metaproj file looking for the
 # project file in this directory, to be able to get the project's name.
 
-$projects = Get-Childitem -Path .\ -Filter *.vcxproj -File
+$projects = Get-ChildItem -Path * -Include *.vcxproj,*.wapproj
 if ($projects.length -eq 0)
 {
     exit -1

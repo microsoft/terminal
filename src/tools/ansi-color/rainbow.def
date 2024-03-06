@@ -1,0 +1,52 @@
+:: Like the colortest definition, but arranged to show the colors as ROY G. BIV, dark then light
+__DATA__
+__TABLE__
+:: The test text
+SET "CELL= gYw "
+:: Alignment properties for the cells and headers
+SET "ALIGN.CELL=C"
+SET "ALIGN.BOXHEAD=C"
+SET "ALIGN.STUB=L"
+:: Table spacing
+SET "SEPARATOR.CELL= "
+SET "SEPARATOR.STUB=   "
+__TABLE:END__
+__COLS__
+#NUL#
+40m
+47m
+41m
+43m
+42m
+46m
+44m
+45m
+101m
+103m
+102m
+106m
+104m
+105m
+100m
+107m
+__COLS:END__
+__ROWS__
+#NUL#
+30m
+37m
+31m
+33m
+32m
+36m
+34m
+35m
+91m
+93m
+92m
+96m
+94m
+95m
+90m
+97m
+__ROWS:END__
+__DATA:END__

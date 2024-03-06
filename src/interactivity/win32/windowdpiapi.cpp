@@ -30,7 +30,7 @@ BOOL WindowDpiApi::SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiC
     {
         typedef int(WINAPI * PfnSetProcessDpiAwarenessContexts)(DPI_AWARENESS_CONTEXT dpiContext);
 
-        static bool fTried = false;
+        static auto fTried = false;
         static PfnSetProcessDpiAwarenessContexts pfn = nullptr;
 
         if (!fTried)
@@ -63,7 +63,7 @@ BOOL WindowDpiApi::AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
     {
         typedef BOOL(WINAPI * PfnAdjustWindowRectExForDpi)(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle, int dpi);
 
-        static bool fTried = false;
+        static auto fTried = false;
         static PfnAdjustWindowRectExForDpi pfn = nullptr;
 
         if (!fTried)
@@ -92,7 +92,7 @@ int WindowDpiApi::GetDpiForWindow(const HWND hwnd)
     {
         typedef int(WINAPI * PfnGetDpiForWindow)(HWND hwnd);
 
-        static bool fTried = false;
+        static auto fTried = false;
         static PfnGetDpiForWindow pfn = nullptr;
 
         if (!fTried)
@@ -121,7 +121,7 @@ int WindowDpiApi::GetSystemMetricsForDpi(const int nIndex, const UINT dpi)
     {
         typedef int(WINAPI * PfnGetDpiMetrics)(int nIndex, int dpi);
 
-        static bool fTried = false;
+        static auto fTried = false;
         static PfnGetDpiMetrics pfn = nullptr;
 
         if (!fTried)

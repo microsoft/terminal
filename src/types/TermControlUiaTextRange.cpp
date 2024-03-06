@@ -10,12 +10,12 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
 
 // degenerate range constructor.
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters);
 }
 
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const Cursor& cursor,
                                                         const std::wstring_view wordDelimiters) noexcept
@@ -23,10 +23,10 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, cursor, wordDelimiters);
 }
 
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
-                                                        const COORD start,
-                                                        const COORD end,
+                                                        const til::point start,
+                                                        const til::point end,
                                                         bool blockRange,
                                                         const std::wstring_view wordDelimiters) noexcept
 {
@@ -35,7 +35,7 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 
 // returns a degenerate text range of the start of the row closest to the y value of point
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const UiaPoint point,
                                                         const std::wstring_view wordDelimiters)
@@ -63,20 +63,6 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
         return hr;
     }
 
-#if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
-    OutputDebugString(L"Clone\n");
-    std::wstringstream ss;
-    ss << _id << L" cloned to " << (static_cast<UiaTextRangeBase*>(*ppRetVal))->_id;
-    std::wstring str = ss.str();
-    OutputDebugString(str.c_str());
-    OutputDebugString(L"\n");
-#endif
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgClone apiMsg;
-    apiMsg.CloneId = static_cast<UiaTextRangeBase*>(*ppRetVal)->GetId();
-    Tracing::s_TraceUia(this, ApiCall::Clone, &apiMsg);*/
-
     return S_OK;
 }
 
@@ -87,7 +73,7 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
 //                (0,0) is the top-left of the app window
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
+void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
@@ -121,7 +107,7 @@ void TermControlUiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 //                (0,0) is the top-left of the screen
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
+void TermControlUiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
@@ -148,7 +134,7 @@ void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) con
     screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.top, scaleFactor);
 }
 
-const COORD TermControlUiaTextRange::_getScreenFontSize() const
+til::size TermControlUiaTextRange::_getScreenFontSize() const noexcept
 {
     // Do NOT get the font info from IRenderData. It is a dummy font info.
     // Instead, the font info is saved in the TermControl. So we have to

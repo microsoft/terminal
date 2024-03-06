@@ -21,7 +21,7 @@ namespace winrt::TerminalApp::implementation
 {
     // This class is a wrapper of PaletteItem, that is used as an item of a filterable list in CommandPalette.
     // It manages a highlighted text that is computed by matching search filter characters to item name
-    FilteredCommand::FilteredCommand(winrt::TerminalApp::PaletteItem const& item) :
+    FilteredCommand::FilteredCommand(const winrt::TerminalApp::PaletteItem& item) :
         _Item(item),
         _Filter(L""),
         _Weight(0)
@@ -39,7 +39,7 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void FilteredCommand::UpdateFilter(winrt::hstring const& filter)
+    void FilteredCommand::UpdateFilter(const winrt::hstring& filter)
     {
         // If the filter was not changed we want to prevent the re-computation of matching
         // that might result in triggering a notification event
@@ -74,13 +74,13 @@ namespace winrt::TerminalApp::implementation
     {
         const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
-        bool isProcessingMatchedSegment = false;
+        auto isProcessingMatchedSegment = false;
         uint32_t nextOffsetToReport = 0;
         uint32_t currentOffset = 0;
 
         for (const auto searchChar : _Filter)
         {
-            const auto lowerCaseSearchChar = std::towlower(searchChar);
+            const WCHAR searchCharAsString[] = { searchChar, L'\0' };
             while (true)
             {
                 if (currentOffset == commandName.size())
@@ -93,7 +93,10 @@ namespace winrt::TerminalApp::implementation
                     return winrt::make<HighlightedText>(segments);
                 }
 
-                auto isCurrentCharMatched = std::towlower(commandName[currentOffset]) == lowerCaseSearchChar;
+                // GH#9941: search should be locale-aware as well
+                // We use the same comparison method as upon sorting to guarantee consistent behavior
+                const WCHAR currentCharAsString[] = { commandName[currentOffset], L'\0' };
+                auto isCurrentCharMatched = lstrcmpi(searchCharAsString, currentCharAsString) == 0;
                 if (isProcessingMatchedSegment != isCurrentCharMatched)
                 {
                     // We reached the end of the region (matched character came after a series of unmatched or vice versa).
@@ -188,8 +191,8 @@ namespace winrt::TerminalApp::implementation
     // - the relative weight of this match
     int FilteredCommand::_computeWeight()
     {
-        int result = 0;
-        bool isNextSegmentWordBeginning = true;
+        auto result = 0;
+        auto isNextSegmentWordBeginning = true;
 
         for (const auto& segment : _HighlightedName.Segments())
         {
@@ -222,7 +225,7 @@ namespace winrt::TerminalApp::implementation
     // - other: another instance of FilteredCommand interface
     // Return Value:
     // - Returns true if the first is "bigger" (aka should appear first)
-    int FilteredCommand::Compare(winrt::TerminalApp::FilteredCommand const& first, winrt::TerminalApp::FilteredCommand const& second)
+    int FilteredCommand::Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second)
     {
         auto firstWeight{ first.Weight() };
         auto secondWeight{ second.Weight() };

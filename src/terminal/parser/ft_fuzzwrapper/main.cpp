@@ -15,8 +15,8 @@ void PrintUsage()
     wprintf(L"Use codepage 1200 for Unicode. 437 for US English. 0 for reading straight as ASCII.\r\n");
 }
 
-UINT const UNICODE_CP = 1200;
-UINT const ASCII_CP = 0;
+const UINT UNICODE_CP = 1200;
+const UINT ASCII_CP = 0;
 UINT uiCodePage = UNICODE_CP;
 FILE* hFile = nullptr;
 
@@ -29,14 +29,14 @@ bool GetChar(wchar_t* pwch)
     }
     else if (uiCodePage == ASCII_CP)
     {
-        int ch = fgetc(hFile);
+        auto ch = fgetc(hFile);
         *pwch = 0;
         *pwch = (wchar_t)ch;
         return ch != EOF;
     }
     else
     {
-        int ch = fgetc(hFile);
+        auto ch = fgetc(hFile);
         MultiByteToWideChar(uiCodePage, 0, (char*)&ch, 1, pwch, 1);
         return ch != EOF;
     }
@@ -44,7 +44,7 @@ bool GetChar(wchar_t* pwch)
 
 int __cdecl wmain(int argc, wchar_t* argv[])
 {
-    int ret = 0;
+    auto ret = 0;
 
     if (argc != 3)
     {
@@ -59,7 +59,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
         wprintf(L"Opening file '%s'...\r\n", argv[1]);
         hFile = _wfopen(argv[1], L"r");
         wchar_t wch;
-        bool fGotChar = GetChar(&wch);
+        auto fGotChar = GetChar(&wch);
         auto dispatch = std::make_unique<EchoDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
 

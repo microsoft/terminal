@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 
 // This class is intended to test restrictions placed on APIs from within a UWP application context
 class PolicyTests

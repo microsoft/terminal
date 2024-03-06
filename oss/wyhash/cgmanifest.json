@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
+    {
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/wangyi-fudan/wyhash",
+          "commitHash": "e77036ac1943369dc03e611cde52a8570f8ceefe"
+        }
+      }
+    }
+  ],
+  "Version": 1
+}

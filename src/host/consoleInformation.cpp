@@ -4,6 +4,10 @@
 #include "precomp.h"
 #include <intsafe.h>
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include "misc.h"
 #include "output.h"
 #include "srvinit.h"
@@ -12,72 +16,33 @@
 #include "../types/inc/convert.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
-using Microsoft::Console::Render::BlinkingState;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
-CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
-    // ProcessHandleList initializes itself
-    pInputBuffer(nullptr),
-    pCurrentScreenBuffer(nullptr),
-    ScreenBuffers(nullptr),
-    OutputQueue(),
-    // ExeAliasList initialized below
-    _OriginalTitle(),
-    _Title(),
-    _LinkTitle(),
-    Flags(0),
-    PopupCount(0),
-    CP(0),
-    OutputCP(0),
-    CtrlFlags(0),
-    LimitingProcessId(0),
-    // ColorTable initialized below
-    // CPInfo initialized below
-    // OutputCPInfo initialized below
-    _cookedReadData(nullptr),
-    ConsoleIme{},
-    _vtIo(),
-    _blinker{},
-    renderData{}
+bool CONSOLE_INFORMATION::IsConsoleLocked() const noexcept
 {
-    ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
-    ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-    InitializeCriticalSection(&_csConsoleLock);
-}
-
-CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
-{
-    DeleteCriticalSection(&_csConsoleLock);
-}
-
-bool CONSOLE_INFORMATION::IsConsoleLocked() const
-{
-    // The critical section structure's OwningThread field contains the ThreadId despite having the HANDLE type.
-    // This requires us to hard cast the ID to compare.
-    return _csConsoleLock.OwningThread == (HANDLE)GetCurrentThreadId();
+    return _lock.is_locked();
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-void CONSOLE_INFORMATION::LockConsole()
+void CONSOLE_INFORMATION::LockConsole() noexcept
 {
-    EnterCriticalSection(&_csConsoleLock);
+    _lock.lock();
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-bool CONSOLE_INFORMATION::TryLockConsole()
+void CONSOLE_INFORMATION::UnlockConsole() noexcept
 {
-    return !!TryEnterCriticalSection(&_csConsoleLock);
+    _lock.unlock();
 }
 
-#pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-void CONSOLE_INFORMATION::UnlockConsole()
+til::recursive_ticket_lock_suspension CONSOLE_INFORMATION::SuspendLock() noexcept
 {
-    LeaveCriticalSection(&_csConsoleLock);
+    return _lock.suspend();
 }
 
-ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
+ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 {
-    return _csConsoleLock.RecursionCount;
+    return _lock.recursion_depth();
 }
 
 // Routine Description:
@@ -90,13 +55,13 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 // - STATUS_SUCCESS if successful.
 [[nodiscard]] NTSTATUS CONSOLE_INFORMATION::AllocateConsole(const std::wstring_view title)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
     WI_SetFlagIf(gci.Flags, CONSOLE_AUTO_POSITION, !!gci.GetAutoPosition());
     WI_SetFlagIf(gci.Flags, CONSOLE_QUICK_EDIT_MODE, !!gci.GetQuickEdit());
     WI_SetFlagIf(gci.Flags, CONSOLE_HISTORY_NODUP, !!gci.GetHistoryNoDup());
 
-    Selection* const pSelection = &Selection::Instance();
+    const auto pSelection = &Selection::Instance();
     pSelection->SetLineSelection(!!gci.GetLineSelection());
 
     SetConsoleCPInfo(TRUE);
@@ -115,31 +80,36 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
     try
     {
         gci.SetTitle(title);
-        gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE)));
+
+        // TranslateConsoleTitle must have a null terminated string.
+        // This should only happen once on startup so the copy shouldn't be costly
+        // but could be eliminated by rewriting TranslateConsoleTitle.
+        const std::wstring nullTerminatedTitle{ gci.GetTitle() };
+        gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(nullTerminatedTitle.c_str(), TRUE, FALSE)));
     }
     catch (...)
     {
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    NTSTATUS Status = DoCreateScreenBuffer();
-    if (!NT_SUCCESS(Status))
+    auto Status = DoCreateScreenBuffer();
+    if (FAILED_NTSTATUS(Status))
     {
         goto ErrorExit2;
     }
 
-    gci.pCurrentScreenBuffer = gci.ScreenBuffers;
+    gci.SetActiveOutputBuffer(*gci.ScreenBuffers);
 
     gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
     gci.ConsoleIme.RefreshAreaAttributes();
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         return STATUS_SUCCESS;
     }
 
-    RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
+    LOG_NTSTATUS_MSG(Status, "Console init failed");
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
@@ -165,6 +135,11 @@ bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
     return _cookedReadData != nullptr;
 }
 
+bool CONSOLE_INFORMATION::HasPendingPopup() const noexcept
+{
+    return _cookedReadData && _cookedReadData->PresentingPopup();
+}
+
 const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept
 {
     return *_cookedReadData;
@@ -178,6 +153,16 @@ COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() noexcept
 void CONSOLE_INFORMATION::SetCookedReadData(COOKED_READ_DATA* readData) noexcept
 {
     _cookedReadData = readData;
+}
+
+bool CONSOLE_INFORMATION::GetBracketedPasteMode() const noexcept
+{
+    return _bracketedPasteMode;
+}
+
+void CONSOLE_INFORMATION::SetBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
 }
 
 // Method Description:
@@ -194,6 +179,16 @@ SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer()
 const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
 {
     return *pCurrentScreenBuffer;
+}
+
+void CONSOLE_INFORMATION::SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer)
+{
+    if (pCurrentScreenBuffer)
+    {
+        pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(false);
+    }
+    pCurrentScreenBuffer = &screenBuffer;
+    pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(true);
 }
 
 bool CONSOLE_INFORMATION::HasActiveOutputBuffer() const
@@ -213,53 +208,6 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 }
 
 // Method Description:
-// - Return the default foreground color of the console. If the settings are
-//      configured to have a default foreground color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
-// Arguments:
-// - <none>
-// Return Value:
-// - the default foreground color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
-{
-    const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
-}
-
-// Method Description:
-// - Return the default background color of the console. If the settings are
-//      configured to have a default background color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
-// Arguments:
-// - <none>
-// Return Value:
-// - the default background color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
-{
-    const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
-}
-
-// Method Description:
-// - Get the colors of a particular text attribute, using our color table,
-//      and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the foreground color of.
-// Return Value:
-// - The color values of the attribute's foreground and background.
-std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
-{
-    _blinkingState.RecordBlinkingUsage(attr);
-    return attr.CalculateRgbColors(Get256ColorTable(),
-                                   GetDefaultForeground(),
-                                   GetDefaultBackground(),
-                                   IsScreenReversed(),
-                                   _blinkingState.IsBlinkingFaint());
-}
-
-// Method Description:
 // - Set the console's title, and trigger a renderer update of the title.
 //      This does not include the title prefix, such as "Mark", "Select", or "Scroll"
 // Arguments:
@@ -269,6 +217,21 @@ std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const T
 void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 {
     _Title = std::wstring{ newTitle.begin(), newTitle.end() };
+
+    // Sanitize the input if we're in pty mode. No control chars - this string
+    //      will get emitted back to the TTY in a VT sequence, and we don't want
+    //      to embed control characters in that string. Note that we can't use
+    //      IsInVtIoMode for this test, because the VT I/O thread won't have
+    //      been created when the title is first set during startup.
+    if (ServiceLocator::LocateGlobals().launchArgs.InConptyMode())
+    {
+        _Title.erase(std::remove_if(_Title.begin(), _Title.end(), [](auto ch) {
+                         return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                     }),
+                     _Title.end());
+    }
+
+    _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;
     if (pRender)
@@ -284,9 +247,10 @@ void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 // - newTitlePrefix: The new value to use for the title prefix
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
+void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring_view newTitlePrefix)
 {
-    _TitlePrefix = newTitlePrefix;
+    _Prefix = newTitlePrefix;
+    _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;
     if (pRender)
@@ -302,7 +266,7 @@ void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
 // - originalTitle: The new value to use for the console's original title
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring& originalTitle)
+void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring_view originalTitle)
 {
     _OriginalTitle = originalTitle;
 }
@@ -314,7 +278,7 @@ void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring& originalTitle)
 // - linkTitle: The new value to use for the console's link title
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring& linkTitle)
+void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring_view linkTitle)
 {
     _LinkTitle = linkTitle;
 }
@@ -324,8 +288,8 @@ void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring& linkTitle)
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's title.
-const std::wstring& CONSOLE_INFORMATION::GetTitle() const noexcept
+// - the console's title.
+const std::wstring_view CONSOLE_INFORMATION::GetTitle() const noexcept
 {
     return _Title;
 }
@@ -336,10 +300,10 @@ const std::wstring& CONSOLE_INFORMATION::GetTitle() const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - a new wstring containing the combined prefix and title.
-const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
+// - the combined prefix and title.
+const std::wstring_view CONSOLE_INFORMATION::GetTitleAndPrefix() const
 {
-    return _TitlePrefix + _Title;
+    return _TitleAndPrefix;
 }
 
 // Method Description:
@@ -347,8 +311,8 @@ const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's original title.
-const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
+// - the console's original title.
+const std::wstring_view CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
 {
     return _OriginalTitle;
 }
@@ -358,8 +322,8 @@ const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's link title.
-const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const noexcept
+// - the console's link title.
+const std::wstring_view CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 {
     return _LinkTitle;
 }
@@ -376,14 +340,14 @@ Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexc
 }
 
 // Method Description:
-// - return a reference to the console's blinking state.
+// - Returns the MIDI audio instance.
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's blinking state.
-BlinkingState& CONSOLE_INFORMATION::GetBlinkingState() const noexcept
+// - a reference to the MidiAudio instance.
+MidiAudio& CONSOLE_INFORMATION::GetMidiAudio()
 {
-    return _blinkingState;
+    return _midiAudio;
 }
 
 // Method Description:
@@ -403,6 +367,6 @@ CHAR_INFO CONSOLE_INFORMATION::AsCharInfo(const OutputCellView& cell) const noex
     //    (for mapping RGB values to the nearest table value)
     const auto& attr = cell.TextAttr();
     ci.Attributes = attr.GetLegacyAttributes();
-    ci.Attributes |= cell.DbcsAttr().GeneratePublicApiAttributeFormat();
+    ci.Attributes |= GeneratePublicApiAttributeFormat(cell.DbcsAttr());
     return ci;
 }

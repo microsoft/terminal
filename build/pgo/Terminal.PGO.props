@@ -1,0 +1,50 @@
+<Project>
+  <PropertyGroup>
+    <NuGetPackageDirectory>$(MSBuildThisFileDirectory)..\..\packages</NuGetPackageDirectory>
+    <PkgMicrosoft_PGO_Helpers_Cpp>$(NuGetPackageDirectory)\Microsoft.Internal.PGO-Helpers.Cpp.0.2.34</PkgMicrosoft_PGO_Helpers_Cpp>
+  </PropertyGroup>
+
+  <!-- Get version information -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\custom.props" />
+
+  <PropertyGroup>
+    <!-- Optional, defaults to main.  Name of the branch which will be used for calculating branch point. -->
+    <PGOBranch>main</PGOBranch>
+
+    <!-- Mandatory.  Name of the NuGet package which will contain PGO databases for consumption by build system. -->
+    <PGOPackageName>Microsoft.Internal.Windows.Terminal.PGODatabase</PGOPackageName>
+
+    <!-- Mandatory.  Major version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
+    <PGOPackageVersionMajor>$(VersionMajor)</PGOPackageVersionMajor>
+
+    <!-- Mandatory.  Minor version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
+    <PGOPackageVersionMinor>$(VersionMinor)</PGOPackageVersionMinor>
+
+    <!-- Mandatory, defaults to 0.  Patch version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
+    <PGOPackageVersionPatch>0</PGOPackageVersionPatch>
+    
+    <!-- Optional, defaults to empty.  Prerelease version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
+    <PGOPackageVersionPrerelease></PGOPackageVersionPrerelease>
+
+    <!-- Mandatory.  Path to nuget.config file for the project.  Path is relative to where the props file will be. -->
+    <PGONuGetConfigPath>$(MSBuildThisFileDirectory)..\..\nuget.config</PGONuGetConfigPath>
+
+    <!-- Mandatory.  Path to PGO database NuSpec, see section below. -->
+    <PGONuspecPath>$(MSBuildThisFileDirectory)Terminal.PGO.DB.nuspec</PGONuspecPath>
+
+    <!-- Optional, defaults to true.  Should verification result in build failure or error? -->
+    <PGOVerifyFailureTreatedAsError>true</PGOVerifyFailureTreatedAsError>
+
+    <!-- Optional, defaults to $(IntDir)\Nuspec.  Temporary path where PGD files are copied to. -->
+    <PGONuspecBasePath>$(PGDPathForAllArch)</PGONuspecBasePath>
+
+    <!-- Optional, defaults to true.  Specifies whether to use default information for PGD files. -->
+    <PGOUseDefaultPGDFileInfo>true</PGOUseDefaultPGDFileInfo>
+
+    <!-- Copying the PGO runtime brings along a CRT. If we do that under normal circumstances, WAPPROJ will get its grubby hands on it and mess up all the CRT shenanigans we have to pull to make MSIX packages happy. So only pull it in for Instrument builds.-->
+    <PGOCopyRuntime>false</PGOCopyRuntime>
+    <PGOCopyRuntime Condition="'$(PGOBuildMode)' == 'Instrument'">true</PGOCopyRuntime>
+  </PropertyGroup>
+
+  <!-- Do not import PGO-Helpers props here, as it is too early to detect the C++ tools directory -->
+</Project>

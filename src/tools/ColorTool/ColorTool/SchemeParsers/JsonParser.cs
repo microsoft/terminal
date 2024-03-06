@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (C) Microsoft.  All rights reserved.
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
@@ -94,7 +94,7 @@ namespace ColorTool.SchemeParsers
                     }
                 }
 
-                var consoleAttributes = new ConsoleAttributes(screenBackground, screenForeground, popupBackground, popupForeground);
+                var consoleAttributes = new ConsoleAttributes(screenBackground, screenForeground, popupBackground, popupForeground, null);
                 return new ColorScheme(ExtractSchemeName(schemeName), colorTable, consoleAttributes);
             }
             catch (Exception /*e*/)

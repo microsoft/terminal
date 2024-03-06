@@ -21,6 +21,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _cursorChanged{ false },
     _isEnabled{ true },
     _prevSelection{},
+    _prevCursorRegion{},
     RenderEngineBase()
 {
 }
@@ -46,6 +47,12 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 [[nodiscard]] HRESULT UiaEngine::Disable() noexcept
 {
     _isEnabled = false;
+
+    // If we had buffered any text from NotifyNewText, dump it. When we do come
+    // back around to actually paint, we will just no-op. No sense in keeping
+    // the data buffered.
+    _newOutput = std::wstring{};
+
     return S_OK;
 }
 
@@ -53,10 +60,10 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
-// - psrRegion - Character region (SMALL_RECT) that has been changed
+// - psrRegion - Character region (til::rect) that has been changed
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT UiaEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::Invalidate(const til::rect* const /*psrRegion*/) noexcept
 {
     _textBufferChanged = true;
     return S_OK;
@@ -66,18 +73,18 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - Notifies us that the console has changed the position of the cursor.
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
-// - pcoordCursor - the new position of the cursor
+// - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 try
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
+    RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
     // check if cursor moved
-    if (*pcoordCursor != _prevCursorPos)
+    if (*psrRegion != _prevCursorRegion)
     {
-        _prevCursorPos = *pcoordCursor;
+        _prevCursorRegion = *psrRegion;
         _cursorChanged = true;
     }
     return S_OK;
@@ -91,7 +98,7 @@ CATCH_RETURN();
 // - prcDirtyClient - pixel rectangle
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateSystem(const til::rect* const /*prcDirtyClient*/) noexcept
 {
     return S_FALSE;
 }
@@ -103,7 +110,7 @@ CATCH_RETURN();
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
 {
     // early exit: different number of rows
     if (_prevSelection.size() != rectangles.size())
@@ -125,7 +132,7 @@ CATCH_RETURN();
             const auto newRect = rectangles.at(i);
 
             // if any value is different, selection has changed
-            if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
+            if (prevRect.top != newRect.top || prevRect.right != newRect.right || prevRect.left != newRect.left || prevRect.bottom != newRect.bottom)
             {
                 _selectionChanged = true;
                 _prevSelection = rectangles;
@@ -148,7 +155,7 @@ CATCH_RETURN();
 //               - -Y is up, Y is down, -X is left, X is right.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateScroll(const til::point* const /*pcoordDelta*/) noexcept
 {
     return S_FALSE;
 }
@@ -167,19 +174,22 @@ CATCH_RETURN();
     return S_OK;
 }
 
-// Routine Description:
-// - This currently has no effect in this renderer.
-// Arguments:
-// - pForcePaint - Always filled with false
-// Return Value:
-// - S_FALSE because we don't use this.
-[[nodiscard]] HRESULT UiaEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
+[[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
+try
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
+    // GH#16217 - don't even buffer this text if we're disabled. We may never
+    // come around to write it out.
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
 
-    *pForcePaint = false;
-    return S_FALSE;
+    if (!newText.empty())
+    {
+        _newOutput.append(newText);
+        _newOutput.push_back(L'\n');
+        _textBufferChanged = true;
+    }
+    return S_OK;
 }
+CATCH_LOG_RETURN_HR(E_FAIL);
 
 // Routine Description:
 // - This is unused by this renderer.
@@ -206,7 +216,7 @@ CATCH_RETURN();
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged;
+    const auto somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged || !_queuedOutput.empty();
 
     // If there's nothing to do, quick return
     RETURN_HR_IF(S_FALSE, !somethingToDo);
@@ -225,6 +235,34 @@ CATCH_RETURN();
 {
     RETURN_HR_IF(S_FALSE, !_isEnabled);
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
+
+    // Snap this now while we're still under lock
+    // so present can work on the copy while another
+    // thread might start filling the next "frame"
+    // worth of text data.
+    std::swap(_queuedOutput, _newOutput);
+    _newOutput.clear();
+    return S_OK;
+}
+
+// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
+// But UiaEngine is never the only engine running. Overriding this function prevents
+// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
+void UiaEngine::WaitUntilCanRender() noexcept
+{
+}
+
+// Routine Description:
+// - Used to perform longer running presentation steps outside the lock so the
+//      other threads can continue.
+// - Not currently used by UiaEngine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE since we do nothing.
+[[nodiscard]] HRESULT UiaEngine::Present() noexcept
+{
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // Fire UIA Events here
     if (_selectionChanged)
@@ -251,26 +289,27 @@ CATCH_RETURN();
         }
         CATCH_LOG();
     }
+    try
+    {
+        // The speech API is limited to 1000 characters at a time.
+        // Break up the output into 1000 character chunks to ensure
+        // the output isn't cut off.
+        static constexpr size_t sapiLimit{ 1000 };
+        const std::wstring_view output{ _queuedOutput };
+        for (size_t offset = 0; offset < output.size(); offset += sapiLimit)
+        {
+            _dispatcher->NotifyNewOutput(output.substr(offset, sapiLimit));
+        }
+    }
+    CATCH_LOG();
 
     _selectionChanged = false;
     _textBufferChanged = false;
     _cursorChanged = false;
     _isPainting = false;
+    _queuedOutput.clear();
 
     return S_OK;
-}
-
-// Routine Description:
-// - Used to perform longer running presentation steps outside the lock so the
-//      other threads can continue.
-// - Not currently used by UiaEngine.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT UiaEngine::Present() noexcept
-{
-    return S_FALSE;
 }
 
 // Routine Description:
@@ -305,8 +344,8 @@ CATCH_RETURN();
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(gsl::span<const Cluster> const /*clusters*/,
-                                                 COORD const /*coord*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const std::span<const Cluster> /*clusters*/,
+                                                 const til::point /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept
 {
@@ -318,15 +357,17 @@ CATCH_RETURN();
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - lines - <unused>
-// - color - <unused>
+// - gridlineColor - <unused>
+// - underlineColor - <unused>
 // - cchLine - <unused>
 // - coordTarget - <unused>
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLines const /*lines*/,
-                                                      COLORREF const /*color*/,
-                                                      size_t const /*cchLine*/,
-                                                      COORD const /*coordTarget*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                      const COLORREF /*gridlineColor*/,
+                                                      const COLORREF /*underlineColor*/,
+                                                      const size_t /*cchLine*/,
+                                                      const til::point /*coordTarget*/) noexcept
 {
     return S_FALSE;
 }
@@ -340,7 +381,12 @@ CATCH_RETURN();
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::PaintSelection(const til::rect& /*rect*/) noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]] HRESULT UiaEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
 {
     return S_FALSE;
 }
@@ -362,12 +408,16 @@ CATCH_RETURN();
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - textAttributes - <unused>
+// - renderSettings - <unused>
 // - pData - <unused>
+// - usingSoftFont - <unused>
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
+                                                      const RenderSettings& /*renderSettings*/,
                                                       const gsl::not_null<IRenderData*> /*pData*/,
+                                                      const bool /*usingSoftFont*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;
@@ -392,7 +442,7 @@ CATCH_RETURN();
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }
@@ -403,7 +453,7 @@ CATCH_RETURN();
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT UiaEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept
 {
     return S_FALSE;
 }
@@ -418,7 +468,7 @@ CATCH_RETURN();
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
                                                  FontInfo& /*pfiFontInfo*/,
-                                                 int const /*iDpi*/) noexcept
+                                                 const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }
@@ -427,12 +477,16 @@ CATCH_RETURN();
 // - Gets the area that we currently believe is dirty within the character cell grid
 // - Not currently used by UiaEngine.
 // Arguments:
-// - <none>
+// - area - Rectangle describing dirty area in characters.
 // Return Value:
-// - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<til::rectangle> UiaEngine::GetDirtyArea()
+// - S_OK.
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
-    return { Viewport::Empty().ToInclusive() };
+    // Magic static is only valid because any instance of this object has the same behavior.
+    // Use member variable instead if this ever changes.
+    static constexpr til::rect empty;
+    area = { &empty, 1 };
+    return S_OK;
 }
 
 // Routine Description:
@@ -441,7 +495,7 @@ CATCH_RETURN();
 // - pFontSize - Filled with the font size.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::GetFontSize(_Out_ COORD* const /*pFontSize*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::GetFontSize(_Out_ til::size* const /*pFontSize*/) noexcept
 {
     return S_FALSE;
 }
@@ -465,7 +519,7 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     return S_FALSE;
 }

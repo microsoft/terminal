@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{43ce4ce5-0010-4b99-9569-672670d26e26}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Microsoft.Terminal.Remoting.Lib</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Remoting</RootNamespace>
+    <TargetName>Microsoft.Terminal.Remoting.Lib</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="Monarch.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FindTargetWindowArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ProposeCommandlineResult.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SummonWindowSelectionArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SummonWindowBehavior.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="RenameRequestArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="WindowActivatedArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="GetWindowLayoutArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="QuitAllRequestedArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="MonarchFactory.h" />
+    <ClInclude Include="Peasant.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="WindowManager.h">
+      <DependentUpon>WindowManager.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="CommandlineArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="Monarch.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FindTargetWindowArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ProposeCommandlineResult.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SummonWindowSelectionArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SummonWindowBehavior.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="RenameRequestArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="WindowActivatedArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="GetWindowLayoutArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="QuitAllRequestedArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Peasant.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="WindowManager.cpp">
+      <DependentUpon>WindowManager.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="CommandlineArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="init.cpp" />
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <Midl Include="Monarch.idl" />
+    <Midl Include="Peasant.idl" />
+    <Midl Include="WindowManager.idl" />
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <!-- For whatever reason, we can't include the TerminalControl and
+    TerminalSettings projects' winmds via project references. So we'll have to
+    manually include the winmds as References below -->
+  </ItemGroup>
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;user32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+  <!-- ========================= Globals ======================== -->
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+</Project>

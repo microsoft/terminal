@@ -3,7 +3,7 @@
 https?://\S+
 [Pp]ublicKeyToken="?[0-9a-fA-F]{16}"?
 (?:[{"]|UniqueIdentifier>)[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?:[}"]|</UniqueIdentifier)
-(?:0[Xx]|\\x|U\+|#)[a-f0-9A-FGgRr]{2,}[Uu]?[Ll]{0,2}\b
+(?:0[Xx]|\\x|U\+|#)[a-f0-9A-FGgRr]{2,}(?!\[)[Uu]?[Ll]{0,2}\b
 microsoft/cascadia-code\@[0-9a-fA-F]{40}
 \d+x\d+Logo
 Scro\&ll
@@ -12,7 +12,6 @@ Scro\&ll
 TestUtils::VerifyExpectedString\(tb, L"[^"]+"
 (?:hostSm|mach)\.ProcessString\(L"[^"]+"
 \b([A-Za-z])\g{-1}{3,}\b
-0x[0-9A-Za-z]+
 Base64::s_(?:En|De)code\(L"[^"]+"
 VERIFY_ARE_EQUAL\(L"[^"]+"
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\+/"
@@ -24,64 +23,129 @@ ROY\sG\.\sBIV
 !(?:(?i)ESC)!\[
 !(?:(?i)CSI)!(?:\d+(?:;\d+|)m|[ABCDF])
 
-# Python stringprefix / binaryprefix
-\b(?:B|BR|Br|F|FR|Fr|R|RB|RF|Rb|Rf|U|UR|Ur|b|bR|br|f|fR|fr|r|rB|rF|rb|rf|u|uR|ur)'
+# SSE intrinsics like "_mm_subs_epu16"
+\b_mm(?:|256|512)_\w+\b
+
+# ARM NEON intrinsics like "vsubq_u16"
+\bv\w+_[fsu](?:8|16|32|64)\b
+
+# color floating numbers
+0x[0-9a-f](?:\.[0-9a-f]*p)[-+]\d+f
+
+# AppX package
+_\d[0-9a-z]{12}['\.]
+
+# string test
+equals_insensitive_ascii\("\w+", "\w+"
 
 # Automatically suggested patterns
-# hit-count: 3831 file-count: 582
-# IServiceProvider
-\bI(?=(?:[A-Z][a-z]{2,})+\b)
+# hit-count: 3788 file-count: 599
+# IServiceProvider / isAThing
+\b(?:I|isA)(?=(?:[A-Z][a-z]{2,})+\b)
 
-# hit-count: 71 file-count: 35
-# Compiler flags
-(?:^|[\t ,"'`=(])-[D](?=[A-Z]{2,}|[A-Z][a-z])
-(?:^|[\t ,"'`=(])-[X](?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
-
-# hit-count: 41 file-count: 28
-# version suffix <word>v#
-(?:(?<=[A-Z]{2})V|(?<=[a-z]{2}|[A-Z]{2})v)\d+(?:\b|(?=[a-zA-Z_]))
-
-# hit-count: 20 file-count: 9
+# hit-count: 314 file-count: 21
 # hex runs
 \b[0-9a-fA-F]{16,}\b
 
-# hit-count: 10 file-count: 7
+# hit-count: 47 file-count: 11
+# special cased printf markers
+\\r\\n(?=[a-z])|(?<!\\)\\[nrt](?=[a-z]{2,})(?=.*(?:<.*['"`]|"(?:[;,]|\);)$|\) \+$))
+
+# ConsoleArgumentsTests
+--headless\\.*?"
+
+# hit-count: 109 file-count: 62
+# Compiler flags (Unix, Java/Scala)
+# Use if you have things like `-Pdocker` and want to treat them as `docker`
+(?:^|[\t ,>"'`=(])-(?:D(?=[A-Z])|[WX]|f(?=[ms]))(?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
+
+# hit-count: 60 file-count: 35
+# version suffix <word>v#
+(?:(?<=[A-Z]{2})V|(?<=[a-z]{2}|[A-Z]{2})v)\d+(?:\b|(?=[a-zA-Z_]))
+
+# hit-count: 2 file-count: 2
+# This does not cover multiline strings, if your repository has them,
+# you'll want to remove the `(?=.*?")` suffix.
+# The `(?=.*?")` suffix should limit the false positives rate
+# printf
+%(?:s)(?!ize)(?=[a-z]{2,})
+
+# hit-count: 16 file-count: 10
 # uuid:
 \b[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}\b
 
+# hit-count: 13 file-count: 4
+# Non-English
+[a-zA-Z]*[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź][a-zA-Z]{3}[a-zA-ZÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź]*|[a-zA-Z]{3,}[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź]|[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź][a-zA-Z]{3,}
+
+# hit-count: 7 file-count: 5
+# hex digits including css/html color classes:
+(?:[\\0][xX]|\\u|[uU]\+|#x?|\%23)[0-9_a-fA-FgGrR]*?[a-fA-FgGrR]{2,}[0-9_a-fA-FgGrR]*(?:[uUlL]{0,3}|[iu]\d+)\b
+
+# hit-count: 7 file-count: 1
+# regex choice
+\(\?:[^)]+\|[^)]+\)
+
 # hit-count: 4 file-count: 4
-# mailto urls
-mailto:[-a-zA-Z=;:/?%&0-9+@.]{3,}
+# tar arguments
+\b(?:\\n|)g?tar(?:\.exe|)(?:(?:\s+--[-a-zA-Z]+|\s+-[a-zA-Z]+|\s[ABGJMOPRSUWZacdfh-pr-xz]+\b)(?:=[^ ]*|))+
 
 # hit-count: 4 file-count: 1
 # ANSI color codes
-(?:\\(?:u00|x)1b|\x1b)\[\d+(?:;\d+|)m
+(?:\\(?:u00|x)1[Bb]|\x1b|\\u\{1[Bb]\})\[\d+(?:;\d+|)m
+
+# hit-count: 4 file-count: 1
+# Update Lorem based on your content (requires `ge` and `w` from https://github.com/jsoref/spelling; and `review` from https://github.com/check-spelling/check-spelling/wiki/Looking-for-items-locally )
+# grep '^[^#].*lorem' .github/actions/spelling/patterns.txt|perl -pne 's/.*i..\?://;s/\).*//' |tr '|' "\n"|sort -f |xargs -n1 ge|perl -pne 's/^[^:]*://'|sort -u|w|sed -e 's/ .*//'|w|review -
+# Warning, while `(?i)` is very neat and fancy, if you have some binary files that aren't proper unicode, you might run into:
+## Operation "substitution (s///)" returns its argument for non-Unicode code point 0x1C19AE (the code point will vary).
+## You could manually change `(?i)X...` to use `[Xx]...`
+## or you could add the files to your `excludes` file (a version after 0.0.19 should identify the file path)
+# Lorem
+(?:\w|\s|[,.])*\b(?i)(?:amet|consectetur|cursus|dolor|eros|ipsum|lacus|libero|ligula|lorem|magna|neque|nulla|suscipit|tempus)\b(?:\w|\s|[,.])*
+
+# hit-count: 3 file-count: 3
+# mailto urls
+mailto:[-a-zA-Z=;:/?%&0-9+@.]{3,}
 
 # hit-count: 2 file-count: 1
-# latex
-\\(?:n(?:ew|ormal|osub)|r(?:enew)|t(?:able(?:of|)|he|itle))(?=[a-z]+)
+# Python string prefix / binary prefix
+# Note that there's a high false positive rate, remove the `?=` and search for the regex to see if the matches seem like reasonable strings
+(?<!')\b(?:B|BR|Br|F|FR|Fr|R|RB|RF|Rb|Rf|U|UR|Ur|b|bR|br|f|fR|fr|r|rB|rF|rb|rf|u|uR|ur)'(?=[A-Z]{3,}|[A-Z][a-z]{2,}|[a-z]{3,})
 
 # hit-count: 1 file-count: 1
-# hex digits including css/html color classes:
-(?:[\\0][xX]|\\u|[uU]\+|#x?|\%23)[0-9_a-fA-FgGrR]*?[a-fA-FgGrR]{2,}[0-9_a-fA-FgGrR]*(?:[uUlL]{0,3}|u\d+)\b
+# Punycode
+\bxn--[-0-9a-z]+
 
 # hit-count: 1 file-count: 1
-# Non-English
-[a-zA-Z]*[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź][a-zA-Z]{3}[a-zA-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź]*
+# latex (check-spelling >= 0.0.22)
+\\\w{2,}\{
 
 # hit-count: 1 file-count: 1
-# French
-# This corpus only had capital letters, but you probably want lowercase ones as well.
-\b[LN]'+[a-z]{2,}\b
+# tput arguments -- https://man7.org/linux/man-pages/man5/terminfo.5.html -- technically they can be more than 5 chars long...
+\btput\s+(?:(?:-[SV]|-T\s*\w+)\s+)*\w{3,5}\b
+
+# Questionably acceptable forms of `in to`
+# Personally, I prefer `log into`, but people object
+# https://www.tprteaching.com/log-into-log-in-to-login/
+\b(?:[Ll]og|[Ss]ign) in to\b
+
+# to opt in
+\bto opt in\b
 
 # acceptable duplicates
 # ls directory listings
-[-bcdlpsw](?:[-r][-w][-sx]){3}\s+\d+\s+(\S+)\s+\g{-1}\s+\d+\s+
-# C/idl types + English ...
-\s(Guid|long|LONG|that) \g{-1}\s
-
-# javadoc / .net
-(?:[\\@](?:groupname|param)|(?:public|private)(?:\s+static|\s+readonly)*)\s+(\w+)\s+\g{-1}\s
+[-bcdlpsw](?:[-r][-w][-Ssx]){3}\s+\d+\s+\S+\s+\S+\s+\d+\s+
+# mount
+\bmount\s+-t\s+(\w+)\s+\g{-1}\b
+# C types and repeated CSS values
+\s(auto|center|div|Guid|inherit|long|LONG|none|normal|solid|that|thin|transparent|very)(?: \g{-1})+\s
+# C struct
+\bstruct\s+(\w+)\s+\g{-1}\b
+# go templates
+\s(\w+)\s+\g{-1}\s+\`(?:graphql|inject|json|yaml):
+# doxygen / javadoc / .net
+(?:[\\@](?:brief|groupname|t?param|return|retval)|(?:public|private|\[Parameter(?:\(.+\)|)\])(?:\s+static|\s+override|\s+readonly)*)(?:\s+\{\w+\}|)\s+(\w+)\s+\g{-1}\s
 
 # Commit message -- Signed-off-by and friends
 ^\s*(?:(?:Based-on-patch|Co-authored|Helped|Mentored|Reported|Reviewed|Signed-off)-by|Thanks-to): (?:[^<]*<[^>]*>|[^<]*)\s*$
