@@ -42,11 +42,44 @@ IslandWindow::~IslandWindow()
 
 void IslandWindow::Close()
 {
+    // GH#15454: Unset the user data for the window. This will prevent future
+    // callbacks that come onto our window message loop from being sent to the
+    // IslandWindow (or other derived class's) implementation.
+    //
+    // Specifically, this prevents a pending coroutine from being able to call
+    // something like ShowWindow, and have that come back on the IslandWindow
+    // message loop, where it'll end up asking XAML something that XAML is no
+    // longer able to answer.
+    SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
+
     if (_source)
     {
         _source.Close();
         _source = nullptr;
     }
+}
+
+// Clear out any state that might be associated with this app instance, so that
+// we can later re-use this HWND for another instance.
+//
+// This doesn't actually close out our HWND or DesktopWindowXamlSource, but it
+// will remove all our content, and SW_HIDE the window, so it isn't accessible.
+void IslandWindow::Refrigerate() noexcept
+{
+    // Similar to in Close - unset our HWND's user data. We'll re-set this when
+    // we get re-heated, so that while we're refrigerated, we won't have
+    // unexpected callbacks into us while we don't have content.
+    //
+    // This pointer will get re-set in _warmInitialize
+    SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
+
+    _resetSystemMenu();
+
+    _pfnCreateCallback = nullptr;
+    _pfnSnapDimensionCallback = nullptr;
+
+    _rootGrid.Children().Clear();
+    ShowWindow(_window.get(), SW_HIDE);
 }
 
 HWND IslandWindow::GetInteropHandle() const
@@ -62,6 +95,12 @@ HWND IslandWindow::GetInteropHandle() const
 // - <none>
 void IslandWindow::MakeWindow() noexcept
 {
+    if (_window)
+    {
+        // no-op if we already have a window.
+        return;
+    }
+
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
@@ -162,6 +201,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     UpdateWindow(_window.get());
 
     UpdateWindowIconForActiveMetrics(_window.get());
+
+    _currentSystemThemeIsDark = Theme::IsSystemInDarkTheme();
 }
 
 // Method Description:
@@ -295,7 +336,30 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
     return false;
 }
 
-void IslandWindow::Initialize()
+// return true if this was a "cold" initialize, that didn't start XAML before.
+bool IslandWindow::Initialize()
+{
+    if (!_source)
+    {
+        _coldInitialize();
+        return true;
+    }
+    else
+    {
+        // This was a "warm" initialize - we've already got an HWND, but we need
+        // to move it to the new correct place, new size, and reset any leftover
+        // runtime state.
+        _warmInitialize();
+        return false;
+    }
+}
+
+// Method Description:
+// - Start this window for the first time. This will instantiate our XAML
+//   island, set up our root grid, and initialize some other members that only
+//   need to be initialized once.
+// - This should only be called once.
+void IslandWindow::_coldInitialize()
 {
     _source = DesktopWindowXamlSource{};
 
@@ -328,9 +392,32 @@ void IslandWindow::Initialize()
     // We don't really care if this failed or not.
     TerminalTrySetTransparentBackground(true);
 }
+void IslandWindow::_warmInitialize()
+{
+    // re-add the pointer to us to our HWND's user data, so that we can start
+    // getting window proc callbacks again.
+    _setupUserData();
+
+    // Manually ask how we want to be created.
+    if (_pfnCreateCallback)
+    {
+        til::rect rc{ GetWindowRect() };
+        _pfnCreateCallback(_window.get(), rc);
+    }
+
+    // Don't call IslandWindow::OnSize - that will set the Width/Height members
+    // of the _rootGrid. However, NonClientIslandWindow doesn't use those! If you set them, here,
+    // the contents of the window will never resize.
+    UpdateWindow(_window.get());
+    ForceResize();
+}
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
 {
+    // NOTE: This _isn't_ called by NonClientIslandWindow::OnSize. The
+    // NonClientIslandWindow has very different logic for positioning the
+    // DesktopWindowXamlSource inside its HWND.
+
     // update the interop window size
     SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
 
@@ -662,7 +749,16 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             // themes, color schemes that might depend on the OS theme
             if (param == L"ImmersiveColorSet")
             {
-                _UpdateSettingsRequestedHandlers();
+                // GH#15732: Don't update the settings, unless the theme
+                // _actually_ changed. ImmersiveColorSet gets sent more often
+                // than just on a theme change. It notably gets sent when the PC
+                // is locked, or the UAC prompt opens.
+                auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
+                if (isCurrentlyDark != _currentSystemThemeIsDark)
+                {
+                    _currentSystemThemeIsDark = isCurrentlyDark;
+                    _UpdateSettingsRequestedHandlers();
+                }
             }
         }
         break;
@@ -1823,6 +1919,18 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
     _systemMenuItems.erase(it->first);
 }
 
+void IslandWindow::_resetSystemMenu()
+{
+    // GetSystemMenu(..., true) will revert the menu to the default state.
+    GetSystemMenu(_window.get(), TRUE);
+}
+
+void IslandWindow::UseDarkTheme(const bool v)
+{
+    const BOOL attribute = v ? TRUE : FALSE;
+    std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE, &attribute, sizeof(attribute));
+}
+
 void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/)
 {
     // This block of code enables Mica for our window. By all accounts, this
@@ -1857,7 +1965,7 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
     // the darkness of our window. However, we're keeping this call to prevent
     // the window from appearing as a white rectangle for a frame before we load
     // the rest of the settings.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
+    UseDarkTheme(true);
 
     return TRUE;
 }

@@ -7,12 +7,24 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
+    // Don't use this definition in the code elsewhere.
+    // It only exists to make the definitions below possible.
+#ifdef NDEBUG
+#define ATLAS_DEBUG__IS_DEBUG 0
+#else
+#define ATLAS_DEBUG__IS_DEBUG 1
+#endif
+
     // If set to 1, this will cause the entire viewport to be invalidated at all times.
     // Helpful for benchmarking our text shaping code based on DirectWrite.
 #define ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION 0
 
     // Redraw at display refresh rate at all times. This helps with shader debugging.
 #define ATLAS_DEBUG_CONTINUOUS_REDRAW 0
+
+    // Hot reload the builtin .hlsl files whenever they change on disk.
+    // Enabled by default in debug builds.
+#define ATLAS_DEBUG_SHADER_HOT_RELOAD ATLAS_DEBUG__IS_DEBUG
 
     // Disables the use of DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT.
     // This helps with benchmarking the application as it'll run beyond display refresh rate.
@@ -69,7 +81,7 @@ namespace Microsoft::Console::Render::Atlas
     // std::clamp<T, Predicate>(T, T, T, Predicate) with std::less{} as the argument,
     // which introduces branching. While not perfect, this is still better than std::clamp.
     template<typename T>
-    constexpr T clamp(T val, T min, T max)
+    constexpr T clamp(T val, T min, T max) noexcept
     {
         return val < min ? min : (max < val ? max : val);
     }

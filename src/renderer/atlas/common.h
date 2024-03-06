@@ -125,6 +125,7 @@ namespace Microsoft::Console::Render::Atlas
     };
 
     using u8 = uint8_t;
+    using u8x2 = vec2<u8>;
 
     using u16 = uint16_t;
     using u16x2 = vec2<u16>;
@@ -313,7 +314,7 @@ namespace Microsoft::Console::Render::Atlas
     struct TargetSettings
     {
         HWND hwnd = nullptr;
-        bool enableTransparentBackground = false;
+        bool useAlpha = false;
         bool useSoftwareRendering = false;
     };
 
@@ -359,6 +360,7 @@ namespace Microsoft::Console::Render::Atlas
 
         u16 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
+        bool builtinGlyphs = false;
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
@@ -387,8 +389,12 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
-        u16x2 targetSize{};
-        u16x2 cellCount{};
+        // Size of the viewport / swap chain in pixel.
+        u16x2 targetSize{ 1, 1 };
+        // Size of the portion of the text buffer that we're drawing on the screen.
+        u16x2 viewportCellCount{ 1, 1 };
+        // The position of the viewport inside the text buffer (in cells).
+        u16x2 viewportOffset{ 0, 0 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -415,14 +421,15 @@ namespace Microsoft::Console::Render::Atlas
     struct FontMapping
     {
         wil::com_ptr<IDWriteFontFace2> fontFace;
-        u32 glyphsFrom = 0;
-        u32 glyphsTo = 0;
+        size_t glyphsFrom = 0;
+        size_t glyphsTo = 0;
     };
 
     struct GridLineRange
     {
         GridLineSet lines;
-        u32 color = 0;
+        u32 gridlineColor = 0;
+        u32 underlineColor = 0;
         u16 from = 0;
         u16 to = 0;
     };
@@ -444,11 +451,18 @@ namespace Microsoft::Console::Render::Atlas
             dirtyBottom = dirtyTop + cellHeight;
         }
 
+        // Each mappings from/to range indicates the range of indices/advances/offsets/colors this fontFace is to be used for.
         std::vector<FontMapping> mappings;
+        // Stores glyph indices of the corresponding mappings.fontFace, unless fontFace is nullptr,
+        // in which case this stores UTF16 because we're dealing with a custom glyph (box glyph, etc.).
         std::vector<u16> glyphIndices;
-        std::vector<f32> glyphAdvances; // same size as glyphIndices
-        std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
-        std::vector<u32> colors; // same size as glyphIndices
+        // Same size as glyphIndices.
+        std::vector<f32> glyphAdvances;
+        // Same size as glyphIndices.
+        std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets;
+        // Same size as glyphIndices.
+        std::vector<u32> colors;
+
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
         u16 selectionFrom = 0;
@@ -466,7 +480,6 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<IDWriteFontFallback> systemFontFallback;
         wil::com_ptr<IDWriteFontFallback1> systemFontFallback1; // optional, might be nullptr
         wil::com_ptr<IDWriteTextAnalyzer1> textAnalyzer;
-        wil::com_ptr<IDWriteRenderingParams1> renderingParams;
         std::function<void(HRESULT)> warningCallback;
         std::function<void(HANDLE)> swapChainChangedCallback;
 
@@ -494,6 +507,7 @@ namespace Microsoft::Console::Render::Atlas
 
         //// Parameters which change seldom.
         GenerationalSettings s;
+        std::wstring userLocaleName;
 
         //// Parameters which change every frame.
         // This is the backing buffer for `rows`.
@@ -531,8 +545,12 @@ namespace Microsoft::Console::Render::Atlas
         std::array<til::generation_t, 2> colorBitmapGenerations{ 1, 1 };
         // In columns/rows.
         til::rect cursorRect;
-        // In pixel.
-        til::rect dirtyRectInPx;
+        // The viewport/SwapChain area to be presented. In pixel.
+        // NOTE:
+        //   This cannot use til::rect, because til::rect generally expects positive coordinates only
+        //   (`operator!()` checks for negative values), whereas this one can go out of bounds,
+        //   whenever glyphs go out of bounds. `AtlasEngine::_present()` will clamp it.
+        i32r dirtyRectInPx{};
         // In rows.
         range<u16> invalidatedRows{};
         // In pixel.
@@ -541,7 +559,7 @@ namespace Microsoft::Console::Render::Atlas
         void MarkAllAsDirty() noexcept
         {
             dirtyRectInPx = { 0, 0, s->targetSize.x, s->targetSize.y };
-            invalidatedRows = { 0, s->cellCount.y };
+            invalidatedRows = { 0, s->viewportCellCount.y };
             scrollOffset = 0;
         }
     };

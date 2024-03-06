@@ -13,7 +13,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         property& operator=(const property& other) = default;
 
-        T operator()() const
+        T operator()() const noexcept
         {
             return _value;
         }
@@ -21,13 +21,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _value = std::forward<decltype(arg)>(arg);
         }
-        operator bool() const noexcept
+        explicit operator bool() const noexcept
         {
+#ifdef WINRT_Windows_Foundation_H
             if constexpr (std::is_same_v<T, winrt::hstring>)
             {
                 return !_value.empty();
             }
             else
+#endif
             {
                 return _value;
             }

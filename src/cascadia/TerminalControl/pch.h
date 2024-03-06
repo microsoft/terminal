@@ -58,6 +58,8 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
+#include <winrt/Microsoft.Terminal.UI.h>
+
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #include <TraceLoggingProvider.h>
@@ -67,12 +69,14 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <shellapi.h>
 #include <ShlObj_core.h>
 #include <WinUser.h>
+#include <UIAutomationCore.h>
 
 #include "til.h"
 #include <til/mutex.h>
 #include <til/winrt.h>
 
-#include "ThrottledFunc.h"
+#include <SafeDispatcherTimer.h>
+#include <ThrottledFunc.h>
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

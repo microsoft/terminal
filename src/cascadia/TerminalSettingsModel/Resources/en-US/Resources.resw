@@ -449,6 +449,12 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
+    <value>Recent commands...</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>Open suggestions...</value>
+  </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
   </data>
@@ -510,6 +516,9 @@
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Rename window...</value>
+  </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>Display Terminal's current working directory</value>
   </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
     <value>Show/Hide the Terminal window</value>
@@ -684,6 +693,10 @@
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
     <value>Close all other panes</value>
   </data>
+  <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
+    <value>Toggle broadcast input to all panes</value>
+    <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
+  </data>
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>Restart connection</value>
   </data>
@@ -698,5 +711,17 @@
   </data>
   <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
     <value>Select previous command</value>
+  </data>
+  <data name="SearchForTextCommandKey" xml:space="preserve">
+    <value>Search {0}</value>
+    <comment>{0} will be replaced with a user-specified URL to a web page</comment>
+  </data>
+  <data name="SearchWebCommandKey" xml:space="preserve">
+    <value>Search the web for selected text</value>
+    <comment>This will open a web browser to search for some user-selected text</comment>
+  </data>
+  <data name="OpenAboutCommandKey" xml:space="preserve">
+    <value>Open about dialog</value>
+    <comment>This will open the "about" dialog, to display version info and other documentation</comment>
   </data>
 </root>

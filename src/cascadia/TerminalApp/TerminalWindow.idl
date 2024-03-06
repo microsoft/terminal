@@ -3,7 +3,6 @@
 
 import "TerminalPage.idl";
 import "ShortcutActionDispatch.idl";
-import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
@@ -40,7 +39,7 @@ namespace TerminalApp
 
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
-    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass TerminalWindow : Microsoft.Terminal.UI.IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TerminalWindow(SettingsLoadEventArgs result, ContentManager manager);
 
@@ -53,9 +52,9 @@ namespace TerminalApp
 
         Boolean HasCommandlineArguments();
 
-        Int32 SetStartupCommandline(String[] commands, String cwd);
+        Int32 SetStartupCommandline(String[] commands, String cwd, String env);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
-        Int32 ExecuteCommandline(String[] commands, String cwd);
+        Int32 ExecuteCommandline(String[] commands, String cwd, String env);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
@@ -95,6 +94,7 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        Windows.UI.Xaml.Media.Brush FrameBrush { get; };
         void WindowActivated(Boolean activated);
 
         String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);

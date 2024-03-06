@@ -4,7 +4,10 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <til/unicode.h>
+
 #include "Backend.h"
+#include "BuiltinGlyphs.h"
 #include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
@@ -20,6 +23,7 @@
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
 using namespace Microsoft::Console::Render::Atlas;
@@ -70,25 +74,27 @@ try
         _handleSettingsUpdate();
     }
 
-    if constexpr (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION)
+    if (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION || _hackTriggerRedrawAll)
     {
+        _hackTriggerRedrawAll = false;
         _api.invalidatedRows = invalidatedRowsAll;
         _api.scrollOffset = 0;
     }
 
     // Clamp invalidation rects into valid value ranges.
     {
-        _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _p.s->cellCount.x);
-        _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _p.s->cellCount.y);
-        _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _p.s->cellCount.x);
-        _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _p.s->cellCount.y);
+        _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _p.s->viewportCellCount.x);
+        _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _p.s->viewportCellCount.y);
+        _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _p.s->viewportCellCount.x);
+        _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _p.s->viewportCellCount.y);
     }
     {
-        _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->cellCount.y);
-        _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->cellCount.y);
+        _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->viewportCellCount.y);
+        _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->viewportCellCount.y);
     }
+    if (_api.scrollOffset)
     {
-        const auto limit = gsl::narrow_cast<i16>(_p.s->cellCount.y & 0x7fff);
+        const auto limit = gsl::narrow_cast<i16>(_p.s->viewportCellCount.y & 0x7fff);
         const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
         const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
 
@@ -97,9 +103,9 @@ try
         // Mark the newly scrolled in rows as invalidated
         if (offset < 0)
         {
-            const u16 begRow = _p.s->cellCount.y + offset;
+            const u16 begRow = _p.s->viewportCellCount.y + offset;
             _api.invalidatedRows.start = nothingInvalid ? begRow : std::min(_api.invalidatedRows.start, begRow);
-            _api.invalidatedRows.end = _p.s->cellCount.y;
+            _api.invalidatedRows.end = _p.s->viewportCellCount.y;
         }
         else
         {
@@ -112,7 +118,7 @@ try
     _api.dirtyRect = {
         0,
         _api.invalidatedRows.start,
-        _p.s->cellCount.x,
+        _p.s->viewportCellCount.x,
         _api.invalidatedRows.end,
     };
 
@@ -134,12 +140,12 @@ try
     //   the contents of the entire swap chain is redundant, but more importantly because the scroll rect
     //   is the subset of the contents that are being scrolled into. If you scroll the entire viewport
     //   then the scroll rect is empty, which Present1() will loudly complain about.
-    if (_api.invalidatedRows == range<u16>{ 0, _p.s->cellCount.y })
+    if (_p.invalidatedRows == range<u16>{ 0, _p.s->viewportCellCount.y })
     {
         _p.MarkAllAsDirty();
     }
 
-    if (const auto offset = _api.scrollOffset)
+    if (const auto offset = _p.scrollOffset)
     {
         if (offset < 0)
         {
@@ -212,17 +218,17 @@ try
     // * Get the old dirty rect and mark that region as needing invalidation during the upcoming Present1(),
     //   because it'll now be replaced with something else (for instance nothing/whitespace).
     // * Clear() them to prepare them for the new incoming content from the TextBuffer.
-    if (_api.invalidatedRows.non_empty())
+    if (_p.invalidatedRows.non_empty())
     {
         const til::CoordType targetSizeX = _p.s->targetSize.x;
         const til::CoordType targetSizeY = _p.s->targetSize.y;
 
         _p.dirtyRectInPx.left = 0;
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, _api.invalidatedRows.start * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, _p.invalidatedRows.start * _p.s->font->cellSize.y);
         _p.dirtyRectInPx.right = targetSizeX;
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _api.invalidatedRows.end * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.invalidatedRows.end * _p.s->font->cellSize.y);
 
-        for (auto y = _api.invalidatedRows.start; y < _api.invalidatedRows.end; ++y)
+        for (auto y = _p.invalidatedRows.start; y < _p.invalidatedRows.end; ++y)
         {
             const auto r = _p.rows[y];
             const auto clampedTop = clamp(r->dirtyTop, 0, targetSizeY);
@@ -250,6 +256,16 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
+
+    // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
+    // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
+    }
 
     _api.invalidatedCursorArea = invalidatedAreaNone;
     _api.invalidatedRows = invalidatedRowsNone;
@@ -282,7 +298,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->cellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y));
     _p.rows[y]->lineRendition = lineRendition;
     _api.lineRendition = lineRendition;
     return S_OK;
@@ -296,14 +312,15 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->cellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
         _flushBufferLine();
     }
 
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _p.s->cellCount.x));
+    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_p.s->viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
     auto columnEnd = x;
 
     // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
@@ -330,7 +347,6 @@ try
     }
 
     {
-        const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
         const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
         auto beg = row + (static_cast<size_t>(x) << shift);
         auto end = row + (static_cast<size_t>(columnEnd) << shift);
@@ -364,15 +380,17 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
 try
 {
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->cellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.x << shift, 0, _p.s->cellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<size_t>((coordTarget.x + cchLine) << shift, from, _p.s->cellCount.x));
-    const auto fg = gsl::narrow_cast<u32>(color) | 0xff000000;
-    _p.rows[y]->gridLineRanges.emplace_back(lines, fg, from, to);
+    const auto x = std::max(0, coordTarget.x - (_p.s->viewportOffset.x >> shift));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
+    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
+    const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
+    const auto glColor = gsl::narrow_cast<u32>(gridlineColor) | 0xff000000;
+    const auto ulColor = gsl::narrow_cast<u32>(underlineColor) | 0xff000000;
+    _p.rows[y]->gridLineRanges.emplace_back(lines, glColor, ulColor, from, to);
     return S_OK;
 }
 CATCH_RETURN()
@@ -385,9 +403,9 @@ try
     // As such we got to call _flushBufferLine() here just to be sure.
     _flushBufferLine();
 
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->cellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->cellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->cellCount.x));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
+    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
 
     auto& row = *_p.rows[y];
     row.selectionFrom = from;
@@ -397,6 +415,40 @@ try
     _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
     _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
     _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
+    return S_OK;
+}
+CATCH_RETURN()
+
+[[nodiscard]] HRESULT AtlasEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+try
+{
+    if (rects.empty())
+    {
+        return S_OK;
+    }
+
+    for (const auto& rect : rects)
+    {
+        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
+        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
+
+        if (rect.bottom <= 0 || rect.top >= _p.s->viewportCellCount.y)
+        {
+            continue;
+        }
+
+        const auto bg = &_p.backgroundBitmap[_p.colorBitmapRowStride * y];
+        const auto fg = &_p.foregroundBitmap[_p.colorBitmapRowStride * y];
+        std::fill(bg + from, bg + to, 0xff3296ff);
+        std::fill(fg + from, fg + to, 0xff000000);
+    }
+
+    for (int i = 0; i < 2; ++i)
+    {
+        _p.colorBitmapGenerations[i].bump();
+    }
+
     return S_OK;
 }
 CATCH_RETURN()
@@ -422,41 +474,32 @@ try
         }
     }
 
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
-        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
-    }
-
     if (options.isOn)
     {
-        const auto point = options.coordCursor;
-        // TODO: options.coordCursor can contain invalid out of bounds coordinates when
-        // the window is being resized and the cursor is on the last line of the viewport.
-        const auto top = clamp(point.y, 0, _p.s->cellCount.y - 1);
-        const auto bottom = top + 1;
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
+        const auto top = options.coordCursor.y;
+        const auto bottom = top + 1;
+        const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
+        auto left = options.coordCursor.x - (_p.s->viewportOffset.x >> shift);
+        auto right = left + cursorWidth;
 
-        auto left = std::max(point.x, 0);
-        auto right = std::max(left + cursorWidth, 0);
+        left <<= shift;
+        right <<= shift;
 
-        if (_p.rows[top]->lineRendition != LineRendition::SingleWidth)
+        _p.cursorRect = {
+            std::max<til::CoordType>(left, 0),
+            std::max<til::CoordType>(top, 0),
+            std::min<til::CoordType>(right, _p.s->viewportCellCount.x),
+            std::min<til::CoordType>(bottom, _p.s->viewportCellCount.y),
+        };
+
+        if (_p.cursorRect)
         {
-            left <<= 1;
-            right <<= 1;
+            _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, left * _p.s->font->cellSize.x);
+            _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, top * _p.s->font->cellSize.y);
+            _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, right * _p.s->font->cellSize.x);
+            _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, bottom * _p.s->font->cellSize.y);
         }
-
-        left = std::min(left, _p.s->cellCount.x - cursorWidth);
-        right = std::min(right, i32{ _p.s->cellCount.x });
-
-        _p.cursorRect = { left, top, right, bottom };
-        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, left * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, top * _p.s->font->cellSize.y);
-        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, right * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, bottom * _p.s->font->cellSize.y);
     }
 
     return S_OK;
@@ -501,7 +544,7 @@ void AtlasEngine::_handleSettingsUpdate()
 {
     const auto targetChanged = _p.s->target != _api.s->target;
     const auto fontChanged = _p.s->font != _api.s->font;
-    const auto cellCountChanged = _p.s->cellCount != _api.s->cellCount;
+    const auto cellCountChanged = _p.s->viewportCellCount != _api.s->viewportCellCount;
 
     _p.s = _api.s;
 
@@ -537,7 +580,7 @@ void AtlasEngine::_recreateFontDependentResources()
             memcpy(&localeName[0], L"en-US", 12);
         }
 
-        _api.userLocaleName = std::wstring{ &localeName[0] };
+        _p.userLocaleName = std::wstring{ &localeName[0] };
     }
 
     if (_p.s->font->fontAxisValues.empty())
@@ -568,12 +611,14 @@ void AtlasEngine::_recreateFontDependentResources()
             _api.textFormatAxes[i] = { fontAxisValues.data(), fontAxisValues.size() };
         }
     }
+
+    _hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !_hackIsBackendD2D;
 }
 
 void AtlasEngine::_recreateCellCountDependentResources()
 {
     // Let's guess that every cell consists of a surrogate pair.
-    const auto projectedTextSize = static_cast<size_t>(_p.s->cellCount.x) * 2;
+    const auto projectedTextSize = static_cast<size_t>(_p.s->viewportCellCount.x) * 2;
     // IDWriteTextAnalyzer::GetGlyphs says:
     //   The recommended estimate for the per-glyph output buffers is (3 * textLength / 2 + 16).
     const auto projectedGlyphSize = 3 * projectedTextSize / 2 + 16;
@@ -590,16 +635,16 @@ void AtlasEngine::_recreateCellCountDependentResources()
     _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
     _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
 
-    _p.unorderedRows = Buffer<ShapedRow>(_p.s->cellCount.y);
-    _p.rowsScratch = Buffer<ShapedRow*>(_p.s->cellCount.y);
-    _p.rows = Buffer<ShapedRow*>(_p.s->cellCount.y);
+    _p.unorderedRows = Buffer<ShapedRow>(_p.s->viewportCellCount.y);
+    _p.rowsScratch = Buffer<ShapedRow*>(_p.s->viewportCellCount.y);
+    _p.rows = Buffer<ShapedRow*>(_p.s->viewportCellCount.y);
 
     // Our render loop heavily relies on memcpy() which is up to between 1.5x (Intel)
     // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
     // backgroundBitmapStride is a "count" of u32 and not in bytes,
     // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
-    _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->cellCount.x) + 7) & ~7;
-    _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->cellCount.y;
+    _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->viewportCellCount.x) + 7) & ~7;
+    _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->viewportCellCount.y;
     _p.colorBitmap = Buffer<u32, 32>(_p.colorBitmapDepthStride * 2);
     _p.backgroundBitmap = { _p.colorBitmap.data(), _p.colorBitmapDepthStride };
     _p.foregroundBitmap = { _p.colorBitmap.data() + _p.colorBitmapDepthStride, _p.colorBitmapDepthStride };
@@ -628,15 +673,65 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    const auto beg = _api.bufferLine.data();
+    const auto len = _api.bufferLine.size();
+    size_t segmentBeg = 0;
+    size_t segmentEnd = 0;
+    bool custom = false;
+
+    if (!_hackWantsBuiltinGlyphs)
+    {
+        _mapRegularText(0, len);
+        return;
+    }
+
+    while (segmentBeg < len)
+    {
+        segmentEnd = segmentBeg;
+        do
+        {
+            auto i = segmentEnd;
+            char32_t codepoint = beg[i++];
+            if (til::is_leading_surrogate(codepoint) && i < len)
+            {
+                codepoint = til::combine_surrogates(codepoint, beg[i++]);
+            }
+
+            const auto c = BuiltinGlyphs::IsBuiltinGlyph(codepoint) || BuiltinGlyphs::IsSoftFontChar(codepoint);
+            if (custom != c)
+            {
+                break;
+            }
+
+            segmentEnd = i;
+        } while (segmentEnd < len);
+
+        if (segmentBeg != segmentEnd)
+        {
+            if (custom)
+            {
+                _mapBuiltinGlyphs(segmentBeg, segmentEnd);
+            }
+            else
+            {
+                _mapRegularText(segmentBeg, segmentEnd);
+            }
+        }
+
+        segmentBeg = segmentEnd;
+        custom = !custom;
+    }
+}
+
+void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
+{
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
-    wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-
-#pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
-    for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
+    for (u32 idx = gsl::narrow_cast<u32>(offBeg), mappedEnd = 0; idx < offEnd; idx = mappedEnd)
     {
         u32 mappedLength = 0;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.put());
+        wil::com_ptr<IDWriteFontFace2> mappedFontFace;
+        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -647,6 +742,9 @@ void AtlasEngine::_flushBufferLine()
 
         const auto initialIndicesCount = row.glyphIndices.size();
 
+        // GetTextComplexity() returns as many glyph indices as its textLength parameter (here: mappedLength).
+        // This block ensures that the buffer has sufficient capacity. It also initializes the glyphProps buffer because it and
+        // glyphIndices sort of form a "pair" in the _mapComplex() code and are always simultaneously resized there as well.
         if (mappedLength > _api.glyphIndices.size())
         {
             auto size = _api.glyphIndices.size();
@@ -657,33 +755,40 @@ void AtlasEngine::_flushBufferLine()
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
 
-        // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-        for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
+        if (_p.s->font->fontFeatures.empty())
         {
-            BOOL isTextSimple = FALSE;
-            THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
-
-            if (isTextSimple)
+            // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
+            for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
             {
-                const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
-                const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+                BOOL isTextSimple = FALSE;
+                THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
-                for (size_t i = 0; i < complexityLength; ++i)
+                if (isTextSimple)
                 {
-                    const size_t col1 = _api.bufferLineColumn[idx + i + 0];
-                    const size_t col2 = _api.bufferLineColumn[idx + i + 1];
-                    const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-                    const auto fg = colors[col1 << shift];
-                    row.glyphIndices.emplace_back(_api.glyphIndices[i]);
-                    row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
-                    row.glyphOffsets.emplace_back();
-                    row.colors.emplace_back(fg);
+                    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+                    const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+
+                    for (size_t i = 0; i < complexityLength; ++i)
+                    {
+                        const auto col1 = _api.bufferLineColumn[idx + i + 0];
+                        const auto col2 = _api.bufferLineColumn[idx + i + 1];
+                        const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+                        const auto fg = colors[static_cast<size_t>(col1) << shift];
+                        row.glyphIndices.emplace_back(_api.glyphIndices[i]);
+                        row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
+                        row.glyphOffsets.emplace_back();
+                        row.colors.emplace_back(fg);
+                    }
+                }
+                else
+                {
+                    _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
                 }
             }
-            else
-            {
-                _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
-            }
+        }
+        else
+        {
+            _mapComplex(mappedFontFace.get(), idx, mappedLength, row);
         }
 
         const auto indicesCount = row.glyphIndices.size();
@@ -703,9 +808,31 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
+void AtlasEngine::_mapBuiltinGlyphs(size_t offBeg, size_t offEnd)
+{
+    auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
+    auto initialIndicesCount = row.glyphIndices.size();
+    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+    const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+    const auto base = reinterpret_cast<const u16*>(_api.bufferLine.data());
+    const auto len = offEnd - offBeg;
+
+    row.glyphIndices.insert(row.glyphIndices.end(), base + offBeg, base + offEnd);
+    row.glyphAdvances.insert(row.glyphAdvances.end(), len, static_cast<f32>(_p.s->font->cellSize.x));
+    row.glyphOffsets.insert(row.glyphOffsets.end(), len, {});
+
+    for (size_t i = offBeg; i < offEnd; ++i)
+    {
+        const auto col = _api.bufferLineColumn[i];
+        row.colors.emplace_back(colors[static_cast<size_t>(col) << shift]);
+    }
+
+    row.mappings.emplace_back(nullptr, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()));
+}
+
 void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const
 {
-    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), text, textLength };
+    TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), text, textLength };
     const auto& textFormatAxis = _api.textFormatAxes[static_cast<size_t>(_api.attributes)];
 
     // We don't read from scale anyways.
@@ -760,7 +887,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 {
     _api.analysisResults.clear();
 
-    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
     TextAnalysisSink analysisSink{ _api.analysisResults };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
 
@@ -805,7 +932,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* isSideways          */ false,
                 /* isRightToLeft       */ 0,
                 /* scriptAnalysis      */ &a.analysis,
-                /* localeName          */ _api.userLocaleName.c_str(),
+                /* localeName          */ _p.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
                 /* features            */ &features,
                 /* featureRangeLengths */ &featureRangeLengths,
@@ -857,7 +984,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* isSideways          */ false,
             /* isRightToLeft       */ 0,
             /* scriptAnalysis      */ &a.analysis,
-            /* localeName          */ _api.userLocaleName.c_str(),
+            /* localeName          */ _p.userLocaleName.c_str(),
             /* features            */ &features,
             /* featureRangeLengths */ &featureRangeLengths,
             /* featureRanges       */ featureRanges,
@@ -932,57 +1059,31 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         return;
     }
 
-    static constexpr auto isSoftFontChar = [](wchar_t ch) noexcept {
-        return ch >= 0xEF20 && ch < 0xEF80;
-    };
-
-    auto pos1 = from;
-    auto pos2 = pos1;
-    size_t col1 = _api.bufferLineColumn[from];
-    size_t col2 = col1;
+    auto pos = from;
+    auto col1 = _api.bufferLineColumn[from];
     auto initialIndicesCount = row.glyphIndices.size();
-    const auto softFontAvailable = !_p.s->font->softFontPattern.empty();
-    auto currentlyMappingSoftFont = isSoftFontChar(_api.bufferLine[pos1]);
     const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
     const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
 
-    while (pos2 < to)
+    while (pos < to)
     {
-        col2 = _api.bufferLineColumn[++pos2];
+        const auto col2 = _api.bufferLineColumn[++pos];
         if (col1 == col2)
         {
             continue;
         }
 
-        const auto cols = col2 - col1;
-        const auto ch = static_cast<u16>(_api.bufferLine[pos1]);
-        const auto nowMappingSoftFont = isSoftFontChar(ch);
-
-        row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
-        row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
+        row.glyphIndices.emplace_back(_api.replacementCharacterGlyphIndex);
+        row.glyphAdvances.emplace_back(static_cast<f32>((col2 - col1) * _p.s->font->cellSize.x));
         row.glyphOffsets.emplace_back();
-        row.colors.emplace_back(colors[col1 << shift]);
+        row.colors.emplace_back(colors[static_cast<size_t>(col1) << shift]);
 
-        if (currentlyMappingSoftFont != nowMappingSoftFont)
-        {
-            const auto indicesCount = row.glyphIndices.size();
-            const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? nullptr : _api.replacementCharacterFontFace.get();
-
-            if (indicesCount > initialIndicesCount)
-            {
-                row.mappings.emplace_back(fontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
-                initialIndicesCount = indicesCount;
-            }
-        }
-
-        pos1 = pos2;
         col1 = col2;
-        currentlyMappingSoftFont = nowMappingSoftFont;
     }
 
     {
         const auto indicesCount = row.glyphIndices.size();
-        const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? nullptr : _api.replacementCharacterFontFace.get();
+        const auto fontFace = _api.replacementCharacterFontFace.get();
 
         if (indicesCount > initialIndicesCount)
         {

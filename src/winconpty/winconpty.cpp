@@ -133,19 +133,17 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
-    auto pwszFormat = L"\"%s\" --headless %s%s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
+    auto pwszFormat = L"\"%s\" --headless %s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
-    const BOOL bWin32InputMode = (dwFlags & PSEUDOCONSOLE_WIN32_INPUT_MODE) == PSEUDOCONSOLE_WIN32_INPUT_MODE;
     const BOOL bPassthroughMode = (dwFlags & PSEUDOCONSOLE_PASSTHROUGH_MODE) == PSEUDOCONSOLE_PASSTHROUGH_MODE;
     swprintf_s(cmd,
                MAX_PATH,
                pwszFormat,
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
-               bWin32InputMode ? L"--win32input " : L"",
                bResizeQuirk ? L"--resizeQuirk " : L"",
                bPassthroughMode ? L"--passthrough " : L"",
                size.X,
@@ -327,15 +325,20 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
     {
         return E_INVALIDARG;
     }
+
     // sneaky way to pack a short and a uint64_t in a relatively literal way.
 #pragma pack(push, 1)
     struct _signal
     {
         const unsigned short id;
         const uint64_t hwnd;
-    } data{ PTY_SIGNAL_REPARENT_WINDOW, (uint64_t)(newParent) };
+    };
 #pragma pack(pop)
 
+    const _signal data{
+        PTY_SIGNAL_REPARENT_WINDOW,
+        (uint64_t)(newParent),
+    };
     const auto fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
 
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());

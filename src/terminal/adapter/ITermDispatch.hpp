@@ -51,6 +51,8 @@ public:
     virtual bool ScrollDown(const VTInt distance) = 0; // SD
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
+    virtual bool InsertColumn(const VTInt distance) = 0; // DECIC
+    virtual bool DeleteColumn(const VTInt distance) = 0; // DECDC
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
@@ -59,11 +61,14 @@ public:
     virtual bool CarriageReturn() = 0; // CR
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
     virtual bool ReverseLineFeed() = 0; // RI
-    virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
+    virtual bool BackIndex() = 0; // DECBI
+    virtual bool ForwardIndex() = 0; // DECFI
+    virtual bool SetWindowTitle(std::wstring_view title) = 0; // DECSWT, OscWindowTitle
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
+    virtual bool TabSet(const VTParameter setType) = 0; // DECST8C
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
@@ -109,6 +114,7 @@ public:
     virtual bool LockingShiftRight(const VTInt gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual bool SingleShift(const VTInt gsetNumber) = 0; // SS2, SS3
     virtual bool AcceptC1Controls(const bool enabled) = 0; // DECAC1
+    virtual bool AnnounceCodeStructure(const VTInt ansiLevel) = 0; // ACS
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS
@@ -133,6 +139,8 @@ public:
 
     virtual bool DoFinalTermAction(const std::wstring_view string) = 0;
 
+    virtual bool DoVsCodeAction(const std::wstring_view string) = 0;
+
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,
@@ -140,7 +148,10 @@ public:
                                        const DispatchTypes::DrcsFontSet fontSet,
                                        const DispatchTypes::DrcsFontUsage fontUsage,
                                        const VTParameter cellHeight,
-                                       const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
+                                       const DispatchTypes::CharsetSize charsetSize) = 0; // DECDLD
+
+    virtual bool RequestUserPreferenceCharset() = 0; // DECRQUPSS
+    virtual StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) = 0; // DECAUPSS
 
     virtual StringHandler DefineMacro(const VTInt macroId,
                                       const DispatchTypes::MacroDeleteControl deleteControl,

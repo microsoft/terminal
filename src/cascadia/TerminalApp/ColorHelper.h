@@ -1,7 +1,6 @@
 #pragma once
-#include "pch.h"
 
-#include <winrt/windows.ui.core.h>
+#include <winrt/Windows.UI.h>
 
 namespace winrt::TerminalApp
 {

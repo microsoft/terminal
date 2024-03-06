@@ -204,39 +204,19 @@ namespace winrt::TerminalApp::implementation
         // Pay attention, that even if some command line arguments were parsed (like launch mode),
         // we will not use the startup actions from settings.
         // While this simplifies the logic, we might want to reconsider this behavior in the future.
-        if (!_hasCommandLineArguments && _gotSettingsStartupActions)
+        //
+        // Obviously, don't use the `startupActions` from the settings in the
+        // case of a tear-out / reattach. GH#16050
+        if (!_hasCommandLineArguments &&
+            _initialContentArgs.empty() &&
+            _gotSettingsStartupActions)
         {
             _root->SetStartupActions(_settingsStartupArgs);
         }
 
         _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
         _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
-
-        _root->Initialized([this](auto&&, auto&&) {
-            // GH#288 - When we finish initialization, if the user wanted us
-            // launched _fullscreen_, toggle fullscreen mode. This will make sure
-            // that the window size is _first_ set up as something sensible, so
-            // leaving fullscreen returns to a reasonable size.
-            const auto launchMode = this->GetLaunchMode();
-            if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
-            {
-                _root->SetFocusMode(true);
-            }
-
-            // The IslandWindow handles (creating) the maximized state
-            // we just want to record it here on the page as well.
-            if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
-            {
-                _root->Maximized(true);
-            }
-
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
-            {
-                _root->SetFullscreen(true);
-            }
-
-            AppLogic::Current()->NotifyRootInitialized();
-        });
+        _root->Initialized({ get_weak(), &TerminalWindow::_pageInitialized });
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
@@ -255,6 +235,34 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
+
+    void TerminalWindow::_pageInitialized(const IInspectable&, const IInspectable&)
+    {
+        // GH#288 - When we finish initialization, if the user wanted us
+        // launched _fullscreen_, toggle fullscreen mode. This will make sure
+        // that the window size is _first_ set up as something sensible, so
+        // leaving fullscreen returns to a reasonable size.
+        const auto launchMode = this->GetLaunchMode();
+        if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+        {
+            _root->SetFocusMode(true);
+        }
+
+        // The IslandWindow handles (creating) the maximized state
+        // we just want to record it here on the page as well.
+        if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
+        {
+            _root->Maximized(true);
+        }
+
+        if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
+        {
+            _root->SetFullscreen(true);
+        }
+
+        AppLogic::Current()->NotifyRootInitialized();
+    }
+
     void TerminalWindow::Quit()
     {
         if (_root)
@@ -775,6 +783,10 @@ namespace winrt::TerminalApp::implementation
             {
                 _ShowLoadWarningsDialog(args.Warnings());
             }
+            else if (args.Result() == S_OK)
+            {
+                DismissDialog();
+            }
             _RefreshThemeRoutine();
         }
     }
@@ -851,7 +863,7 @@ namespace winrt::TerminalApp::implementation
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
+                if (auto keyListener{ focusedObject.try_as<UI::IDirectKeyListener>() })
                 {
                     if (keyListener.OnDirectKeyEvent(vkey, scanCode, down))
                     {
@@ -879,7 +891,7 @@ namespace winrt::TerminalApp::implementation
                         // don't want to go around the loop again.
                         if (!focusedObject)
                         {
-                            if (auto keyListener{ _root.try_as<IDirectKeyListener>() })
+                            if (auto keyListener{ _root.try_as<UI::IDirectKeyListener>() })
                             {
                                 return keyListener.OnDirectKeyEvent(vkey, scanCode, down);
                             }
@@ -944,12 +956,13 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::Media::Brush TerminalWindow::TitlebarBrush()
     {
-        if (_root)
-        {
-            return _root->TitlebarBrush();
-        }
-        return { nullptr };
+        return _root ? _root->TitlebarBrush() : nullptr;
     }
+    winrt::Windows::UI::Xaml::Media::Brush TerminalWindow::FrameBrush()
+    {
+        return _root ? _root->FrameBrush() : nullptr;
+    }
+
     void TerminalWindow::WindowActivated(const bool activated)
     {
         if (_root)
@@ -1023,9 +1036,12 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
+    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args,
+                                                  winrt::hstring cwd,
+                                                  winrt::hstring env)
     {
         _WindowProperties->SetInitialCwd(std::move(cwd));
+        _WindowProperties->VirtualEnvVars(std::move(env));
 
         // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)
@@ -1080,7 +1096,8 @@ namespace winrt::TerminalApp::implementation
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
     int32_t TerminalWindow::ExecuteCommandline(array_view<const winrt::hstring> args,
-                                               const winrt::hstring& cwd)
+                                               const winrt::hstring& cwd,
+                                               const winrt::hstring& env)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
@@ -1088,7 +1105,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
 
-            _root->ProcessStartupActions(actions, false, cwd);
+            _root->ProcessStartupActions(actions, false, cwd, env);
 
             if (appArgs.IsHandoffListener())
             {

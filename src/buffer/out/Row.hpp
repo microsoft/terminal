@@ -1,22 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- Row.hpp
-
-Abstract:
-- data structure for information associated with one row of screen buffer
-
-Author(s):
-- Michael Niksa (miniksa) 10-Apr-2014
-- Paul Campbell (paulcam) 10-Apr-2014
-
-Revision History:
-- From components of output.h/.c
-  by Therese Stowell (ThereseS) 1990-1991
-- Pulled into its own file from textBuffer.hpp/cpp (AustDi, 2017)
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
@@ -26,6 +9,7 @@ Revision History:
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
 
+class ROW;
 class TextBuffer;
 
 enum class DelimiterClass
@@ -43,7 +27,7 @@ struct RowWriteState
     // The column at which to start writing.
     til::CoordType columnBegin = 0; // IN
     // The first column which should not be written to anymore.
-    til::CoordType columnLimit = 0; // IN
+    til::CoordType columnLimit = til::CoordTypeMax; // IN
 
     // The column 1 past the last glyph that was successfully written into the row. If you need to call
     // ReplaceAttributes() to colorize the written range, etc., this is the columnEnd parameter you want.
@@ -57,9 +41,78 @@ struct RowWriteState
     til::CoordType columnEndDirty = 0; // OUT
 };
 
+struct RowCopyTextFromState
+{
+    // The row to copy text from.
+    const ROW& source; // IN
+    // The column at which to start writing.
+    til::CoordType columnBegin = 0; // IN
+    // The first column which should not be written to anymore.
+    til::CoordType columnLimit = til::CoordTypeMax; // IN
+    // The column at which to start reading from source.
+    til::CoordType sourceColumnBegin = 0; // IN
+    // The first column which should not be read from anymore.
+    til::CoordType sourceColumnLimit = til::CoordTypeMax; // IN
+
+    til::CoordType columnEnd = 0; // OUT
+    // The first column that got modified by this write operation. In case that the first glyph we write overwrites
+    // the trailing half of a wide glyph, leadingSpaces will be 1 and this value will be 1 less than colBeg.
+    til::CoordType columnBeginDirty = 0; // OUT
+    // This is 1 past the last column that was modified and will be 1 past columnEnd if we overwrote
+    // the leading half of a wide glyph and had to fill the trailing half with whitespace.
+    til::CoordType columnEndDirty = 0; // OUT
+    // This is 1 past the last column that was read from.
+    til::CoordType sourceColumnEnd = 0; // OUT
+};
+
+// This structure is basically an inverse of ROW::_charOffsets. If you have a pointer
+// into a ROW's text this class can tell you what cell that pointer belongs to.
+struct CharToColumnMapper
+{
+    CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept;
+
+    til::CoordType GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept;
+    til::CoordType GetTrailingColumnAt(ptrdiff_t offset) noexcept;
+    til::CoordType GetLeadingColumnAt(const wchar_t* str) noexcept;
+    til::CoordType GetTrailingColumnAt(const wchar_t* str) noexcept;
+
+private:
+    // See ROW and its members with identical name.
+    static constexpr uint16_t CharOffsetsTrailer = 0x8000;
+    static constexpr uint16_t CharOffsetsMask = 0x7fff;
+
+    const wchar_t* _chars;
+    const uint16_t* _charOffsets;
+    ptrdiff_t _lastCharOffset;
+    til::CoordType _currentColumn;
+};
+
 class ROW final
 {
 public:
+    // The implicit agreement between ROW and TextBuffer is that the `charsBuffer` and `charOffsetsBuffer`
+    // arrays have a minimum alignment of 16 Bytes and a size of `rowWidth+1`. The former is used to
+    // implement Reset() efficiently via SIMD and the latter is used to store the past-the-end offset
+    // into the `charsBuffer`. Even though the `charsBuffer` could be only `rowWidth` large we need them
+    // to be the same size so that the SIMD code can process both arrays in the same loop simultaneously.
+    // This wastes up to 5.8% memory but increases overall scrolling performance by around 40%.
+    // These methods exists to make this agreement explicit and serve as a reminder.
+    //
+    // TextBuffer calculates the distance in bytes between two ROWs (_bufferRowStride) as the sum of these values.
+    // As such it's important that we return sizes with a minimum alignment of alignof(ROW).
+    static constexpr size_t CalculateRowSize() noexcept
+    {
+        return (sizeof(ROW) + 15) & ~15;
+    }
+    static constexpr size_t CalculateCharsBufferSize(size_t columns) noexcept
+    {
+        return (columns * sizeof(wchar_t) + 16) & ~15;
+    }
+    static constexpr size_t CalculateCharOffsetsBufferSize(size_t columns) noexcept
+    {
+        return (columns * sizeof(uint16_t) + 16) & ~15;
+    }
+
     ROW() = default;
     ROW(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, const TextAttribute& fillAttribute);
 
@@ -75,33 +128,40 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
     LineRendition GetLineRendition() const noexcept;
+    til::CoordType GetReadableColumnCount() const noexcept;
 
-    void Reset(const TextAttribute& attr);
+    void Reset(const TextAttribute& attr) noexcept;
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
+    void CopyFrom(const ROW& source);
 
     til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
     til::CoordType NavigateToNext(til::CoordType column) const noexcept;
+    til::CoordType AdjustToGlyphStart(til::CoordType column) const noexcept;
+    til::CoordType AdjustToGlyphEnd(til::CoordType column) const noexcept;
 
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
-    bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
+    void SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     void ReplaceText(RowWriteState& state);
-    til::CoordType CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
+    void CopyTextFrom(RowCopyTextFromState& state);
 
     til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
     uint16_t size() const noexcept;
-    til::CoordType LineRenditionColumns() const noexcept;
+    til::CoordType GetLastNonSpaceColumn() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
     til::CoordType MeasureRight() const noexcept;
     bool ContainsText() const noexcept;
     std::wstring_view GlyphAt(til::CoordType column) const noexcept;
     DbcsAttribute DbcsAttrAt(til::CoordType column) const noexcept;
     std::wstring_view GetText() const noexcept;
+    std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
+    til::CoordType GetLeadingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
+    til::CoordType GetTrailingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
@@ -121,7 +181,9 @@ private:
         bool IsValid() const noexcept;
         void ReplaceCharacters(til::CoordType width) noexcept;
         void ReplaceText() noexcept;
-        void CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept;
+        void _replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept;
+        void CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept;
+        static void _copyOffsets(uint16_t* dst, const uint16_t* src, uint16_t size, uint16_t offset) noexcept;
         void Finish();
 
         // Parent pointer.
@@ -170,16 +232,21 @@ private:
     template<typename T>
     constexpr uint16_t _clampedColumnInclusive(T v) const noexcept;
 
-    uint16_t _adjustBackward(uint16_t column) const noexcept;
-    uint16_t _adjustForward(uint16_t column) const noexcept;
-
-    wchar_t _uncheckedChar(size_t off) const noexcept;
     uint16_t _charSize() const noexcept;
-    uint16_t _uncheckedCharOffset(size_t col) const noexcept;
-    bool _uncheckedIsTrailer(size_t col) const noexcept;
+    template<typename T>
+    wchar_t _uncheckedChar(T off) const noexcept;
+    template<typename T>
+    uint16_t _uncheckedCharOffset(T col) const noexcept;
+    template<typename T>
+    bool _uncheckedIsTrailer(T col) const noexcept;
+    template<typename T>
+    T _adjustBackward(T column) const noexcept;
+    template<typename T>
+    T _adjustForward(T column) const noexcept;
 
     void _init() noexcept;
     void _resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDirty, uint16_t chEndDirtyOld);
+    CharToColumnMapper _createCharToColumnMapper(ptrdiff_t offset) const noexcept;
 
     // These fields are a bit "wasteful", but it makes all this a bit more robust against
     // programming errors during initial development (which is when this comment was written).

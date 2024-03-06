@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
+#include <til/winrt.h>
 
 void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
 
@@ -21,6 +22,9 @@ public:
 
     virtual void MakeWindow() noexcept;
     virtual void Close();
+
+    virtual void Refrigerate() noexcept;
+
     virtual void OnSize(const UINT width, const UINT height);
     HWND GetInteropHandle() const;
 
@@ -37,7 +41,7 @@ public:
     virtual til::rect GetNonClientFrame(const UINT dpi) const noexcept;
     virtual til::size GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
-    virtual void Initialize();
+    virtual bool Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const til::rect&)> pfn) noexcept;
 
@@ -65,6 +69,7 @@ public:
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
+    void UseDarkTheme(const bool v);
     virtual void UseMica(const bool newValue, const double titlebarOpacity);
 
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
@@ -112,6 +117,10 @@ protected:
     RECT _rcWindowBeforeFullscreen{};
     RECT _rcWorkBeforeFullscreen{};
     UINT _dpiBeforeFullscreen{ 96 };
+    bool _currentSystemThemeIsDark{ true };
+
+    void _coldInitialize();
+    void _warmInitialize();
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
@@ -150,6 +159,7 @@ protected:
 
     std::unordered_map<UINT, SystemMenuItemInfo> _systemMenuItems;
     UINT _systemMenuNextItemId;
+    void _resetSystemMenu();
 
 private:
     // This minimum width allows for width the tabs fit

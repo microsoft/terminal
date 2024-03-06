@@ -27,6 +27,7 @@ steps:
   clean: true
   submodules: false
   fetchDepth: 1 # Don't need a deep checkout for loc files!
+  fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
   persistCredentials: true
   path: s # Adding a second repo made Azure DevOps change where we're checked out.
 

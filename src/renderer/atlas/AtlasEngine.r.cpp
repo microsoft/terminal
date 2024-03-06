@@ -32,7 +32,7 @@ using namespace Microsoft::Console::Render::Atlas;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
-    if (!_p.dxgi.adapter || !_p.dxgi.factory->IsCurrent())
+    if (!_p.dxgi.adapter)
     {
         _recreateAdapter();
     }
@@ -77,7 +77,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw());
+    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw()) || _hackTriggerRedrawAll;
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -162,6 +162,10 @@ void AtlasEngine::_recreateAdapter()
 
 void AtlasEngine::_recreateBackend()
 {
+    // D3D11 defers the destruction of objects and only one swap chain can be associated with a
+    // HWND, IWindow, or composition surface at a time. --> Destroy it while we still have the old device.
+    _destroySwapChain();
+
     auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
     auto deviceFlags =
         D3D11_CREATE_DEVICE_SINGLETHREADED
@@ -213,7 +217,7 @@ void AtlasEngine::_recreateBackend()
     if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING)
     {
         // This might happen if you don't have "Graphics debugger and GPU
-        // profiler for DirectX" installed in VS. We shouln't just explode if
+        // profiler for DirectX" installed in VS. We shouldn't just explode if
         // you don't though - instead, disable debugging and try again.
         WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_DEBUG);
 
@@ -260,7 +264,6 @@ void AtlasEngine::_recreateBackend()
         d2dMode |= !options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x;
     }
 
-    _p.swapChain = {};
     _p.device = std::move(device);
     _p.deviceContext = std::move(deviceContext);
 
@@ -273,30 +276,24 @@ void AtlasEngine::_recreateBackend()
         _b = std::make_unique<BackendD3D>(_p);
     }
 
-    // !!! NOTE !!!
-    // Normally the viewport is indirectly marked as dirty by `AtlasEngine::_handleSettingsUpdate()` whenever
-    // the settings change, but the `!_p.dxgi.factory->IsCurrent()` check is not part of the settings change
-    // flow and so we have to manually recreate how AtlasEngine.cpp marks viewports as dirty here.
-    // This ensures that the backends redraw their entire viewports whenever a new swap chain is created.
+    // This ensures that the backends redraw their entire viewports whenever a new swap chain is created,
+    // EVEN IF we got called when no actual settings changed (i.e. rendering failure, etc.).
     _p.MarkAllAsDirty();
+
+    const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !d2dMode;
+    _hackTriggerRedrawAll = _hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs;
+    _hackIsBackendD2D = d2dMode;
+    _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
 }
 
 void AtlasEngine::_handleSwapChainUpdate()
 {
     if (_p.swapChain.targetGeneration != _p.s->target.generation())
     {
-        if (_p.swapChain.swapChain)
-        {
-            _b->ReleaseResources();
-            _p.deviceContext->ClearState();
-            _p.deviceContext->Flush();
-        }
         _createSwapChain();
     }
     else if (_p.swapChain.targetSize != _p.s->targetSize)
     {
-        _b->ReleaseResources();
-        _p.deviceContext->ClearState();
         _resizeBuffers();
     }
 
@@ -312,8 +309,7 @@ static constexpr DXGI_SWAP_CHAIN_FLAG swapChainFlags = ATLAS_DEBUG_DISABLE_FRAME
 
 void AtlasEngine::_createSwapChain()
 {
-    _p.swapChain.swapChain.reset();
-    _p.swapChain.frameLatencyWaitableObject.reset();
+    _destroySwapChain();
 
     DXGI_SWAP_CHAIN_DESC1 desc{
         .Width = _p.s->targetSize.x,
@@ -325,21 +321,24 @@ void AtlasEngine::_createSwapChain()
         // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
         .BufferCount = 3,
         .Scaling = DXGI_SCALING_NONE,
-        // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
-        // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
+        // DXGI_SWAP_EFFECT_FLIP_DISCARD is the easiest to use, because it's fast and uses little memory.
+        // But it's a mode that was created at a time were display drivers lacked support
+        // for Multiplane Overlays (MPO) and were copying buffers was expensive.
         // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
         // With faster GPU memory in general and with support for MPO in particular this isn't
         // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
         // more "intelligent" composition and display updates to occur like Panel Self Refresh
         // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
+        // We were asked by DWM folks to use DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL for this reason (PSR).
         .SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
         // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
         // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
-        .AlphaMode = _p.s->target->enableTransparentBackground ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
+        .AlphaMode = _p.s->target->useAlpha ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
         .Flags = swapChainFlags,
     };
 
     wil::com_ptr<IDXGISwapChain1> swapChain1;
+    wil::unique_handle handle;
 
     if (_p.s->target->hwnd)
     {
@@ -354,16 +353,18 @@ void AtlasEngine::_createSwapChain()
 
         // As per: https://docs.microsoft.com/en-us/windows/win32/api/dcomp/nf-dcomp-dcompositioncreatesurfacehandle
         static constexpr DWORD COMPOSITIONSURFACE_ALL_ACCESS = 0x0003L;
-        THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, _p.swapChain.handle.addressof()));
-        THROW_IF_FAILED(_p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_p.device.get(), _p.swapChain.handle.get(), &desc, nullptr, swapChain1.addressof()));
+        THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, handle.addressof()));
+        THROW_IF_FAILED(_p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_p.device.get(), handle.get(), &desc, nullptr, swapChain1.addressof()));
     }
 
     _p.swapChain.swapChain = swapChain1.query<IDXGISwapChain2>();
+    _p.swapChain.handle = std::move(handle);
     _p.swapChain.frameLatencyWaitableObject.reset(_p.swapChain.swapChain->GetFrameLatencyWaitableObject());
     _p.swapChain.targetGeneration = _p.s->target.generation();
-    _p.swapChain.fontGeneration = {};
     _p.swapChain.targetSize = _p.s->targetSize;
     _p.swapChain.waitForPresentation = true;
+
+    LOG_IF_FAILED(_p.swapChain.swapChain->SetMaximumFrameLatency(1));
 
     WaitUntilCanRender();
 
@@ -377,8 +378,30 @@ void AtlasEngine::_createSwapChain()
     }
 }
 
+void AtlasEngine::_destroySwapChain()
+{
+    if (_p.swapChain.swapChain)
+    {
+        // D3D11 defers the destruction of objects and only one swap chain can be associated with a
+        // HWND, IWindow, or composition surface at a time. --> Force the destruction of all objects.
+        _p.swapChain = {};
+        if (_b)
+        {
+            _b->ReleaseResources();
+        }
+        if (_p.deviceContext)
+        {
+            _p.deviceContext->ClearState();
+            _p.deviceContext->Flush();
+        }
+    }
+}
+
 void AtlasEngine::_resizeBuffers()
 {
+    _b->ReleaseResources();
+    _p.deviceContext->ClearState();
+
     THROW_IF_FAILED(_p.swapChain.swapChain->ResizeBuffers(0, _p.s->targetSize.x, _p.s->targetSize.y, DXGI_FORMAT_UNKNOWN, swapChainFlags));
     _p.swapChain.targetSize = _p.s->targetSize;
 }
@@ -415,37 +438,41 @@ void AtlasEngine::_waitUntilCanRender() noexcept
 
 void AtlasEngine::_present()
 {
-    // Present1() dislikes being called with an empty dirty rect.
-    if (!_p.dirtyRectInPx)
-    {
-        return;
-    }
-
-    const til::rect fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
+    const RECT fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
 
     DXGI_PRESENT_PARAMETERS params{};
     RECT scrollRect{};
     POINT scrollOffset{};
 
     // Since rows might be taller than their cells, they might have drawn outside of the viewport.
-    auto dirtyRect = _p.dirtyRectInPx;
-    dirtyRect.left = std::max(dirtyRect.left, 0);
-    dirtyRect.top = std::max(dirtyRect.top, 0);
-    dirtyRect.right = std::min(dirtyRect.right, fullRect.right);
-    dirtyRect.bottom = std::min(dirtyRect.bottom, fullRect.bottom);
+    RECT dirtyRect{
+        .left = std::max(_p.dirtyRectInPx.left, 0),
+        .top = std::max(_p.dirtyRectInPx.top, 0),
+        .right = std::min<LONG>(_p.dirtyRectInPx.right, fullRect.right),
+        .bottom = std::min<LONG>(_p.dirtyRectInPx.bottom, fullRect.bottom),
+    };
+
+    // Present1() dislikes being called with an empty dirty rect.
+    if (dirtyRect.left >= dirtyRect.right || dirtyRect.top >= dirtyRect.bottom)
+    {
+        return;
+    }
 
     if constexpr (!ATLAS_DEBUG_SHOW_DIRTY)
     {
-        if (dirtyRect != fullRect)
+        if (memcmp(&dirtyRect, &fullRect, sizeof(RECT)) != 0)
         {
             params.DirtyRectsCount = 1;
-            params.pDirtyRects = dirtyRect.as_win32_rect();
+            params.pDirtyRects = &dirtyRect;
 
             if (_p.scrollOffset)
             {
                 const auto offsetInPx = _p.scrollOffset * _p.s->font->cellSize.y;
                 const auto width = _p.s->targetSize.x;
-                const auto height = _p.s->cellCount.y * _p.s->font->cellSize.y;
+                // We don't use targetSize.y here, because "height" refers to the bottom coordinate of the last text row
+                // in the buffer. We then add the "offsetInPx" (which is negative when scrolling text upwards) and thus
+                // end up with a "bottom" value that is the bottom of the last row of text that we haven't invalidated.
+                const auto height = _p.s->viewportCellCount.y * _p.s->font->cellSize.y;
                 const auto top = std::max(0, offsetInPx);
                 const auto bottom = height + std::min(0, offsetInPx);
 

@@ -44,6 +44,8 @@ public:
     bool ScrollDown(const VTInt /*distance*/) override { return false; } // SD
     bool InsertLine(const VTInt /*distance*/) override { return false; } // IL
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
+    bool InsertColumn(const VTInt /*distance*/) override { return false; } // DECIC
+    bool DeleteColumn(const VTInt /*distance*/) override { return false; } // DECDC
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
@@ -52,11 +54,14 @@ public:
     bool CarriageReturn() override { return false; } // CR
     bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) override { return false; } // IND, NEL, LF, FF, VT
     bool ReverseLineFeed() override { return false; } // RI
-    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
+    bool BackIndex() override { return false; } // DECBI
+    bool ForwardIndex() override { return false; } // DECFI
+    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // DECSWT, OscWindowTitle
     bool HorizontalTabSet() override { return false; } // HTS
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
+    bool TabSet(const VTParameter /*setType*/) override { return false; } // DECST8C
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground
     bool SetDefaultBackground(const DWORD /*color*/) override { return false; } // OSCDefaultBackground
@@ -102,6 +107,7 @@ public:
     bool LockingShiftRight(const VTInt /*gsetNumber*/) override { return false; } // LS1R, LS2R, LS3R
     bool SingleShift(const VTInt /*gsetNumber*/) override { return false; } // SS2, SS3
     bool AcceptC1Controls(const bool /*enabled*/) override { return false; } // DECAC1
+    bool AnnounceCodeStructure(const VTInt /*ansiLevel*/) override { return false; } // ACS
 
     bool SoftReset() override { return false; } // DECSTR
     bool HardReset() override { return false; } // RIS
@@ -126,6 +132,8 @@ public:
 
     bool DoFinalTermAction(const std::wstring_view /*string*/) override { return false; }
 
+    bool DoVsCodeAction(const std::wstring_view /*string*/) override { return false; }
+
     StringHandler DownloadDRCS(const VTInt /*fontNumber*/,
                                const VTParameter /*startChar*/,
                                const DispatchTypes::DrcsEraseControl /*eraseControl*/,
@@ -133,7 +141,10 @@ public:
                                const DispatchTypes::DrcsFontSet /*fontSet*/,
                                const DispatchTypes::DrcsFontUsage /*fontUsage*/,
                                const VTParameter /*cellHeight*/,
-                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+                               const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+
+    bool RequestUserPreferenceCharset() override { return false; } // DECRQUPSS
+    StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECAUPSS
 
     StringHandler DefineMacro(const VTInt /*macroId*/,
                               const DispatchTypes::MacroDeleteControl /*deleteControl*/,

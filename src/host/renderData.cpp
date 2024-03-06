@@ -80,6 +80,16 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 }
 
 // Method Description:
+// - Retrieves one rectangle per line describing the area of the viewport
+//   that should be highlighted in some way to represent a user-interactive selection
+// Return Value:
+// - Vector of Viewports describing the area selected
+std::vector<Viewport> RenderData::GetSearchSelectionRects() noexcept
+{
+    return {};
+}
+
+// Method Description:
 // - Lock the console for reading the contents of the buffer. Ensures that the
 //      contents of the console won't be changed in the middle of a paint
 //      operation.
@@ -87,14 +97,16 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 //      they're done with any querying they need to do.
 void RenderData::LockConsole() noexcept
 {
-    ::LockConsole();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
 }
 
 // Method Description:
 // - Unlocks the console after a call to RenderData::LockConsole.
 void RenderData::UnlockConsole() noexcept
 {
-    ::UnlockConsole();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.UnlockConsole();
 }
 
 // Method Description:
@@ -246,7 +258,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - <none>
 // Return Value:
 // - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const noexcept
+bool RenderData::IsCursorDoubleWidth() const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
@@ -369,6 +381,10 @@ void RenderData::SelectNewRegion(const til::point coordStart, const til::point c
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
 }
 
+void RenderData::SelectSearchRegions(std::vector<til::inclusive_rect> source)
+{
+}
+
 // Routine Description:
 // - Gets the current selection anchor position
 // Arguments:
@@ -417,17 +433,4 @@ const til::point RenderData::GetSelectionEnd() const noexcept
     const auto y_pos = (selectionRect.top == anchor.y) ? selectionRect.bottom : selectionRect.top;
 
     return { x_pos, y_pos };
-}
-
-// Routine Description:
-// - Given two points in the buffer space, color the selection between the two with the given attribute.
-// - This will create an internal selection rectangle covering the two points, assume a line selection,
-//   and use the first point as the anchor for the selection (as if the mouse click started at that point)
-// Arguments:
-// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
-// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
-// - attr - Color to apply to region.
-void RenderData::ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr)
-{
-    Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
 }

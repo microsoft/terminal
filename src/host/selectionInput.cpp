@@ -8,8 +8,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
 
-#include <algorithm>
-
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
@@ -39,8 +37,6 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
                  // C-c, C-Ins. C-S-c Is also handled by this case.
                  ((ctrlPressed) && (wVirtualKeyCode == 'C' || wVirtualKeyCode == VK_INSERT)))
         {
-            Telemetry::Instance().SetKeyboardTextEditingUsed();
-
             // copy selection
             return Selection::KeySelectionEventResult::CopyToClipboard;
         }
@@ -292,8 +288,6 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     {
         return false;
     }
-
-    Telemetry::Instance().SetKeyboardTextSelectionUsed();
 
     // if we're not currently selecting anything, start a new mouse selection
     if (!IsInSelectingState())
@@ -706,12 +700,11 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
                     // Clear the selection and call the search / mark function.
                     ClearSelection();
 
-                    Telemetry::Instance().LogColorSelectionUsed();
-
-                    Search search(gci.renderData, str, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
-                    while (search.FindNext())
+                    const auto& textBuffer = gci.renderData.GetTextBuffer();
+                    const auto hits = textBuffer.SearchText(str, true);
+                    for (const auto& s : hits)
                     {
-                        search.Color(selectionAttr);
+                        ColorSelection(s.start, s.end, selectionAttr);
                     }
                 }
             }
@@ -949,49 +942,27 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 [[nodiscard]] bool Selection::s_GetInputLineBoundaries(_Out_opt_ til::point* const pcoordInputStart, _Out_opt_ til::point* const pcoordInputEnd)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
 
-    auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-
-    const auto pendingCookedRead = gci.HasPendingCookedRead();
-    const auto isVisible = CommandLine::Instance().IsVisible();
-
-    // if we have no read data, we have no input line.
-    if (!pendingCookedRead || gci.CookedReadData().VisibleCharCount() == 0 || !isVisible)
+    if (gci.HasPendingCookedRead())
     {
-        return false;
+        auto boundaries = gci.CookedReadData().GetBoundaries();
+        if (boundaries.start < boundaries.end)
+        {
+            if (pcoordInputStart != nullptr)
+            {
+                *pcoordInputStart = boundaries.start;
+            }
+            if (pcoordInputEnd != nullptr)
+            {
+                // - 1 so the coordinate is on top of the last position of the text, not one past it.
+                gci.GetActiveOutputBuffer().GetBufferSize().MoveInBounds(-1, boundaries.end);
+                *pcoordInputEnd = boundaries.end;
+            }
+            return true;
+        }
     }
 
-    const auto& cookedRead = gci.CookedReadData();
-    const auto coordStart = cookedRead.OriginalCursorPosition();
-    auto coordEnd = cookedRead.OriginalCursorPosition();
-
-    if (coordEnd.x < 0 && coordEnd.y < 0)
-    {
-        // if the original cursor position from the input line data is invalid, then the buffer cursor position is the final position
-        coordEnd = textBuffer.GetCursor().GetPosition();
-    }
-    else
-    {
-        // otherwise, we need to add the number of characters in the input line to the original cursor position
-        bufferSize.MoveInBounds(gsl::narrow<til::CoordType>(cookedRead.VisibleCharCount()), coordEnd);
-    }
-
-    // - 1 so the coordinate is on top of the last position of the text, not one past it.
-    bufferSize.MoveInBounds(-1, coordEnd);
-
-    if (pcoordInputStart != nullptr)
-    {
-        pcoordInputStart->x = coordStart.x;
-        pcoordInputStart->y = coordStart.y;
-    }
-
-    if (pcoordInputEnd != nullptr)
-    {
-        *pcoordInputEnd = coordEnd;
-    }
-
-    return true;
+    return false;
 }
 
 // Routine Description:

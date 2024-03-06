@@ -15,6 +15,7 @@
 //
 // * Release: {06171993-7eb1-4f3e-85f5-8bdd7386cce3}
 // * Preview: {04221993-7eb1-4f3e-85f5-8bdd7386cce3}
+// * Canary:  {09222022-7eb1-4f3e-85f5-8bdd7386cce3}
 // * Dev:     {08302020-7eb1-4f3e-85f5-8bdd7386cce3}
 constexpr GUID Monarch_clsid
 {
@@ -22,6 +23,8 @@ constexpr GUID Monarch_clsid
     0x06171993,
 #elif defined(WT_BRANDING_PREVIEW)
     0x04221993,
+#elif defined(WT_BRANDING_CANARY)
+    0x09222022,
 #else
     0x08302020,
 #endif
@@ -47,7 +50,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
             _CurrentDirectory{ command.CurrentDirectory() },
-            _ShowWindowCommand{ command.ShowWindowCommand() } {};
+            _ShowWindowCommand{ command.ShowWindowCommand() },
+            _CurrentEnvironment{ command.CurrentEnvironment() } {};
 
         WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
             _Id{ 0u },
@@ -65,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
         WINRT_PROPERTY(winrt::hstring, Content);
         WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL);
+        WINRT_PROPERTY(winrt::hstring, CurrentEnvironment);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:

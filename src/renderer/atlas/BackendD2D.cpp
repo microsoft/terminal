@@ -68,13 +68,14 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     const auto renderTargetChanged = !_renderTarget;
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
-    const auto cellCountChanged = _cellCount != p.s->cellCount;
+    const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (renderTargetChanged)
     {
         {
             wil::com_ptr<ID3D11Texture2D> buffer;
             THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
+            const auto surface = buffer.query<IDXGISurface>();
 
             const D2D1_RENDER_TARGET_PROPERTIES props{
                 .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
@@ -83,8 +84,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
                 .dpiY = static_cast<f32>(p.s->font->dpi),
             };
             // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
-            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(buffer.query<IDXGISurface>().get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
-            _renderTarget.query_to(_renderTarget4.addressof());
+            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
+            _renderTarget.try_query_to(_renderTarget4.addressof());
 
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             _renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -119,8 +120,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             .dpiY = static_cast<f32>(p.s->font->dpi),
         };
         const D2D1_SIZE_U size{
-            p.s->cellCount.x,
-            p.s->cellCount.y,
+            p.s->viewportCellCount.x,
+            p.s->viewportCellCount.y,
         };
         const D2D1_MATRIX_3X2_F transform{
             .m11 = static_cast<f32>(p.s->font->cellSize.x),
@@ -144,7 +145,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
     _cursorGeneration = p.s->cursor.generation();
-    _cellCount = p.s->cellCount;
+    _viewportCellCount = p.s->viewportCellCount;
 }
 
 void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
@@ -331,7 +332,7 @@ void BackendD2D::_drawTextResetLineRendition(const ShapedRow* row) const noexcep
     }
 }
 
-// Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the the given baseline origin.
+// Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the given baseline origin.
 // This algorithm replicates what DirectWrite does internally to provide `IDWriteTextLayout::GetMetrics`.
 f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY)
 {
@@ -408,7 +409,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
 
         D2D1_POINT_2F point0{ 0, static_cast<f32>(textCellCenter) };
         D2D1_POINT_2F point1{ 0, static_cast<f32>(textCellCenter + cellSize.y) };
-        const auto brush = _brushWithColor(r.color);
+        const auto brush = _brushWithColor(r.gridlineColor);
         const f32 w = pos.height;
         const f32 hw = w * 0.5f;
 
@@ -420,11 +421,11 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
             _renderTarget->DrawLine(point0, point1, brush, w, nullptr);
         }
     };
-    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ID2D1StrokeStyle* strokeStyle) {
+    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ID2D1StrokeStyle* strokeStyle, const u32 color) {
         const auto from = r.from >> widthShift;
         const auto to = r.to >> widthShift;
 
-        const auto brush = _brushWithColor(r.color);
+        const auto brush = _brushWithColor(color);
         const f32 w = pos.height;
         const f32 centerY = textCellCenter + pos.position + w * 0.5f;
         const D2D1_POINT_2F point0{ static_cast<f32>(from * cellSize.x), centerY };
@@ -447,31 +448,31 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         }
         if (r.lines.test(GridLines::Top))
         {
-            appendHorizontalLine(r, p.s->font->gridTop, nullptr);
+            appendHorizontalLine(r, p.s->font->gridTop, nullptr, r.gridlineColor);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(r, p.s->font->gridBottom, nullptr);
+            appendHorizontalLine(r, p.s->font->gridBottom, nullptr, r.gridlineColor);
+        }
+        if (r.lines.test(GridLines::Strikethrough))
+        {
+            appendHorizontalLine(r, p.s->font->strikethrough, nullptr, r.gridlineColor);
         }
 
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(r, p.s->font->underline, nullptr);
+            appendHorizontalLine(r, p.s->font->underline, nullptr, r.underlineColor);
         }
-        if (r.lines.test(GridLines::HyperlinkUnderline))
+        else if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
-            appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get());
+            appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get(), r.underlineColor);
         }
-        if (r.lines.test(GridLines::DoubleUnderline))
+        else if (r.lines.test(GridLines::DoubleUnderline))
         {
             for (const auto pos : p.s->font->doubleUnderline)
             {
-                appendHorizontalLine(r, pos, nullptr);
+                appendHorizontalLine(r, pos, nullptr, r.underlineColor);
             }
-        }
-        if (r.lines.test(GridLines::Strikethrough))
-        {
-            appendHorizontalLine(r, p.s->font->strikethrough, nullptr);
         }
     }
 }
@@ -538,6 +539,7 @@ void BackendD2D::_resizeCursorBitmap(const RenderingPayload& p, const til::size 
     cursorRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     cursorRenderTarget->BeginDraw();
+    cursorRenderTarget->Clear();
     {
         const D2D1_RECT_F rect{ 0, 0, sizeF.width, sizeF.height };
         const auto brush = _brushWithColor(0xffffffff);
@@ -627,7 +629,8 @@ void BackendD2D::_debugShowDirty(const RenderingPayload& p)
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
-        if (const auto& rect = _presentRects[i])
+        const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
+        if (rect.non_empty())
         {
             const D2D1_RECT_F rectF{
                 static_cast<f32>(rect.left),

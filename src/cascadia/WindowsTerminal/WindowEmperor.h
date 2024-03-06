@@ -24,10 +24,9 @@ class WindowEmperor : public std::enable_shared_from_this<WindowEmperor>
 {
 public:
     WindowEmperor() noexcept;
-    ~WindowEmperor();
     void WaitForWindows();
 
-    bool HandleCommandlineArgs();
+    void HandleCommandlineArgs(int nCmdShow);
 
 private:
     void _createNewWindowThread(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
@@ -42,6 +41,8 @@ private:
 
     til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _windows;
     std::atomic<uint32_t> _windowThreadInstances;
+
+    til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _oldThreads;
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
 
@@ -77,6 +78,7 @@ private:
     winrt::fire_and_forget _setupGlobalHotkeys();
 
     winrt::fire_and_forget _close();
+    void _finalizeSessionPersistence() const;
 
     void _createNotificationIcon();
     void _destroyNotificationIcon();

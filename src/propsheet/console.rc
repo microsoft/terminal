@@ -85,6 +85,9 @@ BEGIN
     CONTROL         "&Use legacy console (requires relaunch, affects all consoles)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 199, 200, 10
 
+    CONTROL         "The legacy console is not installed. <A HREF=""https://go.microsoft.com/fwlink/?linkid=2257470"">Learn more.</A>",
+                    IDD_HELP_LEGACY_LINK_MISSING, "SysLink", WS_TABSTOP, 21, 211, 179, 10
+
     CONTROL         "Learn more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=871150"">legacy console mode</A>",
                     IDD_HELP_LEGACY_LINK, "SysLink", WS_TABSTOP, 21, 211, 179, 10
 
@@ -147,6 +150,9 @@ BEGIN
 
     CONTROL         "&Use legacy console (requires relaunch, affects all consoles)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 199, 200, 10
+
+    CONTROL         "The legacy console is not installed. <A HREF=""https://go.microsoft.com/fwlink/?linkid=2257470"">Learn more.</A>",
+                    IDD_HELP_LEGACY_LINK_MISSING, "SysLink", WS_TABSTOP, 21, 211, 179, 10
 
     CONTROL         "Learn more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=871150"">legacy console mode</A>",
                     IDD_HELP_LEGACY_LINK, "SysLink", WS_TABSTOP, 21, 211, 179, 10

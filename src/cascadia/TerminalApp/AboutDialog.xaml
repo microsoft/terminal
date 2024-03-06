@@ -40,9 +40,7 @@
                         Orientation="Vertical"
                         Visibility="{x:Bind UpdatesAvailable, Mode=OneWay}">
                 <TextBlock IsTextSelectionEnabled="False">
-                    <Run x:Uid="AboutDialog_UpdateAvailableLabel" /> <LineBreak />
-                    <Run x:Uid="AboutDialog_VersionLabel" />
-                    <Run Text="{x:Bind PendingUpdateVersion, Mode=OneWay}" />
+                    <Run x:Uid="AboutDialog_UpdateAvailableLabel" />
                 </TextBlock>
                 <!-- <Button x:Uid="AboutDialog_InstallUpdateButton"
                         Margin="0" />-->

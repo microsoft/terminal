@@ -16,6 +16,11 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <!--
+      Disable automatic provider generation so that we can control when they initialize.
+      We do this so we can delay the Settings UI DLL loading until absolutely necessary.
+    -->
+    <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -61,6 +66,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CommandPalette.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="SuggestionsControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
@@ -122,9 +130,6 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
-    <ClInclude Include="EmptyStringVisibilityConverter.h">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
@@ -154,6 +159,9 @@
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
+    <ClInclude Include="SuggestionsControl.h">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -221,12 +229,11 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="FilteredCommand.cpp" />
-    <ClCompile Include="EmptyStringVisibilityConverter.cpp">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
-    <ClCompile Include="ColorHelper.cpp" />
+    <ClCompile Include="ColorHelper.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -257,6 +264,9 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="SuggestionsControl.cpp">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -264,7 +274,6 @@
     header in TerminalApp.vcxproj (as well as in this file) -->
     <Midl Include="ActionPaletteItem.idl" />
     <Midl Include="CommandLinePaletteItem.idl" />
-    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="AboutDialog.idl">
       <DependentUpon>AboutDialog.xaml</DependentUpon>
     </Midl>
@@ -320,8 +329,11 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="SuggestionsControl.idl">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="FilteredCommand.idl" />
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -364,6 +376,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj">
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
 
   </ItemGroup>
