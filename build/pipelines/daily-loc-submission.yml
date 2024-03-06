@@ -12,7 +12,7 @@ schedules:
 parameters:
   - name: targetBranch
     type: string
-    value: "automated/loc-update"
+    default: "automated/loc-update"
 
 pool:
   vmImage: windows-2019
