@@ -82,7 +82,6 @@ steps:
 - pwsh: |-
     git add **/*.resw
     git status
-    git switch -c ${{parameters.targetBranch}}
     git diff --quiet --cached --exit-code
     If ($LASTEXITCODE -Ne 0) {
       $Now = Get-Date
@@ -102,7 +101,7 @@ steps:
     $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}"
     If ($null -Eq $existingPr) {
       $Now = Get-Date
-      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base "$(Build.SourceBranchName)" -Title "Localization Updates - $Now"
+      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Title "Localization Updates - $Now"
     }
   displayName: Publish pull request
   condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())
