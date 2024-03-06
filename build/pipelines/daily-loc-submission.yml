@@ -8,6 +8,12 @@ schedules:
         - main
     always: false # only run if there's code changes!
 
+
+parameters:
+  - name: targetBranch
+    type: string
+    value: "automated/loc-update"
+
 pool:
   vmImage: windows-2019
 
@@ -38,6 +44,12 @@ steps:
   persistCredentials: true
   path: s/Terminal.Internal
 
+- pwsh: |-
+    Install-Module PSGitHub -Scope CurrentUser -Force
+    git config --local user.email "consvc@microsoft.com"
+    git config --local user.name "Console Service Bot"
+  displayName: Prepare git submission environment
+
 - task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@1
   displayName: 'Touchdown Build - 7105, PRODEXT'
   inputs:
@@ -53,42 +65,44 @@ steps:
     pseudoSetting: Included
     localizationTarget: false
 
-- pwsh: >-
+- pwsh: |-
     Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
-
     $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
-
     $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
-
     Get-ChildItem LocOutput -R -Filter '*.resw' | % {
-
       ((Get-Content $_.FullName) -join "`r`n") + "`r`n" | Set-Content -NoNewline $_.FullName
-
     }
-
     & tar.exe -c -f LocOutputMunged.tar -C LocOutput
-
     & tar.exe -x -v -f LocOutputMunged.tar
-
     rm LocOutputMunged.tar
-
     rm -r -fo LocOutput
-
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
+  displayName: Move Loc files to the right places
 
-    git config --local user.email "consvc@microsoft.com"
-
-    git config --local user.name "Console Service Bot"
-
+- pwsh: |-
     git add **/*.resw
-
     git status
+    git switch -c ${{parameters.targetBranch}}
+    git diff --quiet --cached --exit-code
+    If ($LASTEXITCODE -Ne 0) {
+      $Now = Get-Date
+      git commit -m "Localization Updates - $Now"
+      git push origin HEAD:refs/heads/${{parameters.targetBranch}} -f
+      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]1"
+    } Else {
+      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]0"
+    }
+  displayName: git commit and push
 
-    git switch -c loc-update
-
-    $Now = Get-Date
-
-    git commit -m "Localization Updates - $Now"
-
-    git push origin HEAD:refs/heads/loc-update -f
-  displayName: Move Loc files to the right places and commit them I guess?
+- pwsh: |-
+    Import-Module PSGitHub
+    $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
+    $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
+    $PSDefaultParameterValues['*GitHub*:Token'] = ("$(System.AccessToken)" | ConvertTo-SecureString -AsPlainText -Force)
+    $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}"
+    If ($null -Eq $existingPr) {
+      $Now = Get-Date
+      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base "$(Build.SourceBranchName)" -Title "Localization Updates - $Now"
+    }
+  displayName: Publish pull request
+  condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())
