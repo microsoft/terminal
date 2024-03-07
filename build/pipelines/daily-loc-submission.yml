@@ -79,7 +79,6 @@ steps:
 
 - pwsh: |-
     git add **/*.resw
-    git reset HEAD **/en-US/*.resw # Don't check in automated changes to en-US files; too noisy
     git status
     git diff --quiet --cached --exit-code
     If ($LASTEXITCODE -Ne 0) {
