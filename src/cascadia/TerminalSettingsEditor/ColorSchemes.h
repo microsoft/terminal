@@ -26,7 +26,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, PropertyChanged.raise, nullptr);
 
-
     private:
         winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
     };

@@ -1256,10 +1256,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // send data up for clipboard
         CopyToClipboard.raise(*this,
-                                 winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
-                                                                       winrt::to_hstring(htmlData),
-                                                                       winrt::to_hstring(rtfData),
-                                                                       copyFormats));
+                              winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
+                                                                    winrt::to_hstring(htmlData),
+                                                                    winrt::to_hstring(rtfData),
+                                                                    copyFormats));
         return true;
     }
 

@@ -61,7 +61,6 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParentCommandName, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParsedCommandLineText, PropertyChanged.raise);
 
-
     private:
         struct winrt_object_hash
         {

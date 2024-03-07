@@ -617,9 +617,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // _core->ScrollOffset() is now set to newValue
             ScrollPositionChanged.raise(*this,
-                                           winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                                  _core->ViewHeight(),
-                                                                                  _core->BufferHeight()));
+                                        winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
+                                                                               _core->ViewHeight(),
+                                                                               _core->BufferHeight()));
         }
     }
 
