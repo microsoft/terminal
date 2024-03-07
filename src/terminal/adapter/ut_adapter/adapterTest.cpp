@@ -1587,12 +1587,21 @@ public:
         coordCursorExpected.x++;
         coordCursorExpected.y++;
 
-        // Until we support paging (GH#13892) the reported page number should always be 1.
-        const auto pageExpected = 1;
+        // By default, the initial page number should be 1.
+        auto pageExpected = 1;
 
         VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExtendedCursorPositionReport, {}));
 
         wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        // Now test with the page number set to 3.
+        pageExpected = 3;
+        _pDispatch->PagePositionAbsolute(pageExpected);
+
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExtendedCursorPositionReport, {}));
+
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
         _testGetSet->ValidateInputEvent(pwszBuffer);
     }
