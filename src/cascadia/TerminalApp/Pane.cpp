@@ -359,16 +359,20 @@ bool Pane::ResizePane(const ResizeDirection& direction, float amount)
     return false;
 }
 
-void Pane::_handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta, bool skip)
+void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const SplitState direction, const winrt::Windows::Foundation::Point delta, bool skip)
 {
-    if (!skip &&
-        (direction == _splitState || direction == SplitState::None))
+    if (skip && direction == SplitState::None && sender == _secondChild)
+    {
+        _handleManipulation(delta);
+    }
+    else if (!skip &&
+             (direction == _splitState || direction == SplitState::None))
     {
         _handleManipulation(delta);
     }
     else
     {
-        ManipulationRequested.raise(direction, delta, false);
+        ManipulationRequested.raise(shared_from_this(), direction, delta, false);
     }
 }
 
@@ -462,16 +466,26 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     // else if (transformOrigin.X < 0 && transformOrigin.Y < 0)
     // else if (transformOrigin.X < PaneBorderSize && transformOrigin.Y < PaneBorderSize) // NO
     // else if (transformOrigin.X < PaneBorderSize || transformOrigin.Y < PaneBorderSize) // nope
-    else if (transformInControlSpace.X < PaneBorderSize || transformInControlSpace.Y < PaneBorderSize) // nope
+    // else if (transformInControlSpace.X < PaneBorderSize || transformInControlSpace.Y < PaneBorderSize) // Close!
+    else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0) // Close!
     {
         //     // clicked above/left of the pane. We're still on the border, but we don't want to resize our parent, we want to resize _their_ parent.
-        ManipulationRequested.raise(_splitState, delta, true);
+        ManipulationRequested.raise(shared_from_this(), _splitState, delta, true);
         //     TODO! THIS DOESN"T WORK
         return;
     }
+    // else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0)
+    // {
+    //     if (transformInControlSpace.X < 0){
+    //                 ManipulationRequested.raise(SplitState::Vertical, delta, false);
+
+    //     }
+
+    //      || transformInControlSpace.Y < 0)
+    // }
     else
     {
-        ManipulationRequested.raise(_splitState, delta, false);
+        ManipulationRequested.raise(shared_from_this(), _splitState, delta, false);
         return;
     }
 
@@ -489,7 +503,7 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
 
     if (transformOrigin.X <= 0 || transformOrigin.Y <= 0)
     {
-        ManipulationRequested.raise(oppositeSplit, delta, false);
+        ManipulationRequested.raise(shared_from_this(), oppositeSplit, delta, false);
         return;
     }
     //const auto pastTopLeft = transformOrigin.X > PaneBorderSize && transformOrigin.Y > PaneBorderSize;
@@ -509,9 +523,7 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
 
     if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
     {
-        ManipulationRequested.raise(oppositeSplit,
-                                    translationForParent,
-                                    false);
+        ManipulationRequested.raise(shared_from_this(), oppositeSplit, translationForParent, false);
     }
     // }
     // else
@@ -533,7 +545,7 @@ void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
 
     if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
     {
-        ManipulationRequested.raise(oppositeSplit,
+        ManipulationRequested.raise(shared_from_this(), oppositeSplit,
                                     translationForParent,
                                     false);
     }
@@ -1507,7 +1519,6 @@ void Pane::_Focus()
     {
         lastContent.Focus(FocusState::Programmatic);
     }
-    
 }
 
 // Method Description:
