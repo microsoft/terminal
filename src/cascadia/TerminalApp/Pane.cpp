@@ -89,6 +89,18 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
     _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
 
+    _borderFirst.PointerEntered([this](auto&&, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& args) {
+        auto pointer = args.Pointer();
+        auto pointerPoint = args.GetCurrentPoint(_borderFirst);
+        if (pointerPoint.Properties().IsLeftButtonPressed())
+        {
+            this->_shouldManipulate = false;
+        }
+    });
+    _borderFirst.PointerExited([this](auto&&, auto&&) {
+        this->_shouldManipulate = true;
+    });
+
     _ApplySplitDefinitions();
 
     // Register event handlers on our children to handle their Close events
@@ -393,20 +405,36 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     {
         return;
     }
+    if (!_shouldManipulate)
+        return;
 
     assert(_IsLeaf());
 
     auto container = args.Container();
+    // if (container != _borderFirst && container != _borderSecond)
+    // if (container != _root)
+    // return;
 
     auto delta = args.Delta().Translation;
-    auto transformOrigin = args.Position();
+    auto cumulative = args.Cumulative().Translation;
+    auto transformCurrentPos = args.Position();
+    transformCurrentPos;
+    auto transformOrigin_d1 = Point{ transformCurrentPos.X - delta.X, transformCurrentPos.Y - delta.Y };
+    transformOrigin_d1;
+    auto transformOrigin_d2 = Point{ transformCurrentPos.X + delta.X, transformCurrentPos.Y + delta.Y };
+    transformOrigin_d2;
+    auto transformOrigin = transformCurrentPos;
     const auto o0 = Point{ 0, 0 };
+    auto cumulative_d1 = Point{ cumulative.X - delta.X, cumulative.Y - delta.Y };
+    cumulative_d1;
 
     const auto contentSize = _content.GetRoot().ActualSize();
     const auto transform_contentFromOurRoot = _root.TransformToVisual(_content.GetRoot());
     const auto delta_contentFromOurRoot = transform_contentFromOurRoot.TransformPoint(o0);
     delta_contentFromOurRoot;
     const auto transformInControlSpace = transform_contentFromOurRoot.TransformPoint(transformOrigin);
+    const auto cumulative_d1_InControlSpace = transform_contentFromOurRoot.TransformPoint(cumulative_d1);
+    cumulative_d1_InControlSpace;
 
     if ((transformInControlSpace.X > 0 && transformInControlSpace.X < contentSize.x) &&
         (transformInControlSpace.Y > 0 && transformInControlSpace.Y < contentSize.y))

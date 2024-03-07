@@ -1816,8 +1816,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         IUIElement uielem;
         if (sender.try_as(uielem))
         {
-            uielem.CapturePointer(args.Pointer());
-            return true;
+            const auto captured = uielem.CapturePointer(args.Pointer());
+            return captured;
         }
         return false;
     }

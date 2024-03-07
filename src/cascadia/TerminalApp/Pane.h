@@ -264,6 +264,8 @@ private:
     winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _firstManipulationDeltaRevoker;
     winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _secondManipulationDeltaRevoker;
 
+    bool _shouldManipulate{ true };
+
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
