@@ -86,7 +86,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
     _ApplySplitDefinitions();
 
     // Register event handlers on our children to handle their Close events
-    SetupChildCloseHandlers();
+    _SetupChildCloseHandlers();
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -726,7 +726,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             // just always revoke the old helpers since we are making new ones.
             parent->_firstChild->Closed(parent->_firstClosedToken);
             parent->_secondChild->Closed(parent->_secondClosedToken);
-            parent->SetupChildCloseHandlers();
+            parent->_SetupChildCloseHandlers();
             parent->_root.Children().Clear();
             parent->_borderFirst.Child(nullptr);
             parent->_borderSecond.Child(nullptr);
@@ -1737,7 +1737,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _secondChild = remainingChild->_secondChild;
 
         // Set up new close handlers on the children
-        SetupChildCloseHandlers();
+        _SetupChildCloseHandlers();
 
         // Revoke the old event handlers on our new children
         _firstChild->Closed(remainingChild->_firstClosedToken);
@@ -1961,7 +1961,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::SetupChildCloseHandlers()
+void Pane::_SetupChildCloseHandlers()
 {
     _firstClosedToken = _firstChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
         _CloseChildRoutine(true);
@@ -2555,7 +2555,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _ApplySplitDefinitions();
 
     // Register event handlers on our children to handle their Close events
-    SetupChildCloseHandlers();
+    _SetupChildCloseHandlers();
 
     _lastActive = false;
 

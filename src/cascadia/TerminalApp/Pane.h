@@ -276,7 +276,7 @@ private:
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
-    void SetupChildCloseHandlers();
+    void _SetupChildCloseHandlers();
     bool _HasChild(const std::shared_ptr<Pane> child);
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,

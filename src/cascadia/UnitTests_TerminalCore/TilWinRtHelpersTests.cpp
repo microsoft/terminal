@@ -248,20 +248,12 @@ void TilWinRtHelpersTests::TestTypedEvent()
 
 void TilWinRtHelpersTests::TestPropertyChanged()
 {
-    auto handler = [&](const auto& sender, const auto& args) -> void {
-        // VERIFY_ARE_EQUAL(L"sure", sender);
-        // VERIFY_ARE_EQUAL(42, v);
-        // handledOne = true;
-        sender;
-        args;
+    auto handler = [&](const auto& /*sender*/, const auto& args) -> void {
+        VERIFY_ARE_EQUAL(L"BackgroundBrush", args.PropertyName());
     };
 
     til::property_changed_event PropertyChanged;
     PropertyChanged(handler);
-    PropertyChanged.raise(nullptr, winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
-    /*MyEvent(handler);
-    MyEvent([&](winrt::hstring, int) { handledTwo = true; });
-    MyEvent.raise(L"sure", 42);
-    VERIFY_ARE_EQUAL(true, handledOne);
-    VERIFY_ARE_EQUAL(true, handledTwo);*/
+    winrt::Windows::Foundation::IInspectable mySender{};
+    PropertyChanged.raise(mySender, winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
 }
