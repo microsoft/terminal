@@ -361,7 +361,8 @@ bool Pane::ResizePane(const ResizeDirection& direction, float amount)
 
 void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const SplitState direction, const winrt::Windows::Foundation::Point delta, bool skip)
 {
-    if (skip && direction == SplitState::None && sender == _secondChild)
+    // if (skip && (direction == SplitState::None || direction == _splitState) && sender == _secondChild) // NO
+    if (skip && (direction == SplitState::None && sender == _secondChild) || (direction == _splitState && sender == _firstChild))
     {
         _handleManipulation(delta);
     }
@@ -372,7 +373,7 @@ void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const Split
     }
     else
     {
-        ManipulationRequested.raise(shared_from_this(), direction, delta, false);
+        ManipulationRequested.raise(shared_from_this(), direction, delta, direction != _splitState /*false*/);
     }
 }
 
@@ -485,7 +486,20 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     // }
     else
     {
-        ManipulationRequested.raise(shared_from_this(), _splitState, delta, false);
+        const bool pastRight = transformInControlSpace.X > contentSize.x;
+        const bool pastBottom = transformInControlSpace.Y > contentSize.y;
+        if (pastRight)
+        {
+            ManipulationRequested.raise(shared_from_this(), SplitState::Vertical, delta, true);
+        }
+        if (pastBottom)
+        {
+            ManipulationRequested.raise(shared_from_this(), SplitState::Horizontal, delta, true);
+        }
+        if (!pastRight && !pastBottom)
+        {
+            ManipulationRequested.raise(shared_from_this(), _splitState, delta, false);
+        }
         return;
     }
 
@@ -545,9 +559,7 @@ void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
 
     if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
     {
-        ManipulationRequested.raise(shared_from_this(), oppositeSplit,
-                                    translationForParent,
-                                    false);
+        ManipulationRequested.raise(shared_from_this(), oppositeSplit, translationForParent, false);
     }
 
     // Decide on direction based on delta
