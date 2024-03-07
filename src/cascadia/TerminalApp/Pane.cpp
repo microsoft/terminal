@@ -359,22 +359,92 @@ bool Pane::ResizePane(const ResizeDirection& direction, float amount)
     return false;
 }
 
-void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const SplitState direction, const winrt::Windows::Foundation::Point delta, bool skip)
+void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const winrt::Windows::Foundation::Point delta, Borders side)
 {
-    // if (skip && (direction == SplitState::None || direction == _splitState) && sender == _secondChild) // NO
-    if (skip && (direction == SplitState::None && sender == _secondChild) || (direction == _splitState && sender == _firstChild))
+    if (_splitState == SplitState::None)
     {
-        _handleManipulation(delta);
     }
-    else if (!skip &&
-             (direction == _splitState || direction == SplitState::None))
+    else if (_splitState == SplitState::Vertical)
     {
-        _handleManipulation(delta);
+        if (sender == _firstChild)
+        {
+            if (WI_IsFlagSet(side, Borders::Right))
+            {
+                // We do own this border
+                _handleManipulation(delta);
+            }
+            else // if (WI_IsFlagSet(side, Borders::Left))
+            {
+                // We do not own this border. It's either the wrong direction,
+                // or is the left border on our first child, which is owned by
+                // one of our parents.
+                ManipulationRequested.raise(shared_from_this(), delta, side);
+            }
+        }
+        else if (sender == _secondChild)
+        {
+            if (WI_IsFlagSet(side, Borders::Left))
+            {
+                // We do own this border
+                _handleManipulation(delta);
+            }
+            else // if (WI_IsFlagSet(side, Borders::Right))
+            {
+                // We do not own this border. It's either the wrong direction,
+                // or is the right border on our second child, which is owned by
+                // one of our parents.
+                ManipulationRequested.raise(shared_from_this(), delta, side);
+            }
+        }
     }
-    else
+    else if (_splitState == SplitState::Horizontal)
     {
-        ManipulationRequested.raise(shared_from_this(), direction, delta, direction != _splitState /*false*/);
+        if (sender == _firstChild)
+        {
+            if (WI_IsFlagSet(side, Borders::Bottom))
+            {
+                // We do own this border
+                _handleManipulation(delta);
+            }
+            else // if (WI_IsFlagSet(side, Borders::Top))
+            {
+                // We do not own this border. It's either the wrong direction,
+                // or is the top border on our first child, which is owned by
+                // one of our parents.
+                ManipulationRequested.raise(shared_from_this(), delta, side);
+            }
+        }
+        else if (sender == _secondChild)
+        {
+            if (WI_IsFlagSet(side, Borders::Top))
+            {
+                // We do own this border
+                _handleManipulation(delta);
+            }
+            else // if (WI_IsFlagSet(side, Borders::Bottom))
+            {
+                // We do not own this border. It's either the wrong direction,
+                // or is the bottom border on our second child, which is owned by
+                // one of our parents.
+                ManipulationRequested.raise(shared_from_this(), delta, side);
+            }
+        }
     }
+
+    // // if (skip && (direction == SplitState::None || direction == _splitState) && sender == _secondChild) // NO
+    // if (skip && (direction == SplitState::None && sender == _secondChild) || (direction == _splitState && sender == _firstChild))
+    // {
+    //     _handleManipulation(delta);
+    // }
+    // else if (!skip &&
+    //          (direction == _splitState || direction == SplitState::None))
+    // {
+    //     _handleManipulation(delta);
+    // }
+    // else
+    // {
+    //     ManipulationRequested.raise(shared_from_this(), direction, delta, direction != _splitState /*false*/);
+    // }
 }
 
 void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -416,45 +486,52 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     //     // clicked past the bounds of our control. This is good, we want to handle this case. This means we clicked on our bottom/right.
     // }
 
-    else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0) // Close!
-    {
-        // clicked above/left of the pane. We're still on the border, but we don't want to resize our parent, we want to resize _their_ parent.
-        ManipulationRequested.raise(shared_from_this(), _splitState, delta, true);
-        return;
-    }
+    Borders clicked = Borders::None;
+    clicked |= (transformInControlSpace.X < 0) ? Borders::Left : Borders::None;
+    clicked |= (transformInControlSpace.Y < 0) ? Borders::Top : Borders::None;
+    clicked |= (transformInControlSpace.X > contentSize.x) ? Borders::Right : Borders::None;
+    clicked |= (transformInControlSpace.Y > contentSize.y) ? Borders::Bottom : Borders::None;
+    ManipulationRequested.raise(shared_from_this(), delta, clicked);
 
-    else
-    {
-        const bool pastRight = transformInControlSpace.X > contentSize.x;
-        const bool pastBottom = transformInControlSpace.Y > contentSize.y;
-        if (pastRight)
-        {
-            ManipulationRequested.raise(shared_from_this(), SplitState::Vertical, delta, true);
-        }
-        if (pastBottom)
-        {
-            ManipulationRequested.raise(shared_from_this(), SplitState::Horizontal, delta, true);
-        }
-        if (!pastRight && !pastBottom)
-        {
-            ManipulationRequested.raise(shared_from_this(), _splitState, delta, false);
-        }
-        return;
-    }
+    // else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0) // Close!
+    // {
+    //     // clicked above/left of the pane. We're still on the border, but we don't want to resize our parent, we want to resize _their_ parent.
+    //     ManipulationRequested.raise(shared_from_this(), _splitState, delta, true);
+    //     return;
+    // }
+
+    // else
+    // {
+    //     const bool pastRight = transformInControlSpace.X > contentSize.x;
+    //     const bool pastBottom = transformInControlSpace.Y > contentSize.y;
+    //     if (pastRight)
+    //     {
+    //         ManipulationRequested.raise(shared_from_this(), SplitState::Vertical, delta, true);
+    //     }
+    //     if (pastBottom)
+    //     {
+    //         ManipulationRequested.raise(shared_from_this(), SplitState::Horizontal, delta, true);
+    //     }
+    //     if (!pastRight && !pastBottom)
+    //     {
+    //         ManipulationRequested.raise(shared_from_this(), _splitState, delta, false);
+    //     }
+    //     return;
+    // }
 }
 void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
 {
     const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
     const auto weAreVertical = _splitState == SplitState::Vertical;
-    const auto oppositeSplit = weAreVertical ? SplitState::Horizontal : SplitState::Vertical;
+    // const auto oppositeSplit = weAreVertical ? SplitState::Horizontal : SplitState::Vertical;
     const winrt::Windows::Foundation::Point translationForUs = (weAreVertical) ? Point{ delta.X, 0 } : Point{ 0, delta.Y };
-    const winrt::Windows::Foundation::Point translationForParent = (weAreVertical) ? Point{ 0, delta.Y } : Point{ delta.X, 0 };
+    // const winrt::Windows::Foundation::Point translationForParent = (weAreVertical) ? Point{ 0, delta.Y } : Point{ delta.X, 0 };
 
-    if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
-    {
-        ManipulationRequested.raise(shared_from_this(), oppositeSplit, translationForParent, false);
-    }
+    // if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
+    // {
+    //     ManipulationRequested.raise(shared_from_this(), oppositeSplit, translationForParent, false);
+    // }
 
     // Decide on direction based on delta
     ResizeDirection dir = ResizeDirection::None;
