@@ -94,13 +94,14 @@ steps:
 
 - pwsh: |-
     Import-Module PSGitHub
+    Write-Host "Preparing PR against $(Build.SourceBranchName)"
     $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
     $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
     $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
-    $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}"
+    $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}" -BaseBranch "$(Build.SourceBranchName)"
     If ($null -Eq $existingPr) {
       $Now = Get-Date
-      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Title "Localization Updates - $Now"
+      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base "$(Build.SourceBranchName)" -Title "Localization Updates - $(Build.SourceBranchName) - $Now" -Verbose
     }
   displayName: Publish pull request
   condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())
