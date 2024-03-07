@@ -359,15 +359,16 @@ bool Pane::ResizePane(const ResizeDirection& direction, float amount)
     return false;
 }
 
-void Pane::_handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta)
+void Pane::_handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta, bool skip)
 {
-    if (direction == _splitState || direction == SplitState::None)
+    if (!skip &&
+        (direction == _splitState || direction == SplitState::None))
     {
         _handleManipulation(delta);
     }
     else
     {
-        ManipulationRequested.raise(direction, delta);
+        ManipulationRequested.raise(direction, delta, false);
     }
 }
 
@@ -450,9 +451,27 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
         // clicked on control. bail.
         return;
     }
+    // else if (transformInControlSpace.X > contentSize.x &&
+    //          transformInControlSpace.Y > contentSize.y)
+    // {
+    //     // clicked past the bounds of our control. This is good, we want to handle this case. This means we clicked on our bottom/right.
+    // }
+
+    // else if (transformInControlSpace.X < 0 && transformInControlSpace.Y < 0) // NO
+    // else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0) // NO
+    // else if (transformOrigin.X < 0 && transformOrigin.Y < 0)
+    // else if (transformOrigin.X < PaneBorderSize && transformOrigin.Y < PaneBorderSize) // NO
+    // else if (transformOrigin.X < PaneBorderSize || transformOrigin.Y < PaneBorderSize) // nope
+    else if (transformInControlSpace.X < PaneBorderSize || transformInControlSpace.Y < PaneBorderSize) // nope
+    {
+        //     // clicked above/left of the pane. We're still on the border, but we don't want to resize our parent, we want to resize _their_ parent.
+        ManipulationRequested.raise(_splitState, delta, true);
+        //     TODO! THIS DOESN"T WORK
+        return;
+    }
     else
     {
-        ManipulationRequested.raise(_splitState, delta);
+        ManipulationRequested.raise(_splitState, delta, false);
         return;
     }
 
@@ -470,7 +489,7 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
 
     if (transformOrigin.X <= 0 || transformOrigin.Y <= 0)
     {
-        ManipulationRequested.raise(oppositeSplit, delta);
+        ManipulationRequested.raise(oppositeSplit, delta, false);
         return;
     }
     //const auto pastTopLeft = transformOrigin.X > PaneBorderSize && transformOrigin.Y > PaneBorderSize;
@@ -491,7 +510,8 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
     {
         ManipulationRequested.raise(oppositeSplit,
-                                    translationForParent);
+                                    translationForParent,
+                                    false);
     }
     // }
     // else
@@ -506,26 +526,38 @@ void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
 {
     const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
+    const auto weAreVertical = _splitState == SplitState::Vertical;
+    const auto oppositeSplit = weAreVertical ? SplitState::Horizontal : SplitState::Vertical;
+    const winrt::Windows::Foundation::Point translationForUs = (weAreVertical) ? Point{ delta.X, 0 } : Point{ 0, delta.Y };
+    const winrt::Windows::Foundation::Point translationForParent = (weAreVertical) ? Point{ 0, delta.Y } : Point{ delta.X, 0 };
+
+    if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
+    {
+        ManipulationRequested.raise(oppositeSplit,
+                                    translationForParent,
+                                    false);
+    }
+
     // Decide on direction based on delta
     ResizeDirection dir = ResizeDirection::None;
     if (_splitState == SplitState::Vertical)
     {
-        if (delta.X < 0)
+        if (translationForUs.X < 0)
         {
             dir = ResizeDirection::Left;
         }
-        else if (delta.X > 0)
+        else if (translationForUs.X > 0)
         {
             dir = ResizeDirection::Right;
         }
     }
     else if (_splitState == SplitState::Horizontal)
     {
-        if (delta.Y < 0)
+        if (translationForUs.Y < 0)
         {
             dir = ResizeDirection::Up;
         }
-        else if (delta.Y > 0)
+        else if (translationForUs.Y > 0)
         {
             dir = ResizeDirection::Down;
         }
@@ -539,20 +571,21 @@ void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
         base::ClampedNumeric<float> actualDimension;
         if (dir == ResizeDirection::Left || dir == ResizeDirection::Right)
         {
-            amount = delta.X;
+            amount = translationForUs.X;
             // TODO CARLOS: something is wrong here
             actualDimension = base::ClampedNumeric<float>(_root.ActualWidth());
         }
         else if (dir == ResizeDirection::Up || dir == ResizeDirection::Down)
         {
-            amount = delta.Y;
+            amount = translationForUs.Y;
             // TODO CARLOS: something is wrong here
             actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
         }
         const auto scaledAmount = amount * scaleFactor;
         const auto percentDelta = scaledAmount / actualDimension;
 
-        ResizePane(dir, percentDelta.Abs());
+        _Resize(dir, percentDelta.Abs());
+        // ResizePane(dir, percentDelta.Abs());
     }
 }
 

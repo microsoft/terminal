@@ -223,7 +223,7 @@ public:
     WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
     WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
     WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
-    til::event<winrt::delegate<SplitState, winrt::Windows::Foundation::Point>> ManipulationRequested;
+    til::event<winrt::delegate<SplitState, winrt::Windows::Foundation::Point, bool>> ManipulationRequested;
 
 private:
     struct PanePoint;
@@ -288,7 +288,7 @@ private:
     Borders _GetCommonBorders();
     winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
-    void _handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta);
+    void _handleOrBubbleManipulation(const SplitState direction, const winrt::Windows::Foundation::Point delta, bool skip);
     void _handleManipulation(const winrt::Windows::Foundation::Point delta);
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction, float amount);
 
