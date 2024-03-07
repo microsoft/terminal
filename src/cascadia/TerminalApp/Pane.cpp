@@ -387,39 +387,8 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     }
 
     assert(_IsLeaf());
-    // If we early return out of it, because we're a leaf, then this event will bubble. I think
-    if (_IsLeaf())
-    {
-        //args.Handled(true);
-        // return;
-    }
+
     auto container = args.Container();
-    /*if (container == _firstChild->GetRootElement() || container == _secondChild->GetRootElement())
-    {
-        return;
-    }*/
-
-    //auto sendingBorder = (sender == _borderFirst) ? _borderFirst : (sender == _borderSecond) ? _borderSecond :
-    //                                                                                           nullptr;
-    //if (sendingBorder == nullptr)
-    //{
-    //    return;
-    //}
-    //auto sendersElement = (sender == _borderFirst) ?
-    //                          _firstChild->GetRootElement() :
-    //                      (sender == _borderSecond) ? _secondChild->GetRootElement() :
-    //                                                  nullptr;
-    //if (sendersElement == nullptr)
-    //{
-    //    return;
-    //}
-
-    //const auto borderPosition_transform = sendingBorder.TransformToVisual(sendingBorder.XamlRoot().Content());
-    //const auto childPos_transform = sendingBorder.Child().TransformToVisual(sendingBorder.XamlRoot().Content());
-    //const auto childRelativeToBorder_transform = sendingBorder.Child().TransformToVisual(sendingBorder);
-    //const auto senderToRoot_transform = sendingBorder.TransformToVisual(_root);
-    //const auto sendersElemToRoot_transform = sendersElement.TransformToVisual(_root);
-    //const auto sendersElemToBorder_transform = sendersElement.TransformToVisual(sendingBorder);
 
     auto delta = args.Delta().Translation;
     auto transformOrigin = args.Position();
@@ -427,21 +396,6 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     // ourOrigin;
 
     const auto o0 = Point{ 0, 0 };
-
-    //const auto borderPosition_delta = borderPosition_transform.TransformPoint(o0);
-    //const auto childPos_delta = childPos_transform.TransformPoint(o0);
-    //const auto childRelativeToBorder_delta = childRelativeToBorder_transform.TransformPoint(o0);
-    //const auto senderToRoot_delta = senderToRoot_transform.TransformPoint(o0);
-    //const auto sendersElemToRoot_delta = sendersElemToRoot_transform.TransformPoint(o0);
-    //const auto sendersElemToBorder_delta = sendersElemToBorder_transform.TransformPoint(o0);
-    //borderPosition_delta;
-    //childPos_delta;
-    //childRelativeToBorder_delta;
-    //senderToRoot_delta;
-    //sendersElemToRoot_delta;
-    //sendersElemToBorder_delta;
-    //const auto transformFromBorder = childRelativeToBorder_transform.TransformPoint(transformOrigin);
-    //transformFromBorder;
 
     const auto contentSize = _content.GetRoot().ActualSize();
     // const auto transform_contentFromOurRoot = _content.GetRoot().TransformToVisual(_root);
@@ -462,28 +416,13 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     //     // clicked past the bounds of our control. This is good, we want to handle this case. This means we clicked on our bottom/right.
     // }
 
-    // else if (transformInControlSpace.X < 0 && transformInControlSpace.Y < 0) // NO
-    // else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0) // NO
-    // else if (transformOrigin.X < 0 && transformOrigin.Y < 0)
-    // else if (transformOrigin.X < PaneBorderSize && transformOrigin.Y < PaneBorderSize) // NO
-    // else if (transformOrigin.X < PaneBorderSize || transformOrigin.Y < PaneBorderSize) // nope
-    // else if (transformInControlSpace.X < PaneBorderSize || transformInControlSpace.Y < PaneBorderSize) // Close!
     else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0) // Close!
     {
-        //     // clicked above/left of the pane. We're still on the border, but we don't want to resize our parent, we want to resize _their_ parent.
+        // clicked above/left of the pane. We're still on the border, but we don't want to resize our parent, we want to resize _their_ parent.
         ManipulationRequested.raise(shared_from_this(), _splitState, delta, true);
-        //     TODO! THIS DOESN"T WORK
         return;
     }
-    // else if (transformInControlSpace.X < 0 || transformInControlSpace.Y < 0)
-    // {
-    //     if (transformInControlSpace.X < 0){
-    //                 ManipulationRequested.raise(SplitState::Vertical, delta, false);
 
-    //     }
-
-    //      || transformInControlSpace.Y < 0)
-    // }
     else
     {
         const bool pastRight = transformInControlSpace.X > contentSize.x;
@@ -502,51 +441,6 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
         }
         return;
     }
-
-    const auto weAreVertical = _splitState == SplitState::Vertical;
-    const auto oppositeSplit = weAreVertical ? SplitState::Horizontal : SplitState::Vertical;
-
-    //const auto senderSize = sendingBorder.ActualSize(); // This seems to be the size of the half of the pane where the drag originated
-    //const auto childSize = sendingBorder.Child().ActualSize();
-    //const auto rootSize = _root.ActualSize(); // This is the combined size of both child panes. That makes sense.
-    //const auto sendersElemSize = sendersElement.ActualSize();
-    //senderSize;
-    //childSize;
-    //rootSize;
-    //sendersElemSize;
-
-    if (transformOrigin.X <= 0 || transformOrigin.Y <= 0)
-    {
-        ManipulationRequested.raise(shared_from_this(), oppositeSplit, delta, false);
-        return;
-    }
-    //const auto pastTopLeft = transformOrigin.X > PaneBorderSize && transformOrigin.Y > PaneBorderSize;
-    //const auto beforeRight = transformOrigin.X < (2 * PaneBorderSize + childSize.x);
-    //const auto beforeBottom = transformOrigin.Y < (2 * PaneBorderSize + childSize.y);
-    //if (pastTopLeft || (beforeRight && beforeBottom))
-    //{
-    //    //  return;
-    //}
-
-    const winrt::Windows::Foundation::Point translationForUs = (weAreVertical) ? Point{ delta.X, 0 } : Point{ 0, delta.Y };
-    const winrt::Windows::Foundation::Point translationForParent = (weAreVertical) ? Point{ 0, delta.Y } : Point{ delta.X, 0 };
-
-    // if (transformOrigin.X > ourOrigin.x || transformOrigin.Y > ourOrigin.y)
-    // {
-    _handleManipulation(translationForUs);
-
-    if ((translationForParent.X * translationForParent.X + translationForParent.Y * translationForParent.Y) > 0)
-    {
-        ManipulationRequested.raise(shared_from_this(), oppositeSplit, translationForParent, false);
-    }
-    // }
-    // else
-    // {
-    // ManipulationRequested.raise(_splitState,
-    // delta);
-    // }
-
-    args.Handled(true);
 }
 void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
 {
@@ -596,20 +490,17 @@ void Pane::_handleManipulation(const winrt::Windows::Foundation::Point delta)
         if (dir == ResizeDirection::Left || dir == ResizeDirection::Right)
         {
             amount = translationForUs.X;
-            // TODO CARLOS: something is wrong here
             actualDimension = base::ClampedNumeric<float>(_root.ActualWidth());
         }
         else if (dir == ResizeDirection::Up || dir == ResizeDirection::Down)
         {
             amount = translationForUs.Y;
-            // TODO CARLOS: something is wrong here
             actualDimension = base::ClampedNumeric<float>(_root.ActualHeight());
         }
         const auto scaledAmount = amount * scaleFactor;
         const auto percentDelta = scaledAmount / actualDimension;
 
         _Resize(dir, percentDelta.Abs());
-        // ResizePane(dir, percentDelta.Abs());
     }
 }
 
