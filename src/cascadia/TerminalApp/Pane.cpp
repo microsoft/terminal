@@ -370,8 +370,8 @@ void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const winrt
     // We want to handle this drag in the following cases
     // * In a vertical split: if we're dragging the right of the first pane or the left of the second
     // * In a horizontal split: if we're dragging the bottom of the first pane or the top of the second
-    const auto sideMatched = (_splitState == SplitState::Vertical)   ? (isFirstChild && WI_IsFlagSet(side, Borders::Right)) || WI_IsFlagSet(side, Borders::Left) :
-                             (_splitState == SplitState::Horizontal) ? (isFirstChild && WI_IsFlagSet(side, Borders::Bottom)) || WI_IsFlagSet(side, Borders::Top) :
+    const auto sideMatched = (_splitState == SplitState::Vertical)   ? (isFirstChild && WI_IsFlagSet(side, Borders::Right)) || (!isFirstChild && WI_IsFlagSet(side, Borders::Left)) :
+                             (_splitState == SplitState::Horizontal) ? (isFirstChild && WI_IsFlagSet(side, Borders::Bottom)) || (!isFirstChild && WI_IsFlagSet(side, Borders::Top)) :
                                                                        false;
 
     if (sideMatched)
