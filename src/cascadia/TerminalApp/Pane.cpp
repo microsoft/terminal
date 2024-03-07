@@ -415,6 +415,12 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     // if (container != _root)
     // return;
 
+    // A thought: store our last transformOrigin in an optional on the pane.
+    // If the first transform origin isn't on the border, then store the current one, and bail.
+    // If the next one is now on a border, doesn't matter! bail.
+    //   But also like, find some way to determine if the current manipulation is somehow related to the initial one that started this drag.
+    // On a pointer release, clear it. Or if we get a tapped on this pane, or they start dragging sufficently far away?
+
     auto delta = args.Delta().Translation;
     auto cumulative = args.Cumulative().Translation;
     auto transformCurrentPos = args.Position();
