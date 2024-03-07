@@ -31,7 +31,7 @@ void WindowThread::CreateHost()
                                         _manager,
                                         _peasant);
 
-    _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
+    _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { UpdateSettingsRequested.raise(); });
 
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -111,7 +111,7 @@ bool WindowThread::KeepWarm()
         // state transitions. In this case, the window is actually being woken up.
         if (msg.message == AppHost::WM_REFRIGERATE)
         {
-            _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
+            _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { UpdateSettingsRequested.raise(); });
             // Re-initialize the host here, on the window thread
             _host->Initialize();
             return true;

@@ -86,7 +86,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
     _ApplySplitDefinitions();
 
     // Register event handlers on our children to handle their Close events
-    _SetupChildCloseHandlers();
+    SetupChildCloseHandlers();
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -726,7 +726,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             // just always revoke the old helpers since we are making new ones.
             parent->_firstChild->Closed(parent->_firstClosedToken);
             parent->_secondChild->Closed(parent->_secondClosedToken);
-            parent->_SetupChildCloseHandlers();
+            parent->SetupChildCloseHandlers();
             parent->_root.Children().Clear();
             parent->_borderFirst.Child(nullptr);
             parent->_borderSecond.Child(nullptr);
@@ -1119,7 +1119,7 @@ void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::II
     {
         return;
     }
-    _RestartTerminalRequestedHandlers(shared_from_this());
+    RestartTerminalRequested.raise(shared_from_this());
 }
 
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
@@ -1194,7 +1194,7 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
             }
 
             // raise the event with the bool value corresponding to the taskbar flag
-            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
+            PaneRaiseBell.raise(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
         }
     }
 }
@@ -1215,7 +1215,7 @@ void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectabl
     {
         f = o.FocusState();
     }
-    _GotFocusHandlers(shared_from_this(), f);
+    GotFocus.raise(shared_from_this(), f);
 }
 
 // Event Description:
@@ -1225,7 +1225,7 @@ void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectabl
 void Pane::_ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
                                     const RoutedEventArgs& /* args */)
 {
-    _LostFocusHandlers(shared_from_this());
+    LostFocus.raise(shared_from_this());
 }
 
 // Method Description:
@@ -1237,7 +1237,7 @@ void Pane::_ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectab
 void Pane::Close()
 {
     // Fire our Closed event to tell our parent that we should be removed.
-    _ClosedHandlers(nullptr, nullptr);
+    Closed.raise(nullptr, nullptr);
 }
 
 // Method Description:
@@ -1465,7 +1465,7 @@ void Pane::UpdateVisuals()
 // - <none>
 void Pane::_Focus()
 {
-    _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
+    GotFocus.raise(shared_from_this(), FocusState::Programmatic);
     if (const auto& control = GetLastFocusedTerminalControl())
     {
         control.Focus(FocusState::Programmatic);
@@ -1582,7 +1582,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 
         // Trigger the detached event on each child
         detached->WalkTree([](auto pane) {
-            pane->_DetachedHandlers(pane);
+            pane->Detached.raise(pane);
         });
 
         return detached;
@@ -1717,7 +1717,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             // the control. Because Tab is relying on GotFocus to know who the
             // active pane in the tree is, without this call, _no one_ will be
             // the active pane any longer.
-            _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
+            GotFocus.raise(shared_from_this(), FocusState::Programmatic);
         }
 
         _UpdateBorders();
@@ -1737,7 +1737,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _secondChild = remainingChild->_secondChild;
 
         // Set up new close handlers on the children
-        _SetupChildCloseHandlers();
+        SetupChildCloseHandlers();
 
         // Revoke the old event handlers on our new children
         _firstChild->Closed(remainingChild->_firstClosedToken);
@@ -1828,7 +1828,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
     }
 
     // Notify the discarded child that it was closed by its parent
-    closedChild->_ClosedByParentHandlers();
+    closedChild->ClosedByParent.raise();
 }
 
 void Pane::_CloseChildRoutine(const bool closeFirst)
@@ -1961,7 +1961,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_SetupChildCloseHandlers()
+void Pane::SetupChildCloseHandlers()
 {
     _firstClosedToken = _firstChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
         _CloseChildRoutine(true);
@@ -2555,7 +2555,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _ApplySplitDefinitions();
 
     // Register event handlers on our children to handle their Close events
-    _SetupChildCloseHandlers();
+    SetupChildCloseHandlers();
 
     _lastActive = false;
 

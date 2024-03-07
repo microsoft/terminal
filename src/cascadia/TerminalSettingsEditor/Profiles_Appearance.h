@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Editor::IHostedInWindow WindowRoot() { return _windowRoot; };
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        til::property_changed_event PropertyChanged;
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:

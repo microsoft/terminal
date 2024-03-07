@@ -15,9 +15,9 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(bool, UpdatesAvailable, _PropertyChangedHandlers, false);
-        WINRT_OBSERVABLE_PROPERTY(bool, CheckingForUpdates, _PropertyChangedHandlers, false);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(bool, UpdatesAvailable, PropertyChanged.raise, false);
+        WINRT_OBSERVABLE_PROPERTY(bool, CheckingForUpdates, PropertyChanged.raise, false);
 
     private:
         friend struct AboutDialogT<AboutDialog>; // for Xaml to bind events

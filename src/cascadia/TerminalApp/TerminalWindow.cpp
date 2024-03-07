@@ -226,7 +226,7 @@ namespace winrt::TerminalApp::implementation
         auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"),
                                                            SystemMenuChangeAction::Add,
                                                            SystemMenuItemHandler(this, &TerminalWindow::_OpenSettingsUI));
-        _SystemMenuChangeRequestedHandlers(*this, *args);
+        SystemMenuChangeRequested.raise(*this, *args);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -748,7 +748,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::_RefreshThemeRoutine()
     {
         // Propagate the event to the host layer, so it can update its own UI
-        _RequestedThemeChangedHandlers(*this, Theme());
+        RequestedThemeChanged.raise(*this, Theme());
     }
 
     // This may be called on a background thread, or the main thread, but almost
@@ -767,7 +767,7 @@ namespace winrt::TerminalApp::implementation
             _root->SetSettings(_settings, true);
 
             // Bubble the notification up to the AppHost, now that we've updated our _settings.
-            _SettingsChangedHandlers(*this, args);
+            SettingsChanged.raise(*this, args);
 
             if (FAILED(args.Result()))
             {
@@ -1239,7 +1239,7 @@ namespace winrt::TerminalApp::implementation
             // If we're entering Quake Mode from Focus Mode, then this will do nothing
             // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
             _root->SetFocusMode(true);
-            _IsQuakeWindowChangedHandlers(*this, nullptr);
+            IsQuakeWindowChanged.raise(*this, nullptr);
         }
     }
     void TerminalWindow::WindowId(const uint64_t& id)
@@ -1359,8 +1359,8 @@ namespace winrt::TerminalApp::implementation
             // PropertyChangedEventArgs will throw.
             try
             {
-                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
-                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
+                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
             }
             CATCH_LOG();
         }

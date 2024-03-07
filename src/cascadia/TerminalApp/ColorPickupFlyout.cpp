@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
         auto rectClr{ button.Background().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
-        _ColorSelectedHandlers(rectClr.Color());
+        ColorSelected.raise(rectClr.Color());
         Hide();
     }
 
@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void ColorPickupFlyout::ClearColorButton_Click(const IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
-        _ColorClearedHandlers();
+        ColorCleared.raise();
         Hide();
     }
 
@@ -80,12 +80,12 @@ namespace winrt::TerminalApp::implementation
     void ColorPickupFlyout::CustomColorButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         auto color = customColorPicker().Color();
-        _ColorSelectedHandlers(color);
+        ColorSelected.raise(color);
         Hide();
     }
 
     void ColorPickupFlyout::ColorPicker_ColorChanged(const Microsoft::UI::Xaml::Controls::ColorPicker&, const Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args)
     {
-        _ColorSelectedHandlers(args.NewColor());
+        ColorSelected.raise(args.NewColor());
     }
 }

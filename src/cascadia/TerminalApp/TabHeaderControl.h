@@ -19,14 +19,13 @@ namespace winrt::TerminalApp::implementation
 
         bool InRename();
 
-        WINRT_CALLBACK(TitleChangeRequested, TerminalApp::TitleChangeRequestedArgs);
+        til::event<TerminalApp::TitleChangeRequestedArgs> TitleChangeRequested;
+        til::typed_event<> RenameEnded;
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(double, RenamerMaxWidth, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
-
-        TYPED_EVENT(RenameEnded, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Title, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(double, RenamerMaxWidth, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, PropertyChanged.raise);
 
     private:
         bool _receivedKeyDown{ false };

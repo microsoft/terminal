@@ -13,8 +13,8 @@ namespace winrt::TerminalApp::implementation
         void ClearColorButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void ColorPicker_ColorChanged(const Microsoft::UI::Xaml::Controls::ColorPicker&, const Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args);
 
-        WINRT_CALLBACK(ColorCleared, TerminalApp::ColorClearedArgs);
-        WINRT_CALLBACK(ColorSelected, TerminalApp::ColorSelectedArgs);
+        til::event<TerminalApp::ColorClearedArgs> ColorCleared;
+        til::event<TerminalApp::ColorSelectedArgs> ColorSelected;
     };
 }
 

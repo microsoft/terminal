@@ -17,7 +17,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return _connectionState;
         }
 
-        TYPED_EVENT(StateChanged, ITerminalConnection, winrt::Windows::Foundation::IInspectable);
+        til::typed_event<ITerminalConnection, winrt::Windows::Foundation::IInspectable> StateChanged;
 
     protected:
         template<typename U>
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
             // Dispatch the event outside of lock.
 #pragma warning(suppress : 26491) // We can't avoid static_cast downcast because this is template magic.
-            _StateChangedHandlers(*static_cast<T*>(this), nullptr);
+            StateChanged.raise(*static_cast<T*>(this), nullptr);
             return true;
         }
         CATCH_FAIL_FAST()

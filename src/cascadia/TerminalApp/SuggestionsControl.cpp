@@ -268,7 +268,7 @@ namespace winrt::TerminalApp::implementation
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
 
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
 
         // Make sure to not send the preview if we're collapsed. This can
         // sometimes fire after we've been closed, which can trigger us to
