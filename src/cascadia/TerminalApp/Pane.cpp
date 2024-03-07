@@ -1340,6 +1340,29 @@ TermControl Pane::GetLastFocusedTerminalControl()
     }
 }
 
+IPaneContent Pane::GetLastFocusedContent()
+{
+    if (!_IsLeaf())
+    {
+        if (_lastActive)
+        {
+            auto pane = shared_from_this();
+            while (const auto p = pane->_parentChildPath.lock())
+            {
+                if (p->_IsLeaf())
+                {
+                    return p->_content;
+                }
+                pane = p;
+            }
+            // We didn't find our child somehow, they might have closed under us.
+        }
+        return _firstChild->GetLastFocusedContent();
+    }
+
+    return _content;
+}
+
 // Method Description:
 // - Gets the TermControl of this pane. If this Pane is not a leaf this will
 //   return the nullptr;
@@ -1480,7 +1503,11 @@ void Pane::UpdateVisuals()
 void Pane::_Focus()
 {
     _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
-    _content.Focus(FocusState::Programmatic);
+    if (const auto& lastContent{ GetLastFocusedContent() })
+    {
+        lastContent.Focus(FocusState::Programmatic);
+    }
+    
 }
 
 // Method Description:
@@ -2176,7 +2203,7 @@ void Pane::_SetupEntranceAnimation()
         auto child = isFirstChild ? _firstChild : _secondChild;
         auto childGrid = child->_root;
         // If we are splitting a parent pane this may be null
-        auto control = child->_content.GetRoot();
+        auto control = child->_content ? child->_content.GetRoot() : nullptr;
         // Build up our animation:
         // * it'll take as long as our duration (200ms)
         // * it'll change the value of our property from 0 to secondSize

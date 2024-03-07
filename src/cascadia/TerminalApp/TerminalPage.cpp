@@ -4598,7 +4598,10 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& pane{ tab->GetActivePane() })
             {
-                terminalBrush = pane->GetContent().BackgroundBrush();
+                if (const auto& lastContent{ pane->GetLastFocusedContent() })
+                {
+                    terminalBrush = lastContent.BackgroundBrush();
+                }
             }
         }
 
