@@ -16,24 +16,11 @@ using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
-    // TODO:microsoft/terminal#3838:
-    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
-    // an updated TAEF that will let us install framework packages when the test
-    // package is deployed. Until then, these tests won't deploy in CI.
-
     class TerminalSettingsTests
     {
-        // Use a custom AppxManifest to ensure that we can activate winrt types
-        // from our test. This property will tell taef to manually use this as
-        // the AppxManifest for this test class.
-        // This does not yet work for anything XAML-y. See TabTests.cpp for more
-        // details on that.
-        BEGIN_TEST_CLASS(TerminalSettingsTests)
-            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
-        END_TEST_CLASS()
+        TEST_CLASS(TerminalSettingsTests);
 
         TEST_METHOD(TryCreateWinRTType);
         TEST_METHOD(TestTerminalArgsForBinding);
@@ -153,7 +140,7 @@ namespace SettingsModelLocalTests
                 g.Data4[7]);
         }
 
-        const auto tmpdir = std::filesystem::temp_directory_path();
+        const auto tmpdir = std::filesystem::canonical(std::filesystem::temp_directory_path());
         const auto dir1 = tmpdir / guid;
         const auto dir2 = tmpdir / (guid + L" two");
         const auto file1 = dir1 / L"file 1.exe";

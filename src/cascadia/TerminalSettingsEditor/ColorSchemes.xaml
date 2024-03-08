@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -22,7 +23,7 @@
                           x:DataType="local:ColorTableEntry">
                 <Border Width="12"
                         Height="12"
-                        Background="{x:Bind local:Converters.ColorToBrush(Color)}"
+                        Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
                         CornerRadius="2" />
             </DataTemplate>
 
@@ -89,7 +90,7 @@
                               Height="48"
                               Padding="12,11,8,8"
                               VerticalAlignment="Center"
-                              Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                              Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
                               ColumnSpacing="2"
                               CornerRadius="4"
                               RowSpacing="2">
@@ -195,7 +196,7 @@
                                        VerticalAlignment="Center"
                                        AutomationProperties.AccessibilityView="Raw"
                                        FontFamily="Cascadia Code"
-                                       Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                       Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
                                        Text="{x:Bind Name, Mode=OneWay}" />
                         </Grid>
                         <Border Grid.Column="1"

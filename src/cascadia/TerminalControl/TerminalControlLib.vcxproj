@@ -122,7 +122,6 @@
     <Midl Include="ControlInteractivity.idl" />
     <Midl Include="ScrollBarVisualStateManager.idl" />
     <Midl Include="ICoreState.idl" />
-    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="KeyChord.idl" />
     <Midl Include="EventArgs.idl" />
     <Midl Include="IKeyBindings.idl" />
@@ -177,6 +176,10 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+      <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->

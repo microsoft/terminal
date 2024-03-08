@@ -315,7 +315,7 @@ namespace winrt::TerminalApp::implementation
         {
             Icon(_lastIconPath);
             bool isMonochrome = iconStyle == IconStyle::Monochrome;
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
+            TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
         }
     }
 
@@ -338,7 +338,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
+                TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
             }
             _iconHidden = hide;
         }

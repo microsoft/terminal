@@ -25,7 +25,7 @@ Author(s):
 #include "SettingsTypes.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class CommandTests;
@@ -87,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
                                                           Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::CommandTests;
+        friend class SettingsModelUnitTests::DeserializationTests;
+        friend class SettingsModelUnitTests::CommandTests;
     };
 }
 
