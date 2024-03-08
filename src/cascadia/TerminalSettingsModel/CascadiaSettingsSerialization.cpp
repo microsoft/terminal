@@ -21,9 +21,6 @@
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
 
-#include "userDefaults.h"
-#include "enableColorSelection.h"
-
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
@@ -347,7 +344,7 @@ void SettingsLoader::FinalizeLayering()
     // actions, this is the time to do it.
     if (userSettings.globals->EnableColorSelection())
     {
-        const auto json = _parseJson(EnableColorSelectionSettingsJson);
+        const auto json = _parseJson(_getEnableColorSelectionJsonHelper());
         const auto globals = GlobalAppSettings::FromJson(json.root);
         userSettings.globals->AddLeastImportantParent(globals);
     }
@@ -590,6 +587,15 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
     }
 
     return Json::Value::nullSingleton();
+}
+
+std::string_view SettingsLoader::_getEnableColorSelectionJsonHelper()
+{
+    const auto rsrc = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_ENABLE_COLOR_SELECTION), RT_RCDATA);
+    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto ptr = LockResource(loaded);
+    return { reinterpret_cast<const char*>(ptr), sz };
 }
 
 // We treat userSettings.profiles as an append-only array and will
@@ -970,7 +976,7 @@ try
 
     // Only uses default settings when firstTimeSetup is true and releaseSettingExists is false
     // Otherwise use existing settingsString
-    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? UserSettingsJson : settingsString;
+    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? _getUserDefaultsJsonHelper() : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
     SettingsLoader loader{ settingsStringView, _getDefaultsJsonHelper() };
@@ -1398,6 +1404,15 @@ Json::Value CascadiaSettings::ToJson() const
 std::string_view CascadiaSettings::_getDefaultsJsonHelper()
 {
     const auto rsrc = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_DEFAULTS), RT_RCDATA);
+    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto ptr = LockResource(loaded);
+    return { reinterpret_cast<const char*>(ptr), sz };
+}
+
+std::string_view CascadiaSettings::_getUserDefaultsJsonHelper()
+{
+    const auto rsrc = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_USER_DEFAULTS), RT_RCDATA);
     const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), rsrc);
     const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), rsrc);
     const auto ptr = LockResource(loaded);

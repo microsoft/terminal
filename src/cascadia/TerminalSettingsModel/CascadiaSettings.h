@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
+        static std::string_view _getEnableColorSelectionJsonHelper();
         std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
@@ -154,6 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static const std::filesystem::path& _releaseSettingsPath();
         static winrt::hstring _calculateHash(std::string_view settings, const FILETIME& lastWriteTime);
         static std::string_view _getDefaultsJsonHelper();
+        static std::string_view _getUserDefaultsJsonHelper();
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
         Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
