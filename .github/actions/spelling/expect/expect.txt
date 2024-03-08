@@ -73,6 +73,7 @@ aumid
 Authenticode
 AUTOBUDDY
 AUTOCHECKBOX
+autocrlf
 autohide
 AUTOHSCROLL
 automagically
