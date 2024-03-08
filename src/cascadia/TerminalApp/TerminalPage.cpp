@@ -2958,6 +2958,13 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
     {
+        // If the user doesn't want to see this message again,
+        // don't even bother trying to search for the command
+        if (_IsMessageDismissed(InfoBarMessage::CommandNotFound))
+        {
+            return;
+        }
+#if 0
         static constexpr CLSID CLSID_PackageManager = { 0xC53A4F16, 0x787E, 0x42A4, 0xB3, 0x04, 0x29, 0xEF, 0xFB, 0x4B, 0xF5, 0x97 }; //C53A4F16-787E-42A4-B304-29EFFB4BF597
         static constexpr CLSID CLSID_FindPackagesOptions = { 0x572DED96, 0x9C60, 0x4526, { 0x8F, 0x92, 0xEE, 0x7D, 0x91, 0xD3, 0x8C, 0x1A } }; //572DED96-9C60-4526-8F92-EE7D91D38C1A
         static constexpr CLSID CLSID_PackageMatchFilter = { 0xD02C9DAF, 0x99DC, 0x429C, { 0xB5, 0x03, 0x4E, 0x50, 0x4E, 0x4A, 0xB0, 0x00 } }; //D02C9DAF-99DC-429C-B503-4E504E4AB000
@@ -3102,6 +3109,24 @@ namespace winrt::TerminalApp::implementation
 
             ShowCommandNotFoundInfoBar(suggestions, footer);
         }
+#elif defined(DEBUG) || defined(_DEBUG) || defined(DBG)
+        const bool tooManySuggestions = false;
+        const std::wstring searchOption = L"command";
+        const std::wstring missingCmd = args.MissingCommand().data();
+        std::vector<std::wstring> pkgList = { L"pkg1", L"pkg2", L"pkg3" };
+        std::vector<std::wstring> suggestions;
+        suggestions.reserve(pkgList.size());
+        for (auto pkg : pkgList)
+        {
+            suggestions.emplace_back(fmt::format(L"winget install --id {}", pkg));
+        }
+
+        std::wstring footer = tooManySuggestions ?
+                                  fmt::format(L"winget search --{} {}", searchOption, missingCmd) :
+                                  L"";
+
+        ShowCommandNotFoundInfoBar(suggestions, footer);
+#endif
     }
 
     winrt::fire_and_forget TerminalPage::ShowCommandNotFoundInfoBar(const std::vector<std::wstring> suggestions, std::wstring footerCmd)
@@ -4725,6 +4750,15 @@ namespace winrt::TerminalApp::implementation
     {
         _DismissMessage(InfoBarMessage::KeyboardServiceWarning);
         if (const auto infoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+    }
+
+    void TerminalPage::_CommandNotFoundDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
+    {
+        _DismissMessage(InfoBarMessage::CommandNotFound);
+        if (const auto infoBar = FindName(L"CommandNotFoundInfoBar").try_as<MUX::Controls::InfoBar>())
         {
             infoBar.IsOpen(false);
         }
