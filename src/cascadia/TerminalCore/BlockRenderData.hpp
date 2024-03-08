@@ -46,7 +46,6 @@ public:
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
 
-    // These methods are defined in TerminalRenderData.cpp
     til::point GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;

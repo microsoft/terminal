@@ -34,9 +34,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct ControlInteractivity : ControlInteractivityT<ControlInteractivity>
     {
     public:
+        // Projected
         ControlInteractivity(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection);
+
+        // Not projected
+        ControlInteractivity(IControlSettings settings,
+                             Control::IControlAppearance unfocusedAppearance,
+                             winrt::com_ptr<ControlCore> core);
 
         void GotFocus();
         void LostFocus();

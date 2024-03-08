@@ -88,12 +88,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              ControlData& data) :
         ControlCore()
     {
+        // TODO! In this case, do we need to set a flag to make sure we don't
+        // end up clearing out the Terminal when we get initialized? Probably!
         _construct(settings, unfocusedAppearance, data);
     }
 
     ControlCore::ControlCore(Control::IControlSettings settings,
-                Control::IControlAppearance unfocusedAppearance,
-                TerminalConnection::ITerminalConnection inboundConnection) :
+                             Control::IControlAppearance unfocusedAppearance,
+                             TerminalConnection::ITerminalConnection inboundConnection) :
         ControlCore()
     {
         ControlData data{

@@ -145,4 +145,17 @@ namespace Microsoft.Terminal.Control
 
         void Detach();
     }
+
+
+    [default_interface] runtimeclass Notebook
+    {
+        Notebook(IControlSettings settings,
+                    IControlAppearance unfocusedAppearance,
+                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
+
+        Windows.Foundation.Collections.IVector<TermControl> Controls { get; };
+        TermControl ActiveControl{ get; };
+
+    }
 }

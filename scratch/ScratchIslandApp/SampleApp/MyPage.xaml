@@ -46,12 +46,13 @@
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
 
-            <Grid x:Name="OutOfProcContent"
-                  Grid.Column="1"
-                  Padding="16"
-                  HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="#0000ff" />
+            <StackPanel x:Name="OutOfProcContent"
+                        Grid.Column="1"
+                        Padding="16"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Background="#0000ff"
+                        Orientation="Vertical" />
 
 
 

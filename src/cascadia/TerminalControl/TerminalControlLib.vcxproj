@@ -71,6 +71,9 @@
     <ClInclude Include="XamlUiaTextRange.h" />
     <ClInclude Include="HwndTerminal.hpp" />
     <ClInclude Include="HwndTerminalAutomationPeer.hpp" />
+    <ClInclude Include="Notebook.h">
+      <DependentUpon>TermControl.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -115,6 +118,9 @@
     <ClCompile Include="XamlUiaTextRange.cpp" />
     <ClCompile Include="HwndTerminal.cpp" />
     <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
+    <ClCompile Include="Notebook.cpp">
+      <DependentUpon>TermControl.idl</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>

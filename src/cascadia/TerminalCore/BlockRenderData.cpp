@@ -150,3 +150,26 @@ const bool BlockRenderData::IsUiaDataInitialized() const noexcept
 {
     return _terminal.IsUiaDataInitialized();
 }
+
+//////////////
+
+const bool BlockRenderData::IsSelectionActive() const noexcept
+{
+    return _terminal.IsSelectionActive();
+}
+const bool BlockRenderData::IsBlockSelection() const noexcept
+{
+    return _terminal.IsBlockSelection();
+}
+void BlockRenderData::ClearSelection()
+{
+    return _terminal.ClearSelection();
+}
+const til::point BlockRenderData::GetSelectionAnchor() const noexcept
+{
+    return _terminal.GetSelectionAnchor();
+}
+const til::point BlockRenderData::GetSelectionEnd() const noexcept
+{
+    return _terminal.GetSelectionEnd();
+}

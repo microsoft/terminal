@@ -19,6 +19,10 @@ namespace winrt::SampleApp::implementation
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
+
+        void _createOutOfProcContent();
+
+        winrt::Microsoft::Terminal::Control::Notebook _notebook{ nullptr };
     };
 }
 
