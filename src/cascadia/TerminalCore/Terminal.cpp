@@ -39,7 +39,7 @@ Terminal::Terminal(TestDummyMarker) :
 #endif
 }
 
-void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
+void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer* renderer)
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
@@ -68,7 +68,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderer: the Renderer that the terminal can use for paint invalidation.
 void Terminal::CreateFromSettings(ICoreSettings settings,
-                                  Renderer& renderer)
+                                  Renderer* renderer)
 {
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                                   Utils::ClampToShortMax(settings.InitialRows(), 1) };

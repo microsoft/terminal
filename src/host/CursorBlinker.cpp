@@ -152,7 +152,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
     }
 
 DoBlinkingRenditionAndScroll:
-    gci.GetRenderSettings().ToggleBlinkRendition(buffer.GetRenderer());
+    gci.GetRenderSettings().ToggleBlinkRendition(*buffer.GetRenderer());
 
 DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);

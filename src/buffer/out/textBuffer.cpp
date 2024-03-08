@@ -48,7 +48,7 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
-                       Microsoft::Console::Render::Renderer& renderer) :
+                       Microsoft::Console::Render::Renderer* renderer) :
     _renderer{ renderer },
     _currentAttributes{ defaultAttributes },
     // This way every TextBuffer will start with a ""unique"" _lastMutationId
@@ -860,7 +860,7 @@ void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     if (_isActiveBuffer)
     {
-        _renderer.TriggerFlush(true);
+        _renderer->TriggerFlush(true);
     }
 
     // Prune hyperlinks to delete obsolete references
@@ -1235,7 +1235,7 @@ bool TextBuffer::IsActiveBuffer() const noexcept
     return _isActiveBuffer;
 }
 
-Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
+Microsoft::Console::Render::Renderer* TextBuffer::GetRenderer() noexcept
 {
     return _renderer;
 }
@@ -1244,7 +1244,7 @@ void TextBuffer::TriggerRedraw(const Viewport& viewport)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerRedraw(viewport);
+        _renderer->TriggerRedraw(viewport);
     }
 }
 
@@ -1252,7 +1252,7 @@ void TextBuffer::TriggerRedrawCursor(const til::point position)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerRedrawCursor(&position);
+        _renderer->TriggerRedrawCursor(&position);
     }
 }
 
@@ -1260,7 +1260,7 @@ void TextBuffer::TriggerRedrawAll()
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerRedrawAll();
+        _renderer->TriggerRedrawAll();
     }
 }
 
@@ -1268,7 +1268,7 @@ void TextBuffer::TriggerScroll()
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerScroll();
+        _renderer->TriggerScroll();
     }
 }
 
@@ -1276,7 +1276,7 @@ void TextBuffer::TriggerScroll(const til::point delta)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerScroll(&delta);
+        _renderer->TriggerScroll(&delta);
     }
 }
 
@@ -1284,7 +1284,7 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerNewTextNotification(newText);
+        _renderer->TriggerNewTextNotification(newText);
     }
 }
 
