@@ -23,9 +23,9 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 // RCDATA
 //
-IDR_DEFAULTS RCDATA "defaults.json"
-IDR_USER_DEFAULTS RCDATA "userDefaults.json"
-IDR_ENABLE_COLOR_SELECTION RCDATA "enableColorSelection.json"
+IDR_DEFAULTS RCDATA "GeneratedFiles\defaults.json"
+IDR_USER_DEFAULTS RCDATA "GeneratedFiles\userDefaults.json"
+IDR_ENABLE_COLOR_SELECTION RCDATA "GeneratedFiles\enableColorSelection.json"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
