@@ -30,7 +30,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlAppearance _unfocusedAppearance{ nullptr };
         std::unique_ptr<::Microsoft::Terminal::Core::BlockRenderData> _renderData{ nullptr };
 
+        Microsoft::Terminal::Control::TermControl _active{ nullptr };
+
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> _controls{ winrt::single_threaded_vector<Microsoft::Terminal::Control::TermControl>() };
+
+        void _fork();
     };
 }
 

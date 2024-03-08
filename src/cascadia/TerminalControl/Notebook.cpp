@@ -38,24 +38,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         _renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal);
 
-        ControlData data{
-            .terminal = _terminal,
-            .renderData = _renderData.get(),
-            .connection = _connection,
-        };
+        _fork();
+        _fork();
+        _fork();
+        // ControlData data{
+        //     .terminal = _terminal,
+        //     .renderData = _renderData.get(),
+        //     .connection = _connection,
+        // };
 
-        auto coreOne = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
-        auto coreTwo = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
+        // auto coreOne = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
+        // auto coreTwo = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
 
-        auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(settings, _unfocusedAppearance, coreOne);
-        auto interactivityTwo = winrt::make_self<implementation::ControlInteractivity>(settings, _unfocusedAppearance, coreTwo);
+        // auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(settings, _unfocusedAppearance, coreOne);
+        // auto interactivityTwo = winrt::make_self<implementation::ControlInteractivity>(settings, _unfocusedAppearance, coreTwo);
 
-        auto controlOne = winrt::make<implementation::TermControl>(*interactivityOne);
-        auto controlTwo = winrt::make<implementation::TermControl>(*interactivityTwo);
-        _controls.Append(controlOne);
-        _controls.Append(controlTwo);
+        // auto controlOne = winrt::make<implementation::TermControl>(*interactivityOne);
+        // auto controlTwo = winrt::make<implementation::TermControl>(*interactivityTwo);
+        // _controls.Append(controlOne);
+        // _controls.Append(controlTwo);
 
-        controlOne.Connection(nullptr);
+        // // controlOne.Connection(nullptr);
+        // _active = _controls.GetAt(_controls.Size() - 1);
     }
 
     Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Notebook::Controls() const
@@ -64,7 +68,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     Control::TermControl Notebook::ActiveControl() const
     {
-        return _controls.GetAt(1);
+        return _active;
+    }
+
+    void Notebook::_fork()
+    {
+        if (_active)
+        {
+            _active.Connection(nullptr);
+        }
+
+        ControlData data{
+            .terminal = _terminal,
+            .renderData = _renderData.get(),
+            .connection = _connection,
+        };
+
+        auto coreOne = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
+        auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(_settings, _unfocusedAppearance, coreOne);
+        auto controlOne = winrt::make<implementation::TermControl>(*interactivityOne);
+        _controls.Append(controlOne);
+
+        _active = controlOne;
     }
 
 }

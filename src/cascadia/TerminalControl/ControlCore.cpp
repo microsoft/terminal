@@ -478,7 +478,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _connection.WriteInput(wstr);
+            if (_connection)
+                _connection.WriteInput(wstr);
         }
     }
 
