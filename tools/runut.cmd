@@ -13,7 +13,7 @@ if "%PLATFORM%" == "Win32" (
     set _TestHostAppPath=%OPENCON%\bin\%_LAST_BUILD_CONF%\TestHostApp
 )
 
-call %TAEF% ^
+%TAEF% ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\Conhost.Unit.Tests.dll ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\TextBuffer.Unit.Tests.dll ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_TerminalCore\Terminal.Core.Unit.Tests.dll ^
@@ -26,6 +26,16 @@ call %TAEF% ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_Remoting\Remoting.Unit.Tests.dll ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_Control\Control.Unit.Tests.dll ^
     %_TestHostAppPath%\TerminalApp.LocalTests.dll ^
-    %_TestHostAppPath%\SettingsModel.LocalTests.dll ^
     %*
 
+set _EarlyTestFail=%ERRORLEVEL%
+
+%OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_SettingsModel\te.exe ^
+    %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_SettingsModel\SettingsModel.Unit.Tests.dll ^
+    %*
+
+if %_EarlyTestFail% NEQ 0 (
+    exit /b %_EarlyTestFail%
+)
+
+exit /b %ERRORLEVEL%

@@ -169,7 +169,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'localSettingsModel', 'unitRemoting', 'unitControl')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'unitSettingsModel', 'unitRemoting', 'unitControl')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -232,13 +232,19 @@ function Invoke-OpenConsoleTests()
     # run selected tests
     foreach ($t in $TestsToRun)
     {
+        $currentTaefExe = $TaefExePath
+        if ($t.isolatedTaef -eq "true")
+        {
+            $currentTaefExe = (Join-Path (Split-Path (Join-Path $BinDir $t.binary)) "te.exe")
+        }
+
         if ($t.type -eq "unit")
         {
-            & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
+            & $currentTaefExe "$BinDir\$($t.binary)" $TaefArgs
         }
         elseif ($t.type -eq "ft")
         {
-            Invoke-TaefInNewWindow -OpenConsolePath $OpenConsolePath -TaefPath $TaefExePath -TestDll "$BinDir\$($t.binary)" -TaefArgs $TaefArgs
+            Invoke-TaefInNewWindow -OpenConsolePath $OpenConsolePath -TaefPath $currentTaefExe -TestDll "$BinDir\$($t.binary)" -TaefArgs $TaefArgs
         }
         else
         {

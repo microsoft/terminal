@@ -28,7 +28,6 @@ Modifications:
 
 #pragma once
 
-#include "TermControl.h"
 #include "ControlInteractivity.h"
 #include "TermControlAutomationPeer.g.h"
 #include "../types/TermControlUiaProvider.hpp"
@@ -37,6 +36,8 @@ Modifications:
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    struct TermControl;
+
     struct TermControlAutomationPeer :
         public TermControlAutomationPeerT<TermControlAutomationPeer>,
         ::Microsoft::Console::Types::IUiaEventDispatcher
