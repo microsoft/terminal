@@ -8,6 +8,7 @@
 #include <fmt/chrono.h>
 #include <shlobj.h>
 #include <til/latch.h>
+#include "resource.h"
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
@@ -17,9 +18,6 @@
 #include "SshHostGenerator.h"
 #endif
 
-// The following files are generated at build time into the "Generated Files" directory.
-// defaults.h is a file containing the default json settings in a std::string_view.
-#include "defaults.h"
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
 
@@ -975,7 +973,7 @@ try
     const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? UserSettingsJson : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
-    SettingsLoader loader{ settingsStringView, DefaultJson };
+    SettingsLoader loader{ settingsStringView, _getDefaultsJsonHelper() };
 
     // Generate dynamic profiles and add them as parents of user profiles.
     // That way the user profiles will get appropriate defaults from the generators (like icons and such).
@@ -1127,7 +1125,7 @@ void CascadiaSettings::_researchOnLoad()
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
 Model::CascadiaSettings CascadiaSettings::LoadDefaults()
 {
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultJson);
+    return *winrt::make_self<CascadiaSettings>(std::string_view{}, _getDefaultsJsonHelper());
 }
 
 CascadiaSettings::CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON) :
@@ -1395,6 +1393,15 @@ Json::Value CascadiaSettings::ToJson() const
     json[JsonKey(ThemesKey)] = themes;
 
     return json;
+}
+
+std::string_view CascadiaSettings::_getDefaultsJsonHelper()
+{
+    const auto rsrc = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_DEFAULTS), RT_RCDATA);
+    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto ptr = LockResource(loaded);
+    return { reinterpret_cast<const char*>(ptr), sz };
 }
 
 // Method Description:

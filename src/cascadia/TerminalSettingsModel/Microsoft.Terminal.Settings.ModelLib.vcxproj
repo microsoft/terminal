@@ -20,6 +20,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="ActionArgsMagic.h" />
     <ClInclude Include="NewTabMenuEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
@@ -237,6 +238,9 @@
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Microsoft.Terminal.Settings.Model.rc" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
