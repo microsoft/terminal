@@ -54,6 +54,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto controlTwo = winrt::make<implementation::TermControl>(*interactivityTwo);
         _controls.Append(controlOne);
         _controls.Append(controlTwo);
+
+        controlOne.Connection(nullptr);
     }
 
     Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Notebook::Controls() const
@@ -62,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     Control::TermControl Notebook::ActiveControl() const
     {
-        return _controls.GetAt(0);
+        return _controls.GetAt(1);
     }
 
 }

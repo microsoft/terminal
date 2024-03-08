@@ -383,7 +383,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
             const auto height = vp.Height();
-            _connection.Resize(height, width);
+            if (_connection)
+                _connection.Resize(height, width);
 
             if (_owningHwnd != 0)
             {
@@ -430,7 +431,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Start the connection outside of lock, because it could
         // start writing output immediately.
-        _connection.Start();
+        if (_connection)
+            _connection.Start();
 
         return true;
     }
@@ -498,7 +500,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const wchar_t CtrlD = 0x4;
         const wchar_t Enter = '\r';
 
-        if (_connection.State() >= winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Closed)
+        if (_connection && _connection.State() >= winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Closed)
         {
             if (ch == CtrlD)
             {
@@ -2317,7 +2319,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // _sendInputToConnection() asserts that we aren't in focus mode,
             // but window focus events are always fine to send.
-            _connection.WriteInput(*out);
+            if (_connection)
+                _connection.WriteInput(*out);
         }
     }
 
