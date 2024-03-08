@@ -13,14 +13,11 @@
 
 #include "BuiltinGlyphs.h"
 #include "dwrite.h"
+#include "wic.h"
 #include "../../types/inc/ColorFix.hpp"
 
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
 #include "colorbrewer.h"
-#endif
-
-#if ATLAS_DEBUG_DUMP_RENDER_TARGET
-#include "wic.h"
 #endif
 
 TIL_FAST_MATH_BEGIN
@@ -345,6 +342,8 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
     _customPixelShader.reset();
     _customShaderConstantBuffer.reset();
     _customShaderSamplerState.reset();
+    _customShaderTexture.reset();
+    _customShaderTextureView.reset();
     _requiresContinuousRedraw = false;
 
     if (!p.s->misc->customPixelShaderPath.empty())
@@ -434,6 +433,23 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             if (p.warningCallback)
             {
                 p.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
+            }
+        }
+
+        if (!p.s->misc->customPixelShaderImagePath.empty())
+        {
+            try
+            {
+                WIC::LoadTextureFromFile(p.device.get(), p.s->misc->customPixelShaderImagePath.c_str(), _customShaderTexture.addressof(), _customShaderTextureView.addressof());
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                _customPixelShader.reset();
+                if (p.warningCallback)
+                {
+                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
+                }
             }
         }
     }
@@ -899,7 +915,7 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
     auto newSize = newCapacity * sizeof(QuadInstance);
     // Round up to multiples of 64kB to avoid reallocating too often.
     // 64kB is the minimum alignment for committed resources in D3D12.
-    newSize = (newSize + 0xffff) & ~size_t{ 0xffff };
+    newSize = alignForward<size_t>(newSize, 64 * 1024);
     newCapacity = newSize / sizeof(QuadInstance);
 
     _instanceBuffer.reset();
@@ -2121,7 +2137,11 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
         // PS: Pixel Shader
         p.deviceContext->PSSetShader(_customPixelShader.get(), nullptr, 0);
         p.deviceContext->PSSetConstantBuffers(0, 1, _customShaderConstantBuffer.addressof());
-        p.deviceContext->PSSetShaderResources(0, 1, _customOffscreenTextureView.addressof());
+        ID3D11ShaderResourceView* const resourceViews[]{
+            _customOffscreenTextureView.get(), // The terminal contents
+            _customShaderTextureView.get(), // the experimental.pixelShaderImagePath, if there is one
+        };
+        p.deviceContext->PSSetShaderResources(0, resourceViews[1] ? 2 : 1, &resourceViews[0]);
         p.deviceContext->PSSetSamplers(0, 1, _customShaderSamplerState.addressof());
 
         // OM: Output Merger
