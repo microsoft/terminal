@@ -77,19 +77,44 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    ControlCore::ControlCore(Control::IControlSettings settings,
-                             Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
+    ControlCore::ControlCore() :
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
+    }
+
+    ControlCore::ControlCore(Control::IControlSettings settings,
+                             Control::IControlAppearance unfocusedAppearance,
+                             ControlData& data) :
+        ControlCore()
+    {
+        _construct(settings, unfocusedAppearance, data);
+    }
+
+    ControlCore::ControlCore(Control::IControlSettings settings,
+                Control::IControlAppearance unfocusedAppearance,
+                TerminalConnection::ITerminalConnection inboundConnection) :
+        ControlCore()
+    {
+        ControlData data{
+            .terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>(),
+            .connection = inboundConnection
+        };
+        data.renderData = data.terminal.get();
+        _construct(settings, unfocusedAppearance, data);
+    }
+
+    void ControlCore::_construct(Control::IControlSettings settings,
+                                 Control::IControlAppearance unfocusedAppearance,
+                                 ControlData& data)
+    {
         _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
-        _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
+        _terminal = data.terminal; // std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         const auto lock = _terminal->LockForWriting();
 
         _setupDispatcherAndCallbacks();
 
-        Connection(connection);
+        Connection(data.connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
             _sendInputToConnection(wstr);
@@ -140,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Now create the renderer and initialize the render thread.
             const auto& renderSettings = _terminal->GetRenderSettings();
-            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
+            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, data.renderData, nullptr, 0, std::move(renderThread));
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
             _renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });

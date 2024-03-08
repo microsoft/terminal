@@ -65,12 +65,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     };
 
+    struct ControlData
+    {
+        std::shared_ptr<::Microsoft::Terminal::Core::Terminal> terminal;
+        ::Microsoft::Console::Render::IRenderData* renderData;
+        TerminalConnection::ITerminalConnection connection;
+    };
+
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
+        // Projected
         ControlCore(Control::IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
                     TerminalConnection::ITerminalConnection connection);
+        // not projected
+        ControlCore(Control::IControlSettings settings,
+                    Control::IControlAppearance unfocusedAppearance,
+                    ControlData& data);
+
         ~ControlCore();
 
         bool Initialize(const float actualWidth,
@@ -345,6 +358,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point _contextMenuBufferPosition{ 0, 0 };
 
         Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ nullptr };
+
+        // not projected
+        ControlCore();
+        void _construct(Control::IControlSettings settings,
+                        Control::IControlAppearance unfocusedAppearance,
+                        ControlData& data);
 
         void _setupDispatcherAndCallbacks();
 
