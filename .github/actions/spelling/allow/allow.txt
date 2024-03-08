@@ -4,7 +4,6 @@ allcolors
 Apc
 apc
 backpressure
-BGRA
 breadcrumb
 breadcrumbs
 bsd
@@ -44,13 +43,11 @@ ftp
 fvar
 gantt
 gcc
-Geddy
 geeksforgeeks
 ghe
 github
 gje
 godbolt
-hardcode
 hostname
 hostnames
 https
@@ -88,7 +85,6 @@ overlined
 perlw
 pipeline
 postmodern
-Premultiplied
 Powerline
 powerline
 ptys
@@ -138,7 +134,6 @@ westus
 wildcards
 workarounds
 XBox
-XTK
 YBox
 yeru
 zhe

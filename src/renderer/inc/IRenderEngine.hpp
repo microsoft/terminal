@@ -96,14 +96,12 @@ namespace Microsoft::Console::Render
 
         // DxRenderer - getter
         virtual HRESULT Enable() noexcept { return S_OK; }
-
         [[nodiscard]] virtual std::wstring_view GetPixelShaderPath() noexcept { return {}; }
         [[nodiscard]] virtual std::wstring_view GetPixelShaderImagePath() noexcept { return {}; }
         [[nodiscard]] virtual bool GetRetroTerminalEffect() const noexcept { return false; }
         [[nodiscard]] virtual float GetScaling() const noexcept { return 1; }
         [[nodiscard]] virtual Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept { return Types::Viewport::Empty(); }
         [[nodiscard]] virtual Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept { return Types::Viewport::Empty(); }
-
         // DxRenderer - setter
         virtual void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept {}
         virtual void SetCallback(std::function<void(HANDLE)> pfn) noexcept {}
