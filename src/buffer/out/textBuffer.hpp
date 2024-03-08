@@ -202,6 +202,7 @@ public:
     bool IsActiveBuffer() const noexcept;
 
     Microsoft::Console::Render::Renderer* GetRenderer() noexcept;
+    void ChangeRenderer(Microsoft::Console::Render::Renderer* newRenderer) { _renderer = newRenderer; };
 
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
     void TriggerRedrawCursor(const til::point position);

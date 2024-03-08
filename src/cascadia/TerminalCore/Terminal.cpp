@@ -62,6 +62,20 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     _stateMachine->SetParserMode(StateMachine::Mode::AlwaysAcceptC1, true);
 }
 
+void Terminal::ChangeRenderer(Renderer* newRenderer)
+{
+    assert(newRenderer != nullptr);
+    _mainBuffer->ChangeRenderer(newRenderer);
+    if (_altBuffer)
+    {
+        _altBuffer->ChangeRenderer(newRenderer);
+    }
+    // TODO! gross
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    auto& adaptDispatch = reinterpret_cast<AdaptDispatch&>(engine.Dispatch());
+    adaptDispatch.ChangeRenderer(newRenderer);
+}
+
 // Method Description:
 // - Initializes the Terminal from the given set of settings.
 // Arguments:

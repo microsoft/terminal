@@ -90,6 +90,8 @@ public:
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
                             Microsoft::Console::Render::Renderer* renderer);
 
+    void ChangeRenderer(Microsoft::Console::Render::Renderer* renderer);
+
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
     void SetFontInfo(const FontInfo& fontInfo);
