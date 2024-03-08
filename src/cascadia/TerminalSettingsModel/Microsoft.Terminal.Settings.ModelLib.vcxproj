@@ -324,12 +324,13 @@
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <!-- PowerShell version check, outputs error if the wrong version is installed. -->
-  <Target Name="_WindowsPowershellVersionCheck" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
-  </Target>
-  <Target Name="_PowershellVersionCheck" BeforeTargets="BeforeClCompile">
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
-  </Target>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+  <Target Name="BeforeResourceCompile" Inputs="defaults.json;userDefaults.json;enableColorSelection.json" Outputs="Generated Files\defaults.json;Generated Files\userDefaults.json;Generated Files\enableColorSelection.json">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile defaults.json -OutPath &quot;Generated Files\defaults.json&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.json&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.json&quot;" />
+  </Target>
 
 </Project>
