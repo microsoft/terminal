@@ -27,7 +27,7 @@ Author(s):
 #include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class ColorSchemeTests;

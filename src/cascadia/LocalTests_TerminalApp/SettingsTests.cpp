@@ -4,7 +4,7 @@
 #include "pch.h"
 
 #include "../TerminalApp/TerminalPage.h"
-#include "../LocalTests_SettingsModel/TestUtils.h"
+#include "../UnitTests_SettingsModel/TestUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;

@@ -863,7 +863,7 @@ namespace winrt::TerminalApp::implementation
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
+                if (auto keyListener{ focusedObject.try_as<UI::IDirectKeyListener>() })
                 {
                     if (keyListener.OnDirectKeyEvent(vkey, scanCode, down))
                     {
@@ -891,7 +891,7 @@ namespace winrt::TerminalApp::implementation
                         // don't want to go around the loop again.
                         if (!focusedObject)
                         {
-                            if (auto keyListener{ _root.try_as<IDirectKeyListener>() })
+                            if (auto keyListener{ _root.try_as<UI::IDirectKeyListener>() })
                             {
                                 return keyListener.OnDirectKeyEvent(vkey, scanCode, down);
                             }

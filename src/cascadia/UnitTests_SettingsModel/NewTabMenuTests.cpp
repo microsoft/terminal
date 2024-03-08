@@ -18,24 +18,11 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
-    // TODO:microsoft/terminal#3838:
-    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
-    // an updated TAEF that will let us install framework packages when the test
-    // package is deployed. Until then, these tests won't deploy in CI.
-
     class NewTabMenuTests : public JsonTestClass
     {
-        // Use a custom AppxManifest to ensure that we can activate winrt types
-        // from our test. This property will tell taef to manually use this as
-        // the AppxManifest for this test class.
-        // This does not yet work for anything XAML-y. See TabTests.cpp for more
-        // details on that.
-        BEGIN_TEST_CLASS(NewTabMenuTests)
-            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
-        END_TEST_CLASS()
+        TEST_CLASS(NewTabMenuTests);
 
         TEST_METHOD(DefaultsToRemainingProfiles);
         TEST_METHOD(ParseEmptyFolder);
