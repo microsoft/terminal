@@ -17,6 +17,7 @@ SOURCES = \
     ReflowTests.cpp \
     TextColorTests.cpp \
     TextAttributeTests.cpp \
+    UTextAdapterTests.cpp \
     DefaultResource.rc \
 
 TARGETLIBS = \

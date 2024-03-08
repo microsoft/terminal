@@ -18,6 +18,7 @@ CMMI
 copyable
 Counterintuitively
 CtrlDToClose
+CVS
 CUI
 cybersecurity
 dalet
@@ -94,6 +95,8 @@ ptys
 pwshw
 qof
 qps
+Remappings
+Retargets
 rclt
 reimplementation
 reserialization

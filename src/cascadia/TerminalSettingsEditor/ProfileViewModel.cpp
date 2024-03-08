@@ -5,6 +5,7 @@
 #include "ProfileViewModel.h"
 #include "ProfileViewModel.g.cpp"
 #include "EnumEntry.h"
+#include "Appearances.h"
 
 #include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
@@ -21,7 +22,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static Editor::Font _FontObjectForDWriteFont(IDWriteFontFamily* family);
+    static Editor::Font fontObjectForDWriteFont(IDWriteFontFamily* family, const wchar_t* locale);
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
@@ -118,6 +119,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         wil::com_ptr<IDWriteFontCollection> fontCollection;
         THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.addressof(), TRUE));
 
+        wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+        if (!GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH))
+        {
+            memcpy(&localeName[0], L"en-US", 12);
+        }
+
         for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
         {
             try
@@ -127,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
 
                 // construct a font entry for tracking
-                if (const auto fontEntry{ _FontObjectForDWriteFont(fontFamily.get()) })
+                if (const auto fontEntry{ fontObjectForDWriteFont(fontFamily.get(), &localeName[0]) })
                 {
                     // check if the font is monospaced
                     try
@@ -154,11 +161,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             CATCH_LOG();
         }
 
+        const auto comparator = [&](const Editor::Font& lhs, const Editor::Font& rhs) {
+            const auto a = lhs.LocalizedName();
+            const auto b = rhs.LocalizedName();
+            return til::compare_linguistic_insensitive(a, b) < 0;
+        };
+
         // sort and save the lists
-        std::sort(begin(fontList), end(fontList), FontComparator());
+        std::sort(begin(fontList), end(fontList), comparator);
         _FontList = single_threaded_observable_vector<Editor::Font>(std::move(fontList));
 
-        std::sort(begin(monospaceFontList), end(monospaceFontList), FontComparator());
+        std::sort(begin(monospaceFontList), end(monospaceFontList), comparator);
         _MonospaceFontList = single_threaded_observable_vector<Editor::Font>(std::move(monospaceFontList));
     }
     CATCH_LOG();
@@ -169,6 +182,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::Font fallbackFont{ nullptr };
         try
         {
+            if (!CompleteFontList())
+            {
+                UpdateFontList();
+            }
             const auto& currentFontList{ CompleteFontList() };
             for (const auto& font : currentFontList)
             {
@@ -188,65 +205,43 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return fallbackFont;
     }
 
-    static Editor::Font _FontObjectForDWriteFont(IDWriteFontFamily* family)
+    static winrt::hstring getLocalizedStringByIndex(IDWriteLocalizedStrings* strings, UINT32 index)
     {
-        // used for the font's name as an identifier (i.e. text block's font family property)
-        std::wstring nameID;
-        UINT32 nameIDIndex;
+        UINT32 length = 0;
+        THROW_IF_FAILED(strings->GetStringLength(index, &length));
 
-        // used for the font's localized name
-        std::wstring localizedName;
-        UINT32 localizedNameIndex;
+        winrt::impl::hstring_builder builder{ length };
+        THROW_IF_FAILED(strings->GetString(index, builder.data(), length + 1));
 
-        // get the font's localized names
-        winrt::com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
-        THROW_IF_FAILED(family->GetFamilyNames(localizedFamilyNames.put()));
+        return builder.to_hstring();
+    }
 
-        // use our current locale to find the localized name
-        auto exists{ FALSE };
-        HRESULT hr;
-        wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
-        if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
+    static UINT32 getLocalizedStringIndex(IDWriteLocalizedStrings* strings, const wchar_t* locale, UINT32 fallback)
+    {
+        UINT32 index;
+        BOOL exists;
+        if (FAILED(strings->FindLocaleName(locale, &index, &exists)) || !exists)
         {
-            hr = localizedFamilyNames->FindLocaleName(localeName, &localizedNameIndex, &exists);
+            index = fallback;
         }
-        if (SUCCEEDED(hr) && !exists)
-        {
-            // if we can't find the font for our locale, fallback to the en-us one
-            // Source: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
-            hr = localizedFamilyNames->FindLocaleName(L"en-us", &localizedNameIndex, &exists);
-        }
-        if (!exists)
-        {
-            // failed to find the correct locale, using the first one
-            localizedNameIndex = 0;
-        }
+        return index;
+    }
 
-        // get the localized name
-        UINT32 nameLength;
-        THROW_IF_FAILED(localizedFamilyNames->GetStringLength(localizedNameIndex, &nameLength));
+    static Editor::Font fontObjectForDWriteFont(IDWriteFontFamily* family, const wchar_t* locale)
+    {
+        wil::com_ptr<IDWriteLocalizedStrings> familyNames;
+        THROW_IF_FAILED(family->GetFamilyNames(familyNames.addressof()));
 
-        localizedName.resize(nameLength);
-        THROW_IF_FAILED(localizedFamilyNames->GetString(localizedNameIndex, localizedName.data(), nameLength + 1));
+        // If en-us is missing we fall back to whatever is at index 0.
+        const auto ci = getLocalizedStringIndex(familyNames.get(), L"en-us", 0);
+        // If our locale is missing we fall back to en-us.
+        const auto li = getLocalizedStringIndex(familyNames.get(), locale, ci);
 
-        // now get the nameID
-        hr = localizedFamilyNames->FindLocaleName(L"en-us", &nameIDIndex, &exists);
-        if (FAILED(hr) || !exists)
-        {
-            // failed to find it, using the first one
-            nameIDIndex = 0;
-        }
+        auto canonical = getLocalizedStringByIndex(familyNames.get(), ci);
+        // If the canonical/localized indices are the same, there's no need to get the other string.
+        auto localized = ci == li ? canonical : getLocalizedStringByIndex(familyNames.get(), li);
 
-        // get the nameID
-        THROW_IF_FAILED(localizedFamilyNames->GetStringLength(nameIDIndex, &nameLength));
-        nameID.resize(nameLength);
-        THROW_IF_FAILED(localizedFamilyNames->GetString(nameIDIndex, nameID.data(), nameLength + 1));
-
-        if (!nameID.empty() && !localizedName.empty())
-        {
-            return make<Font>(nameID, localizedName, family);
-        }
-        return nullptr;
+        return make<Font>(std::move(canonical), std::move(localized), family);
     }
 
     winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept

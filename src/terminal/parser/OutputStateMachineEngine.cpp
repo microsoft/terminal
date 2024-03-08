@@ -766,14 +766,11 @@ bool OutputStateMachineEngine::ActionIgnore() noexcept
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch. This will be a BEL or ST char.
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
-                                                 const size_t parameter,
-                                                 const std::wstring_view string)
+bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const std::wstring_view string)
 {
     auto success = false;
 
@@ -782,10 +779,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetIconAndWindowTitle:
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
+    case OscActionCodes::DECSWT_SetWindowTitle:
     {
-        std::wstring title;
-        success = _GetOscTitle(string, title);
-        success = success && _dispatch->SetWindowTitle(title);
+        success = _dispatch->SetWindowTitle(string);
         break;
     }
     case OscActionCodes::SetColor:
@@ -930,21 +926,6 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/, const VT
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
     return false;
-}
-
-// Routine Description:
-// - Null terminates, then returns, the string that we've collected as part of the OSC string.
-// Arguments:
-// - string - Osc String input
-// - title - Where to place the Osc String to use as a title.
-// Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
-                                            std::wstring& title) const
-{
-    title = string;
-
-    return !string.empty();
 }
 
 // Routine Description:

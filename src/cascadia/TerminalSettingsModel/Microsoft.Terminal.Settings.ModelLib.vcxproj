@@ -46,9 +46,6 @@
     <ClInclude Include="DefaultTerminal.h">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="IconPathConverter.h">
-      <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ActionArgs.h">
       <DependentUpon>ActionArgs.idl</DependentUpon>
@@ -121,9 +118,6 @@
     <ClCompile Include="VisualStudioGenerator.cpp" />
     <ClCompile Include="DefaultTerminal.cpp">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="IconPathConverter.cpp">
-      <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="pch.cpp">
@@ -229,7 +223,6 @@
     <Midl Include="Command.idl" />
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="IconPathConverter.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
     <Midl Include="TerminalSettings.idl" />
@@ -237,6 +230,7 @@
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="AppearanceConfig.idl" />
     <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="ISettingsModelObject.idl" />
     <Midl Include="FontConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
@@ -315,7 +309,7 @@
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WindowsApp.lib;user32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);user32.lib</AdditionalDependencies>
     </Link>
     <Reference>
       <Private>false</Private>

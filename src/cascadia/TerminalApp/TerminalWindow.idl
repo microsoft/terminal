@@ -3,7 +3,6 @@
 
 import "TerminalPage.idl";
 import "ShortcutActionDispatch.idl";
-import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
@@ -40,7 +39,7 @@ namespace TerminalApp
 
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
-    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass TerminalWindow : Microsoft.Terminal.UI.IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TerminalWindow(SettingsLoadEventArgs result, ContentManager manager);
 

@@ -44,6 +44,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> baseLayerProfile;
         std::vector<winrt::com_ptr<implementation::Profile>> profiles;
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
+        std::unordered_map<winrt::hstring, winrt::com_ptr<implementation::ColorScheme>> colorSchemes;
+        std::unordered_map<winrt::hstring, winrt::hstring> colorSchemeRemappings;
+        bool fixupsAppliedDuringLoad{ false };
 
         void clear();
     };
@@ -60,6 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
         void FinalizeLayering();
         bool DisableDeletedProfiles();
+        bool RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile);
         bool FixupUserSettings();
 
         ParsedSettings inboxSettings;
@@ -87,6 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
+        void _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;

@@ -1,4 +1,6 @@
+aalt
 ABORTIFHUNG
+abvm
 ACCEPTFILES
 ACCESSDENIED
 acl
@@ -26,8 +28,8 @@ COMDLG
 commandlinetoargv
 commoncontrols
 comparand
-cosf
 COPYFROMRESOURCE
+cosf
 cstdint
 CUsers
 CXICON
@@ -40,6 +42,7 @@ delayimp
 DERR
 dlldata
 DNE
+dnom
 DONTADDTORECENT
 DWMSBT
 DWMWA
@@ -54,6 +57,7 @@ EXPCMDSTATE
 fenv
 filetime
 FILTERSPEC
+fina
 FMA
 FORCEFILESYSTEM
 FORCEMINIMIZE
@@ -69,8 +73,8 @@ Hashtable
 hicon
 HIGHCONTRASTON
 HIGHCONTRASTW
-hinternet
 HIGHQUALITYSCALE
+hinternet
 HINTERNET
 hotkeys
 href
@@ -106,8 +110,8 @@ IObject
 iosfwd
 IPackage
 IPeasant
-IService
 isa
+IService
 ISetup
 ISoftware
 isspace
@@ -134,6 +138,7 @@ LTGRAY
 MAINWINDOW
 MAPVIRTUALKEY
 MAXIMIZEBOX
+medi
 memchr
 memicmp
 MENUCOMMAND
@@ -165,6 +170,7 @@ NOTIFYICON
 NOTIFYICONDATA
 NOTIMEOUTIFNOTHUNG
 ntprivapi
+numr
 oaidl
 ocidl
 ODR
@@ -190,9 +196,11 @@ REGCLS
 RETURNCMD
 rfind
 RLO
+rnrn
 ROOTOWNER
 roundf
 RSHIFT
+rvrn
 SACL
 schandle
 SEH

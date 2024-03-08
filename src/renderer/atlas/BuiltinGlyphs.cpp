@@ -1071,57 +1071,6 @@ static const Instruction* GetInstructions(char32_t codepoint) noexcept
     return nullptr;
 }
 
-static wil::com_ptr<ID2D1BitmapBrush> createShadedBitmapBrush(ID2D1DeviceContext* renderTarget, Shape shape)
-{
-    static constexpr u32 _ = 0;
-    static constexpr u32 w = 0xffffffff;
-    static constexpr u32 size = 4;
-    // clang-format off
-    static constexpr u32 shades[3][size * size] = {
-        {
-            w, _, _, _,
-            w, _, _, _,
-            _, _, w, _,
-            _, _, w, _,
-        },
-        {
-            w, _, w, _,
-            _, w, _, w,
-            w, _, w, _,
-            _, w, _, w,
-        },
-        {
-            _, w, w, w,
-            _, w, w, w,
-            w, w, _, w,
-            w, w, _, w,
-        },
-    };
-    // clang-format on
-
-    static constexpr D2D1_SIZE_U bitmapSize{ size, size };
-    static constexpr D2D1_BITMAP_PROPERTIES bitmapProps{
-        .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
-        .dpiX = 96,
-        .dpiY = 96,
-    };
-    static constexpr D2D1_BITMAP_BRUSH_PROPERTIES bitmapBrushProps{
-        .extendModeX = D2D1_EXTEND_MODE_WRAP,
-        .extendModeY = D2D1_EXTEND_MODE_WRAP,
-        .interpolationMode = D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
-    };
-
-    assert(shape < ARRAYSIZE(shades));
-
-    wil::com_ptr<ID2D1Bitmap> bitmap;
-    THROW_IF_FAILED(renderTarget->CreateBitmap(bitmapSize, &shades[shape][0], sizeof(u32) * size, &bitmapProps, bitmap.addressof()));
-
-    wil::com_ptr<ID2D1BitmapBrush> bitmapBrush;
-    THROW_IF_FAILED(renderTarget->CreateBitmapBrush(bitmap.get(), &bitmapBrushProps, nullptr, bitmapBrush.addressof()));
-
-    return bitmapBrush;
-}
-
 void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint)
 {
     renderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
@@ -1188,16 +1137,28 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         case Shape_Filled025:
         case Shape_Filled050:
         case Shape_Filled075:
-        {
-            const D2D1_RECT_F r{ begXabs, begYabs, endXabs, endYabs };
-            const auto bitmapBrush = createShadedBitmapBrush(renderTarget, shape);
-            renderTarget->FillRectangle(&r, bitmapBrush.get());
-            break;
-        }
         case Shape_Filled100:
         {
+            // This code works in tandem with SHADING_TYPE_TEXT_BUILTIN_GLYPH in our pixel shader.
+            // Unless someone removed it, it should have a lengthy comment visually explaining
+            // what each of the 3 RGB components do. The short version is:
+            //   R: stretch the checkerboard pattern (Shape_Filled050) horizontally
+            //   G: invert the pixels
+            //   B: overrides the above and fills it
+            static constexpr D2D1_COLOR_F colors[] = {
+                { 1, 0, 0, 1 }, // Shape_Filled025
+                { 0, 0, 0, 1 }, // Shape_Filled050
+                { 1, 1, 0, 1 }, // Shape_Filled075
+                { 1, 1, 1, 1 }, // Shape_Filled100
+            };
+
+            const auto brushColor = brush->GetColor();
+            brush->SetColor(&colors[shape]);
+
             const D2D1_RECT_F r{ begXabs, begYabs, endXabs, endYabs };
             renderTarget->FillRectangle(&r, brush);
+
+            brush->SetColor(&brushColor);
             break;
         }
         case Shape_LightLine:

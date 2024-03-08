@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_environment)
             {
                 // Order the environment variable names so that resolution order is consistent
-                std::set<std::wstring, til::wstring_case_insensitive_compare> keys{};
+                std::set<std::wstring, til::env_key_sorter> keys{};
                 for (const auto item : _environment)
                 {
                     keys.insert(item.Key().c_str());

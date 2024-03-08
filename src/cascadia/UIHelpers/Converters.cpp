@@ -1,18 +1,18 @@
 #include "pch.h"
 #include "Converters.h"
-#if __has_include("Converters.g.cpp")
 #include "Converters.g.cpp"
-#endif
 
-namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
+#pragma warning(disable : 26497) // We will make these functions constexpr, as they are part of an ABI boundary.
+#pragma warning(disable : 26440) // The function ... can be declared as noexcept.
+
+namespace winrt::Microsoft::Terminal::UI::implementation
 {
     winrt::hstring Converters::AppendPercentageSign(double value)
     {
-        const auto number{ value };
-        return to_hstring((int)number) + L"%";
+        return to_hstring(gsl::narrow_cast<uint32_t>(std::lrint(value))) + L"%";
     }
 
-    winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(winrt::Windows::UI::Color color)
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(const winrt::Windows::UI::Color& color)
     {
         return Windows::UI::Xaml::Media::SolidColorBrush(color);
     }
@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
     }
 
-    double Converters::FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight)
+    double Converters::FontWeightToDouble(const winrt::Windows::UI::Text::FontWeight& fontWeight)
     {
         return fontWeight.Weight;
     }
@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return value ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
     }
 
-    double Converters::MaxValueFromPaddingString(winrt::hstring paddingString)
+    double Converters::MaxValueFromPaddingString(const winrt::hstring& paddingString)
     {
         const auto singleCharDelim = L',';
         std::wstringstream tokenStream(paddingString.c_str());
@@ -85,11 +85,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return base::ClampDiv<double, double>(value, 100);
     }
 
-    bool Converters::StringsAreNotEqual(winrt::hstring expected, winrt::hstring actual)
+    bool Converters::StringsAreNotEqual(const winrt::hstring& expected, const winrt::hstring& actual)
     {
         return expected != actual;
     }
-    winrt::Windows::UI::Xaml::Visibility Converters::StringNotEmptyToVisibility(winrt::hstring value)
+    winrt::Windows::UI::Xaml::Visibility Converters::StringNotEmptyToVisibility(const winrt::hstring& value)
     {
         return value.empty() ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
     }
@@ -101,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - value - the value string.
     // Return Value:
     // - The value string, unless it matches the placeholder in which case the empty string.
-    winrt::hstring Converters::StringOrEmptyIfPlaceholder(winrt::hstring placeholder, winrt::hstring value)
+    winrt::hstring Converters::StringOrEmptyIfPlaceholder(const winrt::hstring& placeholder, const winrt::hstring& value)
     {
         return placeholder == value ? L"" : value;
     }

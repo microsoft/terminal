@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "TaskbarState.idl";
-import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
@@ -57,7 +56,7 @@ namespace TerminalApp
         Boolean IsQuakeWindow();
     };
 
-    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
+    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
     {
         TerminalPage(WindowProperties properties, ContentManager manager);
 

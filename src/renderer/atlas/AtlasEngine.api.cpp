@@ -704,10 +704,11 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
     const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
-    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
+    const auto doubleUnderlineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(std::max(adjustedWidth / 16.0f, adjustedHeight / 32.0f)));
 
     // For double underlines we loosely follow what Word does:
-    // 1. The lines are half the width of an underline (= thinLineWidth)
+    // 1. The lines are half the width of an underline (= doubleUnderlineWidth)
     // 2. Ideally the bottom line is aligned with the bottom of the underline
     // 3. The top underline is vertically in the middle between baseline and ideal bottom underline
     // 4. If the top line gets too close to the baseline the underlines are shifted downwards
@@ -715,18 +716,18 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // (Additional notes below.)
 
     // 2.
-    auto doubleUnderlinePosBottom = underlinePos + underlineWidth - thinLineWidth;
+    auto doubleUnderlinePosBottom = underlinePos + underlineWidth - doubleUnderlineWidth;
     // 3. Since we don't align the center of our two lines, but rather the top borders
     //    we need to subtract half a line width from our center point.
-    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f);
+    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - doubleUnderlineWidth) / 2.0f);
     // 4.
-    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + thinLineWidth);
+    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + doubleUnderlineWidth);
     // 5. The gap is only the distance _between_ the lines, but we need the distance from the
     //    top border of the top and bottom lines, which includes an additional line width.
     const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * dpi));
-    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
+    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + doubleUnderlineWidth);
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
-    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - thinLineWidth);
+    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - doubleUnderlineWidth);
 
     const auto cellWidth = gsl::narrow<u16>(lrintf(adjustedWidth));
     const auto cellHeight = gsl::narrow<u16>(lrintf(adjustedHeight));
@@ -765,6 +766,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(lrintf(strikethroughWidth));
         const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosTop));
         const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosBottom));
+        const auto doubleUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlineWidth));
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
@@ -787,8 +789,8 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
         fontMetrics->underline = { underlinePosU16, underlineWidthU16 };
         fontMetrics->strikethrough = { strikethroughPosU16, strikethroughWidthU16 };
-        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, thinLineWidthU16 };
-        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, thinLineWidthU16 };
+        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, doubleUnderlineWidthU16 };
+        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, doubleUnderlineWidthU16 };
         fontMetrics->overline = { 0, underlineWidthU16 };
 
         fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();

@@ -42,7 +42,6 @@ Author(s):
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
-#include <Windows.Graphics.Imaging.Interop.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
 #include <winrt/Windows.UI.ViewManagement.h>

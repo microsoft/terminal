@@ -16,24 +16,11 @@ using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
-    // TODO:microsoft/terminal#3838:
-    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
-    // an updated TAEF that will let us install framework packages when the test
-    // package is deployed. Until then, these tests won't deploy in CI.
-
     class SerializationTests : public JsonTestClass
     {
-        // Use a custom AppxManifest to ensure that we can activate winrt types
-        // from our test. This property will tell taef to manually use this as
-        // the AppxManifest for this test class.
-        // This does not yet work for anything XAML-y. See TabTests.cpp for more
-        // details on that.
-        BEGIN_TEST_CLASS(SerializationTests)
-            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
-        END_TEST_CLASS()
+        TEST_CLASS(SerializationTests);
 
         TEST_METHOD(GlobalSettings);
         TEST_METHOD(Profile);
@@ -44,6 +31,10 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(RoundtripReloadEnvVars);
         TEST_METHOD(DontRoundtripNoReloadEnvVars);
+
+        TEST_METHOD(RoundtripUserModifiedColorSchemeCollision);
+        TEST_METHOD(RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles);
+        TEST_METHOD(RoundtripUserDeletedColorSchemeCollision);
 
     private:
         // Method Description:
@@ -208,9 +199,34 @@ namespace SettingsModelLocalTests
                 "source": "local"
             })" };
 
+        static constexpr std::string_view profileWithIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithIcon",
+                "hidden": false,
+                "icon": "foo.png"
+            })" };
+        static constexpr std::string_view profileWithNullIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithNullIcon",
+                "hidden": false,
+                "icon": null
+            })" };
+        static constexpr std::string_view profileWithNoIcon{ R"(
+            {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
+                "name": "profileWithNoIcon",
+                "hidden": false,
+                "icon": "none"
+            })" };
+
         RoundtripTest<implementation::Profile>(profileString);
         RoundtripTest<implementation::Profile>(smallProfileString);
         RoundtripTest<implementation::Profile>(weirdProfileString);
+        RoundtripTest<implementation::Profile>(profileWithIcon);
+        RoundtripTest<implementation::Profile>(profileWithNullIcon);
+        RoundtripTest<implementation::Profile>(profileWithNoIcon);
     }
 
     void SerializationTests::ColorScheme()
@@ -629,5 +645,307 @@ namespace SettingsModelLocalTests
         const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
         VERIFY_IS_FALSE(newSettings->ProfileDefaults().HasReloadEnvironmentVariables(),
                         L"Ensure that the new settings object didn't find a reloadEnvironmentVariables");
+    }
+
+    void SerializationTests::RoundtripUserModifiedColorSchemeCollision()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name": "profile1",
+                    "colorScheme": "Tango Dark",
+                    "guid": "{d0a65a9d-8665-4128-97a4-a581aa747aa7}"
+                }
+            ],
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Campbell",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                },
+                {
+                    "background": "#000000",
+                    "black": "#000000",
+                    "blue": "#3465A4",
+                    "brightBlack": "#555753",
+                    "brightBlue": "#729FCF",
+                    "brightCyan": "#34E2E2",
+                    "brightGreen": "#8AE234",
+                    "brightPurple": "#AD7FA8",
+                    "brightRed": "#EF2929",
+                    "brightWhite": "#EEEEEC",
+                    "brightYellow": "#FCE94F",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#06989A",
+                    "foreground": "#D3D7CF",
+                    "green": "#4E9A06",
+                    "name": "Tango Dark",
+                    "purple": "#75507B",
+                    "red": "#CC0000",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#D3D7CF",
+                    "yellow": "#C4A000"
+                },
+            ]
+        })" };
+
+        // Key differences: one fewer color scheme (Tango Dark has been deleted) and defaults.colorScheme is set.
+        static constexpr std::string_view newSettingsJson{ R"-(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles":
+            {
+                "defaults": {
+                    "colorScheme": "Campbell (modified)"
+                },
+                "list":
+                [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    },
+                    {
+                        "name": "profile1",
+                        "colorScheme": "Tango Dark",
+                        "guid": "{d0a65a9d-8665-4128-97a4-a581aa747aa7}"
+                    }
+                ]
+            },
+            "actions": [ ],
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Campbell",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                }
+            ]
+        })-" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "schemes": [
+                {
+                    "background": "#111111",
+                    "black": "#111111",
+                    "blue": "#111111",
+                    "brightBlack": "#111111",
+                    "brightBlue": "#111111",
+                    "brightCyan": "#111111",
+                    "brightGreen": "#111111",
+                    "brightPurple": "#111111",
+                    "brightRed": "#111111",
+                    "brightWhite": "#111111",
+                    "brightYellow": "#111111",
+                    "cursorColor": "#111111",
+                    "cyan": "#111111",
+                    "foreground": "#111111",
+                    "green": "#111111",
+                    "name": "Tango Dark",
+                    "purple": "#111111",
+                    "red": "#111111",
+                    "selectionBackground": "#111111",
+                    "white": "#111111",
+                    "yellow": "#111111"
+                },
+            ]
+        })" };
+
+        // Key differences: Tango Dark has been renamed; nothing else has changed
+        static constexpr std::string_view newSettingsJson{ R"-(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles":
+            {
+                "list":
+                [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            },
+            "actions": [ ],
+            "schemes": [
+                {
+                    "background": "#111111",
+                    "black": "#111111",
+                    "blue": "#111111",
+                    "brightBlack": "#111111",
+                    "brightBlue": "#111111",
+                    "brightCyan": "#111111",
+                    "brightGreen": "#111111",
+                    "brightPurple": "#111111",
+                    "brightRed": "#111111",
+                    "brightWhite": "#111111",
+                    "brightYellow": "#111111",
+                    "cursorColor": "#111111",
+                    "cyan": "#111111",
+                    "foreground": "#111111",
+                    "green": "#111111",
+                    "name": "Tango Dark (modified)",
+                    "purple": "#111111",
+                    "red": "#111111",
+                    "selectionBackground": "#111111",
+                    "white": "#111111",
+                    "yellow": "#111111"
+                },
+            ]
+        })-" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripUserDeletedColorSchemeCollision()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "Tango Dark",
+                    "foreground": "#D3D7CF",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#CC0000",
+                    "green": "#4E9A06",
+                    "yellow": "#C4A000",
+                    "blue": "#3465A4",
+                    "purple": "#75507B",
+                    "cyan": "#06989A",
+                    "white": "#D3D7CF",
+                    "brightBlack": "#555753",
+                    "brightRed": "#EF2929",
+                    "brightGreen": "#8AE234",
+                    "brightYellow": "#FCE94F",
+                    "brightBlue": "#729FCF",
+                    "brightPurple": "#AD7FA8",
+                    "brightCyan": "#34E2E2",
+                    "brightWhite": "#EEEEEC"
+                }
+            ]
+        })" };
+
+        // Key differences: Tango Dark has been deleted, as it was identical to the inbox one.
+        static constexpr std::string_view newSettingsJson{ R"-(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles":
+            {
+                "list":
+                [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            },
+            "actions": [ ],
+            "schemes": [ ]
+        })-" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
     }
 }

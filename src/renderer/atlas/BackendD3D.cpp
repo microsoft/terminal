@@ -27,6 +27,8 @@
 
 TIL_FAST_MATH_BEGIN
 
+#pragma warning(disable : 4100) // '...': unreferenced formal parameter
+#pragma warning(disable : 26440) // Function '...' can be declared 'noexcept'(f.6).
 // This code packs various data into smaller-than-int types to save both CPU and GPU memory. This warning would force
 // us to add dozens upon dozens of gsl::narrow_cast<>s throughout the file which is more annoying than helpful.
 #pragma warning(disable : 4242) // '=': conversion from '...' to '...', possible loss of data
@@ -160,7 +162,7 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
         THROW_IF_FAILED(p.device->CreateBlendState(&desc, _blendState.addressof()));
     }
 
-#ifndef NDEBUG
+#if ATLAS_DEBUG_SHADER_HOT_RELOAD
     _sourceDirectory = std::filesystem::path{ __FILE__ }.parent_path();
     _sourceCodeWatcher = wil::make_folder_change_reader_nothrow(_sourceDirectory.c_str(), false, wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime, [this](wil::FolderChangeEvent, PCWSTR path) {
         if (til::ends_with(path, L".hlsl"))
@@ -188,9 +190,7 @@ void BackendD3D::Render(RenderingPayload& p)
         _handleSettingsUpdate(p);
     }
 
-#ifndef NDEBUG
     _debugUpdateShaders(p);
-#endif
 
     // After a Present() the render target becomes unbound.
     p.deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
@@ -207,9 +207,7 @@ void BackendD3D::Render(RenderingPayload& p)
     _drawCursorBackground(p);
     _drawText(p);
     _drawSelection(p);
-#if ATLAS_DEBUG_SHOW_DIRTY
     _debugShowDirty(p);
-#endif
     _flushQuads(p);
 
     if (_customPixelShader)
@@ -217,9 +215,7 @@ void BackendD3D::Render(RenderingPayload& p)
         _executeCustomShader(p);
     }
 
-#if ATLAS_DEBUG_DUMP_RENDER_TARGET
     _debugDumpRenderTarget(p);
-#endif
 }
 
 bool BackendD3D::RequiresContinuousRedraw() noexcept
@@ -279,13 +275,15 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     // limited space to draw a curlyline, we apply a limit on the peak height.
     {
         const auto cellHeight = static_cast<f32>(font.cellSize.y);
-        const auto strokeWidth = static_cast<f32>(font.thinLineWidth);
+        const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
+        const auto duBottom = static_cast<f32>(font.doubleUnderline[1].position);
+        const auto duHeight = static_cast<f32>(font.doubleUnderline[0].height);
 
         // This gives it the same position and height as our double-underline. There's no particular reason for that, apart from
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
         // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom.
-        const auto height = std::max(3.0f, static_cast<f32>(font.doubleUnderline[1].position + font.doubleUnderline[1].height - font.doubleUnderline[0].position));
-        const auto top = std::min(static_cast<f32>(font.doubleUnderline[0].position), floorf(cellHeight - height - strokeWidth));
+        const auto height = std::max(3.0f, duBottom + duHeight - duTop);
+        const auto top = std::min(duTop, floorf(cellHeight - height - duHeight));
 
         _curlyLineHalfHeight = height * 0.5f;
         _curlyUnderline.position = gsl::narrow_cast<u16>(lrintf(top));
@@ -541,8 +539,9 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
-        data.thinLineWidth = p.s->font->thinLineWidth;
+        data.doubleUnderlineWidth = p.s->font->doubleUnderline[0].height;
         data.curlyLineHalfHeight = _curlyLineHalfHeight;
+        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 16.0f, p.s->font->cellSize.y / 32.0f)));
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
@@ -579,92 +578,101 @@ void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
     p.deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
 }
 
-#ifndef NDEBUG
 void BackendD3D::_debugUpdateShaders(const RenderingPayload& p) noexcept
-try
 {
-    const auto invalidationTime = _sourceCodeInvalidationTime.load(std::memory_order_relaxed);
-
-    if (invalidationTime == INT64_MAX || invalidationTime > std::chrono::steady_clock::now().time_since_epoch().count())
+#if ATLAS_DEBUG_SHADER_HOT_RELOAD
+    try
     {
-        return;
-    }
+        const auto invalidationTime = _sourceCodeInvalidationTime.load(std::memory_order_relaxed);
 
-    _sourceCodeInvalidationTime.store(INT64_MAX, std::memory_order_relaxed);
-
-    static const auto compile = [](const std::filesystem::path& path, const char* target) {
-        wil::com_ptr<ID3DBlob> error;
-        wil::com_ptr<ID3DBlob> blob;
-        const auto hr = D3DCompileFromFile(
-            /* pFileName   */ path.c_str(),
-            /* pDefines    */ nullptr,
-            /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            /* pEntrypoint */ "main",
-            /* pTarget     */ target,
-            /* Flags1      */ D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS,
-            /* Flags2      */ 0,
-            /* ppCode      */ blob.addressof(),
-            /* ppErrorMsgs */ error.addressof());
-
-        if (error)
+        if (invalidationTime == INT64_MAX || invalidationTime > std::chrono::steady_clock::now().time_since_epoch().count())
         {
-            std::thread t{ [error = std::move(error)]() noexcept {
-                MessageBoxA(nullptr, static_cast<const char*>(error->GetBufferPointer()), "Compilation error", MB_ICONERROR | MB_OK);
-            } };
-            t.detach();
+            return;
         }
 
-        THROW_IF_FAILED(hr);
-        return blob;
-    };
+        _sourceCodeInvalidationTime.store(INT64_MAX, std::memory_order_relaxed);
 
-    struct FileVS
-    {
-        std::wstring_view filename;
-        wil::com_ptr<ID3D11VertexShader> BackendD3D::*target;
-    };
-    struct FilePS
-    {
-        std::wstring_view filename;
-        wil::com_ptr<ID3D11PixelShader> BackendD3D::*target;
-    };
-
-    static constexpr std::array filesVS{
-        FileVS{ L"shader_vs.hlsl", &BackendD3D::_vertexShader },
-    };
-    static constexpr std::array filesPS{
-        FilePS{ L"shader_ps.hlsl", &BackendD3D::_pixelShader },
-    };
-
-    std::array<wil::com_ptr<ID3D11VertexShader>, filesVS.size()> compiledVS;
-    std::array<wil::com_ptr<ID3D11PixelShader>, filesPS.size()> compiledPS;
-
-    // Compile our files before moving them into `this` below to ensure we're
-    // always in a consistent state where all shaders are seemingly valid.
-    for (size_t i = 0; i < filesVS.size(); ++i)
-    {
-        const auto blob = compile(_sourceDirectory / filesVS[i].filename, "vs_4_0");
-        THROW_IF_FAILED(p.device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledVS[i].addressof()));
-    }
-    for (size_t i = 0; i < filesPS.size(); ++i)
-    {
-        const auto blob = compile(_sourceDirectory / filesPS[i].filename, "ps_4_0");
-        THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledPS[i].addressof()));
-    }
-
-    for (size_t i = 0; i < filesVS.size(); ++i)
-    {
-        this->*filesVS[i].target = std::move(compiledVS[i]);
-    }
-    for (size_t i = 0; i < filesPS.size(); ++i)
-    {
-        this->*filesPS[i].target = std::move(compiledPS[i]);
-    }
-
-    _setupDeviceContextState(p);
-}
-CATCH_LOG()
+        static constexpr auto flags =
+            D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS
+#ifndef NDEBUG
+            | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION
 #endif
+            ;
+
+        static const auto compile = [](const std::filesystem::path& path, const char* target) {
+            wil::com_ptr<ID3DBlob> error;
+            wil::com_ptr<ID3DBlob> blob;
+            const auto hr = D3DCompileFromFile(
+                /* pFileName   */ path.c_str(),
+                /* pDefines    */ nullptr,
+                /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                /* pEntrypoint */ "main",
+                /* pTarget     */ target,
+                /* Flags1      */ flags,
+                /* Flags2      */ 0,
+                /* ppCode      */ blob.addressof(),
+                /* ppErrorMsgs */ error.addressof());
+
+            if (error)
+            {
+                std::thread t{ [error = std::move(error)]() noexcept {
+                    MessageBoxA(nullptr, static_cast<const char*>(error->GetBufferPointer()), "Compilation error", MB_ICONERROR | MB_OK);
+                } };
+                t.detach();
+            }
+
+            THROW_IF_FAILED(hr);
+            return blob;
+        };
+
+        struct FileVS
+        {
+            std::wstring_view filename;
+            wil::com_ptr<ID3D11VertexShader> BackendD3D::*target;
+        };
+        struct FilePS
+        {
+            std::wstring_view filename;
+            wil::com_ptr<ID3D11PixelShader> BackendD3D::*target;
+        };
+
+        static constexpr std::array filesVS{
+            FileVS{ L"shader_vs.hlsl", &BackendD3D::_vertexShader },
+        };
+        static constexpr std::array filesPS{
+            FilePS{ L"shader_ps.hlsl", &BackendD3D::_pixelShader },
+        };
+
+        std::array<wil::com_ptr<ID3D11VertexShader>, filesVS.size()> compiledVS;
+        std::array<wil::com_ptr<ID3D11PixelShader>, filesPS.size()> compiledPS;
+
+        // Compile our files before moving them into `this` below to ensure we're
+        // always in a consistent state where all shaders are seemingly valid.
+        for (size_t i = 0; i < filesVS.size(); ++i)
+        {
+            const auto blob = compile(_sourceDirectory / filesVS[i].filename, "vs_4_0");
+            THROW_IF_FAILED(p.device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledVS[i].addressof()));
+        }
+        for (size_t i = 0; i < filesPS.size(); ++i)
+        {
+            const auto blob = compile(_sourceDirectory / filesPS[i].filename, "ps_4_0");
+            THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledPS[i].addressof()));
+        }
+
+        for (size_t i = 0; i < filesVS.size(); ++i)
+        {
+            this->*filesVS[i].target = std::move(compiledVS[i]);
+        }
+        for (size_t i = 0; i < filesPS.size(); ++i)
+        {
+            this->*filesPS[i].target = std::move(compiledPS[i]);
+        }
+
+        _setupDeviceContextState(p);
+    }
+    CATCH_LOG()
+#endif
+}
 
 void BackendD3D::_d2dBeginDrawing() noexcept
 {
@@ -989,6 +997,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
             }
         }
 
+        const u8x2 renditionScale{
+            static_cast<u8>(row->lineRendition != LineRendition::SingleWidth ? 2 : 1),
+            static_cast<u8>(row->lineRendition >= LineRendition::DoubleHeightTop ? 2 : 1),
+        };
+
         for (const auto& m : row->mappings)
         {
             auto x = m.glyphsFrom;
@@ -1037,6 +1050,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
                     _appendQuad() = {
                         .shadingType = static_cast<u16>(glyphEntry->shadingType),
+                        .renditionScale = renditionScale,
                         .position = { static_cast<i16>(l), static_cast<i16>(t) },
                         .size = glyphEntry->size,
                         .texcoord = glyphEntry->texcoord,
@@ -1403,6 +1417,8 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     _drawGlyphAtlasAllocate(p, rect);
     _d2dBeginDrawing();
 
+    auto shadingType = ShadingType::TextGrayscale;
+
     if (BuiltinGlyphs::IsSoftFontChar(glyphIndex))
     {
         _drawSoftFontGlyph(p, rect, glyphIndex);
@@ -1416,10 +1432,11 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
             static_cast<f32>(rect.y + rect.h),
         };
         BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
+        shadingType = ShadingType::TextBuiltinGlyph;
     }
 
     const auto glyphEntry = _drawGlyphAllocateEntry(row, fontFaceEntry, glyphIndex);
-    glyphEntry->shadingType = ShadingType::TextGrayscale;
+    glyphEntry->shadingType = shadingType;
     glyphEntry->overlapSplit = 0;
     glyphEntry->offset.x = 0;
     glyphEntry->offset.y = -baseline;
@@ -2032,9 +2049,9 @@ void BackendD3D::_drawSelection(const RenderingPayload& p)
     }
 }
 
-#if ATLAS_DEBUG_SHOW_DIRTY
 void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 {
+#if ATLAS_DEBUG_SHOW_DIRTY
     _presentRects[_presentRectsPos] = p.dirtyRectInPx;
     _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
 
@@ -2057,12 +2074,12 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
             };
         }
     }
-}
 #endif
+}
 
-#if ATLAS_DEBUG_DUMP_RENDER_TARGET
 void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 {
+#if ATLAS_DEBUG_DUMP_RENDER_TARGET
     if (_dumpRenderTargetCounter == 0)
     {
         ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], gsl::narrow_cast<DWORD>(std::size(_dumpRenderTargetBasePath)));
@@ -2073,8 +2090,8 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
     swprintf_s(path, L"%s\\%u_%08zu.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), _dumpRenderTargetCounter);
     SaveTextureToPNG(p.deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
     _dumpRenderTargetCounter++;
-}
 #endif
+}
 
 void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {

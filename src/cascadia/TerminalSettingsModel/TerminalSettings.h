@@ -25,7 +25,7 @@ using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hst
 using IEnvironmentVariableMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>;
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class TerminalSettingsTests;
 }
@@ -183,7 +183,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                       const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
                                       const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
 
-        friend class SettingsModelLocalTests::TerminalSettingsTests;
+        friend class SettingsModelUnitTests::TerminalSettingsTests;
     };
 }
 

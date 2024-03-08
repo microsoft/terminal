@@ -8,7 +8,6 @@
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
-#include "Appearances.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -50,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetAcrylicOpacityPercentageValue(double value)
         {
-            Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+            Opacity(winrt::Microsoft::Terminal::UI::Converters::PercentageValueToPercentage(value));
         };
 
         void SetPadding(double value)

@@ -27,7 +27,7 @@ Author(s):
 #include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class ColorSchemeTests;
@@ -44,6 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
+        Model::ColorScheme DuplicateColorScheme(const Model::ColorScheme& scheme);
 
         Model::ActionMap ActionMap() const noexcept;
 

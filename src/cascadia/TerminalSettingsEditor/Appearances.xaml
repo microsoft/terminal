@@ -9,6 +9,7 @@
              xmlns:local="using:Microsoft.Terminal.Settings.Editor"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
              IsTabStop="False"
              mc:Ignorable="d">
@@ -34,9 +35,13 @@
                           x:DataType="local:ColorTableEntry">
                 <Border Width="8"
                         Height="8"
-                        Background="{x:Bind local:Converters.ColorToBrush(Color)}"
+                        Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
                         CornerRadius="1" />
             </DataTemplate>
+            <CollectionViewSource x:Key="FontAxesCVS"
+                                  x:Name="FontAxesCVS" />
+            <CollectionViewSource x:Key="FontFeaturesCVS"
+                                  x:Name="FontFeaturesCVS" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -61,7 +66,7 @@
                             <Grid Grid.Column="0"
                                   Padding="8"
                                   VerticalAlignment="Center"
-                                  Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                                  Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
                                   ColumnSpacing="1"
                                   CornerRadius="2"
                                   RowSpacing="1">
@@ -168,7 +173,7 @@
                                            VerticalAlignment="Center"
                                            AutomationProperties.AccessibilityView="Raw"
                                            FontFamily="Cascadia Code"
-                                           Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                           Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
                                            Text="{x:Bind Name, Mode=OneWay}"
                                            TextTrimming="WordEllipsis" />
                             </Grid>
@@ -197,7 +202,7 @@
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                               SelectionChanged="FontFace_SelectionChanged"
                               Style="{StaticResource ComboBoxSettingStyle}"
-                              Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ShowAllFonts), Mode=OneWay}" />
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ShowAllFonts), Mode=OneWay}" />
                     <ComboBox x:Uid="Profile_FontFaceBox"
                               ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                               ItemsSource="{x:Bind SourceProfile.CompleteFontList, Mode=OneWay}"
@@ -278,12 +283,134 @@
                                 Minimum="0"
                                 TickFrequency="50"
                                 TickPlacement="Outside"
-                                Value="{x:Bind local:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
+                                Value="{x:Bind mtu:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
                         <TextBlock Grid.Column="1"
                                    Margin="10,0,0,0"
                                    Style="{StaticResource SliderValueLabelStyle}"
                                    Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}" />
                     </Grid>
+                </StackPanel>
+            </local:SettingContainer>
+            <local:SettingContainer x:Name="FontAxesContainer"
+                                    x:Uid="Profile_FontAxes"
+                                    ClearSettingValue="{x:Bind Appearance.ClearFontAxes}"
+                                    HasSettingValue="{x:Bind Appearance.HasFontAxes, Mode=OneWay}"
+                                    IsEnabled="{x:Bind Appearance.AreFontAxesAvailable, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.FontAxesOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <StackPanel Spacing="16">
+                    <ListView IsItemClickEnabled="False"
+                              ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
+                              SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.Resources>
+                            <CollectionViewSource x:Key="FontAxesNamesCVS"
+                                                  x:Name="FontAxesNamesCVS" />
+                        </ListView.Resources>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:AxisKeyValuePair">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              IsSynchronizedWithCurrentItem="False"
+                                              ItemsSource="{Binding Source={StaticResource FontAxesNamesCVS}}"
+                                              SelectedIndex="{x:Bind AxisIndex, Mode=TwoWay}" />
+                                    <muxc:NumberBox Grid.Column="1"
+                                                    Value="{x:Bind AxisValue, Mode=TwoWay}" />
+                                    <Button Grid.Column="2"
+                                            HorizontalAlignment="Right"
+                                            Click="DeleteAxisKeyValuePair_Click"
+                                            Style="{StaticResource DeleteButtonStyle}"
+                                            Tag="{x:Bind AxisKey, Mode=OneWay}">
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE74D;" />
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Click="AddNewAxisKeyValuePair_Click"
+                            IsEnabled="{x:Bind Appearance.CanFontAxesBeAdded, Mode=OneWay}">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon VerticalAlignment="Bottom"
+                                          FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE710;" />
+                                <TextBlock x:Uid="Profile_AddNewFontAxis"
+                                           Style="{StaticResource IconButtonTextBlockStyle}" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </local:SettingContainer>
+            <local:SettingContainer x:Name="FontFeaturesContainer"
+                                    x:Uid="Profile_FontFeatures"
+                                    ClearSettingValue="{x:Bind Appearance.ClearFontFeatures}"
+                                    HasSettingValue="{x:Bind Appearance.HasFontFeatures, Mode=OneWay}"
+                                    IsEnabled="{x:Bind Appearance.AreFontFeaturesAvailable, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.FontFeaturesOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <StackPanel Spacing="16">
+                    <ListView IsItemClickEnabled="False"
+                              ItemsSource="{Binding Source={StaticResource FontFeaturesCVS}}"
+                              SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.Resources>
+                            <CollectionViewSource x:Key="FontFeaturesNamesCVS"
+                                                  x:Name="FontFeaturesNamesCVS" />
+                        </ListView.Resources>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:FeatureKeyValuePair">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              IsSynchronizedWithCurrentItem="False"
+                                              ItemsSource="{Binding Source={StaticResource FontFeaturesNamesCVS}}"
+                                              SelectedIndex="{x:Bind FeatureIndex, Mode=TwoWay}" />
+                                    <muxc:NumberBox Grid.Column="1"
+                                                    Value="{x:Bind FeatureValue, Mode=TwoWay}" />
+                                    <Button Grid.Column="2"
+                                            HorizontalAlignment="Right"
+                                            Click="DeleteFeatureKeyValuePair_Click"
+                                            Style="{StaticResource DeleteButtonStyle}"
+                                            Tag="{x:Bind FeatureKey, Mode=OneWay}">
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE74D;" />
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Click="AddNewFeatureKeyValuePair_Click"
+                            IsEnabled="{x:Bind Appearance.CanFontFeaturesBeAdded, Mode=OneWay}">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon VerticalAlignment="Bottom"
+                                          FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE710;" />
+                                <TextBlock x:Uid="Profile_AddNewFontFeature"
+                                           Style="{StaticResource IconButtonTextBlockStyle}" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
                 </StackPanel>
             </local:SettingContainer>
 
@@ -373,15 +500,15 @@
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
                     <TextBox x:Uid="Profile_BackgroundImageBox"
-                             IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                             IsEnabled="{x:Bind mtu:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                              IsSpellCheckEnabled="False"
                              Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
+                             Text="{x:Bind mtu:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                     <StackPanel Orientation="Horizontal">
                         <Button x:Uid="Profile_BackgroundImageBrowse"
                                 Margin="0,10,10,0"
                                 Click="BackgroundImage_Click"
-                                IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                                IsEnabled="{x:Bind mtu:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                         <CheckBox x:Name="UseDesktopImageCheckBox"
                                   x:Uid="Profile_UseDesktopImage"
@@ -606,10 +733,10 @@
                     <Slider x:Name="BIOpacitySlider"
                             x:Uid="Profile_BackgroundImageOpacitySlider"
                             Grid.Column="0"
-                            Value="{x:Bind local:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
+                            Value="{x:Bind mtu:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
                                Style="{StaticResource SliderValueLabelStyle}"
-                               Text="{x:Bind local:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
+                               Text="{x:Bind mtu:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
                 </Grid>
             </local:SettingContainer>
         </StackPanel>

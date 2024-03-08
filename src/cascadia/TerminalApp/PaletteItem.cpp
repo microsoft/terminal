@@ -17,7 +17,7 @@ namespace winrt::TerminalApp::implementation
 {
     Controls::IconElement PaletteItem::ResolvedIcon()
     {
-        const auto icon = IconPathConverter::IconWUX(Icon());
+        const auto icon = Microsoft::Terminal::UI::IconPathConverter::IconWUX(Icon());
         icon.Width(16);
         icon.Height(16);
         return icon;

@@ -37,7 +37,6 @@
     <ClInclude Include="../KeyMapping.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../TerminalWarnings.h" />
-    <ClInclude Include="../IconPathConverter.h" />
     <ClInclude Include="../NewTabMenuEntry.h" />
     <ClInclude Include="../SeparatorEntry.h">
       <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
@@ -130,7 +129,7 @@
       <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);user32.lib</AdditionalDependencies>
       <!-- TSM Lib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>
