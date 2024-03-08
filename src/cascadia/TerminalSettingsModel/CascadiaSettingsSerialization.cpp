@@ -102,6 +102,16 @@ static std::filesystem::path buildPath(const std::wstring_view& lhs, const std::
     return { std::move(buffer) };
 }
 
+std::string_view Model::implementation::LoadStringResource(int resourceID)
+{
+    const HINSTANCE moduleInstanceHandle{ wil::GetModuleInstanceHandle() };
+    const auto resource = FindResourceW(moduleInstanceHandle, MAKEINTRESOURCEW(resourceID), RT_RCDATA);
+    const auto loaded = LoadResource(moduleInstanceHandle, resource);
+    const auto sz = SizeofResource(moduleInstanceHandle, resource);
+    const auto ptr = LockResource(loaded);
+    return { reinterpret_cast<const char*>(ptr), sz };
+}
+
 void ParsedSettings::clear()
 {
     globals = {};
