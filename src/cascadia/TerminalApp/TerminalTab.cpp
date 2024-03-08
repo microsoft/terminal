@@ -80,7 +80,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_Setup()
     {
         _rootClosedToken = _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
-            _ClosedHandlers(nullptr, nullptr);
+            Closed.raise(nullptr, nullptr);
         });
 
         Content(_rootPane->GetRootElement());
@@ -103,7 +103,7 @@ namespace winrt::TerminalApp::implementation
         _headerControl.RenameEnded([weakThis = get_weak()](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers();
+                tab->RequestFocusActiveControl.raise();
             }
         });
 
@@ -633,14 +633,14 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Closed(_rootClosedToken);
         auto p = _rootPane;
         p->WalkTree([](auto pane) {
-            pane->_DetachedHandlers(pane);
+            pane->Detached.raise(pane);
         });
 
         // Clean up references and close the tab
         _rootPane = nullptr;
         _activePane = nullptr;
         Content(nullptr);
-        _ClosedHandlers(nullptr, nullptr);
+        Closed.raise(nullptr, nullptr);
 
         return p;
     }
@@ -1122,7 +1122,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // fire an event signaling that our taskbar progress changed.
-        _TaskbarProgressChangedHandlers(nullptr, nullptr);
+        TaskbarProgressChanged.raise(nullptr, nullptr);
     }
 
     // Method Description:
@@ -1202,7 +1202,7 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyReadOnly();
 
         // Raise our own ActivePaneChanged event.
-        _ActivePaneChangedHandlers();
+        ActivePaneChanged.raise();
     }
 
     // Method Description:
@@ -1521,7 +1521,7 @@ namespace winrt::TerminalApp::implementation
                 if (!tab->_headerControl.InRename() &&
                     (terminalControl == nullptr || !terminalControl.SearchBoxEditInFocus()))
                 {
-                    tab->_RequestFocusActiveControlHandlers();
+                    tab->RequestFocusActiveControl.raise();
                 }
             }
         });

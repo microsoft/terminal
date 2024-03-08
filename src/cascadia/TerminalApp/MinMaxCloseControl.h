@@ -28,9 +28,9 @@ namespace winrt::TerminalApp::implementation
         void _CloseClick(const winrt::Windows::Foundation::IInspectable& sender,
                          const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
-        TYPED_EVENT(MinimizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
-        TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
-        TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        til::typed_event<TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs> MinimizeClick;
+        til::typed_event<TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs> MaximizeClick;
+        til::typed_event<TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs> CloseClick;
 
         std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
         std::optional<CaptionButton> _lastPressedButton{ std::nullopt };
