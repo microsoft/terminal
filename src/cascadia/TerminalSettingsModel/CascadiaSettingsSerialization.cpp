@@ -591,9 +591,9 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
 
 std::string_view SettingsLoader::_getEnableColorSelectionJsonHelper()
 {
-    const auto rsrc = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_ENABLE_COLOR_SELECTION), RT_RCDATA);
-    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), rsrc);
-    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto resource = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_ENABLE_COLOR_SELECTION), RT_RCDATA);
+    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), resource);
+    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), resource);
     const auto ptr = LockResource(loaded);
     return { reinterpret_cast<const char*>(ptr), sz };
 }
@@ -1403,18 +1403,18 @@ Json::Value CascadiaSettings::ToJson() const
 
 std::string_view CascadiaSettings::_getDefaultsJsonHelper()
 {
-    const auto rsrc = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_DEFAULTS), RT_RCDATA);
-    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), rsrc);
-    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto resource = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_DEFAULTS), RT_RCDATA);
+    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), resource);
+    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), resource);
     const auto ptr = LockResource(loaded);
     return { reinterpret_cast<const char*>(ptr), sz };
 }
 
 std::string_view CascadiaSettings::_getUserDefaultsJsonHelper()
 {
-    const auto rsrc = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_USER_DEFAULTS), RT_RCDATA);
-    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), rsrc);
-    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), rsrc);
+    const auto resource = FindResourceW(wil::GetModuleInstanceHandle(), MAKEINTRESOURCEW(IDR_USER_DEFAULTS), RT_RCDATA);
+    const auto loaded = LoadResource(wil::GetModuleInstanceHandle(), resource);
+    const auto sz = SizeofResource(wil::GetModuleInstanceHandle(), resource);
     const auto ptr = LockResource(loaded);
     return { reinterpret_cast<const char*>(ptr), sz };
 }
