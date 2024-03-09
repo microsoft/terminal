@@ -930,13 +930,29 @@
     <value>지정된 글꼴의 두께(스트로크 얇게 또는 굵게)를 설정합니다.</value>
     <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
   </data>
+  <data name="Profile_FontAxes.Header" xml:space="preserve">
+    <value>가변 글꼴 축</value>
+    <comment>Header for a control to allow editing the font axes.</comment>
+  </data>
   <data name="Profile_FontAxesAvailable.Text" xml:space="preserve">
     <value>지정된 글꼴의 글꼴 축을 추가하거나 제거합니다.</value>
     <comment>A description for what the "font axes" setting does. Presented near "Profile_FontAxes".</comment>
   </data>
+  <data name="Profile_FontAxesUnavailable.Text" xml:space="preserve">
+    <value>선택한 글꼴에 가변 글꼴 축이 없습니다.</value>
+    <comment>A description provided when the font axes setting is disabled. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontFeatures.Header" xml:space="preserve">
+    <value>글꼴 기능</value>
+    <comment>Header for a control to allow editing the font features.</comment>
+  </data>
   <data name="Profile_FontFeaturesAvailable.Text" xml:space="preserve">
     <value>지정된 글꼴의 글꼴 기능을 추가하거나 제거합니다.</value>
     <comment>A description for what the "font features" setting does. Presented near "Profile_FontFeatures".</comment>
+  </data>
+  <data name="Profile_FontFeaturesUnavailable.Text" xml:space="preserve">
+    <value>선택한 글꼴에 글꼴 기능이 없습니다.</value>
+    <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>일반</value>
@@ -1254,12 +1270,92 @@
     <value>얇은</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
+  <data name="Profile_FontFeature_rlig" xml:space="preserve">
+    <value>필수 합자</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_locl" xml:space="preserve">
+    <value>지역화된 양식</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ccmp" xml:space="preserve">
+    <value>구성/분해</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_calt" xml:space="preserve">
+    <value>상황별 대체 항목</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_liga" xml:space="preserve">
+    <value>표준 합자</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_clig" xml:space="preserve">
+    <value>상황별 합자</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rvrn" xml:space="preserve">
+    <value>필수 변형 대체 항목</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_kern" xml:space="preserve">
+    <value>커닝</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mark" xml:space="preserve">
+    <value>표시 위치</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mkmk" xml:space="preserve">
+    <value>위치를 표시하도록 표시</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
   <data name="Profile_FontFeature_dist" xml:space="preserve">
     <value>거리</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
+  <data name="Profile_FontFeature_aalt" xml:space="preserve">
+    <value>모든 대체 항목에 액세스</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_case" xml:space="preserve">
+    <value>대/소문자 구분 양식</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_dnom" xml:space="preserve">
+    <value>분모</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_fina" xml:space="preserve">
+    <value>터미널 양식</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
   <data name="Profile_FontFeature_frac" xml:space="preserve">
     <value>분수</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_init" xml:space="preserve">
+    <value>초기 양식</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_medi" xml:space="preserve">
+    <value>중간 양식</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_numr" xml:space="preserve">
+    <value>분자</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ordn" xml:space="preserve">
+    <value>서수</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rclt" xml:space="preserve">
+    <value>필수 상황별 대체 항목</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_sinf" xml:space="preserve">
+    <value>과학적 유추자</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
   <data name="Profile_FontFeature_subs" xml:space="preserve">
@@ -1268,6 +1364,14 @@
   </data>
   <data name="Profile_FontFeature_sups" xml:space="preserve">
     <value>위 첨자</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_zero" xml:space="preserve">
+    <value>슬래시 0</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_abvm" xml:space="preserve">
+    <value>베이스 위 표시 위치</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
   <data name="Globals_LaunchSize.Header" xml:space="preserve">
