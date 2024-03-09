@@ -380,6 +380,7 @@ namespace Microsoft::Console::Render::Atlas
         u32 backgroundColor = 0;
         u32 selectionColor = 0x7fffffff;
         std::wstring customPixelShaderPath;
+        std::wstring customPixelShaderImagePath;
         bool useRetroTerminalEffect = false;
     };
 

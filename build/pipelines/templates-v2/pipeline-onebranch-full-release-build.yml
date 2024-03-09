@@ -131,10 +131,6 @@ extends:
                     packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
                     versionListDownload: ${{ parameters.terminalInternalPackageVersion }}
 
-                - template: ./build/pipelines/templates-v2/steps-fetch-and-prepare-localizations.yml@self
-                  parameters:
-                    includePseudoLoc: true
-
           - ${{ if eq(parameters.buildWPF, true) }}:
             # Add an Any CPU build flavor for the WPF control bits
             - template: ./build/pipelines/templates-v2/job-build-project.yml@self
