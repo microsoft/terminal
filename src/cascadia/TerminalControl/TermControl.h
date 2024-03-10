@@ -403,7 +403,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
-            winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker SearchBoxLoaded;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
