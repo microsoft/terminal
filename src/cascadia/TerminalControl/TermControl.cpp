@@ -422,19 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
                 }
 
-                if (!_searchBox->IsLoaded())
-                {
-                    _revokers.SearchBoxLoaded = _searchBox->Loaded(winrt::auto_revoke, [this](auto&&, auto&&) {
-                        VisualStateManager::GoToState(*_searchBox, L"Visible", true);
-                        _searchBox->SetFocusOnTextbox();
-                        _revokers.SearchBoxLoaded.revoke();
-                    });
-                }
-                else
-                {
-                    VisualStateManager::GoToState(*_searchBox, L"Visible", true);
-                    _searchBox->SetFocusOnTextbox();
-                }
+                _searchBox->Open([searchBox]() { searchBox.SetFocusOnTextbox(); });
             }
         }
     }
@@ -515,7 +503,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              const RoutedEventArgs& /*args*/)
     {
         _core.ClearSearch();
-        VisualStateManager::GoToState(*_searchBox, L"Hidden", true);
+        _searchBox->Close();
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);

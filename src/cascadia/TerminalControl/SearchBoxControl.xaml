@@ -142,7 +142,31 @@
                     </Style>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
-            <Duration x:Key="SearchBoxAnimationDuration">0:0:0.3</Duration>
+
+            <Duration x:Key="SearchBoxAnimationDuration">0:0:0.250</Duration>
+            <ExponentialEase x:Key="OpenAnimationEase"
+                             EasingMode="EaseOut"
+                             Exponent="5" />
+            <ExponentialEase x:Key="CloseAnimationEase"
+                             EasingMode="EaseIn"
+                             Exponent="5" />
+            <Storyboard x:Name="OpenAnimation">
+                <DoubleAnimation EasingFunction="{StaticResource OpenAnimationEase}"
+                                 Storyboard.TargetName="Transform"
+                                 Storyboard.TargetProperty="Y"
+                                 From="{x:Bind OpenAnimationStartPoint, Mode=OneWay}"
+                                 To="0"
+                                 Duration="{StaticResource SearchBoxAnimationDuration}" />
+            </Storyboard>
+            <Storyboard x:Name="CloseAnimation">
+                <DoubleAnimation EasingFunction="{StaticResource CloseAnimationEase}"
+                                 Storyboard.TargetName="Transform"
+                                 Storyboard.TargetProperty="Y"
+                                 From="0"
+                                 To="{x:Bind OpenAnimationStartPoint, Mode=OneWay}"
+                                 Duration="{StaticResource SearchBoxAnimationDuration}" />
+            </Storyboard>
+
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -160,7 +184,7 @@
                 Shadow="{StaticResource SharedShadow}"
                 Translation="0,0,16">
         <StackPanel.RenderTransform>
-            <TranslateTransform x:Name="TranslateTransform" />
+            <TranslateTransform x:Name="Transform" />
         </StackPanel.RenderTransform>
 
         <TextBox x:Name="TextBox"
@@ -233,41 +257,16 @@
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="SearchBoxStates">
 
-                <VisualState x:Name="Visible">
+                <VisualState x:Name="Opened">
                     <VisualState.Setters>
                         <Setter Target="Root.Visibility" Value="Visible" />
                     </VisualState.Setters>
-                    <Storyboard>
-                        <DoubleAnimation Storyboard.TargetName="TranslateTransform"
-                                         Storyboard.TargetProperty="Y"
-                                         From="{x:Bind EntryAnimationStartPoint, Mode=OneWay}"
-                                         To="0"
-                                         Duration="{StaticResource SearchBoxAnimationDuration}">
-                            <DoubleAnimation.EasingFunction>
-                                <QuarticEase EasingMode="EaseOut" />
-                            </DoubleAnimation.EasingFunction>
-                        </DoubleAnimation>
-                    </Storyboard>
                 </VisualState>
 
-                <VisualState x:Name="Hidden">
-                    <Storyboard>
-                        <DoubleAnimation Storyboard.TargetName="TranslateTransform"
-                                         Storyboard.TargetProperty="Y"
-                                         To="{x:Bind EntryAnimationStartPoint, Mode=OneWay}"
-                                         Duration="{StaticResource SearchBoxAnimationDuration}">
-                            <DoubleAnimation.EasingFunction>
-                                <QuarticEase EasingMode="EaseIn" />
-                            </DoubleAnimation.EasingFunction>
-                        </DoubleAnimation>
-                        <ObjectAnimationUsingKeyFrames BeginTime="{StaticResource SearchBoxAnimationDuration}"
-                                                       Storyboard.TargetName="Root"
-                                                       Storyboard.TargetProperty="Visibility"
-                                                       Duration="0">
-                            <DiscreteObjectKeyFrame KeyTime="0:0:0"
-                                                    Value="Collapsed" />
-                        </ObjectAnimationUsingKeyFrames>
-                    </Storyboard>
+                <VisualState x:Name="Closed">
+                    <VisualState.Setters>
+                        <Setter Target="Root.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
                 </VisualState>
 
             </VisualStateGroup>

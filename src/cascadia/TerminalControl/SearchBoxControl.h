@@ -29,9 +29,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchBoxControl();
 
         winrt::Windows::Foundation::Rect ContentClipRect() const noexcept;
-        double EntryAnimationStartPoint() const noexcept;
+        double OpenAnimationStartPoint() const noexcept;
 
         void TextBoxKeyDown(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void Open(std::function<void()> callback);
+        void Close();
 
         void SetFocusOnTextbox();
         void PopulateTextbox(const winrt::hstring& text);
@@ -55,12 +57,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
         winrt::Windows::Foundation::Rect _contentClipRect{ 0, 0, 0, 0 };
-        double _entryAnimationStartPoint = 0;
+        double _openAnimationStartPoint = 0;
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _initialLoadedRevoker;
+        bool _initialized = false;
+        std::function<void()> _initializedCallback;
 
+        void _Initialize();
         void _UpdateSizeDependents();
         void _ContentClipRect(const winrt::Windows::Foundation::Rect& rect);
-        void _EntryAnimationStartPoint(double y);
+        void _OpenAnimationStartPoint(double y);
+        void _PlayOpenAnimation();
+        void _PlayCloseAnimation();
+        bool _AnimationEnabled();
 
         static winrt::hstring _FormatStatus(int32_t totalMatches, int32_t currentMatch);
         static double _TextWidth(winrt::hstring text, double fontSize);

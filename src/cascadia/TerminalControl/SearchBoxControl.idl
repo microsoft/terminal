@@ -13,7 +13,7 @@ namespace Microsoft.Terminal.Control
         Boolean ContainsFocus();
         void SetStatus(Int32 totalMatches, Int32 currentMatch);
         Windows.Foundation.Rect ContentClipRect{ get; };
-        Double EntryAnimationStartPoint{ get; };
+        Double OpenAnimationStartPoint{ get; };
 
         Boolean NavigationEnabled;
 
