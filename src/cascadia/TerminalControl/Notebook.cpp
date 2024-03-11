@@ -38,28 +38,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         _renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal);
 
+        _terminal->NewPrompt([this](const auto& /*mark*/) {
+            if (_connection)
+            {
+                _fork();
+            }
+        });
+
         _fork();
-        _fork();
-        _fork();
-        // ControlData data{
-        //     .terminal = _terminal,
-        //     .renderData = _renderData.get(),
-        //     .connection = _connection,
-        // };
-
-        // auto coreOne = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
-        // auto coreTwo = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
-
-        // auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(settings, _unfocusedAppearance, coreOne);
-        // auto interactivityTwo = winrt::make_self<implementation::ControlInteractivity>(settings, _unfocusedAppearance, coreTwo);
-
-        // auto controlOne = winrt::make<implementation::TermControl>(*interactivityOne);
-        // auto controlTwo = winrt::make<implementation::TermControl>(*interactivityTwo);
-        // _controls.Append(controlOne);
-        // _controls.Append(controlTwo);
-
-        // // controlOne.Connection(nullptr);
-        // _active = _controls.GetAt(_controls.Size() - 1);
+        // _fork();
+        // _fork();
     }
 
     Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Notebook::Controls() const
@@ -71,8 +59,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _active;
     }
 
-    void Notebook::_fork()
+    winrt::fire_and_forget Notebook::_fork()
     {
+        if (_active && !_active.Dispatcher().HasThreadAccess())
+        {
+            co_await wil::resume_foreground(_active.Dispatcher());
+        }
+
         if (_active)
         {
             _active.Connection(nullptr);
@@ -90,6 +83,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _controls.Append(controlOne);
 
         _active = controlOne;
+
+        NewBlock.raise(*this, _active);
     }
 
 }

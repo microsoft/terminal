@@ -324,6 +324,8 @@ void Terminal::MarkPrompt(const ScrollMark& mark)
     if (mark.category == MarkCategory::Prompt)
     {
         _currentPromptState = PromptState::Prompt;
+
+        NewPrompt.raise(mark);
     }
 }
 

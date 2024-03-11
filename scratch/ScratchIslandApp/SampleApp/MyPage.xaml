@@ -35,7 +35,7 @@
               VerticalAlignment="Stretch">
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="1" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -45,14 +45,19 @@
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
+            <ScrollViewer Grid.Column="1"
+                          Padding="4"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="#eeeeee">
+                <StackPanel x:Name="OutOfProcContent"
+                            Grid.Column="1"
+                            Padding="16"
+                            HorizontalAlignment="Stretch"
+                            Background="#222233"
+                            Orientation="Vertical" />
+            </ScrollViewer>
 
-            <StackPanel x:Name="OutOfProcContent"
-                        Grid.Column="1"
-                        Padding="16"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Background="#0000ff"
-                        Orientation="Vertical" />
 
 
 

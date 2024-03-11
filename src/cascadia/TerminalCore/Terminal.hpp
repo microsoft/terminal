@@ -240,6 +240,8 @@ public:
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
 
+    til::event<winrt::delegate<const ScrollMark&>> NewPrompt;
+
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
 

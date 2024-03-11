@@ -16,12 +16,20 @@
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+
+    struct NotebookBlock
+    {
+        ::Microsoft::Terminal::Core::BlockRenderData* renderData;
+        Microsoft::Terminal::Control::TermControl control;
+    };
+
     struct Notebook : NotebookT<Notebook>
     {
     public:
         Notebook(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Controls() const;
         Microsoft::Terminal::Control::TermControl ActiveControl() const;
+        til::typed_event<Control::Notebook, Control::TermControl> NewBlock;
 
     private:
         std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
@@ -34,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> _controls{ winrt::single_threaded_vector<Microsoft::Terminal::Control::TermControl>() };
 
-        void _fork();
+        winrt::fire_and_forget _fork();
     };
 }
 

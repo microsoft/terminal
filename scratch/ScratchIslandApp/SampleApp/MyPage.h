@@ -23,6 +23,10 @@ namespace winrt::SampleApp::implementation
         void _createOutOfProcContent();
 
         winrt::Microsoft::Terminal::Control::Notebook _notebook{ nullptr };
+
+        void _newBlockHandler(const winrt::Microsoft::Terminal::Control::Notebook& sender,
+                              const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void _addControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
     };
 }
 
