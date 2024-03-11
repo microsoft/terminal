@@ -39,9 +39,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal);
 
         _terminal->NewPrompt([this](const auto& mark) {
-            if (_connection)
+            if (_gotFirstMark)
             {
                 _fork(mark.start.y);
+            }
+            else
+            {
+                _gotFirstMark = true;
             }
         });
 

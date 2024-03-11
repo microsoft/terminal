@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection _connection{ nullptr };
         Control::IControlSettings _settings{ nullptr };
         Control::IControlAppearance _unfocusedAppearance{ nullptr };
+        bool _gotFirstMark{ false };
         // std::unique_ptr<::Microsoft::Terminal::Core::BlockRenderData> _renderData{ nullptr };
 
         // Microsoft::Terminal::Control::TermControl _active{ nullptr };
