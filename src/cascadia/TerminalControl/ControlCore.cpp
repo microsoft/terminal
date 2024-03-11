@@ -1156,7 +1156,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 _connection.Resize(vp.Height(), vp.Width());
             }
-            
         }
     }
 
@@ -2754,4 +2753,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _clickedOnMark(_contextMenuBufferPosition,
                               [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
     }
+
+    til::rect ControlCore::ViewInPixels(const til::rect& viewInCharacters)
+    {
+        auto v = Viewport::FromExclusive(viewInCharacters);
+        return _renderEngine->GetViewportInPixels(v).ToExclusive();
+    }
+
 }

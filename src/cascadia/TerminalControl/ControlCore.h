@@ -295,6 +295,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<> Attached;
         // clang-format on
 
+        til::rect ViewInPixels(const til::rect& viewInCharacters);
+
     private:
         struct SharedState
         {

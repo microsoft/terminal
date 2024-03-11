@@ -19,8 +19,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     struct NotebookBlock
     {
-        std::unique_ptr<::Microsoft::Terminal::Core::BlockRenderData> renderData;
-        Microsoft::Terminal::Control::TermControl control;
+        std::unique_ptr<::Microsoft::Terminal::Core::BlockRenderData> renderData{ nullptr };
+        winrt::com_ptr<Microsoft::Terminal::Control::implementation::ControlCore> core{ nullptr };
+        Microsoft::Terminal::Control::TermControl control{ nullptr };
     };
 
     struct Notebook : NotebookT<Notebook>

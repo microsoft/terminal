@@ -58,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return nullptr;
     }
+
     Control::TermControl Notebook::ActiveControl() const
     {
         if (_blocks.empty())
@@ -80,12 +81,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         active = ActiveControl();
         if (active)
         {
-            til::rect r{ 0, 0, 0, -128 };
+            auto core{ _blocks.rbegin()->core };
+            auto* renderData{ _blocks.rbegin()->renderData.get() };
+
+            renderData->LockConsole();
+            auto blockRenderViewport = renderData->GetViewport();
+            renderData->UnlockConsole();
+
+            // auto size = TermControl::GetProposedDimensions(_core.Settings(), dpi, minSize);
+            auto pixels = core->ViewInPixels(blockRenderViewport.ToExclusive());
+
+            const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+            // auto viewDips = pixels * scaleFactor;
+
+            const auto controlHeightDips = active.ActualHeight();
+            const auto viewHeightDips = pixels.height() * scaleFactor;
+
+            auto r = pixels;
+
+            // til::rect r{ 0, 0, 0, -128 };
             // const auto p = r.to_core_padding();
-            auto t{ WUX::ThicknessHelper::FromLengths(r.left,
-                                                      r.top,
-                                                      r.right,
-                                                      r.bottom) };
+            auto t{ WUX::ThicknessHelper::FromLengths(0 /*r.left*/,
+                                                      0 /*r.top*/,
+                                                      0 /*r.right*/,
+                                                      -(controlHeightDips - viewHeightDips)/*r.bottom*/) };
             active.Margin(t);
             // WUX::Media::TranslateTransform transform{};
             // transform.X(-15);
@@ -97,12 +116,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // active.Clip(clipRect);
 
-            _blocks.rbegin()->renderData->SetBottom(start - 1);
+            renderData->SetBottom(start - 1);
             active.Connection(nullptr);
         }
 
         NotebookBlock newBlock{
             .renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal, start),
+            .core = nullptr,
             .control = nullptr
         };
 
@@ -112,8 +132,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             .connection = _connection,
         };
 
-        auto coreOne = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
-        auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(_settings, _unfocusedAppearance, coreOne);
+        newBlock.core = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
+        auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(_settings, _unfocusedAppearance, newBlock.core);
         newBlock.control = winrt::make<implementation::TermControl>(*interactivityOne);
 
         _blocks.push_back(std::move(newBlock));
