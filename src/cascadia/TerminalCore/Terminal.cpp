@@ -41,12 +41,16 @@ Terminal::Terminal(TestDummyMarker) :
 
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer* renderer)
 {
+    if (_mainBuffer)
+        return;
+
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
     const til::size bufferSize{ viewportSize.width,
                                 Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
+
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, _terminalInput);
@@ -84,6 +88,8 @@ void Terminal::ChangeRenderer(Renderer* newRenderer)
 void Terminal::CreateFromSettings(ICoreSettings settings,
                                   Renderer* renderer)
 {
+    if (_mainBuffer)
+        return;
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                                   Utils::ClampToShortMax(settings.InitialRows(), 1) };
 

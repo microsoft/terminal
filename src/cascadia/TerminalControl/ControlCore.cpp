@@ -399,6 +399,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _settings->InitialRows(height);
 
             _terminal->CreateFromSettings(*_settings, _renderer.get());
+            _terminal->ChangeRenderer(_renderer.get());
 
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once

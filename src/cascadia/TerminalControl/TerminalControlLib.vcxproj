@@ -74,6 +74,7 @@
     <ClInclude Include="Notebook.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="NotebookRenderer.hpp" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -121,6 +122,7 @@
     <ClCompile Include="Notebook.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="NotebookRenderer.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
