@@ -8,7 +8,6 @@ param (
     [string]$OutPath
 )
 
-$fullPath = Resolve-Path $JsonFile
 $jsonData = Get-Content -Raw $JsonFile | ConvertFrom-Json | ConvertTo-Json -Compress -Depth 100
 
 $jsonData | Out-File -FilePath $OutPath -Encoding utf8
