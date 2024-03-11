@@ -852,7 +852,7 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
-        
+
         if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
             _evaluatePrefix();
