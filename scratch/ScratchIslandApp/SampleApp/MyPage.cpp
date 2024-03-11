@@ -80,6 +80,37 @@ namespace winrt::SampleApp::implementation
     {
         _addControl(control);
     }
+
+    void MyPage::_scrollToElement(const WUX::UIElement& element,
+                                  bool isVerticalScrolling,
+                                  bool smoothScrolling)
+    {
+        const auto scrollViewer = _scrollViewer();
+
+        const auto origin = winrt::Windows::Foundation::Point{ 0, 0 };
+
+        const auto transform_stackPanel = element.TransformToVisual(OutOfProcContent().try_as<WUX::UIElement>());
+        const auto transform_scrollContent = element.TransformToVisual(scrollViewer.Content().try_as<WUX::UIElement>());
+        const auto transform_scrollView = element.TransformToVisual(scrollViewer.try_as<WUX::UIElement>());
+        // const auto transform = element.TransformToVisual(OutOfProcContent().try_as<WUX::UIElement>());
+        const auto position_stackPanel = transform_stackPanel.TransformPoint(origin);
+        const auto position_scrollContent = transform_scrollContent.TransformPoint(origin);
+        const auto position_scrollView = transform_scrollView.TransformPoint(origin);
+
+        position_stackPanel;
+        position_scrollContent;
+        position_scrollView;
+
+        if (isVerticalScrolling)
+        {
+            scrollViewer.ChangeView(nullptr, position_scrollContent.Y, nullptr, !smoothScrolling);
+        }
+        else
+        {
+            scrollViewer.ChangeView(position_scrollContent.X, nullptr, nullptr, !smoothScrolling);
+        }
+    }
+
     void MyPage::_addControl(const Control::TermControl& control)
     {
         control.Height(256);
@@ -90,10 +121,47 @@ namespace winrt::SampleApp::implementation
         wrapper.VerticalAlignment(WUX::VerticalAlignment::Top);
         wrapper.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
         wrapper.CornerRadius(WUX::CornerRadiusHelper::FromRadii(6, 6, 6, 6));
-        wrapper.Margin(WUX::ThicknessHelper::FromLengths(0, 4, 0, 4));
+        wrapper.Margin(WUX::ThicknessHelper::FromLengths(0, 5, 0, 7));
         wrapper.Children().Append(control);
 
         OutOfProcContent().Children().Append(wrapper);
+
+        control.Focus(WUX::FocusState::Programmatic);
+        // _scrollToElement(control);
+        // _scrollToElement(wrapper);
+
+        auto oldHeight = _scrollViewer().ExtentHeight();
+        oldHeight;
+
+        // auto thisIsStupid = [this, wrapper, oldHeight]() -> winrt::fire_and_forget {
+        //     co_await winrt::resume_foreground(this->Dispatcher());
+
+        //     auto newHeight = _scrollViewer().ExtentHeight();
+        //     newHeight;
+
+        //     auto diff = newHeight - oldHeight;
+        //     diff;
+
+        //     _scrollToElement(wrapper);
+        // };
+        _stupid(wrapper);
+
+        // _scrollViewer().ChangeView(nullptr, _scrollViewer().ExtentHeight(), nullptr, true);
     }
 
+    winrt::fire_and_forget MyPage::_stupid(WUX::UIElement elem)
+    {
+        co_await winrt::resume_after(2ms);
+        // co_await winrt::resume_background();
+        co_await winrt::resume_foreground(this->Dispatcher());
+
+        auto newHeight = _scrollViewer().ExtentHeight();
+        newHeight;
+
+        // auto diff = newHeight - oldHeight;
+        // diff;
+
+        _scrollToElement(elem);
+        // _scrollViewer().ChangeView(nullptr, _scrollViewer().ExtentHeight(), nullptr, true);
+    }
 }
