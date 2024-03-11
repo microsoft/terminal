@@ -1455,14 +1455,14 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMark(const ScrollMark& mark,
-                       const til::point& start,
-                       const til::point& end,
-                       const bool fromUi)
+ScrollMark Terminal::AddMark(const ScrollMark& mark,
+                             const til::point& start,
+                             const til::point& end,
+                             const bool fromUi)
 {
     if (_inAltBuffer())
     {
-        return;
+        return mark;
     }
 
     ScrollMark m = mark;
@@ -1485,6 +1485,8 @@ void Terminal::AddMark(const ScrollMark& mark,
 
     // DON'T set _currentPrompt. The VT impl will do that for you. We don't want
     // UI-driven marks to set that.
+
+    return m;
 }
 
 void Terminal::ClearMark()

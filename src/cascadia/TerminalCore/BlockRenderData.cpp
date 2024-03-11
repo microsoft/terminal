@@ -9,15 +9,36 @@ using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 
-BlockRenderData::BlockRenderData(Terminal& terminal) :
-    _terminal{ terminal }
+BlockRenderData::BlockRenderData(Terminal& terminal, til::CoordType virtualTop) :
+    _terminal{ terminal },
+    _virtualTop{ virtualTop }
 {
 }
 
+void BlockRenderData::SetBottom(til::CoordType bottom)
+{
+    _virtualBottom = bottom;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// GetViewport is part of the IRenderData interface that we actually changed.
+////////////////////////////////////////////////////////////////////////////////
+
 Viewport BlockRenderData::GetViewport() noexcept
 {
-    return _terminal.GetViewport();
+    const auto terminalViewport = _terminal.GetViewport().ToInclusive();
+    const til::inclusive_rect finalViewport{
+        .left = terminalViewport.left,
+        .top = _virtualTop.has_value() ? *_virtualTop : terminalViewport.top,
+        .right = terminalViewport.right,
+        .bottom = _virtualBottom.has_value() ? *_virtualBottom : terminalViewport.bottom,
+    };
+    return Viewport::FromInclusive(finalViewport);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Everything down here: blind pass-through
+////////////////////////////////////////////////////////////////////////////////
 
 til::point BlockRenderData::GetTextBufferEndPosition() const noexcept
 {

@@ -38,14 +38,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         // _renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal);
 
-        _terminal->NewPrompt([this](const auto& /*mark*/) {
+        _terminal->NewPrompt([this](const auto& mark) {
             if (_connection)
             {
-                _fork();
+                _fork(mark.start.y);
             }
         });
 
-        _fork();
+        _fork(0);
         // _fork();
         // _fork();
     }
@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // return _active;
     }
 
-    winrt::fire_and_forget Notebook::_fork()
+    winrt::fire_and_forget Notebook::_fork(const til::CoordType start)
     {
         auto active = ActiveControl();
 
@@ -76,11 +76,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         active = ActiveControl();
         if (active)
         {
+            _blocks.rbegin()->renderData->SetBottom(start - 1);
             active.Connection(nullptr);
         }
 
         NotebookBlock newBlock{
-            .renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal),
+            .renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal, start),
             .control = nullptr
         };
 

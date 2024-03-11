@@ -35,7 +35,8 @@ class Microsoft::Terminal::Core::BlockRenderData final :
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
 public:
-    BlockRenderData(Terminal& _terminal);
+    BlockRenderData(Terminal& _terminal, til::CoordType virtualTop);
+    void SetBottom(til::CoordType bottom);
 
 #pragma region IRenderData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
@@ -75,4 +76,7 @@ public:
 
 private:
     Terminal& _terminal;
+
+    std::optional<til::CoordType> _virtualTop{ std::nullopt };
+    std::optional<til::CoordType> _virtualBottom{ std::nullopt };
 };

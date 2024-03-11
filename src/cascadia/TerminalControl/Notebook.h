@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::vector<NotebookBlock> _blocks;
 
-        winrt::fire_and_forget _fork();
+        winrt::fire_and_forget _fork(const til::CoordType start);
     };
 }
 

@@ -319,13 +319,13 @@ void Terminal::MarkPrompt(const ScrollMark& mark)
     }
 
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    AddMark(mark, cursorPos, cursorPos, false);
+    const auto markWithPos = AddMark(mark, cursorPos, cursorPos, false);
 
     if (mark.category == MarkCategory::Prompt)
     {
         _currentPromptState = PromptState::Prompt;
 
-        NewPrompt.raise(mark);
+        NewPrompt.raise(markWithPos);
     }
 }
 

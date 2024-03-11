@@ -120,10 +120,10 @@ public:
     const RenderSettings& GetRenderSettings() const noexcept;
 
     const std::vector<ScrollMark>& GetScrollMarks() const noexcept;
-    void AddMark(const ScrollMark& mark,
-                 const til::point& start,
-                 const til::point& end,
-                 const bool fromUi);
+    ScrollMark AddMark(const ScrollMark& mark,
+                       const til::point& start,
+                       const til::point& end,
+                       const bool fromUi);
 
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
