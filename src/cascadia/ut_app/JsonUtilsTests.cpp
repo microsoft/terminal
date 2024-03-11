@@ -332,7 +332,7 @@ namespace TerminalAppUnitTests
         // test FromJson
         Json::Value jsonObject{ json };
         const auto value{ GetValue<TExpected>(jsonObject) };
-        VERIFY_ARE_EQUAL(expected, value, NoThrowString{}.Format(L"(type: %hs)", typeid(TExpected).name()));
+        VERIFY_ARE_EQUAL(expected, value); // NoThrowString{}.Format(L"(type: %hs)", typeid(TExpected).name()));
 
         // test ToJson
         {

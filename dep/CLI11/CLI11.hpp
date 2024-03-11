@@ -114,6 +114,8 @@
 #endif
 
 /** detection of rtti */
+#define CLI11_USE_STATIC_RTTI 0 // CLANG-BAD-HAX
+
 #ifndef CLI11_USE_STATIC_RTTI
 #if(defined(_HAS_STATIC_RTTI) && _HAS_STATIC_RTTI)
 #define CLI11_USE_STATIC_RTTI 1
