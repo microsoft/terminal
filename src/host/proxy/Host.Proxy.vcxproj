@@ -24,6 +24,8 @@
     on its own.
     -->
     <EnableHybridCRT>true</EnableHybridCRT>
+    <!-- MIDL generates code clang can't link, lol -->
+    <OpenConsoleProjectRequiresMSVC>true</OpenConsoleProjectRequiresMSVC>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>

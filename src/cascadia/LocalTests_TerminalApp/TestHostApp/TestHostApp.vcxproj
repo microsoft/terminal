@@ -26,6 +26,7 @@
      -->
     <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
+    <OpenConsoleProjectRequiresMSVC>true</OpenConsoleProjectRequiresMSVC>
 
   </PropertyGroup>
 

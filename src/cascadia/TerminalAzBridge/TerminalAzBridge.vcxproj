@@ -8,9 +8,8 @@
     <ProjectName>TerminalAzBridge</ProjectName>
     <TargetName>TerminalAzBridge</TargetName>
     <ConfigurationType>Application</ConfigurationType>
-    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
-    <ApplicationType>Windows Store</ApplicationType>
-    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <AppContainerApplication>false</AppContainerApplication>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">

@@ -8,8 +8,7 @@
     <ProjectName>WindowExe</ProjectName>
     <TargetName>WindowExe</TargetName>
     <ConfigurationType>Application</ConfigurationType>
-    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
-    <ApplicationType>Windows Store</ApplicationType>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <WindowsStoreApp>true</WindowsStoreApp>
     <WindowsAppContainer>false</WindowsAppContainer>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>

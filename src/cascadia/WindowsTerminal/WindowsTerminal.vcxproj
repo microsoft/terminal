@@ -8,11 +8,8 @@
     <ProjectName>WindowsTerminal</ProjectName>
     <TargetName>WindowsTerminal</TargetName>
     <ConfigurationType>Application</ConfigurationType>
-    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
-    <ApplicationType>Windows Store</ApplicationType>
-    <WindowsStoreApp>true</WindowsStoreApp>
-    <WindowsAppContainer>false</WindowsAppContainer>
-    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <AppContainerApplication>false</AppContainerApplication>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
 
@@ -109,6 +106,14 @@
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="$(WindowsSDK_MetadataPathVersioned)\Windows.UI.Xaml.Hosting.HostingContract\*\*.winmd">
+      <WinMDFile>true</WinMDFile>
+      <CopyLocal>false</CopyLocal>
+      <ReferenceGrouping>$(TargetPlatformMoniker)</ReferenceGrouping>
+      <ReferenceGroupingDisplayName>$(TargetPlatformDisplayName)</ReferenceGroupingDisplayName>
+      <ResolvedFrom>CppWinRTImplicitlyExpandTargetPlatform</ResolvedFrom>
+      <IsSystemReference>True</IsSystemReference>
     </Reference>
   </ItemGroup>
   <!--

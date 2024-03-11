@@ -44,7 +44,7 @@
       </uap:VisualElements>
 
       <Extensions>
-        <uap3:Extension Category="windows.appExecutionAlias" Executable="MonarchPeasantSample\MonarchPeasantSample.exe" EntryPoint="Windows.FullTrustApplication">
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="MonarchPeasantSample.exe" EntryPoint="Windows.FullTrustApplication">
           <uap3:AppExecutionAlias>
             <desktop:ExecutionAlias Alias="MonarchPeasantSample.exe" />
           </uap3:AppExecutionAlias>

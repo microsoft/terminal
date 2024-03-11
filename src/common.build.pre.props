@@ -13,6 +13,8 @@
 
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IntermediateOutputPath>$(IntDir)</IntermediateOutputPath>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <ClangTidyChecks>-*,modernize-*,performance-*,-modernize-use-trailing-return-type</ClangTidyChecks>
 
     <!-- Both pairs of OutDir/OutputPath and IntDir/IntermediateOutputPath must be set;
          different parts of the project infrastructure use them (without rhyme or reason.) -->
@@ -95,10 +97,10 @@
 
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset Condition="'$(OpenConsoleProjectRequiresMSVC)'=='true'">v143</PlatformToolset>
+    <PlatformToolset Condition="'$(OpenConsoleProjectRequiresMSVC)'!='true'">ClangCL</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
-    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
     <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
     <!--
@@ -116,7 +118,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatSpecificWarningsAsErrors>4189;4100;4242;4389;4244</TreatSpecificWarningsAsErrors>
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <!--<TreatWarningAsError>true</TreatWarningAsError>-->
       <!--
         C4201: nonstandard extension used: nameless struct/union
           Conhost code uses a lot of nameless structs/unions.
@@ -150,7 +152,16 @@
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
+      <!-- /fp:contract used to default to on before VS 17.0. If enabled it allows FMA for floats. -->
+      <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
+      <!--
+      <AdditionalOptions>%(AdditionalOptions) /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
+      -->
+      <AdditionalOptions Condition="'$(PlatformToolset)'=='ClangCL'">%(AdditionalOptions) -Xclang -fno-rtti -D_HAS_STATIC_RTTI=0 -fno-delayed-template-parsing -march=x86-64-v3 -mcx16</AdditionalOptions>
+      <!-- Warning Abatement (Clang) -->
+      <AdditionalOptions Condition="'$(PlatformToolset)'=='ClangCL'">%(AdditionalOptions) -Wno-missing-braces -Wno-unused-variable -Wno-nonportable-include-path</AdditionalOptions>
+      <AdditionalOptions Condition="'$(PlatformToolset)'=='ClangCL'">%(AdditionalOptions) -Wno-microsoft-sealed -Wno-microsoft-include -Wno-pragma-pack -Wno-unused-function</AdditionalOptions>
+      <AdditionalOptions Condition="'$(PlatformToolset)'=='ClangCL'">%(AdditionalOptions) -Wno-reorder-ctor -Wno-ignored-qualifiers</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>

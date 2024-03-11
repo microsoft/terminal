@@ -59,9 +59,9 @@
     <ClInclude Include="..\WinNTControl.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\host\proxy\Host.Proxy.vcxproj">
+	  <!--<ProjectReference Include="..\..\host\proxy\Host.Proxy.vcxproj">
       <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
-    </ProjectReference>
+    </ProjectReference>-->
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
