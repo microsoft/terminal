@@ -1,4 +1,4 @@
-<UserControl x:Class="Microsoft.Terminal.Control.SearchBoxControl"
+﻿<UserControl x:Class="Microsoft.Terminal.Control.SearchBoxControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -143,13 +143,13 @@
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
-            <Duration x:Key="SearchBoxAnimationDuration">0:0:0.250</Duration>
+            <Duration x:Key="SearchBoxAnimationDuration">0:0:0.3</Duration>
             <ExponentialEase x:Key="OpenAnimationEase"
                              EasingMode="EaseOut"
-                             Exponent="5" />
+                             Exponent="6" />
             <ExponentialEase x:Key="CloseAnimationEase"
                              EasingMode="EaseIn"
-                             Exponent="5" />
+                             Exponent="6" />
             <Storyboard x:Name="OpenAnimation">
                 <DoubleAnimation EasingFunction="{StaticResource OpenAnimationEase}"
                                  Storyboard.TargetName="Transform"
