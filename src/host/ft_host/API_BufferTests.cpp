@@ -10,6 +10,9 @@ extern "C" IMAGE_DOS_HEADER __ImageBase;
 using namespace WEX::Logging;
 using namespace WEX::Common;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-narrowing"
+
 // This class is intended to test boundary conditions for:
 // SetConsoleActiveScreenBuffer
 class BufferTests
@@ -294,3 +297,5 @@ void BufferTests::ChafaGifPerformance()
     const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count();
     Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta / count));
 }
+
+#pragma clang diagnostic pop

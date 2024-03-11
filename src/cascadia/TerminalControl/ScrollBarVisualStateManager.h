@@ -14,6 +14,8 @@
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 
+#include "TermControl.h"
+
 #include "ScrollBarVisualStateManager.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation

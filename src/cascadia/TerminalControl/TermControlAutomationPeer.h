@@ -33,6 +33,7 @@ Modifications:
 #include "../types/TermControlUiaProvider.hpp"
 #include "../types/IUiaEventDispatcher.h"
 #include "../types/IControlAccessibilityInfo.h"
+#include "TermControl.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {

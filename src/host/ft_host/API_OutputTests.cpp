@@ -9,6 +9,9 @@
 #include <vector>
 #include <algorithm>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-narrowing"
+
 using namespace Microsoft::Console::Types;
 using namespace WEX::TestExecution;
 using namespace WEX::Logging;
@@ -1062,3 +1065,5 @@ void OutputTests::WinPtyWrite()
         break;
     }
 }
+
+#pragma clang diagnostic pop

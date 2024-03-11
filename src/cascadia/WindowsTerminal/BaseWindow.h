@@ -10,7 +10,7 @@ template<typename T>
 class BaseWindow
 {
 public:
-    virtual ~BaseWindow() = 0;
+    virtual ~BaseWindow() = default;
     static T* GetThisFromHandle(HWND const window) noexcept
     {
         return reinterpret_cast<T*>(GetWindowLongPtr(window, GWLP_USERDATA));
@@ -228,8 +228,3 @@ protected:
         return DefWindowProc(_window.get(), WM_NCCREATE, wParam, lParam);
     };
 };
-
-template<typename T>
-inline BaseWindow<T>::~BaseWindow()
-{
-}
