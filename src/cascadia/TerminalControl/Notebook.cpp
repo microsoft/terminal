@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             auto core{ _blocks.rbegin()->core };
             auto* renderData{ _blocks.rbegin()->renderData.get() };
+            renderData->SetBottom(start - 1);
 
             renderData->LockConsole();
             auto blockRenderViewport = renderData->GetViewport();
@@ -104,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto t{ WUX::ThicknessHelper::FromLengths(0 /*r.left*/,
                                                       0 /*r.top*/,
                                                       0 /*r.right*/,
-                                                      -(controlHeightDips - viewHeightDips)/*r.bottom*/) };
+                                                      -(controlHeightDips - viewHeightDips) /*r.bottom*/) };
             active.Margin(t);
             // WUX::Media::TranslateTransform transform{};
             // transform.X(-15);
@@ -116,7 +117,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // active.Clip(clipRect);
 
-            renderData->SetBottom(start - 1);
             active.Connection(nullptr);
         }
 

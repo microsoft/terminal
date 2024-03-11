@@ -27,11 +27,14 @@ void BlockRenderData::SetBottom(til::CoordType bottom)
 Viewport BlockRenderData::GetViewport() noexcept
 {
     const auto terminalViewport = _terminal.GetViewport().ToInclusive();
+    const til::rect terminalExclusive{ terminalViewport };
     const til::inclusive_rect finalViewport{
         .left = terminalViewport.left,
-        .top = _virtualTop.has_value() ? *_virtualTop : terminalViewport.top,
+        .top = _virtualTop.has_value() ? std::max(*_virtualTop, terminalViewport.top) : terminalViewport.top,
         .right = terminalViewport.right,
-        .bottom = _virtualBottom.has_value() ? *_virtualBottom : terminalViewport.bottom,
+        .bottom = _virtualBottom.has_value() ?
+                      std::min(*_virtualBottom, terminalViewport.bottom) :
+                      std::max(terminalViewport.bottom, *_virtualTop + terminalExclusive.height()),
     };
     return Viewport::FromInclusive(finalViewport);
 }
