@@ -72,6 +72,8 @@ public:
     const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override;
+
+    til::CoordType GetBufferHeight() const noexcept override;
 #pragma endregion
 
 private:

@@ -275,7 +275,8 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
     {
         return;
     }
-    _terminal->SetScrollPositionChangedCallback(callback);
+    callback;
+    // _terminal->SetScrollPositionChangedCallback(callback);
 }
 
 void HwndTerminal::_WriteTextToConnection(const std::wstring_view input) noexcept

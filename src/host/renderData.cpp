@@ -434,3 +434,10 @@ const til::point RenderData::GetSelectionEnd() const noexcept
 
     return { x_pos, y_pos };
 }
+
+til::point RenderData::GetBufferHeight() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
+    return bufferSize.BottomExclusive();
+}

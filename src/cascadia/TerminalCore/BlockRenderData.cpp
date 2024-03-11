@@ -39,6 +39,22 @@ Viewport BlockRenderData::GetViewport() noexcept
     return Viewport::FromInclusive(finalViewport);
 }
 
+til::CoordType BlockRenderData::GetBufferHeight() const noexcept
+{
+    // TODO! I think the GetTextBufferEndPosition().Y just needs a +1. It's hard
+    // to say for sure. TerminalRenderData returns
+    //
+    //   { _GetMutableViewport().Width() - 1, ViewEndIndex() };
+    //
+    // and ViewEndIndex() { return _inAltBuffer() ? _altBufferSize.height - 1 : _mutableViewport.BottomInclusive(); }
+
+    const auto bottom = _virtualBottom.has_value() ?
+                            std::min(*_virtualBottom, _terminal.GetBufferHeight()) :
+                            _terminal.GetBufferHeight(); // std::max(terminalViewport.bottom, *_virtualTop + terminalExclusive.height()),
+
+    return bottom - *_virtualTop;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Everything down here: blind pass-through
 ////////////////////////////////////////////////////////////////////////////////

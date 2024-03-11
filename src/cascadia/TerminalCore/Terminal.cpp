@@ -1100,13 +1100,13 @@ void Terminal::_NotifyScrollEvent()
     // See UserScrollViewport().
     _clearPatternTree();
 
-    if (_pfnScrollPositionChanged)
+    if ((bool)ScrollPositionChanged)
     {
         const auto visible = _GetVisibleViewport();
         const auto top = visible.Top();
         const auto height = visible.Height();
         const auto bottom = this->GetBufferHeight();
-        _pfnScrollPositionChanged(top, height, bottom);
+        ScrollPositionChanged.raise(top, height, bottom);
     }
 }
 
@@ -1142,10 +1142,10 @@ void Terminal::SetCopyToClipboardCallback(std::function<void(std::wstring_view)>
     _pfnCopyToClipboard.swap(pfn);
 }
 
-void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
-{
-    _pfnScrollPositionChanged.swap(pfn);
-}
+// void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
+// {
+//     _pfnScrollPositionChanged.swap(pfn);
+// }
 
 void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept
 {

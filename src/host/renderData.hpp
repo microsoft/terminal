@@ -59,4 +59,6 @@ public:
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override { return true; }
+
+    til::CoordType GetBufferHeight() const noexcept override;
 };

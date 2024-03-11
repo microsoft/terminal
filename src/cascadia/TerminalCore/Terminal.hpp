@@ -111,7 +111,8 @@ public:
     [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting() noexcept;
     til::recursive_ticket_lock_suspension SuspendLock() noexcept;
 
-    til::CoordType GetBufferHeight() const noexcept;
+    // TODO! I moved this into renderdata
+    til::CoordType GetBufferHeight() const noexcept override;
 
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
@@ -233,7 +234,8 @@ public:
     void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept;
-    void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
+    til::event<winrt::delegate<const int, const int, const int>> ScrollPositionChanged;
+    // void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;

@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _construct(settings, unfocusedAppearance, data);
     }
 
+    // The normal ctor that the Windows Terminal comes through
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection inboundConnection) :
@@ -102,6 +103,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             .terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>(),
             .connection = inboundConnection
         };
+        // In the usual case, the Terminal instance itself is the RenderData
+        // (without any extra indirection);
         data.renderData = data.terminal.get();
         _construct(settings, unfocusedAppearance, data);
     }
@@ -134,8 +137,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTitleChanged = std::bind(&ControlCore::_terminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
-        auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
+        // auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        // _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
+        _terminal->ScrollPositionChanged({ this, &ControlCore::_terminalScrollPositionChanged });
 
         auto pfnTerminalCursorPositionChanged = std::bind(&ControlCore::_terminalCursorPositionChanged, this);
         _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
@@ -167,7 +171,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Now create the renderer and initialize the render thread.
             const auto& renderSettings = _terminal->GetRenderSettings();
-            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, data.renderData, nullptr, 0, std::move(renderThread));
+            _renderData = data.renderData;
+            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _renderData, nullptr, 0, std::move(renderThread));
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
             _renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });
@@ -720,6 +725,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //      itself - it was initiated by the mouse wheel, or the scrollbar.
             const auto lock = _terminal->LockForWriting();
             _terminal->UserScrollViewport(viewTop);
+
+            // HAX we can check if we're running as a block because in that case
+            // we'll have different render data than just the Terminal itself.
+            // That's probably not a good way of doing this, but it is _A_ way.
+            if (_renderData != _terminal.get())
+            {
+                _renderer->TriggerScroll();
+            }
         }
 
         const auto shared = _shared.lock_shared();
@@ -1487,7 +1500,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     int ControlCore::ScrollOffset()
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetScrollOffset();
+        // return _terminal->GetScrollOffset();
+        return _renderData->GetViewport().Top();
     }
 
     // Function Description:
@@ -1498,7 +1512,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     int ControlCore::ViewHeight() const
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetViewport().Height();
+        // return _terminal->GetViewport().Height();
+        return _renderData->GetViewport().Height();
     }
 
     // Function Description:
@@ -1509,7 +1524,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     int ControlCore::BufferHeight() const
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetBufferHeight();
+        // return _terminal->GetBufferHeight();
+        return _renderData->GetBufferHeight();
     }
 
     void ControlCore::_terminalWarningBell()
@@ -1547,9 +1563,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      of the buffer.
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
-    void ControlCore::_terminalScrollPositionChanged(const int viewTop,
-                                                     const int viewHeight,
-                                                     const int bufferSize)
+    void ControlCore::_terminalScrollPositionChanged(const int /*viewTop*/,
+                                                     const int /*viewHeight*/,
+                                                     const int /*bufferSize*/)
     {
         if (!_initializedTerminal.load(std::memory_order_relaxed))
         {
@@ -1557,6 +1573,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Start the throttled update of our scrollbar.
+
+        // As raised in Terminal::_NotifyScrollEvent
+        // {
+        //     const auto visible = _GetVisibleViewport();
+        //     const auto top = visible.Top();
+        //     const auto height = visible.Height();
+        //     const auto bottom = this->GetBufferHeight();
+        //     _pfnScrollPositionChanged(top, height, bottom);
+        // }
+        const auto viewport = _renderData->GetViewport();
+        const int viewTop = viewport.Top();
+        const int viewHeight = viewport.Height();
+        const int bufferSize = _renderData->GetBufferHeight();
+
         auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
                                                             viewHeight,
                                                             bufferSize) };

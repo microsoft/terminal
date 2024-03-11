@@ -76,5 +76,8 @@ namespace Microsoft::Console::Render
         virtual const til::point GetSelectionAnchor() const noexcept = 0;
         virtual const til::point GetSelectionEnd() const noexcept = 0;
         virtual const bool IsUiaDataInitialized() const noexcept = 0;
+
+        // This block is mike fn around with notebooks
+        virtual til::CoordType GetBufferHeight() const noexcept = 0;
     };
 }
