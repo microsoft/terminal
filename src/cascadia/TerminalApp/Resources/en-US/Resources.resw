@@ -168,6 +168,12 @@
   <data name="MultiplePanes" xml:space="preserve">
     <value>Multiple panes</value>
   </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>Close...</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>Close Tabs to the Right</value>
+  </data>
   <data name="TabCloseOther" xml:space="preserve">
     <value>Close Other Tabs</value>
   </data>
