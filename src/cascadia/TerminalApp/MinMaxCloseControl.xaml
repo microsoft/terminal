@@ -237,7 +237,7 @@
     </StackPanel.Resources>
 
     <Button x:Name="MinimizeButton"
-            x:Uid="MinimizeButton"
+            x:Uid="WindowMinimizeButton"
             Width="46.0"
             Height="{StaticResource CaptionButtonHeightWindowed}"
             MinWidth="46.0"
@@ -269,7 +269,7 @@
         </ToolTipService.ToolTip>
     </Button>
     <Button x:Name="MaximizeButton"
-            x:Uid="MaximizeButton"
+            x:Uid="WindowMaximizeButton"
             Width="46.0"
             Height="{StaticResource CaptionButtonHeightWindowed}"
             MinWidth="46.0"
@@ -303,7 +303,7 @@
         </ToolTipService.ToolTip>
     </Button>
     <Button x:Name="CloseButton"
-            x:Uid="CloseButton"
+            x:Uid="WindowCloseButton"
             Width="46.0"
             Height="{StaticResource CaptionButtonHeightWindowed}"
             MinWidth="46.0"
