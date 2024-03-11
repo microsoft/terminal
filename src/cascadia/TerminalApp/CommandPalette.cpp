@@ -844,9 +844,9 @@ namespace winrt::TerminalApp::implementation
                                             const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         // When we are executing the _SelectNextTab in the TabManagement.cpp, this method
-        // is getting triggered because we set up the default value for that CommandPallete
+        // is getting triggered because we set up the default value for that CommandPalete
         // with an empty string. Therefore, to avoid the reset of the index when executing
-        // the Next/Prev tab command, we are skiping this execution.
+        // the Next/Prev tab command, we are skipping this execution.
         // Check issue https://github.com/microsoft/terminal/issues/11146
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
