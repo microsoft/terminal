@@ -1152,7 +1152,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
-            _connection.Resize(vp.Height(), vp.Width());
+            if (_connection)
+            {
+                _connection.Resize(vp.Height(), vp.Width());
+            }
+            
         }
     }
 

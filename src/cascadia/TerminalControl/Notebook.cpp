@@ -80,6 +80,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         active = ActiveControl();
         if (active)
         {
+            til::rect r{ 0, 0, 0, -128 };
+            // const auto p = r.to_core_padding();
+            auto t{ WUX::ThicknessHelper::FromLengths(r.left,
+                                                      r.top,
+                                                      r.right,
+                                                      r.bottom) };
+            active.Margin(t);
+            // WUX::Media::TranslateTransform transform{};
+            // transform.X(-15);
+            // transform.Y(-64);
+
+            // WUX::Media::RectangleGeometry clipRect{};
+            // clipRect.Rect(r.to_winrt_rect());
+            // clipRect.Transform(transform);
+
+            // active.Clip(clipRect);
+
             _blocks.rbegin()->renderData->SetBottom(start - 1);
             active.Connection(nullptr);
         }
