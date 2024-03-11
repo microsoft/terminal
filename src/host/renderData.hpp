@@ -61,4 +61,5 @@ public:
     const bool IsUiaDataInitialized() const noexcept override { return true; }
 
     til::CoordType GetBufferHeight() const noexcept override;
+    void UserScrollViewport(const int /*viewTop*/) override{};
 };

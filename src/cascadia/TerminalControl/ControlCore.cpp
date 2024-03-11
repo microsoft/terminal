@@ -724,7 +724,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // This is a scroll event that wasn't initiated by the terminal
             //      itself - it was initiated by the mouse wheel, or the scrollbar.
             const auto lock = _terminal->LockForWriting();
-            _terminal->UserScrollViewport(viewTop);
+            _renderData->UserScrollViewport(viewTop);
 
             // HAX we can check if we're running as a block because in that case
             // we'll have different render data than just the Terminal itself.

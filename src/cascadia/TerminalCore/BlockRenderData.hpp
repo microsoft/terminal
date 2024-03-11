@@ -74,11 +74,14 @@ public:
     const bool IsUiaDataInitialized() const noexcept override;
 
     til::CoordType GetBufferHeight() const noexcept override;
+    void UserScrollViewport(const int viewTop) override;
+
 #pragma endregion
 
 private:
     Terminal& _terminal;
 
-    std::optional<til::CoordType> _virtualTop{ std::nullopt };
+    til::CoordType _virtualTop{ 0 };
+    til::CoordType _scrollOffset{ 0 };
     std::optional<til::CoordType> _virtualBottom{ std::nullopt };
 };

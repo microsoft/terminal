@@ -79,5 +79,6 @@ namespace Microsoft::Console::Render
 
         // This block is mike fn around with notebooks
         virtual til::CoordType GetBufferHeight() const noexcept = 0;
+        virtual void UserScrollViewport(const int viewTop) = 0;
     };
 }

@@ -180,6 +180,7 @@ public:
     [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType FocusChanged(const bool focused) override;
 
     [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
+    // TODO! I moved this ALSO into renderdata and now it's in two places hope c++ is cool with that.
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() noexcept override;
 

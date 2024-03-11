@@ -28,13 +28,20 @@ Viewport BlockRenderData::GetViewport() noexcept
 {
     const auto terminalViewport = _terminal.GetViewport().ToInclusive();
     const til::rect terminalExclusive{ terminalViewport };
+
+    auto lastMutableViewportBottom = _virtualBottom.has_value() ? *_virtualBottom : _terminal.GetBufferHeight();
+    auto lastMutableViewportTop = std::max(0, lastMutableViewportBottom - terminalExclusive.height());
+    // auto numScrollbackRows = std::max(0, lastMutableViewportTop - _virtualTop);
+    auto clampedTop = std::max(_virtualTop, lastMutableViewportTop);
+
     const til::inclusive_rect finalViewport{
         .left = terminalViewport.left,
-        .top = _virtualTop.has_value() ? std::max(*_virtualTop, terminalViewport.top) : terminalViewport.top,
+        // .top = std::max(_virtualTop, terminalViewport.top),
+        .top = clampedTop - _scrollOffset,
         .right = terminalViewport.right,
         .bottom = _virtualBottom.has_value() ?
                       std::min(*_virtualBottom, terminalViewport.bottom) :
-                      std::max(terminalViewport.bottom, *_virtualTop + terminalExclusive.height()),
+                      std::max(terminalViewport.bottom, _virtualTop + terminalExclusive.height()),
     };
     return Viewport::FromInclusive(finalViewport);
 }
@@ -50,9 +57,30 @@ til::CoordType BlockRenderData::GetBufferHeight() const noexcept
 
     const auto bottom = _virtualBottom.has_value() ?
                             std::min(*_virtualBottom, _terminal.GetBufferHeight()) :
-                            _terminal.GetBufferHeight(); // std::max(terminalViewport.bottom, *_virtualTop + terminalExclusive.height()),
+                            _terminal.GetBufferHeight();
 
-    return bottom - *_virtualTop;
+    return bottom - _virtualTop;
+}
+
+void BlockRenderData::UserScrollViewport(const int viewTop)
+{
+    const auto terminalViewport = _terminal.GetViewport().ToInclusive();
+    const til::rect terminalExclusive{ terminalViewport };
+
+    auto lastMutableViewportBottom = _virtualBottom.has_value() ? *_virtualBottom : _terminal.GetBufferHeight();
+    auto lastMutableViewportTop = std::max(0, lastMutableViewportBottom - terminalExclusive.height());
+    auto numScrollbackRows = std::max(0, lastMutableViewportTop - _virtualTop);
+
+    if (viewTop <= _virtualTop)
+    {
+        _scrollOffset = numScrollbackRows;
+    }
+    else
+    {
+        // scrolled somewhere below virtual top
+
+        _scrollOffset = std::max(0, lastMutableViewportTop - viewTop);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
