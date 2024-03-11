@@ -77,7 +77,7 @@
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies);$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Microsoft.Terminal.Settings.Model.res</AdditionalDependencies>
       <!--
       SettingsModelLib contains a DllMain that we need to force the use of.
       If you don't have this, then you'll see an error like
