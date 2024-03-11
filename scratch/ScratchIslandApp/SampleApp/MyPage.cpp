@@ -89,17 +89,8 @@ namespace winrt::SampleApp::implementation
 
         const auto origin = winrt::Windows::Foundation::Point{ 0, 0 };
 
-        const auto transform_stackPanel = element.TransformToVisual(OutOfProcContent().try_as<WUX::UIElement>());
         const auto transform_scrollContent = element.TransformToVisual(scrollViewer.Content().try_as<WUX::UIElement>());
-        const auto transform_scrollView = element.TransformToVisual(scrollViewer.try_as<WUX::UIElement>());
-        // const auto transform = element.TransformToVisual(OutOfProcContent().try_as<WUX::UIElement>());
-        const auto position_stackPanel = transform_stackPanel.TransformPoint(origin);
         const auto position_scrollContent = transform_scrollContent.TransformPoint(origin);
-        const auto position_scrollView = transform_scrollView.TransformPoint(origin);
-
-        position_stackPanel;
-        position_scrollContent;
-        position_scrollView;
 
         if (isVerticalScrolling)
         {
@@ -127,41 +118,16 @@ namespace winrt::SampleApp::implementation
         OutOfProcContent().Children().Append(wrapper);
 
         control.Focus(WUX::FocusState::Programmatic);
-        // _scrollToElement(control);
-        // _scrollToElement(wrapper);
 
-        auto oldHeight = _scrollViewer().ExtentHeight();
-        oldHeight;
-
-        // auto thisIsStupid = [this, wrapper, oldHeight]() -> winrt::fire_and_forget {
-        //     co_await winrt::resume_foreground(this->Dispatcher());
-
-        //     auto newHeight = _scrollViewer().ExtentHeight();
-        //     newHeight;
-
-        //     auto diff = newHeight - oldHeight;
-        //     diff;
-
-        //     _scrollToElement(wrapper);
-        // };
+        // Incredibly dumb: move off UI thread, then back on, then scroll to the
+        // new control.
         _stupid(wrapper);
-
-        // _scrollViewer().ChangeView(nullptr, _scrollViewer().ExtentHeight(), nullptr, true);
     }
 
     winrt::fire_and_forget MyPage::_stupid(WUX::UIElement elem)
     {
-        co_await winrt::resume_after(2ms);
-        // co_await winrt::resume_background();
+        co_await winrt::resume_after(2ms); // no, resume_background is not enough to make this work.
         co_await winrt::resume_foreground(this->Dispatcher());
-
-        auto newHeight = _scrollViewer().ExtentHeight();
-        newHeight;
-
-        // auto diff = newHeight - oldHeight;
-        // diff;
-
         _scrollToElement(elem);
-        // _scrollViewer().ChangeView(nullptr, _scrollViewer().ExtentHeight(), nullptr, true);
     }
 }

@@ -56,7 +56,7 @@
                             Grid.Column="1"
                             Padding="16"
                             HorizontalAlignment="Stretch"
-                            Background="#222233"
+                            Background="#dddddd"
                             Orientation="Vertical" />
             </ScrollViewer>
 
