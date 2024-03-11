@@ -174,11 +174,12 @@ namespace winrt::TerminalApp::implementation
         // Set this tab's icon to the icon from the user's profile
         if (const auto profile{ newTabImpl->GetFocusedProfile() })
         {
-            if (!profile.Icon().empty())
+            const auto& icon = profile.EvaluatedIcon();
+            if (!icon.empty())
             {
                 const auto theme = _settings.GlobalSettings().CurrentTheme();
                 const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
-                newTabImpl->UpdateIcon(profile.Icon(), iconStyle);
+                newTabImpl->UpdateIcon(icon, iconStyle);
             }
         }
 
@@ -245,7 +246,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto theme = _settings.GlobalSettings().CurrentTheme();
             const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
-            tab.UpdateIcon(profile.Icon(), iconStyle);
+            tab.UpdateIcon(profile.EvaluatedIcon(), iconStyle);
         }
     }
 

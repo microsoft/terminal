@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -56,7 +57,7 @@
             <DataTemplate x:Key="ColorTableEntryTemplate"
                           x:DataType="local:ColorTableEntry">
                 <Button AutomationProperties.Name="{x:Bind AccessibleName, Mode=OneWay}"
-                        Background="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
+                        Background="{x:Bind mtu:Converters.ColorToBrush(Color), Mode=OneWay}"
                         Style="{StaticResource ColorSchemesColorButtonStyle}"
                         ToolTipService.ToolTip="{x:Bind AccessibleName, Mode=OneWay}">
                     <Button.Flyout>
@@ -74,7 +75,7 @@
                 <TextBlock AutomationProperties.Name="{x:Bind Name}"
                            FontFamily="Cascadia Code"
                            FontSize="14"
-                           Foreground="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
+                           Foreground="{x:Bind mtu:Converters.ColorToBrush(Color), Mode=OneWay}"
                            Text="{x:Bind Name}"
                            ToolTipService.ToolTip="{x:Bind Name}" />
             </DataTemplate>
@@ -90,7 +91,7 @@
                   MaxWidth="{StaticResource StandardControlMaxWidth}"
                   Margin="4"
                   HorizontalAlignment="Left"
-                  Background="{x:Bind local:Converters.ColorToBrush(ViewModel.BackgroundColor.Color), Mode=OneWay}"
+                  Background="{x:Bind mtu:Converters.ColorToBrush(ViewModel.BackgroundColor.Color), Mode=OneWay}"
                   BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
                   BorderThickness="1">
                 <Grid.ColumnDefinitions>
@@ -197,9 +198,18 @@
             </Grid>
         </Border>
 
+        <local:SettingContainer x:Uid="ColorScheme_InboxSchemeDuplicate"
+                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
+            <Button x:Name="DuplicateSchemeButton"
+                    x:Uid="ColorScheme_DuplicateButton"
+                    Click="{x:Bind ViewModel.Duplicate_Click}"
+                    Style="{StaticResource BrowseButtonStyle}" />
+        </local:SettingContainer>
+
         <local:SettingContainer x:Uid="ColorScheme_ColorsHeader"
                                 StartExpanded="True"
-                                Style="{StaticResource ExpanderSettingContainerStyle}">
+                                Style="{StaticResource ExpanderSettingContainerStyle}"
+                                Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <Grid x:Name="ColorTableGrid"
                   Style="{StaticResource ColorTableGridStyle}"
                   XYFocusKeyboardNavigation="Enabled">
@@ -424,8 +434,8 @@
 
         <local:SettingContainer x:Name="RenameContainer"
                                 x:Uid="ColorScheme_Rename"
-                                IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme), Mode=OneWay}"
-                                Style="{StaticResource ExpanderSettingContainerStyle}">
+                                Style="{StaticResource ExpanderSettingContainerStyle}"
+                                Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <StackPanel Orientation="Horizontal"
                         XYFocusKeyboardNavigation="Enabled">
                 <!--  Shown when color scheme name is already in use  -->
@@ -460,14 +470,14 @@
 
         <Grid MaxWidth="1000"
               Margin="2,6,0,0"
-              ColumnSpacing="4">
+              ColumnSpacing="4"
+              Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Button x:Name="DeleteButton"
                     Grid.Column="0"
-                    IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme)}"
                     Style="{StaticResource DeleteButtonStyle}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
@@ -488,13 +498,6 @@
                     </Flyout>
                 </Button.Flyout>
             </Button>
-            <TextBlock x:Name="SelectedSchemeDisclaimer"
-                       x:Uid="ColorScheme_DeleteButtonDisclaimerInBox"
-                       Grid.Column="1"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource DisclaimerStyle}"
-                       TextWrapping="Wrap"
-                       Visibility="{x:Bind ViewModel.IsInBoxScheme}" />
         </Grid>
     </StackPanel>
 </Page>

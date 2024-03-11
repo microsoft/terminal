@@ -64,6 +64,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     {
         OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     }
+    _desiredFont.SetEnableBuiltinGlyphs(gci.GetEnableBuiltinGlyphs());
 }
 
 // Routine Description:
@@ -539,7 +540,10 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
 
 void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
 {
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
     FontInfoDesired fiDesiredFont(*pfiNewFont);
+    fiDesiredFont.SetEnableBuiltinGlyphs(gci.GetEnableBuiltinGlyphs());
 
     GetDesiredFont() = fiDesiredFont;
 

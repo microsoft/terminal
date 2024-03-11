@@ -524,8 +524,6 @@ bool AdaptDispatch::CursorSaveState()
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
-    savedCursorState.C1ControlsAccepted = _api.GetStateMachine().GetParserMode(StateMachine::Mode::AcceptC1);
-    savedCursorState.CodePage = _api.GetConsoleOutputCP();
 
     return true;
 }
@@ -557,17 +555,8 @@ bool AdaptDispatch::CursorRestoreState()
     // Restore text attributes.
     _api.SetTextAttributes(savedCursorState.Attributes);
 
-    // Restore designated character set.
-    _termOutput = savedCursorState.TermOutput;
-
-    // Restore the parsing state of C1 control codes.
-    AcceptC1Controls(savedCursorState.C1ControlsAccepted);
-
-    // Restore the code page if it was previously saved.
-    if (savedCursorState.CodePage != 0)
-    {
-        _api.SetConsoleOutputCP(savedCursorState.CodePage);
-    }
+    // Restore designated character sets.
+    _termOutput.RestoreFrom(savedCursorState.TermOutput);
 
     return true;
 }
@@ -1541,21 +1530,22 @@ bool AdaptDispatch::DeviceAttributes()
     // 1 = 132 column mode (ConHost only)
     // 6 = Selective erase
     // 7 = Soft fonts
+    // 14 = 8-bit interface architecture
     // 21 = Horizontal scrolling
     // 22 = Color text
     // 23 = Greek character sets
     // 24 = Turkish character sets
     // 28 = Rectangular area operations
     // 32 = Text macros
-    // 42 = ISO Latin - 2 character set
+    // 42 = ISO Latin-2 character set
 
     if (_api.IsConsolePty())
     {
-        _api.ReturnResponse(L"\x1b[?61;6;7;21;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;6;7;14;21;22;23;24;28;32;42c");
     }
     else
     {
-        _api.ReturnResponse(L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;14;21;22;23;24;28;32;42c");
     }
     return true;
 }
@@ -2233,7 +2223,7 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 {
     // When an attempt is made to update the mode, the designated character sets
     // need to be reset to defaults, even if the mode doesn't actually change.
-    _termOutput = {};
+    _termOutput.SoftReset();
 
     _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
     _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
@@ -2654,7 +2644,7 @@ bool AdaptDispatch::ForwardIndex()
 // Routine Description:
 // - OSC Set Window Title - Sets the title of the window
 // Arguments:
-// - title - The string to set the title to. Must be null terminated.
+// - title - The string to set the title to.
 // Return Value:
 // - True.
 bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
@@ -2981,6 +2971,34 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 }
 
 //Routine Description:
+// ACS - Announces the ANSI conformance level for subsequent data exchange.
+//  This requires certain character sets to be mapped into the terminal's
+//  G-sets and in-use tables.
+//Arguments:
+// - ansiLevel - the expected conformance level
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::AnnounceCodeStructure(const VTInt ansiLevel)
+{
+    // Levels 1 and 2 require ASCII in G0/GL and Latin-1 in G1/GR.
+    // Level 3 only requires ASCII in G0/GL.
+    switch (ansiLevel)
+    {
+    case 1:
+    case 2:
+        Designate96Charset(1, VTID("A")); // Latin-1 designated as G1
+        LockingShiftRight(1); // G1 mapped into GR
+        [[fallthrough]];
+    case 3:
+        Designate94Charset(0, VTID("B")); // ASCII designated as G0
+        LockingShift(0); // G0 mapped into GL
+        return true;
+    default:
+        return false;
+    }
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
@@ -3000,7 +3018,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  X Select graphic rendition    SGR         Normal rendition.
 //  X Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
-//    Assign user preference      DECAUPSS    Set selected in Set-Up.
+//  X Assign user preference      DECAUPSS    Always Latin-1 (not configurable).
 //        supplemental set
 //    Select active               DECSASD     Main display.
 //        status display
@@ -3027,14 +3045,7 @@ bool AdaptDispatch::SoftReset()
     // Left margin = 1; right margin = page width.
     _DoSetLeftRightScrollingMargins(0, 0);
 
-    _termOutput = {}; // Reset all character set designations.
-    if (_initialCodePage.has_value())
-    {
-        // Restore initial code page if previously changed by a DOCS sequence.
-        _api.SetConsoleOutputCP(_initialCodePage.value());
-    }
-    // Disable parsing of C1 control codes.
-    AcceptC1Controls(false);
+    _termOutput.SoftReset(); // Reset all character set designations.
 
     SetGraphicsRendition({}); // Normal rendition.
     SetCharacterProtectionAttribute({}); // Default (unprotected)
@@ -3044,6 +3055,12 @@ bool AdaptDispatch::SoftReset()
     // seems likely to be a bug. Most other terminals reset both.
     _savedCursorState.at(0) = {}; // Main buffer
     _savedCursorState.at(1) = {}; // Alt buffer
+
+    // The TerminalOutput state in these buffers must be reset to
+    // the same state as the _termOutput instance, which is not
+    // necessarily equivalent to a full reset.
+    _savedCursorState.at(0).TermOutput = _termOutput;
+    _savedCursorState.at(1).TermOutput = _termOutput;
 
     return !_api.IsConsolePty();
 }
@@ -3078,6 +3095,16 @@ bool AdaptDispatch::HardReset()
         _api.UseMainScreenBuffer();
         _usingAltBuffer = false;
     }
+
+    // Completely reset the TerminalOutput state.
+    _termOutput = {};
+    if (_initialCodePage.has_value())
+    {
+        // Restore initial code page if previously changed by a DOCS sequence.
+        _api.SetConsoleOutputCP(_initialCodePage.value());
+    }
+    // Disable parsing of C1 control codes.
+    AcceptC1Controls(false);
 
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
@@ -3885,7 +3912,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
                                                          const DispatchTypes::DrcsFontSet fontSet,
                                                          const DispatchTypes::DrcsFontUsage fontUsage,
                                                          const VTParameter cellHeight,
-                                                         const DispatchTypes::DrcsCharsetSize charsetSize)
+                                                         const DispatchTypes::CharsetSize charsetSize)
 {
     // The font buffer is created on demand.
     if (!_fontBuffer)
@@ -3932,7 +3959,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
             // We also need to inform the character set mapper of the ID that
             // will map to this font (we only support one font buffer so there
             // will only ever be one active dynamic character set).
-            if (charsetSize == DispatchTypes::DrcsCharsetSize::Size96)
+            if (charsetSize == DispatchTypes::CharsetSize::Size96)
             {
                 _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
             }
@@ -3957,7 +3984,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
 // - <none>
 // Return value:
 // - a function to receive the data or nullptr if the initial flush fails
-ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize)
+ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize)
 {
     const auto defaultPassthrough = _CreatePassthroughHandler();
     if (defaultPassthrough)
@@ -3980,13 +4007,58 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
             {
                 // Once the DECDLD sequence is finished, we also output an SCS
                 // sequence to map the character set into the G1 table.
-                const auto charset96 = charsetSize == DispatchTypes::DrcsCharsetSize::Size96;
+                const auto charset96 = charsetSize == DispatchTypes::CharsetSize::Size96;
                 engine.ActionPassThroughString(charset96 ? L"\033-@" : L"\033)@");
             }
             return true;
         };
     }
     return nullptr;
+}
+
+// Method Description:
+// - DECRQUPSS - Request the user-preference supplemental character set.
+// Arguments:
+// - None
+// Return Value:
+// - True
+bool AdaptDispatch::RequestUserPreferenceCharset()
+{
+    const auto size = _termOutput.GetUserPreferenceCharsetSize();
+    const auto id = _termOutput.GetUserPreferenceCharsetId();
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P{}!u{}\033\\"), (size == 96 ? 1 : 0), id.ToString()));
+    return true;
+}
+
+// Method Description:
+// - DECAUPSS - Assigns the user-preference supplemental character set.
+// Arguments:
+// - charsetSize - Whether the character set is 94 or 96 characters.
+// Return Value:
+// - a function to parse the character set ID
+ITermDispatch::StringHandler AdaptDispatch::AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize)
+{
+    return [this, charsetSize, idBuilder = VTIDBuilder{}](const auto ch) mutable {
+        if (ch >= L'\x20' && ch <= L'\x2f')
+        {
+            idBuilder.AddIntermediate(ch);
+        }
+        else if (ch >= L'\x30' && ch <= L'\x7e')
+        {
+            const auto id = idBuilder.Finalize(ch);
+            switch (charsetSize)
+            {
+            case DispatchTypes::CharsetSize::Size94:
+                _termOutput.AssignUserPreferenceCharset(id, false);
+                break;
+            case DispatchTypes::CharsetSize::Size96:
+                _termOutput.AssignUserPreferenceCharset(id, true);
+                break;
+            }
+            return false;
+        }
+        return true;
+    };
 }
 
 // Method Description:

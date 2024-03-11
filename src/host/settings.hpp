@@ -24,13 +24,6 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 #include "ConsoleArguments.hpp"
 #include "../renderer/inc/RenderSettings.hpp"
 
-enum class UseDx : DWORD
-{
-    Disabled = 0,
-    DxEngine,
-    AtlasEngine,
-};
-
 class Settings
 {
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
@@ -176,8 +169,9 @@ public:
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    UseDx GetUseDx() const noexcept;
+    bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
+    bool GetEnableBuiltinGlyphs() const noexcept;
 
 private:
     RenderSettings _renderSettings;
@@ -219,8 +213,9 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
-    UseDx _fUseDx;
+    bool _fUseDx;
     bool _fCopyColor;
+    bool _fEnableBuiltinGlyphs = true;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;

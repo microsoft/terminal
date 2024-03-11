@@ -159,12 +159,13 @@ void ConhostInternalGetSet::WarningBell()
 // Routine Description:
 // - Sets the title of the console window.
 // Arguments:
-// - title - The null-terminated string to set as the window title
+// - title - The string to set as the window title
 // Return Value:
 // - <none>
 void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 {
-    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTitle(title.empty() ? gci.GetOriginalTitle() : title);
 }
 
 // Routine Description:

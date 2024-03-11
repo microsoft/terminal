@@ -74,6 +74,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"IsDefaultScheme");
     }
 
+    bool ColorSchemeViewModel::IsEditable() const
+    {
+        return _scheme.Origin() == Model::OriginTag::User;
+    }
+
     bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)
     {
         if (const auto parentPageVM{ _parentPageVM.get() })
@@ -123,6 +128,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
             }
+        }
+    }
+
+    void ColorSchemeViewModel::Duplicate_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestDuplicateCurrentScheme();
         }
     }
 

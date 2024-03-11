@@ -1033,9 +1033,10 @@ namespace winrt::TerminalApp::implementation
 
         // If there's an icon set for this profile, set it as the icon for
         // this flyout item
-        if (!profile.Icon().empty())
+        const auto& iconPath = profile.EvaluatedIcon();
+        if (!iconPath.empty())
         {
-            const auto icon = _CreateNewTabFlyoutIcon(profile.Icon());
+            const auto icon = _CreateNewTabFlyoutIcon(iconPath);
             profileMenuItem.Icon(icon);
         }
 
@@ -1100,7 +1101,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        auto icon = IconPathConverter::IconWUX(iconSource);
+        auto icon = UI::IconPathConverter::IconWUX(iconSource);
         Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
 
         return icon;
@@ -4924,7 +4925,7 @@ namespace winrt::TerminalApp::implementation
 
             if (!icon.empty())
             {
-                auto iconElement = IconPathConverter::IconWUX(icon);
+                auto iconElement = UI::IconPathConverter::IconWUX(icon);
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
                 button.Icon(iconElement);
             }
