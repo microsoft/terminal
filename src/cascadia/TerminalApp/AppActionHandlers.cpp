@@ -737,8 +737,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<ExecuteCommandlineArgs>())
         {
-            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(
-                TerminalPage::ConvertExecuteCommandlineToActions(realArgs)));
+            auto actions = winrt::single_threaded_vector<ActionAndArgs>(
+                TerminalPage::ConvertExecuteCommandlineToActions(realArgs));
 
             if (actions.Size() != 0)
             {

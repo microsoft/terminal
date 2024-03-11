@@ -355,7 +355,7 @@ void WindowEmperor::_becomeMonarch()
 
     // The monarch should be monitoring if it should save the window layout.
     // We want at least some delay to prevent the first save from overwriting
-    _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _saveWindowLayoutsRepeat(); }));
+    _getWindowLayoutThrottler.emplace(std::chrono::seconds(10), [this]() { _saveWindowLayoutsRepeat(); });
     _getWindowLayoutThrottler.value()();
 }
 
