@@ -69,10 +69,12 @@ namespace winrt::SampleApp::implementation
 
         _notebook = Control::Notebook(*settings, *settings, conn);
         _notebook.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
-        for (const auto& control : _notebook.Controls())
-        {
-            _addControl(control);
-        }
+        _addControl(_notebook.ActiveControl());
+
+        // for (const auto& control : _notebook.Controls())
+        // {
+        //     _addControl(control);
+        // }
     }
 
     void MyPage::_newBlockHandler(const Control::Notebook& /*sender*/,
@@ -127,7 +129,7 @@ namespace winrt::SampleApp::implementation
     winrt::fire_and_forget MyPage::_stupid(WUX::UIElement elem)
     {
         co_await winrt::resume_after(2ms); // no, resume_background is not enough to make this work.
-        co_await winrt::resume_foreground(this->Dispatcher());
+        co_await winrt::resume_foreground(this->Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
         _scrollToElement(elem);
     }
 }

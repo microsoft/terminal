@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _connection{ connection }
     {
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
-        _renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal);
+        // _renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal);
 
         _terminal->NewPrompt([this](const auto& /*mark*/) {
             if (_connection)
@@ -52,39 +52,55 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Notebook::Controls() const
     {
-        return _controls;
+        return nullptr;
     }
     Control::TermControl Notebook::ActiveControl() const
     {
-        return _active;
+        if (_blocks.empty())
+        {
+            return nullptr;
+        }
+        return _blocks.rbegin()->control;
+        // return _active;
     }
 
     winrt::fire_and_forget Notebook::_fork()
     {
-        if (_active && !_active.Dispatcher().HasThreadAccess())
+        auto active = ActiveControl();
+
+        if (active && !active.Dispatcher().HasThreadAccess())
         {
-            co_await wil::resume_foreground(_active.Dispatcher());
+            co_await wil::resume_foreground(active.Dispatcher());
         }
 
-        if (_active)
+        active = ActiveControl();
+        if (active)
         {
-            _active.Connection(nullptr);
+            active.Connection(nullptr);
         }
+
+        NotebookBlock newBlock{
+            .renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal),
+            .control = nullptr
+        };
 
         ControlData data{
             .terminal = _terminal,
-            .renderData = _renderData.get(),
+            .renderData = newBlock.renderData.get(),
             .connection = _connection,
         };
 
         auto coreOne = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
         auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(_settings, _unfocusedAppearance, coreOne);
-        auto controlOne = winrt::make<implementation::TermControl>(*interactivityOne);
-        _controls.Append(controlOne);
+        newBlock.control = winrt::make<implementation::TermControl>(*interactivityOne);
 
-        _active = controlOne;
+        _blocks.push_back(std::move(newBlock));
 
-        NewBlock.raise(*this, _active);
+        // _controls.Append(newBlock.control);
+
+        // _active = controlOne;
+
+        NewBlock.raise(*this, ActiveControl());
     }
 
 }
