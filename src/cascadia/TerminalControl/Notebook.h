@@ -45,8 +45,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _gotFirstMark{ false };
         std::vector<winrt::com_ptr<NotebookBlock>> _blocks{};
+        std::atomic<bool> _currentlyCreating{ false };
 
         winrt::fire_and_forget _fork(const til::CoordType start);
+        void _forkOnUIThread(const til::CoordType start);
         void _createNewBlock(const til::CoordType start);
         winrt::com_ptr<NotebookBlock> _activeBlock() const;
     };

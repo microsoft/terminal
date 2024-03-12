@@ -101,6 +101,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             co_await wil::resume_foreground(active->Control().Dispatcher());
         }
+        _forkOnUIThread(start);
+    }
+
+    void Notebook::_forkOnUIThread(const til::CoordType start)
+    {
+        auto active = _activeBlock();
+        if (_currentlyCreating.exchange(true))
+        {
+            return;
+        }
+        auto exit = wil::scope_exit([&] { _currentlyCreating.exchange(false); });
 
         active = _activeBlock();
         if (active)

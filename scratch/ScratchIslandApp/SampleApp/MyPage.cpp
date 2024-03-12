@@ -40,7 +40,11 @@ namespace winrt::SampleApp::implementation
 
         createCodeBlock(L"ping 8.8.8.8");
         createCodeBlock(L"echo This has been a test of the new code block objects");
-        createCodeBlock(L"set FOO=%FOO%+1 & echo FOO set to %FOO% ");
+        createCodeBlock(L"set FOO=%FOO%+1 & echo FOO set to %FOO%");
+        createCodeBlock(L"cd /d %~%");
+        createCodeBlock(L"cd /d z:\\dev\\public\\OpenConsole");
+        createCodeBlock(L"pwsh -c gci");
+        createCodeBlock(L"git status");
 
         _createOutOfProcContent();
     }
