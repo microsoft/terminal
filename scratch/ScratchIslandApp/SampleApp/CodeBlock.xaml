@@ -45,17 +45,17 @@
             </Button.Content>
         </Button>
         <Border Grid.Column="1"
-                Padding="8"
                 HorizontalAlignment="Stretch"
                 Background="#f6f8fa"
                 BorderBrush="#dbdbdb"
                 BorderThickness="1"
                 CornerRadius="4">
             <StackPanel x:Name="CommandsAndOutput">
-                <StackPanel x:Name="CommandLines">
+                <StackPanel x:Name="CommandLines"
+                            Padding="8">
                     <!-- <TextBlock FontFamily="Cascadia Code">build the_thing</TextBlock> -->
                 </StackPanel>
-                <StackPanel x:Name="OutputBlock"
+                <StackPanel x:Name="OutputBlockContainer"
                             Visibility="Collapsed">
                     <!--  Put the TermControl here.  -->
                 </StackPanel>

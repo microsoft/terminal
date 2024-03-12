@@ -16,6 +16,9 @@ namespace winrt::SampleApp::implementation
 
         til::property<winrt::hstring> Commandlines;
 
+        winrt::Microsoft::Terminal::Control::NotebookBlock OutputBlock();
+        void OutputBlock(const winrt::Microsoft::Terminal::Control::NotebookBlock& block);
+
         til::property_changed_event PropertyChanged;
         til::typed_event<SampleApp::CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
 
@@ -23,6 +26,7 @@ namespace winrt::SampleApp::implementation
         friend struct CodeBlockT<CodeBlock>; // for Xaml to bind events
 
         winrt::hstring _providedCommandlines{};
+        winrt::Microsoft::Terminal::Control::NotebookBlock _block{ nullptr };
 
         void _playPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
     };

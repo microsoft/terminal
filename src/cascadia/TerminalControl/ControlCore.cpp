@@ -1501,7 +1501,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForReading();
         // return _terminal->GetScrollOffset();
-        return _renderData->GetViewport().Top();
+        return std::max(0, _terminal->ViewStartIndex() - _renderData->GetViewport().Top());
     }
 
     // Function Description:

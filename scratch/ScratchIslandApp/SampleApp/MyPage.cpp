@@ -28,10 +28,19 @@ namespace winrt::SampleApp::implementation
     void MyPage::Create()
     {
         // First things first, make a dummy code block
+        const auto createCodeBlock = [=](const auto& command) {
+            auto codeBlock = winrt::make<implementation::CodeBlock>(command);
 
-        auto codeBlock = winrt::make<implementation::CodeBlock>(L"echo This has been a test of the new code block objects");
-        codeBlock.RequestRunCommands({ this, &MyPage::_handleRunCommandRequest });
-        OutOfProcContent().Children().Append(codeBlock);
+            codeBlock.Margin(WUX::ThicknessHelper::FromLengths(8, 8, 8, 8));
+
+            codeBlock.RequestRunCommands({ this, &MyPage::_handleRunCommandRequest });
+
+            OutOfProcContent().Children().Append(codeBlock);
+        };
+
+        createCodeBlock(L"ping 8.8.8.8");
+        createCodeBlock(L"echo This has been a test of the new code block objects");
+        createCodeBlock(L"set FOO=%FOO%+1 & echo FOO set to %FOO% ");
 
         _createOutOfProcContent();
     }
@@ -75,8 +84,10 @@ namespace winrt::SampleApp::implementation
         TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
 
         _notebook = Control::Notebook(*settings, *settings, conn);
-        _notebook.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
-        _addControl(_notebook.ActiveBlock().Control());
+        // _notebook.Initialize();
+        // _notebook.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
+
+        // _addControl(_notebook.ActiveBlock().Control());
     }
 
     void MyPage::_newBlockHandler(const Control::Notebook& /*sender*/,
@@ -85,13 +96,25 @@ namespace winrt::SampleApp::implementation
         _addControl(block.Control());
     }
 
-    void MyPage::_handleRunCommandRequest(const SampleApp::CodeBlock& /*sender*/,
+    void MyPage::_handleRunCommandRequest(const SampleApp::CodeBlock& sender,
                                           const SampleApp::RequestRunCommandsArgs& request)
     {
         // _addControl(block.Control());
         auto text = request.Commandlines();
-        _notebook.ActiveBlock().Control().SendInput(text);
-        _notebook.ActiveBlock().Control().SendInput(L"\r");
+        auto targetControl = _notebook.ActiveBlock().Control();
+
+        sender.OutputBlock(_notebook.ActiveBlock());
+
+        targetControl.Height(256);
+        targetControl.VerticalAlignment(WUX::VerticalAlignment::Top);
+        targetControl.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+        targetControl.Initialized([text](const auto& sender, auto&&) {
+            sender.SendInput(text);
+            sender.SendInput(L"\r");
+        });
+        // targetControl.SendInput(text);
+        // targetControl.SendInput(L"\r");
+        // _stupid(targetControl);
     }
 
     void MyPage::_scrollToElement(const WUX::UIElement& element,

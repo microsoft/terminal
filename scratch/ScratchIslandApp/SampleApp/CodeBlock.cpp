@@ -34,8 +34,22 @@ namespace winrt::SampleApp::implementation
     void CodeBlock::_playPressed(const Windows::Foundation::IInspectable&,
                                  const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
     {
+        _block = nullptr;
+        OutputBlockContainer().Children().Clear();
+
         auto args = winrt::make_self<RequestRunCommandsArgs>(_providedCommandlines);
         RequestRunCommands.raise(*this, *args);
+    }
+
+    winrt::Microsoft::Terminal::Control::NotebookBlock CodeBlock::OutputBlock()
+    {
+        return _block;
+    }
+    void CodeBlock::OutputBlock(const winrt::Microsoft::Terminal::Control::NotebookBlock& block)
+    {
+        _block = block;
+        OutputBlockContainer().Children().Append(_block.Control());
+        OutputBlockContainer().Visibility(WUX::Visibility::Visible);
     }
 
 }

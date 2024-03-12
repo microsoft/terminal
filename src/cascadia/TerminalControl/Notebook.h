@@ -29,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     public:
         Notebook(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
+        void Initialize();
+
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::NotebookBlock> Blocks() const;
         Microsoft::Terminal::Control::NotebookBlock ActiveBlock() const;
 
@@ -45,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::vector<winrt::com_ptr<NotebookBlock>> _blocks{};
 
         winrt::fire_and_forget _fork(const til::CoordType start);
+        void _createNewBlock(const til::CoordType start);
         winrt::com_ptr<NotebookBlock> _activeBlock() const;
     };
 }

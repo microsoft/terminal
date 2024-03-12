@@ -49,6 +49,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
 
         _fork(0);
+
+        // At this point, we have one single block we created. Typically, it
+        // doesn't get initialized until the actual TermControl is added to the
+        // page. But we may want to be initialized _before_ the control is added
+        // to a page.
+        // Initialize();
+    }
+
+    void Notebook::Initialize()
+    {
+        const auto active{ _activeBlock() };
+
+        // we need:
+        // * panelWidth (dips)
+        // * panelHeight (dips)
+        // * panelScaleX
+        //
+        // what we have is _settings.InitialRows() and _settings.InitialCols()
+
+        auto size = TermControl::GetProposedDimensions(_settings, USER_DEFAULT_SCREEN_DPI, 0, 0);
+
+        active->core->Initialize(size.Width, size.Height, 1.0f);
     }
 
     Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::NotebookBlock> Notebook::Blocks() const
@@ -95,20 +117,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto blockRenderViewport = renderData->GetViewport();
             renderData->UnlockConsole();
 
+            const auto rows = blockRenderViewport.Height();
+            const auto fakePixelHeight = 16 + 16 * rows;
+
             const auto pixels = core->ViewInPixels(blockRenderViewport.ToExclusive());
             const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto controlHeightDips = activeControl.ActualHeight();
             const auto viewHeightDips = pixels.height() * scaleFactor;
+            const auto fakeHeightDips = fakePixelHeight * scaleFactor;
+            controlHeightDips;
+            viewHeightDips;
+            fakeHeightDips;
 
             auto t{ WUX::ThicknessHelper::FromLengths(0 /*r.left*/,
                                                       0 /*r.top*/,
                                                       0 /*r.right*/,
                                                       -(controlHeightDips - viewHeightDips) /*r.bottom*/) };
             activeControl.Margin(t);
-
+            // activeControl.Height(fakeHeightDips);
             activeControl.Connection(nullptr);
         }
+        _createNewBlock(start);
+    }
 
+    void Notebook::_createNewBlock(const til::CoordType start)
+    {
         auto newBlock = winrt::make_self<implementation::NotebookBlock>();
         newBlock->renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal, start);
 
@@ -124,7 +157,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _blocks.push_back(std::move(newBlock));
 
-        NewBlock.raise(*this, ActiveBlock());
+        // NewBlock.raise(*this, ActiveBlock());
     }
 
 }
