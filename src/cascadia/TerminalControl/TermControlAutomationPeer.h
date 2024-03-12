@@ -78,8 +78,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider DocumentRange();
 #pragma endregion
 
-        TYPED_EVENT(TextChanged, IInspectable, IInspectable);
-
     private:
         winrt::weak_ref<Microsoft::Terminal::Control::implementation::TermControl> _termControl;
         Control::InteractivityAutomationPeer _contentAutomationPeer;

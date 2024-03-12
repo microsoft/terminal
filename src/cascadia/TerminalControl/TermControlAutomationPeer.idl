@@ -12,7 +12,5 @@ namespace Microsoft.Terminal.Control
 
         void UpdateControlBounds();
         void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
-
-        event Windows.Foundation.TypedEventHandler<Object, Object> TextChanged;
     }
 }

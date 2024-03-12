@@ -953,9 +953,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              margins.Right,
                                              margins.Bottom };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(get_strong(), padding, interactivityAutoPeer);
-
-                _revokers.TextChanged = _automationPeer.TextChanged(winrt::auto_revoke, { get_weak(), &TermControl::_automationTextChanged });
-
                 return _automationPeer;
             }
         }
@@ -3348,16 +3345,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 SelectionStartMarker().Visibility(Visibility::Collapsed);
                 SelectionEndMarker().Visibility(Visibility::Collapsed);
             }
-        }
-    }
-
-    winrt::fire_and_forget TermControl::_automationTextChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        co_await winrt::resume_foreground(Dispatcher());
-        auto weakThis{ get_weak() };
-        if (weakThis.get())
-        {
-            _ClearSearch();
         }
     }
 
