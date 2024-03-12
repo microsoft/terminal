@@ -97,8 +97,8 @@
 
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
-    <PlatformToolset Condition="'$(OpenConsoleProjectRequiresMSVC)'=='true'">v143</PlatformToolset>
-    <PlatformToolset Condition="'$(OpenConsoleProjectRequiresMSVC)'!='true'">ClangCL</PlatformToolset>
+    <PlatformToolset Condition="'$(OpenConsoleProjectRequiresMSVC)'!='true' and '$(WindowsTerminalClangBuild)'=='true'">ClangCL</PlatformToolset>
+    <PlatformToolset Condition="'$(PlatformToolset)'==''">v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
@@ -154,10 +154,13 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <!-- /fp:contract used to default to on before VS 17.0. If enabled it allows FMA for floats. -->
       <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
-      <!--
-      <AdditionalOptions>%(AdditionalOptions) /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
-      -->
+
+      <!-- Default build options (MSVC) -->
+      <AdditionalOptions Condition="'$(PlatformToolset)'!='ClangCL'">%(AdditionalOptions) /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
+
+      <!-- ClangCL build options -->
       <AdditionalOptions Condition="'$(PlatformToolset)'=='ClangCL'">%(AdditionalOptions) -Xclang -fno-rtti -D_HAS_STATIC_RTTI=0 -fno-delayed-template-parsing -march=x86-64-v3 -mcx16</AdditionalOptions>
+
       <!-- Warning Abatement (Clang) -->
       <AdditionalOptions Condition="'$(PlatformToolset)'=='ClangCL'">%(AdditionalOptions) -Wno-missing-braces -Wno-unused-variable -Wno-nonportable-include-path</AdditionalOptions>
       <AdditionalOptions Condition="'$(PlatformToolset)'=='ClangCL'">%(AdditionalOptions) -Wno-microsoft-sealed -Wno-microsoft-include -Wno-pragma-pack -Wno-unused-function</AdditionalOptions>
