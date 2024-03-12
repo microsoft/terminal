@@ -6,6 +6,7 @@
 #include <LibraryResources.h>
 
 #include "CodeBlock.g.cpp"
+#include "RequestRunCommandsArgs.g.cpp"
 
 namespace winrt
 {
@@ -33,6 +34,8 @@ namespace winrt::SampleApp::implementation
     void CodeBlock::_playPressed(const Windows::Foundation::IInspectable&,
                                  const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
     {
+        auto args = winrt::make_self<RequestRunCommandsArgs>(_providedCommandlines);
+        RequestRunCommands.raise(*this, *args);
     }
 
 }

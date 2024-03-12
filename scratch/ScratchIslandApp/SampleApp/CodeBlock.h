@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CodeBlock.g.h"
+#include "RequestRunCommandsArgs.g.h"
 #include "../../../src/cascadia/inc/cppwinrt_utils.h"
 #include <til/hash.h>
 
@@ -13,7 +14,10 @@ namespace winrt::SampleApp::implementation
     {
         CodeBlock(const winrt::hstring& initialCommandlines);
 
+        til::property<winrt::hstring> Commandlines;
+
         til::property_changed_event PropertyChanged;
+        til::typed_event<SampleApp::CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
 
     private:
         friend struct CodeBlockT<CodeBlock>; // for Xaml to bind events
@@ -21,6 +25,14 @@ namespace winrt::SampleApp::implementation
         winrt::hstring _providedCommandlines{};
 
         void _playPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
+    };
+
+    struct RequestRunCommandsArgs : RequestRunCommandsArgsT<RequestRunCommandsArgs>
+    {
+        RequestRunCommandsArgs(const winrt::hstring& commandlines) :
+            Commandlines{ commandlines } {};
+
+        til::property<winrt::hstring> Commandlines;
     };
 }
 

@@ -30,7 +30,7 @@ namespace winrt::SampleApp::implementation
         // First things first, make a dummy code block
 
         auto codeBlock = winrt::make<implementation::CodeBlock>(L"echo This has been a test of the new code block objects");
-
+        codeBlock.RequestRunCommands({ this, &MyPage::_handleRunCommandRequest });
         OutOfProcContent().Children().Append(codeBlock);
 
         _createOutOfProcContent();
@@ -83,6 +83,15 @@ namespace winrt::SampleApp::implementation
                                   const Control::NotebookBlock& block)
     {
         _addControl(block.Control());
+    }
+
+    void MyPage::_handleRunCommandRequest(const SampleApp::CodeBlock& /*sender*/,
+                                          const SampleApp::RequestRunCommandsArgs& request)
+    {
+        // _addControl(block.Control());
+        auto text = request.Commandlines();
+        _notebook.ActiveBlock().Control().SendInput(text);
+        _notebook.ActiveBlock().Control().SendInput(L"\r");
     }
 
     void MyPage::_scrollToElement(const WUX::UIElement& element,
