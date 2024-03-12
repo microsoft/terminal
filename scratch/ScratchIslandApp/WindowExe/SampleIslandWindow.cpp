@@ -57,8 +57,8 @@ void SampleIslandWindow::MakeWindow() noexcept
                                 WS_OVERLAPPEDWINDOW,
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,
-                                CW_USEDEFAULT,
-                                CW_USEDEFAULT,
+                                1024, //CW_USEDEFAULT, // Initial width
+                                1024, // CW_USEDEFAULT, // Initial height
                                 nullptr,
                                 nullptr,
                                 wc.hInstance,

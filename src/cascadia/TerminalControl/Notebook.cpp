@@ -95,6 +95,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::fire_and_forget Notebook::_fork(const til::CoordType start)
     {
+        if (_currentlyCreating.exchange(true))
+        {
+            co_return;
+        }
         auto active = _activeBlock();
 
         if (active && !active->Control().Dispatcher().HasThreadAccess())
@@ -106,14 +110,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void Notebook::_forkOnUIThread(const til::CoordType start)
     {
-        auto active = _activeBlock();
-        if (_currentlyCreating.exchange(true))
-        {
-            return;
-        }
         auto exit = wil::scope_exit([&] { _currentlyCreating.exchange(false); });
 
-        active = _activeBlock();
+        auto active = _activeBlock();
         if (active)
         {
             auto core{ active->core };
