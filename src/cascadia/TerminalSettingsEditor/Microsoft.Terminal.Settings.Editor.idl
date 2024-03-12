@@ -1,0 +1,591 @@
+#include "ViewModelHelpers.idl.h"
+
+#define OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Type, Name) \
+    OBSERVABLE_PROJECTED_SETTING(Type, Name);               \
+    Object Name##OverrideSource { get; }
+
+#define OBSERVABLE_PROJECTED_PROFILE_SETTING(Type, Name) \
+    OBSERVABLE_PROJECTED_SETTING(Type, Name);            \
+    Object Name##OverrideSource { get; }
+
+#define COMMA ,
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Actions : Windows.UI.Xaml.Controls.Page
+    {
+        Actions();
+        ActionsViewModel ViewModel { get; };
+    }
+
+    runtimeclass ModifyKeyBindingEventArgs
+    {
+        Microsoft.Terminal.Control.KeyChord OldKeys { get; };
+        Microsoft.Terminal.Control.KeyChord NewKeys { get; };
+        String OldActionName { get; };
+        String NewActionName { get; };
+    }
+
+    runtimeclass KeyBindingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        // Settings Model side
+        String Name { get; };
+        String KeyChordText { get; };
+
+        // UI side
+        Boolean ShowEditButton { get; };
+        Boolean IsInEditMode { get; };
+        Boolean IsNewlyAdded { get; };
+        Microsoft.Terminal.Control.KeyChord ProposedKeys;
+        Object ProposedAction;
+        Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
+        String EditButtonName { get; };
+        String CancelButtonName { get; };
+        String AcceptButtonName { get; };
+        String DeleteButtonName { get; };
+        Windows.UI.Xaml.Media.Brush ContainerBackground { get; };
+
+        void EnterHoverMode();
+        void ExitHoverMode();
+        void ActionGotFocus();
+        void ActionLostFocus();
+        void EditButtonGettingFocus();
+        void EditButtonLosingFocus();
+        IObservableVector<String> AvailableActions { get; };
+        void ToggleEditMode();
+        void AttemptAcceptChanges();
+        void CancelChanges();
+        void DeleteKeyBinding();
+
+        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, ModifyKeyBindingEventArgs> ModifyKeyBindingRequested;
+        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyBindingRequested;
+    }
+
+    runtimeclass ActionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ActionsViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        void OnAutomationPeerAttached();
+        void AddNewKeybinding();
+
+        IObservableVector<KeyBindingViewModel> KeyBindingList { get; };
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusContainer;
+        event Windows.Foundation.TypedEventHandler<Object, Object> UpdateBackground;
+    }
+
+    delegate void AddNewArgs(Guid profile);
+
+    runtimeclass AddProfilePageNavigationState
+    {
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
+        void RequestAddNew();
+        void RequestDuplicate(Guid profile);
+        event AddNewArgs AddNew;
+    };
+
+    [default_interface] runtimeclass AddProfile : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        AddProfile();
+        AddProfilePageNavigationState State { get; };
+        Boolean IsProfileSelected { get; };
+    }
+
+    runtimeclass Font : Windows.Foundation.IStringable
+    {
+        String Name { get; };
+        String LocalizedName { get; };
+        Boolean HasPowerlineCharacters { get; };
+        Windows.Foundation.Collections.IMap<String, String> FontAxesTagsAndNames { get; };
+        Windows.Foundation.Collections.IMap<String, String> FontFeaturesTagsAndNames { get; };
+    }
+
+    // We have to make this because we cannot bind an IObservableMap to a ListView in XAML (in c++)
+    // So instead we make an IObservableVector of these AxisKeyValuePair objects
+    runtimeclass AxisKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        AxisKeyValuePair(String axisKey, Single axisValue, Windows.Foundation.Collections.IMap<String, Single> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
+        String AxisKey;
+        Single AxisValue;
+        Int32 AxisIndex;
+    }
+
+    runtimeclass FeatureKeyValuePair : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        FeatureKeyValuePair(String featureKey, UInt32 featureValue, Windows.Foundation.Collections.IMap<String, UInt32> baseMap, Windows.Foundation.Collections.IMap<String, String> tagToNameMap);
+        String FeatureKey;
+        UInt32 FeatureValue;
+        Int32 FeatureIndex;
+    }
+
+    runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Boolean IsDefault;
+
+        void SetFontWeightFromDouble(Double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(Double percentageValue);
+        void SetBackgroundImagePath(String path);
+
+        Boolean UseDesktopBGImage;
+        Boolean BackgroundImageSettingsVisible { get; };
+
+        void ClearColorScheme();
+        ColorSchemeViewModel CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
+
+        void AddNewAxisKeyValuePair();
+        void DeleteAxisKeyValuePair(String key);
+        void InitializeFontAxesVector();
+        Boolean AreFontAxesAvailable { get; };
+        Boolean CanFontAxesBeAdded { get; };
+        Windows.Foundation.Collections.IObservableVector<AxisKeyValuePair> FontAxesVector;
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
+
+        void AddNewFeatureKeyValuePair();
+        void DeleteFeatureKeyValuePair(String key);
+        void InitializeFontFeaturesVector();
+        Boolean AreFontFeaturesAvailable { get; };
+        Boolean CanFontFeaturesBeAdded { get; };
+        Windows.Foundation.Collections.IObservableVector<FeatureKeyValuePair> FontFeaturesVector;
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
+
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, LineHeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableBuiltinGlyphs);
+
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, DarkColorSchemeName);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, LightColorSchemeName);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, BackgroundImagePath);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.IntenseStyle, IntenseTextStyle);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
+    }
+
+    [default_interface] runtimeclass Appearances : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Appearances();
+        AppearanceViewModel Appearance;
+        ProfileViewModel SourceProfile;
+        IHostedInWindow WindowRoot;
+        static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
+
+        Boolean UsingMonospaceFont { get; };
+        Boolean ShowAllFonts;
+        Boolean ShowProportionalFontWarning;
+
+        IInspectable CurrentCursorShape;
+        Boolean IsVintageCursor { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
+
+        IInspectable CurrentAdjustIndistinguishableColors;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
+
+        IInspectable CurrentBackgroundImageStretchMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
+
+        IInspectable CurrentFontWeight;
+        Boolean IsCustomFontWeight { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
+
+        IInspectable CurrentFontFace { get; };
+        Windows.UI.Xaml.Controls.Slider BIOpacitySlider { get; };
+
+        IInspectable CurrentIntenseTextStyle;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
+    }
+
+    [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ColorSchemes();
+
+        ColorSchemesPageViewModel ViewModel { get; };
+    }
+
+    enum ColorSchemesSubPage
+    {
+        Base = 0,
+        EditColorScheme = 1
+    };
+
+    runtimeclass ColorSchemesPageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ColorSchemesPageViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        ColorSchemeViewModel RequestAddNew();
+        Boolean RequestRenameCurrentScheme(String newName);
+        void RequestDeleteCurrentScheme();
+        void RequestDuplicateCurrentScheme();
+        void RequestEditSelectedScheme();
+        void RequestSetSelectedSchemeAsDefault();
+
+        ColorSchemeViewModel CurrentScheme;
+        Boolean HasCurrentScheme { get; };
+        Boolean CanDeleteCurrentScheme { get; };
+        ColorSchemesSubPage CurrentPage;
+        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
+
+        void SchemeListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
+    }
+
+    runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
+    {
+        String Name;
+        Boolean IsEditable { get; };
+        Boolean IsDefaultScheme { get; };
+
+        Boolean RequestRename(String newName);
+
+        // Terminal Colors
+        Windows.Foundation.Collections.IVector<ColorTableEntry> NonBrightColorTable;
+        Windows.Foundation.Collections.IVector<ColorTableEntry> BrightColorTable;
+
+        ColorTableEntry ColorEntryAt(UInt32 Index);
+
+        // System Colors
+        ColorTableEntry ForegroundColor;
+        ColorTableEntry BackgroundColor;
+        ColorTableEntry CursorColor;
+        ColorTableEntry SelectionBackgroundColor;
+
+        void DeleteConfirmation_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void SetAsDefault_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void Duplicate_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+    }
+
+    [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name { get; };
+        IInspectable Tag;
+        Windows.UI.Color Color;
+        String AccessibleName { get; };
+    }
+
+    [default_interface] runtimeclass EditColorScheme : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        EditColorScheme();
+
+        ColorSchemeViewModel ViewModel { get; };
+    }
+
+    [default_interface] runtimeclass EnumEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
+    {
+        String EnumName { get; };
+        IInspectable EnumValue { get; };
+    }
+
+    [default_interface] runtimeclass GlobalAppearance : Windows.UI.Xaml.Controls.Page
+    {
+        GlobalAppearance();
+        GlobalAppearanceViewModel ViewModel { get; };
+    }
+
+    runtimeclass GlobalAppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        GlobalAppearanceViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+
+        static String LanguageDisplayConverter(String tag);
+        Boolean LanguageSelectorAvailable { get; };
+        Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
+        IInspectable CurrentLanguage;
+
+        IInspectable CurrentTheme;
+        static String ThemeNameConverter(Microsoft.Terminal.Settings.Model.Theme theme);
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Theme> ThemeList { get; };
+
+        IInspectable CurrentNewTabPosition;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> NewTabPositionList { get; };
+
+        IInspectable CurrentTabWidthMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModeList { get; };
+
+        Boolean InvertedDisableAnimations;
+
+        void ShowTitlebarToggled(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAcrylicInTabRow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTitleInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysOnTop);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AutoHideWindow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowNotificationIcon);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, MinimizeToNotificationArea);
+    }
+
+    [default_interface] runtimeclass Interaction : Windows.UI.Xaml.Controls.Page
+    {
+        Interaction();
+        InteractionViewModel ViewModel { get; };
+    }
+
+    runtimeclass InteractionViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        InteractionViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+
+        IInspectable CurrentTabSwitcherMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabSwitcherModeList { get; };
+
+        IInspectable CurrentCopyFormat;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CopyFormatList { get; };
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CopyOnSelect);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
+    }
+
+    [default_interface] runtimeclass KeyChordListener : Windows.UI.Xaml.Controls.UserControl
+    {
+        KeyChordListener();
+
+        Microsoft.Terminal.Control.KeyChord Keys;
+        static Windows.UI.Xaml.DependencyProperty KeysProperty { get; };
+    }
+
+    [default_interface] runtimeclass Launch : Windows.UI.Xaml.Controls.Page
+    {
+        Launch();
+        LaunchViewModel ViewModel { get; };
+    }
+
+    runtimeclass LaunchViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        LaunchViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        String LaunchParametersCurrentValue { get; };
+        Double InitialPosX;
+        Double InitialPosY;
+        Boolean UseDefaultLaunchPosition;
+
+        IInspectable CurrentDefaultProfile;
+        IObservableVector<Microsoft.Terminal.Settings.Model.Profile> DefaultProfiles { get; };
+
+        IInspectable CurrentDefaultTerminal;
+        IObservableVector<Microsoft.Terminal.Settings.Model.DefaultTerminal> DefaultTerminals { get; };
+
+        IInspectable CurrentFirstWindowPreference;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FirstWindowPreferenceList { get; };
+
+        IInspectable CurrentLaunchMode;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
+
+        IInspectable CurrentWindowingBehavior;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> WindowingBehaviorList { get; };
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CenterOnLaunch);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, StartOnUserLogin);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Int32, InitialRows);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Int32, InitialCols);
+    }
+
+    // Due to a XAML Compiler bug, it is hard for us to propagate an HWND into a XAML-using runtimeclass.
+    // To work around that, we'll only propagate the HWND (when we need to) into the settings' toplevel page
+    // and use IHostedInWindow to hide the implementation detail where we use IInitializeWithWindow (shobjidl_core)
+    // https://github.com/microsoft/microsoft-ui-xaml/issues/3331
+    interface IHostedInWindow
+    {
+        Boolean TryPropagateHostingWindow(IInspectable i);
+        UInt64 GetHostingWindow();
+    }
+
+    enum BreadcrumbSubPage
+    {
+        None = 0,
+        Profile_Appearance,
+        Profile_Advanced,
+        ColorSchemes_Edit
+    };
+
+    runtimeclass Breadcrumb : Windows.Foundation.IStringable
+    {
+        IInspectable Tag;
+        String Label;
+        BreadcrumbSubPage SubPage;
+    }
+
+    [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
+    {
+        MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
+
+        // Due to the aforementioned bug, we can't use IInitializeWithWindow _here_ either.
+        // Let's just smuggle the HWND in as a UInt64 :|
+        void SetHostingWindow(UInt64 window);
+
+        Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
+
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+    }
+
+    [default_interface] runtimeclass Profiles_Advanced : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Profiles_Advanced();
+        ProfileViewModel Profile { get; };
+    }
+
+    [default_interface] runtimeclass Profiles_Appearance : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Profiles_Appearance();
+        ProfileViewModel Profile { get; };
+        IHostedInWindow WindowRoot { get; };
+
+        Windows.UI.Xaml.Controls.Slider OpacitySlider { get; };
+    }
+
+    [default_interface] runtimeclass Profiles_Base : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Profiles_Base();
+        ProfileViewModel Profile { get; };
+    }
+
+    runtimeclass NavigateToProfileArgs
+    {
+        ProfileViewModel Profile { get; };
+        IHostedInWindow WindowRoot { get; };
+    }
+
+    runtimeclass DeleteProfileEventArgs
+    {
+        Guid ProfileGuid { get; };
+    }
+
+    enum ProfileSubPage
+    {
+        Base = 0,
+        Appearance = 1,
+        Advanced = 2
+    };
+
+    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        static Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
+        static Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
+        static Font FindFontWithLocalizedName(String name);
+
+        Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
+
+        event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfile;
+
+        void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
+
+        void SetAcrylicOpacityPercentageValue(Double value);
+        void SetPadding(Double value);
+
+        Boolean IsBellStyleFlagSet(UInt32 flag);
+        void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
+
+        IInspectable CurrentAntiAliasingMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
+
+        IInspectable CurrentCloseOnExitMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CloseOnExitModeList { get; };
+
+        IInspectable CurrentScrollState;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
+
+        Boolean CanDeleteProfile { get; };
+        Boolean FocusDeleteButton;
+        Boolean IsBaseLayer;
+        ProfileSubPage CurrentPage;
+        Boolean UseParentProcessDirectory;
+        Boolean UseCustomStartingDirectory { get; };
+        Boolean HideIcon;
+        AppearanceViewModel DefaultAppearance { get; };
+        Guid OriginalProfileGuid { get; };
+        Boolean HasUnfocusedAppearance { get; };
+        Boolean EditableUnfocusedAppearance { get; };
+        Boolean ShowUnfocusedAppearance { get; };
+        AppearanceViewModel UnfocusedAppearance { get; };
+        Boolean VtPassthroughAvailable { get; };
+
+        String EvaluatedIcon { get; };
+
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
+
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Hidden);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Icon);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, TabTitle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAcrylic);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, Opacity);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, VtPassthrough);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
+    }
+
+    [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
+    {
+        Rendering();
+        RenderingViewModel ViewModel { get; };
+    }
+
+    runtimeclass RenderingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        RenderingViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
+    }
+
+    [default_interface] runtimeclass SettingContainer : Windows.UI.Xaml.Controls.ContentControl
+    {
+        SettingContainer();
+
+        void SetExpanded(Boolean expanded);
+
+        IInspectable Header;
+        static Windows.UI.Xaml.DependencyProperty HeaderProperty { get; };
+
+        String HelpText;
+        static Windows.UI.Xaml.DependencyProperty HelpTextProperty { get; };
+
+        String CurrentValue;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueProperty { get; };
+
+        Boolean HasSettingValue;
+        static Windows.UI.Xaml.DependencyProperty HasSettingValueProperty { get; };
+
+        IInspectable SettingOverrideSource;
+        static Windows.UI.Xaml.DependencyProperty SettingOverrideSourceProperty { get; };
+
+        Boolean StartExpanded;
+        static Windows.UI.Xaml.DependencyProperty StartExpandedProperty { get; };
+
+        event Windows.Foundation.TypedEventHandler<SettingContainer, Object> ClearSettingValue;
+    };
+}

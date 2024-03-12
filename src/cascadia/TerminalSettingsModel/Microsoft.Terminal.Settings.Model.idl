@@ -1,0 +1,1155 @@
+#include "AllShortcutActions.h"
+#include "IInheritable.idl.h"
+
+#define INHERITABLE_FONT_SETTING(Type, Name) \
+    _BASE_INHERITABLE_SETTING(Type, Name);      \
+    Microsoft.Terminal.Settings.Model.FontConfig Name##OverrideSource { get; }
+
+#define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
+    _BASE_INHERITABLE_SETTING(Type, Name);         \
+    Microsoft.Terminal.Settings.Model.IAppearanceConfig Name##OverrideSource { get; }
+
+#define INHERITABLE_PROFILE_SETTING(Type, Name) \
+    _BASE_INHERITABLE_SETTING(Type, Name);      \
+    Microsoft.Terminal.Settings.Model.Profile Name##OverrideSource { get; }
+
+#define COMMA ,
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    runtimeclass Command;
+
+    // MIDL 3 allows for structs to hold nullable types
+    // Though IReference is a WinRT object, MIDL 3
+    // handles all of the ownership logic for us.
+    // Docs: https://docs.microsoft.com/en-us/uwp/midl-3/intro#types
+    struct LaunchPosition
+    {
+        Windows.Foundation.IReference<Int32> X;
+        Windows.Foundation.IReference<Int32> Y;
+    };
+
+    [flags]
+    enum LaunchMode
+    {
+        DefaultMode = 0,
+        MaximizedMode = 1,
+        FullscreenMode = 2,
+        FocusMode = 4,
+        MaximizedFocusMode = 5
+    };
+
+    enum WindowingMode
+    {
+        UseNew,
+        UseAnyExisting,
+        UseExisting,
+    };
+
+    enum FirstWindowPreference
+    {
+        DefaultProfile,
+        PersistedWindowLayout,
+    };
+
+    enum NewTabPosition
+    {
+        AfterLastTab,
+        AfterCurrentTab,
+    };
+
+
+    interface IActionArgs
+    {
+        Boolean Equals(IActionArgs other);
+        String GenerateName();
+        IActionArgs Copy();
+        UInt64 Hash();
+    };
+
+    interface IActionEventArgs
+    {
+        Boolean Handled;
+        IActionArgs ActionArgs { get; };
+    };
+
+    enum ResizeDirection
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
+    enum FocusDirection
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down,
+        Previous,
+        PreviousInOrder,
+        NextInOrder,
+        First,
+        Parent,
+        Child
+    };
+
+    enum SplitDirection
+    {
+        Automatic = 0,
+        Up,
+        Right,
+        Down,
+        Left
+    };
+
+    enum SplitType
+    {
+        Manual = 0,
+        Duplicate = 1
+    };
+
+    enum SettingsTarget
+    {
+        SettingsFile = 0,
+        DefaultsFile,
+        AllFiles,
+        SettingsUI
+    };
+
+    enum MoveTabDirection
+    {
+        None = 0,
+        Forward,
+        Backward
+    };
+
+    enum FindMatchDirection
+    {
+        None = 0,
+        Next,
+        Previous
+    };
+
+    enum SelectOutputDirection
+    {
+        Previous = 0,
+        Next,
+    };
+
+    enum CommandPaletteLaunchMode
+    {
+        Action = 0,
+        CommandLine
+    };
+
+    enum TabSwitcherMode
+    {
+        MostRecentlyUsed,
+        InOrder,
+        Disabled,
+    };
+
+    enum DesktopBehavior
+    {
+        Any,
+        ToCurrent,
+        OnCurrent,
+    };
+
+    enum MonitorBehavior
+    {
+        Any,
+        ToCurrent,
+        ToMouse,
+    };
+
+    [flags]
+    enum SuggestionsSource
+    {
+        Tasks = 0x1,
+        CommandHistory = 0x2,
+        DirectoryHistory = 0x4,
+        All = 0xffffffff,
+    };
+
+    runtimeclass NewTerminalArgs {
+        NewTerminalArgs();
+        NewTerminalArgs(Int32 profileIndex);
+        NewTerminalArgs Copy();
+
+        String Commandline;
+        String StartingDirectory;
+        String TabTitle;
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor;
+        String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        Boolean AppendCommandLine;
+
+        // We use IReference<> to treat some args as nullable where null means
+        // "use the inherited value". See ProfileIndex,
+        // SuppressApplicationTitle, Elevate. Strings that behave this way just
+        // use `null` as "use the inherited value".
+
+        // ProfileIndex can be null (for "use the default"), so this needs to be
+        // a IReference, so it's nullable
+        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+        Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
+        String ColorScheme;
+        // This needs to be an optional so that the default value (null) does
+        // not modify whatever the profile's value is (either true or false)
+        Windows.Foundation.IReference<Boolean> Elevate;
+        // Similarly with ReloadEnvironmentVariables
+        Windows.Foundation.IReference<Boolean> ReloadEnvironmentVariables;
+
+        UInt64 ContentId{ get; set; };
+
+        Boolean Equals(NewTerminalArgs other);
+        String GenerateName();
+        String ToCommandline();
+        UInt64 Hash();
+    };
+
+    [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
+    {
+        ActionEventArgs();
+        ActionEventArgs(IActionArgs args);
+    };
+
+    [default_interface] runtimeclass CopyTextArgs : IActionArgs
+    {
+        CopyTextArgs();
+        Boolean DismissSelection { get; };
+        Boolean SingleLine { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
+    };
+
+    [default_interface] runtimeclass NewTabArgs : IActionArgs
+    {
+        NewTabArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    {
+        MovePaneArgs(UInt32 tabIndex, String Window);
+        UInt32 TabIndex;
+        String Window;
+    };
+
+    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
+    {
+        SwitchToTabArgs(UInt32 tabIndex);
+        UInt32 TabIndex;
+    };
+
+    [default_interface] runtimeclass ResizePaneArgs : IActionArgs
+    {
+        ResizeDirection ResizeDirection { get; };
+    };
+
+    [default_interface] runtimeclass MoveFocusArgs : IActionArgs
+    {
+        MoveFocusArgs(FocusDirection direction);
+        FocusDirection FocusDirection { get; };
+    };
+
+    [default_interface] runtimeclass SwapPaneArgs : IActionArgs
+    {
+        SwapPaneArgs(FocusDirection direction);
+        FocusDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
+    {
+        Single Delta { get; };
+    };
+
+    [default_interface] runtimeclass SendInputArgs : IActionArgs
+    {
+        String Input { get; };
+    };
+
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs
+    {
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode);
+
+        SplitDirection SplitDirection { get; };
+        NewTerminalArgs TerminalArgs { get; };
+        SplitType SplitMode { get; };
+        Double SplitSize { get; };
+    };
+
+    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
+    {
+        OpenSettingsArgs(SettingsTarget target);
+        SettingsTarget Target { get; };
+    };
+
+    [default_interface] runtimeclass SetFocusModeArgs : IActionArgs
+    {
+        SetFocusModeArgs(Boolean isFocusMode);
+        Boolean IsFocusMode { get; };
+    };
+
+    [default_interface] runtimeclass SetFullScreenArgs : IActionArgs
+    {
+        SetFullScreenArgs(Boolean isFullScreen);
+        Boolean IsFullScreen { get; };
+    };
+
+    [default_interface] runtimeclass SetMaximizedArgs : IActionArgs
+    {
+        SetMaximizedArgs(Boolean isMaximized);
+        Boolean IsMaximized { get; };
+    };
+
+    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
+    {
+        SetColorSchemeArgs(String name);
+        String SchemeName { get; };
+    };
+
+    [default_interface] runtimeclass SetTabColorArgs : IActionArgs
+    {
+        SetTabColorArgs(Windows.UI.Color tabColor);
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+    };
+
+    [default_interface] runtimeclass RenameTabArgs : IActionArgs
+    {
+        RenameTabArgs(String title);
+        String Title { get; };
+    };
+
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
+    {
+        ExecuteCommandlineArgs(String commandline);
+        String Commandline;
+    };
+
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
+    {
+        CloseOtherTabsArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
+    {
+        CloseTabsAfterArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabArgs : IActionArgs
+    {
+        CloseTabArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs
+    {
+        MoveTabArgs(String window, MoveTabDirection direction);
+        MoveTabDirection Direction { get; };
+        String Window { get; };
+    };
+
+    [default_interface] runtimeclass ScrollUpArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+    [default_interface] runtimeclass ScrollDownArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+
+    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AddMarkArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
+    };
+
+    [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
+    {
+        CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass SuggestionsArgs : IActionArgs
+    {
+        SuggestionsArgs();
+        SuggestionsArgs(SuggestionsSource source, Boolean useCommandline);
+        SuggestionsSource Source { get; };
+        Boolean UseCommandline { get; };
+    };
+
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs
+    {
+        FindMatchArgs(FindMatchDirection direction);
+        FindMatchDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs
+    {
+        NewWindowArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass PrevTabArgs : IActionArgs
+    {
+        PrevTabArgs();
+        PrevTabArgs(TabSwitcherMode SwitcherMode);
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass NextTabArgs : IActionArgs
+    {
+        NextTabArgs();
+        NextTabArgs(TabSwitcherMode SwitcherMode);
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass RenameWindowArgs : IActionArgs
+    {
+        RenameWindowArgs(String name);
+        String Name { get; };
+    };
+
+    [default_interface] runtimeclass SearchForTextArgs : IActionArgs
+    {
+        String QueryUrl { get; };
+    };
+
+    [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
+    {
+        String Name { get; };
+        DesktopBehavior Desktop { get; };
+        MonitorBehavior Monitor { get; };
+        Boolean ToggleVisibility { get; };
+        UInt32 DropdownDuration { get; };
+    };
+
+    [default_interface] runtimeclass FocusPaneArgs : IActionArgs
+    {
+        FocusPaneArgs(UInt32 Id);
+        UInt32 Id { get; };
+    };
+
+    [default_interface] runtimeclass ExportBufferArgs : IActionArgs
+    {
+        ExportBufferArgs(String path);
+        String Path { get; };
+    };
+
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs
+    {
+        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
+        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
+    };
+
+    [default_interface] runtimeclass AdjustOpacityArgs : IActionArgs
+    {
+        AdjustOpacityArgs();
+        Int32 Opacity { get; };
+        Boolean Relative { get; };
+    };
+
+    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.SelectionColor Foreground;
+        Microsoft.Terminal.Control.SelectionColor Background;
+        Microsoft.Terminal.Core.MatchMode MatchMode { get; };
+    };
+
+    [default_interface] runtimeclass SelectCommandArgs : IActionArgs
+    {
+        SelectCommandArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+    [default_interface] runtimeclass SelectOutputArgs : IActionArgs
+    {
+        SelectOutputArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+
+    // This interface ensures that no changes are made to ActionMap
+    interface IActionMapView
+    {
+        Boolean IsKeyChordExplicitlyUnbound(Microsoft.Terminal.Control.KeyChord keys);
+
+        Command GetActionByKeyChord(Microsoft.Terminal.Control.KeyChord keys);
+
+        Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);
+        [method_name("GetKeyBindingForActionWithArgs")] Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
+
+        Windows.Foundation.Collections.IMapView<String, ActionAndArgs> AvailableActions { get; };
+
+        Windows.Foundation.Collections.IMapView<String, Command> NameMap { get; };
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> KeyBindings { get; };
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> GlobalHotkeys { get; };
+
+        IVector<Command> ExpandedCommands { get; };
+
+        IVector<Command> FilterToSendInput(String CurrentCommandline);
+    };
+
+    [default_interface] runtimeclass ActionMap : IActionMapView
+    {
+        void RebindKeys(Microsoft.Terminal.Control.KeyChord oldKeys, Microsoft.Terminal.Control.KeyChord newKeys);
+        void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);
+
+        void RegisterKeyBinding(Microsoft.Terminal.Control.KeyChord keys, ActionAndArgs action);
+    }
+
+    runtimeclass AppearanceConfig : [default] IAppearanceConfig {
+    }
+
+    enum InfoBarMessage
+    {
+        CloseOnExitInfo = 0,
+        KeyboardServiceWarning,
+        SetAsDefault,
+    };
+
+    runtimeclass WindowLayout
+    {
+        WindowLayout();
+
+        static String ToJson(WindowLayout layout);
+        static WindowLayout FromJson(String json);
+
+        Windows.Foundation.Collections.IVector<ActionAndArgs> TabLayout;
+        Windows.Foundation.IReference<LaunchPosition> InitialPosition;
+        Windows.Foundation.IReference<Windows.Foundation.Size> InitialSize;
+        Windows.Foundation.IReference<LaunchMode> LaunchMode;
+    };
+
+    runtimeclass ApplicationState {
+        static ApplicationState SharedInstance();
+
+        void Flush();
+        void Reset();
+
+        String SettingsHash;
+        Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;
+        Windows.Foundation.Collections.IVector<String> RecentCommands;
+        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages;
+        Windows.Foundation.Collections.IVector<String> AllowedCommandlines;
+    }
+
+    runtimeclass CascadiaSettings {
+        static CascadiaSettings LoadDefaults();
+        static CascadiaSettings LoadAll();
+
+        static String SettingsPath { get; };
+        static String DefaultSettingsPath { get; };
+        static Boolean IsPortableMode { get; };
+
+        static String ApplicationDisplayName { get; };
+        static String ApplicationVersion { get; };
+
+        static void ExportFile(String path, String content);
+
+        CascadiaSettings(String userJSON, String inboxJSON);
+
+        CascadiaSettings Copy();
+        void WriteSettingsToDisk();
+
+        String Hash { get; };
+
+        GlobalAppSettings GlobalSettings { get; };
+
+        Profile ProfileDefaults { get; };
+
+        IObservableVector<Profile> AllProfiles { get; };
+        IObservableVector<Profile> ActiveProfiles { get; };
+
+        Profile DuplicateProfile(Profile sourceProfile);
+
+        ActionMap ActionMap { get; };
+
+        IVectorView<SettingsLoadWarnings> Warnings { get; };
+        Windows.Foundation.IReference<SettingsLoadErrors> GetLoadingError { get; };
+        String GetSerializationErrorMessage { get; };
+
+        Profile CreateNewProfile();
+        Profile FindProfile(Guid profileGuid);
+        void UpdateColorSchemeReferences(String oldName, String newName);
+
+        Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
+
+        static Boolean IsDefaultTerminalAvailable { get; };
+        static Boolean IsDefaultTerminalSet { get; };
+        IObservableVector<DefaultTerminal> DefaultTerminals { get; };
+        DefaultTerminal CurrentDefaultTerminal;
+
+        void ExpandCommands();
+    }
+
+    runtimeclass ColorScheme : Windows.Foundation.IStringable, ISettingsModelObject {
+        ColorScheme();
+        ColorScheme(String name);
+
+        String Name;
+
+        Microsoft.Terminal.Core.Color Foreground;
+        Microsoft.Terminal.Core.Color Background;
+        Microsoft.Terminal.Core.Color SelectionBackground;
+        Microsoft.Terminal.Core.Color CursorColor;
+
+        // winrt::com_arrays prevent data binding.
+        // Instead of representing Table as a property,
+        // we expose the getter as a function.
+        Microsoft.Terminal.Core.Color[] Table();
+        void SetColorTableEntry(UInt8 index, Microsoft.Terminal.Core.Color value);
+
+        Microsoft.Terminal.Core.Scheme ToCoreScheme();
+    }
+
+    enum ShortcutAction
+    {
+        Invalid = 0, // treat Invalid as unbound actions
+
+        // When adding a new action, add them to AllShortcutActions.h!
+        #define ON_ALL_ACTIONS(action) action,
+        ALL_SHORTCUT_ACTIONS
+        #undef ON_ALL_ACTIONS
+    };
+
+    runtimeclass ActionAndArgs {
+        ActionAndArgs();
+        ActionAndArgs(ShortcutAction action, IActionArgs args);
+
+        static String Serialize(IVector<ActionAndArgs> args);
+        static IVector<ActionAndArgs> Deserialize(String content);
+
+        IActionArgs Args;
+        ShortcutAction Action;
+    };
+
+    runtimeclass Command
+    {
+        Command();
+
+        String Name { get; };
+        ActionAndArgs ActionAndArgs { get; };
+        Microsoft.Terminal.Control.KeyChord Keys { get; };
+        void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);
+        String KeyChordText { get; };
+
+        String IconPath;
+
+        Boolean HasNestedCommands { get; };
+        Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
+
+        static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
+        static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories);
+
+    }
+
+    runtimeclass DefaultTerminal : Windows.Foundation.IStringable
+    {
+        String Name { get; };
+        String Author { get; };
+        String Version { get; };
+        String Icon { get; };
+    }
+
+    runtimeclass EnumMappings {
+        // Global Settings
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.NewTabPosition> NewTabPosition { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.UI.Xaml.Controls.TabViewWidthMode> TabViewWidthMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FirstWindowPreference> FirstWindowPreference { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.LaunchMode> LaunchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.TabSwitcherMode> TabSwitcherMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.CopyFormat> CopyFormat { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.WindowingMode> WindowingMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
+
+        // Profile Settings
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.ScrollbarState> ScrollbarState { get; };
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextAntialiasingMode> TextAntialiasingMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.CursorStyle> CursorStyle { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.AdjustTextMode> AdjustIndistinguishableColors { get; };
+        static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.IntenseStyle> IntenseTextStyle { get; };
+    }
+
+    runtimeclass FontConfig {
+        Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
+
+        INHERITABLE_FONT_SETTING(String, FontFace);
+        INHERITABLE_FONT_SETTING(Single, FontSize);
+        INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
+        INHERITABLE_FONT_SETTING(Boolean, EnableBuiltinGlyphs);
+        INHERITABLE_FONT_SETTING(String, CellWidth);
+        INHERITABLE_FONT_SETTING(String, CellHeight);
+    }
+
+    runtimeclass GlobalAppSettings {
+        Guid DefaultProfile;
+
+        INHERITABLE_SETTING(String, UnparsedDefaultProfile);
+
+        INHERITABLE_SETTING(Int32, InitialRows);
+        INHERITABLE_SETTING(Int32, InitialCols);
+        INHERITABLE_SETTING(Boolean, AlwaysShowTabs);
+        INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
+        INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
+        INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
+        INHERITABLE_SETTING(String, Language);
+        INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
+        INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
+        INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
+        INHERITABLE_SETTING(String, WordDelimiters);
+        INHERITABLE_SETTING(Boolean, CopyOnSelect);
+        INHERITABLE_SETTING(Boolean, InputServiceWarning);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
+        INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
+        INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
+        INHERITABLE_SETTING(Boolean, TrimPaste);
+        INHERITABLE_SETTING(LaunchPosition, InitialPosition);
+        INHERITABLE_SETTING(Boolean, CenterOnLaunch);
+        INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
+        INHERITABLE_SETTING(LaunchMode, LaunchMode);
+        INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
+        INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
+        INHERITABLE_SETTING(Boolean, SoftwareRendering);
+        INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
+        INHERITABLE_SETTING(Boolean, ForceVTInput);
+        INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
+        INHERITABLE_SETTING(Boolean, StartOnUserLogin);
+        INHERITABLE_SETTING(Boolean, AlwaysOnTop);
+        INHERITABLE_SETTING(Boolean, AutoHideWindow);
+        INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
+        INHERITABLE_SETTING(Boolean, DisableAnimations);
+        INHERITABLE_SETTING(String, StartupActions);
+        INHERITABLE_SETTING(Boolean, FocusFollowMouse);
+        INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
+        INHERITABLE_SETTING(Boolean, TrimBlockSelection);
+        INHERITABLE_SETTING(Boolean, DetectURLs);
+        INHERITABLE_SETTING(Boolean, MinimizeToNotificationArea);
+        INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
+        INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
+        INHERITABLE_SETTING(Boolean, ShowAdminShield);
+        INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
+        INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
+        INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
+        INHERITABLE_SETTING(Boolean, IsolatedMode);
+        INHERITABLE_SETTING(Boolean, AllowHeadless);
+        INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
+
+        Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
+        void AddColorScheme(ColorScheme scheme);
+        void RemoveColorScheme(String schemeName);
+        ColorScheme DuplicateColorScheme(ColorScheme scheme);
+
+        ActionMap ActionMap { get; };
+
+        Windows.Foundation.Collections.IMapView<String, Theme> Themes();
+        void AddTheme(Theme theme);
+        INHERITABLE_SETTING(ThemePair, Theme);
+        Theme CurrentTheme { get; };
+
+        Boolean ShouldUsePersistedLayout();
+    }
+
+    [flags] enum ConvergedAlignment {
+        // low 4 bits are the horizontal
+        Horizontal_Center = 0x00,
+        Horizontal_Left = 0x01,
+        Horizontal_Right = 0x02,
+
+        // high 4 bits are the vertical
+        Vertical_Center = 0x00,
+        Vertical_Top = 0x10,
+        Vertical_Bottom = 0x20
+    };
+
+    [flags] enum IntenseStyle {
+        Bold = 0x1,
+        Bright = 0x2,
+        All = 0xffffffff
+    };
+
+    interface IAppearanceConfig
+    {
+        Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
+
+        INHERITABLE_APPEARANCE_SETTING(String, DarkColorSchemeName);
+        INHERITABLE_APPEARANCE_SETTING(String, LightColorSchemeName);
+
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
+        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
+        INHERITABLE_APPEARANCE_SETTING(UInt32, CursorHeight);
+
+        INHERITABLE_APPEARANCE_SETTING(String, BackgroundImagePath);
+        String ExpandedBackgroundImagePath { get; };
+
+        INHERITABLE_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        INHERITABLE_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        INHERITABLE_APPEARANCE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
+
+        INHERITABLE_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
+        INHERITABLE_APPEARANCE_SETTING(String, PixelShaderPath);
+        INHERITABLE_APPEARANCE_SETTING(String, PixelShaderImagePath);
+        INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
+        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
+        INHERITABLE_APPEARANCE_SETTING(Double, Opacity);
+        INHERITABLE_APPEARANCE_SETTING(Boolean, UseAcrylic);
+    };
+
+    // This tag is used to identify the context in which this object was created
+    enum OriginTag
+    {
+        None = 0,
+        User,
+        InBox,
+        Generated,
+        Fragment,
+        ProfilesDefaults
+    };
+
+    interface ISettingsModelObject {
+        OriginTag Origin { get; };
+    }
+
+    static runtimeclass KeyChordSerialization
+    {
+        static Microsoft.Terminal.Control.KeyChord FromString(String str);
+        static String ToString(Microsoft.Terminal.Control.KeyChord chord);
+    }
+
+    enum NewTabMenuEntryType
+    {
+        Invalid = 0,
+        Profile,
+        Separator,
+        Folder,
+        RemainingProfiles,
+        MatchProfiles
+    };
+
+    unsealed runtimeclass NewTabMenuEntry
+    {
+        NewTabMenuEntryType Type;
+    }
+
+    [default_interface] runtimeclass SeparatorEntry : NewTabMenuEntry
+    {
+        SeparatorEntry();
+    }
+
+    runtimeclass ProfileEntry : NewTabMenuEntry
+    {
+        ProfileEntry();
+        ProfileEntry(String profile);
+
+        Profile Profile;
+        Int32 ProfileIndex;
+    }
+
+    enum FolderEntryInlining
+    {
+        Never = 0,
+        Auto
+    };
+
+    runtimeclass FolderEntry : NewTabMenuEntry 
+    {
+        FolderEntry();
+        FolderEntry(String name);
+
+        String Name;
+        String Icon;
+        FolderEntryInlining Inlining;
+        Boolean AllowEmpty;
+
+        IVector<NewTabMenuEntry> Entries();
+    }
+
+    unsealed runtimeclass ProfileCollectionEntry : NewTabMenuEntry
+    {
+        IMap<Int32, Profile> Profiles;
+    }
+
+    [default_interface] runtimeclass RemainingProfilesEntry : ProfileCollectionEntry
+    {
+        RemainingProfilesEntry();
+    }
+
+    runtimeclass MatchProfilesEntry : ProfileCollectionEntry
+    {
+        MatchProfilesEntry();
+
+        String Name;
+        String Commandline;
+        String Source;
+    }
+
+    enum CloseOnExitMode
+    {
+        Never = 0,
+        Graceful,
+        Always,
+        Automatic
+    };
+
+    [flags]
+    enum BellStyle
+    {
+        // !! If you update this, you must update the values in TerminalSettingsEditor/Profiles.xaml
+        Audible = 0x1,
+        Window = 0x2,
+        Taskbar = 0x4,
+        All = 0xffffffff
+    };
+
+    runtimeclass Profile : Windows.Foundation.IStringable, ISettingsModelObject {
+        Profile();
+        Profile(Guid guid);
+
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
+
+        // True if the user explicitly removed this Profile from settings.json.
+        Boolean Deleted { get; };
+
+        // Helper for magically using a commandline for an icon for a profile
+        // without an explicit icon.
+        String EvaluatedIcon { get; };
+
+        INHERITABLE_PROFILE_SETTING(Guid, Guid);
+        INHERITABLE_PROFILE_SETTING(String, Name);
+        INHERITABLE_PROFILE_SETTING(String, Source);
+        INHERITABLE_PROFILE_SETTING(Boolean, Hidden);
+        INHERITABLE_PROFILE_SETTING(Guid, ConnectionType);
+        INHERITABLE_PROFILE_SETTING(String, Icon);
+        INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
+        INHERITABLE_PROFILE_SETTING(String, TabTitle);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
+        INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
+        INHERITABLE_PROFILE_SETTING(String, Padding);
+        INHERITABLE_PROFILE_SETTING(String, Commandline);
+        INHERITABLE_PROFILE_SETTING(Boolean, VtPassthrough);
+
+        INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
+        String EvaluatedStartingDirectory { get; };
+
+        FontConfig FontInfo { get; };
+
+        IAppearanceConfig DefaultAppearance { get; };
+        INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);
+
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
+
+        INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
+        INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
+        INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
+        INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
+
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IMap<String COMMA String>, EnvironmentVariables);
+
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
+
+        INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
+        INHERITABLE_PROFILE_SETTING(Boolean, AutoMarkPrompts);
+        INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
+
+        INHERITABLE_PROFILE_SETTING(Boolean, RightClickContextMenu);
+        INHERITABLE_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
+
+        INHERITABLE_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
+
+    }
+
+    runtimeclass TerminalSettingsCreateResult
+    {
+        TerminalSettingsCreateResult(TerminalSettings defaultSettings);
+        TerminalSettings DefaultSettings { get; };
+        TerminalSettings UnfocusedSettings { get; };
+    }
+
+    // Class Description:
+    // TerminalSettings encapsulates all settings that control the
+    //      TermControl's behavior. In these settings there is both the entirety
+    //      of the Core ICoreSettings properties and the IControlSettings
+    //      properties. It's the Profile's responsibility to build this from
+    //      settings it contains, in combination with the global settings.
+    // The TerminalControl will pull settings it requires from this object,
+    //      and pass along the Core properties to the terminal core.
+    [default_interface]
+    runtimeclass TerminalSettings : Microsoft.Terminal.Core.ICoreSettings,
+                                    Microsoft.Terminal.Control.IControlSettings
+    {
+        TerminalSettings();
+
+        Windows.Foundation.Collections.IMap<String COMMA String> EnvironmentVariables;
+
+        static TerminalSettings CreateForPreview(CascadiaSettings appSettings, Profile profile);
+        static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
+        static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
+
+        void ApplyColorScheme(ColorScheme scheme);
+
+        ColorScheme AppliedColorScheme;
+
+        // The getters for these are already defined in IControlSettings. So
+        // we're just adding the setters here, because TerminalApp likes to be
+        // able to change these at runtime (e.g. when duplicating a pane).
+        String Commandline { set; };
+        String StartingDirectory { set; };
+
+        Boolean Elevate;
+        Boolean ReloadEnvironmentVariables;
+    };
+
+    // SettingsLoadWarnings are scenarios where the settings contained
+    // information we knew was invalid, but we could recover from.
+    enum SettingsLoadWarnings
+    {
+        MissingDefaultProfile = 0,
+        DuplicateProfile,
+        UnknownColorScheme,
+        InvalidBackgroundImage,
+        InvalidIcon,
+        AtLeastOneKeybindingWarning,
+        TooManyKeysForChord,
+        MissingRequiredParameter,
+        FailedToParseCommandJson,
+        FailedToWriteToSettings,
+        InvalidColorSchemeInCmd,
+        InvalidSplitSize,
+        FailedToParseStartupActions,
+        InvalidProfileEnvironmentVariables,
+        FailedToParseSubCommands,
+        UnknownTheme,
+        DuplicateRemainingProfilesEntry,
+        InvalidUseOfContent,
+        WARNINGS_SIZE // IMPORTANT: This MUST be the last value in this enum. It's an unused placeholder.
+    };
+
+    // SettingsLoadWarnings are scenarios where the settings had invalid state
+    // that we could not recover from.
+    enum SettingsLoadErrors
+    {
+        NoProfiles = 0,
+        AllProfilesHidden = 1,
+        ERRORS_SIZE // IMPORTANT: This MUST be the last value in this enum. It's an unused placeholder.
+    };
+
+    enum IconStyle
+    {
+        Default,
+        Hidden,
+        Monochrome
+    };
+
+    enum ThemeColorType
+    {
+        Accent,
+        Color,
+        TerminalBackground
+    };
+
+    enum TabCloseButtonVisibility
+    {
+        Always,
+        Hover,
+        Never,
+        ActiveOnly
+    };
+
+    runtimeclass ThemePair
+    {
+        ThemePair();
+        ThemePair(String name);
+        ThemePair(String darkName, String lightName);
+
+        String DarkName;
+        String LightName;
+    };
+
+    runtimeclass ThemeColor
+    {
+        ThemeColor();
+        static ThemeColor FromColor(Microsoft.Terminal.Core.Color color);
+        static ThemeColor FromAccent();
+        static ThemeColor FromTerminalBackground();
+
+        Microsoft.Terminal.Core.Color Color { get; };
+        ThemeColorType ColorType;
+
+        static Microsoft.Terminal.Core.Color ColorFromBrush(Windows.UI.Xaml.Media.Brush brush);
+        Windows.UI.Xaml.Media.Brush Evaluate(Windows.UI.Xaml.ResourceDictionary res,
+                                             Windows.UI.Xaml.Media.Brush terminalBackground,
+                                             Boolean forTitlebar);
+        UInt8 UnfocusedTabOpacity { get; };
+    }
+
+    runtimeclass WindowTheme {
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+        Boolean UseMica { get; };
+        Boolean RainbowFrame { get; };
+        ThemeColor Frame { get; };
+        ThemeColor UnfocusedFrame { get; };
+    }
+
+    runtimeclass TabRowTheme {
+        ThemeColor Background { get; };
+        ThemeColor UnfocusedBackground { get; };
+    }
+
+    runtimeclass TabTheme {
+        ThemeColor Background { get; };
+        ThemeColor UnfocusedBackground { get; };
+        TabCloseButtonVisibility ShowCloseButton { get; };
+        IconStyle IconStyle { get; };
+    }
+
+    runtimeclass Theme : Windows.Foundation.IStringable {
+        Theme();
+        Theme(Windows.UI.Xaml.ElementTheme requestedTheme);
+
+        String Name;
+
+        // window.* Namespace
+        WindowTheme Window { get; };
+
+        // tabRow.* Namespace
+        TabRowTheme TabRow { get; };
+
+        // tab.* Namespace
+        TabTheme Tab { get; };
+
+        // A helper for retrieving the RequestedTheme out of the window property
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+        static Boolean IsSystemInDarkTheme();
+
+    }
+}

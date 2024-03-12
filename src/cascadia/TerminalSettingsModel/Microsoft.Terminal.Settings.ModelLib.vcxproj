@@ -22,60 +22,43 @@
   <ItemGroup>
     <ClInclude Include="ActionArgsMagic.h" />
     <ClInclude Include="NewTabMenuEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SeparatorEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="FolderEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="ProfileEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="RemainingProfilesEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="ProfileCollectionEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="MatchProfilesEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="VisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
-      <DependentUpon>DefaultTerminal.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ActionArgs.h">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="ActionAndArgs.h">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="ActionMap.h">
-      <DependentUpon>ActionMap.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="AzureCloudShellGenerator.h" />
     <ClInclude Include="ApplicationState.h">
-      <DependentUpon>ApplicationState.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="CascadiaSettings.h">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="ColorScheme.h">
-      <DependentUpon>ColorScheme.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Theme.h">
-      <DependentUpon>Theme.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Command.h">
-      <DependentUpon>Command.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="DynamicProfileUtils.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="GlobalAppSettings.h">
-      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="MTSMSettings.h" />
@@ -83,28 +66,21 @@
     <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="HashUtils.h" />
     <ClInclude Include="KeyChordSerialization.h">
-      <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
     <ClInclude Include="Profile.h">
-      <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="AppearanceConfig.h">
-      <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="FontConfig.h">
-      <DependentUpon>FontConfig.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="EnumMappings.h">
-      <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalSettings.h">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="TerminalWarnings.h">
-      <DependentUpon>TerminalWarnings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="VsDevCmdGenerator.h" />
     <ClInclude Include="VsDevShellGenerator.h" />
@@ -117,87 +93,62 @@
   <ItemGroup>
     <ClCompile Include="VisualStudioGenerator.cpp" />
     <ClCompile Include="DefaultTerminal.cpp">
-      <DependentUpon>DefaultTerminal.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ActionAndArgs.cpp">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ActionArgs.cpp">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ActionMap.cpp">
-      <DependentUpon>ActionMap.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ActionMapSerialization.cpp">
-      <DependentUpon>ActionMap.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
     <ClCompile Include="ApplicationState.cpp">
-      <DependentUpon>ApplicationState.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="CascadiaSettingsSerialization.cpp">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorScheme.cpp">
-      <DependentUpon>ColorScheme.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Theme.cpp">
-      <DependentUpon>Theme.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Command.cpp">
-      <DependentUpon>Command.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="DynamicProfileUtils.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp">
-      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="KeyChordSerialization.cpp">
-      <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="Profile.cpp">
-      <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="AppearanceConfig.cpp">
-      <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="FontConfig.cpp">
-      <DependentUpon>FontConfig.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalSettings.cpp">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="EnumMappings.cpp">
-      <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="NewTabMenuEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="SeparatorEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="FolderEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ProfileEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ProfileCollectionEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="RemainingProfilesEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="MatchProfilesEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="VsDevCmdGenerator.cpp" />
     <ClCompile Include="VsDevShellGenerator.cpp" />
@@ -213,25 +164,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="ActionArgs.idl" />
-    <Midl Include="ActionMap.idl" />
-    <Midl Include="ApplicationState.idl" />
-    <Midl Include="CascadiaSettings.idl" />
-    <Midl Include="ColorScheme.idl" />
-    <Midl Include="NewTabMenuEntry.idl" />
-    <Midl Include="Theme.idl" />
-    <Midl Include="Command.idl" />
-    <Midl Include="DefaultTerminal.idl" />
-    <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="Profile.idl" />
-    <Midl Include="EnumMappings.idl" />
-    <Midl Include="TerminalSettings.idl" />
-    <Midl Include="TerminalWarnings.idl" />
-    <Midl Include="KeyChordSerialization.idl" />
-    <Midl Include="AppearanceConfig.idl" />
-    <Midl Include="IAppearanceConfig.idl" />
-    <Midl Include="ISettingsModelObject.idl" />
-    <Midl Include="FontConfig.idl" />
+    <Midl Include="Microsoft.Terminal.Settings.Model.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
