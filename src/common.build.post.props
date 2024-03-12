@@ -67,9 +67,13 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
-  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true' and $(_OpenConsoleProjectProvidedTargetPlatformIdentifier)==''">
+  <!--
+    If we do not override the target platform, the AppX packaging rules (which we honestly don't even care to use...) will
+    fail because they're looking for an SDK called "Clang.Windows". Yeah.
+  -->
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true' and '$(PlatformToolset)'=='ClangCL'">
+    <TargetPlatformIdentifier Condition="'$(_OpenConsoleProjectProvidedTargetPlatformIdentifier)'==''">$(_OpenConsoleProjectProvidedTargetPlatformIdentifier)</TargetPlatformIdentifier>
     <TargetPlatformIdentifier Condition="'$(TargetPlatformIdentifier)'==''">UAP</TargetPlatformIdentifier>
-    <TargetPlatformName Condition="'$(TargetPlatformName)'==''">UAP</TargetPlatformName>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
