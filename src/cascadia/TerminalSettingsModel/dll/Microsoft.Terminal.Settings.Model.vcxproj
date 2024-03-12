@@ -83,11 +83,6 @@
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't
     include Settings and Connection, since Control will include them for us) -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalConnection\ITerminalConnection.vcxproj">
-      <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
-      <Private>false</Private>
-    </ProjectReference>
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
       <!-- Private:true and ReferenceOutputAssembly:false, in combination with
       the manual reference to TerminalControl.winmd below make sure that this
@@ -102,6 +97,16 @@
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj">
       <Private>true</Private>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalConnection\ITerminalConnection.vcxproj">
+      <Private>false</Private>
+      <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
+      <Private>false</Private>
+      <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
     </ProjectReference>
   </ItemGroup>
 

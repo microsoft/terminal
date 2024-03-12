@@ -65,14 +65,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return AzureConnectionType;
     }
 
-    // This function exists because the clientID only gets added by the release pipelines
-    // and is not available on local builds, so we want to be able to make sure we don't
-    // try to make an Azure connection if its a local build
-    bool AzureConnection::IsAzureConnectionAvailable() noexcept
-    {
-        return (AzureClientID != L"0");
-    }
-
     void AzureConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         if (settings)

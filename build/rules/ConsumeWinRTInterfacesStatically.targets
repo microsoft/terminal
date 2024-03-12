@@ -7,7 +7,7 @@
       $(OpenConsoleGetUtilityProjectWinMDReferencesDependsOn)
     </OpenConsoleGetUtilityProjectWinMDReferencesDependsOn>
     <OpenConsoleGetUtilityProjectWinMDReferencesDependsOn Condition="'$(TerminalMidlRT)'=='true'">
-      MidlRTProjectWinMDReferences;
+      GetMidlRTProjectWinMDReferences;
       $(OpenConsoleGetUtilityProjectWinMDReferencesDependsOn)
     </OpenConsoleGetUtilityProjectWinMDReferencesDependsOn>
 
@@ -22,7 +22,8 @@
       <_OpenConsoleUtilityProjectReferences Remove="@(_OpenConsoleUtilityProjectReferences)"/>
       <_OpenConsoleUtilityProjectReferences Include="@(_ResolvedProjectReferencePaths)"
           Condition= "'%(_ResolvedProjectReferencePaths.ProjectType)'=='Utility' AND 
-              '%(_ResolvedProjectReferencePaths.WinMDFile)' == 'true'"/>
+                      '%(_ResolvedProjectReferencePaths.WinMDFile)' == 'true' AND
+                      '%(_ResolvedProjectReferencePaths.OpenConsoleImplementInterface)' == 'true'"/>
     </ItemGroup>
     <ItemGroup>
       <OpenConsoleUtilityProjectWinMDReferences Remove="@(OpenConsoleUtilityProjectWinMDReferences)" />

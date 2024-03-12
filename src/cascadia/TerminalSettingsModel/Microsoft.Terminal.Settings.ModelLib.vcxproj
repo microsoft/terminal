@@ -276,6 +276,11 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalConnection\ITerminalConnection.vcxproj">
+      <Private>false</Private>
+      <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
+    </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
       <Private>false</Private>
       <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
@@ -286,12 +291,6 @@
     <!-- Manually add references to each of our dependent winmds. Mark them as private=false and CopyLocalSatelliteAssemblies=false, so that we don't
     propagate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
-    <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
     <Reference Include="Microsoft.Terminal.Control">
       <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>

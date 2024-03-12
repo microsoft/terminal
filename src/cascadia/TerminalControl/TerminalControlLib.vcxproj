@@ -169,16 +169,12 @@
     <ProjectReference Include="..\..\terminal\parser\lib\parser.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" />
 
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
-      <Private>false</Private>
-      <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
 
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    <ProjectReference Include="..\ITerminalConnection\ITerminalConnection.vcxproj">
+      <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -188,6 +184,7 @@
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
+
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>

@@ -290,9 +290,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 newConnection.Resize(height, width);
             }
             // Window owner too.
-            if (auto conpty{ newConnection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto withWindow{ newConnection.try_as<TerminalConnection::ITerminalConnectionWithWindow>() })
             {
-                conpty.ReparentWindow(_owningHwnd);
+                withWindow.ReparentWindow(_owningHwnd);
             }
 
             // This event is explicitly revoked in the destructor: does not need weak_ref
@@ -360,9 +360,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_owningHwnd != 0)
             {
-                if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+                if (auto withWindow{ _connection.try_as<TerminalConnection::ITerminalConnectionWithWindow>() })
                 {
-                    conpty.ReparentWindow(_owningHwnd);
+                    withWindow.ReparentWindow(_owningHwnd);
                 }
             }
 
@@ -2044,12 +2044,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
         {
-            // Send a signal to conpty to clear the buffer.
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            // Send a signal to clear the buffer.
+            if (auto withBuffer{ _connection.try_as<TerminalConnection::ITerminalConnectionWithBufferState>() })
             {
                 // ConPTY will emit sequences to sync up our buffer with its new
                 // contents.
-                conpty.ClearBuffer();
+                withBuffer.ClearBuffer();
             }
         }
     }
@@ -2253,9 +2253,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_initializedTerminal.load(std::memory_order_relaxed))
         {
             // show is true, hide is false
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto withWindow{ _connection.try_as<TerminalConnection::ITerminalConnectionWithWindow>() })
             {
-                conpty.ShowHide(showOrHide);
+                withWindow.ShowHide(showOrHide);
             }
         }
     }
@@ -2317,9 +2317,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (owner != _owningHwnd && _connection)
         {
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto withWindow{ _connection.try_as<TerminalConnection::ITerminalConnectionWithWindow>() })
             {
-                conpty.ReparentWindow(owner);
+                withWindow.ReparentWindow(owner);
             }
         }
         _owningHwnd = owner;

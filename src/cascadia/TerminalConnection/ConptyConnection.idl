@@ -5,18 +5,12 @@ namespace Microsoft.Terminal.TerminalConnection
 {
     delegate void NewConnectionHandler(ConptyConnection connection);
 
-    [default_interface] runtimeclass ConptyConnection : ITerminalConnection
+    [default_interface] runtimeclass ConptyConnection : ITerminalConnection, ITerminalConnectionWithWindow, ITerminalConnectionWithBufferState
     {
         ConptyConnection();
         String Commandline { get; };
         String StartingTitle { get; };
         UInt16 ShowWindow { get; };
-
-        void ClearBuffer();
-
-        void ShowHide(Boolean show);
-
-        void ReparentWindow(UInt64 newParent);
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();

@@ -16,7 +16,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     struct AzureConnection : AzureConnectionT<AzureConnection>, BaseTerminalConnection<AzureConnection>
     {
         static winrt::guid ConnectionType() noexcept;
-        static bool IsAzureConnectionAvailable() noexcept;
 
         AzureConnection() = default;
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);

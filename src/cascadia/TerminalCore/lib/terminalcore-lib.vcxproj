@@ -13,12 +13,18 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">
-    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMidlRt>true</TerminalMidlRt>
   </PropertyGroup>
 
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <CompileAsWinRT>false</CompileAsWinRT>
+    </ClCompile>
+  </ItemDefinitionGroup>
 
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxitems -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxitems" />
@@ -48,6 +54,7 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
       <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
+      <OpenConsoleImplementInterface>true</OpenConsoleImplementInterface>
     </ProjectReference>
   </ItemGroup>
 

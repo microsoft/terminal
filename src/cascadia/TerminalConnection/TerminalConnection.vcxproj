@@ -84,6 +84,7 @@
     </ProjectReference>
     <ProjectReference Include="..\ITerminalConnection\ITerminalConnection.vcxproj">
       <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
+      <OpenConsoleImplementInterface>true</OpenConsoleImplementInterface>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />

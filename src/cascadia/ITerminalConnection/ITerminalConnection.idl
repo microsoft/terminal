@@ -30,4 +30,15 @@ namespace Microsoft.Terminal.TerminalConnection
         Guid SessionId { get; };
         ConnectionState State { get; };
     };
+
+    interface ITerminalConnectionWithWindow
+    {
+        void ShowHide(Boolean show);
+        void ReparentWindow(UInt64 newParent);
+    };
+
+    interface ITerminalConnectionWithBufferState
+    {
+        void ClearBuffer();
+    };
 }

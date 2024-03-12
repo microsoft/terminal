@@ -6,7 +6,6 @@ namespace Microsoft.Terminal.TerminalConnection
     [default_interface] runtimeclass AzureConnection : ITerminalConnection
     {
         static Guid ConnectionType { get; };
-        static Boolean IsAzureConnectionAvailable();
 
         AzureConnection();
     };
