@@ -119,6 +119,7 @@ stages:
           keepAllExpensiveBuildOutputs: false
           additionalBuildOptions: /p:WindowsTerminalClangBuild=true
           artifactStem: -clang
+          parallelBuild: false # memory exhaustion
 
   - stage: Test_x64_Clang
     displayName: Test x64 ClangCL

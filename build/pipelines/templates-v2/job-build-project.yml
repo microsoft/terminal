@@ -71,6 +71,9 @@ parameters:
   - name: enableCaching
     type: boolean
     default: false
+  - name: parallelBuild
+    type: boolean
+    default: true
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -180,7 +183,7 @@ jobs:
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
       msbuildArchitecture: x64
-      maximumCpuCount: true
+      maximumCpuCount: ${{ parameters.parallelBuild }}
     ${{ if eq(parameters.enableCaching, true) }}:
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
