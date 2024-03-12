@@ -930,13 +930,29 @@
     <value>為指定的字型設定權數 (筆觸的亮度或重度)。</value>
     <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
   </data>
+  <data name="Profile_FontAxes.Header" xml:space="preserve">
+    <value>可變字型軸</value>
+    <comment>Header for a control to allow editing the font axes.</comment>
+  </data>
   <data name="Profile_FontAxesAvailable.Text" xml:space="preserve">
     <value>新增或移除指定字型的字型軸。</value>
     <comment>A description for what the "font axes" setting does. Presented near "Profile_FontAxes".</comment>
   </data>
+  <data name="Profile_FontAxesUnavailable.Text" xml:space="preserve">
+    <value>選取的字型沒有變數字型軸。</value>
+    <comment>A description provided when the font axes setting is disabled. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontFeatures.Header" xml:space="preserve">
+    <value>字型功能</value>
+    <comment>Header for a control to allow editing the font features.</comment>
+  </data>
   <data name="Profile_FontFeaturesAvailable.Text" xml:space="preserve">
     <value>新增或移除指定字型的字型功能。</value>
     <comment>A description for what the "font features" setting does. Presented near "Profile_FontFeatures".</comment>
+  </data>
+  <data name="Profile_FontFeaturesUnavailable.Text" xml:space="preserve">
+    <value>選取的字型沒有字型功能。</value>
+    <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>一般</value>
@@ -1254,12 +1270,92 @@
     <value>極細</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
+  <data name="Profile_FontFeature_rlig" xml:space="preserve">
+    <value>必要連字</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_locl" xml:space="preserve">
+    <value>本地化表單</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ccmp" xml:space="preserve">
+    <value>組合/分解</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_calt" xml:space="preserve">
+    <value>內容相關的替代字</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_liga" xml:space="preserve">
+    <value>標準連字</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_clig" xml:space="preserve">
+    <value>內容相關的連字</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rvrn" xml:space="preserve">
+    <value>必要的變化替代項目</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_kern" xml:space="preserve">
+    <value>字元間距調整</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mark" xml:space="preserve">
+    <value>標示位置</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mkmk" xml:space="preserve">
+    <value>標記以標記位置</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
   <data name="Profile_FontFeature_dist" xml:space="preserve">
     <value>距離</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
+  <data name="Profile_FontFeature_aalt" xml:space="preserve">
+    <value>存取所有替代項目</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_case" xml:space="preserve">
+    <value>區分大小寫的表單</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_dnom" xml:space="preserve">
+    <value>分母 (分數)</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_fina" xml:space="preserve">
+    <value>終端機表單</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
   <data name="Profile_FontFeature_frac" xml:space="preserve">
     <value>分數</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_init" xml:space="preserve">
+    <value>初始表單</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_medi" xml:space="preserve">
+    <value>媒體表單</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_numr" xml:space="preserve">
+    <value>分子 (分數)</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ordn" xml:space="preserve">
+    <value>序數</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rclt" xml:space="preserve">
+    <value>要求內容相關的替代字</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_sinf" xml:space="preserve">
+    <value>科學符號下標</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
   <data name="Profile_FontFeature_subs" xml:space="preserve">
@@ -1268,6 +1364,14 @@
   </data>
   <data name="Profile_FontFeature_sups" xml:space="preserve">
     <value>上標</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_zero" xml:space="preserve">
+    <value>有斜線的零</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_abvm" xml:space="preserve">
+    <value>底線上方標記位置</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
   <data name="Globals_LaunchSize.Header" xml:space="preserve">
