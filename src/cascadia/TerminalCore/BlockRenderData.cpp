@@ -36,7 +36,6 @@ Viewport BlockRenderData::GetViewport() noexcept
 
     const til::inclusive_rect finalViewport{
         .left = terminalViewport.left,
-        // .top = std::max(_virtualTop, terminalViewport.top),
         .top = clampedTop - _scrollOffset,
         .right = terminalViewport.right,
         .bottom = _virtualBottom.has_value() ?
@@ -78,7 +77,6 @@ void BlockRenderData::UserScrollViewport(const int viewTop)
     else
     {
         // scrolled somewhere below virtual top
-
         _scrollOffset = std::max(0, lastMutableViewportTop - viewTop);
     }
 }

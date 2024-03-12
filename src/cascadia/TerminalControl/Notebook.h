@@ -16,7 +16,6 @@
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-
     struct NotebookBlock
     {
         std::unique_ptr<::Microsoft::Terminal::Core::BlockRenderData> renderData{ nullptr };
@@ -30,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Notebook(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Controls() const;
         Microsoft::Terminal::Control::TermControl ActiveControl() const;
+
         til::typed_event<Control::Notebook, Control::TermControl> NewBlock;
 
     private:
@@ -38,13 +38,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlSettings _settings{ nullptr };
         Control::IControlAppearance _unfocusedAppearance{ nullptr };
         bool _gotFirstMark{ false };
-        // std::unique_ptr<::Microsoft::Terminal::Core::BlockRenderData> _renderData{ nullptr };
-
-        // Microsoft::Terminal::Control::TermControl _active{ nullptr };
-
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> _controls{ winrt::single_threaded_vector<Microsoft::Terminal::Control::TermControl>() };
-
-        std::vector<NotebookBlock> _blocks;
+        std::vector<NotebookBlock> _blocks{};
 
         winrt::fire_and_forget _fork(const til::CoordType start);
     };

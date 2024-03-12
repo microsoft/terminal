@@ -36,7 +36,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _connection{ connection }
     {
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
-        // _renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal);
 
         _terminal->NewPrompt([this](const auto& mark) {
             if (_gotFirstMark)
@@ -50,8 +49,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
 
         _fork(0);
-        // _fork();
-        // _fork();
     }
 
     Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Notebook::Controls() const
@@ -66,7 +63,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return nullptr;
         }
         return _blocks.rbegin()->control;
-        // return _active;
     }
 
     winrt::fire_and_forget Notebook::_fork(const til::CoordType start)
@@ -89,11 +85,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto blockRenderViewport = renderData->GetViewport();
             renderData->UnlockConsole();
 
-            // auto size = TermControl::GetProposedDimensions(_core.Settings(), dpi, minSize);
             auto pixels = core->ViewInPixels(blockRenderViewport.ToExclusive());
 
             const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-            // auto viewDips = pixels * scaleFactor;
 
             const auto controlHeightDips = active.ActualHeight();
             const auto viewHeightDips = pixels.height() * scaleFactor;
@@ -107,15 +101,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                       0 /*r.right*/,
                                                       -(controlHeightDips - viewHeightDips) /*r.bottom*/) };
             active.Margin(t);
-            // WUX::Media::TranslateTransform transform{};
-            // transform.X(-15);
-            // transform.Y(-64);
-
-            // WUX::Media::RectangleGeometry clipRect{};
-            // clipRect.Rect(r.to_winrt_rect());
-            // clipRect.Transform(transform);
-
-            // active.Clip(clipRect);
 
             active.Connection(nullptr);
         }
@@ -137,10 +122,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         newBlock.control = winrt::make<implementation::TermControl>(*interactivityOne);
 
         _blocks.push_back(std::move(newBlock));
-
-        // _controls.Append(newBlock.control);
-
-        // _active = controlOne;
 
         NewBlock.raise(*this, ActiveControl());
     }

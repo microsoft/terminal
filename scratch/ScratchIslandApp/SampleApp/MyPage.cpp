@@ -70,11 +70,6 @@ namespace winrt::SampleApp::implementation
         _notebook = Control::Notebook(*settings, *settings, conn);
         _notebook.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
         _addControl(_notebook.ActiveControl());
-
-        // for (const auto& control : _notebook.Controls())
-        // {
-        //     _addControl(control);
-        // }
     }
 
     void MyPage::_newBlockHandler(const Control::Notebook& /*sender*/,
