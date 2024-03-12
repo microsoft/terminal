@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace SampleApp
+{
+
+    [default_interface] runtimeclass CodeBlock : Windows.UI.Xaml.Controls.UserControl,
+                                                   Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        CodeBlock(String initialCommandlines);
+    };
+
+}

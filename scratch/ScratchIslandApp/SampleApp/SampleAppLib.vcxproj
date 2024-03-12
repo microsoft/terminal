@@ -40,11 +40,18 @@
     <Page Include="MyPage.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="CodeBlock.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="App.base.h" />
     <ClInclude Include="MySettings.h" />
+    <ClInclude Include="CodeBlock.h">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="MyPage.h">
       <DependentUpon>MyPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -62,6 +69,10 @@
     <ClCompile Include="MySettings.cpp" />
     <ClCompile Include="MyPage.cpp">
       <DependentUpon>MyPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="CodeBlock.cpp">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="pch.cpp">
@@ -87,6 +98,10 @@
     <Midl Include="MySettings.idl" />
     <Midl Include="MyPage.idl">
       <DependentUpon>MyPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="CodeBlock.idl">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

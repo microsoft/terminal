@@ -6,6 +6,7 @@
 #include <LibraryResources.h>
 #include "MyPage.g.cpp"
 #include "MySettings.h"
+#include "CodeBlock.h"
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
@@ -26,6 +27,12 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
+        // First things first, make a dummy code block
+
+        auto codeBlock = winrt::make<implementation::CodeBlock>(L"echo This has been a test of the new code block objects");
+
+        OutOfProcContent().Children().Append(codeBlock);
+
         _createOutOfProcContent();
     }
 
