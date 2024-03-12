@@ -67,7 +67,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
-  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true'">
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true' and $(_OpenConsoleProjectProvidedTargetPlatformIdentifier)==''">
     <TargetPlatformIdentifier Condition="'$(TargetPlatformIdentifier)'==''">UAP</TargetPlatformIdentifier>
     <TargetPlatformName Condition="'$(TargetPlatformName)'==''">UAP</TargetPlatformName>
   </PropertyGroup>

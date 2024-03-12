@@ -4,6 +4,7 @@
   <PropertyGroup>
     <!-- this will trigger the use of a project-specific out dir -->
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+    <_OpenConsoleProjectProvidedTargetPlatformIdentifier>$(TargetPlatformIdentifier)</_OpenConsoleProjectProvidedTargetPlatformIdentifier>
   </PropertyGroup>
 
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
