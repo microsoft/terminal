@@ -366,6 +366,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
         winrt::fire_and_forget _coreFoundMatch(const IInspectable& sender, Control::FoundResultsArgs args);
+        winrt::fire_and_forget _coreTextChanged(const IInspectable& sender, const IInspectable& args);
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
@@ -406,6 +407,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
+            Control::ControlCore::TextChanged_revoker TextChanged;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;

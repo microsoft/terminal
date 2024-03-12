@@ -68,6 +68,7 @@ public:
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
     void NotifyBufferRotation(const int delta) override;
+    void NotifyTextChange() override;
 
     void MarkPrompt(const ScrollMark& mark) override;
     void MarkCommandStart() override;

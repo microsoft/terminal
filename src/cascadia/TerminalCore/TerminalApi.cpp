@@ -511,3 +511,10 @@ void Terminal::NotifyBufferRotation(const int delta)
         _NotifyScrollEvent();
     }
 }
+
+// Method Description:
+// - Notifies the terminal UI layer that the text has changed.
+void Terminal::NotifyTextChange()
+{
+    _pfnTextChanged();
+}
