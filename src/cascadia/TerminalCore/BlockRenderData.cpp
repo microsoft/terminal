@@ -63,22 +63,32 @@ til::CoordType BlockRenderData::GetBufferHeight() const noexcept
 
 void BlockRenderData::UserScrollViewport(const int viewTop)
 {
-    const auto terminalViewport = _terminal.GetViewport().ToInclusive();
-    const til::rect terminalExclusive{ terminalViewport };
+    //const auto absoluteViewTop = _virtualTop + viewTop;
+    //const auto terminalViewport = _terminal.GetViewport().ToInclusive();
+    //const til::rect terminalExclusive{ terminalViewport };
 
-    auto lastMutableViewportBottom = _virtualBottom.has_value() ? *_virtualBottom : _terminal.GetBufferHeight();
-    auto lastMutableViewportTop = std::max(0, lastMutableViewportBottom - terminalExclusive.height());
-    auto numScrollbackRows = std::max(0, lastMutableViewportTop - _virtualTop);
+    //auto lastMutableViewportBottom = _virtualBottom.has_value() ? *_virtualBottom : _terminal.GetBufferHeight();
+    //auto lastMutableViewportTop = std::max(0, lastMutableViewportBottom - terminalExclusive.height());
+    //auto numScrollbackRows = std::max(0, lastMutableViewportTop - _virtualTop);
 
-    if (viewTop <= _virtualTop)
-    {
-        _scrollOffset = numScrollbackRows;
-    }
-    else
-    {
-        // scrolled somewhere below virtual top
-        _scrollOffset = std::max(0, lastMutableViewportTop - viewTop);
-    }
+    //if (absoluteViewTop <= _virtualTop)
+    //{
+    //    _scrollOffset = numScrollbackRows;
+    //}
+    //else
+    //{
+    //    // scrolled somewhere below virtual top
+    //    _scrollOffset = std::max(0, lastMutableViewportTop - absoluteViewTop);
+    //}
+
+    
+    const auto clampedNewTop = std::max(_virtualTop, viewTop);
+    const auto realTop = _terminal.ViewStartIndex();
+    const auto newDelta = realTop - clampedNewTop;
+    // if viewTop > realTop, we want the offset to be 0.
+
+    _scrollOffset = std::max(0, newDelta);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

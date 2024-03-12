@@ -1497,11 +1497,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetTaskbarProgress();
     }
 
+    // This returns the top of the visible viewport.
     int ControlCore::ScrollOffset()
     {
         const auto lock = _terminal->LockForReading();
         // return _terminal->GetScrollOffset();
-        return std::max(0, _terminal->ViewStartIndex() - _renderData->GetViewport().Top());
+        // const auto viewStart = _terminal->ViewStartIndex();
+        const auto visibleTop = _renderData->GetViewport().Top();
+        // return std::max(0, viewStart - visibleTop);
+        return visibleTop;
     }
 
     // Function Description:
