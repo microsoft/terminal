@@ -12,6 +12,8 @@
 
 #include "Profile.g.cpp"
 
+#include <shellapi.h>
+
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -25,6 +27,7 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view HiddenKey{ "hidden" };
+static constexpr std::string_view IconKey{ "icon" };
 
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view PaddingKey{ "padding" };
@@ -104,6 +107,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
+    profile->_Icon = _Icon;
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -170,6 +174,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
+    JsonUtils::GetValueForKey(json, IconKey, _Icon);
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
@@ -313,6 +318,11 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
+    // Recall: Icon isn't actually a setting in the MTSM_PROFILE_SETTINGS. We
+    // defined it manually in Profile, so make sure we only serialize the Icon
+    // if the user actually changed it here.
+    JsonUtils::SetValueForKey(json, IconKey, (writeBasicSettings && HasIcon()) ? Icon() : _Icon);
+
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
 
@@ -335,4 +345,168 @@ Json::Value Profile::ToJson() const
     }
 
     return json;
+}
+
+// This is the implementation for and INHERITABLE_SETTING, but with one addition
+// in the setter. We want to make sure to clear out our cached icon, so that we
+// can re-evaluate it as it changes in the SUI.
+void Profile::Icon(const winrt::hstring& value)
+{
+    _evaluatedIcon = std::nullopt;
+    _Icon = value;
+}
+winrt::hstring Profile::Icon() const
+{
+    const auto val{ _getIconImpl() };
+    return val ? *val : hstring{ L"\uE756" };
+}
+
+winrt::hstring Profile::EvaluatedIcon()
+{
+    // We cache the result here, so we don't search the path for the exe every time.
+    if (!_evaluatedIcon.has_value())
+    {
+        _evaluatedIcon = _evaluateIcon();
+    }
+    return *_evaluatedIcon;
+}
+
+winrt::hstring Profile::_evaluateIcon() const
+{
+    // If the profile has an icon, return it.
+    if (!Icon().empty())
+    {
+        return Icon();
+    }
+
+    // Otherwise, use NormalizeCommandLine to find the actual exe name. This
+    // will actually search for the exe, including spaces, in the same way that
+    // CreateProcess does.
+    std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
+    // NormalizeCommandLine will return a string with embedded nulls after each
+    // arg. We just want the first one.
+    return winrt::hstring{ cmdline.c_str() };
+}
+
+// Given a commandLine like the following:
+// * "C:\WINDOWS\System32\cmd.exe"
+// * "pwsh -WorkingDirectory ~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+//
+// This function returns:
+// * "C:\Windows\System32\cmd.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+//
+// The resulting strings are then used for comparisons in _getProfileForCommandLine().
+// For instance a resulting string of
+//   "C:\Program Files\PowerShell\7\pwsh.exe"
+// is considered a compatible profile with
+//   "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+// as it shares the same (normalized) prefix.
+std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
+{
+    // Turn "%SystemRoot%\System32\cmd.exe" into "C:\WINDOWS\System32\cmd.exe".
+    // We do this early, as environment variables might occur anywhere in the commandLine.
+    std::wstring normalized;
+    THROW_IF_FAILED(wil::ExpandEnvironmentStringsW(commandLine, normalized));
+
+    // One of the most important things this function does is to strip quotes.
+    // That way the commandLine "foo.exe -bar" and "\"foo.exe\" \"-bar\"" appear identical.
+    // We'll abuse CommandLineToArgvW for that as it's close to what CreateProcessW uses.
+    auto argc = 0;
+    wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
+    THROW_LAST_ERROR_IF(!argc);
+
+    // The index of the first argument in argv for our executable in argv[0].
+    // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
+    auto startOfArguments = 1;
+
+    // The given commandLine should start with an executable name or path.
+    // For instance given the following argv arrays:
+    // * {"C:\WINDOWS\System32\cmd.exe"}
+    // * {"pwsh", "-WorkingDirectory", "~"}
+    // * {"C:\Program", "Files\PowerShell\7\pwsh.exe"}
+    //               ^^^^
+    //   Notice how there used to be a space in the path, which was split by ExpandEnvironmentStringsW().
+    //   CreateProcessW() supports such atrocities, so we got to do the same.
+    // * {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"}
+    //
+    // This loop tries to resolve relative paths, as well as executable names in %PATH%
+    // into absolute paths and normalizes them. The results for the above would be:
+    // * "C:\Windows\System32\cmd.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    for (;;)
+    {
+        // CreateProcessW uses RtlGetExePath to get the lpPath for SearchPathW.
+        // The difference between the behavior of SearchPathW if lpPath is nullptr and what RtlGetExePath returns
+        // seems to be mostly whether SafeProcessSearchMode is respected and the support for relative paths.
+        // Windows Terminal makes the use of relative paths rather impractical which is why we simply dropped the call to RtlGetExePath.
+        const auto status = wil::SearchPathW(nullptr, argv[0], L".exe", normalized);
+
+        if (status == S_OK)
+        {
+            const auto attributes = GetFileAttributesW(normalized.c_str());
+
+            if (attributes != INVALID_FILE_ATTRIBUTES && WI_IsFlagClear(attributes, FILE_ATTRIBUTE_DIRECTORY))
+            {
+                std::filesystem::path path{ std::move(normalized) };
+
+                // canonical() will resolve symlinks, etc. for us.
+                {
+                    std::error_code ec;
+                    auto canonicalPath = std::filesystem::canonical(path, ec);
+                    if (!ec)
+                    {
+                        path = std::move(canonicalPath);
+                    }
+                }
+
+                // std::filesystem::path has no way to extract the internal path.
+                // So about that.... I own you, computer. Give me that path.
+                normalized = std::move(const_cast<std::wstring&>(path.native()));
+                break;
+            }
+        }
+        // All other error types aren't handled at the moment.
+        else if (status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        {
+            break;
+        }
+        // If the file path couldn't be found by SearchPathW this could be the result of us being given a commandLine
+        // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"},
+        // or we were erroneously given a directory to execute (e.g. someone ran `wt .`).
+        // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
+        // Of course we can only do that if we have at least 2 remaining arguments in argv.
+        if ((argc - startOfArguments) < 2)
+        {
+            break;
+        }
+
+        // As described in the comment right above, we concatenate arguments in an attempt to resolve a valid path.
+        // The code below turns argv from {"C:\foo", "bar\baz.exe", "-arg"} into {"C:\foo bar\baz.exe", "-arg"}.
+        // The code abuses the fact that CommandLineToArgvW allocates all arguments back-to-back on the heap separated by '\0'.
+        argv[startOfArguments][-1] = L' ';
+        ++startOfArguments;
+    }
+
+    // We've (hopefully) finished resolving the path to the executable.
+    // We're now going to append all remaining arguments to the resulting string.
+    // If argv is {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"},
+    // then we'll get "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+    if (startOfArguments < argc)
+    {
+        // normalized contains a canonical form of argv[0] at this point.
+        // -1 allows us to include the \0 between argv[0] and argv[1] in the call to append().
+        const auto beg = argv[startOfArguments] - 1;
+        const auto lastArg = argv[argc - 1];
+        const auto end = lastArg + wcslen(lastArg);
+        normalized.append(beg, end);
+    }
+
+    return normalized;
 }

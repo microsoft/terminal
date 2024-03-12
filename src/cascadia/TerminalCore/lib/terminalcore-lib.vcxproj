@@ -43,9 +43,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\atlas\atlas.vcxproj">
       <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\renderer\dx\lib\dx.vcxproj">
-      <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\audio\midi\lib\midi.vcxproj">
       <Project>{3c67784e-1453-49c2-9660-483e2cc7f7ad}</Project>
     </ProjectReference>

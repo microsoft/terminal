@@ -3,14 +3,31 @@
 
 #pragma once
 
-#include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
-#include "../../renderer/uia/UiaRenderer.hpp"
-#include "../../cascadia/TerminalCore/Terminal.hpp"
+#include "../../buffer/out/textBuffer.hpp"
+#include "../../renderer/inc/FontInfoDesired.hpp"
 #include "../../types/IControlAccessibilityInfo.h"
-#include "HwndTerminalAutomationPeer.hpp"
 
-using namespace Microsoft::Console::VirtualTerminal;
+namespace Microsoft::Console::Render::Atlas
+{
+    class AtlasEngine;
+}
+
+namespace Microsoft::Console::Render
+{
+    using AtlasEngine = Atlas::AtlasEngine;
+    class IRenderData;
+    class Renderer;
+    class UiaEngine;
+}
+
+namespace Microsoft::Terminal::Core
+{
+    class Terminal;
+}
+
+class FontInfo;
+class FontInfoDesired;
+class HwndTerminalAutomationPeer;
 
 // Keep in sync with TerminalTheme.cs
 typedef struct _TerminalTheme
@@ -79,7 +96,7 @@ private:
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
-    std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+    std::unique_ptr<::Microsoft::Console::Render::AtlasEngine> _renderEngine;
     std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
     bool _focused{ false };

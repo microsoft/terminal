@@ -130,9 +130,6 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
-    <ClInclude Include="EmptyStringVisibilityConverter.h">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
@@ -232,9 +229,6 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="FilteredCommand.cpp" />
-    <ClCompile Include="EmptyStringVisibilityConverter.cpp">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp">
@@ -280,7 +274,6 @@
     header in TerminalApp.vcxproj (as well as in this file) -->
     <Midl Include="ActionPaletteItem.idl" />
     <Midl Include="CommandLinePaletteItem.idl" />
-    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="AboutDialog.idl">
       <DependentUpon>AboutDialog.xaml</DependentUpon>
     </Midl>
@@ -341,7 +334,6 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -384,6 +376,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj">
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
 
   </ItemGroup>

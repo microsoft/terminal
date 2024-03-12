@@ -56,7 +56,7 @@ public:
     bool ReverseLineFeed() override { return false; } // RI
     bool BackIndex() override { return false; } // DECBI
     bool ForwardIndex() override { return false; } // DECFI
-    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
+    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // DECSWT, OscWindowTitle
     bool HorizontalTabSet() override { return false; } // HTS
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
@@ -107,6 +107,7 @@ public:
     bool LockingShiftRight(const VTInt /*gsetNumber*/) override { return false; } // LS1R, LS2R, LS3R
     bool SingleShift(const VTInt /*gsetNumber*/) override { return false; } // SS2, SS3
     bool AcceptC1Controls(const bool /*enabled*/) override { return false; } // DECAC1
+    bool AnnounceCodeStructure(const VTInt /*ansiLevel*/) override { return false; } // ACS
 
     bool SoftReset() override { return false; } // DECSTR
     bool HardReset() override { return false; } // RIS
@@ -140,7 +141,10 @@ public:
                                const DispatchTypes::DrcsFontSet /*fontSet*/,
                                const DispatchTypes::DrcsFontUsage /*fontUsage*/,
                                const VTParameter /*cellHeight*/,
-                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+                               const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+
+    bool RequestUserPreferenceCharset() override { return false; } // DECRQUPSS
+    StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECAUPSS
 
     StringHandler DefineMacro(const VTInt /*macroId*/,
                               const DispatchTypes::MacroDeleteControl /*deleteControl*/,

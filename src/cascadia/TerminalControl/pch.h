@@ -58,6 +58,8 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
+#include <winrt/Microsoft.Terminal.UI.h>
+
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #include <TraceLoggingProvider.h>

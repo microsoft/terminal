@@ -472,7 +472,25 @@ using namespace Microsoft::Console::Types;
         _bufferLine.append(cluster.GetText());
         totalWidth += cluster.GetColumns();
     }
+
+    // If any of the values in the buffer are C0 or C1 controls, we need to
+    // convert them to printable codepoints, otherwise they'll end up being
+    // evaluated as control characters by the receiving terminal. We use the
+    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
+    // C1 controls, since that's what you would most likely have seen in the
+    // legacy v1 console with raster fonts.
     const auto cchLine = _bufferLine.size();
+    std::for_each_n(_bufferLine.begin(), cchLine, [](auto& ch) {
+        static constexpr std::wstring_view C0Glyphs = L" ☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼";
+        if (ch < C0Glyphs.size())
+        {
+            ch = til::at(C0Glyphs, ch);
+        }
+        else if (ch >= L'\u007F' && ch < L'\u00A0')
+        {
+            ch = (ch == L'\u007F' ? L'⌂' : L'?');
+        }
+    });
 
     const auto spaceIndex = _bufferLine.find_last_not_of(L' ');
     const auto foundNonspace = spaceIndex != decltype(_bufferLine)::npos;

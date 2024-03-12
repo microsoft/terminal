@@ -10,6 +10,7 @@
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              AllowFocusOnInteraction="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
@@ -23,9 +24,6 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter" />
-            <model:IconPathConverter x:Key="IconSourceConverter" />
-
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
                 <ListViewItem Height="32"
@@ -161,7 +159,7 @@
             <StackPanel Grid.Row="1"
                         Margin="8,0,8,8"
                         Orientation="Horizontal"
-                        Visibility="{x:Bind ParentCommandName, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}">
+                        Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(ParentCommandName), Mode=OneWay}">
 
                 <Button x:Name="_parentCommandBackButton"
                         x:Uid="ParentCommandBackButton"

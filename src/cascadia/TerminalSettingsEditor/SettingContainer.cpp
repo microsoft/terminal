@@ -185,6 +185,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void SettingContainer::SetExpanded(bool expanded)
+    {
+        if (const auto& child{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            {
+                expander.IsExpanded(expanded);
+            }
+        }
+    }
+
     // Method Description:
     // - Updates the override system visibility and text
     // Arguments:

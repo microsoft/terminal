@@ -37,12 +37,12 @@ float3 DWrite_EnhanceContrast3(float3 alpha, float k)
 
 float DWrite_ApplyAlphaCorrection(float a, float f, float4 g)
 {
-    return a + a * (1 - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));
+    return a + a * (1.0f - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));
 }
 
 float3 DWrite_ApplyAlphaCorrection3(float3 a, float3 f, float4 g)
 {
-    return a + a * (1 - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));
+    return a + a * (1.0f - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));
 }
 
 // Call this function to get the same gamma corrected alpha blending effect
