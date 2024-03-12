@@ -30,6 +30,13 @@
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
 
+  <!-- Clang runs out of memory building the PCH, so disable it for this project -->
+  <ItemDefinitionGroup Condition="'$(PlatformToolset)'=='ClangCL'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -42,7 +49,7 @@
     <ClCompile Include="SettingsTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
 	<ClCompile Include="FilteredCommandTests.cpp" />
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="pch.cpp" Condition="'$(PlatformToolset)'!='ClangCL'">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>

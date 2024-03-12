@@ -10,6 +10,8 @@
     <ConfigurationType>Application</ConfigurationType>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <AppContainerApplication>false</AppContainerApplication>
+    <!-- If we do not set this, it will be derived as UAP by our common build rules; this will really blow up the packaging project -->
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">

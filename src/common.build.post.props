@@ -68,8 +68,8 @@
   </ItemDefinitionGroup>
 
   <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true'">
-    <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformName>UAP</TargetPlatformName>
+    <TargetPlatformIdentifier Condition="'$(TargetPlatformIdentifier)'==''">UAP</TargetPlatformIdentifier>
+    <TargetPlatformName Condition="'$(TargetPlatformName)'==''">UAP</TargetPlatformName>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
