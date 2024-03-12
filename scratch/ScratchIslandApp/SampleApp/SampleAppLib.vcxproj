@@ -86,6 +86,8 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
 
+    <!-- <ClCompile Include="$(OpenConsoleDir)oss\md4c\md4c.c" /> -->
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -118,6 +120,14 @@
     just has a bug in it.-->
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>Warning</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- subsume fmt, one of our dependencies, into contypes. -->
+    <ProjectReference Include="$(OpenConsoleDir)src\dep\md4c\md4c.vcxproj">
+      <Project>{7cae5851-50d5-4934-8d5e-30361a8a40f3}</Project>
+    </ProjectReference>
+  </ItemGroup>
+
   <!-- ========================== Other References ========================= -->
   <ItemGroup>
     <!-- Manually add references to each of our dependent winmds. Mark them as

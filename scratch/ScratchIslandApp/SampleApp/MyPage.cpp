@@ -7,6 +7,8 @@
 #include "MyPage.g.cpp"
 #include "MySettings.h"
 #include "CodeBlock.h"
+#define MD4C_USE_UTF16
+#include "..\..\..\oss\md4c\md4c.h"
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
@@ -20,6 +22,94 @@ namespace winrt
 
 namespace winrt::SampleApp::implementation
 {
+    int md_parser_enter_block(MD_BLOCKTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
+    int md_parser_leave_block(MD_BLOCKTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
+    int md_parser_enter_span(MD_SPANTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
+    int md_parser_leave_span(MD_SPANTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
+    int md_parser_text(MD_TEXTTYPE /*type*/, const MD_CHAR* /*text*/, MD_SIZE /*size*/, void* /*userdata*/) { return 0; }
+
+    void parseMarkdown(const std::wstring& markdown)
+    {
+        MD_PARSER parser{
+            .abi_version = 0,
+            .flags = 0,
+            .enter_block = &md_parser_enter_block,
+            .leave_block = &md_parser_leave_block,
+            .enter_span = &md_parser_enter_span,
+            .leave_span = &md_parser_leave_span,
+            .text = &md_parser_text,
+        };
+
+        const auto result = md_parse(
+            markdown.c_str(),
+            (unsigned)markdown.size(),
+            &parser,
+            nullptr // user data
+        );
+
+        result;
+    }
+
+    // void markdownToXaml(const MD_CHAR* input, size_t inputSize, std::vector<std::wstring>& output)
+    // {
+    //     MD_STRUCT* doc = md4c_parse(input, inputSize, 0);
+    //     if (!doc)
+    //     {
+    //         // cerr << "Failed to parse Markdown" << endl;
+    //         return;
+    //     }
+
+    //     std::stack<std::wstring> tags; // Stack to keep track of open tags
+    //     tags.push(L""); // Push empty tag to handle root elements
+
+    //     for (MD_BLOCK* block = doc->first_child; block != nullptr; block = block->next)
+    //     {
+    //         switch (block->type)
+    //         {
+    //         case MD_BLOCK_DOC:
+    //             break; // Ignore document node
+    //         case MD_BLOCK_HR:
+    //             output.push_back(L"<Separator/>");
+    //             break;
+    //         case MD_BLOCK_H:
+    //         {
+    //             int level = block->header.level;
+    //             std::wstring headerTag = L"<TextBlock Text=\"";
+    //             headerTag += std::wstring(level, L'#') + L" " + std::wstring(block->string, block->len) + L"\"/>";
+    //             output.push_back(headerTag);
+    //             break;
+    //         }
+    //         case MD_BLOCK_P:
+    //             output.push_back(L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\"/>");
+    //             break;
+    //         case MD_BLOCK_CODE:
+    //             output.push_back(L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\"/>");
+    //             break;
+    //         case MD_BLOCK_QUOTE:
+    //             output.push_back(L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\" FontStyle=\"Italic\"/>");
+    //             break;
+    //         case MD_BLOCK_UL:
+    //         case MD_BLOCK_OL:
+    //             tags.push(L"<StackPanel>");
+    //             break;
+    //         case MD_BLOCK_LI:
+    //             output.push_back(tags.top() + L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\"/>");
+    //             break;
+    //         case MD_BLOCK_HTML:
+    //             // Handle HTML blocks if necessary
+    //             break;
+    //         }
+    //     }
+
+    //     while (!tags.empty())
+    //     {
+    //         output.push_back(tags.top() + L"</StackPanel>");
+    //         tags.pop();
+    //     }
+
+    //     md4c_free(doc); // Free parsed Markdown AST
+    // }
+
     MyPage::MyPage()
     {
         InitializeComponent();
@@ -27,6 +117,47 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
+        // {
+        //     // Example Markdown input
+        //     const char* markdownInput = "## Hello, *world*!\nThis is a **sample** Markdown text.\n"
+        //                                 "> This is a blockquote.\n"
+        //                                 "- List item 1\n"
+        //                                 "- List item 2\n"
+        //                                 "1. Numbered item 1\n"
+        //                                 "2. Numbered item 2\n";
+
+        //     // Convert Markdown to XAML
+        //     std::vector<wstring> xamlOutput;
+        //     markdownToXaml(markdownInput, strlen(markdownInput), xamlOutput);
+        //     xamlOutput;
+        // }
+
+        {
+            std::wstring markdown{ LR"(
+# readme
+
+This is my cool project
+
+## build
+
+To build the thing, run the following command:
+
+```cmd
+build the_thing
+```
+
+## test
+
+```cmd
+pwsh -c gci ~
+ping 8.8.8.8
+```
+
+That'll run the tests
+)" };
+            parseMarkdown(markdown);
+        }
+
         // First things first, make a dummy code block
         const auto createCodeBlock = [=](const auto& command) {
             auto codeBlock = winrt::make<implementation::CodeBlock>(command);
