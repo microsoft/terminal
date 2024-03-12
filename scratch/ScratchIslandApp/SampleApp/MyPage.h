@@ -25,7 +25,7 @@ namespace winrt::SampleApp::implementation
         winrt::Microsoft::Terminal::Control::Notebook _notebook{ nullptr };
 
         void _newBlockHandler(const winrt::Microsoft::Terminal::Control::Notebook& sender,
-                              const winrt::Microsoft::Terminal::Control::TermControl& control);
+                              const winrt::Microsoft::Terminal::Control::NotebookBlock& control);
         void _addControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _scrollToElement(const Windows::UI::Xaml::UIElement& element,
                               bool isVerticalScrolling = true,

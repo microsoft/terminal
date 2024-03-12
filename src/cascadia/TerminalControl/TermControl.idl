@@ -147,16 +147,19 @@ namespace Microsoft.Terminal.Control
     }
 
 
+    [default_interface] runtimeclass NotebookBlock
+    {
+        TermControl Control { get; };
+    }
     [default_interface] runtimeclass Notebook
     {
         Notebook(IControlSettings settings,
-                    IControlAppearance unfocusedAppearance,
-                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+                 IControlAppearance unfocusedAppearance,
+                 Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
 
-        Windows.Foundation.Collections.IVector<TermControl> Controls { get; };
-        TermControl ActiveControl{ get; };
-        event Windows.Foundation.TypedEventHandler<Notebook, TermControl> NewBlock;
-
+        Windows.Foundation.Collections.IVector<NotebookBlock> Blocks { get; };
+        NotebookBlock ActiveBlock{ get; };
+        event Windows.Foundation.TypedEventHandler<Notebook, NotebookBlock> NewBlock;
     }
 }

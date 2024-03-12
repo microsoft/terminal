@@ -76,13 +76,13 @@ namespace winrt::SampleApp::implementation
 
         _notebook = Control::Notebook(*settings, *settings, conn);
         _notebook.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
-        _addControl(_notebook.ActiveControl());
+        _addControl(_notebook.ActiveBlock().Control());
     }
 
     void MyPage::_newBlockHandler(const Control::Notebook& /*sender*/,
-                                  const Control::TermControl& control)
+                                  const Control::NotebookBlock& block)
     {
-        _addControl(control);
+        _addControl(block.Control());
     }
 
     void MyPage::_scrollToElement(const WUX::UIElement& element,

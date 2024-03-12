@@ -51,79 +51,80 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _fork(0);
     }
 
-    Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::TermControl> Notebook::Controls() const
+    Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::NotebookBlock> Notebook::Blocks() const
     {
         return nullptr;
     }
 
-    Control::TermControl Notebook::ActiveControl() const
+    Control::NotebookBlock Notebook::ActiveBlock() const
+    {
+        const auto active{ _activeBlock() };
+        return active ? *active : Control::NotebookBlock{ nullptr };
+    }
+
+    winrt::com_ptr<implementation::NotebookBlock> Notebook::_activeBlock() const
     {
         if (_blocks.empty())
         {
             return nullptr;
         }
-        return _blocks.rbegin()->control;
+        return *_blocks.rbegin();
     }
 
     winrt::fire_and_forget Notebook::_fork(const til::CoordType start)
     {
-        auto active = ActiveControl();
+        auto active = _activeBlock();
 
-        if (active && !active.Dispatcher().HasThreadAccess())
+        if (active && !active->Control().Dispatcher().HasThreadAccess())
         {
-            co_await wil::resume_foreground(active.Dispatcher());
+            co_await wil::resume_foreground(active->Control().Dispatcher());
         }
 
-        active = ActiveControl();
+        active = _activeBlock();
         if (active)
         {
-            auto core{ _blocks.rbegin()->core };
-            auto* renderData{ _blocks.rbegin()->renderData.get() };
+            auto core{ active->core };
+            auto* renderData{ active->renderData.get() };
+            auto activeControl = active->Control();
+
+            // First, important. Set the bottom, so it thinks it has ended,
             renderData->SetBottom(start - 1);
 
+            // Get how tall the viewport is with the new bottom, under lock.
             renderData->LockConsole();
             auto blockRenderViewport = renderData->GetViewport();
             renderData->UnlockConsole();
 
-            auto pixels = core->ViewInPixels(blockRenderViewport.ToExclusive());
-
+            const auto pixels = core->ViewInPixels(blockRenderViewport.ToExclusive());
             const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-
-            const auto controlHeightDips = active.ActualHeight();
+            const auto controlHeightDips = activeControl.ActualHeight();
             const auto viewHeightDips = pixels.height() * scaleFactor;
 
-            auto r = pixels;
-
-            // til::rect r{ 0, 0, 0, -128 };
-            // const auto p = r.to_core_padding();
             auto t{ WUX::ThicknessHelper::FromLengths(0 /*r.left*/,
                                                       0 /*r.top*/,
                                                       0 /*r.right*/,
                                                       -(controlHeightDips - viewHeightDips) /*r.bottom*/) };
-            active.Margin(t);
+            activeControl.Margin(t);
 
-            active.Connection(nullptr);
+            activeControl.Connection(nullptr);
         }
 
-        NotebookBlock newBlock{
-            .renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal, start),
-            .core = nullptr,
-            .control = nullptr
-        };
+        auto newBlock = winrt::make_self<implementation::NotebookBlock>();
+        newBlock->renderData = std::make_unique<::Microsoft::Terminal::Core::BlockRenderData>(*_terminal, start);
 
         ControlData data{
             .terminal = _terminal,
-            .renderData = newBlock.renderData.get(),
+            .renderData = newBlock->renderData.get(),
             .connection = _connection,
         };
 
-        newBlock.core = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
-        auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(_settings, _unfocusedAppearance, newBlock.core);
-        newBlock.control = winrt::make<implementation::TermControl>(*interactivityOne);
+        newBlock->core = winrt::make_self<implementation::ControlCore>(_settings, _unfocusedAppearance, data);
+        auto interactivityOne = winrt::make_self<implementation::ControlInteractivity>(_settings, _unfocusedAppearance, newBlock->core);
+        newBlock->Control(winrt::make<implementation::TermControl>(*interactivityOne));
 
         _blocks.push_back(std::move(newBlock));
 
-        NewBlock.raise(*this, ActiveControl());
+        NewBlock.raise(*this, ActiveBlock());
     }
 
 }
