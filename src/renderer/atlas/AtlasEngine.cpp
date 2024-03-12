@@ -318,7 +318,7 @@ CATCH_RETURN()
 // Arguments:
 //  - highlights: the list of highlighted regions
 //  - row: the row for which highlighted regions are to be painted
-//  - end: the last (exclusive) column of the row to paint up to
+//  - end: the last (exclusive) column of the row to paint up to (in Buffer coord)
 //  - fgColor: the foreground color to use for highlighting
 //  - bgColor: the background color to use for highlighting
 // Returns:
@@ -327,7 +327,11 @@ CATCH_RETURN()
 try
 {
     const auto y = static_cast<til::CoordType>(row);
-    const auto colEnd = static_cast<til::CoordType>(end);
+
+    // highlighted regions are in viewport coordinate so convert `end` to viewport coordinate as well
+    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
+    const auto colEnd = static_cast<til::CoordType>(end) << shift;
+
     auto hi = highlights.begin();
     const auto hiEnd = highlights.end();
 
