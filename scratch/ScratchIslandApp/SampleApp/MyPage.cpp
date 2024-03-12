@@ -22,13 +22,114 @@ namespace winrt
 
 namespace winrt::SampleApp::implementation
 {
-    int md_parser_enter_block(MD_BLOCKTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
-    int md_parser_leave_block(MD_BLOCKTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
-    int md_parser_enter_span(MD_SPANTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
-    int md_parser_leave_span(MD_SPANTYPE /*type*/, void* /*detail*/, void* /*userdata*/) { return 0; }
-    int md_parser_text(MD_TEXTTYPE /*type*/, const MD_CHAR* /*text*/, MD_SIZE /*size*/, void* /*userdata*/) { return 0; }
 
-    void parseMarkdown(const std::wstring& markdown)
+    struct MyMarkdownData
+    {
+        WUX::Controls::StackPanel root{};
+    };
+
+    int md_parser_enter_block(MD_BLOCKTYPE type, void* /*detail*/, void* userdata)
+    {
+        MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
+        data;
+        switch (type)
+        {
+         case MD_BLOCK_UL:
+         {
+             break;
+         }
+        default:
+        {
+            break;
+        }
+        }
+        return 0;
+    }
+    int md_parser_leave_block(MD_BLOCKTYPE type, void* /*detail*/, void* userdata)
+    {
+        MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
+        data;
+        switch (type)
+        {
+         case MD_BLOCK_UL:
+         {
+             break;
+         }
+        default:
+        {
+            break;
+        }
+        }
+        return 0;
+    }
+    int md_parser_enter_span(MD_SPANTYPE type, void* /*detail*/, void* userdata)
+    {
+        MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
+        data;
+        switch (type)
+        {
+        case MD_SPAN_EM:
+        {
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+        return 0;
+    }
+    int md_parser_leave_span(MD_SPANTYPE type, void* /*detail*/, void* userdata)
+    {
+        MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
+        data;
+        switch (type)
+        {
+        case MD_SPAN_EM:
+         {
+             break;
+         }
+        default:
+        {
+            break;
+        }
+        }
+        return 0;
+    }
+    int md_parser_text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata)
+    {
+        MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
+        winrt::hstring str{ text, size }; 
+        data;
+        switch (type)
+        {
+         case MD_TEXT_NORMAL:
+         {
+            WUX::Controls::TextBlock block{};
+             block.Text(str);
+            data->root.Children().Append(block);
+            break;
+         }
+         case MD_TEXT_CODE:
+         {
+             WUX::Controls::TextBlock block{};
+             block.Text(str);
+             block.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" }); // TODO! get the Style from the control's resources
+             data->root.Children().Append(block);
+             break;
+         }
+        default:
+        {
+            WUX::Controls::TextBlock block{};
+            block.Text(str);
+            data->root.Children().Append(block);
+            break;
+        }
+        }
+        return 0;
+    }
+
+    int parseMarkdown(const std::wstring& markdown, MyMarkdownData& data)
     {
         MD_PARSER parser{
             .abi_version = 0,
@@ -44,10 +145,10 @@ namespace winrt::SampleApp::implementation
             markdown.c_str(),
             (unsigned)markdown.size(),
             &parser,
-            nullptr // user data
+            &data // user data
         );
 
-        result;
+        return result;
     }
 
     // void markdownToXaml(const MD_CHAR* input, size_t inputSize, std::vector<std::wstring>& output)
@@ -155,7 +256,12 @@ ping 8.8.8.8
 
 That'll run the tests
 )" };
-            parseMarkdown(markdown);
+            MyMarkdownData data;
+
+            if (0 == parseMarkdown(markdown, data))
+            {
+                OutOfProcContent().Children().Append(data.root);
+            }
         }
 
         // First things first, make a dummy code block
