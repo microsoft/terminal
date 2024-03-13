@@ -65,7 +65,7 @@ public:
 
     void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;
 
-    void OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept;
+    void OpenSystemMenu(std::optional<int> x, std::optional<int> y, const std::optional<int> yOffset) const noexcept;
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
