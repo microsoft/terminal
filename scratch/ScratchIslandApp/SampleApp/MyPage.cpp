@@ -26,18 +26,46 @@ namespace winrt::SampleApp::implementation
     struct MyMarkdownData
     {
         WUX::Controls::StackPanel root{};
+        implementation::MyPage* page{ nullptr };
+        // std::vector<WUX::Documents::Run> currentRuns{};
+        WUX::Controls::TextBlock current{ nullptr };
     };
 
-    int md_parser_enter_block(MD_BLOCKTYPE type, void* /*detail*/, void* userdata)
+    int md_parser_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata)
     {
         MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
         data;
         switch (type)
         {
-         case MD_BLOCK_UL:
-         {
-             break;
-         }
+        case MD_BLOCK_UL:
+        {
+            break;
+        }
+        case MD_BLOCK_H:
+        {
+            MD_BLOCK_H_DETAIL* headerDetail = reinterpret_cast<MD_BLOCK_H_DETAIL*>(detail);
+            data->current = WUX::Controls::TextBlock{};
+            const auto fontSize = std::max(16u, 36u - ((headerDetail->level - 1) * 6u));
+            data->current.FontSize(fontSize);
+            data->current.FontWeight(Windows::UI::Text::FontWeights::Bold());
+            WUX::Documents::Run run{};
+            // run.Text(winrtL'#');
+
+            // Immediately add the header block
+            data->root.Children().Append(data->current);
+
+            if (headerDetail->level == 1)
+            {
+                // <Border Height="1" BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Stretch"></Border>
+                WUX::Controls::Border b;
+                b.Height(1);
+                b.BorderThickness(WUX::ThicknessHelper::FromLengths(1, 1, 1, 1));
+                b.BorderBrush(WUX::Media::SolidColorBrush(Windows::UI::Colors::Gray()));
+                b.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+                data->root.Children().Append(b);
+            }
+            break;
+        }
         default:
         {
             break;
@@ -51,10 +79,16 @@ namespace winrt::SampleApp::implementation
         data;
         switch (type)
         {
-         case MD_BLOCK_UL:
-         {
-             break;
-         }
+        case MD_BLOCK_UL:
+        {
+            break;
+        }
+        case MD_BLOCK_H:
+        {
+            // data->root.Children().Append(data->current);
+            data->current = nullptr;
+            break;
+        }
         default:
         {
             break;
@@ -86,9 +120,9 @@ namespace winrt::SampleApp::implementation
         switch (type)
         {
         case MD_SPAN_EM:
-         {
-             break;
-         }
+        {
+            break;
+        }
         default:
         {
             break;
@@ -99,25 +133,42 @@ namespace winrt::SampleApp::implementation
     int md_parser_text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata)
     {
         MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
-        winrt::hstring str{ text, size }; 
+        winrt::hstring str{ text, size };
         data;
         switch (type)
         {
-         case MD_TEXT_NORMAL:
-         {
-            WUX::Controls::TextBlock block{};
-             block.Text(str);
-            data->root.Children().Append(block);
+        case MD_TEXT_NORMAL:
+        {
+            WUX::Documents::Run run{};
+            run.Text(str);
+            if (data->current)
+            {
+                data->current.Inlines().Append(run);
+            }
+            else
+            {
+                WUX::Controls::TextBlock block{};
+                block.Inlines().Append(run);
+                data->root.Children().Append(block);
+            }
+            // data->root.Children().Append(block);
+
             break;
-         }
-         case MD_TEXT_CODE:
-         {
-             WUX::Controls::TextBlock block{};
-             block.Text(str);
-             block.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" }); // TODO! get the Style from the control's resources
-             data->root.Children().Append(block);
-             break;
-         }
+        }
+        case MD_TEXT_CODE:
+        {
+            if (str == L"\n")
+            {
+                break;
+            }
+            auto codeBlock = winrt::make<implementation::CodeBlock>(str);
+            codeBlock.Margin(WUX::ThicknessHelper::FromLengths(8, 8, 8, 8));
+            codeBlock.RequestRunCommands({ data->page, &MyPage::_handleRunCommandRequest });
+
+            data->root.Children().Append(codeBlock);
+
+            break;
+        }
         default:
         {
             WUX::Controls::TextBlock block{};
@@ -151,66 +202,6 @@ namespace winrt::SampleApp::implementation
         return result;
     }
 
-    // void markdownToXaml(const MD_CHAR* input, size_t inputSize, std::vector<std::wstring>& output)
-    // {
-    //     MD_STRUCT* doc = md4c_parse(input, inputSize, 0);
-    //     if (!doc)
-    //     {
-    //         // cerr << "Failed to parse Markdown" << endl;
-    //         return;
-    //     }
-
-    //     std::stack<std::wstring> tags; // Stack to keep track of open tags
-    //     tags.push(L""); // Push empty tag to handle root elements
-
-    //     for (MD_BLOCK* block = doc->first_child; block != nullptr; block = block->next)
-    //     {
-    //         switch (block->type)
-    //         {
-    //         case MD_BLOCK_DOC:
-    //             break; // Ignore document node
-    //         case MD_BLOCK_HR:
-    //             output.push_back(L"<Separator/>");
-    //             break;
-    //         case MD_BLOCK_H:
-    //         {
-    //             int level = block->header.level;
-    //             std::wstring headerTag = L"<TextBlock Text=\"";
-    //             headerTag += std::wstring(level, L'#') + L" " + std::wstring(block->string, block->len) + L"\"/>";
-    //             output.push_back(headerTag);
-    //             break;
-    //         }
-    //         case MD_BLOCK_P:
-    //             output.push_back(L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\"/>");
-    //             break;
-    //         case MD_BLOCK_CODE:
-    //             output.push_back(L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\"/>");
-    //             break;
-    //         case MD_BLOCK_QUOTE:
-    //             output.push_back(L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\" FontStyle=\"Italic\"/>");
-    //             break;
-    //         case MD_BLOCK_UL:
-    //         case MD_BLOCK_OL:
-    //             tags.push(L"<StackPanel>");
-    //             break;
-    //         case MD_BLOCK_LI:
-    //             output.push_back(tags.top() + L"<TextBlock Text=\"" + std::wstring(block->string, block->len) + L"\"/>");
-    //             break;
-    //         case MD_BLOCK_HTML:
-    //             // Handle HTML blocks if necessary
-    //             break;
-    //         }
-    //     }
-
-    //     while (!tags.empty())
-    //     {
-    //         output.push_back(tags.top() + L"</StackPanel>");
-    //         tags.pop();
-    //     }
-
-    //     md4c_free(doc); // Free parsed Markdown AST
-    // }
-
     MyPage::MyPage()
     {
         InitializeComponent();
@@ -218,26 +209,21 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        // {
-        //     // Example Markdown input
-        //     const char* markdownInput = "## Hello, *world*!\nThis is a **sample** Markdown text.\n"
-        //                                 "> This is a blockquote.\n"
-        //                                 "- List item 1\n"
-        //                                 "- List item 2\n"
-        //                                 "1. Numbered item 1\n"
-        //                                 "2. Numbered item 2\n";
-
-        //     // Convert Markdown to XAML
-        //     std::vector<wstring> xamlOutput;
-        //     markdownToXaml(markdownInput, strlen(markdownInput), xamlOutput);
-        //     xamlOutput;
-        // }
-
         {
             std::wstring markdown{ LR"(
 # readme
 
 This is my cool project
+
+## Useful directories
+
+```
+cd /d %~%
+```
+
+```
+cd /d z:\dev\public\OpenConsole
+```
 
 ## build
 
@@ -250,13 +236,31 @@ build the_thing
 ## test
 
 ```cmd
-pwsh -c gci ~
+pwsh -c gci
 ping 8.8.8.8
 ```
 
 That'll run the tests
+
+## Other helpful commmands
+
+```
+git status
+```
+```
+git diff dev/migrie/fhl/2024-spring-merge-base --stat -- . ":!oss/md4c"
+```
+```
+set FOO=%FOO%+1 & echo FOO set to %FOO%
+```
+```
+echo This has been a test of the new code block objects
+```
+
+
 )" };
             MyMarkdownData data;
+            data.page = this;
 
             if (0 == parseMarkdown(markdown, data))
             {
@@ -264,24 +268,24 @@ That'll run the tests
             }
         }
 
-        // First things first, make a dummy code block
-        const auto createCodeBlock = [=](const auto& command) {
-            auto codeBlock = winrt::make<implementation::CodeBlock>(command);
+        // // First things first, make a dummy code block
+        // const auto createCodeBlock = [=](const auto& command) {
+        //     auto codeBlock = winrt::make<implementation::CodeBlock>(command);
 
-            codeBlock.Margin(WUX::ThicknessHelper::FromLengths(8, 8, 8, 8));
+        //     codeBlock.Margin(WUX::ThicknessHelper::FromLengths(8, 8, 8, 8));
 
-            codeBlock.RequestRunCommands({ this, &MyPage::_handleRunCommandRequest });
+        //     codeBlock.RequestRunCommands({ this, &MyPage::_handleRunCommandRequest });
 
-            OutOfProcContent().Children().Append(codeBlock);
-        };
+        //     OutOfProcContent().Children().Append(codeBlock);
+        // };
 
-        createCodeBlock(L"ping 8.8.8.8");
-        createCodeBlock(L"echo This has been a test of the new code block objects");
-        createCodeBlock(L"set FOO=%FOO%+1 & echo FOO set to %FOO%");
-        createCodeBlock(L"cd /d %~%");
-        createCodeBlock(L"cd /d z:\\dev\\public\\OpenConsole");
-        createCodeBlock(L"pwsh -c gci");
-        createCodeBlock(L"git status");
+        // createCodeBlock(L"ping 8.8.8.8");
+        // createCodeBlock(L"echo This has been a test of the new code block objects");
+        // createCodeBlock(L"set FOO=%FOO%+1 & echo FOO set to %FOO%");
+        // createCodeBlock(L"cd /d %~%");
+        // createCodeBlock(L"cd /d z:\\dev\\public\\OpenConsole");
+        // createCodeBlock(L"pwsh -c gci");
+        // createCodeBlock(L"git status");
 
         _createOutOfProcContent();
     }

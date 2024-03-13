@@ -59,7 +59,8 @@
                             Background="#fff"
                             Orientation="Vertical"
                             RequestedTheme="Light">
-                    <TextBlock FontSize="32"># readme</TextBlock>
+
+                    <!-- <TextBlock FontSize="32"># readme</TextBlock>
                     <TextBlock>This is my cool project</TextBlock>
                     <TextBlock FontSize="24">## build</TextBlock>
                     <TextBlock>To build the thing, run the following command:</TextBlock>
@@ -124,7 +125,8 @@
                         </Border>
                     </Grid>
 
-                    <TextBlock>That'll run the tests</TextBlock>
+                    <TextBlock>That'll run the tests</TextBlock>-->
+
                 </StackPanel>
             </ScrollViewer>
 
