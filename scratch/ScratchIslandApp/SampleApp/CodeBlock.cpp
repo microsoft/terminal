@@ -39,6 +39,8 @@ namespace winrt::SampleApp::implementation
 
         auto args = winrt::make_self<RequestRunCommandsArgs>(Commandlines());
         RequestRunCommands.raise(*this, *args);
+
+        WUX::VisualStateManager::GoToState(RunButton(), L"Running", false);
     }
 
     winrt::Microsoft::Terminal::Control::NotebookBlock CodeBlock::OutputBlock()
