@@ -187,6 +187,17 @@ namespace winrt::SampleApp::implementation
         winrt::hstring str{ text, size };
         switch (type)
         {
+        case MD_TEXT_BR:
+        case MD_TEXT_SOFTBR:
+        {
+            if (const auto& curr{ data->current })
+            {
+                data->root.Children().Append(curr);
+                data->current = WUX::Controls::TextBlock();
+            }
+
+            break;
+        }
         case MD_TEXT_CODE:
         {
             if (str == L"\n")
@@ -200,24 +211,14 @@ namespace winrt::SampleApp::implementation
                 auto newText = currentText.empty() ? str :
                                                      currentText + winrt::hstring{ L"\r\n" } + str;
                 codeBlock.Commandlines(newText);
+                break;
             }
             else
             {
                 // just normal `code` inline
-                data->currentRun.Text(str);
+                // data->currentRun.Text(str);
+                [[fallthrough]];
             }
-            break;
-        }
-        case MD_TEXT_BR:
-        case MD_TEXT_SOFTBR:
-        {
-            if (const auto& curr{ data->current })
-            {
-                data->root.Children().Append(curr);
-                data->current = WUX::Controls::TextBlock();
-            }
-
-            break;
         }
         case MD_TEXT_NORMAL:
         default:
