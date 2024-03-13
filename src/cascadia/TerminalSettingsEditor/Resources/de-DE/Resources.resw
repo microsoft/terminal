@@ -930,13 +930,29 @@
     <value>Legt die Strichstärke (leichter oder betonter) für die angegebene Schriftart fest.</value>
     <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
   </data>
+  <data name="Profile_FontAxes.Header" xml:space="preserve">
+    <value>Variable Schriftartachsen</value>
+    <comment>Header for a control to allow editing the font axes.</comment>
+  </data>
   <data name="Profile_FontAxesAvailable.Text" xml:space="preserve">
     <value>Schriftartachsen für die angegebene Schriftart hinzufügen oder entfernen.</value>
     <comment>A description for what the "font axes" setting does. Presented near "Profile_FontAxes".</comment>
   </data>
+  <data name="Profile_FontAxesUnavailable.Text" xml:space="preserve">
+    <value>Die ausgewählte Schriftart weist keine variablen Schriftartachsen auf.</value>
+    <comment>A description provided when the font axes setting is disabled. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontFeatures.Header" xml:space="preserve">
+    <value>Schriftartfeatures</value>
+    <comment>Header for a control to allow editing the font features.</comment>
+  </data>
   <data name="Profile_FontFeaturesAvailable.Text" xml:space="preserve">
     <value>Schriftartfeatures für die angegebene Schriftart hinzufügen oder entfernen.</value>
     <comment>A description for what the "font features" setting does. Presented near "Profile_FontFeatures".</comment>
+  </data>
+  <data name="Profile_FontFeaturesUnavailable.Text" xml:space="preserve">
+    <value>Die ausgewählte Schriftart weist keine Schriftartfeatures auf.</value>
+    <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>Allgemein</value>
@@ -1254,12 +1270,92 @@
     <value>Dünn</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
+  <data name="Profile_FontFeature_rlig" xml:space="preserve">
+    <value>Erforderliche Ligaturen</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_locl" xml:space="preserve">
+    <value>Lokalisierte Formulare</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ccmp" xml:space="preserve">
+    <value>Zusammensetzung/Aufgliederung</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_calt" xml:space="preserve">
+    <value>Kontextbezogene Alternativen</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_liga" xml:space="preserve">
+    <value>Standardligaturen</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_clig" xml:space="preserve">
+    <value>Kontextbezogene Ligaturen</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rvrn" xml:space="preserve">
+    <value>Erforderliche Variantenwechsel</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_kern" xml:space="preserve">
+    <value>Kerning</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mark" xml:space="preserve">
+    <value>Positionierung markieren</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mkmk" xml:space="preserve">
+    <value>Markieren, um die Positionierung zu markieren</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
   <data name="Profile_FontFeature_dist" xml:space="preserve">
     <value>Entfernung</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
+  <data name="Profile_FontFeature_aalt" xml:space="preserve">
+    <value>Auf alle Alternativen zugreifen</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_case" xml:space="preserve">
+    <value>Formulare mit Beachtung der Groß-/Kleinschreibung</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_dnom" xml:space="preserve">
+    <value>Nenner</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_fina" xml:space="preserve">
+    <value>Terminalformulare</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
   <data name="Profile_FontFeature_frac" xml:space="preserve">
     <value>Brüche</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_init" xml:space="preserve">
+    <value>Anfangsformulare</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_medi" xml:space="preserve">
+    <value>Mediale Formulare</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_numr" xml:space="preserve">
+    <value>Zähler</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ordn" xml:space="preserve">
+    <value>Ordnungszahlen</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rclt" xml:space="preserve">
+    <value>Erforderliche kontextbezogene Alternativen</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_sinf" xml:space="preserve">
+    <value>Wissenschaftliche Untergeordnete</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
   <data name="Profile_FontFeature_subs" xml:space="preserve">
@@ -1268,6 +1364,14 @@
   </data>
   <data name="Profile_FontFeature_sups" xml:space="preserve">
     <value>Höhergestellt</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_zero" xml:space="preserve">
+    <value>Schrägstrich null</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_abvm" xml:space="preserve">
+    <value>Positionierung der oberen Basismarkierung</value>
     <comment>This is the formal name for a font feature.</comment>
   </data>
   <data name="Globals_LaunchSize.Header" xml:space="preserve">
