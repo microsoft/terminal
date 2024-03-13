@@ -29,6 +29,9 @@ namespace winrt::SampleApp::implementation
         implementation::MyPage* page{ nullptr };
         // std::vector<WUX::Documents::Run> currentRuns{};
         WUX::Controls::TextBlock current{ nullptr };
+        WUX::Documents::Run currentRun{ nullptr };
+        // winrt::com_ptr<implementation::CodeBlock> currentCodeBlock{ nullptr };
+        SampleApp::CodeBlock currentCodeBlock{ nullptr };
     };
 
     int md_parser_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata)
@@ -66,6 +69,17 @@ namespace winrt::SampleApp::implementation
             }
             break;
         }
+        case MD_BLOCK_CODE:
+        {
+            MD_BLOCK_CODE_DETAIL* codeDetail = reinterpret_cast<MD_BLOCK_CODE_DETAIL*>(detail);
+            codeDetail;
+
+            data->currentCodeBlock = winrt::make<implementation::CodeBlock>(L"");
+            data->currentCodeBlock.Margin(WUX::ThicknessHelper::FromLengths(8, 8, 8, 8));
+            data->currentCodeBlock.RequestRunCommands({ data->page, &MyPage::_handleRunCommandRequest });
+
+            data->root.Children().Append(data->currentCodeBlock);
+        }
         default:
         {
             break;
@@ -89,6 +103,12 @@ namespace winrt::SampleApp::implementation
             data->current = nullptr;
             break;
         }
+        case MD_BLOCK_CODE:
+        {
+            // data->root.Children().Append(data->current);
+            data->current = nullptr;
+            break;
+        }
         default:
         {
             break;
@@ -100,10 +120,32 @@ namespace winrt::SampleApp::implementation
     {
         MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
         data;
+
+        if (data->current == nullptr)
+        {
+            data->current = WUX::Controls::TextBlock();
+            data->root.Children().Append(data->current);
+        }
+        if (data->currentRun == nullptr)
+        {
+            data->currentRun = WUX::Documents::Run();
+        }
+        auto currentRun = data->currentRun;
         switch (type)
         {
+        case MD_SPAN_STRONG:
+        {
+            currentRun.FontWeight(Windows::UI::Text::FontWeights::Bold());
+            break;
+        }
         case MD_SPAN_EM:
         {
+            currentRun.FontStyle(Windows::UI::Text::FontStyle::Italic);
+            break;
+        }
+        case MD_SPAN_CODE:
+        {
+            currentRun.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
             break;
         }
         default:
@@ -116,11 +158,20 @@ namespace winrt::SampleApp::implementation
     int md_parser_leave_span(MD_SPANTYPE type, void* /*detail*/, void* userdata)
     {
         MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
-        data;
         switch (type)
         {
         case MD_SPAN_EM:
+        case MD_SPAN_STRONG:
+        // {
+        //     break;
+        // }
+        case MD_SPAN_CODE:
         {
+            if (const auto& currentRun{ data->currentRun })
+            {
+                // data->current.Inlines().Append(currentRun);
+                // data->currentRun = nullptr;
+            }
             break;
         }
         default:
@@ -134,12 +185,44 @@ namespace winrt::SampleApp::implementation
     {
         MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
         winrt::hstring str{ text, size };
-        data;
         switch (type)
         {
-        case MD_TEXT_NORMAL:
+        case MD_TEXT_CODE:
         {
-            WUX::Documents::Run run{};
+            if (str == L"\n")
+            {
+                break;
+            }
+            if (const auto& codeBlock{ data->currentCodeBlock })
+            {
+                // code in a fenced block
+                auto currentText = codeBlock.Commandlines();
+                auto newText = currentText.empty() ? str :
+                                                     currentText + winrt::hstring{ L"\r\n" } + str;
+                codeBlock.Commandlines(newText);
+            }
+            else
+            {
+                // just normal `code` inline
+                data->currentRun.Text(str);
+            }
+            break;
+        }
+        case MD_TEXT_BR:
+        case MD_TEXT_SOFTBR:
+        {
+            if (const auto& curr{ data->current })
+            {
+                data->root.Children().Append(curr);
+                data->current = WUX::Controls::TextBlock();
+            }
+
+            break;
+        }
+        case MD_TEXT_NORMAL:
+        default:
+        {
+            auto run = data->currentRun ? data->currentRun : WUX::Documents::Run{};
             run.Text(str);
             if (data->current)
             {
@@ -150,30 +233,11 @@ namespace winrt::SampleApp::implementation
                 WUX::Controls::TextBlock block{};
                 block.Inlines().Append(run);
                 data->root.Children().Append(block);
+                data->current = block;
             }
             // data->root.Children().Append(block);
 
-            break;
-        }
-        case MD_TEXT_CODE:
-        {
-            if (str == L"\n")
-            {
-                break;
-            }
-            auto codeBlock = winrt::make<implementation::CodeBlock>(str);
-            codeBlock.Margin(WUX::ThicknessHelper::FromLengths(8, 8, 8, 8));
-            codeBlock.RequestRunCommands({ data->page, &MyPage::_handleRunCommandRequest });
-
-            data->root.Children().Append(codeBlock);
-
-            break;
-        }
-        default:
-        {
-            WUX::Controls::TextBlock block{};
-            block.Text(str);
-            data->root.Children().Append(block);
+            data->currentRun = nullptr;
             break;
         }
         }
@@ -211,11 +275,13 @@ namespace winrt::SampleApp::implementation
     {
         {
             std::wstring markdown{ LR"(
-# readme
+# Readme
 
-This is my cool project
+This is my cool project. It's got lots of commands.
 
 ## Useful directories
+
+Click these to `cd` the notebook to relevant locations.
 
 ```
 cd /d %~%
@@ -226,6 +292,16 @@ cd /d z:\dev\public\OpenConsole
 ```
 
 ## build
+
+### Setup
+
+Dependencies!
+
+```
+winget search "I most certainly don't exist"
+```
+
+### Actual build
 
 To build the thing, run the following command:
 
@@ -240,7 +316,7 @@ pwsh -c gci
 ping 8.8.8.8
 ```
 
-That'll run the tests
+That _should_ run the tests
 
 ## Other helpful commmands
 
@@ -248,7 +324,7 @@ That'll run the tests
 git status
 ```
 ```
-git diff dev/migrie/fhl/2024-spring-merge-base --stat -- . ":!oss/md4c"
+git --no-pager diff dev/migrie/fhl/2024-spring-merge-base --stat -- . ":!oss/md4c"
 ```
 ```
 set FOO=%FOO%+1 & echo FOO set to %FOO%

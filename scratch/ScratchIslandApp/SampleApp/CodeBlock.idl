@@ -13,7 +13,7 @@ namespace SampleApp
     {
         CodeBlock(String initialCommandlines);
 
-        String Commandlines { get; };
+        String Commandlines { get; set; };
         Microsoft.Terminal.Control.NotebookBlock OutputBlock;
 
         event Windows.Foundation.TypedEventHandler<CodeBlock, RequestRunCommandsArgs> RequestRunCommands;

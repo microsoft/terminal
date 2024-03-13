@@ -37,7 +37,7 @@ namespace winrt::SampleApp::implementation
         _block = nullptr;
         OutputBlockContainer().Children().Clear();
 
-        auto args = winrt::make_self<RequestRunCommandsArgs>(_providedCommandlines);
+        auto args = winrt::make_self<RequestRunCommandsArgs>(Commandlines());
         RequestRunCommands.raise(*this, *args);
     }
 

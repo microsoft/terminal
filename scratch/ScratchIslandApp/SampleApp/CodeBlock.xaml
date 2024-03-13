@@ -53,6 +53,8 @@
             <StackPanel x:Name="CommandsAndOutput">
                 <StackPanel x:Name="CommandLines"
                             Padding="8">
+                    <TextBlock FontFamily="Cascadia Code"
+                               Text="{x:Bind Commandlines}" />
                     <!-- <TextBlock FontFamily="Cascadia Code">build the_thing</TextBlock> -->
                 </StackPanel>
                 <StackPanel x:Name="OutputBlockContainer"
