@@ -19,15 +19,26 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal">
-            <TextBox x:Name="GuidInput"
-                     Width="400"
-                     PlaceholderText="{}{guid here}" />
-            <Button Grid.Row="0">
-                Create
-            </Button>
-
-        </StackPanel>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="FilePathInput"
+                     Grid.Column="0"
+                     PlaceholderText="Enter a path to a markdown file..."
+                     Text="Z:\dev\public\OpenConsole\scratch\ScratchIslandApp\SampleApp\simple-test.md" />
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal">
+                <Button Tapped="_loadTapped">
+                    Load
+                </Button>
+                <Button Tapped="_reloadTapped">
+                    <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                              Glyph="&#xe72c;" />
+                </Button>
+            </StackPanel>
+        </Grid>
 
         <Grid x:Name="TabContent"
               Grid.Row="1"
@@ -45,93 +56,23 @@
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
+
             <ScrollViewer x:Name="_scrollViewer"
                           Grid.Column="1"
                           Padding="3"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
                           Background="#eeeeee"
-                          BringIntoViewOnFocusChange="True">
-                <StackPanel x:Name="OutOfProcContent"
+                          BringIntoViewOnFocusChange="True"
+                          IsVerticalScrollChainingEnabled="True">
+                <StackPanel x:Name="RenderedMarkdown"
                             Grid.Column="1"
                             Padding="16"
                             HorizontalAlignment="Stretch"
                             Background="#fff"
                             Orientation="Vertical"
-                            RequestedTheme="Light">
-
-                    <!-- <TextBlock FontSize="32"># readme</TextBlock>
-                    <TextBlock>This is my cool project</TextBlock>
-                    <TextBlock FontSize="24">## build</TextBlock>
-                    <TextBlock>To build the thing, run the following command:</TextBlock>
-                    <Grid HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0"
-                                Margin="0"
-                                Padding="4"
-                                VerticalAlignment="Top"
-                                BorderBrush="Transparent">
-                            <Button.Content>
-                                <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                                          Foreground="Green"
-                                          Glyph="&#xE768;" />
-                            </Button.Content>
-                        </Button>
-                        <Border Grid.Column="1"
-                                Padding="8"
-                                HorizontalAlignment="Stretch"
-                                Background="#f6f8fa"
-                                BorderBrush="#dbdbdb"
-                                BorderThickness="1"
-                                CornerRadius="4">
-                            <StackPanel>
-                                <TextBlock FontFamily="Cascadia Code">build the_thing</TextBlock>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <TextBlock FontSize="24">## test</TextBlock>
-
-                    <Grid HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0"
-                                Margin="0"
-                                Padding="4"
-                                VerticalAlignment="Top"
-                                BorderBrush="Transparent">
-                            <Button.Content>
-                                <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                                          Foreground="Green"
-                                          Glyph="&#xE768;" />
-                            </Button.Content>
-                        </Button>
-                        <Border Grid.Column="1"
-                                Padding="8"
-                                HorizontalAlignment="Stretch"
-                                Background="#f6f8fa"
-                                BorderBrush="#dbdbdb"
-                                BorderThickness="1"
-                                CornerRadius="4">
-                            <StackPanel>
-                                <TextBlock FontFamily="Cascadia Code">pwsh -c gci ~</TextBlock>
-                                <TextBlock FontFamily="Cascadia Code">ping 8.8.8.8</TextBlock>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <TextBlock>That'll run the tests</TextBlock>-->
-
-                </StackPanel>
+                            RequestedTheme="Light" />
             </ScrollViewer>
-
-
-
 
         </Grid>
 

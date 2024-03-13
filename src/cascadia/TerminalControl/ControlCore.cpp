@@ -1770,7 +1770,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Stop accepting new output and state changes before we disconnect everything.
             _connectionOutputEventRevoker.revoke();
             _connectionStateChangedRevoker.revoke();
-            _connection.Close();
+            if (_connection)
+            {
+                _connection.Close();
+            }
         }
     }
 

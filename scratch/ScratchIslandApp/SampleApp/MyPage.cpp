@@ -27,17 +27,14 @@ namespace winrt::SampleApp::implementation
     {
         WUX::Controls::StackPanel root{};
         implementation::MyPage* page{ nullptr };
-        // std::vector<WUX::Documents::Run> currentRuns{};
         WUX::Controls::TextBlock current{ nullptr };
         WUX::Documents::Run currentRun{ nullptr };
-        // winrt::com_ptr<implementation::CodeBlock> currentCodeBlock{ nullptr };
         SampleApp::CodeBlock currentCodeBlock{ nullptr };
     };
 
     int md_parser_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata)
     {
         MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
-        data;
         switch (type)
         {
         case MD_BLOCK_UL:
@@ -192,8 +189,8 @@ namespace winrt::SampleApp::implementation
         {
             if (const auto& curr{ data->current })
             {
-                data->root.Children().Append(curr);
                 data->current = WUX::Controls::TextBlock();
+                data->root.Children().Append(data->current);
             }
 
             break;
@@ -245,7 +242,7 @@ namespace winrt::SampleApp::implementation
         return 0;
     }
 
-    int parseMarkdown(const std::wstring& markdown, MyMarkdownData& data)
+    int parseMarkdown(const winrt::hstring& markdown, MyMarkdownData& data)
     {
         MD_PARSER parser{
             .abi_version = 0,
@@ -274,77 +271,77 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
+        _filePath = FilePathInput().Text();
+        _createNotebook();
+        _loadMarkdown();
+    }
+
+    void MyPage::_clearOldNotebook()
+    {
+        RenderedMarkdown().Children().Clear();
+        _notebook = nullptr;
+    }
+    void MyPage::_loadMarkdown()
+    {
+        // Read _filePath, then parse as markdown.
+
+        const wil::unique_handle file{ CreateFileW(_filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        if (!file)
         {
-            std::wstring markdown{ LR"(
-# Readme
+            return;
+        }
 
-This is my cool project. It's got lots of commands.
-
-#### Useful directories
-
-Click these to `cd` the notebook to relevant locations.
-
-```
-cd /d %~%
-```
-
-```
-cd /d z:\dev\public\OpenConsole
-```
-
-## build
-
-### Setup
-
-Dependencies!
-
-```
-winget search "I most certainly don't exist"
-```
-
-### Actual build
-
-To build the thing, run the following command:
-
-```cmd
-build the_thing
-```
-
-## test
-
-```cmd
-pwsh -c gci
-ping 8.8.8.8
-```
-
-That _should_ run the tests
-
-## Other helpful commmands
-
-```
-git status
-```
-```
-git --no-pager diff dev/migrie/fhl/2024-spring-merge-base --stat -- . ":!oss/md4c"
-```
-```
-set FOO=%FOO%+1 & echo FOO set to %FOO%
-```
-```
-echo This has been a test of the new code block objects
-```
-
-
-)" };
-            MyMarkdownData data;
-            data.page = this;
-
-            if (0 == parseMarkdown(markdown, data))
+        char buffer[32 * 1024];
+        DWORD read = 0;
+        for (;;)
+        {
+            if (!ReadFile(file.get(), &buffer[0], sizeof(buffer), &read, nullptr))
             {
-                OutOfProcContent().Children().Append(data.root);
+                break;
+            }
+            if (read < sizeof(buffer))
+            {
+                break;
             }
         }
-        _createOutOfProcContent();
+        // BLINDLY TREATING TEXT AS utf-8 (I THINK)
+        std::string markdownContents{ buffer, read };
+        winrt::hstring c = winrt::to_hstring(markdownContents);
+        MyMarkdownData data;
+        data.page = this;
+
+        const auto parseResult = parseMarkdown(c, data);
+
+        if (0 == parseResult)
+        {
+            RenderedMarkdown().Children().Append(data.root);
+        }
+    }
+    void MyPage::_loadTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
+    {
+        auto p = FilePathInput().Text();
+        if (p != _filePath)
+        {
+            _filePath = p;
+            // Does the file exist? if not, bail
+            const wil::unique_handle file{ CreateFileW(_filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+            if (!file)
+            {
+                return;
+            }
+
+            // It does. Clear the old one
+            _clearOldNotebook();
+            _createNotebook();
+            _loadMarkdown();
+        }
+    }
+    void MyPage::_reloadTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
+    {
+        // Clear the old one
+        _clearOldNotebook();
+        _createNotebook();
+        _loadMarkdown();
     }
 
     // Method Description:
@@ -363,7 +360,7 @@ echo This has been a test of the new code block objects
         return { L"Terminal Notebook test" };
     }
 
-    void MyPage::_createOutOfProcContent()
+    void MyPage::_createNotebook()
     {
         auto settings = winrt::make_self<implementation::MySettings>();
 
@@ -413,13 +410,8 @@ echo This has been a test of the new code block objects
         targetControl.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
 
         targetControl.Initialized([this, text](const auto&, auto&&) {
-            // sender.SendInput(text);
-            // sender.SendInput(L"\r");
             _notebook.SendCommands(text + L"\r");
         });
-        // targetControl.SendInput(text);
-        // targetControl.SendInput(L"\r");
-        // _stupid(targetControl);
     }
 
     void MyPage::_scrollToElement(const WUX::UIElement& element,
@@ -456,7 +448,7 @@ echo This has been a test of the new code block objects
         wrapper.Margin(WUX::ThicknessHelper::FromLengths(0, 5, 0, 7));
         wrapper.Children().Append(control);
 
-        OutOfProcContent().Children().Append(wrapper);
+        RenderedMarkdown().Children().Append(wrapper);
 
         control.Focus(WUX::FocusState::Programmatic);
 

@@ -23,9 +23,16 @@ namespace winrt::SampleApp::implementation
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
 
-        void _createOutOfProcContent();
+        void _createNotebook();
+
+        void _clearOldNotebook();
+        void _loadMarkdown();
 
         winrt::Microsoft::Terminal::Control::Notebook _notebook{ nullptr };
+        winrt::hstring _filePath{};
+
+        void _loadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
+        void _reloadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
 
         void _newBlockHandler(const winrt::Microsoft::Terminal::Control::Notebook& sender,
                               const winrt::Microsoft::Terminal::Control::NotebookBlock& control);
