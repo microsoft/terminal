@@ -1710,6 +1710,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        CancelDirectManipulations();
+
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                 point.Properties().MouseWheelDelta(),
                                                 _toTerminalOrigin(point.Position()).to_core_point(),
@@ -1718,6 +1720,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             args.Handled(true);
         }
+        args.Handled(true);
     }
 
     // Method Description:
@@ -2151,6 +2154,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
+
     }
 
     // Method Description:
