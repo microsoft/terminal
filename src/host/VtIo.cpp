@@ -174,7 +174,7 @@ VtIo::VtIo() :
 
                         if (_pVtInputThread)
                         {
-                            auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
+                            auto pfnSetListenForDSR = [capture0 = _pVtInputThread.get()](auto&& PH1) { capture0->SetLookingForDSR(std::forward<decltype(PH1)>(PH1)); };
                             xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
                         }
 

@@ -98,28 +98,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
 
-        auto pfnCopyToClipboard = std::bind(&ControlCore::_terminalCopyToClipboard, this, std::placeholders::_1);
+        auto pfnCopyToClipboard = [this](auto&& PH1) { _terminalCopyToClipboard(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
-        auto pfnWarningBell = std::bind(&ControlCore::_terminalWarningBell, this);
+        auto pfnWarningBell = [this] { _terminalWarningBell(); };
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
-        auto pfnTitleChanged = std::bind(&ControlCore::_terminalTitleChanged, this, std::placeholders::_1);
+        auto pfnTitleChanged = [this](auto&& PH1) { _terminalTitleChanged(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
-        auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        auto pfnScrollPositionChanged = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalScrollPositionChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        auto pfnTerminalCursorPositionChanged = std::bind(&ControlCore::_terminalCursorPositionChanged, this);
+        auto pfnTerminalCursorPositionChanged = [this] { _terminalCursorPositionChanged(); };
         _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
-        auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
+        auto pfnTerminalTaskbarProgressChanged = [this] { _terminalTaskbarProgressChanged(); };
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
-        auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
+        auto pfnShowWindowChanged = [this](auto&& PH1) { _terminalShowWindowChanged(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
-        auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        auto pfnPlayMidiNote = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalPlayMidiNote(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
         auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
@@ -376,7 +376,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
             // the first paint will be ignored!
-            _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
+            _renderEngine->SetWarningCallback([this](auto&& PH1) { _rendererWarning(std::forward<decltype(PH1)>(PH1)); });
 
             // Tell the render engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid
