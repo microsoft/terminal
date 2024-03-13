@@ -69,32 +69,15 @@
 
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroup x:Name="CommonStates">
-                                        <!-- <VisualStateGroup.Transitions>
-                                            <VisualTransition From="PointerOver"
-                                                              To="Normal">
-                                                <Storyboard>
-                                                    <ColorAnimation Storyboard.TargetName="ButtonIcon"
-                                                                    Storyboard.TargetProperty="(UIElement.Foreground).(SolidColorBrush.Color)"
-                                                                    To="{ThemeResource PlayButtonHoveredColor}"
-                                                                    Duration="0:0:0.1" />
-                                                </Storyboard>
-                                            </VisualTransition>
-                                        </VisualStateGroup.Transitions>-->
 
                                         <VisualState x:Name="Normal">
                                             <VisualState.Setters>
-                                                <!-- <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackground}" /> -->
-                                                <!-- <Setter Target="ButtonIcon.Foreground" Value="{ThemeResource PlayButtonNormalColor}" /> -->
-                                                <!-- <Setter Target="ButtonIcon.Glyph" Value="&#xE768;" /> -->
                                                 <Setter Target="ButtonBackgroundIcon.Visibility" Value="Collapsed" />
                                             </VisualState.Setters>
                                         </VisualState>
 
                                         <VisualState x:Name="PointerOver">
                                             <VisualState.Setters>
-                                                <!-- <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackgroundPointerOver}" /> -->
-                                                <!-- <Setter Target="ButtonIcon.Foreground" Value="{ThemeResource PlayButtonHoveredColor}" /> -->
-                                                <!-- <Setter Target="ButtonIcon.Glyph" Value="&#xf5b0;" /> -->
                                                 <Setter Target="ButtonBackgroundIcon.Visibility" Value="Visible" />
                                             </VisualState.Setters>
                                         </VisualState>
@@ -168,7 +151,6 @@
                             Padding="8">
                     <TextBlock FontFamily="Cascadia Code"
                                Text="{x:Bind Commandlines}" />
-                    <!-- <TextBlock FontFamily="Cascadia Code">build the_thing</TextBlock> -->
                 </StackPanel>
                 <StackPanel x:Name="OutputBlockContainer"
                             Visibility="Collapsed">

@@ -399,7 +399,6 @@ namespace winrt::SampleApp::implementation
     void MyPage::_handleRunCommandRequest(const SampleApp::CodeBlock& sender,
                                           const SampleApp::RequestRunCommandsArgs& request)
     {
-        // _addControl(block.Control());
         auto text = request.Commandlines();
         auto targetControl = _notebook.ActiveBlock().Control();
 
