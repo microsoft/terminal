@@ -280,7 +280,7 @@ namespace winrt::SampleApp::implementation
 
 This is my cool project. It's got lots of commands.
 
-## Useful directories
+#### Useful directories
 
 Click these to `cd` the notebook to relevant locations.
 

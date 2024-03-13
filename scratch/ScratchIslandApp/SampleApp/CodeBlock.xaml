@@ -13,20 +13,113 @@
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
-             d:DesignHeight="768"
+             d:DesignHeight="256"
              d:DesignWidth="1024"
              mc:Ignorable="d">
     <UserControl.Resources>
-        <Style x:Key="PlayButtonTemplate"
-               TargetType="Button">
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="Padding" Value="4" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-        </Style>
-        <Style x:Key="CodeBlockLineTemplate"
-               TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Cascadia Code" />
-        </Style>
+
+
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
+                    <Color x:Key="PlayButtonNormalColor">#88222222</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
+                    <Color x:Key="PlayButtonNormalColor">#88dddddd</Color>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+
+            <Style x:Key="PlayButtonTemplate"
+                   TargetType="Button">
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="ButtonBaseElement"
+                                    Padding="{TemplateBinding Padding}"
+                                    AutomationProperties.AccessibilityView="Raw"
+                                    Background="{TemplateBinding Background}"
+                                    BackgroundSizing="{TemplateBinding BackgroundSizing}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="{TemplateBinding CornerRadius}">
+                                <Viewbox Width="20"
+                                         Height="20">
+                                    <!--  TODO! FontFamily="{ThemeResource SymbolThemeFontFamily}"  -->
+                                    <FontIcon x:Name="ButtonIcon"
+                                              FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                              Foreground="{ThemeResource PlayButtonNormalColor}"
+                                              Glyph="&#xE768;" />
+                                </Viewbox>
+
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualStateGroup.Transitions>
+                                            <VisualTransition From="PointerOver"
+                                                              To="Normal">
+                                                <Storyboard>
+                                                    <!-- <ColorAnimation Storyboard.TargetName="PlayButtonIcon"
+                                                                        Storyboard.TargetProperty="(UIElement.Background).(SolidColorBrush.Color)"
+                                                                        To="{ThemeResource PlayButtonHoveredColor}"
+                                                                        Duration="0:0:0.15" />-->
+                                                    <ColorAnimation Storyboard.TargetName="ButtonIcon"
+                                                                    Storyboard.TargetProperty="(UIElement.Foreground).(SolidColorBrush.Color)"
+                                                                    To="{ThemeResource PlayButtonHoveredColor}"
+                                                                    Duration="0:0:0.1" />
+                                                </Storyboard>
+                                            </VisualTransition>
+                                        </VisualStateGroup.Transitions>
+
+                                        <VisualState x:Name="Normal">
+                                            <VisualState.Setters>
+                                                <!-- <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackground}" /> -->
+                                                <Setter Target="ButtonIcon.Foreground" Value="{ThemeResource PlayButtonNormalColor}" />
+                                                <Setter Target="ButtonIcon.Glyph" Value="&#xE768;" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <!-- <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackgroundPointerOver}" /> -->
+                                                <Setter Target="ButtonIcon.Foreground" Value="{ThemeResource PlayButtonHoveredColor}" />
+                                                <Setter Target="ButtonIcon.Glyph" Value="&#xf5b0;" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+
+
+                                        <VisualState x:Name="Disabled" />
+                                    </VisualStateGroup>
+
+                                    <!--                 <VisualStateGroup x:Name="MinMaxStates">
+                                            <VisualState x:Name="WindowStateNormal" />
+
+                                            <VisualState x:Name="WindowStateMaximized">
+                                                <VisualState.Setters>
+                                                    <Setter Target="ButtonIcon.Glyph" Value="{ThemeResource RestoreButtonGlyph}" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    -->
+                                </VisualStateManager.VisualStateGroups>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+
+            </Style>
+            <Style x:Key="CodeBlockLineTemplate"
+                   TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Cascadia Code" />
+            </Style>
+
+        </ResourceDictionary>
+
     </UserControl.Resources>
 
     <Grid HorizontalAlignment="Stretch">
@@ -35,14 +128,19 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Button Grid.Column="0"
+                Margin="0,9,0,0"
+                Padding="0"
                 VerticalAlignment="Top"
                 Style="{StaticResource PlayButtonTemplate}"
                 Tapped="_playPressed">
-            <Button.Content>
-                <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                          Foreground="Green"
+            <!--             <Button.Content>
+                <FontIcon x:Name="PlayButtonIcon"
+                          FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                          Foreground="{ThemeResource PlayButtonNormalColor}"
                           Glyph="&#xE768;" />
-            </Button.Content>
+            </Button.Content>-->
+
+
         </Button>
         <Border Grid.Column="1"
                 HorizontalAlignment="Stretch"
