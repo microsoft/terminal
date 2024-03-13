@@ -344,26 +344,6 @@ echo This has been a test of the new code block objects
                 OutOfProcContent().Children().Append(data.root);
             }
         }
-
-        // // First things first, make a dummy code block
-        // const auto createCodeBlock = [=](const auto& command) {
-        //     auto codeBlock = winrt::make<implementation::CodeBlock>(command);
-
-        //     codeBlock.Margin(WUX::ThicknessHelper::FromLengths(8, 8, 8, 8));
-
-        //     codeBlock.RequestRunCommands({ this, &MyPage::_handleRunCommandRequest });
-
-        //     OutOfProcContent().Children().Append(codeBlock);
-        // };
-
-        // createCodeBlock(L"ping 8.8.8.8");
-        // createCodeBlock(L"echo This has been a test of the new code block objects");
-        // createCodeBlock(L"set FOO=%FOO%+1 & echo FOO set to %FOO%");
-        // createCodeBlock(L"cd /d %~%");
-        // createCodeBlock(L"cd /d z:\\dev\\public\\OpenConsole");
-        // createCodeBlock(L"pwsh -c gci");
-        // createCodeBlock(L"git status");
-
         _createOutOfProcContent();
     }
 
@@ -376,7 +356,11 @@ echo This has been a test of the new code block objects
     // - the title of the focused control if there is one, else "Windows Terminal"
     hstring MyPage::Title()
     {
-        return { L"Sample Application" };
+        if (const auto& active{ _notebook.ActiveBlock() })
+        {
+            return active.Control().Title();
+        }
+        return { L"Terminal Notebook test" };
     }
 
     void MyPage::_createOutOfProcContent()
@@ -385,6 +369,7 @@ echo This has been a test of the new code block objects
 
         settings->DefaultBackground(til::color{ 0x25, 0x25, 0x25 });
         settings->AutoMarkPrompts(true);
+        settings->StartingTitle(L"Terminal Notebook test");
         auto envMap = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
         envMap.Insert(L"PROMPT", L"$e]133;D$e\\$e]133;A$e\\$e]9;9;$P$e\\$P$G$e]133;B$e\\");
 
@@ -406,10 +391,6 @@ echo This has been a test of the new code block objects
         TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
 
         _notebook = Control::Notebook(*settings, *settings, conn);
-        // _notebook.Initialize();
-        // _notebook.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
-
-        // _addControl(_notebook.ActiveBlock().Control());
     }
 
     void MyPage::_newBlockHandler(const Control::Notebook& /*sender*/,
@@ -430,9 +411,11 @@ echo This has been a test of the new code block objects
         targetControl.Height(256);
         targetControl.VerticalAlignment(WUX::VerticalAlignment::Top);
         targetControl.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-        targetControl.Initialized([text](const auto& sender, auto&&) {
-            sender.SendInput(text);
-            sender.SendInput(L"\r");
+
+        targetControl.Initialized([this, text](const auto&, auto&&) {
+            // sender.SendInput(text);
+            // sender.SendInput(L"\r");
+            _notebook.SendCommands(text + L"\r");
         });
         // targetControl.SendInput(text);
         // targetControl.SendInput(L"\r");

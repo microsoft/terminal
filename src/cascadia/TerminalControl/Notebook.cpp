@@ -37,40 +37,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
 
-        _terminal->NewPrompt([this](const auto& mark) {
-            if (_gotFirstMark)
-            {
-                _fork(mark.start.y);
-            }
-            else
-            {
-                _gotFirstMark = true;
-            }
-        });
+        _terminal->NewPrompt({ get_weak(), &Notebook::_handleNewPrompt });
 
         _fork(0);
-
-        // At this point, we have one single block we created. Typically, it
-        // doesn't get initialized until the actual TermControl is added to the
-        // page. But we may want to be initialized _before_ the control is added
-        // to a page.
-        // Initialize();
     }
 
-    void Notebook::Initialize()
+    void Notebook::_handleNewPrompt(const ::ScrollMark& mark)
     {
-        const auto active{ _activeBlock() };
-
-        // we need:
-        // * panelWidth (dips)
-        // * panelHeight (dips)
-        // * panelScaleX
-        //
-        // what we have is _settings.InitialRows() and _settings.InitialCols()
-
-        auto size = TermControl::GetProposedDimensions(_settings, USER_DEFAULT_SCREEN_DPI, 0, 0);
-
-        active->core->Initialize(size.Width, size.Height, 1.0f);
+        _expectedPrompts--;
+        if (_expectedPrompts > 0)
+            return;
+        if (_gotFirstMark)
+        {
+            _fork(mark.start.y);
+        }
+        else
+        {
+            _gotFirstMark = true;
+        }
     }
 
     Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::NotebookBlock> Notebook::Blocks() const
@@ -91,6 +75,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return nullptr;
         }
         return *_blocks.rbegin();
+    }
+
+    void Notebook::SendCommands(const winrt::hstring& commands)
+    {
+        auto numCarriageReturns = std::count(commands.begin(), commands.end(), L'\r');
+
+        auto active = _activeBlock();
+        if (numCarriageReturns > 0)
+        {
+            _expectedPrompts = numCarriageReturns;
+
+            active->State(BlockState::Running);
+            // BAD just make it not a winrt property you donkey
+            active->StateChanged.raise(*active, nullptr);
+        }
+
+        active->Control().SendInput(commands);
     }
 
     winrt::fire_and_forget Notebook::_fork(const til::CoordType start)
@@ -115,6 +116,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto active = _activeBlock();
         if (active)
         {
+            active->State(BlockState::Finished);
+            // BAD just make it not a winrt property you donkey
+            active->StateChanged.raise(*active, nullptr);
+
             auto core{ active->core };
             auto* renderData{ active->renderData.get() };
             auto activeControl = active->Control();

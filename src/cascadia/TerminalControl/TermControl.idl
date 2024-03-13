@@ -147,9 +147,18 @@ namespace Microsoft.Terminal.Control
     }
 
 
+    enum BlockState
+    {
+        Default,
+        Running,
+        Finished
+    };
+
     [default_interface] runtimeclass NotebookBlock
     {
         TermControl Control { get; };
+        BlockState State{ get; };
+        event Windows.Foundation.TypedEventHandler<NotebookBlock, Object> StateChanged;
     }
     [default_interface] runtimeclass Notebook
     {
@@ -160,6 +169,8 @@ namespace Microsoft.Terminal.Control
 
         Windows.Foundation.Collections.IVector<NotebookBlock> Blocks { get; };
         NotebookBlock ActiveBlock{ get; };
+        void SendCommands(String commands);
+
         event Windows.Foundation.TypedEventHandler<Notebook, NotebookBlock> NewBlock;
     }
 }

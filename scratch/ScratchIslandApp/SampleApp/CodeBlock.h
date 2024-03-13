@@ -29,6 +29,7 @@ namespace winrt::SampleApp::implementation
         winrt::Microsoft::Terminal::Control::NotebookBlock _block{ nullptr };
 
         void _playPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
+        void _blockStateChanged(const winrt::Microsoft::Terminal::Control::NotebookBlock& sender, const Windows::Foundation::IInspectable& e);
     };
 
     struct RequestRunCommandsArgs : RequestRunCommandsArgsT<RequestRunCommandsArgs>

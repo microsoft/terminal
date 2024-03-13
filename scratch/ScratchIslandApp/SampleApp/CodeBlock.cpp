@@ -39,8 +39,6 @@ namespace winrt::SampleApp::implementation
 
         auto args = winrt::make_self<RequestRunCommandsArgs>(Commandlines());
         RequestRunCommands.raise(*this, *args);
-
-        WUX::VisualStateManager::GoToState(RunButton(), L"Running", false);
     }
 
     winrt::Microsoft::Terminal::Control::NotebookBlock CodeBlock::OutputBlock()
@@ -50,8 +48,31 @@ namespace winrt::SampleApp::implementation
     void CodeBlock::OutputBlock(const winrt::Microsoft::Terminal::Control::NotebookBlock& block)
     {
         _block = block;
+        _block.StateChanged({ get_weak(), &CodeBlock::_blockStateChanged });
         OutputBlockContainer().Children().Append(_block.Control());
         OutputBlockContainer().Visibility(WUX::Visibility::Visible);
+    }
+    void CodeBlock::_blockStateChanged(const winrt::Microsoft::Terminal::Control::NotebookBlock& sender,
+                                       const Windows::Foundation::IInspectable&)
+    {
+        switch (sender.State())
+        {
+        case winrt::Microsoft::Terminal::Control::BlockState::Default:
+        {
+            WUX::VisualStateManager::GoToState(RunButton(), L"Ready", false);
+            break;
+        }
+        case winrt::Microsoft::Terminal::Control::BlockState::Running:
+        {
+            WUX::VisualStateManager::GoToState(RunButton(), L"Running", false);
+            break;
+        }
+        case winrt::Microsoft::Terminal::Control::BlockState::Finished:
+        {
+            WUX::VisualStateManager::GoToState(RunButton(), L"AlreadyRan", false);
+            break;
+        }
+        }
     }
 
 }
