@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const winrt::guid& guid,
                                                                          const winrt::guid& profileGuid);
 
-        til::event<TerminalOutputHandler> TerminalOutput;
+        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
         static void closePseudoConsoleAsync(HPCON hPC) noexcept;
