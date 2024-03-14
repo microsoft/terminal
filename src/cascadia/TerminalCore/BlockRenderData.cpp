@@ -82,7 +82,7 @@ void BlockRenderData::UserScrollViewport(const int viewTop)
     //}
 
     
-    const auto clampedNewTop = std::max(_virtualTop, viewTop);
+    const auto clampedNewTop = std::max(_virtualTop, _virtualTop+viewTop);
     const auto realTop = _terminal.ViewStartIndex();
     const auto newDelta = realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.

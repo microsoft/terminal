@@ -126,6 +126,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
 
         // GH#8969: pre-seed working directory to prevent potential races
+        // TODO! This will reset it for every new block, that's dumb.
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
 
         auto pfnCopyToClipboard = std::bind(&ControlCore::_terminalCopyToClipboard, this, std::placeholders::_1);
@@ -139,7 +140,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         // _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
-        _terminal->ScrollPositionChanged({ this, &ControlCore::_terminalScrollPositionChanged });
+        _scrollPosToken = _terminal->ScrollPositionChanged({ this, &ControlCore::_terminalScrollPositionChanged });
 
         auto pfnTerminalCursorPositionChanged = std::bind(&ControlCore::_terminalCursorPositionChanged, this);
         _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
@@ -329,6 +330,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // This event is explicitly revoked in the destructor: does not need weak_ref
             _connectionOutputEventRevoker = _connection.TerminalOutput(winrt::auto_revoke, { this, &ControlCore::_connectionOutputHandler });
+        }
+        else
+        {
+            // HAX
+            _terminal->ScrollPositionChanged(_scrollPosToken);
         }
 
         // Fire off a connection state changed notification, to let our hosting

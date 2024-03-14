@@ -325,6 +325,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Microsoft::Console::Render::IRenderData* _renderData{ nullptr };
+        winrt::event_token _scrollPosToken{};
 
         ::Search _searcher;
 
