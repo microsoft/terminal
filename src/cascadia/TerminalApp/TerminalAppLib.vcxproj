@@ -420,9 +420,8 @@
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\dep\md4c.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\dep\md4c\md4c.vcxproj">
       <Project>{7CAE5851-50D5-4934-8D5E-30361A8A40F3}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to

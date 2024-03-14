@@ -433,5 +433,11 @@ namespace Microsoft.Terminal.Settings.Model
         SelectOutputDirection Direction { get; };
     }
 
+    [default_interface] runtimeclass OpenMarkdownPaneArgs : IActionArgs
+    {
+        OpenMarkdownPaneArgs(String path);
+        String Path { get; };
+    }
+
 
 }

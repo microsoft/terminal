@@ -50,6 +50,7 @@
 #include "SelectCommandArgs.g.h"
 #include "SelectOutputArgs.g.h"
 #include "ColorSelectionArgs.g.h"
+#include "OpenMarkdownPaneArgs.g.h"
 
 #include "JsonUtils.h"
 #include "HashUtils.h"
@@ -277,6 +278,10 @@ private:                                                                    \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, nullptr) \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, nullptr) \
     X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Core::MatchMode::None)
+
+////////////////////////////////////////////////////////////////////////////////
+#define OPEN_MARKDOWN_PANE_ARGS(X) \
+    X(winrt::hstring, Path, "path", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -819,6 +824,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
+    ACTION_ARGS_STRUCT(OpenMarkdownPaneArgs, OPEN_MARKDOWN_PANE_ARGS);
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -857,4 +864,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SuggestionsArgs);
     BASIC_FACTORY(SelectCommandArgs);
     BASIC_FACTORY(SelectOutputArgs);
+    BASIC_FACTORY(OpenMarkdownPaneArgs);
 }

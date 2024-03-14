@@ -11,6 +11,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         MarkdownPaneContent();
+        MarkdownPaneContent(const winrt::hstring& filePath);
 
         void SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control);
 

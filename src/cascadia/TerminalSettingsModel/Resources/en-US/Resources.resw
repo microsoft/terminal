@@ -731,4 +731,12 @@
     <value>Open tasks pane</value>
     <comment>This will open a pane with a list of the users's saved commands in it</comment>
   </data>
+  <data name="OpenMarkdownFromPathCommandKey" xml:space="preserve">
+    <value>Open markdown file {0}</value>
+    <comment>{0} will be replaced with a user-specified path to a markdown file to open</comment>
+  </data>
+  <data name="OpenMarkdownCommandKey" xml:space="preserve">
+    <value>Open markdown pane</value>
+    <comment>This will open a pane which can display markdown in it</comment>
+  </data>
 </root>

@@ -112,6 +112,7 @@
     ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenScratchpad)          \
     ON_ALL_ACTIONS(OpenAbout)               \
+    ON_ALL_ACTIONS(OpenMarkdownPane)        \
     ON_ALL_ACTIONS(OpenTasksPane)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
@@ -157,4 +158,5 @@
     ON_ALL_ACTIONS_WITH_ARGS(Suggestions)          \
     ON_ALL_ACTIONS_WITH_ARGS(SelectCommand)        \
     ON_ALL_ACTIONS_WITH_ARGS(SelectOutput)         \
-    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)
+    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)       \
+    ON_ALL_ACTIONS_WITH_ARGS(OpenMarkdownPane)

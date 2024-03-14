@@ -48,6 +48,7 @@
 #include "SelectCommandArgs.g.cpp"
 #include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
+#include "OpenMarkdownPaneArgs.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -1076,4 +1077,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         return L"";
     }
+
+    winrt::hstring OpenMarkdownPaneArgs::GenerateName() const
+    {
+        if (!Path().empty())
+        {
+            // "Open markdown file {path}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"OpenMarkdownFromPathCommandKey")),
+                            Path())
+            };
+        }
+        else
+        {
+            // "Open markdown pane"
+            return RS_(L"OpenMarkdownCommandKey");
+        }
+    }
+
 }

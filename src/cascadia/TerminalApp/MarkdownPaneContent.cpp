@@ -261,8 +261,10 @@ namespace winrt::TerminalApp::implementation
 
         return result;
     }
+    MarkdownPaneContent::MarkdownPaneContent() :
+        MarkdownPaneContent(L"") {}
 
-    MarkdownPaneContent::MarkdownPaneContent()
+    MarkdownPaneContent::MarkdownPaneContent(const winrt::hstring& initialPath)
     {
         InitializeComponent();
 
@@ -270,6 +272,7 @@ namespace winrt::TerminalApp::implementation
         auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
         Background(bg.try_as<WUX::Media::Brush>());
 
+        FilePathInput().Text(initialPath);
         _filePath = FilePathInput().Text();
         // _createNotebook();
         _loadMarkdown();
@@ -466,6 +469,11 @@ namespace winrt::TerminalApp::implementation
 
 #pragma region IPaneContent
 
+    winrt::Windows::UI::Xaml::FrameworkElement MarkdownPaneContent::GetRoot()
+    {
+        return *this;
+    }
+
     void MarkdownPaneContent::Close()
     {
         CloseRequested.raise(*this, nullptr);
@@ -478,5 +486,10 @@ namespace winrt::TerminalApp::implementation
     }
 
 #pragma endregion
+
+    void MarkdownPaneContent::SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& /*control*/)
+    {
+        // _control = control;
+    }
 
 }
