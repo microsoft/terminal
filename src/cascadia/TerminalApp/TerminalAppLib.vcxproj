@@ -74,6 +74,12 @@
     <Page Include="TasksPaneContent.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="CodeBlock.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MarkdownPaneContent.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -179,6 +185,12 @@
     <ClInclude Include="Toast.h" />
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="CodeBlock.h">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="MarkdownPaneContent.h">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -300,6 +312,14 @@
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="CodeBlock.cpp">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="MarkdownPaneContent.cpp">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -371,6 +391,14 @@
     <Midl Include="IPaneContent.idl" />
     <Midl Include="TerminalPaneContent.idl" >
       <DependentUpon>TaskPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="CodeBlock.idl">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="MarkdownPaneContent.idl">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
