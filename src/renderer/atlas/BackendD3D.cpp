@@ -1316,7 +1316,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     });
 
     {
-        wil::com_ptr<IDWriteColorGlyphRunEnumerator1> enumerator{ nullptr };
+        wil::com_ptr<IDWriteColorGlyphRunEnumerator1> enumerator;
 
         if (p.s->font->colorGlyphs)
         {
