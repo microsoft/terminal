@@ -7,7 +7,7 @@ namespace Microsoft.Terminal.Settings.Model
 {
     enum InfoBarMessage
     {
-        // We need a sentinel value to map deleted keys to, as we can't actually delete them (GH#XXXXXX)
+        // We need a sentinel value to map deleted keys to, as we can't actually delete them (GH#16874)
         IgnoredDeprecatedEntry = 0,
         CloseOnExitInfo,
     };
