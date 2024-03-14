@@ -1,3 +1,5 @@
+aalt
+abvm
 ACCEPTFILES
 ACCESSDENIED
 acl
@@ -22,7 +24,9 @@ COLORPROPERTY
 colspan
 COMDLG
 commandlinetoargv
+commoncontrols
 comparand
+COPYFROMRESOURCE
 cstdint
 CXICON
 CYICON
@@ -34,6 +38,7 @@ delayimp
 DERR
 dlldata
 DNE
+dnom
 DONTADDTORECENT
 DWMSBT
 DWMWA
@@ -42,10 +47,12 @@ endfor
 ENDSESSION
 enumset
 environstrings
+EXACTSIZEONLY
 EXPCMDFLAGS
 EXPCMDSTATE
 filetime
 FILTERSPEC
+fina
 FORCEFILESYSTEM
 FORCEMINIMIZE
 frac
@@ -59,6 +66,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 hinternet
+HIGHQUALITYSCALE
 HINTERNET
 hotkeys
 href
@@ -75,6 +83,7 @@ IBox
 IClass
 IComparable
 IComparer
+ICONINFO
 IConnection
 ICustom
 IDialog
@@ -84,6 +93,7 @@ IExplorer
 IFACEMETHOD
 IFile
 IGraphics
+IImage
 IInheritable
 IMap
 IMonarch
@@ -114,6 +124,7 @@ LSHIFT
 LTGRAY
 MAINWINDOW
 MAXIMIZEBOX
+medi
 memchr
 memicmp
 MENUCOMMAND
@@ -144,6 +155,7 @@ NOTIFYBYPOS
 NOTIFYICON
 NOTIFYICONDATA
 ntprivapi
+numr
 oaidl
 ocidl
 ODR
@@ -169,9 +181,11 @@ REGCLS
 RETURNCMD
 rfind
 RLO
+rnrn
 ROOTOWNER
 roundf
 RSHIFT
+rvrn
 SACL
 schandle
 SEH

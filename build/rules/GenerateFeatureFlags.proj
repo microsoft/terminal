@@ -30,6 +30,7 @@
     <IntermediateOutputPath>$(SolutionDir)obj\$(Configuration)\GenerateFeatureFlags\</IntermediateOutputPath>
     <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Configuration)\</OpenConsoleCommonOutDir>
 
+    <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Canary'">Canary</_WTBrandingName>
     <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Preview'">Preview</_WTBrandingName>
     <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Release'">Release</_WTBrandingName>
     <_WTBrandingName Condition="'$(_WTBrandingName)'==''">Dev</_WTBrandingName>

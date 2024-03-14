@@ -19,6 +19,7 @@ AFew
 AFill
 AFX
 AHelper
+ahicon
 ahz
 AImpl
 AInplace
@@ -429,6 +430,7 @@ DECRQM
 DECRQPSR
 DECRQSS
 DECRQTSR
+DECRQUPSS
 DECRSPS
 decrst
 DECSACE
@@ -451,6 +453,7 @@ DECSTBM
 DECSTGLT
 DECSTR
 DECSWL
+DECSWT
 DECTABSR
 DECTCEM
 DECXCPR
@@ -843,6 +846,9 @@ IGNORELANGUAGE
 IHosted
 iid
 IIo
+ILC
+ILCo
+ILD
 ime
 IMPEXP
 inbox
@@ -1340,11 +1346,14 @@ pgomgr
 PGONu
 pguid
 phhook
+phico
+phicon
 phwnd
 pidl
 PIDLIST
 pids
 pii
+piml
 pinvoke
 pipename
 pipestr
@@ -1676,6 +1685,8 @@ slpit
 SManifest
 SMARTQUOTE
 SMTO
+snapcx
+snapcy
 SOLIDBOX
 Solutiondir
 somefile
@@ -1901,6 +1912,7 @@ UPDATEDISPLAY
 UPDOWN
 UPKEY
 UPSS
+upss
 uregex
 URegular
 usebackq

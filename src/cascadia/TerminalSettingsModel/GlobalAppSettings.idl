@@ -106,6 +106,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
         void RemoveColorScheme(String schemeName);
+        ColorScheme DuplicateColorScheme(ColorScheme scheme);
 
         ActionMap ActionMap { get; };
 

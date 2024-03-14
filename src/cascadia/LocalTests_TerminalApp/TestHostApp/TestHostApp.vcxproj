@@ -133,7 +133,6 @@
 
   <ItemGroup>
     <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" />
-    <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll" />
   </ItemGroup>
 
   <Target Name="AfterBuild" Inputs="@(TestDll)" Outputs="@(TestDll->'$(TargetDir)'\%(Filename)%(Extension)')">

@@ -266,7 +266,7 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const CascadiaSettings& settings)
+    void TerminalTab::UpdateSettings(const CascadiaSettings& settings, const TerminalApp::TerminalSettingsCache& cache)
     {
         ASSERT_UI_THREAD();
 
@@ -275,7 +275,7 @@ namespace winrt::TerminalApp::implementation
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](auto pane) {
-            pane->UpdateSettings(settings);
+            pane->UpdateSettings(settings, cache);
             return false;
         });
     }
@@ -315,7 +315,7 @@ namespace winrt::TerminalApp::implementation
         {
             Icon(_lastIconPath);
             bool isMonochrome = iconStyle == IconStyle::Monochrome;
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
+            TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
         }
     }
 
@@ -338,7 +338,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
+                TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
             }
             _iconHidden = hide;
         }

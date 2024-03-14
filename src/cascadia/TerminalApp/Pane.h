@@ -73,6 +73,7 @@ public:
 
     std::shared_ptr<Pane> GetActivePane();
     winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
+    winrt::TerminalApp::IPaneContent GetLastFocusedContent();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl() const;
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
     bool IsConnectionClosed() const;
@@ -107,9 +108,7 @@ public:
     BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent = false, const bool asMovePane = false);
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(const bool asContent = false) const;
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-    void UpdateTerminalSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                                const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache);
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,

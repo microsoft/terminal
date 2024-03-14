@@ -22,8 +22,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-        void UpdateTerminalSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                                    const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache);
 
         void MarkAsDefterm();
 

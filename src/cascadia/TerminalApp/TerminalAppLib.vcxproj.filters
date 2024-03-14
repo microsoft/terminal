@@ -93,6 +93,9 @@
       <Filter>settings</Filter>
     </Midl>
     <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="SettingsTab.idl">
+      <Filter>tab</Filter>
+    </Midl>
     <Midl Include="TerminalTab.idl">
       <Filter>tab</Filter>
     </Midl>
@@ -107,7 +110,6 @@
     </Midl>
     <Midl Include="PaletteItemTemplateSelector.idl" />
     <Midl Include="TabBase.idl" />
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -42,9 +42,9 @@ namespace Microsoft::Console::Render::Atlas
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 underlineWidth = 0;
-            alignas(sizeof(f32)) f32 curlyLinePeakHeight = 0;
-            alignas(sizeof(f32)) f32 curlyLineWaveFreq = 0;
-            alignas(sizeof(f32)) f32 curlyLineCellOffset = 0;
+            alignas(sizeof(f32)) f32 doubleUnderlineWidth = 0;
+            alignas(sizeof(f32)) f32 curlyLineHalfHeight = 0;
+            alignas(sizeof(f32)) f32 shadedGlyphDotSize = 0;
 #pragma warning(suppress : 4324) // 'PSConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -58,24 +58,25 @@ namespace Microsoft::Console::Render::Atlas
 #pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
         };
 
-        enum class ShadingType : u16
+        enum class ShadingType : u8 // u8 so that it packs perfectly into AtlasGlyphEntry
         {
             Default = 0,
             Background = 0,
 
             // This block of values will be used for the TextDrawingFirst/Last range and need to stay together.
             // This is used to quickly check if an instance is related to a "text drawing primitive".
-            TextGrayscale = 1,
-            TextClearType = 2,
-            TextPassthrough = 3,
-            DottedLine = 4,
-            DashedLine = 5,
-            CurlyLine = 6,
+            TextGrayscale,
+            TextClearType,
+            TextBuiltinGlyph,
+            TextPassthrough,
+            DottedLine,
+            DashedLine,
+            CurlyLine,
             // All items starting here will be drawing as a solid RGBA color
-            SolidLine = 7,
+            SolidLine,
 
-            Cursor = 8,
-            Selection = 9,
+            Cursor,
+            Selection,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,
@@ -90,7 +91,7 @@ namespace Microsoft::Console::Render::Atlas
             // impact on performance and power draw. If (when?) displays with >32k resolution make their
             // appearance in the future, this should be changed to f32x2. But if you do so, please change
             // all other occurrences of i16x2 positions/offsets throughout the class to keep it consistent.
-            alignas(u16) ShadingType shadingType;
+            alignas(u16) u16 shadingType; // not using ShadingType here to avoid struct padding which causes optimization failures with MSVC
             alignas(u16) u8x2 renditionScale;
             alignas(u32) i16x2 position;
             alignas(u32) u16x2 size;
@@ -98,8 +99,12 @@ namespace Microsoft::Console::Render::Atlas
             alignas(u32) u32 color;
         };
 
-        struct alignas(u32) AtlasGlyphEntryData
+        // NOTE: Don't initialize any members in this struct. This ensures that no
+        // zero-initialization needs to occur when we allocate large buffers of this object.
+        struct AtlasGlyphEntry
         {
+            u32 glyphIndex;
+            u8 occupied;
             ShadingType shadingType;
             u16 overlapSplit;
             i16x2 offset;
@@ -107,80 +112,71 @@ namespace Microsoft::Console::Render::Atlas
             u16x2 texcoord;
         };
 
-        // NOTE: Don't initialize any members in this struct. This ensures that no
-        // zero-initialization needs to occur when we allocate large buffers of this object.
-        struct AtlasGlyphEntry
+        struct AtlasGlyphEntryHashTrait
         {
-            u16 glyphIndex;
-            // All data in QuadInstance is u32-aligned anyways, so this simultaneously serves as padding.
-            u16 _occupied;
-
-            AtlasGlyphEntryData data;
-
-            constexpr bool operator==(u16 key) const noexcept
+            static constexpr bool occupied(const AtlasGlyphEntry& entry) noexcept
             {
-                return glyphIndex == key;
+                return entry.occupied != 0;
             }
 
-            constexpr operator bool() const noexcept
+            static constexpr size_t hash(const u16 glyphIndex) noexcept
             {
-                return _occupied != 0;
+                return til::flat_set_hash_integer(glyphIndex);
             }
 
-            constexpr AtlasGlyphEntry& operator=(u16 key) noexcept
+            static constexpr size_t hash(const AtlasGlyphEntry& entry) noexcept
             {
-                glyphIndex = key;
-                _occupied = 1;
-                return *this;
+                return til::flat_set_hash_integer(entry.glyphIndex);
+            }
+
+            static constexpr bool equals(const AtlasGlyphEntry& entry, u16 glyphIndex) noexcept
+            {
+                return entry.glyphIndex == glyphIndex;
+            }
+
+            static constexpr void assign(AtlasGlyphEntry& entry, u16 glyphIndex) noexcept
+            {
+                entry.glyphIndex = glyphIndex;
+                entry.occupied = 1;
             }
         };
 
-        // This exists so that we can look up a AtlasFontFaceEntry without AddRef()/Release()ing fontFace first.
-        struct AtlasFontFaceKey
-        {
-            IDWriteFontFace2* fontFace;
-            LineRendition lineRendition;
-        };
-
-        struct AtlasFontFaceEntryInner
+        struct AtlasFontFaceEntry
         {
             // BODGY: At the time of writing IDWriteFontFallback::MapCharacters returns the same IDWriteFontFace instance
             // for the same font face variant as long as someone is holding a reference to the instance (see ActiveFaceCache).
             // This allows us to hash the value of the pointer as if it was uniquely identifying the font face variant.
             wil::com_ptr<IDWriteFontFace2> fontFace;
-            LineRendition lineRendition = LineRendition::SingleWidth;
 
-            til::linear_flat_set<AtlasGlyphEntry> glyphs;
-            // boxGlyphs gets an increased growth rate of 2^2 = 4x, because presumably fonts either contain very
-            // few or almost all of the box glyphs. This reduces the cost of _initializeFontFaceEntry quite a bit.
-            til::linear_flat_set<u16, 2, 2> boxGlyphs;
+            // The 4 entries map to the 4 corresponding LineRendition enum values.
+            til::linear_flat_set<AtlasGlyphEntry, AtlasGlyphEntryHashTrait> glyphs[4];
         };
 
-        struct AtlasFontFaceEntry
+        struct AtlasFontFaceEntryHashTrait
         {
-            // This being a heap allocated allows us to insert into `glyphs` in `_splitDoubleHeightGlyph`
-            // (which might resize the hashmap!), while the caller `_drawText` is holding onto `glyphs`.
-            // If it wasn't heap allocated, all pointers into `linear_flat_set` would be invalidated.
-            std::unique_ptr<AtlasFontFaceEntryInner> inner;
-
-            bool operator==(const AtlasFontFaceKey& key) const noexcept
+            static bool occupied(const AtlasFontFaceEntry& entry) noexcept
             {
-                const auto& i = *inner;
-                return i.fontFace.get() == key.fontFace && i.lineRendition == key.lineRendition;
+                return static_cast<bool>(entry.fontFace);
             }
 
-            operator bool() const noexcept
+            static constexpr size_t hash(const IDWriteFontFace2* fontFace) noexcept
             {
-                return static_cast<bool>(inner);
+                return til::flat_set_hash_integer(std::bit_cast<uintptr_t>(fontFace));
             }
 
-            AtlasFontFaceEntry& operator=(const AtlasFontFaceKey& key)
+            static size_t hash(const AtlasFontFaceEntry& entry) noexcept
             {
-                inner = std::make_unique<AtlasFontFaceEntryInner>();
-                auto& i = *inner;
-                i.fontFace = key.fontFace;
-                i.lineRendition = key.lineRendition;
-                return *this;
+                return hash(entry.fontFace.get());
+            }
+
+            static bool equals(const AtlasFontFaceEntry& entry, const IDWriteFontFace2* fontFace) noexcept
+            {
+                return entry.fontFace.get() == fontFace;
+            }
+
+            static void assign(AtlasFontFaceEntry& entry, IDWriteFontFace2* fontFace) noexcept
+            {
+                entry.fontFace = fontFace;
             }
         };
 
@@ -217,12 +213,12 @@ namespace Microsoft::Console::Render::Atlas
         void _uploadBackgroundBitmap(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawTextOverlapSplit(const RenderingPayload& p, u16 y);
-        ATLAS_ATTR_COLD static void _initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry);
-        [[nodiscard]] ATLAS_ATTR_COLD bool _drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
-        bool _drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
-        void _drawSoftFontGlyphInBitmap(const RenderingPayload& p, const AtlasGlyphEntry& glyphEntry) const;
-        void _drawGlyphPrepareRetry(const RenderingPayload& p);
-        void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
+        [[nodiscard]] ATLAS_ATTR_COLD AtlasGlyphEntry* _drawGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
+        AtlasGlyphEntry* _drawBuiltinGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
+        void _drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect& rect, u32 glyphIndex);
+        void _drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect);
+        static AtlasGlyphEntry* _drawGlyphAllocateEntry(const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
+        static void _splitDoubleHeightGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, AtlasGlyphEntry* glyphEntry);
         void _drawGridlines(const RenderingPayload& p, u16 y);
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorForeground();
@@ -259,7 +255,8 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID3D11Texture2D> _glyphAtlas;
         wil::com_ptr<ID3D11ShaderResourceView> _glyphAtlasView;
-        til::linear_flat_set<AtlasFontFaceEntry> _glyphAtlasMap;
+        til::linear_flat_set<AtlasFontFaceEntry, AtlasFontFaceEntryHashTrait> _glyphAtlasMap;
+        AtlasFontFaceEntry _builtinGlyphs;
         Buffer<stbrp_node> _rectPackerData;
         stbrp_context _rectPacker{};
         til::CoordType _ligatureOverhangTriggerLeft = 0;
@@ -291,7 +288,7 @@ namespace Microsoft::Console::Render::Atlas
         // The bounding rect of _cursorRects in pixels.
         til::rect _cursorPosition;
 
-        f32 _curlyLinePeakHeight = 0.0f;
+        f32 _curlyLineHalfHeight = 0.0f;
         FontDecorationPosition _curlyUnderline;
 
         bool _requiresContinuousRedraw = false;
@@ -310,7 +307,7 @@ namespace Microsoft::Console::Render::Atlas
         size_t _colorizeGlyphAtlasCounter = 0;
 #endif
 
-#ifndef NDEBUG
+#if ATLAS_DEBUG_SHADER_HOT_RELOAD
         std::filesystem::path _sourceDirectory;
         wil::unique_folder_change_reader_nothrow _sourceCodeWatcher;
         std::atomic<int64_t> _sourceCodeInvalidationTime{ INT64_MAX };

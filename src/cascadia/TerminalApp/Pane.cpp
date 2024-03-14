@@ -1106,6 +1106,29 @@ TermControl Pane::GetLastFocusedTerminalControl()
     }
 }
 
+IPaneContent Pane::GetLastFocusedContent()
+{
+    if (!_IsLeaf())
+    {
+        if (_lastActive)
+        {
+            auto pane = shared_from_this();
+            while (const auto p = pane->_parentChildPath.lock())
+            {
+                if (p->_IsLeaf())
+                {
+                    return p->_content;
+                }
+                pane = p;
+            }
+            // We didn't find our child somehow, they might have closed under us.
+        }
+        return _firstChild->GetLastFocusedContent();
+    }
+
+    return _content;
+}
+
 // Method Description:
 // - Gets the TermControl of this pane. If this Pane is not a leaf this will
 //   return the nullptr;
@@ -1246,7 +1269,11 @@ void Pane::UpdateVisuals()
 void Pane::_Focus()
 {
     _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
-    _content.Focus(FocusState::Programmatic);
+    if (const auto& lastContent{ GetLastFocusedContent() })
+    {
+        lastContent.Focus(FocusState::Programmatic);
+    }
+    
 }
 
 // Method Description:
@@ -1285,28 +1312,21 @@ void Pane::_FocusFirstChild()
     }
 }
 
-void Pane::UpdateSettings(const CascadiaSettings& settings)
+void Pane::UpdateSettings(const CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache)
 {
     if (_content)
     {
-        _content.UpdateSettings(settings);
-    }
-}
-
-// Method Description:
-// - Updates the settings of this pane, presuming that it is a leaf.
-// Arguments:
-// - settings: The new TerminalSettings to apply to any matching controls
-// - profile: The profile from which these settings originated.
-// Return Value:
-// - <none>
-void Pane::UpdateTerminalSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
-{
-    assert(_IsLeaf());
-
-    if (const auto& terminalPane{ _getTerminalContent() })
-    {
-        return terminalPane.UpdateTerminalSettings(settings, profile);
+        // We need to do a bit more work here for terminal
+        // panes. They need to know about the profile that was used for
+        // them, and about the focused/unfocused settings.
+        if (const auto& terminalPaneContent{ _content.try_as<TerminalPaneContent>() })
+        {
+            terminalPaneContent.UpdateTerminalSettings(cache);
+        }
+        else
+        {
+            _content.UpdateSettings(settings);
+        }
     }
 }
 
@@ -1932,7 +1952,7 @@ void Pane::_SetupEntranceAnimation()
         auto child = isFirstChild ? _firstChild : _secondChild;
         auto childGrid = child->_root;
         // If we are splitting a parent pane this may be null
-        auto control = child->_content.GetRoot();
+        auto control = child->_content ? child->_content.GetRoot() : nullptr;
         // Build up our animation:
         // * it'll take as long as our duration (200ms)
         // * it'll change the value of our property from 0 to secondSize
