@@ -1485,7 +1485,13 @@ namespace winrt::TerminalApp::implementation
             // handle.
             scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
-            scratchPane->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+            // scratchPane->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+            scratchPane->DispatchActionRequested([weak = get_weak()](const auto& sender, const auto& actionAndArgs) {
+                if (const auto& page{ weak.get() })
+                {
+                    page->_actionDispatch->DoAction(sender, actionAndArgs);
+                }
+            });
 
             const auto resultPane = std::make_shared<Pane>(*scratchPane);
             _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);

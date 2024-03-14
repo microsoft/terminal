@@ -22,12 +22,15 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
+                    <Color x:Key="BlockBackgroundColor">#f6f8fa</Color>
                     <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
                     <Color x:Key="PlayButtonNormalColor">#88222222</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
-                    <Color x:Key="PlayButtonNormalColor">#88dddddd</Color>
+                    <!--<Color x:Key="BlockBackgroundColor">#161b22</Color>-->
+                    <Color x:Key="BlockBackgroundColor">#1e1e1e</Color>
+                    <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
+                    <Color x:Key="PlayButtonNormalColor">#8888</Color>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
@@ -37,6 +40,7 @@
                 <Setter Property="Margin" Value="0" />
                 <Setter Property="Padding" Value="4" />
                 <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Background" Value="Transparent" />
 
                 <Setter Property="Template">
                     <Setter.Value>
@@ -142,7 +146,7 @@
                 Tapped="_playPressed" />
         <Border Grid.Column="1"
                 HorizontalAlignment="Stretch"
-                Background="#f6f8fa"
+                Background="{ThemeResource BlockBackgroundColor}"
                 BorderBrush="#dbdbdb"
                 BorderThickness="1"
                 CornerRadius="4">

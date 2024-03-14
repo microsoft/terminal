@@ -840,6 +840,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SetTabColorArgs);
     BASIC_FACTORY(RenameTabArgs);
     BASIC_FACTORY(SwapPaneArgs);
+    BASIC_FACTORY(SendInputArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(SetFocusModeArgs);
     BASIC_FACTORY(SetFullScreenArgs);

@@ -11,8 +11,7 @@
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              mc:Ignorable="d">
 
-    <Grid x:Name="Root"
-          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid x:Name="Root">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -25,15 +24,19 @@
             </Grid.ColumnDefinitions>
             <TextBox x:Name="FilePathInput"
                      Grid.Column="0"
+                     Margin="4"
                      PlaceholderText="Enter a path to a markdown file..."
                      Text="Z:\dev\simple-test.md" />
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal">
-                <Button Tapped="_loadTapped">
+                <Button Margin="4"
+                        Tapped="_loadTapped">
                     Load
                 </Button>
-                <Button Tapped="_reloadTapped">
+                <Button Margin="4"
+                        Tapped="_reloadTapped">
                     <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                              FontSize="12"
                               Glyph="&#xe72c;" />
                 </Button>
             </StackPanel>
@@ -45,7 +48,7 @@
               VerticalAlignment="Stretch">
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="0" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -61,16 +64,15 @@
                           Padding="3"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
-                          Background="#eeeeee"
+                          Background="Transparent"
                           BringIntoViewOnFocusChange="True"
                           IsVerticalScrollChainingEnabled="True">
                 <StackPanel x:Name="RenderedMarkdown"
                             Grid.Column="1"
                             Padding="16"
                             HorizontalAlignment="Stretch"
-                            Background="#fff"
-                            Orientation="Vertical"
-                            RequestedTheme="Light" />
+                            Background="Transparent"
+                            Orientation="Vertical" />
             </ScrollViewer>
 
         </Grid>

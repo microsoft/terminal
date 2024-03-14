@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> ReadOnlyChanged;
         til::typed_event<> FocusRequested;
 
-        til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::ActionAndArgs> DispatchActionRequested;
 #pragma endregion
 
         void _handleRunCommandRequest(const TerminalApp::CodeBlock& sender,
@@ -52,24 +52,15 @@ namespace winrt::TerminalApp::implementation
     private:
         friend struct MarkdownPaneContentT<MarkdownPaneContent>; // for Xaml to bind events
 
-        // void _createNotebook();
+        winrt::hstring _filePath{};
+
+        winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
+
         void _clearOldNotebook();
         void _loadMarkdown();
 
-        // winrt::Microsoft::Terminal::Control::Notebook _notebook{ nullptr };
-        winrt::hstring _filePath{};
-
         void _loadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _reloadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
-
-        // void _newBlockHandler(const winrt::Microsoft::Terminal::Control::Notebook& sender,
-        //                       const winrt::Microsoft::Terminal::Control::NotebookBlock& control);
-        // void _addControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
-        // void _scrollToElement(const Windows::UI::Xaml::UIElement& element,
-        //                       bool isVerticalScrolling = true,
-        //                       bool smoothScrolling = true);
-
-        // winrt::fire_and_forget _stupid(Windows::UI::Xaml::UIElement elem);
     };
 }
 
