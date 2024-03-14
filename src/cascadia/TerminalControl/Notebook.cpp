@@ -124,11 +124,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto* renderData{ active->renderData.get() };
             auto activeControl = active->Control();
 
-            // First, important. Set the bottom, so it thinks it has ended,
-            renderData->SetBottom(start - 1);
-
             // Get how tall the viewport is with the new bottom, under lock.
             renderData->LockConsole();
+            // First, important. Set the bottom, so it thinks it has ended. This has to be under lock
+            renderData->SetBottom(start - 1);
+
             auto blockRenderViewport = renderData->GetViewport();
             renderData->UnlockConsole();
 

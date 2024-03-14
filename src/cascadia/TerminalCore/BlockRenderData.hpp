@@ -84,4 +84,5 @@ private:
     til::CoordType _virtualTop{ 0 };
     til::CoordType _scrollOffset{ 0 };
     std::optional<til::CoordType> _virtualBottom{ std::nullopt };
+    std::optional<til::CoordType> _virtualMutableTop{ std::nullopt };
 };

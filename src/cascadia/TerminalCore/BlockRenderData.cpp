@@ -18,6 +18,7 @@ BlockRenderData::BlockRenderData(Terminal& terminal, til::CoordType virtualTop) 
 void BlockRenderData::SetBottom(til::CoordType bottom)
 {
     _virtualBottom = bottom;
+    _virtualMutableTop = _terminal.ViewStartIndex();;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28,19 +29,22 @@ Viewport BlockRenderData::GetViewport() noexcept
 {
     const auto terminalViewport = _terminal.GetViewport().ToInclusive();
     const til::rect terminalExclusive{ terminalViewport };
+    const auto terminalViewHeight = terminalExclusive.height();
 
     auto lastMutableViewportBottom = _virtualBottom.has_value() ? *_virtualBottom : _terminal.GetBufferHeight();
-    auto lastMutableViewportTop = std::max(0, lastMutableViewportBottom - terminalExclusive.height());
+    auto lastMutableViewportTop = std::max(0, lastMutableViewportBottom - terminalViewHeight);
     // auto numScrollbackRows = std::max(0, lastMutableViewportTop - _virtualTop);
     auto clampedTop = std::max(_virtualTop, lastMutableViewportTop);
 
+    const auto visibleTop = clampedTop - _scrollOffset;
+
     const til::inclusive_rect finalViewport{
         .left = terminalViewport.left,
-        .top = clampedTop - _scrollOffset,
+        .top = visibleTop,
         .right = terminalViewport.right,
         .bottom = _virtualBottom.has_value() ?
-                      std::min(*_virtualBottom, terminalViewport.bottom) :
-                      std::max(terminalViewport.bottom, _virtualTop + terminalExclusive.height()),
+                      std::min(*_virtualBottom, visibleTop + terminalViewHeight /*terminalViewport.bottom*/) :
+                      std::max(terminalViewport.bottom, _virtualTop + terminalViewHeight),
     };
     return Viewport::FromInclusive(finalViewport);
 }
@@ -83,8 +87,8 @@ void BlockRenderData::UserScrollViewport(const int viewTop)
 
     
     const auto clampedNewTop = std::max(_virtualTop, _virtualTop+viewTop);
-    const auto realTop = _terminal.ViewStartIndex();
-    const auto newDelta = realTop - clampedNewTop;
+    const auto realTop = _virtualMutableTop.has_value() ? *_virtualMutableTop:  _terminal.ViewStartIndex(); // _terminal.ViewStartIndex is the start of the MUTABLE VIEWPORT? That's not where this block needs to be offset from even 1%
+    const auto newDelta =  realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.
 
     _scrollOffset = std::max(0, newDelta);

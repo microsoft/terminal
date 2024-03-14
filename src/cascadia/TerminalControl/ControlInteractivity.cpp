@@ -619,7 +619,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // row, then actually update the scroll position in the core, and raise
         // a ScrollPositionChanged to inform the control.
         auto viewTop = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
-        if (viewTop != _core->ScrollOffset())
+        auto coreScrollOffset = _core->ScrollOffset();
+        if (viewTop != coreScrollOffset)
         {
             _core->UserScrollViewport(viewTop);
 
