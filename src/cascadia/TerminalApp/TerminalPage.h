@@ -29,7 +29,6 @@ namespace Microsoft::Terminal::Core
 namespace winrt::TerminalApp::implementation
 {
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
-    inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 
     enum StartupState : int
     {
@@ -143,9 +142,6 @@ namespace winrt::TerminalApp::implementation
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
 
         winrt::TerminalApp::TaskbarState TaskbarState() const;
-
-        void ShowKeyboardServiceWarning() const;
-        winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
         winrt::fire_and_forget RenameFailed();
@@ -505,7 +501,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
-        void _KeyboardServiceWarningInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 

@@ -198,8 +198,6 @@ namespace winrt::TerminalApp::implementation
                                    const winrt::hstring& exceptionText);
         void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
 
-        bool _IsKeyboardServiceEnabled();
-
         void _RefreshThemeRoutine();
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _pageInitialized(const IInspectable& sender, const IInspectable& eventArgs);
