@@ -513,8 +513,13 @@ void Terminal::NotifyBufferRotation(const int delta)
 }
 
 // Method Description:
-// - Notifies the terminal UI layer that the text has changed.
-void Terminal::NotifyTextChange()
+// - Notifies the terminal UI layer that the text layout has changed.
+// - This will be called when new text is added, or when the text is
+//   rearranged in the buffer due to window resize.
+void Terminal::NotifyTextLayoutUpdated()
 {
-    _pfnTextChanged();
+    if (_pfnTextLayoutUpdated)
+    {
+        _pfnTextLayoutUpdated();
+    }
 }

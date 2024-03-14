@@ -119,8 +119,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
-        auto pfnTextChanged = std::bind(&ControlCore::_terminalTextChanged, this);
-        _terminal->SetTextChangedCallback(pfnTextChanged);
+        auto pfnTextLayoutUpdated = std::bind(&ControlCore::_terminalTextLayoutUpdated, this);
+        _terminal->SetTextLayoutUpdatedCallback(pfnTextLayoutUpdated);
 
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
@@ -1566,9 +1566,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ShowWindowChangedHandlers(*this, *showWindow);
     }
 
-    void ControlCore::_terminalTextChanged()
+    void ControlCore::_terminalTextLayoutUpdated()
     {
-        _TextChangedHandlers(*this, nullptr);
+        _TextLayoutUpdatedHandlers(*this, nullptr);
     }
 
     // Method Description:

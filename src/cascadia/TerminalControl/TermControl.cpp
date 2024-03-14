@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.ContextMenuRequested = _interactivity.ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
-        _revokers.TextChanged = _core.TextChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreTextChanged });
+        _revokers.TextLayoutUpdated = _core.TextLayoutUpdated(winrt::auto_revoke, { get_weak(), &TermControl::_coreTextLayoutUpdated });
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
         _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
@@ -3558,8 +3558,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Called when the core raises a TextChanged event.
-    winrt::fire_and_forget TermControl::_coreTextChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    // - Called when the core raises a TextLayoutUpdated event.
+    winrt::fire_and_forget TermControl::_coreTextLayoutUpdated(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         co_await winrt::resume_foreground(Dispatcher());
         auto weakThis{ get_weak() };

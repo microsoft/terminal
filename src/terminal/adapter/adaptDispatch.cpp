@@ -192,7 +192,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     // It's important to do this here instead of in TextBuffer, because here you
     // have access to the entire line of text, whereas TextBuffer writes it one
     // character at a time via the OutputCellIterator.
-    _api.NotifyTextChange();
+    _api.NotifyTextLayoutUpdated();
     textBuffer.TriggerNewTextNotification(string);
 }
 

@@ -1250,9 +1250,9 @@ void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::functi
     _pfnCompletionsChanged.swap(pfn);
 }
 
-void Terminal::SetTextChangedCallback(std::function<void()> pfn) noexcept
+void Terminal::SetTextLayoutUpdatedCallback(std::function<void()> pfn) noexcept
 {
-    _pfnTextChanged.swap(pfn);
+    _pfnTextLayoutUpdated.swap(pfn);
 }
 
 Scheme Terminal::GetColorScheme() const

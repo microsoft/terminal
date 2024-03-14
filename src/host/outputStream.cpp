@@ -423,7 +423,7 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
-void ConhostInternalGetSet::NotifyTextChange()
+void ConhostInternalGetSet::NotifyTextLayoutUpdated()
 {
 }
 

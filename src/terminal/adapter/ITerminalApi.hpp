@@ -80,7 +80,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;
-        virtual void NotifyTextChange() = 0;
+        virtual void NotifyTextLayoutUpdated() = 0;
 
         virtual void MarkPrompt(const ScrollMark& mark) = 0;
         virtual void MarkCommandStart() = 0;

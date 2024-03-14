@@ -275,7 +275,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(CompletionsChanged,        IInspectable, Control::CompletionsChangedEventArgs);
-        TYPED_EVENT(TextChanged,               IInspectable, IInspectable);
+        TYPED_EVENT(TextLayoutUpdated,         IInspectable, IInspectable);
 
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
         TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
@@ -368,7 +368,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
-        void _terminalTextChanged();
+        void _terminalTextLayoutUpdated();
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
