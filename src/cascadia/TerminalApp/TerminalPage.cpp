@@ -283,8 +283,6 @@ namespace winrt::TerminalApp::implementation
             _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
         }
         CATCH_LOG();
-
-        ShowSetAsDefaultInfoBar();
     }
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
@@ -4046,35 +4044,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Displays a info popup guiding the user into setting their default terminal.
-    void TerminalPage::ShowSetAsDefaultInfoBar() const
-    {
-        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::TerminalApp::App>() == nullptr)
-        {
-            // Just ignore this in the tests (where the Application::Current()
-            // is not a TerminalApp::App)
-            return;
-        }
-        if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
-        {
-            return;
-        }
-
-        // If the user has already configured any terminal for hand-off we
-        // shouldn't inform them again about the possibility to do so.
-        if (CascadiaSettings::IsDefaultTerminalSet())
-        {
-            _DismissMessage(InfoBarMessage::SetAsDefault);
-            return;
-        }
-
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(true);
-        }
-    }
-
     // Function Description:
     // - Helper function to get the OS-localized name for the "Touch Keyboard
     //   and Handwriting Panel Service". If we can't open up the service for any
@@ -4534,40 +4503,6 @@ namespace winrt::TerminalApp::implementation
         {
             infoBar.IsOpen(false);
         }
-    }
-
-    // Method Description:
-    // - Persists the user's choice not to show the information bar warning about "Windows Terminal can be set as your default terminal application"
-    // Then hides this information buffer.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SetAsDefaultDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        _DismissMessage(InfoBarMessage::SetAsDefault);
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-
-        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipDismissed", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        _FocusCurrentTab(true);
-    }
-
-    // Method Description:
-    // - Dismisses the Default Terminal tip and opens the settings.
-    void TerminalPage::_SetAsDefaultOpenSettingsHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-
-        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipInteracted", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        OpenSettingsUI();
     }
 
     // Method Description:
