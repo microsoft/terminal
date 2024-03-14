@@ -3860,9 +3860,6 @@ namespace winrt::TerminalApp::implementation
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);
 
-            const IInspectable unused{ nullptr };
-            _SetAsDefaultDismissHandler(unused, unused);
-
             // TEMPORARY SOLUTION
             // If the connection has requested for the window to be maximized,
             // manually maximize it here. Ideally, we should be _initializing_
