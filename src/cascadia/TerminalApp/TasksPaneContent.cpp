@@ -5,7 +5,6 @@
 #include "TasksPaneContent.h"
 #include "PaneArgs.h"
 #include "TasksPaneContent.g.cpp"
-#include "TaskViewModel.g.cpp"
 #include "FilteredTask.g.cpp"
 
 using namespace winrt::Windows::Foundation;

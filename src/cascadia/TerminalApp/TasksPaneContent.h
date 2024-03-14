@@ -3,7 +3,6 @@
 
 #pragma once
 #include "TasksPaneContent.g.h"
-#include "TaskViewModel.g.h"
 #include "FilteredTask.g.h"
 #include "FilteredCommand.h"
 #include "ActionPaletteItem.h"
@@ -138,5 +137,4 @@ namespace winrt::TerminalApp::implementation
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(TasksPaneContent);
-    BASIC_FACTORY(TaskViewModel);
 }
