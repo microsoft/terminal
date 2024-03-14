@@ -443,8 +443,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Start the connection outside of lock, because it could
         // start writing output immediately.
-        if (_connection)
+        if (_connection &&
+            _connection.State() < TerminalConnection::ConnectionState::Connecting)
+        {
             _connection.Start();
+        }
 
         return true;
     }

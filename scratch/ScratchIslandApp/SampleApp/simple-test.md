@@ -50,6 +50,10 @@ git status
 git --no-pager diff dev/migrie/fhl/2024-spring-merge-base --stat -- . ":!oss/md4c"
 ```
 ```
+ping 8.8.8.8
+```
+
+```
 set FOO=%FOO%+1 & echo FOO set to %FOO%
 ```
 ```
