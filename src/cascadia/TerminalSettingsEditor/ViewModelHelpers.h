@@ -37,22 +37,25 @@ protected:
     winrt::event<::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler> _propertyChangedHandlers;
 };
 
+#define GETSET_OBSERVABLE_PROJECTED_SETTING(target, name) \
+public:                                                   \
+    auto name() const                                     \
+    {                                                     \
+        return target.name();                             \
+    };                                                    \
+    template<typename T>                                  \
+    void name(const T& value)                             \
+    {                                                     \
+        const auto t = target;                            \
+        if (t.name() != value)                            \
+        {                                                 \
+            t.name(value);                                \
+            _NotifyChanges(L"Has" #name, L## #name);      \
+        }                                                 \
+    }
+
 #define _BASE_OBSERVABLE_PROJECTED_SETTING(target, name) \
-public:                                                  \
-    auto name() const                                    \
-    {                                                    \
-        return target.name();                            \
-    };                                                   \
-    template<typename T>                                 \
-    void name(const T& value)                            \
-    {                                                    \
-        const auto t = target;                           \
-        if (t.name() != value)                           \
-        {                                                \
-            t.name(value);                               \
-            _NotifyChanges(L"Has" #name, L## #name);     \
-        }                                                \
-    }                                                    \
+    GETSET_OBSERVABLE_PROJECTED_SETTING(target, name)    \
     bool Has##name() const                               \
     {                                                    \
         return target.Has##name();                       \

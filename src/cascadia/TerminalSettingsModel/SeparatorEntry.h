@@ -24,6 +24,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         SeparatorEntry() noexcept;
 
+        winrt::com_ptr<SeparatorEntry> Copy() const;
+
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
     };
 }

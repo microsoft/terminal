@@ -1839,4 +1839,72 @@
     <value>Non-monospace fonts:</value>
     <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
+  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
+    <value>Warning:</value>
+    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  </data>
+  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
+    <value>Choosing a non-monospaced font will likely result in visual artifacts. Use at your own discretion.</value>
+    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  </data>
+  <data name="Nav_NewTabMenu.Content" xml:space="preserve">
+    <value>New Tab Menu</value>
+    <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
+  </data>
+  <data name="NewTabMenuEntry_Separator.Content" xml:space="preserve">
+    <value>&lt;Separator&gt;</value>
+    <comment>{Locked="&lt;"}, {Locked="&gt;"}</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfiles.Content" xml:space="preserve">
+    <value>&lt;Remaining profiles&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"}</comment>
+  </data>
+  <data name="NewTabMenu_AddProfile.Header" xml:space="preserve">
+    <value>Profile</value>
+    <comment>Header for a control that adds a terminal profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.Header" xml:space="preserve">
+    <value>Profile matcher</value>
+    <comment>Header for a control that adds a terminal profile matcher to the new tab menu. This entry adds profiles that match the given parameters.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.Header" xml:space="preserve">
+    <value>Remaining profiles</value>
+    <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
+    <value>Add a group of profiles that match at least one of the defined properties</value>
+    <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
+    <value>There can only be one "remaining profiles" entry</value>
+    <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
+    <value>Separator</value>
+    <comment>Header for a control that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder.Header" xml:space="preserve">
+    <value>Folder</value>
+    <comment>Header for a control that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
+    <value>Profile name</value>
+    <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
+    <value>Profile source</value>
+    <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
+    <value>Commandline</value>
+    <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Confirmation.Text" xml:space="preserve">
+    <value>Add profile matcher</value>
+    <comment>Label for a button confirming to add the profile matcher to the new tab menu as an entry.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder_FolderName.PlaceholderText" xml:space="preserve">
+    <value>Folder name</value>
+    <comment>Placeholder text for a text box control used to set the name of the folder.</comment>
+  </data>
 </root>

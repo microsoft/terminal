@@ -1,0 +1,258 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.NewTabMenu"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--<ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <StaticResource x:Key="ControlExampleDisplayBrush" ResourceKey="SolidBackgroundFillColorBaseBrush" />
+                    <Thickness x:Key="ControlExampleDisplayBorderThickness">0</Thickness>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <StaticResource x:Key="ControlExampleDisplayBrush" ResourceKey="SolidBackgroundFillColorBaseBrush" />
+                    <Thickness x:Key="ControlExampleDisplayBorderThickness">0</Thickness>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="ControlExampleDisplayBrush" Color="{ThemeResource SystemColorWindowColor}" />
+                    <Thickness x:Key="ControlExampleDisplayBorderThickness">1</Thickness>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>-->
+
+            <DataTemplate x:Key="ProfileEntryTemplate"
+                          x:DataType="local:ProfileEntryViewModel">
+                <muxc:TreeViewItem AutomationProperties.Name="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}">
+                    <muxc:TreeViewItem.Content>
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="10">
+                            <Image Source="{x:Bind ProfileEntry.Profile.Icon, Mode=OneWay}"
+                                   Width="16"
+                                   Height="16" />
+                            <TextBlock Text="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}"/>
+                        </StackPanel>
+                    </muxc:TreeViewItem.Content>
+                </muxc:TreeViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="SeparatorEntryTemplate"
+                          x:DataType="local:SeparatorEntryViewModel">
+                <muxc:TreeViewItem x:Uid="NewTabMenuEntry_Separator"
+                                   FontStyle="Italic"/>
+            </DataTemplate>
+
+            <!-- TODO CARLOS: I'm using TreeViewItem.ItemsSource to recursively define
+                 folder entries. This is the method shown in the WinUI 2 Gallery.
+                 It's not working. Investigate.
+                 Investigation Notes:
+                 If you comment out the images, this works. Otherwise, sometimes you
+                 get a crash or the nested folders don't load.-->
+            <DataTemplate x:Key="FolderEntryTemplate"
+                          x:DataType="local:FolderEntryViewModel">
+                <muxc:TreeViewItem AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                                   ItemsSource="{x:Bind Entries, Mode=TwoWay}"
+                                   IsExpanded="True">
+                    <muxc:TreeViewItem.Content>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <!--<Image Source="{x:Bind Icon}"
+                                   Width="16"
+                                   Height="16" />-->
+                            <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                        </StackPanel>
+                    </muxc:TreeViewItem.Content>
+                </muxc:TreeViewItem>
+            </DataTemplate>
+
+            <DataTemplate x:Key="MatchProfilesEntryTemplate"
+                          x:DataType="local:MatchProfilesEntryViewModel">
+                <muxc:TreeViewItem FontStyle="Italic"
+                                   Content="{x:Bind DisplayText, Mode=OneWay}"/>
+            </DataTemplate>
+
+            <DataTemplate x:Key="RemainingProfilesEntryTemplate"
+                          x:DataType="local:RemainingProfilesEntryViewModel">
+                <muxc:TreeViewItem x:Uid="NewTabMenuEntry_RemainingProfiles"
+                                   FontStyle="Italic"/>
+            </DataTemplate>
+
+            <local:NewTabMenuEntryTemplateSelector x:Key="NewTabMenuEntryTemplateSelector"
+                                                   ProfileEntryTemplate="{StaticResource ProfileEntryTemplate}"
+                                                   SeparatorEntryTemplate="{StaticResource SeparatorEntryTemplate}"
+                                                   FolderEntryTemplate="{StaticResource FolderEntryTemplate}"
+                                                   MatchProfilesEntryTemplate="{StaticResource MatchProfilesEntryTemplate}"
+                                                   RemainingProfilesEntryTemplate="{StaticResource RemainingProfilesEntryTemplate}"/>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <StackPanel>
+        <!-- Margin stolen from SettingsStackStyle -->
+        <Grid Margin="13,0,13,48">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!--New Tab Menu Content-->
+            <Border Grid.Row="0"
+                    Margin="0,12,0,12"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1"
+                    MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    CornerRadius="{ThemeResource ControlCornerRadius}"
+                    Height="200">
+                <muxc:TreeView x:Name="NewTabMenuTreeView"
+                               AllowDrop="False"
+                               CanDrag="False"
+                               CanDragItems="True"
+                               CanReorderItems="True"
+                               SelectionMode="None"
+                               ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}"
+                               ItemTemplateSelector="{StaticResource NewTabMenuEntryTemplateSelector}"/>
+            </Border>
+
+            <StackPanel Grid.Row="1"
+                        HorizontalAlignment="Stretch">
+                <!--  Add Profile  -->
+                <local:SettingContainer x:Uid="NewTabMenu_AddProfile"
+                                        FontIconGlyph="&#xE756;">
+
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="5">
+                        <!--Select profile to add-->
+                        <!--TODO CARLOS: sort the list alphabetically?-->
+                        <ComboBox x:Name="AddProfileComboBox"
+                                  ItemsSource="{x:Bind ViewModel.AvailableProfiles, Mode=OneWay}"
+                                  SelectedItem="{x:Bind ViewModel.SelectedProfile, Mode=TwoWay}"
+                                  MinWidth="{StaticResource StandardBoxMinWidth}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="model:Profile">
+                                    <Grid HorizontalAlignment="Stretch"
+                                          ColumnSpacing="8">
+
+                                        <Grid.ColumnDefinitions>
+                                            <!--  icon  -->
+                                            <ColumnDefinition Width="16" />
+                                            <!--  profile name  -->
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <IconSourceElement Grid.Column="0"
+                                                           Width="16"
+                                                           Height="16"
+                                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{x:Bind Name}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Button x:Name="AddProfileButton"
+                                VerticalAlignment="Stretch"
+                                HorizontalAlignment="Stretch"
+                                Click="{x:Bind ViewModel.RequestAddSelectedProfileEntry}">
+                            <Button.Content>
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE710;" />
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                </local:SettingContainer>
+
+                <!--  Add Separator  -->
+                <!--TODO CARLOS: the button height is different from the one before.-->
+                <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
+                                        FontIconGlyph="&#xE76f;">
+                    <Button x:Name="AddSeparatorButton"
+                            VerticalAlignment="Stretch"
+                            HorizontalAlignment="Stretch"
+                            Click="{x:Bind ViewModel.RequestAddSeparatorEntry}">
+                        <Button.Content>
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE710;" />
+                        </Button.Content>
+                    </Button>
+                </local:SettingContainer>
+            
+                <!--  Add Folder  -->
+                <!--TODO CARLOS: adding an icon would be cool, but I don't think we're equipped to do that yet-->
+                <local:SettingContainer x:Uid="NewTabMenu_AddFolder"
+                                        FontIconGlyph="&#xF12B;">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="5">
+                        <TextBox x:Uid="NewTabMenu_AddFolder_FolderName"
+                                 x:Name="FolderNameTextBox"
+                                 MinWidth="{StaticResource StandardBoxMinWidth}"
+                                 Text="{x:Bind ViewModel.FolderName, Mode=TwoWay}"
+                                 TextChanged="FolderNameTextBox_TextChanged"/>
+                        <Button x:Name="AddFolderButton"
+                                VerticalAlignment="Stretch"
+                                HorizontalAlignment="Stretch"
+                                Click="{x:Bind ViewModel.RequestAddFolderEntry}"
+                                IsEnabled="False">
+                            <Button.Content>
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE710;" />
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                </local:SettingContainer>
+
+                <!--  Add Match Profiles  -->
+                <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
+                                        FontIconGlyph="&#xE748;"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <StackPanel Spacing="10">
+                        <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Name"
+                                 Text="{x:Bind ViewModel.ProfileMatcherName, Mode=TwoWay}"/>
+                        <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Source"
+                                 Text="{x:Bind ViewModel.ProfileMatcherSource, Mode=TwoWay}"/>
+                        <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Commandline"
+                                 Text="{x:Bind ViewModel.ProfileMatcherCommandline, Mode=TwoWay}"/>
+                        <Button x:Name="AddMatchProfilesButton"
+                                Click="{x:Bind ViewModel.RequestAddProfileMatcherEntry}">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                              Glyph="&#xE710;" />
+                                    <TextBlock x:Uid="NewTabMenu_AddMatchProfiles_Confirmation"
+                                               Style="{StaticResource IconButtonTextBlockStyle}" />
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                </local:SettingContainer>
+
+                <!--  Add Remaining Profiles  -->
+                <!--TODO CARLOS: it would be cool if when disabled, we should --> 
+                <local:SettingContainer x:Uid="NewTabMenu_AddRemainingProfiles"
+                                        FontIconGlyph="&#xE902;">
+                    <Button VerticalAlignment="Stretch"
+                            HorizontalAlignment="Stretch"
+                            Click="{x:Bind ViewModel.RequestAddRemainingProfilesEntry}"
+                            IsEnabled="{x:Bind ViewModel.IsRemainingProfilesEntryMissing(ViewModel.Entries), Mode=OneWay}">
+                        <Button.Content>
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE710;" />
+                        </Button.Content>
+                    </Button>
+                </local:SettingContainer>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</Page>

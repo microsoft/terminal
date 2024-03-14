@@ -3,6 +3,11 @@
 
 #include "pch.h"
 #include "FolderEntry.h"
+#include "ProfileEntry.h"
+#include "SeparatorEntry.h"
+#include "RemainingProfilesEntry.h"
+#include "MatchProfilesEntry.h"
+#include "ActionEntry.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -83,7 +88,7 @@ IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
         // A profile is filtered out if it is not valid, so if it was not resolved
         case NewTabMenuEntryType::Profile:
         {
-            const auto profileEntry = entry.as<ProfileEntry>();
+            const auto profileEntry = entry.as<Model::ProfileEntry>();
             if (profileEntry.Profile() == nullptr)
             {
                 continue;
@@ -95,7 +100,7 @@ IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
         case NewTabMenuEntryType::RemainingProfiles:
         case NewTabMenuEntryType::MatchProfiles:
         {
-            const auto profileCollectionEntry = entry.as<ProfileCollectionEntry>();
+            const auto profileCollectionEntry = entry.as<Model::ProfileCollectionEntry>();
             if (profileCollectionEntry.Profiles().Size() == 0)
             {
                 continue;
@@ -121,4 +126,48 @@ IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
     }
 
     return result;
+}
+
+winrt::com_ptr<FolderEntry> FolderEntry::Copy() const
+{
+    auto entry = winrt::make_self<FolderEntry>();
+    entry->_Name = _Name;
+    entry->_Icon = _Icon;
+    entry->_Inlining = _Inlining;
+    entry->_AllowEmpty = _AllowEmpty;
+
+    if (_Entries)
+    {
+        entry->_Entries = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
+        for (const auto& e : _Entries)
+        {
+            switch (e.Type())
+            {
+            case NewTabMenuEntryType::Profile:
+                entry->_Entries.Append(*winrt::get_self<implementation::ProfileEntry>(e.as<Model::ProfileEntry>())->Copy());
+                break;
+            case NewTabMenuEntryType::Separator:
+                entry->_Entries.Append(*winrt::get_self<implementation::SeparatorEntry>(e.as<Model::SeparatorEntry>())->Copy());
+                break;
+            case NewTabMenuEntryType::Folder:
+                entry->_Entries.Append(*winrt::get_self<implementation::FolderEntry>(e.as<Model::FolderEntry>())->Copy());
+                break;
+            case NewTabMenuEntryType::RemainingProfiles:
+                entry->_Entries.Append(*winrt::get_self<implementation::RemainingProfilesEntry>(e.as<Model::RemainingProfilesEntry>())->Copy());
+                break;
+            case NewTabMenuEntryType::MatchProfiles:
+                entry->_Entries.Append(*winrt::get_self<implementation::MatchProfilesEntry>(e.as<Model::MatchProfilesEntry>())->Copy());
+                break;
+            case NewTabMenuEntryType::Action:
+            {
+                entry->_Entries.Append(*winrt::get_self<implementation::ActionEntry>(e.as<Model::ActionEntry>())->Copy());
+                break;
+            }
+            case NewTabMenuEntryType::Invalid:
+                // ignore invalid
+                break;
+            }
+        }
+    }
+    return entry;
 }

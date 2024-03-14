@@ -26,6 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         FolderEntry() noexcept;
         explicit FolderEntry(const winrt::hstring& name) noexcept;
 
+        winrt::com_ptr<FolderEntry> Copy() const;
+
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 

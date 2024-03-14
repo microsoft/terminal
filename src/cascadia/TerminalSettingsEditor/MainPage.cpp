@@ -16,6 +16,7 @@
 #include "AddProfile.h"
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
+#include "NewTabMenuViewModel.h"
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
 
@@ -40,6 +41,7 @@ static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
+static const std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
@@ -59,6 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
         _UpdateBackgroundForMica();
 
+        _newTabMenuPageVM = winrt::make<NewTabMenuViewModel>(_settingsClone);
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
         _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
@@ -134,6 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
+        get_self<NewTabMenuViewModel>(_newTabMenuPageVM)->UpdateSettings(_settingsClone);
 
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
@@ -376,6 +380,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+        }
+        else if (clickedItemTag == newTabMenuTag)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == globalProfileTag)

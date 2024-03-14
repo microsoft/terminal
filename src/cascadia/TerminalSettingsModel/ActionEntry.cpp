@@ -34,3 +34,10 @@ winrt::com_ptr<NewTabMenuEntry> ActionEntry::FromJson(const Json::Value& json)
 
     return entry;
 }
+
+winrt::com_ptr<ActionEntry> ActionEntry::Copy() const
+{
+    auto entry = winrt::make_self<ActionEntry>();
+    entry->_ActionId = _ActionId;
+    return entry;
+}

@@ -20,3 +20,9 @@ winrt::com_ptr<NewTabMenuEntry> RemainingProfilesEntry::FromJson(const Json::Val
 {
     return winrt::make_self<RemainingProfilesEntry>();
 }
+
+winrt::com_ptr<RemainingProfilesEntry> RemainingProfilesEntry::Copy() const
+{
+    auto entry = winrt::make_self<RemainingProfilesEntry>();
+    return entry;
+}
