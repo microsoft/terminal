@@ -118,7 +118,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
                                                             defaultAttributes,
                                                             uiCursorSize,
                                                             pScreen->IsActiveScreenBuffer(),
-                                                            *ServiceLocator::LocateGlobals().pRender);
+                                                            ServiceLocator::LocateGlobals().pRender);
 
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
@@ -254,7 +254,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     {
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
-        auto& renderer = *g.pRender;
+        auto* renderer = g.pRender;
         auto& renderSettings = gci.GetRenderSettings();
         auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
         auto adapter = std::make_unique<AdaptDispatch>(_api, renderer, renderSettings, terminalInput);
