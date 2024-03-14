@@ -239,6 +239,8 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
     // Update scrollbars
     _NotifyScrollEvent();
 
+    NotifyTextLayoutUpdated();
+
     // redraw the screen
     try
     {
@@ -295,6 +297,8 @@ void Terminal::UseMainScreenBuffer()
 
     // Update scrollbars
     _NotifyScrollEvent();
+
+    NotifyTextLayoutUpdated();
 
     // redraw the screen
     _activeBuffer().TriggerRedrawAll();
