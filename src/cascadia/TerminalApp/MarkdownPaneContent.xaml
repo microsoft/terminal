@@ -11,6 +11,38 @@
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              mc:Ignorable="d">
 
+    <UserControl.Resources>
+
+        <mux:CommandBarFlyout x:Name="TextSelectionContextMenu">
+            <AppBarButton x:Name="CopyCommandButton"
+                          x:Uid="CopyCommandButton"
+                          Click="_copyCommandHandler"
+                          Icon="Copy"
+                          Label="Copy" />
+            <AppBarButton x:Name="PasteWithSelectionCommandButton"
+                          x:Uid="PasteWithSelectionCommandButton"
+                          Click="_pasteCommandHandler"
+                          Icon="Paste"
+                          Label="Paste" />
+            <mux:CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="CopyToTerminal"
+                              x:Uid="CopyToTerminal"
+                              Click="_copyToTerminalCommandHandler"
+                              Label="Copy to terminal">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="11"
+                                  Glyph="&#xE756;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SelectAllButton"
+                              x:Uid="SelectAllButton"
+                              Click="_selectAllCommandHandler"
+                              Label="Select all" />
+            </mux:CommandBarFlyout.SecondaryCommands>
+        </mux:CommandBarFlyout>
+    </UserControl.Resources>
+
     <Grid x:Name="Root">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
