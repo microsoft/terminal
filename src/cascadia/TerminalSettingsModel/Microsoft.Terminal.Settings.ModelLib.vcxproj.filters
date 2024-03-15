@@ -30,9 +30,6 @@
     <ClCompile Include="DynamicProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="DefaultTerminal.cpp" />
     <ClCompile Include="FileUtils.cpp" />

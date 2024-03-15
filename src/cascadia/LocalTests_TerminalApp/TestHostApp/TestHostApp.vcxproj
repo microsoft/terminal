@@ -15,6 +15,11 @@
     <ConfigurationType>Application</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
     <EnableHybridCRT>false</EnableHybridCRT> <!-- C++/CLI projects can't deal -->
+    <!--
+      vcpkg adds *.lib to the link line, but our libraries are static libs and use the static CRT;
+      since this project doesn't support Hybrid CRT, it can't use the static CRT libs from vcpkg either.
+    -->
+    <VcpkgAutoLink>false</VcpkgAutoLink>
 
     <TerminalMUX>true</TerminalMUX>
 
@@ -26,7 +31,6 @@
      -->
     <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
-
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

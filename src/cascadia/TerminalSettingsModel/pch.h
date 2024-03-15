@@ -51,7 +51,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 #include <TraceLoggingActivity.h>
 
 // JsonCpp
-#include <json.h>
+#include <json/json.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

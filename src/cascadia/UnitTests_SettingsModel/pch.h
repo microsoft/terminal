@@ -33,7 +33,7 @@ Author(s):
 #include <shellapi.h>
 
 #include <WexTestClass.h>
-#include <json.h>
+#include <json/json.h>
 #include "consoletaeftemplates.hpp"
 #include "winrtTaefTemplates.hpp"
 

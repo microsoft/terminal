@@ -28,7 +28,7 @@ Author(s):
 #endif
 
 #include <WexTestClass.h>
-#include <json.h>
+#include <json/json.h>
 #include "consoletaeftemplates.hpp"
 
 // Are you thinking about adding WinRT things here? If so, you probably want to

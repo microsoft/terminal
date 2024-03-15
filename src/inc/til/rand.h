@@ -1,6 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// Help PCG out. Windows is always LE these days, but it doesn't default to LE (rather, it complains)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ // Clang, GCC
+#define PCG_LITTLE_ENDIAN 0
+#else
+#define PCG_LITTLE_ENDIAN 1
+#endif
 #include <pcg_random.hpp>
 
 namespace til

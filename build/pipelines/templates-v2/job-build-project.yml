@@ -142,6 +142,8 @@ jobs:
 
   - template: .\steps-restore-nuget.yml
 
+  - template: .\steps-install-vcpkg.yml
+
   - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
