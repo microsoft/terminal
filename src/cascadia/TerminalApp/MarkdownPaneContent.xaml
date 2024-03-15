@@ -33,13 +33,25 @@
                         Orientation="Horizontal">
                 <Button Margin="4"
                         Tapped="_loadTapped">
-                    Load
-                </Button>
-                <Button Margin="4"
-                        Tapped="_reloadTapped">
                     <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                               FontSize="12"
-                              Glyph="&#xe72c;" />
+                              Glyph="&#xe8e5;" /> 
+                    <!--  OpenFile  -->
+                </Button>
+                <Button Margin="4"
+                        Tapped="_editTapped">
+                    <FontIcon x:Name="EditIcon"
+                              FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                              FontSize="12"
+                              Glyph="&#xe932;" /> 
+                    <!--  Label  -->
+                </Button>
+                <Button Margin="4"
+                        Tapped="_closeTapped">
+                    <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                              FontSize="12"
+                              Glyph="&#xe8bb;" /> 
+                    <!--  ChromeClose  -->
                 </Button>
             </StackPanel>
         </Grid>
@@ -60,6 +72,17 @@
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
+
+            <TextBox x:Name="_editor"
+                     Grid.Column="1"
+                     Padding="3"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Stretch"
+                     AcceptsReturn="True"
+                     FontFamily="Cascadia Code"
+                     IsSpellCheckEnabled="False"
+                     Text="{x:Bind FileContents, Mode=TwoWay}"
+                     Visibility="{x:Bind Editing}" />
 
             <ScrollViewer x:Name="_scrollViewer"
                           Grid.Column="1"

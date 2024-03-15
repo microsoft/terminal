@@ -31,7 +31,13 @@ namespace winrt::TerminalApp::implementation
         WUX::Documents::Run currentRun{ nullptr };
         TerminalApp::CodeBlock currentCodeBlock{ nullptr };
     };
-
+    WUX::Controls::TextBlock makeDefaultTextBlock()
+    {
+        WUX::Controls::TextBlock b{};
+        b.IsTextSelectionEnabled(true);
+        b.TextWrapping(WUX::TextWrapping::WrapWholeWords);
+        return b;
+    }
     int md_parser_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata)
     {
         MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
@@ -44,8 +50,7 @@ namespace winrt::TerminalApp::implementation
         case MD_BLOCK_H:
         {
             MD_BLOCK_H_DETAIL* headerDetail = reinterpret_cast<MD_BLOCK_H_DETAIL*>(detail);
-            data->current = WUX::Controls::TextBlock{};
-            data->current.IsTextSelectionEnabled(true);
+            data->current = makeDefaultTextBlock();
             const auto fontSize = std::max(16u, 36u - ((headerDetail->level - 1) * 6u));
             data->current.FontSize(fontSize);
             data->current.FontWeight(Windows::UI::Text::FontWeights::Bold());
@@ -121,8 +126,7 @@ namespace winrt::TerminalApp::implementation
 
         if (data->current == nullptr)
         {
-            data->current = WUX::Controls::TextBlock();
-            data->current.IsTextSelectionEnabled(true);
+            data->current = makeDefaultTextBlock();
             data->root.Children().Append(data->current);
         }
         if (data->currentRun == nullptr)
@@ -191,8 +195,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& curr{ data->current })
             {
-                data->current = WUX::Controls::TextBlock();
-                data->current.IsTextSelectionEnabled(true);
+                data->current = makeDefaultTextBlock();
                 data->root.Children().Append(data->current);
             }
 
@@ -223,6 +226,8 @@ namespace winrt::TerminalApp::implementation
         case MD_TEXT_NORMAL:
         default:
         {
+            data->currentCodeBlock = nullptr;
+
             auto run = data->currentRun ? data->currentRun : WUX::Documents::Run{};
             run.Text(str);
             if (data->current)
@@ -231,8 +236,7 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                WUX::Controls::TextBlock block{};
-                block.IsTextSelectionEnabled(true);
+                WUX::Controls::TextBlock block = makeDefaultTextBlock();
                 block.Inlines().Append(run);
                 data->root.Children().Append(block);
                 data->current = block;
@@ -313,34 +317,42 @@ namespace winrt::TerminalApp::implementation
         }
         // BLINDLY TREATING TEXT AS utf-8 (I THINK)
         std::string markdownContents{ buffer, read };
-        winrt::hstring fileContents = winrt::to_hstring(markdownContents);
 
+        Editing(false);
+        PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"Editing" });
+        FileContents(winrt::to_hstring(markdownContents));
+        PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"FileContents" });
+
+        _renderFileContents();
+    }
+    void MarkdownPaneContent::_renderFileContents()
+    {
         // Was the file a .md file?
         if (_filePath.ends_with(L".md"))
         {
-            _loadMarkdown(fileContents);
+            _loadMarkdown();
         }
         else
         {
-            _loadText(fileContents);
+            _loadText();
         }
     }
-    void MarkdownPaneContent::_loadText(const winrt::hstring& fileContents)
+    void MarkdownPaneContent::_loadText()
     {
         auto block = WUX::Controls::TextBlock();
         block.IsTextSelectionEnabled(true);
         block.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
-        block.Text(fileContents);
+        block.Text(FileContents());
 
         RenderedMarkdown().Children().Append(block);
     }
 
-    void MarkdownPaneContent::_loadMarkdown(const winrt::hstring& fileContents)
+    void MarkdownPaneContent::_loadMarkdown()
     {
         MyMarkdownData data;
         data.page = this;
 
-        const auto parseResult = parseMarkdown(fileContents, data);
+        const auto parseResult = parseMarkdown(FileContents(), data);
 
         if (0 == parseResult)
         {
@@ -350,27 +362,51 @@ namespace winrt::TerminalApp::implementation
 
     void MarkdownPaneContent::_loadTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
     {
-        auto p = FilePathInput().Text();
-        if (p != _filePath)
+        _filePath = FilePathInput().Text();
+        // Does the file exist? if not, bail
+        const wil::unique_handle file{ CreateFileW(_filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        if (!file)
         {
-            _filePath = p;
-            // Does the file exist? if not, bail
-            const wil::unique_handle file{ CreateFileW(_filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
-            if (!file)
-            {
-                return;
-            }
-
-            // It does. Clear the old one
-            _clearOldNotebook();
-            _loadFile();
+            return;
         }
-    }
-    void MarkdownPaneContent::_reloadTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
-    {
-        // Clear the old one
+
+        // It does. Clear the old one
         _clearOldNotebook();
         _loadFile();
+    }
+
+    void MarkdownPaneContent::_editTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
+    {
+        if (Editing())
+        {
+            _clearOldNotebook();
+            _renderFileContents();
+
+            EditIcon().Glyph(L"\xe932"); // Label
+
+            _scrollViewer().Visibility(WUX::Visibility::Visible);
+            _editor().Visibility(WUX::Visibility::Collapsed);
+
+            Editing(false);
+        }
+        else
+        {
+            EditIcon().Glyph(L"\xe890"); // View
+
+            _scrollViewer().Visibility(WUX::Visibility::Collapsed);
+            _editor().Visibility(WUX::Visibility::Visible);
+
+            Editing(true);
+        }
+        PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"Editing" });
+    }
+
+    void MarkdownPaneContent::_closeTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
+    {
+        // // Clear the old one
+        // _clearOldNotebook();
+        // _loadFile();
+        CloseRequested.raise(*this, nullptr);
     }
 
     void MarkdownPaneContent::_handleRunCommandRequest(const TerminalApp::CodeBlock& sender,

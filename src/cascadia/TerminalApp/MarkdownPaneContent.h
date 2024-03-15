@@ -13,7 +13,13 @@ namespace winrt::TerminalApp::implementation
         MarkdownPaneContent();
         MarkdownPaneContent(const winrt::hstring& filePath);
 
+        til::property<bool> Editing{ false };
+        til::property<winrt::hstring> FileContents{ L"" };
+
         void SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control);
+
+        // TODO! this should just be til::property_changed_event but I don't havfe tht commit here
+        til::event<winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler> PropertyChanged;
 
 #pragma region IPaneContent
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
@@ -53,16 +59,19 @@ namespace winrt::TerminalApp::implementation
         friend struct MarkdownPaneContentT<MarkdownPaneContent>; // for Xaml to bind events
 
         winrt::hstring _filePath{};
+        // winrt::hstring _fileContents{};
 
         winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
 
         void _clearOldNotebook();
         void _loadFile();
-        void _loadText(const winrt::hstring& fileContents);
-        void _loadMarkdown(const winrt::hstring& fileContents);
+        void _renderFileContents();
+        void _loadText();
+        void _loadMarkdown();
 
         void _loadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
-        void _reloadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
+        void _editTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
+        void _closeTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
     };
 }
 
