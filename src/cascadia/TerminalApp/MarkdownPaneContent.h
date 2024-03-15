@@ -57,7 +57,9 @@ namespace winrt::TerminalApp::implementation
         winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
 
         void _clearOldNotebook();
-        void _loadMarkdown();
+        void _loadFile();
+        void _loadText(const winrt::hstring& fileContents);
+        void _loadMarkdown(const winrt::hstring& fileContents);
 
         void _loadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _reloadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);

@@ -23,12 +23,14 @@
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
                     <Color x:Key="BlockBackgroundColor">#f6f8fa</Color>
+                    <Color x:Key="BlockBorderColor">#d3d3d3</Color>
                     <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
                     <Color x:Key="PlayButtonNormalColor">#88222222</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <!--<Color x:Key="BlockBackgroundColor">#161b22</Color>-->
                     <Color x:Key="BlockBackgroundColor">#1e1e1e</Color>
+                    <Color x:Key="BlockBorderColor">#30363d</Color>
                     <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
                     <Color x:Key="PlayButtonNormalColor">#8888</Color>
                 </ResourceDictionary>
@@ -147,13 +149,14 @@
         <Border Grid.Column="1"
                 HorizontalAlignment="Stretch"
                 Background="{ThemeResource BlockBackgroundColor}"
-                BorderBrush="#dbdbdb"
+                BorderBrush="{ThemeResource BlockBorderColor}"
                 BorderThickness="1"
                 CornerRadius="4">
             <StackPanel x:Name="CommandsAndOutput">
                 <StackPanel x:Name="CommandLines"
                             Padding="8">
                     <TextBlock FontFamily="Cascadia Code"
+                               IsTextSelectionEnabled="True"
                                Text="{x:Bind Commandlines}" />
                 </StackPanel>
                 <StackPanel x:Name="OutputBlockContainer"

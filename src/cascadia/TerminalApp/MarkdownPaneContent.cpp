@@ -45,6 +45,7 @@ namespace winrt::TerminalApp::implementation
         {
             MD_BLOCK_H_DETAIL* headerDetail = reinterpret_cast<MD_BLOCK_H_DETAIL*>(detail);
             data->current = WUX::Controls::TextBlock{};
+            data->current.IsTextSelectionEnabled(true);
             const auto fontSize = std::max(16u, 36u - ((headerDetail->level - 1) * 6u));
             data->current.FontSize(fontSize);
             data->current.FontWeight(Windows::UI::Text::FontWeights::Bold());
@@ -121,6 +122,7 @@ namespace winrt::TerminalApp::implementation
         if (data->current == nullptr)
         {
             data->current = WUX::Controls::TextBlock();
+            data->current.IsTextSelectionEnabled(true);
             data->root.Children().Append(data->current);
         }
         if (data->currentRun == nullptr)
@@ -190,6 +192,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& curr{ data->current })
             {
                 data->current = WUX::Controls::TextBlock();
+                data->current.IsTextSelectionEnabled(true);
                 data->root.Children().Append(data->current);
             }
 
@@ -229,6 +232,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 WUX::Controls::TextBlock block{};
+                block.IsTextSelectionEnabled(true);
                 block.Inlines().Append(run);
                 data->root.Children().Append(block);
                 data->current = block;
@@ -276,17 +280,18 @@ namespace winrt::TerminalApp::implementation
 
         FilePathInput().Text(initialPath);
         _filePath = FilePathInput().Text();
-        _loadMarkdown();
+        _loadFile();
     }
 
     void MarkdownPaneContent::_clearOldNotebook()
     {
         RenderedMarkdown().Children().Clear();
     }
-    void MarkdownPaneContent::_loadMarkdown()
+    void MarkdownPaneContent::_loadFile()
     {
-        // Read _filePath, then parse as markdown.
+        // TODO! use our til::io file readers
 
+        // Read _filePath, then parse as markdown.
         const wil::unique_handle file{ CreateFileW(_filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
         if (!file)
         {
@@ -308,17 +313,40 @@ namespace winrt::TerminalApp::implementation
         }
         // BLINDLY TREATING TEXT AS utf-8 (I THINK)
         std::string markdownContents{ buffer, read };
-        winrt::hstring c = winrt::to_hstring(markdownContents);
+        winrt::hstring fileContents = winrt::to_hstring(markdownContents);
+
+        // Was the file a .md file?
+        if (_filePath.ends_with(L".md"))
+        {
+            _loadMarkdown(fileContents);
+        }
+        else
+        {
+            _loadText(fileContents);
+        }
+    }
+    void MarkdownPaneContent::_loadText(const winrt::hstring& fileContents)
+    {
+        auto block = WUX::Controls::TextBlock();
+        block.IsTextSelectionEnabled(true);
+        block.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
+        block.Text(fileContents);
+        RenderedMarkdown().Children().Append(block);
+    }
+
+    void MarkdownPaneContent::_loadMarkdown(const winrt::hstring& fileContents)
+    {
         MyMarkdownData data;
         data.page = this;
 
-        const auto parseResult = parseMarkdown(c, data);
+        const auto parseResult = parseMarkdown(fileContents, data);
 
         if (0 == parseResult)
         {
             RenderedMarkdown().Children().Append(data.root);
         }
     }
+
     void MarkdownPaneContent::_loadTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
     {
         auto p = FilePathInput().Text();
@@ -334,14 +362,14 @@ namespace winrt::TerminalApp::implementation
 
             // It does. Clear the old one
             _clearOldNotebook();
-            _loadMarkdown();
+            _loadFile();
         }
     }
     void MarkdownPaneContent::_reloadTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
     {
         // Clear the old one
         _clearOldNotebook();
-        _loadMarkdown();
+        _loadFile();
     }
 
     void MarkdownPaneContent::_handleRunCommandRequest(const TerminalApp::CodeBlock& sender,
@@ -353,7 +381,6 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto& strongControl{ _control.get() })
         {
-            // Model::SendInputArgs args{ text };
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, Model::SendInputArgs{ text + winrt::hstring{ L"\r" } } };
 
             // By using the last active control as the sender here, the
