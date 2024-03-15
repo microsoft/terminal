@@ -221,8 +221,14 @@ void BackendD2D::_drawText(RenderingPayload& p)
                 if (glyphRun.fontFace)
                 {
                     D2D1_RECT_F bounds = GlyphRunEmptyBounds;
+                    wil::com_ptr<IDWriteColorGlyphRunEnumerator1> enumerator;
 
-                    if (const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), baselineOrigin, &glyphRun))
+                    if (p.s->font->colorGlyphs)
+                    {
+                        enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), baselineOrigin, &glyphRun);
+                    }
+
+                    if (enumerator)
                     {
                         while (ColorGlyphRunMoveNext(enumerator.get()))
                         {
