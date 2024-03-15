@@ -1474,7 +1474,11 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto& realArgs = args.ActionArgs().try_as<OpenMarkdownPaneArgs>())
                 {
-                    filePath = realArgs.Path();
+                    // Use the CWD of the Terminal to evaluate this path, like a
+                    // startingDirectory. This lets the `wtd open` command work
+                    // on relative file paths.
+
+                    filePath = _evaluatePathForCwd(realArgs.Path());
                 }
             }
 
