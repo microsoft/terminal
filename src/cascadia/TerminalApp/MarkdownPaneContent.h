@@ -63,12 +63,6 @@ namespace winrt::TerminalApp::implementation
 
         void _loadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _reloadTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
-        void _textBlockContextMenuOpened(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ContextMenuEventArgs& e);
-
-        void _copyCommandHandler(const IInspectable& sender, const IInspectable& args);
-        void _pasteCommandHandler(const IInspectable& sender, const IInspectable& args);
-        void _selectAllCommandHandler(const IInspectable& sender, const IInspectable& args);
-        void _copyToTerminalCommandHandler(const IInspectable& sender, const IInspectable& args);
     };
 }
 
