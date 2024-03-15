@@ -331,6 +331,9 @@ namespace winrt::TerminalApp::implementation
         block.IsTextSelectionEnabled(true);
         block.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
         block.Text(fileContents);
+        // block.ContextMenu()
+        block.ContextMenuOpening({ get_weak(), &MarkdownPaneContent::_textBlockContextMenuOpened });
+
         RenderedMarkdown().Children().Append(block);
     }
 
@@ -390,6 +393,61 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // ALL Commented out. Because apparently, the menu aint a MenuFlyout, or a CommandBarFlyout,, or a TextCommandBarFlyout
+
+    // void MarkdownPaneContent::_textBlockContextMenuOpened(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ContextMenuEventArgs& /*e*/)
+    // {
+    //     if (const auto& block{ sender.try_as<WUX::Controls::TextBlock>() })
+    //     {
+    //         auto copyToTerminalItem = WUX::Controls::AppBarButton{};
+    //         copyToTerminalItem.Label(L"Send to terminal");
+
+    //         //auto copyToTerminalItem = WUX::Controls::MenuFlyoutItem{};
+    //         //copyToTerminalItem.Text(L"Send to terminal");
+
+    //         // TODO!
+    //         // const auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
+    //         // WUX::Controls::ToolTipService::SetToolTip(commandPaletteFlyout, box_value(commandPaletteToolTip));
+    //         // Automation::AutomationProperties::SetHelpText(commandPaletteFlyout, commandPaletteToolTip);
+
+    //         WUX::Controls::FontIcon commandPaletteIcon{};
+    //         commandPaletteIcon.Glyph(L"\xE945");
+    //         commandPaletteIcon.FontFamily(WUX::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+    //         copyToTerminalItem.Icon(commandPaletteIcon);
+    //         auto weak = get_weak();
+    //         // auto weak_block = block.get_weak();
+    //         copyToTerminalItem.Click([weak, block](auto&&, auto&&) {
+    //             const auto& pane = weak.get();
+    //             const Microsoft::Terminal::Control::TermControl& strongControl = pane ? pane->_control.get() : nullptr;
+
+    //             if (pane && strongControl)
+    //             {
+    //                 Model::ActionAndArgs actionAndArgs{
+    //                     ShortcutAction::SendInput,
+    //                     Model::SendInputArgs{ block.SelectedText() }
+    //                 };
+    //                 pane->DispatchActionRequested.raise(strongControl, actionAndArgs);
+    //             }
+    //         });
+    //         if (const auto& selectionMenu{ block.SelectionFlyout() })
+    //         {
+    //             // if (const auto& commandBar{ selectionMenu.try_as<WUX::Controls::TextCommandBarFlyout>() })
+    //             // {
+    //             //     commandBar.PrimaryCommands().Append(copyToTerminalItem);
+    //             // }
+    //              if (const auto& commandBar{ selectionMenu.try_as<WUX::Controls::CommandBarFlyout>() })
+    //              {
+    //                  commandBar.PrimaryCommands().Append(copyToTerminalItem);
+    //              }
+    //             /*if (const auto& menu{ selectionMenu.try_as<WUX::Controls::MenuFlyout>() })
+    //             {
+    //                 menu.Items().Append(copyToTerminalItem);
+    //             }*/
+    //         }
+    //         // block.SelectionFlyout().try_as<WUX::Controls::TextCommandBarFlyout>().SecondaryCommands().Append(copyToTerminalItem);
+    //     }
+    // }
+
 #pragma region IPaneContent
 
     winrt::Windows::UI::Xaml::FrameworkElement MarkdownPaneContent::GetRoot()
@@ -414,5 +472,4 @@ namespace winrt::TerminalApp::implementation
     {
         _control = control;
     }
-
 }
