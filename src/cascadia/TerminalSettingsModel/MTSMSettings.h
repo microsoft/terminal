@@ -114,6 +114,7 @@ Author(s):
     X(IFontAxesMap, FontAxes, "axes")                                                  \
     X(IFontFeatureMap, FontFeatures, "features")                                       \
     X(bool, EnableBuiltinGlyphs, "builtinGlyphs", true)                                \
+    X(bool, EnableColorGlyphs, "colorGlyphs", true)                                    \
     X(winrt::hstring, CellWidth, "cellWidth")                                          \
     X(winrt::hstring, CellHeight, "cellHeight")
 

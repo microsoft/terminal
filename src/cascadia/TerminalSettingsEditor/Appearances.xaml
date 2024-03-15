@@ -423,6 +423,15 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Color Glyphs  -->
+            <local:SettingContainer x:Uid="Profile_EnableColorGlyphs"
+                                    ClearSettingValue="{x:Bind Appearance.ClearEnableColorGlyphs}"
+                                    HasSettingValue="{x:Bind Appearance.HasEnableColorGlyphs, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.EnableColorGlyphsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.EnableColorGlyphs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Retro Terminal Effect  -->
             <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"

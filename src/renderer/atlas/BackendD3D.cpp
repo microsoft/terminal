@@ -1316,7 +1316,12 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     });
 
     {
-        const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), {}, &glyphRun);
+        wil::com_ptr<IDWriteColorGlyphRunEnumerator1> enumerator;
+
+        if (p.s->font->colorGlyphs)
+        {
+            enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), {}, &glyphRun);
+        }
 
         if (!enumerator)
         {
