@@ -209,6 +209,7 @@ void AppCommandlineArgs::_buildParser()
     _buildMovePaneParser();
     _buildSwapPaneParser();
     _buildFocusPaneParser();
+    _buildOpenParser();
 }
 
 // Method Description:
@@ -537,6 +538,38 @@ void AppCommandlineArgs::_buildFocusPaneParser()
     setupSubcommand(_focusPaneShort);
 }
 
+void AppCommandlineArgs::_buildOpenParser()
+{
+    _openCommand = _app.add_subcommand("open", "Open a file in a pane");
+
+    auto setupSubcommand = [this](auto& subcommand) {
+        auto* pathOpt = subcommand->add_option("path",
+                                               _filePath,
+                                               "TODO! description");
+
+        // directionOpt->transform(CLI::CheckedTransformer(focusDirectionMap, CLI::ignore_case));
+        pathOpt->required();
+
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            if (_windowTarget.empty())
+            {
+                _windowTarget = "0";
+            }
+
+            // Build the NewTab action from the values we've parsed on the commandline.
+            ActionAndArgs action{ ShortcutAction::OpenMarkdownPane,
+                                  OpenMarkdownPaneArgs{ winrt::to_hstring(_filePath) } };
+            _startupActions.push_back(action);
+        });
+    };
+
+    setupSubcommand(_openCommand);
+}
+
 // Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
@@ -699,6 +732,7 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_swapPaneCommand ||
              *_focusPaneCommand ||
              *_focusPaneShort ||
+             *_openCommand ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand);
 }
@@ -736,6 +770,8 @@ void AppCommandlineArgs::_resetStateToDefault()
 
     _focusPaneTarget = -1;
     _loadPersistedLayoutIdx = -1;
+
+    _filePath = "";
 
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
