@@ -60,11 +60,30 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
     }
 }
 
+
+/**
+ * @brief Returns the state of the specified input mode.
+ * 
+ * This function returns the state of the specified input mode in the terminal.
+ * 
+ * @param mode The input mode whose state will be checked.
+ * @return true if the input mode is enabled, false otherwise.
+ * 
+ */
 bool TerminalInput::GetInputMode(const Mode mode) const noexcept
 {
     return _inputMode.test(mode);
 }
 
+/**
+ * @brief Resets the input modes and state of the terminal input.
+ * 
+ * This function resets the input modes and state of the terminal input to their default values.
+ * It sets the input mode to ANSI, enables auto-repeat mode, and enables alternate scroll mode.
+ * Additionally, it resets the last mouse position to (-1, -1) and the last mouse button to 0.
+ * Finally, it initializes the keyboard map.
+ * 
+ */
 void TerminalInput::ResetInputModes() noexcept
 {
     _inputMode = { Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
