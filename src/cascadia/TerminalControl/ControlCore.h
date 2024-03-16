@@ -209,6 +209,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void ClearSearch();
+        void SnapSearchResultToSelection(bool snap) noexcept;
+        bool SnapSearchResultToSelection() const noexcept;
 
         Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
 
@@ -270,12 +272,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
         TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
-        TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
+        TYPED_EVENT(UpdateSearchResults,       IInspectable, Control::UpdateSearchResultsEventArgs);
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(CompletionsChanged,        IInspectable, Control::CompletionsChangedEventArgs);
-        TYPED_EVENT(TextLayoutUpdated,         IInspectable, IInspectable);
 
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
         TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
@@ -311,6 +312,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Search _searcher;
+        bool _snapSearchResultToSelection;
 
         winrt::handle _lastSwapChainHandle{ nullptr };
 

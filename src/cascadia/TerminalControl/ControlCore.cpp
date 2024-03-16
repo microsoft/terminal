@@ -1125,6 +1125,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
             _connection.Resize(vp.Height(), vp.Width());
+
+            // let the UI know that the text layout has been updated
+            _terminal->NotifyTextLayoutUpdated();
         }
     }
 
@@ -1568,7 +1571,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalTextLayoutUpdated()
     {
-        _TextLayoutUpdatedHandlers(*this, nullptr);
+        ClearSearch();
+
+        // send an UpdateSearchResults event to the UI to put the Search UI into inactive state.
+        auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
+        evArgs->State(SearchState::InActive);
+        _UpdateSearchResultsHandlers(*this, *evArgs);
     }
 
     // Method Description:
@@ -1636,34 +1644,35 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            _searcher.MoveToCurrentSelection();
             _cachedSearchResultRows = {};
+            if (SnapSearchResultToSelection())
+            {
+                _searcher.MoveToCurrentSelection();
+                SnapSearchResultToSelection(false);
+            }
         }
         else
         {
             _searcher.FindNext();
         }
 
-        const auto foundMatch = _searcher.GetCurrent() ? true : false;
-        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
-        if (foundMatch)
+        auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
+        evArgs->State(SearchState::InActive);
+        if (!text.empty())
         {
-            // this is used for search,
-            // DO NOT call _updateSelectionUI() here.
-            // We don't want to show the markers so manually tell it to clear it.
-            _terminal->SetBlockSelection(false);
-            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
-
-            foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
-            foundResults->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
-
-            _terminal->AlwaysNotifyOnBufferRotation(true);
+            evArgs->State(SearchState::Active);
+            if (_searcher.GetCurrent())
+            {
+                evArgs->FoundMatch(true);
+                evArgs->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
+                evArgs->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
+            }
         }
         _renderer->TriggerSearchHighlight();
 
-        // Raise a FoundMatch event, which the control will use to notify
-        // narrator if there was any results in the buffer
-        _FoundMatchHandlers(*this, *foundResults);
+        // Raise an UpdateSearchResults event, which the control will use to update the
+        // UI and notify the narrator about the updated search results in the buffer
+        _UpdateSearchResultsHandlers(*this, *evArgs);
     }
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
@@ -1692,14 +1701,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ClearSearch()
     {
         const auto lock = _terminal->LockForWriting();
-
-        _terminal->AlwaysNotifyOnBufferRotation(false);
         _searcher = {};
         _cachedSearchResultRows = {};
-
         _terminal->SetSearchHighlights({});
         _terminal->SetSearchHighlightFocused({});
         _renderer->TriggerSearchHighlight();
+    }
+
+    // Method Description:
+    // - Tells ControlCore to snap the current search result index to currently
+    //   selected text if the search was started using it.
+    void ControlCore::SnapSearchResultToSelection(bool shouldSnap) noexcept
+    {
+        _snapSearchResultToSelection = shouldSnap;
+    }
+
+    // Method Description:
+    // - Returns true, if we should snap the current search result index to
+    //   the currently selected text after a new search is started, else false.
+    bool ControlCore::SnapSearchResultToSelection() const noexcept
+    {
+        return _snapSearchResultToSelection;
     }
 
     void ControlCore::Close()

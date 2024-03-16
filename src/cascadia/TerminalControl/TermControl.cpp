@@ -84,13 +84,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.TransparencyChanged = _core.TransparencyChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreTransparencyChanged });
         _revokers.RaiseNotice = _core.RaiseNotice(winrt::auto_revoke, { get_weak(), &TermControl::_coreRaisedNotice });
         _revokers.HoveredHyperlinkChanged = _core.HoveredHyperlinkChanged(winrt::auto_revoke, { get_weak(), &TermControl::_hoveredHyperlinkChanged });
-        _revokers.FoundMatch = _core.FoundMatch(winrt::auto_revoke, { get_weak(), &TermControl::_coreFoundMatch });
+        _revokers.UpdateSearchResults = _core.UpdateSearchResults(winrt::auto_revoke, { get_weak(), &TermControl::_coreUpdateSearchResults });
         _revokers.UpdateSelectionMarkers = _core.UpdateSelectionMarkers(winrt::auto_revoke, { get_weak(), &TermControl::_updateSelectionMarkers });
         _revokers.coreOpenHyperlink = _core.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.ContextMenuRequested = _interactivity.ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
-        _revokers.TextLayoutUpdated = _core.TextLayoutUpdated(winrt::auto_revoke, { get_weak(), &TermControl::_coreTextLayoutUpdated });
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
         _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
@@ -419,6 +418,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
+                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
@@ -3507,29 +3507,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Clears the search results, and updates relevant UI elements.
-    void TermControl::_ClearSearch()
-    {
-        _core.ClearSearch();
-        _UpdateSearchScrollMarks();
-        if (_searchBox)
-        {
-            _searchBox->ClearStatus();
-        }
-    }
-
-    // Method Description:
-    // - Called when the core raises a FoundMatch event. That's done in response
-    //   to us starting a search query with ControlCore::Search.
+    // - Called when the core raises a UpdateSearchResults event. That's done in response to:
+    //   - starting a search query with ControlCore::Search.
+    //   - clearing search results due to change in buffer content.
     // - The args will tell us if there were or were not any results for that
     //   particular search. We'll use that to control what to announce to
     //   Narrator. When we have more elaborate search information to report, we
     //   may want to report that here. (see GH #3920)
     // Arguments:
-    // - args: contains information about the results that were or were not found.
+    // - args: contains information about the search state and results that were
+    //         or were not found.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_coreFoundMatch(const IInspectable& /*sender*/, Control::FoundResultsArgs args)
+    winrt::fire_and_forget TermControl::_coreUpdateSearchResults(const IInspectable& /*sender*/, Control::UpdateSearchResultsEventArgs args)
     {
         co_await wil::resume_foreground(Dispatcher());
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
@@ -3546,7 +3536,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_searchBox)
         {
             _searchBox->NavigationEnabled(true);
-            if (_searchBox->TextBox().Text().empty())
+            if (args.State() == Control::SearchState::InActive)
             {
                 _searchBox->ClearStatus();
             }
@@ -3554,19 +3544,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
             }
-        }
-    }
-
-    // Method Description:
-    // - Called when the core raises a TextLayoutUpdated event.
-    winrt::fire_and_forget TermControl::_coreTextLayoutUpdated(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        co_await winrt::resume_foreground(Dispatcher());
-        auto weakThis{ get_weak() };
-        if (weakThis.get())
-        {
-            // clear the search results because the text has changed
-            _ClearSearch();
         }
     }
 
