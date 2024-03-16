@@ -324,27 +324,38 @@ TerminalInput::OutputType TerminalInput::HandleFocus(const bool focused) const
     return MakeOutput(focused ? _focusInSequence : _focusOutSequence);
 }
 
+// Initializes the key mapping for escape sequence codes.
 void TerminalInput::_initKeyboardMap() noexcept
 try
 {
+
+    // Defines a key mapping with unused modifiers.
     auto defineKeyWithUnusedModifiers = [this](const int keyCode, const std::wstring& sequence) {
         for (auto m = 0; m < 8; m++)
             _keyMap[VTModifier(m) + keyCode] = sequence;
     };
+
+    // Defines a key mapping with the Alt modifier.
     auto defineKeyWithAltModifier = [this](const int keyCode, const std::wstring& sequence) {
         _keyMap[keyCode] = sequence;
         _keyMap[Alt + keyCode] = L"\x1B" + sequence;
     };
+
+    // Defines a key mapping for numeric keypad keys.
     auto defineKeypadKey = [this](const int keyCode, const wchar_t* prefix, const wchar_t finalChar) {
         _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}"), prefix, finalChar);
         for (auto m = 1; m < 8; m++)
             _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}1;{}{}"), _csi, m + 1, finalChar);
     };
+
+    // Defines a key mapping for editing keys.
     auto defineEditingKey = [this](const int keyCode, const int parm) {
         _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}~"), _csi, parm);
         for (auto m = 1; m < 8; m++)
             _keyMap[VTModifier(m) + keyCode] = fmt::format(FMT_COMPILE(L"{}{};{}~"), _csi, parm, m + 1);
     };
+    
+    // Defines a key mapping for numeric keys.
     auto defineNumericKey = [this](const int keyCode, const wchar_t finalChar) {
         _keyMap[keyCode] = fmt::format(FMT_COMPILE(L"{}{}"), _ss3, finalChar);
         for (auto m = 1; m < 8; m++)
