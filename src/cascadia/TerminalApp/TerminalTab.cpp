@@ -1321,7 +1321,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        // "Color..."
+        // "Change tab color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         {
             Controls::FontIcon colorPickSymbol;
@@ -1340,7 +1340,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem renameTabMenuItem;
         {
-            // "Rename Tab"
+            // "Rename tab"
             Controls::FontIcon renameTabSymbol;
             renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             renameTabSymbol.Glyph(L"\xE8AC"); // Rename
@@ -1357,7 +1357,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem duplicateTabMenuItem;
         {
-            // "Duplicate Tab"
+            // "Duplicate tab"
             Controls::FontIcon duplicateTabSymbol;
             duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             duplicateTabSymbol.Glyph(L"\xF5ED");
@@ -1374,7 +1374,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem splitTabMenuItem;
         {
-            // "Split Tab"
+            // "Split tab"
             Controls::FontIcon splitTabSymbol;
             splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
@@ -1391,7 +1391,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem moveTabToNewWindowMenuItem;
         {
-            // "Move Tab to New Window"
+            // "Move tab tonNew eindow"
             Controls::FontIcon moveTabToNewWindowTabSymbol;
             moveTabToNewWindowTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             moveTabToNewWindowTabSymbol.Glyph(L"\xE8A7");
@@ -1408,7 +1408,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
-            // "Close Pane"
+            // "Close pane"
             closePaneMenuItem.Click({ get_weak(), &TerminalTab::_closePaneClicked });
             closePaneMenuItem.Text(RS_(L"ClosePaneText"));
 
@@ -1420,7 +1420,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem exportTabMenuItem;
         {
-            // "Export Tab"
+            // "Export tab"
             Controls::FontIcon exportTabSymbol;
             exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
@@ -1454,7 +1454,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem restartConnectionMenuItem = _restartConnectionMenuItem;
         {
-            // "Restart Connection"
+            // "Restart connection"
             Controls::FontIcon restartConnectionSymbol;
             restartConnectionSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             restartConnectionSymbol.Glyph(L"\xE72C");
