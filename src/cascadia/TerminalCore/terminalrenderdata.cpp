@@ -155,27 +155,9 @@ catch (...)
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
 std::vector<til::inclusive_rect> Terminal::GetSearchHighlights() const noexcept
-try
 {
     _assertLocked();
-
-    std::vector<til::inclusive_rect> result;
-
-    // find the search highlights that are within the viewport
-    const auto& viewport = _GetVisibleViewport();
-    auto lowerIt = std::lower_bound(_searchHighlights.begin(), _searchHighlights.end(), viewport.Top(), [](const til::inclusive_rect& rect, til::CoordType value) {
-        return rect.top < value;
-    });
-    const auto upperIt = std::upper_bound(_searchHighlights.begin(), _searchHighlights.end(), viewport.BottomExclusive(), [](til::CoordType value, const til::inclusive_rect& rect) {
-        return value < rect.top;
-    });
-
-    return { lowerIt, upperIt };
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return {};
+    return _searchHighlights;
 }
 
 // Method Description:

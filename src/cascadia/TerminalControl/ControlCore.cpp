@@ -1700,12 +1700,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ClearSearch()
     {
-        const auto lock = _terminal->LockForWriting();
-        _searcher = {};
-        _cachedSearchResultRows = {};
-        _terminal->SetSearchHighlights({});
-        _terminal->SetSearchHighlightFocused({});
-        _renderer->TriggerSearchHighlight();
+        // nothing to clear if there's no results
+        if (_searcher.GetCurrent())
+        {
+            _searcher = {};
+            _cachedSearchResultRows = {};
+            const auto lock = _terminal->LockForWriting();
+            _terminal->SetSearchHighlights({});
+            _terminal->SetSearchHighlightFocused({});
+            _renderer->TriggerSearchHighlight();
+        }
     }
 
     // Method Description:

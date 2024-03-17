@@ -151,6 +151,7 @@ void Search::_setResultInData() const
 {
     const auto& buffer = _renderData->GetTextBuffer();
     std::vector<til::inclusive_rect> resultRects;
+    resultRects.reserve(_results.size());
     for (const auto& result : _results)
     {
         auto bufferRects = buffer.GetTextRects(result.start, result.end, false, true);
