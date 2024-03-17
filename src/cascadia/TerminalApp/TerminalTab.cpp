@@ -1391,7 +1391,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem moveTabToNewWindowMenuItem;
         {
-            // "Move tab tonNew eindow"
+            // "Move tab to new window"
             Controls::FontIcon moveTabToNewWindowTabSymbol;
             moveTabToNewWindowTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             moveTabToNewWindowTabSymbol.Glyph(L"\xE8A7");
