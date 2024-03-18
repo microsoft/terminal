@@ -14,7 +14,6 @@
 #include "InteractivityAutomationPeer.h"
 
 #include "ControlInteractivity.g.cpp"
-#include "TermControl.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;

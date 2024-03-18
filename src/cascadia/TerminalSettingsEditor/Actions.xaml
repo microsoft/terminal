@@ -8,7 +8,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       mc:Ignorable="d">
 
     <Page.Resources>
@@ -157,7 +157,6 @@
             </Style>
 
             <!--  Converters & Misc.  -->
-            <model:IconPathConverter x:Key="IconSourceConverter" />
             <SolidColorBrush x:Key="ActionContainerBackgroundEditing"
                              Color="{ThemeResource SystemListMediumColor}" />
             <SolidColorBrush x:Key="ActionContainerBackground"
@@ -194,7 +193,7 @@
                         <TextBlock Grid.Column="0"
                                    Style="{StaticResource KeyBindingNameTextBlockStyle}"
                                    Text="{x:Bind Name, Mode=OneWay}"
-                                   Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}" />
+                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}" />
 
                         <!--  Edit Mode: Action Combo-box  -->
                         <ComboBox x:Uid="Actions_ActionComboBox"
@@ -210,7 +209,7 @@
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
                                 Style="{ThemeResource KeyChordBorderStyle}"
-                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
+                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
 
                             <TextBlock FontSize="14"
                                        Style="{ThemeResource KeyChordTextBlockStyle}"
@@ -302,7 +301,7 @@
                                     Margin="8,0,0,0"
                                     AutomationProperties.Name="{x:Bind DeleteButtonName}"
                                     Style="{StaticResource DeleteSmallButtonStyle}"
-                                    Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsNewlyAdded), Mode=OneWay}">
+                                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsNewlyAdded), Mode=OneWay}">
                                 <Button.Content>
                                     <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                               Glyph="&#xE74D;" />

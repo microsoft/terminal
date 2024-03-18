@@ -44,6 +44,7 @@ jobs:
   - task: PowerShell@2
     displayName: 'Run Unit Tests'
     inputs:
+      pwsh: true
       targetType: filePath
       filePath: build\scripts\Run-Tests.ps1
       arguments: -MatchPattern '*unit.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(Terminal.BinDir)"
@@ -52,6 +53,7 @@ jobs:
     - task: PowerShell@2
       displayName: 'Run Feature Tests'
       inputs:
+        pwsh: true
         targetType: filePath
         filePath: build\scripts\Run-Tests.ps1
         arguments: -MatchPattern '*feature.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(Terminal.BinDir)"

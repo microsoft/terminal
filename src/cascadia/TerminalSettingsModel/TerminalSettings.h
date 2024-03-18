@@ -25,7 +25,7 @@ using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hst
 using IEnvironmentVariableMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>;
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class TerminalSettingsTests;
 }
@@ -130,6 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, EnableBuiltinGlyphs, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, EnableColorGlyphs, true);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, CellWidth);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, CellHeight);
 
@@ -160,6 +161,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderImagePath);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, Elevate, false);
 
@@ -182,7 +184,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                       const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
                                       const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
 
-        friend class SettingsModelLocalTests::TerminalSettingsTests;
+        friend class SettingsModelUnitTests::TerminalSettingsTests;
     };
 }
 

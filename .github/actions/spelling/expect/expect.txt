@@ -19,6 +19,7 @@ AFew
 AFill
 AFX
 AHelper
+ahicon
 ahz
 AImpl
 AInplace
@@ -73,6 +74,7 @@ aumid
 Authenticode
 AUTOBUDDY
 AUTOCHECKBOX
+autocrlf
 autohide
 AUTOHSCROLL
 automagically
@@ -452,6 +454,7 @@ DECSTBM
 DECSTGLT
 DECSTR
 DECSWL
+DECSWT
 DECTABSR
 DECTCEM
 DECXCPR
@@ -844,6 +847,9 @@ IGNORELANGUAGE
 IHosted
 iid
 IIo
+ILC
+ILCo
+ILD
 ime
 IMPEXP
 inbox
@@ -1341,11 +1347,14 @@ pgomgr
 PGONu
 pguid
 phhook
+phico
+phicon
 phwnd
 pidl
 PIDLIST
 pids
 pii
+piml
 pinvoke
 pipename
 pipestr
@@ -1677,6 +1686,8 @@ slpit
 SManifest
 SMARTQUOTE
 SMTO
+snapcx
+snapcy
 SOLIDBOX
 Solutiondir
 somefile

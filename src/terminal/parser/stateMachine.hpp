@@ -95,7 +95,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
-        void _ActionOscDispatch(const wchar_t wch);
+        void _ActionOscDispatch();
         void _ActionSs3Dispatch(const wchar_t wch);
         void _ActionDcsDispatch(const wchar_t wch);
 
@@ -132,7 +132,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
         void _EventCsiSubParam(const wchar_t wch);
-        void _EventOscParam(const wchar_t wch) noexcept;
+        void _EventOscParam(const wchar_t wch);
         void _EventOscString(const wchar_t wch);
         void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);

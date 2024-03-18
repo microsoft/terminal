@@ -20,7 +20,7 @@ Author(s):
 #include "Command.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class KeyBindingsTests;
     class DeserializationTests;
@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // JSON
         static com_ptr<ActionMap> FromJson(const Json::Value& json);
-        std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json);
+        std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json, const bool withKeybindings = true);
         Json::Value ToJson() const;
 
         // modification
@@ -123,8 +123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //   than is necessary to be serialized.
         std::unordered_map<InternalActionID, Model::Command> _MaskingActions;
 
-        friend class SettingsModelLocalTests::KeyBindingsTests;
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::TerminalSettingsTests;
+        friend class SettingsModelUnitTests::KeyBindingsTests;
+        friend class SettingsModelUnitTests::DeserializationTests;
+        friend class SettingsModelUnitTests::TerminalSettingsTests;
     };
 }

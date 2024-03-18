@@ -23,6 +23,27 @@
                              Color="{StaticResource CardStrokeColorDefault}" />
             <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="CardStrokeColorDefaultBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCriticalBackgroundBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCautionBackgroundBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityIconBackground"
+                            ResourceKey="SystemFillColorCriticalBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
+                            ResourceKey="SystemFillColorCautionBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityIconForeground"
+                            ResourceKey="TextFillColorInverseBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconForeground"
+                            ResourceKey="TextFillColorInverseBrush" />
+
+            <StaticResource x:Key="SettingContainerTitleForeground"
+                            ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="SettingContainerMessageForeground"
+                            ResourceKey="TextFillColorPrimaryBrush" />
+
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -32,6 +53,26 @@
                              Color="{ThemeResource SystemColorWindowTextColor}" />
             <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="SystemColorButtonTextColorBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
+                            ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityBackgroundBrush"
+                            ResourceKey="SystemColorWindowColorBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityIconBackground"
+                            ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
+                            ResourceKey="SystemColorHighlightColorBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityIconForeground"
+                            ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconForeground"
+                            ResourceKey="SystemColorHighlightTextColorBrush" />
+
+            <StaticResource x:Key="SettingContainerTitleForeground"
+                            ResourceKey="SystemColorWindowTextColorBrush" />
+            <StaticResource x:Key="SettingContainerMessageForeground"
+                            ResourceKey="SystemColorWindowTextColorBrush" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -45,8 +86,37 @@
                              Color="{StaticResource CardStrokeColorDefault}" />
             <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="CardStrokeColorDefaultBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCriticalBackgroundBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCautionBackgroundBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityIconBackground"
+                            ResourceKey="SystemFillColorCriticalBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
+                            ResourceKey="SystemFillColorCautionBrush" />
+
+            <StaticResource x:Key="SettingContainerErrorSeverityIconForeground"
+                            ResourceKey="TextFillColorInverseBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconForeground"
+                            ResourceKey="TextFillColorInverseBrush" />
+
+            <StaticResource x:Key="SettingContainerTitleForeground"
+                            ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="SettingContainerMessageForeground"
+                            ResourceKey="TextFillColorPrimaryBrush" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
+
+    <FontWeight x:Key="SettingContainerTitleFontWeight">SemiBold</FontWeight>
+
+    <x:String x:Key="SettingContainerIconBackgroundGlyph">&#xF136;</x:String>
+    <x:String x:Key="SettingContainerErrorIconGlyph">&#xF13D;</x:String>
+    <x:String x:Key="SettingContainerWarningIconGlyph">&#xF13C;</x:String>
+
+    <Thickness x:Key="SettingContainerIconMargin">0,4,8,4</Thickness>
+    <x:Double x:Key="SettingContainerIconFontSize">16</x:Double>
 
     <Style x:Key="StackPanelInExpanderStyle"
            TargetType="StackPanel">
@@ -99,6 +169,7 @@
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
     </Style>
 
+    <!--  A setting container for a setting that has no additional options  -->
     <Style TargetType="local:SettingContainer">
         <Setter Property="Margin" Value="0,4,0,0" />
         <Setter Property="IsTabStop" Value="False" />
@@ -136,6 +207,7 @@
         </Setter>
     </Style>
 
+    <!--  A setting container which can expand  -->
     <Style x:Key="ExpanderSettingContainerStyle"
            TargetType="local:SettingContainer">
         <Setter Property="MaxWidth" Value="1000" />
@@ -180,6 +252,116 @@
                             </Grid>
                         </muxc:Expander.Header>
                     </muxc:Expander>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  A setting container that displays a warning with an icon  -->
+    <Style x:Key="SettingContainerWarningStyle"
+           TargetType="local:SettingContainer">
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
+                          Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
+                          Style="{StaticResource NonExpanderGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <Grid>
+                                    <TextBlock x:Name="IconBackground"
+                                               Grid.Column="0"
+                                               Margin="{StaticResource SettingContainerIconMargin}"
+                                               VerticalAlignment="Center"
+                                               AutomationProperties.AccessibilityView="Raw"
+                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                               FontSize="{StaticResource SettingContainerIconFontSize}"
+                                               Foreground="{ThemeResource SettingContainerWarningSeverityIconBackground}"
+                                               Text="{StaticResource SettingContainerIconBackgroundGlyph}" />
+
+                                    <TextBlock x:Name="StandardIcon"
+                                               Grid.Column="0"
+                                               Margin="{StaticResource SettingContainerIconMargin}"
+                                               VerticalAlignment="Center"
+                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                               FontSize="{StaticResource SettingContainerIconFontSize}"
+                                               Foreground="{ThemeResource SettingContainerWarningSeverityIconForeground}"
+                                               Text="{StaticResource SettingContainerWarningIconGlyph}" />
+                                </Grid>
+                                <TextBlock VerticalAlignment="Center"
+                                           FontWeight="{StaticResource SettingContainerTitleFontWeight}"
+                                           Foreground="{ThemeResource SettingContainerTitleForeground}"
+                                           Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
+                            </StackPanel>
+                            <TextBlock x:Name="HelpTextBlock"
+                                       Foreground="{ThemeResource SettingContainerMessageForeground}"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{TemplateBinding HelpText}" />
+                        </StackPanel>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  A setting container that displays an error with an icon  -->
+    <Style x:Key="SettingContainerErrorStyle"
+           TargetType="local:SettingContainer">
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
+                          Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
+                          Style="{StaticResource NonExpanderGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <Grid>
+                                    <TextBlock x:Name="IconBackground"
+                                               Grid.Column="0"
+                                               Margin="{StaticResource SettingContainerIconMargin}"
+                                               VerticalAlignment="Center"
+                                               AutomationProperties.AccessibilityView="Raw"
+                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                               FontSize="{StaticResource SettingContainerIconFontSize}"
+                                               Foreground="{ThemeResource SettingContainerErrorSeverityIconBackground}"
+                                               Text="{StaticResource SettingContainerIconBackgroundGlyph}" />
+
+                                    <TextBlock x:Name="StandardIcon"
+                                               Grid.Column="0"
+                                               Margin="{StaticResource SettingContainerIconMargin}"
+                                               VerticalAlignment="Center"
+                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                               FontSize="{StaticResource SettingContainerIconFontSize}"
+                                               Foreground="{ThemeResource SettingContainerErrorSeverityIconForeground}"
+                                               Text="{StaticResource SettingContainerErrorIconGlyph}" />
+                                </Grid>
+                                <TextBlock VerticalAlignment="Center"
+                                           FontWeight="{StaticResource SettingContainerTitleFontWeight}"
+                                           Foreground="{ThemeResource SettingContainerTitleForeground}"
+                                           Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
+                            </StackPanel>
+                            <TextBlock x:Name="HelpTextBlock"
+                                       Foreground="{ThemeResource SettingContainerMessageForeground}"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{TemplateBinding HelpText}" />
+                        </StackPanel>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

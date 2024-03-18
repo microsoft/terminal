@@ -61,6 +61,7 @@ namespace Microsoft::Console::Render::Atlas
         // DxRenderer - getter
         HRESULT Enable() noexcept override;
         [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept override;
+        [[nodiscard]] std::wstring_view GetPixelShaderImagePath() noexcept override;
         [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
         [[nodiscard]] float GetScaling() const noexcept override;
         [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
@@ -72,6 +73,7 @@ namespace Microsoft::Console::Render::Atlas
         void SetForceFullRepaintRendering(bool enable) noexcept override;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
         void SetPixelShaderPath(std::wstring_view value) noexcept override;
+        void SetPixelShaderImagePath(std::wstring_view value) noexcept override;
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;

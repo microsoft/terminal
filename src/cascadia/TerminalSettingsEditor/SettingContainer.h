@@ -29,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnApplyTemplate();
 
+        void SetExpanded(bool expanded);
+
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(hstring, HelpText);
         DEPENDENCY_PROPERTY(hstring, CurrentValue);

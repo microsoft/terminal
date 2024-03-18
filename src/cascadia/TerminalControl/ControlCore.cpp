@@ -390,6 +390,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
+            _renderEngine->SetPixelShaderImagePath(_settings->PixelShaderImagePath());
             _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
 
@@ -864,6 +865,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto lock = _terminal->LockForWriting();
 
         _builtinGlyphs = _settings->EnableBuiltinGlyphs();
+        _colorGlyphs = _settings->EnableColorGlyphs();
         _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
@@ -917,6 +919,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
+            _renderEngine->SetPixelShaderImagePath(newAppearance->PixelShaderImagePath());
 
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
             // the terminal should ignore the unfocused opacity from settings.
@@ -1043,6 +1046,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _actualFontFaceName = { fontFace };
 
         _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
+        _desiredFont.SetEnableColorGlyphs(_colorGlyphs);
         _desiredFont.SetCellSize(_cellWidth, _cellHeight);
 
         const auto before = _actualFont.GetSize();

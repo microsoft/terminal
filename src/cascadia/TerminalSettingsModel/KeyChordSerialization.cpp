@@ -153,7 +153,7 @@ static KeyChord _fromString(std::wstring_view wstr)
 
     while (!wstr.empty())
     {
-        const auto part = til::prefix_split(wstr, L"+");
+        const auto part = til::prefix_split(wstr, L'+');
 
         if (til::equals_insensitive_ascii(part, CTRL_KEY))
         {
