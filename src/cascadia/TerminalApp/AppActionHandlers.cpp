@@ -737,8 +737,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<ExecuteCommandlineArgs>())
         {
-            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(
-                TerminalPage::ConvertExecuteCommandlineToActions(realArgs)));
+            auto actions = winrt::single_threaded_vector<ActionAndArgs>(
+                TerminalPage::ConvertExecuteCommandlineToActions(realArgs));
 
             if (actions.Size() != 0)
             {
@@ -1065,10 +1065,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (termControl.HasSelection())
             {
-                const auto selections{ termControl.SelectedText(true) };
-
-                // concatenate the selection into a single line
-                auto searchText = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                std::wstring searchText{ termControl.SelectedText(true) };
 
                 // make it compact by replacing consecutive whitespaces with a single space
                 searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");

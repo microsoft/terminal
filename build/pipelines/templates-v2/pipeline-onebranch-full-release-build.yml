@@ -78,6 +78,9 @@ extends:
     cloudvault: # https://aka.ms/obpipelines/cloudvault
       enabled: false
     globalSdl: # https://aka.ms/obpipelines/sdl
+      asyncSdl:
+        enabled: true
+        tsaOptionsFile: 'build/config/tsa.json'
       tsa:
         enabled: true
         configFile: '$(Build.SourcesDirectory)\build\config\tsa.json'
@@ -127,10 +130,6 @@ extends:
                     feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
                     packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
                     versionListDownload: ${{ parameters.terminalInternalPackageVersion }}
-
-                - template: ./build/pipelines/templates-v2/steps-fetch-and-prepare-localizations.yml@self
-                  parameters:
-                    includePseudoLoc: true
 
           - ${{ if eq(parameters.buildWPF, true) }}:
             # Add an Any CPU build flavor for the WPF control bits
@@ -247,7 +246,7 @@ extends:
 
       - stage: Publish
         displayName: Publish
-        dependsOn: [Build, Package]
+        dependsOn: [Build]
         jobs:
           - template: ./build/pipelines/templates-v2/job-publish-symbols.yml@self
             parameters:

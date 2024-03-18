@@ -71,7 +71,7 @@ struct CharToColumnMapper
 {
     CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept;
 
-    til::CoordType GetLeadingColumnAt(ptrdiff_t offset) noexcept;
+    til::CoordType GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept;
     til::CoordType GetTrailingColumnAt(ptrdiff_t offset) noexcept;
     til::CoordType GetLeadingColumnAt(const wchar_t* str) noexcept;
     til::CoordType GetTrailingColumnAt(const wchar_t* str) noexcept;
@@ -137,6 +137,7 @@ public:
     til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
     til::CoordType NavigateToNext(til::CoordType column) const noexcept;
     til::CoordType AdjustToGlyphStart(til::CoordType column) const noexcept;
+    til::CoordType AdjustToGlyphEnd(til::CoordType column) const noexcept;
 
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
@@ -151,6 +152,7 @@ public:
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
     uint16_t size() const noexcept;
+    til::CoordType GetLastNonSpaceColumn() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
     til::CoordType MeasureRight() const noexcept;
     bool ContainsText() const noexcept;

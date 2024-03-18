@@ -60,6 +60,7 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Microsoft.Terminal.UI.h>
 #include <winrt/Windows.Services.Store.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Provider.h>
@@ -82,6 +83,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <SafeDispatcherTimer.h>
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

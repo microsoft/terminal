@@ -20,6 +20,7 @@ cpptools
 cppvsdbg
 CPRs
 cryptbase
+cscript
 DACL
 DACLs
 defaultlib
@@ -45,6 +46,7 @@ MSAA
 msixbundle
 MSVC
 MSVCP
+mtu
 muxc
 netcore
 Onefuzz
@@ -88,8 +90,10 @@ Virtualization
 visualstudio
 vscode
 VSTHRD
+WINBASEAPI
 winsdkver
 wlk
+wscript
 wslpath
 wtl
 wtt

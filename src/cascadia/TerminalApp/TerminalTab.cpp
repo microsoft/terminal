@@ -121,12 +121,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_BellIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
     {
         ShowBellIndicator(false);
-        // Just do a sanity check that the timer still exists before we stop it
-        if (_bellIndicatorTimer.has_value())
-        {
-            _bellIndicatorTimer->Stop();
-            _bellIndicatorTimer = std::nullopt;
-        }
+        _bellIndicatorTimer.Stop();
     }
 
     // Method Description:
@@ -309,7 +304,7 @@ namespace winrt::TerminalApp::implementation
         {
             Icon(_lastIconPath);
             bool isMonochrome = iconStyle == IconStyle::Monochrome;
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
+            TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
         }
     }
 
@@ -332,7 +327,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
+                TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
             }
             _iconHidden = hide;
         }
@@ -356,14 +351,13 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
-        if (!_bellIndicatorTimer.has_value())
+        if (!_bellIndicatorTimer)
         {
-            DispatcherTimer bellIndicatorTimer;
-            bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
-            bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
-            bellIndicatorTimer.Start();
-            _bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
+            _bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+            _bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
         }
+
+        _bellIndicatorTimer.Start();
     }
 
     // Method Description:
