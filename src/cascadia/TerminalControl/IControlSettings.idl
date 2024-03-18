@@ -42,6 +42,7 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
         Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
         Boolean EnableBuiltinGlyphs { get; };
+        Boolean EnableColorGlyphs { get; };
         String CellWidth { get; };
         String CellHeight { get; };
 

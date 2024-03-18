@@ -643,7 +643,7 @@ void AtlasEngine::_recreateCellCountDependentResources()
     // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
     // backgroundBitmapStride is a "count" of u32 and not in bytes,
     // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
-    _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->viewportCellCount.x) + 7) & ~7;
+    _p.colorBitmapRowStride = alignForward<size_t>(_p.s->viewportCellCount.x, 8);
     _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->viewportCellCount.y;
     _p.colorBitmap = Buffer<u32, 32>(_p.colorBitmapDepthStride * 2);
     _p.backgroundBitmap = { _p.colorBitmap.data(), _p.colorBitmapDepthStride };
