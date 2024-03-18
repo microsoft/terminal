@@ -56,7 +56,7 @@ public:
     bool ReverseLineFeed() override { return false; } // RI
     bool BackIndex() override { return false; } // DECBI
     bool ForwardIndex() override { return false; } // DECFI
-    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
+    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // DECSWT, OscWindowTitle
     bool HorizontalTabSet() override { return false; } // HTS
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT

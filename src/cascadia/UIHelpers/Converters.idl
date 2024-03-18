@@ -12,8 +12,9 @@ namespace Microsoft.Terminal.UI
         static Windows.UI.Xaml.Visibility InvertedBooleanToVisibility(Boolean value);
 
         // Numbers
-        static Int32 PercentageToPercentageValue(Double value);
+        static Double PercentageToPercentageValue(Double value);
         static Double PercentageValueToPercentage(Double value);
+        static String PercentageToPercentageString(Double value);
 
         // Strings
         static Boolean StringsAreNotEqual(String expected, String actual);
@@ -21,7 +22,6 @@ namespace Microsoft.Terminal.UI
         static String StringOrEmptyIfPlaceholder(String placeholder, String value);
 
         // Misc
-        static String AppendPercentageSign(Double value);
         static Windows.UI.Text.FontWeight DoubleToFontWeight(Double value);
         static Windows.UI.Xaml.Media.SolidColorBrush ColorToBrush(Windows.UI.Color color);
         static Double FontWeightToDouble(Windows.UI.Text.FontWeight fontWeight);

@@ -256,6 +256,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
         _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
+        _PixelShaderImagePath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderImagePath().c_str()) };
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
@@ -290,6 +291,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _FontFeatures = fontInfo.FontFeatures();
         _FontAxes = fontInfo.FontAxes();
         _EnableBuiltinGlyphs = fontInfo.EnableBuiltinGlyphs();
+        _EnableColorGlyphs = fontInfo.EnableColorGlyphs();
         _CellWidth = fontInfo.CellWidth();
         _CellHeight = fontInfo.CellHeight();
         _Padding = profile.Padding();

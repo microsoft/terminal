@@ -18,5 +18,6 @@ namespace Microsoft.Terminal.Control
         // Experimental settings
         Boolean RetroTerminalEffect { get; };
         String PixelShaderPath { get; };
+        String PixelShaderImagePath { get; };
     };
 }

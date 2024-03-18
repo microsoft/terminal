@@ -21,6 +21,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
         INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
         INHERITABLE_FONT_SETTING(Boolean, EnableBuiltinGlyphs);
+        INHERITABLE_FONT_SETTING(Boolean, EnableColorGlyphs);
         INHERITABLE_FONT_SETTING(String, CellWidth);
         INHERITABLE_FONT_SETTING(String, CellHeight);
     }
