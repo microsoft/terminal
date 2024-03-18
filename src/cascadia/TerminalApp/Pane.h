@@ -261,10 +261,11 @@ private:
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _manipulationDeltaRevoker;
+    winrt::Windows::UI::Xaml::UIElement::ManipulationStarted_revoker _manipulationStartedRevoker;
     winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _firstManipulationDeltaRevoker;
     winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _secondManipulationDeltaRevoker;
 
-    bool _shouldManipulate{ true };
+    bool _shouldManipulate{ false };
 
     Borders _borders{ Borders::None };
 
@@ -316,6 +317,8 @@ private:
     void _ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
+    void _ManipulationStartedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                     const winrt::Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs& e);
     void _ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                    const winrt::Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs& e);
 

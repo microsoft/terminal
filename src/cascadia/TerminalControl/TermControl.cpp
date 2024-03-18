@@ -1629,6 +1629,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
+            CancelDirectManipulations();
         }
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
@@ -1636,6 +1637,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
 
             _interactivity.TouchMoved(newTouchPoint.to_core_point(), _focused);
+            CancelDirectManipulations();
         }
 
         args.Handled(true);

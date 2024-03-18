@@ -51,6 +51,22 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
 
     _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
 
+    if (control)
+    {
+        control.ManipulationStarted([this](auto&&, const auto& args) {
+            _shouldManipulate = false;
+            args.Handled(true);
+        });
+    }
+    _manipulationStartedRevoker = _root.ManipulationStarted(winrt::auto_revoke, { this, &Pane::_ManipulationStartedHandler });
+
+    /*_root.ManipulationStarted([this](auto&&, const auto& args) {
+        if (!args.Handled())
+        {
+            _shouldManipulate = true;
+        }
+    });*/
+
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
@@ -88,18 +104,24 @@ Pane::Pane(std::shared_ptr<Pane> first,
     _root.Children().Append(_borderSecond);
 
     _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
-
-    _borderFirst.PointerEntered([this](auto&&, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& args) {
-        auto pointer = args.Pointer();
-        auto pointerPoint = args.GetCurrentPoint(_borderFirst);
-        if (pointerPoint.Properties().IsLeftButtonPressed())
+    /*_root.ManipulationStarted([this](auto&&, const auto& args) {
+        if (!args.Handled())
         {
-            this->_shouldManipulate = false;
+            _shouldManipulate = true;
         }
-    });
-    _borderFirst.PointerExited([this](auto&&, auto&&) {
-        this->_shouldManipulate = true;
-    });
+    });*/
+
+    // _borderFirst.PointerEntered([this](auto&&, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& args) {
+    //     auto pointer = args.Pointer();
+    //     auto pointerPoint = args.GetCurrentPoint(_borderFirst);
+    //     if (pointerPoint.Properties().IsLeftButtonPressed())
+    //     {
+    //         this->_shouldManipulate = false;
+    //     }
+    // });
+    // _borderFirst.PointerExited([this](auto&&, auto&&) {
+    //     this->_shouldManipulate = true;
+    // });
 
     _ApplySplitDefinitions();
 
@@ -394,6 +416,43 @@ void Pane::_handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const winrt
     {
         // Bubble, with us as the new sender.
         ManipulationRequested.raise(shared_from_this(), delta, side);
+    }
+}
+
+// Handler for the _root's ManipulationStarted event. We use this to check if a
+// manipulation (read: drag) started inside our content. If it did, we _don't_
+// want to do our normal pane dragging.
+//
+// Consider the case that the TermControl might be selecting text, and the user
+// drags the mouse over the pane border. We don't want that to start moving the
+// border!
+void Pane::_ManipulationStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                       const winrt::Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs& args)
+{
+    // This is added to each _root. But it also bubbles, so only leaves should actually try to handle this.
+    if (args.Handled())
+    {
+        return;
+    }
+    args.Handled(true);
+
+    assert(_IsLeaf());
+
+    const auto contentSize = _content.GetRoot().ActualSize();
+    auto transformCurrentPos = args.Position();
+    auto transformOrigin = transformCurrentPos;
+
+    const auto transform_contentFromOurRoot = _root.TransformToVisual(_content.GetRoot());
+    const auto transformInControlSpace = transform_contentFromOurRoot.TransformPoint(transformOrigin);
+    if ((transformInControlSpace.X > 0 && transformInControlSpace.X < contentSize.x) &&
+        (transformInControlSpace.Y > 0 && transformInControlSpace.Y < contentSize.y))
+    {
+        // clicked on control. bail, and don't allow any manipulations for this one.
+        _shouldManipulate = false;
+    }
+    else
+    {
+        _shouldManipulate = true;
     }
 }
 
