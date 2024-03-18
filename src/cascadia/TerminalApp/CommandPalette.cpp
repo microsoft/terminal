@@ -1348,7 +1348,7 @@ namespace winrt::TerminalApp::implementation
         // there aren't any recent commands, then just store the new command.
         if (!recentCommands)
         {
-            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(std::vector{ command })));
+            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::vector{ command }));
             return;
         }
 
