@@ -80,6 +80,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, LineHeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableBuiltinGlyphs);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableColorGlyphs);
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, DarkColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, LightColorSchemeName);
@@ -121,7 +122,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
 
         IInspectable CurrentFontFace { get; };
-        Windows.UI.Xaml.Controls.Slider BIOpacitySlider { get; };
 
         IInspectable CurrentIntenseTextStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };

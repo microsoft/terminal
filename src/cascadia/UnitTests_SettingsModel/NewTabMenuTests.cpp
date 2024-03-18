@@ -6,10 +6,9 @@
 #include "../TerminalSettingsModel/NewTabMenuEntry.h"
 #include "../TerminalSettingsModel/FolderEntry.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../TerminalSettingsModel/resource.h"
 #include "../types/inc/colorTable.hpp"
 #include "JsonTestClass.h"
-
-#include <defaults.h>
 
 using namespace Microsoft::Console;
 using namespace winrt::Microsoft::Terminal;
@@ -37,7 +36,7 @@ namespace SettingsModelUnitTests
 
         try
         {
-            const auto settings{ winrt::make_self<CascadiaSettings>(settingsString, DefaultJson) };
+            const auto settings{ winrt::make_self<CascadiaSettings>(settingsString, LoadStringResource(IDR_DEFAULTS)) };
 
             VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
 
@@ -71,7 +70,7 @@ namespace SettingsModelUnitTests
 
         try
         {
-            const auto settings{ winrt::make_self<CascadiaSettings>(settingsString, DefaultJson) };
+            const auto settings{ winrt::make_self<CascadiaSettings>(settingsString, LoadStringResource(IDR_DEFAULTS)) };
 
             VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
 

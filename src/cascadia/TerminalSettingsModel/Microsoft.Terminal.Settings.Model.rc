@@ -1,0 +1,31 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(65001)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RCDATA
+//
+IDR_DEFAULTS RCDATA "Generated Files\defaults.json"
+IDR_USER_DEFAULTS RCDATA "Generated Files\userDefaults.json"
+IDR_ENABLE_COLOR_SELECTION RCDATA "Generated Files\enableColorSelection.json"
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////

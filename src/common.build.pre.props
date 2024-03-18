@@ -167,6 +167,13 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <!-- Work around the Windows Store platform not specifying a TargetMachine for static libraries -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
+
   <!-- For Debug ONLY -->
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>

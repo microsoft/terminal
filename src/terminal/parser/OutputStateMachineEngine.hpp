@@ -52,9 +52,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionIgnore() noexcept override;
 
-        bool ActionOscDispatch(const wchar_t wch,
-                               const size_t parameter,
-                               const std::wstring_view string) override;
+        bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) override;
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) noexcept override;
 
@@ -217,6 +215,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
+            DECSWT_SetWindowTitle = 21,
             SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
@@ -225,9 +224,6 @@ namespace Microsoft::Console::VirtualTerminal
             VsCodeAction = 633,
             ITerm2Action = 1337,
         };
-
-        bool _GetOscTitle(const std::wstring_view string,
-                          std::wstring& title) const;
 
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   std::vector<size_t>& tableIndexes,
