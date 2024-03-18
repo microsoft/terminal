@@ -26,6 +26,7 @@
 #include <dxgi1_3.h>
 #include <dxgidebug.h>
 #include <VersionHelpers.h>
+#include <wincodec.h>
 
 #include <gsl/gsl_util>
 #include <gsl/pointers>
