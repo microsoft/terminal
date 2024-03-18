@@ -127,11 +127,11 @@
     <value>Split pane</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
-    <value>Terminal (Portable)</value>
+    <value>Terminal (portable)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
   </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
-    <value>Terminal (Unpackaged)</value>
+    <value>Terminal (unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
   </data>
   <data name="ApplicationVersionUnknown" xml:space="preserve">
