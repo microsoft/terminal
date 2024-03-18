@@ -17,9 +17,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _initialLoadedRevoker = Loaded(winrt::auto_revoke, [this](auto&&, auto&&) {
-            _Initialize();
-            _initialLoadedRevoker.revoke();
+        _initialLoadedRevoker = Loaded(winrt::auto_revoke, [weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto searchbox{ weakThis.get() })
+            {
+                searchbox->_Initialize();
+                searchbox->_initialLoadedRevoker.revoke();
+            }
         });
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
@@ -122,9 +125,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // visibility) after we've updated the size-dependent properties.
         VisualStateManager::GoToState(*this, L"Closed", false);
 
-        CloseAnimation().Completed([this](auto&&, auto&&) {
-            CloseAnimation().Stop();
-            VisualStateManager::GoToState(*this, L"Closed", false);
+        CloseAnimation().Completed([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto searchbox{ weakThis.get() })
+            {
+                searchbox->CloseAnimation().Stop();
+                VisualStateManager::GoToState(*searchbox, L"Closed", false);
+            }
         });
 
         _initialized = true;
