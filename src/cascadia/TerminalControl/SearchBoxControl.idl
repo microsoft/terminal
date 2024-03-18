@@ -5,13 +5,15 @@ namespace Microsoft.Terminal.Control
 {
     delegate void SearchHandler(String query, Boolean goForward, Boolean isCaseSensitive);
 
-    [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         SearchBoxControl();
         void SetFocusOnTextbox();
         void PopulateTextbox(String text);
         Boolean ContainsFocus();
         void SetStatus(Int32 totalMatches, Int32 currentMatch);
+        Windows.Foundation.Rect ContentClipRect{ get; };
+        Double OpenAnimationStartPoint{ get; };
 
         Boolean NavigationEnabled;
 
