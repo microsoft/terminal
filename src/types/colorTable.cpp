@@ -464,7 +464,7 @@ void Utils::InitializeColorTable(const std::span<COLORREF> table)
 std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept
 try
 {
-    std::stringstream ss;
+    std::string stem;
     size_t variantIndex = 0;
     auto foundVariant = false;
     for (const auto c : wstr)
@@ -485,7 +485,7 @@ try
         }
 
         // Ignore spaces.
-        if (std::iswspace(c))
+        if (c == L' ' || c == L'\f' || c == L'\n' || c == L'\r' || c == L'\t' || c == L'\v')
         {
             continue;
         }
@@ -498,11 +498,10 @@ try
             return std::nullopt;
         }
 
-        ss << gsl::narrow_cast<char>(std::towlower(c));
+        stem += gsl::narrow_cast<char>(til::tolower_ascii(c));
     }
 
-    auto name = ss.str();
-    const auto variantColorIter = xorgAppVariantColorTable.find(name);
+    const auto variantColorIter = xorgAppVariantColorTable.find(stem);
     if (variantColorIter != xorgAppVariantColorTable.end())
     {
         const auto colors = variantColorIter->second;
@@ -513,7 +512,7 @@ try
     }
 
     // Calculate the color value for gray0 - gray99.
-    if ((name == "gray" || name == "grey") && foundVariant)
+    if ((stem == "gray" || stem == "grey") && foundVariant)
     {
         if (variantIndex > 100) // size_t is unsigned, so >=0 is implicit
         {
@@ -523,7 +522,7 @@ try
         return til::color{ component, component, component };
     }
 
-    const auto colorIter = xorgAppColorTable.find(name);
+    const auto colorIter = xorgAppColorTable.find(stem);
     if (colorIter != xorgAppColorTable.end())
     {
         return colorIter->second;

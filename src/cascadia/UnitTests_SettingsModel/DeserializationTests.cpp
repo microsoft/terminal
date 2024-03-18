@@ -5,11 +5,9 @@
 
 #include "../TerminalSettingsModel/ColorScheme.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../TerminalSettingsModel/resource.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
-
-#include <defaults.h>
-#include <userDefaults.h>
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -541,7 +539,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
 
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
@@ -619,7 +617,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
 
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
@@ -656,7 +654,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
         const auto profiles = settings->AllProfiles();
         VERIFY_ARE_EQUAL(5u, profiles.Size());
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", profiles.GetAt(0).Name());
@@ -1065,7 +1063,7 @@ namespace SettingsModelUnitTests
         const auto guid1String = L"{6239a42c-1111-49a3-80bd-e8fdd045185c}";
         const winrt::guid guid1{ Utils::GuidFromString(guid1String) };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
 
         VERIFY_ARE_EQUAL(guid1String, settings->GlobalSettings().UnparsedDefaultProfile());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
@@ -2006,7 +2004,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2029,7 +2027,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2054,7 +2052,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2088,7 +2086,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2123,7 +2121,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2149,7 +2147,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2175,7 +2173,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2189,7 +2187,7 @@ namespace SettingsModelUnitTests
         const auto oldResult{ oldSettings->ToJson() };
 
         Log::Comment(L"Now, create a _new_ settings object from the re-serialization of the first");
-        implementation::SettingsLoader newLoader{ toString(oldResult), DefaultJson };
+        implementation::SettingsLoader newLoader{ toString(oldResult), implementation::LoadStringResource(IDR_DEFAULTS) };
         // NOTABLY! Don't load the fragment here.
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
@@ -2223,7 +2221,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ settings1Json, DefaultJson };
+        implementation::SettingsLoader loader{ settings1Json, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.FinalizeLayering();
 
