@@ -328,6 +328,11 @@ HRESULT AtlasEngine::Enable() noexcept
     return _api.s->misc->customPixelShaderPath;
 }
 
+[[nodiscard]] std::wstring_view AtlasEngine::GetPixelShaderImagePath() noexcept
+{
+    return _api.s->misc->customPixelShaderImagePath;
+}
+
 [[nodiscard]] bool AtlasEngine::GetRetroTerminalEffect() const noexcept
 {
     return _api.s->misc->useRetroTerminalEffect;
@@ -395,6 +400,17 @@ try
     if (_api.s->misc->customPixelShaderPath != value)
     {
         _api.s.write()->misc.write()->customPixelShaderPath = value;
+        _resolveTransparencySettings();
+    }
+}
+CATCH_LOG()
+
+void AtlasEngine::SetPixelShaderImagePath(std::wstring_view value) noexcept
+try
+{
+    if (_api.s->misc->customPixelShaderImagePath != value)
+    {
+        _api.s.write()->misc.write()->customPixelShaderImagePath = value;
         _resolveTransparencySettings();
     }
 }
@@ -849,5 +865,6 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
         fontMetrics->overline = { 0, underlineWidthU16 };
 
         fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();
+        fontMetrics->colorGlyphs = fontInfoDesired.GetEnableColorGlyphs();
     }
 }

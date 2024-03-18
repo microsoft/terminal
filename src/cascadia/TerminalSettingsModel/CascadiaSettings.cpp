@@ -43,6 +43,16 @@ winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<
     return profile;
 }
 
+std::string_view Model::implementation::LoadStringResource(int resourceID)
+{
+    const HINSTANCE moduleInstanceHandle{ wil::GetModuleInstanceHandle() };
+    const auto resource = FindResourceW(moduleInstanceHandle, MAKEINTRESOURCEW(resourceID), RT_RCDATA);
+    const auto loaded = LoadResource(moduleInstanceHandle, resource);
+    const auto sz = SizeofResource(moduleInstanceHandle, resource);
+    const auto ptr = LockResource(loaded);
+    return { reinterpret_cast<const char*>(ptr), sz };
+}
+
 winrt::hstring CascadiaSettings::Hash() const noexcept
 {
     return _hash;

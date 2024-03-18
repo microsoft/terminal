@@ -247,6 +247,8 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11PixelShader> _customPixelShader;
         wil::com_ptr<ID3D11Buffer> _customShaderConstantBuffer;
         wil::com_ptr<ID3D11SamplerState> _customShaderSamplerState;
+        wil::com_ptr<ID3D11Texture2D> _customShaderTexture;
+        wil::com_ptr<ID3D11ShaderResourceView> _customShaderTextureView;
         std::chrono::steady_clock::time_point _customShaderStartTime;
 
         wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;

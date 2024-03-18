@@ -317,6 +317,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;
         bool _builtinGlyphs = true;
+        bool _colorGlyphs = true;
         CSSLengthPercentage _cellWidth;
         CSSLengthPercentage _cellHeight;
 

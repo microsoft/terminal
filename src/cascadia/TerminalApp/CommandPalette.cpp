@@ -843,6 +843,16 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(const IInspectable& /*sender*/,
                                             const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        // When we are executing the _SelectNextTab in the TabManagement.cpp, this method
+        // is getting triggered because we set up the default value for that CommandPalette
+        // with an empty string. Therefore, to avoid the reset of the index when executing
+        // the Next/Prev tab command, we are skipping this execution.
+        // Check issue https://github.com/microsoft/terminal/issues/11146
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            return;
+        }
+
         if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
             _evaluatePrefix();
@@ -1338,7 +1348,7 @@ namespace winrt::TerminalApp::implementation
         // there aren't any recent commands, then just store the new command.
         if (!recentCommands)
         {
-            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(std::vector{ command })));
+            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::vector{ command }));
             return;
         }
 

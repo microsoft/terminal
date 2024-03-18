@@ -8,6 +8,12 @@ schedules:
         - main
     always: false # only run if there's code changes!
 
+
+parameters:
+  - name: targetBranch
+    type: string
+    default: "automated/loc-update"
+
 pool:
   vmImage: windows-2019
 
@@ -38,6 +44,13 @@ steps:
   persistCredentials: true
   path: s/Terminal.Internal
 
+- pwsh: |-
+    Install-Module PSGitHub -Scope CurrentUser -Force
+    git config --local user.email "consvc@microsoft.com"
+    git config --local user.name "Console Service Bot"
+    git config --local core.autocrlf true
+  displayName: Prepare git submission environment
+
 - task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@1
   displayName: 'Touchdown Build - 7105, PRODEXT'
   inputs:
@@ -51,13 +64,44 @@ steps:
     outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
+    localizationTarget: true
 
-# Saving one of these makes it really easy to inspect the loc output...
-- powershell: 'tar czf LocOutput.tar.gz LocOutput'
-  displayName: 'Archive Loc Output for Submission'
+- pwsh: |-
+    Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
+    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
+    $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+    & tar.exe -c -f LocOutputMunged.tar -C LocOutput .
+    & tar.exe -x -v -f LocOutputMunged.tar
+    rm LocOutputMunged.tar
+    rm -r -fo LocOutput
+    & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
+  displayName: Move Loc files to the right places
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: LocOutput'
-  inputs:
-    PathtoPublish: LocOutput.tar.gz
-    ArtifactName: LocOutput
+- pwsh: |-
+    git add **/*.resw
+    git status
+    git diff --quiet --cached --exit-code
+    If ($LASTEXITCODE -Ne 0) {
+      $Now = Get-Date
+      git commit -m "Localization Updates - $Now"
+      git push origin HEAD:refs/heads/${{parameters.targetBranch}} -f
+      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]1"
+    } Else {
+      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]0"
+    }
+  displayName: git commit and push
+
+- pwsh: |-
+    Import-Module PSGitHub
+    $BaseBranch = "$(Build.SourceBranch)" -Replace "^refs/heads/",""
+    Write-Host "Preparing PR against $BaseBranch"
+    $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
+    $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
+    $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
+    $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}" -BaseBranch $BaseBranch
+    If ($null -Eq $existingPr) {
+      $Now = Get-Date
+      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base $BaseBranch -Title "Localization Updates - $BaseBranch - $Now" -Verbose
+    }
+  displayName: Publish pull request
+  condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())
