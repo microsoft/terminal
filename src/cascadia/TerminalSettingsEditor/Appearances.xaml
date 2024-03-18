@@ -739,13 +739,12 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Slider x:Name="BIOpacitySlider"
-                            x:Uid="Profile_BackgroundImageOpacitySlider"
+                    <Slider x:Uid="Profile_BackgroundImageOpacitySlider"
                             Grid.Column="0"
                             Value="{x:Bind mtu:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
                                Style="{StaticResource SliderValueLabelStyle}"
-                               Text="{x:Bind mtu:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
+                               Text="{x:Bind mtu:Converters.PercentageToPercentageString(Appearance.BackgroundImageOpacity), Mode=OneWay}" />
                 </Grid>
             </local:SettingContainer>
         </StackPanel>

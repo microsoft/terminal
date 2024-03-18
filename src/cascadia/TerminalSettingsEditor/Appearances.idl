@@ -122,7 +122,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
 
         IInspectable CurrentFontFace { get; };
-        Windows.UI.Xaml.Controls.Slider BIOpacitySlider { get; };
 
         IInspectable CurrentIntenseTextStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
