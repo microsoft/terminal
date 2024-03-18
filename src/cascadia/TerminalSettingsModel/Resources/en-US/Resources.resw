@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Select color scheme...</value>
+    <value>Select color scheme</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
     <value>New tab</value>
@@ -127,11 +127,11 @@
     <value>Split pane</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
-    <value>Terminal (portable)</value>
+    <value>Terminal (Portable)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
   </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
-    <value>Terminal (unpackaged)</value>
+    <value>Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
   </data>
   <data name="ApplicationVersionUnknown" xml:space="preserve">
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Set the tab color...</value>
+    <value>Set the tab color</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
@@ -347,7 +347,7 @@
     <value>Reset tab title</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Rename tab title...</value>
+    <value>Rename tab title</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Resize pane</value>
@@ -441,7 +441,7 @@
     <value>Switch to the last tab</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Search for tab...</value>
+    <value>Search for tab</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Toggle always on top mode</value>
@@ -450,10 +450,10 @@
     <value>Toggle command palette</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Recent commands...</value>
+    <value>Recent commands</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Open suggestions...</value>
+    <value>Open suggestions</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
@@ -505,7 +505,7 @@
     <value>Break into the debugger</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Open settings...</value>
+    <value>Open settings</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Rename window to "{0}"</value>
@@ -515,7 +515,7 @@
     <value>Reset window name</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Rename window...</value>
+    <value>Rename window</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Display Terminal's current working directory</value>
@@ -566,7 +566,7 @@
     <value>Quit the Terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Set background opacity...</value>
+    <value>Set background opacity</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Increase background opacity by {0}%</value>
