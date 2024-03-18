@@ -2122,6 +2122,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
 
+        context->CurrentWorkingDirectory(winrt::hstring{ _terminal->GetWorkingDirectory() });
+
         return *context;
     }
 

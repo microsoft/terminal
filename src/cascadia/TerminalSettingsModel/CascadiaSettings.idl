@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.Settings.Model
         static String ApplicationVersion { get; };
 
         static void ExportFile(String path, String content);
+        static String ReadFile(String path);
 
         CascadiaSettings(String userJSON, String inboxJSON);
 

@@ -52,6 +52,23 @@ namespace winrt::TerminalApp::implementation
         // string.
 
         const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
+
+        if (const auto& strongControl{ _control.get() })
+        {
+            // TODO! this is wack. CurrentWorkingDirectory should be it's own
+            // property, or a property of ControlCore.DirectoryHistory() or
+            // something. I only have 5 minutes to pch tho so garbage will do
+            auto cwd = strongControl.CommandHistory().CurrentWorkingDirectory();
+            if (!cwd.empty())
+            {
+                auto localTasks = CascadiaSettings::ReadFile(cwd + L"\\.wt.json");
+                if (!localTasks.empty())
+                {
+                    Command::AddLocalCommands(tasks, localTasks);
+                }
+            }
+        }
+
         _allTasks = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
         for (const auto& t : tasks)
         {
@@ -106,6 +123,7 @@ namespace winrt::TerminalApp::implementation
     void TasksPaneContent::SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control)
     {
         _control = control;
+        UpdateSettings(_settings);
     }
 
     void TasksPaneContent::_runCommandButtonClicked(const Windows::Foundation::IInspectable& sender,
