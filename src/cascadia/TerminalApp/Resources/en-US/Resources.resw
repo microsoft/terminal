@@ -194,7 +194,7 @@
     <value>Multiple panes</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Close...</value>
+    <value>Close</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Close tabs to the right</value>
@@ -462,7 +462,7 @@
     <value>About</value>
   </data>
   <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Send Feedback</value>
+    <value>Send feedback</value>
   </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
@@ -472,7 +472,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Getting Started</value>
+    <value>Getting started</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -579,10 +579,10 @@
     <value>Failed parsing command line:</value>
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
-    <value>Command Palette</value>
+    <value>Command palette</value>
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
-    <value>Tab Switcher</value>
+    <value>Tab switcher</value>
   </data>
   <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
     <value>Type a tab name...</value>
@@ -754,7 +754,7 @@
     <value>Split the window and start in given directory</value>
   </data>
   <data name="ExportTabText" xml:space="preserve">
-    <value>Export Text</value>
+    <value>Export text</value>
   </data>
   <data name="ExportFailure" xml:space="preserve">
     <value>Failed to export terminal content</value>
@@ -766,7 +766,7 @@
     <value>Find</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>Plain Text</value>
+    <value>Plain text</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Termination behavior can be configured in advanced profile settings.</value>
@@ -778,7 +778,7 @@
     <value>Don't show again</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>This Terminal window is running as admin</value>
+    <value>This Terminal window is running as administrator</value>
   </data>
   <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
     <value>Open settings</value>
@@ -861,7 +861,7 @@
     <value>Moves tab to a new window </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>Run as Administrator</value>
+    <value>Run as administrator</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">

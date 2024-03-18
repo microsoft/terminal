@@ -121,10 +121,10 @@
     <value>Select color scheme...</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>New Tab...</value>
+    <value>New tab</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Split Pane...</value>
+    <value>Split pane</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portable)</value>
