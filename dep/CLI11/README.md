@@ -1,4 +1,4 @@
 # CLI11
 
-Taken from [release v2.4.0](https://github.com/CLIUtils/CLI11/releases/tag/v2.4.0), source commit
-[88e9bb1](https://github.com/CLIUtils/CLI11/commit/88e9bb17418ee730817d5942894d99a4bdd78fb3)
+Taken from [release v2.4.1](https://github.com/CLIUtils/CLI11/releases/tag/v2.4.1), source commit
+[f4d0731](https://github.com/CLIUtils/CLI11/commit/f4d0731cebb123ff0ace712c099dffbcd2c58e5a)
