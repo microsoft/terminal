@@ -284,7 +284,6 @@ bool Pane::_Resize(const ResizeDirection& direction, float amount)
         return false;
     }
 
-    // auto amount = .05f;
     if (direction == ResizeDirection::Right || direction == ResizeDirection::Down)
     {
         amount = -amount;
@@ -2088,9 +2087,6 @@ void Pane::_ApplySplitDefinitions()
 
         _firstChild->_ApplySplitDefinitions();
         _secondChild->_ApplySplitDefinitions();
-
-        // Only allow x-axis resizing
-        // _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX);
     }
     else if (_splitState == SplitState::Horizontal)
     {
@@ -2103,9 +2099,6 @@ void Pane::_ApplySplitDefinitions()
 
         _firstChild->_ApplySplitDefinitions();
         _secondChild->_ApplySplitDefinitions();
-
-        // Only allow y-axis resizing
-        // _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
     }
     else
     {
@@ -2114,7 +2107,10 @@ void Pane::_ApplySplitDefinitions()
         _manipulationDeltaRevoker = _root.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
     }
 
-    _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX | Xaml::Input::ManipulationModes::TranslateRailsX | Xaml::Input::ManipulationModes::TranslateY | Xaml::Input::ManipulationModes::TranslateRailsY);
+    _root.ManipulationMode(Xaml::Input::ManipulationModes::TranslateX |
+                           Xaml::Input::ManipulationModes::TranslateRailsX |
+                           Xaml::Input::ManipulationModes::TranslateY |
+                           Xaml::Input::ManipulationModes::TranslateRailsY);
     _UpdateBorders();
 }
 
@@ -2480,8 +2476,6 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 {
     auto actualSplitType = _convertAutomaticOrDirectionalSplitState(splitType);
 
-    // _manipulationDeltaRevoker.revoke();
-
     if (_IsLeaf())
     {
         // Remove our old GotFocus handler from the control. We don't want the
@@ -2536,9 +2530,6 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _borderFirst.Child(_firstChild->GetRootElement());
     _borderSecond.Child(_secondChild->GetRootElement());
 
-    // _firstManipulationDeltaRevoker = _borderFirst.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
-    // _secondManipulationDeltaRevoker = _borderSecond.ManipulationDelta(winrt::auto_revoke, { this, &Pane::_ManipulationDeltaHandler });
-
     _root.Children().Append(_borderFirst);
     _root.Children().Append(_borderSecond);
 
@@ -2546,7 +2537,6 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 
     _firstManipulatedToken = _firstChild->ManipulationRequested({ this, &Pane::_handleOrBubbleManipulation });
     _secondManipulatedToken = _secondChild->ManipulationRequested({ this, &Pane::_handleOrBubbleManipulation });
-    // _secondChild->ManipulationRequested(handler);
 
     // Register event handlers on our children to handle their Close events
     _SetupChildCloseHandlers();
