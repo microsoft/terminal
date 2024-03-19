@@ -22,7 +22,7 @@ namespace winrt::TerminalApp::implementation
                             const winrt::Microsoft::Terminal::Control::TermControl& control);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
-        winrt::Microsoft::Terminal::Control::TermControl GetTerminal();
+        winrt::Microsoft::Terminal::Control::TermControl GetTermControl();
         winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();

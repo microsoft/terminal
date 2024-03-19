@@ -1306,7 +1306,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        const auto& control{ paneContent.GetTerminal() };
+        const auto& control{ paneContent.GetTermControl() };
         if (control == nullptr)
         {
             return nullptr;
@@ -3219,7 +3219,7 @@ namespace winrt::TerminalApp::implementation
         // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            paneContent.GetTerminal().Connection(connection);
+            paneContent.GetTermControl().Connection(connection);
             connection.Start();
         }
     }

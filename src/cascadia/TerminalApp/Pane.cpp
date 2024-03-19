@@ -1081,14 +1081,7 @@ TermControl Pane::GetLastFocusedTerminalControl()
             {
                 if (p->_IsLeaf())
                 {
-                    if (const auto& terminalPane{ p->_content.try_as<TerminalPaneContent>() })
-                    {
-                        return terminalPane.GetTerminal();
-                    }
-                    else
-                    {
-                        return nullptr;
-                    }
+                    return p->GetTerminalControl();
                 }
                 pane = p;
             }
@@ -1096,15 +1089,8 @@ TermControl Pane::GetLastFocusedTerminalControl()
         }
         return _firstChild->GetLastFocusedTerminalControl();
     }
-
-    if (const auto& terminalPane{ _content.try_as<TerminalPaneContent>() })
-    {
-        return terminalPane.GetTerminal();
-    }
-    else
-    {
-        return nullptr;
-    }
+    // we _are_ a leaf.
+    return GetTerminalControl();
 }
 
 // Method Description:
@@ -1118,7 +1104,7 @@ TermControl Pane::GetTerminalControl() const
 {
     if (const auto& terminalPane{ _getTerminalContent() })
     {
-        return terminalPane.GetTerminal();
+        return terminalPane.GetTermControl();
     }
     else
     {

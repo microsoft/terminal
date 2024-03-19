@@ -1040,7 +1040,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& termContent{ content.try_as<TerminalApp::TerminalPaneContent>() })
             {
-                _addBroadcastHandlers(termContent.GetTerminal(), events);
+                _addBroadcastHandlers(termContent.GetTermControl(), events);
             }
         }
 
@@ -1722,7 +1722,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
             {
-                return termContent.GetTerminal();
+                return termContent.GetTermControl();
             }
         }
         return nullptr;

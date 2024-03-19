@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _control;
     }
-    winrt::Microsoft::Terminal::Control::TermControl TerminalPaneContent::GetTerminal()
+    winrt::Microsoft::Terminal::Control::TermControl TerminalPaneContent::GetTermControl()
     {
         return _control;
     }
