@@ -26,15 +26,15 @@ namespace TerminalApp
 
         void Close();
 
-        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> CloseRequested;
 
-        event Windows.Foundation.TypedEventHandler<Object, BellEventArgs> BellRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> TaskbarProgressChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> FocusRequested;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, BellEventArgs> BellRequested;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TabColorChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TaskbarProgressChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> FocusRequested;
     };
 
 

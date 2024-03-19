@@ -48,14 +48,14 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Size GridUnitSize();
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
-        til::typed_event<> CloseRequested;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;
-        til::typed_event<> TitleChanged;
-        til::typed_event<> TabColorChanged;
-        til::typed_event<> TaskbarProgressChanged;
         til::typed_event<> ConnectionStateChanged;
-        til::typed_event<> ReadOnlyChanged;
-        til::typed_event<> FocusRequested;
+        til::typed_event<IPaneContent> CloseRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent> TitleChanged;
+        til::typed_event<IPaneContent> TabColorChanged;
+        til::typed_event<IPaneContent> TaskbarProgressChanged;
+        til::typed_event<IPaneContent> ReadOnlyChanged;
+        til::typed_event<IPaneContent> FocusRequested;
 
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };

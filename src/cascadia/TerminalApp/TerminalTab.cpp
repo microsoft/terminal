@@ -1021,17 +1021,14 @@ namespace winrt::TerminalApp::implementation
 
         events.FocusRequested = content.FocusRequested(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto) -> winrt::fire_and_forget {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
                 {
                     if (tab->_focused())
                     {
-                        if (const auto content{ sender.try_as<TerminalApp::IPaneContent>() })
-                        {
-                            content.Focus(FocusState::Pointer);
-                        }
+                        sender.Focus(FocusState::Pointer);
                     }
                 }
             });
