@@ -407,7 +407,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
-                _searchBox->Visibility(Visibility::Visible);
 
                 // If a text is selected inside terminal, use it to populate the search box.
                 // If the search box already contains a value, it will be overridden.
@@ -423,7 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
                 }
 
-                _searchBox->SetFocusOnTextbox();
+                _searchBox->Open([searchBox]() { searchBox.SetFocusOnTextbox(); });
             }
         }
     }
@@ -504,7 +503,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              const RoutedEventArgs& /*args*/)
     {
         _core.ClearSearch();
-        _searchBox->Visibility(Visibility::Collapsed);
+        _searchBox->Close();
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
