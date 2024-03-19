@@ -3,9 +3,19 @@
 
 #pragma once
 #include "TerminalPaneContent.g.h"
+#include "BellEventArgs.g.h"
 
 namespace winrt::TerminalApp::implementation
 {
+    struct BellEventArgs : public BellEventArgsT<BellEventArgs>
+    {
+    public:
+        BellEventArgs(bool flashTaskbar) :
+            FlashTaskbar(flashTaskbar) {}
+
+        til::property<bool> FlashTaskbar;
+    };
+
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>
     {
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
@@ -13,7 +23,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
         winrt::Microsoft::Terminal::Control::TermControl GetTerminal();
-        winrt::Windows::Foundation::Size MinSize();
+        winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
 
@@ -35,7 +45,7 @@ namespace winrt::TerminalApp::implementation
         bool ReadOnly() { return _control.ReadOnly(); }
 
         float SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap);
-        Windows::Foundation::Size GridSize();
+        Windows::Foundation::Size GridUnitSize();
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
         til::typed_event<> CloseRequested;

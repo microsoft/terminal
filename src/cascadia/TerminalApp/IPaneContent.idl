@@ -13,7 +13,7 @@ namespace TerminalApp
     {
         Windows.UI.Xaml.FrameworkElement GetRoot();
 
-        Windows.Foundation.Size MinSize { get; };
+        Windows.Foundation.Size MinimumSize { get; };
 
         String Title { get; };
         UInt64 TaskbarState { get; };
@@ -47,6 +47,6 @@ namespace TerminalApp
     interface ISnappable
     {
         Single SnapDownToGrid(PaneSnapDirection direction, Single sizeToSnap);
-        Windows.Foundation.Size GridSize { get; };
+        Windows.Foundation.Size GridUnitSize { get; };
     };
 }

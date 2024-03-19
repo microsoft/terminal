@@ -4,8 +4,6 @@
 #include "pch.h"
 #include "Pane.h"
 
-#include "BellEventArgs.g.cpp"
-
 #include "AppLogic.h"
 
 #include "Utils.h"
@@ -2642,7 +2640,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
         }
         else
         {
-            const auto cellSize = snappable.GridSize();
+            const auto cellSize = snappable.GridUnitSize();
             const auto higher = lower + (direction == PaneSnapDirection::Width ?
                                              cellSize.Width :
                                              cellSize.Height);
@@ -2703,13 +2701,11 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
                 // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
                 // however be already snapped, so add 1 to make sure it really increases
                 // (not strictly necessary but to avoid surprises).
-                sizeNode.size = _CalcSnappedDimension(widthOrHeight,
-                                                      sizeNode.size + 1)
-                                    .higher;
+                sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
             }
             else
             {
-                const auto cellSize = snappable.GridSize();
+                const auto cellSize = snappable.GridUnitSize();
                 sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
             }
         }
@@ -2825,7 +2821,7 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        auto controlSize = _content.MinSize();
+        auto controlSize = _content.MinimumSize();
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
