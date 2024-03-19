@@ -1033,6 +1033,33 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
+        events.BellRequested = content.BellRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto bellArgs) -> winrt::fire_and_forget {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (const auto tab{ weakThisCopy.get() })
+                {
+                    if (bellArgs.FlashTaskbar())
+                    {
+                        // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
+                        // In this part of the chain we bubble it from the hosting tab to the page
+                        tab->_TabRaiseVisualBellHandlers();
+                    }
+
+                    // Show the bell indicator in the tab header
+                    tab->ShowBellIndicator(true);
+
+                    // If this tab is focused, activate the bell indicator timer, which will
+                    // remove the bell indicator once it fires
+                    // (otherwise, the indicator is removed when the tab gets focus)
+                    if (tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        tab->ActivateBellIndicatorTimer();
+                    }
+                }
+            });
+
         if (_tabStatus.IsInputBroadcastActive())
         {
             if (const auto& termContent{ content.try_as<TerminalApp::TerminalPaneContent>() })
