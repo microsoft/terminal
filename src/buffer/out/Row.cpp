@@ -348,12 +348,6 @@ void ROW::_init() noexcept
 #pragma warning(push)
 }
 
-void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)
-{
-    _attr = attr;
-    _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
-}
-
 void ROW::CopyFrom(const ROW& source)
 {
     _lineRendition = source._lineRendition;
@@ -365,7 +359,8 @@ void ROW::CopyFrom(const ROW& source)
     };
     CopyTextFrom(state);
 
-    TransferAttributes(source.Attributes(), _columnCount);
+    _attr = source.Attributes();
+    _attr.resize_trailing_extent(_columnCount);
 }
 
 // Returns the previous possible cursor position, preceding the given column.
