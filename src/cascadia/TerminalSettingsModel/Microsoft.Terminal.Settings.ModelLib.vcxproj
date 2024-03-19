@@ -20,6 +20,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="ActionArgsMagic.h" />
     <ClInclude Include="NewTabMenuEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
@@ -238,6 +239,9 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Microsoft.Terminal.Settings.Model.rc" />
+  </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -320,26 +324,13 @@
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <!-- PowerShell version check, outputs error if the wrong version is installed. -->
-  <Target Name="_WindowsPowershellVersionCheck" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
-  </Target>
-  <Target Name="_PowershellVersionCheck" BeforeTargets="BeforeClCompile">
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
-  </Target>
-  <!-- This target will take our defaults.json and stamp it into a .h file that
-  we can include in the code directly. This way, we don't need to worry about
-  failing to load the default settings at runtime. -->
-  <Target Name="_TerminalAppGenerateDefaultsH" Inputs="defaults.json" Outputs="Generated Files\defaults.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile defaults.json -OutPath &quot;Generated Files\defaults.h&quot; -VariableName DefaultJson" />
-  </Target>
-  <!-- Same as above, but for the default settings.json template -->
-  <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.h&quot; -VariableName UserSettingsJson" />
-  </Target>
-  <!-- Same as above, but for the enableColorSelection actions -->
-  <Target Name="_TerminalAppGenerateEnableColorSelectionSettingsH" Inputs="enableColorSelection.json" Outputs="Generated Files\enableColorSelection.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.h&quot; -VariableName EnableColorSelectionSettingsJson" />
-  </Target>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+  <Target Name="BeforeResourceCompile" Inputs="defaults.json;userDefaults.json;enableColorSelection.json" Outputs="Generated Files\defaults.json;Generated Files\userDefaults.json;Generated Files\enableColorSelection.json">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile defaults.json -OutPath &quot;Generated Files\defaults.json&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.json&quot;" />
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.json&quot;" />
+  </Target>
 
 </Project>

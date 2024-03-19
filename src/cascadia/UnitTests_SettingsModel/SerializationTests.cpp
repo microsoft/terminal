@@ -5,9 +5,9 @@
 
 #include "../TerminalSettingsModel/ColorScheme.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../TerminalSettingsModel/resource.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
-#include <defaults.h>
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -588,14 +588,14 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         oldLoader.MergeInboxIntoUserSettings();
         oldLoader.FinalizeLayering();
         VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
         const auto oldResult{ oldSettings->ToJson() };
 
-        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
         newLoader.FixupUserSettings();
@@ -630,7 +630,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         oldLoader.MergeInboxIntoUserSettings();
         oldLoader.FinalizeLayering();
         oldLoader.FixupUserSettings();
@@ -638,7 +638,7 @@ namespace SettingsModelUnitTests
         const auto oldResult{ oldSettings->ToJson() };
 
         Log::Comment(L"Now, create a _new_ settings object from the re-serialization of the first");
-        implementation::SettingsLoader newLoader{ toString(oldResult), DefaultJson };
+        implementation::SettingsLoader newLoader{ toString(oldResult), implementation::LoadStringResource(IDR_DEFAULTS) };
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
         newLoader.FixupUserSettings();
@@ -763,14 +763,14 @@ namespace SettingsModelUnitTests
             ]
         })-" };
 
-        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         oldLoader.MergeInboxIntoUserSettings();
         oldLoader.FinalizeLayering();
         VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
         const auto oldResult{ oldSettings->ToJson() };
 
-        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
         newLoader.FixupUserSettings();
@@ -860,14 +860,14 @@ namespace SettingsModelUnitTests
             ]
         })-" };
 
-        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         oldLoader.MergeInboxIntoUserSettings();
         oldLoader.FinalizeLayering();
         VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
         const auto oldResult{ oldSettings->ToJson() };
 
-        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
         newLoader.FixupUserSettings();
@@ -932,14 +932,14 @@ namespace SettingsModelUnitTests
             "schemes": [ ]
         })-" };
 
-        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         oldLoader.MergeInboxIntoUserSettings();
         oldLoader.FinalizeLayering();
         VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
         const auto oldResult{ oldSettings->ToJson() };
 
-        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
         newLoader.FixupUserSettings();

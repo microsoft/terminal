@@ -131,7 +131,7 @@ void WindowThread::Refrigerate()
     _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
 
     // keep a reference to the HWND and DesktopWindowXamlSource alive.
-    _warmWindow = std::move(_host->Refrigerate());
+    _warmWindow = _host->Refrigerate();
 
     // rundown remaining messages before destructing the app host
     _pumpRemainingXamlMessages();

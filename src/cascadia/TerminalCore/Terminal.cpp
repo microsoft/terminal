@@ -1602,7 +1602,7 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 // These functions are used by TerminalInput, which must build in conhost
 // against OneCore compatible signatures. See the definitions in
 // VtApiRedirection.hpp (which we cannot include cross-project.)
-// Since we do nto run on OneCore, we can dispense with the compatibility
+// Since we don't run on OneCore, we can dispense with the compatibility
 // shims.
 extern "C" UINT OneCoreSafeMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType)
 {

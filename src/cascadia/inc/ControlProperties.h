@@ -27,7 +27,8 @@
     X(winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center) \
     X(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center)       \
     X(bool, RetroTerminalEffect, false)                                                                                                         \
-    X(winrt::hstring, PixelShaderPath)
+    X(winrt::hstring, PixelShaderPath)                                                                                                          \
+    X(winrt::hstring, PixelShaderImagePath)
 
 // --------------------------- Core Settings ---------------------------
 //  All of these settings are defined in ICoreSettings.
@@ -64,6 +65,7 @@
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
     X(bool, EnableBuiltinGlyphs, true)                                                                                                                   \
+    X(bool, EnableColorGlyphs, true)                                                                                                                     \
     X(winrt::hstring, CellWidth)                                                                                                                         \
     X(winrt::hstring, CellHeight)                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \

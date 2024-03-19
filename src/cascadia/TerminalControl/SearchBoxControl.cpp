@@ -17,6 +17,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
+        _initialLoadedRevoker = Loaded(winrt::auto_revoke, [weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto searchbox{ weakThis.get() })
+            {
+                searchbox->_Initialize();
+                searchbox->_initialLoadedRevoker.revoke();
+            }
+        });
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
         this->RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
@@ -39,6 +46,165 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _focusableElements.insert(GoBackwardButton());
 
         StatusBox().Width(_GetStatusMaxWidth());
+    }
+
+    winrt::Windows::Foundation::Rect SearchBoxControl::ContentClipRect() const noexcept
+    {
+        return _contentClipRect;
+    }
+
+    void SearchBoxControl::_ContentClipRect(const winrt::Windows::Foundation::Rect& rect)
+    {
+        if (rect != _contentClipRect)
+        {
+            _contentClipRect = rect;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"ContentClipRect" });
+        }
+    }
+
+    double SearchBoxControl::OpenAnimationStartPoint() const noexcept
+    {
+        return _openAnimationStartPoint;
+    }
+
+    void SearchBoxControl::_OpenAnimationStartPoint(double y)
+    {
+        if (y != _openAnimationStartPoint)
+        {
+            _openAnimationStartPoint = y;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"OpenAnimationStartPoint" });
+        }
+    }
+
+    void SearchBoxControl::_UpdateSizeDependents()
+    {
+        const winrt::Windows::Foundation::Size infiniteSize{ std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity() };
+        Measure(infiniteSize);
+        const auto desiredSize = DesiredSize();
+        _OpenAnimationStartPoint(-desiredSize.Height);
+        _ContentClipRect({ 0, 0, desiredSize.Width, desiredSize.Height });
+    }
+
+    void SearchBoxControl::_PlayOpenAnimation()
+    {
+        if (CloseAnimation().GetCurrentState() == Media::Animation::ClockState::Active)
+        {
+            CloseAnimation().Stop();
+        }
+
+        if (OpenAnimation().GetCurrentState() != Media::Animation::ClockState::Active)
+        {
+            OpenAnimation().Begin();
+        }
+    }
+
+    void SearchBoxControl::_PlayCloseAnimation()
+    {
+        if (OpenAnimation().GetCurrentState() == Media::Animation::ClockState::Active)
+        {
+            OpenAnimation().Stop();
+        }
+
+        if (CloseAnimation().GetCurrentState() != Media::Animation::ClockState::Active)
+        {
+            CloseAnimation().Begin();
+        }
+    }
+
+    // Method Description:
+    // - Sets the search box control to its initial state and calls the initialized callback if it's set.
+    void SearchBoxControl::_Initialize()
+    {
+        _UpdateSizeDependents();
+
+        // Search box is in Visible visibility state by default. This is to make
+        // sure DesiredSize() returns the correct size for the search box.
+        // (DesiredSize() seems to report a size of 0,0 until the control is
+        // visible for the first time, i.e not in Collapsed state).
+        // Here, we set the search box to "Closed" state (and hence Collapsed
+        // visibility) after we've updated the size-dependent properties.
+        VisualStateManager::GoToState(*this, L"Closed", false);
+
+        CloseAnimation().Completed([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto searchbox{ weakThis.get() })
+            {
+                searchbox->CloseAnimation().Stop();
+                VisualStateManager::GoToState(*searchbox, L"Closed", false);
+            }
+        });
+
+        _initialized = true;
+        if (_initializedCallback)
+        {
+            _initializedCallback();
+            _initializedCallback = nullptr;
+        }
+    }
+
+    bool SearchBoxControl::_AnimationEnabled()
+    {
+        const auto uiSettings = winrt::Windows::UI::ViewManagement::UISettings{};
+        const auto isOsAnimationEnabled = uiSettings.AnimationsEnabled();
+        const auto isAppAnimationEnabled = Media::Animation::Timeline::AllowDependentAnimations();
+        return isOsAnimationEnabled && isAppAnimationEnabled;
+    }
+
+    // Method Description:
+    // - Opens the search box taking a callback to be executed when it's opened.
+    void SearchBoxControl::Open(std::function<void()> callback)
+    {
+        // defer opening the search box until we have initialized our size-dependent
+        // properties so we don't animate to wrong values.
+        if (!_initialized)
+        {
+            _initializedCallback = [this, callback]() { Open(callback); };
+        }
+        else
+        {
+            // don't run animation if we're already open.
+            // Note: We can't apply this check at the beginning of the function because the
+            // search box remains in Visible state (though not really *visible*) during the
+            // first load. So, we only need to apply this check here (after checking that
+            // we're done initializing).
+            if (Visibility() == Visibility::Visible)
+            {
+                callback();
+                return;
+            }
+
+            VisualStateManager::GoToState(*this, L"Opened", false);
+
+            // Call the callback only after we're in Opened state. Setting focus
+            // (through the callback) to a collapsed search box will not work.
+            callback();
+
+            // Don't animate if animation is disabled
+            if (_AnimationEnabled())
+            {
+                _PlayOpenAnimation();
+            }
+        }
+    }
+
+    // Method Description:
+    // - Closes the search box.
+    void SearchBoxControl::Close()
+    {
+        // Nothing to do if we're already closed
+        if (Visibility() == Visibility::Collapsed)
+        {
+            return;
+        }
+
+        if (_AnimationEnabled())
+        {
+            // close animation will set the state to "Closed" in its Completed handler.
+            _PlayCloseAnimation();
+        }
+        else
+        {
+            VisualStateManager::GoToState(*this, L"Closed", false);
+        }
     }
 
     // Method Description:
