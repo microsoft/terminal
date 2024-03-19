@@ -223,14 +223,18 @@
         <mux:TeachingTip x:Name="ActionSavedToast"
                          x:Uid="ActionSavedToast"
                          Title="Action Saved"
-                         x:Load="False"
                          HorizontalAlignment="Stretch"
+                         x:Load="False"
                          IsLightDismissEnabled="True">
             <mux:TeachingTip.Content>
-                <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch">
-                    <TextBlock x:Name="ActionSavedNameText" Text="" />
-                    <TextBlock x:Name="ActionSavedKeyChordText" Text="" />
-                    <TextBlock x:Name="ActionSavedCommandLineText" Text="" />
+                <StackPanel HorizontalAlignment="Stretch"
+                            Orientation="Vertical">
+                    <TextBlock x:Name="ActionSavedNameText"
+                               Text="" />
+                    <TextBlock x:Name="ActionSavedKeyChordText"
+                               Text="" />
+                    <TextBlock x:Name="ActionSavedCommandLineText"
+                               Text="" />
                 </StackPanel>
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
@@ -240,7 +244,8 @@
                          x:Load="False"
                          IsLightDismissEnabled="True">
             <mux:TeachingTip.Content>
-                <TextBlock x:Name="ActionSaveFailedMessage" Text="" />
+                <TextBlock x:Name="ActionSaveFailedMessage"
+                           Text="" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
     </Grid>

@@ -1231,7 +1231,7 @@ namespace winrt::TerminalApp::implementation
             args.Handled(true);
         }
     }
-    
+
     void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {

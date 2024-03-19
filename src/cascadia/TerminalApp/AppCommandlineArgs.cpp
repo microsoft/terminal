@@ -589,7 +589,7 @@ void AppCommandlineArgs::_buildSaveParser()
             {
                 args.KeyChord(winrt::to_hstring(_keyChordOption));
             }
-            
+
             if (!_saveInputName.empty())
             {
                 winrt::hstring hString = winrt::to_hstring(_saveInputName);

@@ -957,7 +957,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return winrt::hstring{ ss.str() };
-     }
+    }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)
     {
