@@ -3,8 +3,6 @@
 
 #pragma once
 #include "TerminalPaneContent.g.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
-#include <til/winrt.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -29,7 +27,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
         {
             return _profile;
-        };
+        }
 
         winrt::hstring Title() { return _control.Title(); }
         uint64_t TaskbarState() { return _control.TaskbarState(); }

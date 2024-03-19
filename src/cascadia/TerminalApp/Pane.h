@@ -22,6 +22,7 @@
 
 #include "TaskbarState.h"
 #include "TerminalPaneContent.h"
+#include "BellEventArgs.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -57,6 +58,18 @@ struct PaneResources
     winrt::Windows::UI::Xaml::Media::SolidColorBrush focusedBorderBrush{ nullptr };
     winrt::Windows::UI::Xaml::Media::SolidColorBrush unfocusedBorderBrush{ nullptr };
     winrt::Windows::UI::Xaml::Media::SolidColorBrush broadcastBorderBrush{ nullptr };
+};
+
+namespace winrt::TerminalApp::implementation
+{
+    struct BellEventArgs : public BellEventArgsT<BellEventArgs>
+    {
+    public:
+        BellEventArgs(bool flashTaskbar) :
+            FlashTaskbar(flashTaskbar) {}
+
+        til::property<bool> FlashTaskbar;
+    };
 };
 
 class Pane : public std::enable_shared_from_this<Pane>

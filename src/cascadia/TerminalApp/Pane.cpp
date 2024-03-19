@@ -3,6 +3,9 @@
 
 #include "pch.h"
 #include "Pane.h"
+
+#include "BellEventArgs.g.cpp"
+
 #include "AppLogic.h"
 
 #include "Utils.h"

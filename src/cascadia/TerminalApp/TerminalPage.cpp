@@ -3125,8 +3125,8 @@ namespace winrt::TerminalApp::implementation
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-            auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
-            return std::make_shared<Pane>(terminalPane);
+            auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+            return std::make_shared<Pane>(paneContent);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -3182,15 +3182,15 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
-        auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
-        auto resultPane = std::make_shared<Pane>(terminalPane);
+        auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+        auto resultPane = std::make_shared<Pane>(paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugTerminalPane{ winrt::make<TerminalPaneContent>(profile, newControl) };
-            auto debugPane = std::make_shared<Pane>(debugTerminalPane);
+            auto debugContent{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            auto debugPane = std::make_shared<Pane>(debugContent);
 
             // Since we're doing this split directly on the pane (instead of going through TerminalTab,
             // we need to handle the panes 'active' states
@@ -3204,7 +3204,7 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
-        _RegisterPaneEvents(terminalPane);
+        _RegisterPaneEvents(paneContent);
 
         return resultPane;
     }

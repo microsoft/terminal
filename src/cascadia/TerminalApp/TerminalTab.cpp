@@ -930,7 +930,7 @@ namespace winrt::TerminalApp::implementation
         events.CloseRequested = content.CloseRequested(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto sender, auto&&) -> winrt::fire_and_forget {
-                // Don't forget! this ^^^^^^^^ sender can't be a reference, this is a async callback. 
+                // Don't forget! this ^^^^^^^^ sender can't be a reference, this is a async callback.
 
                 // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
                 // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
