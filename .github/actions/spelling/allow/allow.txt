@@ -14,9 +14,11 @@ changelog
 clickable
 clig
 CMMI
+consvc
 copyable
 Counterintuitively
 CtrlDToClose
+CVS
 CUI
 cybersecurity
 dalet

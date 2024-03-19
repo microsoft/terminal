@@ -114,6 +114,7 @@ Author(s):
     X(IFontAxesMap, FontAxes, "axes")                                                  \
     X(IFontFeatureMap, FontFeatures, "features")                                       \
     X(bool, EnableBuiltinGlyphs, "builtinGlyphs", true)                                \
+    X(bool, EnableColorGlyphs, "colorGlyphs", true)                                    \
     X(winrt::hstring, CellWidth, "cellWidth")                                          \
     X(winrt::hstring, CellHeight, "cellHeight")
 
@@ -124,6 +125,7 @@ Author(s):
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, "backgroundImageStretchMode", winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill) \
     X(bool, RetroTerminalEffect, "experimental.retroTerminalEffect", false)                                                                                        \
     X(hstring, PixelShaderPath, "experimental.pixelShaderPath")                                                                                                    \
+    X(hstring, PixelShaderImagePath, "experimental.pixelShaderImagePath")                                                                                          \
     X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \

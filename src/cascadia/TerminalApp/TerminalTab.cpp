@@ -315,7 +315,7 @@ namespace winrt::TerminalApp::implementation
         {
             Icon(_lastIconPath);
             bool isMonochrome = iconStyle == IconStyle::Monochrome;
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
+            TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
         }
     }
 
@@ -338,7 +338,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
+                TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
             }
             _iconHidden = hide;
         }
@@ -955,6 +955,32 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
         auto dispatcher = TabViewItem().Dispatcher();
         ContentEventTokens events{};
+
+        events.CloseRequested = content.CloseRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto sender, auto&&) -> winrt::fire_and_forget {
+                // Don't forget! this ^^^^^^^^ sender can't be a reference, this is a async callback. 
+
+                // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
+                // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
+                // copy `weakThis` onto the stack, because that's the only thing that gets captured in coroutines.
+                // See: https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                // Check if Tab's lifetime has expired
+                if (auto tab{ weakThisCopy.get() })
+                {
+                    if (const auto content{ sender.try_as<TerminalApp::IPaneContent>() })
+                    {
+                        tab->_rootPane->WalkTree([content](std::shared_ptr<Pane> pane) {
+                            if (pane->GetContent() == content)
+                            {
+                                pane->Close();
+                            }
+                        });
+                    }
+                }
+            });
 
         events.TitleChanged = content.TitleChanged(
             winrt::auto_revoke,

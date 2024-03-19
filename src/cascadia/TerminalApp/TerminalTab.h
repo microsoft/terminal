@@ -132,6 +132,7 @@ namespace winrt::TerminalApp::implementation
             winrt::TerminalApp::IPaneContent::ConnectionStateChanged_revoker ConnectionStateChanged;
             winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
             winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
+            winrt::TerminalApp::IPaneContent::CloseRequested_revoker CloseRequested;
 
             // These events literally only apply if the content is a TermControl.
             winrt::Microsoft::Terminal::Control::TermControl::KeySent_revoker KeySent;
