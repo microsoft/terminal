@@ -904,7 +904,6 @@ namespace winrt::TerminalApp::implementation
         if (it != _contentEvents.end())
         {
             // revoke the event handlers by resetting the event struct
-            it->second = {};
             // and remove it from the map
             _contentEvents.erase(paneId);
         }
@@ -1059,6 +1058,11 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             });
+
+        if (const auto& terminal{ content.try_as<TerminalApp::TerminalPaneContent>() })
+        {
+            events.RestartTerminalRequested = terminal.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalTab::_bubbleRestartTerminalRequested });
+        }
 
         if (_tabStatus.IsInputBroadcastActive())
         {
@@ -1997,5 +2001,10 @@ namespace winrt::TerminalApp::implementation
     {
         ActionAndArgs actionAndArgs{ ShortcutAction::Find, nullptr };
         _dispatch.DoAction(*this, actionAndArgs);
+    }
+    void TerminalTab::_bubbleRestartTerminalRequested(TerminalApp::TerminalPaneContent sender,
+                                                      const winrt::Windows::Foundation::IInspectable& args)
+    {
+        RestartTerminalRequested.raise(sender, args);
     }
 }

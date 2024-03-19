@@ -1731,11 +1731,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-    }
 
-    void TerminalPage::_RegisterPaneEvents(const TerminalApp::TerminalPaneContent& paneContent)
-    {
-        paneContent.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+        hostingTab.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
     }
 
     // Method Description:
@@ -2383,16 +2380,6 @@ namespace winrt::TerminalApp::implementation
 
         _UnZoomIfNeeded();
         auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
-
-        // When we split the pane, the Pane itself will create a _new_ Pane
-        // instance for the original content. We need to make sure we also
-        // re-add our event handler to that newly created pane.
-        //
-        // _MakePane will already call this for the newly created pane.
-        if (const auto& paneContent{ original->GetContent().try_as<TerminalPaneContent>() })
-        {
-            _RegisterPaneEvents(*paneContent);
-        }
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
@@ -3203,8 +3190,6 @@ namespace winrt::TerminalApp::implementation
             resultPane->ClearActive();
             original->SetActive();
         }
-
-        _RegisterPaneEvents(paneContent);
 
         return resultPane;
     }
