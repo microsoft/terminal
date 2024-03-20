@@ -106,7 +106,7 @@ public:
         uint32_t panesCreated;
     };
     BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent = false, const bool asMovePane = false);
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(const bool asContent = false) const;
+    winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetTerminalArgsForPane(const bool asContent = false) const;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache);
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);

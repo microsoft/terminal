@@ -49,9 +49,9 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs ScratchpadContent::GetNewTerminalArgs(const bool /* asContent */) const
+    INewContentArgs ScratchpadContent::GetNewTerminalArgs(const bool /* asContent */) const
     {
-        return nullptr;
+        return GenericContentArgs(L"scratchpad");
     }
 
     winrt::hstring ScratchpadContent::Icon() const

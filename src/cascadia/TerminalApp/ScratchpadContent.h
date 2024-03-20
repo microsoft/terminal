@@ -18,7 +18,7 @@ namespace winrt::TerminalApp::implementation
 
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
-        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
+        winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(const bool asContent) const;
 
         winrt::hstring Title() { return L"Scratchpad"; }
         uint64_t TaskbarState() { return 0; }

@@ -24,7 +24,7 @@ namespace TerminalApp
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
-        Microsoft.Terminal.Settings.Model.NewTerminalArgs GetNewTerminalArgs(Boolean asContent);
+        Microsoft.Terminal.Settings.Model.INewContentArgs GetNewTerminalArgs(Boolean asContent);
 
         void Focus(Windows.UI.Xaml.FocusState reason);
 

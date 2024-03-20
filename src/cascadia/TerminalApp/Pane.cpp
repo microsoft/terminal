@@ -114,7 +114,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
 //   terminal args.
 // Return Value:
 // - Arguments appropriate for a SplitPane or NewTab action
-NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
+INewContentArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
@@ -1260,7 +1260,6 @@ void Pane::_Focus()
     {
         lastContent.Focus(FocusState::Programmatic);
     }
-    
 }
 
 // Method Description:

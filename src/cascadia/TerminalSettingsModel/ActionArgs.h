@@ -6,6 +6,7 @@
 // HEY YOU: When adding ActionArgs types, make sure to add the corresponding
 //          *.g.cpp to ActionArgs.cpp!
 #include "ActionEventArgs.g.h"
+#include "GenericContentArgs.g.h"
 #include "NewTerminalArgs.g.h"
 #include "CopyTextArgs.g.h"
 #include "NewTabArgs.g.h"
@@ -71,7 +72,7 @@ public:                                                                     \
         _##name = value;                                                    \
     }                                                                       \
                                                                             \
-private:                                                                    \
+protected:                                                                  \
     std::optional<type> _##name{ std::nullopt };
 
 // Notes on defining ActionArgs and ActionEventArgs:
@@ -295,13 +296,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Handled, false);
     };
 
-    struct ContentArgsBase : public winrt::implements<ContentArgsBase, INewContentArgs>
+    struct GenericContentArgs : public GenericContentArgsT<GenericContentArgs>
     {
-        ContentArgsBase(winrt::hstring type) :
+        GenericContentArgs(winrt::hstring type) :
             _Type{ type } {}
 
-        ContentArgsBase() :
-            ContentArgsBase(L"") {}
+        GenericContentArgs() :
+            GenericContentArgs(L"") {}
 
         ACTION_ARG(winrt::hstring, Type, L"");
 
@@ -324,7 +325,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         INewContentArgs Copy() const
         {
-            auto copy{ winrt::make_self<ContentArgsBase>() };
+            auto copy{ winrt::make_self<GenericContentArgs>() };
             copy->_Type = _Type;
             return *copy;
         }
@@ -332,14 +333,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return winrt::hstring{ L"type: " } + Type();
         }
-        static Json::Value ToJson(const winrt::com_ptr<ContentArgsBase>& val)
+        static Json::Value ToJson(const Model::GenericContentArgs& val)
         {
             if (!val)
             {
                 return {};
             }
+            auto args{ get_self<GenericContentArgs>(val) };
             Json::Value json{ Json::ValueType::objectValue };
-            JsonUtils::SetValueForKey(json, TypeKey, val->_Type);
+            JsonUtils::SetValueForKey(json, TypeKey, args->_Type);
             return json;
         }
     };
@@ -499,7 +501,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // For now, we don't support any other concrete types of content
         // with args. Just return a placeholder type that only includes the type
-        return { *winrt::make_self<ContentArgsBase>(type), {} };
+        return { *winrt::make_self<GenericContentArgs>(type), {} };
     }
     static Json::Value ContentArgsToJson(const Model::INewContentArgs& contentArgs)
     {
@@ -510,8 +512,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // For now, we don't support any other concrete types of content
         // with args. Just return a placeholder.
-        auto base{ winrt::make_self<ContentArgsBase>(contentArgs.Type()) };
-        return ContentArgsBase::ToJson(base);
+        auto base{ winrt::make_self<GenericContentArgs>(contentArgs.Type()) };
+        return GenericContentArgs::ToJson(*base);
     }
 
 }
@@ -905,6 +907,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
+    BASIC_FACTORY(GenericContentArgs);
     BASIC_FACTORY(CopyTextArgs);
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);
