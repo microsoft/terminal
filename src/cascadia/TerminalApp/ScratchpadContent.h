@@ -12,7 +12,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
-        winrt::Windows::Foundation::Size MinSize();
+        winrt::Windows::Foundation::Size MinimumSize();
+
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
@@ -22,14 +23,14 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarProgress() { return 0; }
         bool ReadOnly() { return false; }
 
-        til::typed_event<> CloseRequested;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;
-        til::typed_event<> TitleChanged;
-        til::typed_event<> TabColorChanged;
-        til::typed_event<> TaskbarProgressChanged;
         til::typed_event<> ConnectionStateChanged;
-        til::typed_event<> ReadOnlyChanged;
-        til::typed_event<> FocusRequested;
+        til::typed_event<IPaneContent> CloseRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent> TitleChanged;
+        til::typed_event<IPaneContent> TabColorChanged;
+        til::typed_event<IPaneContent> TaskbarProgressChanged;
+        til::typed_event<IPaneContent> ReadOnlyChanged;
+        til::typed_event<IPaneContent> FocusRequested;
 
     private:
         winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
