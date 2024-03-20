@@ -164,6 +164,8 @@ class DbcsTests
     BEGIN_TEST_METHOD(TestInvalidTrailer)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
+
+    TEST_METHOD(TestNarrowSurrogate);
 };
 
 bool DbcsTests::DbcsTestSetup()
@@ -2182,4 +2184,19 @@ void DbcsTests::TestInvalidTrailer()
     }
 
     DbcsWriteRead::Verify(expected, output);
+}
+
+// The various console APIs that read back from the buffer are generally incompatible with UTF16 and surrogate pairs.
+// ReadConsoleOutputCharacterW in particular has a nLength parameter which is a column count but also the buffer size.
+// This makes it impossible to reliably return arbitrarily long graphemes per-cell in the output buffer.
+// The test ensures that we replace them with U+FFFD which makes the behavior more consistent for the caller.
+void DbcsTests::TestNarrowSurrogate()
+{
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+    wchar_t buf[3];
+    DWORD read;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputCharacterW(out, L"a\U00010000b", 4, {}, &read));
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(out, &buf[0], ARRAYSIZE(buf), {}, &read));
+    VERIFY_ARE_EQUAL(std::wstring_view(L"a\U0000FFFDb"), std::wstring_view(&buf[0], read));
 }
