@@ -13,7 +13,7 @@
 
   <!-- AppiumWebDriver -->
   <PropertyGroup>
-    <AppiumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Appium.WebDriver.3.0.0.2</AppiumWebDriverPathRoot>
+    <AppiumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Appium.WebDriver.4.4.5</AppiumWebDriverPathRoot>
   </PropertyGroup>
 
   <!-- CastleCore -->
