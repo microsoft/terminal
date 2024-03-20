@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // When clicked, we dispatch the bound ClearSettingValue event,
                 // resulting in inheriting the setting value from the parent.
                 button.Click([=](auto&&, auto&&) {
-                    _ClearSettingValueHandlers(*this, nullptr);
+                    ClearSettingValue.raise(*this, nullptr);
 
                     // move the focus to the child control
                     if (const auto& content{ Content() })
@@ -181,6 +181,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
             {
                 textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
+            }
+        }
+    }
+
+    void SettingContainer::SetExpanded(bool expanded)
+    {
+        if (const auto& child{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            {
+                expander.IsExpanded(expanded);
             }
         }
     }

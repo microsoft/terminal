@@ -96,9 +96,9 @@ namespace winrt::TerminalApp::implementation
             return _tabStatus;
         }
 
-        WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
-        WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
-        TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
+        til::event<winrt::delegate<>> ActivePaneChanged;
+        til::event<winrt::delegate<>> TabRaiseVisualBell;
+        til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
 
     private:
         static constexpr double HeaderRenameBoxWidthDefault{ 165 };

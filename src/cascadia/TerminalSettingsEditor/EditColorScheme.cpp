@@ -42,15 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemeViewModel>();
 
-        // Set the text disclaimer for the text box
-        hstring disclaimer{};
-        if (_ViewModel.IsInBoxScheme())
-        {
-            // load disclaimer for in-box profiles
-            disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox/Text");
-        }
-        RenameContainer().HelpText(disclaimer);
-
         NameBox().Text(_ViewModel.Name());
     }
 

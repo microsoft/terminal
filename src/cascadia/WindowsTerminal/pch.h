@@ -72,6 +72,7 @@ Abstract:
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.Remoting.h>
 #include <winrt/Microsoft.Terminal.Control.h>
+#include <winrt/Microsoft.Terminal.UI.h>
 
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>
@@ -90,6 +91,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 
 #include "til.h"
 #include "til/mutex.h"
+#include "til/winrt.h"
 
 #include <SafeDispatcherTimer.h>
 

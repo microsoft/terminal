@@ -170,6 +170,24 @@ class StringTests
         }
     }
 
+    TEST_METHOD(prefix_split_char)
+    {
+        {
+            std::string_view s{ "" };
+            VERIFY_ARE_EQUAL("", til::prefix_split(s, ' '));
+            VERIFY_ARE_EQUAL("", s);
+        }
+        {
+            std::string_view s{ "foo bar baz" };
+            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, ' '));
+            VERIFY_ARE_EQUAL("bar baz", s);
+            VERIFY_ARE_EQUAL("bar", til::prefix_split(s, ' '));
+            VERIFY_ARE_EQUAL("baz", s);
+            VERIFY_ARE_EQUAL("baz", til::prefix_split(s, ' '));
+            VERIFY_ARE_EQUAL("", s);
+        }
+    }
+
     TEST_METHOD(CleanPathAndFilename)
     {
         VERIFY_ARE_EQUAL(LR"(CUsersGeddyMusicAnalog Man)", til::clean_filename(LR"(C:\Users\Geddy\Music\"Analog Man")"));

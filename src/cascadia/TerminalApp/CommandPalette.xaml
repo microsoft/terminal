@@ -9,7 +9,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              AllowFocusOnInteraction="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
@@ -23,12 +23,6 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <!--  This creates an instance of our CommandKeyChordVisibilityConverter we can reference below  -->
-            <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter" />
-            <local:EmptyStringVisibilityConverter x:Key="ParsedCommandLineTextVisibilityConverter" />
-            <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter" />
-            <model:IconPathConverter x:Key="IconSourceConverter" />
-
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
                 <ListViewItem HorizontalContentAlignment="Stretch"
@@ -62,8 +56,7 @@
 
                     <!--
                         The block for the key chord is only visible
-                        when there's actual text set as the label. See
-                        CommandKeyChordVisibilityConverter for details.
+                        when there's actual text set as the label.
                         We're setting the accessibility view on the
                         border and text block to Raw because otherwise,
                         Narrator will read out the key chord. Problem is,
@@ -77,7 +70,7 @@
                             AutomationProperties.AccessibilityView="Raw"
                             Background="{ThemeResource FlyoutPresenterBackground}"
                             Style="{ThemeResource KeyChordBorderStyle}"
-                            Visibility="{x:Bind Item.KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
+                            Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Item.KeyChordText), Mode=OneWay}">
 
                         <TextBlock AutomationProperties.AccessibilityView="Raw"
                                    FontSize="12"
@@ -113,8 +106,7 @@
 
                     <!--
                         The block for the key chord is only visible
-                        when there's actual text set as the label. See
-                        CommandKeyChordVisibilityConverter for details.
+                        when there's actual text set as the label.
                         We're setting the accessibility view on the
                         border and text block to Raw because otherwise,
                         Narrator will read out the key chord. Problem is,
@@ -127,7 +119,7 @@
                             VerticalAlignment="Center"
                             AutomationProperties.AccessibilityView="Raw"
                             Style="{ThemeResource KeyChordBorderStyle}"
-                            Visibility="{x:Bind Item.KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
+                            Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Item.KeyChordText), Mode=OneWay}">
 
                         <TextBlock AutomationProperties.AccessibilityView="Raw"
                                    FontSize="12"
@@ -347,12 +339,12 @@
                        VerticalAlignment="Center"
                        FontSize="14"
                        Text="{x:Bind PrefixCharacter, Mode=OneWay}"
-                       Visibility="{x:Bind PrefixCharacter, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}" />
+                       Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(PrefixCharacter), Mode=OneWay}" />
 
             <StackPanel Grid.Row="1"
                         Margin="8,0,8,8"
                         Orientation="Horizontal"
-                        Visibility="{x:Bind ParentCommandName, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}">
+                        Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(ParentCommandName), Mode=OneWay}">
 
                 <Button x:Name="_parentCommandBackButton"
                         x:Uid="ParentCommandBackButton"
@@ -377,7 +369,7 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Center"
                     Style="{ThemeResource ParsedCommandLineBorderStyle}"
-                    Visibility="{x:Bind ParsedCommandLineText, Mode=OneWay, Converter={StaticResource ParsedCommandLineTextVisibilityConverter}}">
+                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(ParsedCommandLineText), Mode=OneWay}">
 
                 <ScrollViewer MaxHeight="200"
                               VerticalScrollBarVisibility="Auto">

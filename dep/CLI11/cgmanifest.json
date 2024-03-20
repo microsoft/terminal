@@ -6,7 +6,7 @@
         "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/CLIUtils/CLI11",
-          "commitHash": "5cb3efabce007c3a0230e4cc2e27da491c646b6c"
+          "commitHash": "88e9bb17418ee730817d5942894d99a4bdd78fb3"
         }
       }
     }

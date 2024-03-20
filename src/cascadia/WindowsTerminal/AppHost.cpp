@@ -1502,5 +1502,5 @@ void AppHost::_handleSendContent(const winrt::Windows::Foundation::IInspectable&
 // thread.
 void AppHost::_requestUpdateSettings()
 {
-    _UpdateSettingsRequestedHandlers();
+    UpdateSettingsRequested.raise();
 }

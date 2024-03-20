@@ -186,7 +186,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Inform the host that our titlebar content has changed.
-            _SetTitleBarContentHandlers(*this, _tabRow);
+            SetTitleBarContent.raise(*this, _tabRow);
 
             // GH#13143 Manually set the tab row's background to transparent here.
             //
@@ -657,7 +657,7 @@ namespace winrt::TerminalApp::implementation
         // have a tab yet, but will once we're initialized.
         if (_tabs.Size() == 0 && !_shouldStartInboundListener && !_isEmbeddingInboundListener)
         {
-            _CloseWindowRequestedHandlers(*this, nullptr);
+            CloseWindowRequested.raise(*this, nullptr);
             co_return;
         }
         else
@@ -688,7 +688,7 @@ namespace winrt::TerminalApp::implementation
             Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weak = get_weak()]() {
                 if (auto self{ weak.get() })
                 {
-                    self->_InitializedHandlers(*self, nullptr);
+                    self->Initialized.raise(*self, nullptr);
                 }
             });
         }
@@ -1032,9 +1032,10 @@ namespace winrt::TerminalApp::implementation
 
         // If there's an icon set for this profile, set it as the icon for
         // this flyout item
-        if (!profile.Icon().empty())
+        const auto& iconPath = profile.EvaluatedIcon();
+        if (!iconPath.empty())
         {
-            const auto icon = _CreateNewTabFlyoutIcon(profile.Icon());
+            const auto icon = _CreateNewTabFlyoutIcon(iconPath);
             profileMenuItem.Icon(icon);
         }
 
@@ -1099,7 +1100,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        auto icon = IconPathConverter::IconWUX(iconSource);
+        auto icon = UI::IconPathConverter::IconWUX(iconSource);
         Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
 
         return icon;
@@ -1626,7 +1627,7 @@ namespace winrt::TerminalApp::implementation
 
         if (tab == _GetFocusedTab())
         {
-            _TitleChangedHandlers(*this, newTabTitle);
+            TitleChanged.raise(*this, newTabTitle);
         }
     }
 
@@ -1895,7 +1896,7 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
 
-            _QuitRequestedHandlers(nullptr, nullptr);
+            QuitRequested.raise(nullptr, nullptr);
         }
     }
 
@@ -1987,7 +1988,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _CloseWindowRequestedHandlers(*this, nullptr);
+        CloseWindowRequested.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -2167,7 +2168,7 @@ namespace winrt::TerminalApp::implementation
         {
             request->WindowPosition(dragPoint->to_winrt_point());
         }
-        _RequestMoveContentHandlers(*this, *request);
+        RequestMoveContent.raise(*this, *request);
     }
 
     bool TerminalPage::_MoveTab(winrt::com_ptr<TerminalTab> tab, MoveTabArgs args)
@@ -2933,7 +2934,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
         co_await wil::resume_foreground(Dispatcher());
-        _SetTaskbarProgressHandlers(*this, nullptr);
+        SetTaskbarProgress.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -2943,7 +2944,7 @@ namespace winrt::TerminalApp::implementation
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
     void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
-        _ShowWindowChangedHandlers(*this, args);
+        ShowWindowChanged.raise(*this, args);
     }
 
     // Method Description:
@@ -3361,7 +3362,7 @@ namespace winrt::TerminalApp::implementation
         // will let the user hot-reload this setting, but any runtime changes to
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
-        _AlwaysOnTopChangedHandlers(*this, nullptr);
+        AlwaysOnTopChanged.raise(*this, nullptr);
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -3569,7 +3570,7 @@ namespace winrt::TerminalApp::implementation
         {
             _isInFocusMode = newInFocusMode;
             _UpdateTabView();
-            _FocusModeChangedHandlers(*this, nullptr);
+            FocusModeChanged.raise(*this, nullptr);
         }
     }
 
@@ -3594,7 +3595,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ToggleAlwaysOnTop()
     {
         _isAlwaysOnTop = !_isAlwaysOnTop;
-        _AlwaysOnTopChangedHandlers(*this, nullptr);
+        AlwaysOnTopChanged.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -3795,7 +3796,7 @@ namespace winrt::TerminalApp::implementation
         }
         _isFullscreen = newFullscreen;
         _UpdateTabView();
-        _FullscreenChangedHandlers(*this, nullptr);
+        FullscreenChanged.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -3814,7 +3815,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
         _isMaximized = newMaximized;
-        _ChangeMaximizeRequestedHandlers(*this, nullptr);
+        ChangeMaximizeRequested.raise(*this, nullptr);
     }
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
@@ -3857,7 +3858,7 @@ namespace winrt::TerminalApp::implementation
             _CreateNewTabFromPane(newPane);
 
             // Request a summon of this window to the foreground
-            _SummonWindowRequestedHandlers(*this, nullptr);
+            SummonWindowRequested.raise(*this, nullptr);
 
             const IInspectable unused{ nullptr };
             _SetAsDefaultDismissHandler(unused, unused);
@@ -4312,7 +4313,7 @@ namespace winrt::TerminalApp::implementation
         {
             WindowRenamer().IsOpen(false);
         }
-        _RenameWindowRequestedHandlers(*this, request);
+        RenameWindowRequested.raise(*this, request);
         // We can't just use request.Successful here, because the handler might
         // (will) be handling this asynchronously, so when control returns to
         // us, this hasn't actually been handled yet. We'll get called back in
@@ -4922,7 +4923,7 @@ namespace winrt::TerminalApp::implementation
 
             if (!icon.empty())
             {
-                auto iconElement = IconPathConverter::IconWUX(icon);
+                auto iconElement = UI::IconPathConverter::IconWUX(icon);
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
                 button.Icon(iconElement);
             }
@@ -5119,7 +5120,7 @@ namespace winrt::TerminalApp::implementation
             // This will go up to the monarch, who will then dispatch the request
             // back down to the source TerminalPage, who will then perform a
             // RequestMoveContent to move their tab to us.
-            _RequestReceiveContentHandlers(*this, *request);
+            RequestReceiveContent.raise(*this, *request);
         }
     }
 

@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
     {
         String Name;
-        Boolean IsInBoxScheme;
+        Boolean IsEditable { get; };
         Boolean IsDefaultScheme { get; };
 
         Boolean RequestRename(String newName);
@@ -27,6 +27,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void DeleteConfirmation_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
         void SetAsDefault_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void Duplicate_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
     }
 
     [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
