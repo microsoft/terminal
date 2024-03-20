@@ -3,8 +3,9 @@
 
 #include "pch.h"
 #include "TerminalPaneContent.h"
-#include "PaneArgs.h"
 #include "TerminalPaneContent.g.cpp"
+
+#include "BellEventArgs.g.cpp"
 
 #include <Mmsystem.h>
 using namespace winrt::Windows::Foundation;
@@ -45,11 +46,11 @@ namespace winrt::TerminalApp::implementation
     {
         return _control;
     }
-    winrt::Microsoft::Terminal::Control::TermControl TerminalPaneContent::GetTerminal()
+    winrt::Microsoft::Terminal::Control::TermControl TerminalPaneContent::GetTermControl()
     {
         return _control;
     }
-    winrt::Windows::Foundation::Size TerminalPaneContent::MinSize()
+    winrt::Windows::Foundation::Size TerminalPaneContent::MinimumSize()
     {
         return _control.MinimumSize();
     }
@@ -78,7 +79,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPaneContent::Icon() const
     {
-        return _profile.Icon();
+        return _profile.EvaluatedIcon();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
@@ -319,13 +320,15 @@ namespace winrt::TerminalApp::implementation
         // Do nothing. We'll later be updated manually by
         // UpdateTerminalSettings, which we need for profile and
         // focused/unfocused settings.
+        assert(false); // If you hit this, you done goofed.
     }
 
-    void TerminalPaneContent::UpdateTerminalSettings(const TerminalSettingsCreateResult& settings,
-                                                     const Profile& profile)
+    void TerminalPaneContent::UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache)
     {
-        _profile = profile;
-        _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        if (const auto& settings{ cache.TryLookup(_profile) })
+        {
+            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        }
     }
 
     // Method Description:
@@ -346,7 +349,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _control.SnapDimensionToGrid(direction == PaneSnapDirection::Width, sizeToSnap);
     }
-    Windows::Foundation::Size TerminalPaneContent::GridSize()
+    Windows::Foundation::Size TerminalPaneContent::GridUnitSize()
     {
         return _control.CharacterDimensions();
     }

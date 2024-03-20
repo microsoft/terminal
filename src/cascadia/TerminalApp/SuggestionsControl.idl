@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import "TabBase.idl";
-import "IDirectKeyListener.idl";
 import "HighlightedTextControl.idl";
 import "FilteredCommand.idl";
 
@@ -21,7 +20,7 @@ namespace TerminalApp
         BottomUp
     };
 
-    [default_interface] runtimeclass SuggestionsControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
+    [default_interface] runtimeclass SuggestionsControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
     {
         SuggestionsControl();
 

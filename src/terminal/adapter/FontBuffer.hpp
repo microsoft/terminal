@@ -26,7 +26,7 @@ namespace Microsoft::Console::VirtualTerminal
                            const DispatchTypes::DrcsFontSet fontSet,
                            const DispatchTypes::DrcsFontUsage fontUsage) noexcept;
         bool SetStartChar(const VTParameter startChar,
-                          const DispatchTypes::DrcsCharsetSize charsetSize) noexcept;
+                          const DispatchTypes::CharsetSize charsetSize) noexcept;
         void AddSixelData(const wchar_t ch);
         bool FinalizeSixelData();
 
@@ -75,8 +75,8 @@ namespace Microsoft::Console::VirtualTerminal
         VTInt _columnsPerPage;
         bool _isTextFont;
 
-        DispatchTypes::DrcsCharsetSize _charsetSize;
-        DispatchTypes::DrcsCharsetSize _pendingCharsetSize;
+        DispatchTypes::CharsetSize _charsetSize;
+        DispatchTypes::CharsetSize _pendingCharsetSize;
         VTID _charsetId{ 0 };
         VTID _pendingCharsetId{ 0 };
         bool _charsetIdInitialized;

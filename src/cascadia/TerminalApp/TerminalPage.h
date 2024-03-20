@@ -272,6 +272,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
+        TerminalApp::TerminalSettingsCache _terminalSettingsCache{ nullptr };
+
         struct StashedDragData
         {
             winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> draggedTab{ nullptr };
@@ -345,7 +347,6 @@ namespace winrt::TerminalApp::implementation
         void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition = -1);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
         void _RegisterTabEvents(TerminalTab& hostingTab);
-        void _RegisterPaneEvents(const TerminalApp::TerminalPaneContent& paneContent);
 
         void _DismissTabContextMenus();
         void _FocusCurrentTab(const bool focusAlways);

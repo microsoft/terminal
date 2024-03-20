@@ -3,34 +3,41 @@
 
 #pragma once
 #include "TerminalPaneContent.g.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
-#include <til/winrt.h>
+#include "BellEventArgs.g.h"
 
 namespace winrt::TerminalApp::implementation
 {
+    struct BellEventArgs : public BellEventArgsT<BellEventArgs>
+    {
+    public:
+        BellEventArgs(bool flashTaskbar) :
+            FlashTaskbar(flashTaskbar) {}
+
+        til::property<bool> FlashTaskbar;
+    };
+
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>
     {
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                             const winrt::Microsoft::Terminal::Control::TermControl& control);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
-        winrt::Microsoft::Terminal::Control::TermControl GetTerminal();
-        winrt::Windows::Foundation::Size MinSize();
+        winrt::Microsoft::Terminal::Control::TermControl GetTermControl();
+        winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
 
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-        void UpdateTerminalSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                                    const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache);
 
         void MarkAsDefterm();
 
         winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
         {
             return _profile;
-        };
+        }
 
         winrt::hstring Title() { return _control.Title(); }
         uint64_t TaskbarState() { return _control.TaskbarState(); }
@@ -41,17 +48,18 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         float SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap);
-        Windows::Foundation::Size GridSize();
+        Windows::Foundation::Size GridUnitSize();
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
-        til::typed_event<> CloseRequested;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;
-        til::typed_event<> TitleChanged;
-        til::typed_event<> TabColorChanged;
-        til::typed_event<> TaskbarProgressChanged;
+
         til::typed_event<> ConnectionStateChanged;
-        til::typed_event<> ReadOnlyChanged;
-        til::typed_event<> FocusRequested;
+        til::typed_event<IPaneContent> CloseRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent> TitleChanged;
+        til::typed_event<IPaneContent> TabColorChanged;
+        til::typed_event<IPaneContent> TaskbarProgressChanged;
+        til::typed_event<IPaneContent> ReadOnlyChanged;
+        til::typed_event<IPaneContent> FocusRequested;
 
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };

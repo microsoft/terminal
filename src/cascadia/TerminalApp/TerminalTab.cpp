@@ -266,7 +266,7 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const CascadiaSettings& settings)
+    void TerminalTab::UpdateSettings(const CascadiaSettings& settings, const TerminalApp::TerminalSettingsCache& cache)
     {
         ASSERT_UI_THREAD();
 
@@ -275,7 +275,7 @@ namespace winrt::TerminalApp::implementation
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](auto pane) {
-            pane->UpdateSettings(settings);
+            pane->UpdateSettings(settings, cache);
             return false;
         });
     }
@@ -315,7 +315,7 @@ namespace winrt::TerminalApp::implementation
         {
             Icon(_lastIconPath);
             bool isMonochrome = iconStyle == IconStyle::Monochrome;
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
+            TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
         }
     }
 
@@ -338,7 +338,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
+                TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
             }
             _iconHidden = hide;
         }
@@ -933,7 +933,6 @@ namespace winrt::TerminalApp::implementation
         if (it != _contentEvents.end())
         {
             // revoke the event handlers by resetting the event struct
-            it->second = {};
             // and remove it from the map
             _contentEvents.erase(paneId);
         }
@@ -959,7 +958,7 @@ namespace winrt::TerminalApp::implementation
         events.CloseRequested = content.CloseRequested(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto sender, auto&&) -> winrt::fire_and_forget {
-                // Don't forget! this ^^^^^^^^ sender can't be a reference, this is a async callback. 
+                // Don't forget! this ^^^^^^^^ sender can't be a reference, this is a async callback.
 
                 // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
                 // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
@@ -1050,26 +1049,55 @@ namespace winrt::TerminalApp::implementation
 
         events.FocusRequested = content.FocusRequested(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto) -> winrt::fire_and_forget {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
                 {
                     if (tab->_focused())
                     {
-                        if (const auto content{ sender.try_as<TerminalApp::IPaneContent>() })
-                        {
-                            content.Focus(FocusState::Pointer);
-                        }
+                        sender.Focus(FocusState::Pointer);
                     }
                 }
             });
+
+        events.BellRequested = content.BellRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto bellArgs) -> winrt::fire_and_forget {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (const auto tab{ weakThisCopy.get() })
+                {
+                    if (bellArgs.FlashTaskbar())
+                    {
+                        // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
+                        // In this part of the chain we bubble it from the hosting tab to the page
+                        tab->_TabRaiseVisualBellHandlers();
+                    }
+
+                    // Show the bell indicator in the tab header
+                    tab->ShowBellIndicator(true);
+
+                    // If this tab is focused, activate the bell indicator timer, which will
+                    // remove the bell indicator once it fires
+                    // (otherwise, the indicator is removed when the tab gets focus)
+                    if (tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        tab->ActivateBellIndicatorTimer();
+                    }
+                }
+            });
+
+        if (const auto& terminal{ content.try_as<TerminalApp::TerminalPaneContent>() })
+        {
+            events.RestartTerminalRequested = terminal.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalTab::_bubbleRestartTerminalRequested });
+        }
 
         if (_tabStatus.IsInputBroadcastActive())
         {
             if (const auto& termContent{ content.try_as<TerminalApp::TerminalPaneContent>() })
             {
-                _addBroadcastHandlers(termContent.GetTerminal(), events);
+                _addBroadcastHandlers(termContent.GetTermControl(), events);
             }
         }
 
@@ -1233,7 +1261,7 @@ namespace winrt::TerminalApp::implementation
         const auto content{ pane->GetContent() };
         if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
         {
-            const auto& termControl{ termContent.GetTerminal() };
+            const auto& termControl{ termContent.GetTermControl() };
             _rootPane->WalkTree([termControl](const auto& p) {
                 if (const auto& taskPane{ p->GetContent().try_as<TasksPaneContent>() })
                 {
@@ -1767,7 +1795,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
             {
-                return termContent.GetTerminal();
+                return termContent.GetTermControl();
             }
         }
         return nullptr;
@@ -2018,5 +2046,10 @@ namespace winrt::TerminalApp::implementation
     {
         ActionAndArgs actionAndArgs{ ShortcutAction::Find, nullptr };
         _dispatch.DoAction(*this, actionAndArgs);
+    }
+    void TerminalTab::_bubbleRestartTerminalRequested(TerminalApp::TerminalPaneContent sender,
+                                                      const winrt::Windows::Foundation::IInspectable& args)
+    {
+        RestartTerminalRequested.raise(sender, args);
     }
 }

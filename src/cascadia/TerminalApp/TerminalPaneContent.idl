@@ -2,16 +2,16 @@
 // Licensed under the MIT license.
 
 import "IPaneContent.idl";
+import "TerminalSettingsCache.idl";
 import "FilteredCommand.idl";
 
 namespace TerminalApp
 {
     [default_interface] runtimeclass TerminalPaneContent : IPaneContent, ISnappable
     {
-        Microsoft.Terminal.Control.TermControl GetTerminal();
+        Microsoft.Terminal.Control.TermControl GetTermControl();
 
-        void UpdateTerminalSettings(Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings,
-                                    Microsoft.Terminal.Settings.Model.Profile profile);
+        void UpdateTerminalSettings(TerminalSettingsCache cache);
 
         void MarkAsDefterm();
 

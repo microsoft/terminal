@@ -100,7 +100,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ReverseLineFeed() override; // RI
         bool BackIndex() override; // DECBI
         bool ForwardIndex() override; // DECFI
-        bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
+        bool SetWindowTitle(const std::wstring_view title) override; // DECSWT, OSCWindowTitle
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
         bool BackwardsTab(const VTInt numTabs) override; // CBT
@@ -113,6 +113,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
         bool SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         bool AcceptC1Controls(const bool enabled) override; // DECAC1
+        bool AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
@@ -149,7 +150,10 @@ namespace Microsoft::Console::VirtualTerminal
                                    const DispatchTypes::DrcsFontSet fontSet,
                                    const DispatchTypes::DrcsFontUsage fontUsage,
                                    const VTParameter cellHeight,
-                                   const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
+                                   const DispatchTypes::CharsetSize charsetSize) override; // DECDLD
+
+        bool RequestUserPreferenceCharset() override; // DECRQUPSS
+        StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) override; // DECAUPSS
 
         StringHandler DefineMacro(const VTInt macroId,
                                   const DispatchTypes::MacroDeleteControl deleteControl,
@@ -189,8 +193,6 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
-            bool C1ControlsAccepted = false;
-            unsigned int CodePage = 0;
         };
         struct Offset
         {
@@ -268,7 +270,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
-        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
+        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
 
         std::vector<uint8_t> _tabStopColumns;

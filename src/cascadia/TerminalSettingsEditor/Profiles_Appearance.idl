@@ -10,7 +10,5 @@ namespace Microsoft.Terminal.Settings.Editor
         Profiles_Appearance();
         ProfileViewModel Profile { get; };
         IHostedInWindow WindowRoot { get; };
-
-        Windows.UI.Xaml.Controls.Slider OpacitySlider { get; };
     }
 }

@@ -9,6 +9,8 @@
 
 #include "GlobalAppSettings.g.cpp"
 
+#include <LibraryResources.h>
+
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI::Xaml;
@@ -34,13 +36,6 @@ void GlobalAppSettings::_FinalizeInheritance()
     {
         _actionMap->AddLeastImportantParent(parent->_actionMap);
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
-        for (const auto& [k, v] : parent->_colorSchemes)
-        {
-            if (!_colorSchemes.HasKey(k))
-            {
-                _colorSchemes.Insert(k, v);
-            }
-        }
 
         for (const auto& [k, v] : parent->_themes)
         {
@@ -142,12 +137,19 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
+    LayerActionsFrom(json, true);
+
+    JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
+}
+
+void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const bool withKeybindings)
+{
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
     for (const auto& jsonKey : bindingsKeys)
     {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            auto warnings = _actionMap->LayerJson(bindings);
+            auto warnings = _actionMap->LayerJson(bindings, withKeybindings);
 
             // It's possible that the user provided keybindings have some warnings
             // in them - problems that we should alert the user to, but we can
@@ -158,8 +160,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     }
-
-    JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
 }
 
 // Method Description:
@@ -176,6 +176,28 @@ void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
 void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
 {
     _colorSchemes.TryRemove(schemeName);
+}
+
+winrt::Microsoft::Terminal::Settings::Model::ColorScheme GlobalAppSettings::DuplicateColorScheme(const Model::ColorScheme& source)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, source);
+
+    auto newName = fmt::format(FMT_COMPILE(L"{} ({})"), source.Name(), RS_(L"CopySuffix"));
+    auto nextCandidateIndex = 2;
+
+    // Check if this name already exists and if so, append a number
+    while (_colorSchemes.HasKey(newName))
+    {
+        // There is a theoretical unsigned integer wraparound, which is OK
+        newName = fmt::format(FMT_COMPILE(L"{} ({} {})"), source.Name(), RS_(L"CopySuffix"), nextCandidateIndex++);
+    }
+
+    auto duplicated{ winrt::get_self<ColorScheme>(source)->Copy() };
+    duplicated->Name(hstring{ newName });
+    duplicated->Origin(OriginTag::User);
+
+    AddColorScheme(*duplicated);
+    return *duplicated;
 }
 
 // Method Description:

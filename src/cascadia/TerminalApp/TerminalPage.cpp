@@ -1033,9 +1033,10 @@ namespace winrt::TerminalApp::implementation
 
         // If there's an icon set for this profile, set it as the icon for
         // this flyout item
-        if (!profile.Icon().empty())
+        const auto& iconPath = profile.EvaluatedIcon();
+        if (!iconPath.empty())
         {
-            const auto icon = _CreateNewTabFlyoutIcon(profile.Icon());
+            const auto icon = _CreateNewTabFlyoutIcon(iconPath);
             profileMenuItem.Icon(icon);
         }
 
@@ -1100,7 +1101,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        auto icon = IconPathConverter::IconWUX(iconSource);
+        auto icon = UI::IconPathConverter::IconWUX(iconSource);
         Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
 
         return icon;
@@ -1305,7 +1306,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        const auto& control{ paneContent.GetTerminal() };
+        const auto& control{ paneContent.GetTermControl() };
         if (control == nullptr)
         {
             return nullptr;
@@ -1730,11 +1731,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-    }
 
-    void TerminalPage::_RegisterPaneEvents(const TerminalApp::TerminalPaneContent& paneContent)
-    {
-        paneContent.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+        hostingTab.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
     }
 
     // Method Description:
@@ -2388,16 +2386,6 @@ namespace winrt::TerminalApp::implementation
 
         _UnZoomIfNeeded();
         auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
-
-        // When we split the pane, the Pane itself will create a _new_ Pane
-        // instance for the original content. We need to make sure we also
-        // re-add our event handler to that newly created pane.
-        //
-        // _MakePane will already call this for the newly created pane.
-        if (const auto& paneContent{ original->GetContent().try_as<TerminalPaneContent>() })
-        {
-            _RegisterPaneEvents(*paneContent);
-        }
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
@@ -3130,8 +3118,8 @@ namespace winrt::TerminalApp::implementation
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-            auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
-            return std::make_shared<Pane>(terminalPane);
+            auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+            return std::make_shared<Pane>(paneContent);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -3187,15 +3175,15 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
-        auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
-        auto resultPane = std::make_shared<Pane>(terminalPane);
+        auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+        auto resultPane = std::make_shared<Pane>(paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugTerminalPane{ winrt::make<TerminalPaneContent>(profile, newControl) };
-            auto debugPane = std::make_shared<Pane>(debugTerminalPane);
+            auto debugContent{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            auto debugPane = std::make_shared<Pane>(debugContent);
 
             // Since we're doing this split directly on the pane (instead of going through TerminalTab,
             // we need to handle the panes 'active' states
@@ -3208,8 +3196,6 @@ namespace winrt::TerminalApp::implementation
             resultPane->ClearActive();
             original->SetActive();
         }
-
-        _RegisterPaneEvents(terminalPane);
 
         return resultPane;
     }
@@ -3224,7 +3210,7 @@ namespace winrt::TerminalApp::implementation
         // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            paneContent.GetTerminal().Connection(connection);
+            paneContent.GetTermControl().Connection(connection);
             connection.Start();
         }
     }
@@ -3305,56 +3291,18 @@ namespace winrt::TerminalApp::implementation
 
         // Refresh UI elements
 
-        // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
-        // when we stabilize its guid this will become fully safe.
-        std::unordered_map<winrt::guid, std::pair<Profile, TerminalSettingsCreateResult>> profileGuidSettingsMap;
-        const auto profileDefaults{ _settings.ProfileDefaults() };
-        const auto allProfiles{ _settings.AllProfiles() };
-
-        profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
-
-        // Include the Defaults profile for consideration
-        profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, nullptr });
-        for (const auto& newProfile : allProfiles)
-        {
-            // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
-            // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
-            profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
-        }
+        // Recreate the TerminalSettings cache here. We'll use that as we're
+        // updating terminal panes, so that we don't have to build a _new_
+        // TerminalSettings for every profile we update - we can just look them
+        // up the previous ones we built.
+        _terminalSettingsCache = TerminalApp::TerminalSettingsCache{ _settings, *_bindings };
 
         for (const auto& tab : _tabs)
         {
             if (auto terminalTab{ _GetTerminalTabImpl(tab) })
             {
                 // Let the tab know that there are new settings. It's up to each content to decide what to do with them.
-                terminalTab->UpdateSettings(_settings);
-
-                // FURTHERMORE We need to do a bit more work here for terminal
-                // panes. They need to know about the profile that was used for
-                // them, and about the focused/unfocused settings.
-
-                // Manually enumerate the panes in each tab; this will let us recycle TerminalSettings
-                // objects but only have to iterate one time.
-                terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
-                    // If the pane isn't a terminal pane, it won't have a profile.
-                    if (const auto profile{ pane->GetProfile() })
-                    {
-                        const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
-                        // GH#2455: If there are any panes with controls that had been
-                        // initialized with a Profile that no longer exists in our list of
-                        // profiles, we'll leave it unmodified. The profile doesn't exist
-                        // anymore, so we can't possibly update its settings.
-                        if (found != profileGuidSettingsMap.cend())
-                        {
-                            auto& pair{ found->second };
-                            if (!pair.second)
-                            {
-                                pair.second = TerminalSettings::CreateWithProfile(_settings, pair.first, *_bindings);
-                            }
-                            pane->UpdateTerminalSettings(pair.second, pair.first);
-                        }
-                    }
-                });
+                terminalTab->UpdateSettings(_settings, _terminalSettingsCache);
 
                 // Update the icon of the tab for the currently focused profile in that tab.
                 // Only do this for TerminalTabs. Other types of tabs won't have multiple panes
@@ -4635,7 +4583,10 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& pane{ tab->GetActivePane() })
             {
-                terminalBrush = pane->GetContent().BackgroundBrush();
+                if (const auto& lastContent{ pane->GetLastFocusedContent() })
+                {
+                    terminalBrush = lastContent.BackgroundBrush();
+                }
             }
         }
 
@@ -4904,7 +4855,7 @@ namespace winrt::TerminalApp::implementation
 
             if (!icon.empty())
             {
-                auto iconElement = IconPathConverter::IconWUX(icon);
+                auto iconElement = UI::IconPathConverter::IconWUX(icon);
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
                 button.Icon(iconElement);
             }
