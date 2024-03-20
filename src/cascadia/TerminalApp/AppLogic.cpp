@@ -692,9 +692,9 @@ namespace winrt::TerminalApp::implementation
         return _contentManager;
     }
 
-    bool AppLogic::SessionRestoreEnabled() const
+    bool AppLogic::ShouldUsePersistedLayout() const
     {
-        return _settings.GlobalSettings().SessionRestoreEnabled();
+        return _settings.GlobalSettings().ShouldUsePersistedLayout();
     }
 
     TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)

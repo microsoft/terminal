@@ -215,7 +215,7 @@ void AppHost::_HandleSessionRestore(const bool startedForContent)
     // we'll leave it here.
     const auto numPeasants = _windowManager.GetNumberOfPeasants();
     // Don't attempt to session restore if we're just making a window for tear-out
-    if (startedForContent || numPeasants != 1 || !_appLogic.SessionRestoreEnabled())
+    if (startedForContent || numPeasants != 1 || !_appLogic.ShouldUsePersistedLayout())
     {
         return;
     }
@@ -1305,7 +1305,15 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
-    PostQuitMessage(0);
+
+    if (Utils::IsWindows11())
+    {
+        PostQuitMessage(0);
+    }
+    else
+    {
+        PostMessageW(_window->GetInteropHandle(), WM_REFRIGERATE, 0, 0);
+    }
 }
 
 void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,

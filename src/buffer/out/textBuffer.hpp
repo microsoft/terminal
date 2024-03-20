@@ -60,7 +60,6 @@ filling in the last row, and updating the screen.
 #include "../buffer/out/textBufferTextIterator.hpp"
 
 struct URegularExpression;
-struct TextBufferSerializer;
 
 namespace Microsoft::Console::Render
 {
@@ -320,7 +319,7 @@ public:
                        const bool isIntenseBold,
                        std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
-    TextBufferSerializer Serialize() const;
+    void Serialize(const wchar_t* destination) const;
 
     struct PositionInformation
     {
@@ -447,23 +446,4 @@ private:
     friend class TextBufferTests;
     friend class UiaTextRangeTests;
 #endif
-};
-
-struct TextBufferSerializer
-{
-    explicit TextBufferSerializer(const TextBuffer& textBuffer);
-
-    bool SerializeNextRow(std::wstring& out);
-
-private:
-    static constexpr auto defaultAttr = TextAttribute{};
-
-    const TextBuffer& _textBuffer;
-    til::CoordType lastRowWithText = 0;
-    til::CoordType currentRow = 0;
-    CharacterAttributes previousAttr = CharacterAttributes::Unused1;
-    TextColor previousFg;
-    TextColor previousBg;
-    TextColor previousUl;
-    uint16_t previousHyperlinkId = 0;
 };

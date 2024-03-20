@@ -36,7 +36,7 @@ namespace TerminalApp
 
         Boolean HasSettingsStartupActions();
 
-        Boolean SessionRestoreEnabled();
+        Boolean ShouldUsePersistedLayout();
 
         void ReloadSettings();
 

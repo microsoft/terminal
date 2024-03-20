@@ -724,6 +724,7 @@ bool AppCommandlineArgs::_noCommandsProvided()
 void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName.clear();
+    _sessionId.clear();
     _startingDirectory.clear();
     _startingTitle.clear();
     _startingTabColor.clear();

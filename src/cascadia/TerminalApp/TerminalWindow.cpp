@@ -1128,7 +1128,7 @@ namespace winrt::TerminalApp::implementation
     // - non-null if there is a particular saved layout to use
     std::optional<uint32_t> TerminalWindow::LoadPersistedLayoutIdx() const
     {
-        return _settings.GlobalSettings().SessionRestoreEnabled() ? _loadFromPersistedLayoutIdx : std::nullopt;
+        return _settings.GlobalSettings().ShouldUsePersistedLayout() ? _loadFromPersistedLayoutIdx : std::nullopt;
     }
 
     WindowLayout TerminalWindow::LoadPersistedLayout()

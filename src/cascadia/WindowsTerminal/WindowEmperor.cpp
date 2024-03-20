@@ -486,7 +486,7 @@ void WindowEmperor::_finalizeSessionPersistence() const
     // Ensure to write the state.json before we TerminateProcess()
     state.Flush();
 
-    if (!_app.Logic().SessionRestoreEnabled())
+    if (!_app.Logic().ShouldUsePersistedLayout())
     {
         return;
     }

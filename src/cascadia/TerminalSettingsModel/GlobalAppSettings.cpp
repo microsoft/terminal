@@ -249,7 +249,7 @@ void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collect
     _actionMap->ExpandCommands(profiles, schemes);
 }
 
-bool GlobalAppSettings::SessionRestoreEnabled() const
+bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
     return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
 }

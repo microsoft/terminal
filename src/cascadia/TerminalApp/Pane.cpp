@@ -299,10 +299,10 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     // We now need to execute the commands for each side of the tree
     // We've done one split, so the first-most child will have currentId, and the
     // one after it will be incremented.
-    auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1, BuildStartupKind::None);
+    auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1, kind);
     // the next id for the second branch depends on how many splits were in the
     // first child.
-    auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1, BuildStartupKind::None);
+    auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1, kind);
 
     std::vector<ActionAndArgs> actions{};
     actions.reserve(firstState.args.size() + secondState.args.size() + 3);

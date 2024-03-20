@@ -53,7 +53,7 @@ namespace winrt::TerminalApp::implementation
         void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
-        bool SessionRestoreEnabled() const;
+        bool ShouldUsePersistedLayout() const;
 
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
