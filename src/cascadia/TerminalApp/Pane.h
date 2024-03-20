@@ -222,7 +222,6 @@ public:
 
     WINRT_CALLBACK(GotFocus, gotFocusArgs);
     WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
-    WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
     WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
     til::event<winrt::delegate<std::shared_ptr<Pane>, winrt::Windows::Foundation::Point, Borders>> ManipulationRequested;
 

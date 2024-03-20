@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Pane.h"
+
 #include "AppLogic.h"
 
 #include "Utils.h"
@@ -1272,14 +1273,7 @@ TermControl Pane::GetLastFocusedTerminalControl()
             {
                 if (p->_IsLeaf())
                 {
-                    if (const auto& terminalPane{ p->_content.try_as<TerminalPaneContent>() })
-                    {
-                        return terminalPane.GetTerminal();
-                    }
-                    else
-                    {
-                        return nullptr;
-                    }
+                    return p->GetTerminalControl();
                 }
                 pane = p;
             }
@@ -1287,15 +1281,8 @@ TermControl Pane::GetLastFocusedTerminalControl()
         }
         return _firstChild->GetLastFocusedTerminalControl();
     }
-
-    if (const auto& terminalPane{ _content.try_as<TerminalPaneContent>() })
-    {
-        return terminalPane.GetTerminal();
-    }
-    else
-    {
-        return nullptr;
-    }
+    // we _are_ a leaf.
+    return GetTerminalControl();
 }
 
 IPaneContent Pane::GetLastFocusedContent()
@@ -1332,7 +1319,7 @@ TermControl Pane::GetTerminalControl() const
 {
     if (const auto& terminalPane{ _getTerminalContent() })
     {
-        return terminalPane.GetTerminal();
+        return terminalPane.GetTermControl();
     }
     else
     {
@@ -2878,7 +2865,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
         }
         else
         {
-            const auto cellSize = snappable.GridSize();
+            const auto cellSize = snappable.GridUnitSize();
             const auto higher = lower + (direction == PaneSnapDirection::Width ?
                                              cellSize.Width :
                                              cellSize.Height);
@@ -2939,13 +2926,11 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
                 // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
                 // however be already snapped, so add 1 to make sure it really increases
                 // (not strictly necessary but to avoid surprises).
-                sizeNode.size = _CalcSnappedDimension(widthOrHeight,
-                                                      sizeNode.size + 1)
-                                    .higher;
+                sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
             }
             else
             {
-                const auto cellSize = snappable.GridSize();
+                const auto cellSize = snappable.GridUnitSize();
                 sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
             }
         }
@@ -3061,7 +3046,7 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        auto controlSize = _content.MinSize();
+        auto controlSize = _content.MinimumSize();
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
