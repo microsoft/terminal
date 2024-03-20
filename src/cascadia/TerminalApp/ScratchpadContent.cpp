@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ScratchpadContent.h"
-#include "PaneArgs.h"
 #include "ScratchpadContent.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -37,7 +36,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _root;
     }
-    winrt::Windows::Foundation::Size ScratchpadContent::MinSize()
+    winrt::Windows::Foundation::Size ScratchpadContent::MinimumSize()
     {
         return { 1, 1 };
     }

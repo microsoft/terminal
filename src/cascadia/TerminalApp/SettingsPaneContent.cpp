@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "SettingsPaneContent.h"
-#include "PaneArgs.h"
 #include "SettingsPaneContent.g.cpp"
 #include "Utils.h"
 
@@ -36,7 +35,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _sui;
     }
-    winrt::Windows::Foundation::Size SettingsPaneContent::MinSize()
+    winrt::Windows::Foundation::Size SettingsPaneContent::MinimumSize()
     {
         return { 1, 1 };
     }
