@@ -3,8 +3,9 @@
 
 #include "pch.h"
 #include "TerminalPaneContent.h"
-#include "PaneArgs.h"
 #include "TerminalPaneContent.g.cpp"
+
+#include "BellEventArgs.g.cpp"
 
 #include <Mmsystem.h>
 using namespace winrt::Windows::Foundation;
@@ -45,11 +46,11 @@ namespace winrt::TerminalApp::implementation
     {
         return _control;
     }
-    winrt::Microsoft::Terminal::Control::TermControl TerminalPaneContent::GetTerminal()
+    winrt::Microsoft::Terminal::Control::TermControl TerminalPaneContent::GetTermControl()
     {
         return _control;
     }
-    winrt::Windows::Foundation::Size TerminalPaneContent::MinSize()
+    winrt::Windows::Foundation::Size TerminalPaneContent::MinimumSize()
     {
         return _control.MinimumSize();
     }
@@ -324,7 +325,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _control.SnapDimensionToGrid(direction == PaneSnapDirection::Width, sizeToSnap);
     }
-    Windows::Foundation::Size TerminalPaneContent::GridSize()
+    Windows::Foundation::Size TerminalPaneContent::GridUnitSize()
     {
         return _control.CharacterDimensions();
     }

@@ -7,7 +7,7 @@ namespace TerminalApp
 {
     [default_interface] runtimeclass TerminalPaneContent : IPaneContent, ISnappable
     {
-        Microsoft.Terminal.Control.TermControl GetTerminal();
+        Microsoft.Terminal.Control.TermControl GetTermControl();
 
         void UpdateSettings(const Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings,
                             const Microsoft.Terminal.Settings.Model.Profile profile);

@@ -1306,7 +1306,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        const auto& control{ paneContent.GetTerminal() };
+        const auto& control{ paneContent.GetTermControl() };
         if (control == nullptr)
         {
             return nullptr;
@@ -1731,11 +1731,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-    }
 
-    void TerminalPage::_RegisterPaneEvents(const TerminalApp::TerminalPaneContent& paneContent)
-    {
-        paneContent.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+        hostingTab.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
     }
 
     // Method Description:
@@ -2383,16 +2380,6 @@ namespace winrt::TerminalApp::implementation
 
         _UnZoomIfNeeded();
         auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
-
-        // When we split the pane, the Pane itself will create a _new_ Pane
-        // instance for the original content. We need to make sure we also
-        // re-add our event handler to that newly created pane.
-        //
-        // _MakePane will already call this for the newly created pane.
-        if (const auto& paneContent{ original->GetContent().try_as<TerminalPaneContent>() })
-        {
-            _RegisterPaneEvents(*paneContent);
-        }
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
@@ -3125,8 +3112,8 @@ namespace winrt::TerminalApp::implementation
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-            auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
-            return std::make_shared<Pane>(terminalPane);
+            auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+            return std::make_shared<Pane>(paneContent);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -3182,15 +3169,15 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
-        auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
-        auto resultPane = std::make_shared<Pane>(terminalPane);
+        auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+        auto resultPane = std::make_shared<Pane>(paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugTerminalPane{ winrt::make<TerminalPaneContent>(profile, newControl) };
-            auto debugPane = std::make_shared<Pane>(debugTerminalPane);
+            auto debugContent{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            auto debugPane = std::make_shared<Pane>(debugContent);
 
             // Since we're doing this split directly on the pane (instead of going through TerminalTab,
             // we need to handle the panes 'active' states
@@ -3203,8 +3190,6 @@ namespace winrt::TerminalApp::implementation
             resultPane->ClearActive();
             original->SetActive();
         }
-
-        _RegisterPaneEvents(terminalPane);
 
         return resultPane;
     }
@@ -3219,7 +3204,7 @@ namespace winrt::TerminalApp::implementation
         // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            paneContent.GetTerminal().Connection(connection);
+            paneContent.GetTermControl().Connection(connection);
             connection.Start();
         }
     }
