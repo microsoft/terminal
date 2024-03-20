@@ -295,19 +295,66 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Handled, false);
     };
 
-    struct ContentArgsBase
+    struct ContentArgsBase : public winrt::implements<ContentArgsBase, INewContentArgs>
     {
+        ContentArgsBase(winrt::hstring type) :
+            _Type{ type } {}
+
+        ContentArgsBase() :
+            ContentArgsBase(L"") {}
+
         ACTION_ARG(winrt::hstring, Type, L"");
+
+        static constexpr std::string_view TypeKey{ "type" };
+
+    public:
+        bool Equals(INewContentArgs other) const
+        {
+            return other.Type() == _Type;
+        }
+        size_t Hash() const
+        {
+            til::hasher h;
+            Hash(h);
+            return h.finalize();
+        }
+        void Hash(til::hasher& h) const
+        {
+            h.write(Type());
+        }
+        INewContentArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ContentArgsBase>() };
+            copy->_Type = _Type;
+            return *copy;
+        }
+        winrt::hstring GenerateName() const
+        {
+            return winrt::hstring{ L"type: " } + Type();
+        }
+        static Json::Value ToJson(const winrt::com_ptr<ContentArgsBase>& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            JsonUtils::SetValueForKey(json, TypeKey, val->_Type);
+            return json;
+        }
     };
 
     // Although it may _seem_ like NewTerminalArgs can use ACTION_ARG_BODY, it
     // actually can't, because it isn't an `IActionArgs`, which breaks some
     // assumptions made in the macro.
-    struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>, public ContentArgsBase
+    struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
     {
         NewTerminalArgs() = default;
         NewTerminalArgs(int32_t& profileIndex) :
             _ProfileIndex{ profileIndex } {};
+
+        ACTION_ARG(winrt::hstring, Type, L"");
+
         ACTION_ARG(winrt::hstring, Commandline, L"");
         ACTION_ARG(winrt::hstring, StartingDirectory, L"");
         ACTION_ARG(winrt::hstring, TabTitle, L"");
@@ -450,7 +497,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return { terminalArgs, {} };
         }
 
-        return { nullptr, {} };
+        // For now, we don't support any other concrete types of content
+        // with args. Just return a placeholder type that only includes the type
+        return { *winrt::make_self<ContentArgsBase>(type), {} };
     }
     static Json::Value ContentArgsToJson(const Model::INewContentArgs& contentArgs)
     {
@@ -458,7 +507,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs::ToJson(contentArgs.try_as<Model::NewTerminalArgs>());
         }
-        return Json::Value::null;
+
+        // For now, we don't support any other concrete types of content
+        // with args. Just return a placeholder.
+        auto base{ winrt::make_self<ContentArgsBase>(contentArgs.Type()) };
+        return ContentArgsBase::ToJson(base);
     }
 
 }
