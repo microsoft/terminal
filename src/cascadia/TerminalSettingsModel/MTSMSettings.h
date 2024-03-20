@@ -39,6 +39,7 @@ Author(s):
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
+    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                                                                         \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
     X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                                                           \
     X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                                                                   \

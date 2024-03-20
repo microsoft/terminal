@@ -4028,6 +4028,74 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog stating the "Touch Keyboard and Handwriting Panel
+    //   Service" is disabled.
+    void TerminalPage::ShowKeyboardServiceWarning() const
+    {
+        if (!_IsMessageDismissed(InfoBarMessage::KeyboardServiceWarning))
+        {
+            if (const auto keyboardServiceWarningInfoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+            {
+                keyboardServiceWarningInfoBar.IsOpen(true);
+            }
+        }
+    }
+
+    // Function Description:
+    // - Helper function to get the OS-localized name for the "Touch Keyboard
+    //   and Handwriting Panel Service". If we can't open up the service for any
+    //   reason, then we'll just return the service's key, "TabletInputService".
+    // Return Value:
+    // - The OS-localized name for the TabletInputService
+    winrt::hstring _getTabletServiceName()
+    {
+        wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
+
+        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
+        {
+            return winrt::hstring{ TabletInputServiceKey };
+        }
+
+        DWORD cchBuffer = 0;
+        const auto ok = GetServiceDisplayNameW(hManager.get(), TabletInputServiceKey.data(), nullptr, &cchBuffer);
+
+        // Windows 11 doesn't have a TabletInputService.
+        // (It was renamed to TextInputManagementService, because people kept thinking that a
+        // service called "tablet-something" is system-irrelevant on PCs and can be disabled.)
+        if (ok || GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        {
+            return winrt::hstring{ TabletInputServiceKey };
+        }
+
+        std::wstring buffer;
+        cchBuffer += 1; // Add space for a null
+        buffer.resize(cchBuffer);
+
+        if (LOG_LAST_ERROR_IF(!GetServiceDisplayNameW(hManager.get(),
+                                                      TabletInputServiceKey.data(),
+                                                      buffer.data(),
+                                                      &cchBuffer)))
+        {
+            return winrt::hstring{ TabletInputServiceKey };
+        }
+        return winrt::hstring{ buffer };
+    }
+
+    // Method Description:
+    // - Return the fully-formed warning message for the
+    //   "KeyboardServiceDisabled" InfoBar. This InfoBar is used to warn the user
+    //   if the keyboard service is disabled, and uses the OS localization for
+    //   the service's actual name. It's bound to the bar in XAML.
+    // Return Value:
+    // - The warning message, including the OS-localized service name.
+    winrt::hstring TerminalPage::KeyboardServiceDisabledText()
+    {
+        const auto serviceName{ _getTabletServiceName() };
+        const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
+        return text;
+    }
+
+    // Method Description:
     // - Hides cursor if required
     // Return Value:
     // - <none>
@@ -4413,6 +4481,22 @@ namespace winrt::TerminalApp::implementation
     {
         _DismissMessage(InfoBarMessage::CloseOnExitInfo);
         if (const auto infoBar = FindName(L"CloseOnExitInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+    }
+
+    // Method Description:
+    // - Persists the user's choice not to show information bar warning about "Touch keyboard and Handwriting Panel Service" disabled
+    // Then hides this information buffer.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_KeyboardServiceWarningInfoDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
+    {
+        _DismissMessage(InfoBarMessage::KeyboardServiceWarning);
+        if (const auto infoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
         {
             infoBar.IsOpen(false);
         }

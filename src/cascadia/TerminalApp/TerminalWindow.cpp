@@ -483,6 +483,15 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::_OnLoaded(const IInspectable& /*sender*/,
                                    const RoutedEventArgs& /*eventArgs*/)
     {
+        if (_settings.GlobalSettings().InputServiceWarning())
+        {
+            const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+            if (keyboardServiceIsDisabled)
+            {
+                _root->ShowKeyboardServiceWarning();
+            }
+        }
+
         const auto& settingsLoadedResult = gsl::narrow_cast<HRESULT>(_initialLoadResult.Result());
         if (FAILED(settingsLoadedResult))
         {
@@ -494,6 +503,50 @@ namespace winrt::TerminalApp::implementation
         {
             _ShowLoadWarningsDialog(_initialLoadResult.Warnings());
         }
+    }
+
+    // Method Description:
+    // - Helper for determining if the "Touch Keyboard and Handwriting Panel
+    //   Service" is enabled. If it isn't, we want to be able to display a
+    //   warning to the user, because they won't be able to type in the
+    //   Terminal.
+    // Return Value:
+    // - true if the service is enabled, or if we fail to query the service. We
+    //   return true in that case, to be less noisy (though, that is unexpected)
+    bool TerminalWindow::_IsKeyboardServiceEnabled()
+    {
+        // If at any point we fail to open the service manager, the service,
+        // etc, then just quick return true to disable the dialog. We'd rather
+        // not be noisy with this dialog if we failed for some reason.
+
+        // Open the service manager. This will return 0 if it failed.
+        wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
+
+        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
+        {
+            return true;
+        }
+
+        // Get a handle to the keyboard service
+        wil::unique_schandle hService{ OpenServiceW(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
+
+        // Windows 11 doesn't have a TabletInputService.
+        // (It was renamed to TextInputManagementService, because people kept thinking that a
+        // service called "tablet-something" is system-irrelevant on PCs and can be disabled.)
+        if (!hService.is_valid())
+        {
+            return true;
+        }
+
+        // Get the current state of the service
+        SERVICE_STATUS status{ 0 };
+        if (!LOG_IF_WIN32_BOOL_FALSE(QueryServiceStatus(hService.get(), &status)))
+        {
+            return true;
+        }
+
+        const auto state = status.dwCurrentState;
+        return (state == SERVICE_RUNNING || state == SERVICE_START_PENDING);
     }
 
     // Method Description:

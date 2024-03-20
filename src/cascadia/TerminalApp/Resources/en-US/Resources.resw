@@ -149,6 +149,16 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Encountered errors while loading user settings</value>
   </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>Warning:</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>The "{0}" isn't running on your machine. This can prevent the Terminal from receiving keyboard input.</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>
   </data>
