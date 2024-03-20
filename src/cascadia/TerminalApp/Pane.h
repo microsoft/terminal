@@ -210,16 +210,16 @@ public:
 
     void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
 
-    WINRT_CALLBACK(ClosedByParent, winrt::delegate<>);
-    WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+    til::event<winrt::delegate<>> ClosedByParent;
+    til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> Closed;
 
     using gotFocusArgs = winrt::delegate<std::shared_ptr<Pane>, winrt::Windows::UI::Xaml::FocusState>;
 
-    WINRT_CALLBACK(GotFocus, gotFocusArgs);
-    WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
-    WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
-    WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
-    WINRT_CALLBACK(RestartTerminalRequested, winrt::delegate<std::shared_ptr<Pane>>);
+    til::event<gotFocusArgs> GotFocus;
+    til::event<winrt::delegate<std::shared_ptr<Pane>>> LostFocus;
+    til::event<winrt::Windows::Foundation::EventHandler<bool>> PaneRaiseBell;
+    til::event<winrt::delegate<std::shared_ptr<Pane>>> Detached;
+    til::event<winrt::delegate<std::shared_ptr<Pane>>> RestartTerminalRequested;
 
 private:
     struct PanePoint;

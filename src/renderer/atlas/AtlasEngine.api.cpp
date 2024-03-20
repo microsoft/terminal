@@ -794,5 +794,6 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->overline = { 0, underlineWidthU16 };
 
         fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();
+        fontMetrics->colorGlyphs = fontInfoDesired.GetEnableColorGlyphs();
     }
 }

@@ -71,10 +71,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
 #pragma endregion
 
-        TYPED_EVENT(SelectionChanged, IInspectable, IInspectable);
-        TYPED_EVENT(TextChanged, IInspectable, IInspectable);
-        TYPED_EVENT(CursorChanged, IInspectable, IInspectable);
-        TYPED_EVENT(NewOutput, IInspectable, hstring);
+        til::typed_event<IInspectable, IInspectable> SelectionChanged;
+        til::typed_event<IInspectable, IInspectable> TextChanged;
+        til::typed_event<IInspectable, IInspectable> CursorChanged;
+        til::typed_event<IInspectable, hstring> NewOutput;
 
     private:
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider _CreateXamlUiaTextRange(::ITextRangeProvider* returnVal) const;

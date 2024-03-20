@@ -8,6 +8,7 @@
 #include <fmt/chrono.h>
 #include <shlobj.h>
 #include <til/latch.h>
+#include "resource.h"
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
@@ -17,14 +18,8 @@
 #include "SshHostGenerator.h"
 #endif
 
-// The following files are generated at build time into the "Generated Files" directory.
-// defaults.h is a file containing the default json settings in a std::string_view.
-#include "defaults.h"
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
-
-#include "userDefaults.h"
-#include "enableColorSelection.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -349,8 +344,8 @@ void SettingsLoader::FinalizeLayering()
     // actions, this is the time to do it.
     if (userSettings.globals->EnableColorSelection())
     {
-        const auto json = _parseJson(EnableColorSelectionSettingsJson);
-        const auto globals = GlobalAppSettings::FromJson(json.root);
+        const auto json = _parseJson(LoadStringResource(IDR_ENABLE_COLOR_SELECTION));
+        const auto globals = GlobalAppSettings::FromJson(json.root, OriginTag::InBox);
         userSettings.globals->AddLeastImportantParent(globals);
     }
 
@@ -616,7 +611,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     settings.clear();
 
     {
-        settings.globals = GlobalAppSettings::FromJson(json.root);
+        settings.globals = GlobalAppSettings::FromJson(json.root, origin);
 
         for (const auto& schemeJson : json.colorSchemes)
         {
@@ -704,7 +699,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         // Parse out actions from the fragment. Manually opt-out of keybinding
         // parsing - fragments shouldn't be allowed to bind actions to keys
         // directly. We may want to revisit circa GH#2205
-        settings.globals->LayerActionsFrom(json.root, false);
+        settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
     }
 
     {
@@ -972,10 +967,10 @@ try
 
     // Only uses default settings when firstTimeSetup is true and releaseSettingExists is false
     // Otherwise use existing settingsString
-    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? UserSettingsJson : settingsString;
+    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? LoadStringResource(IDR_USER_DEFAULTS) : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
-    SettingsLoader loader{ settingsStringView, DefaultJson };
+    SettingsLoader loader{ settingsStringView, LoadStringResource(IDR_DEFAULTS) };
 
     // Generate dynamic profiles and add them as parents of user profiles.
     // That way the user profiles will get appropriate defaults from the generators (like icons and such).
@@ -1127,7 +1122,7 @@ void CascadiaSettings::_researchOnLoad()
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
 Model::CascadiaSettings CascadiaSettings::LoadDefaults()
 {
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultJson);
+    return *winrt::make_self<CascadiaSettings>(std::string_view{}, LoadStringResource(IDR_DEFAULTS));
 }
 
 CascadiaSettings::CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON) :

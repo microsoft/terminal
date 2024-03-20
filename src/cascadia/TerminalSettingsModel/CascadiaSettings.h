@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    std::string_view LoadStringResource(int resourceID);
     winrt::com_ptr<Profile> CreateChild(const winrt::com_ptr<Profile>& parent);
 
     class SettingsTypedDeserializationException final : public std::runtime_error

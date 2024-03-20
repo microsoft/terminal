@@ -94,7 +94,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - str: the string to write.
     void AzureConnection::_WriteStringWithNewline(const std::wstring_view str)
     {
-        _TerminalOutputHandlers(str + L"\r\n");
+        TerminalOutput.raise(str + L"\r\n");
     }
 
     // Method description:
@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         catch (const std::exception& runtimeException)
         {
             // This also catches the AzureException, which has a .what()
-            _TerminalOutputHandlers(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
+            TerminalOutput.raise(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
         }
         catch (...)
         {
@@ -160,13 +160,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _currentInputMode = mode;
 
-        _TerminalOutputHandlers(L"> \x1b[92m"); // Make prompted user input green
+        TerminalOutput.raise(L"> \x1b[92m"); // Make prompted user input green
 
         _inputEvent.wait(inputLock, [this, mode]() {
             return _currentInputMode != mode || _isStateAtOrBeyond(ConnectionState::Closing);
         });
 
-        _TerminalOutputHandlers(L"\x1b[m");
+        TerminalOutput.raise(L"\x1b[m");
 
         if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
@@ -204,19 +204,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_userInput.size() > 0)
             {
                 _userInput.pop_back();
-                _TerminalOutputHandlers(L"\x08 \x08"); // overstrike the character with a space
+                TerminalOutput.raise(L"\x08 \x08"); // overstrike the character with a space
             }
         }
         else
         {
-            _TerminalOutputHandlers(data); // echo back
+            TerminalOutput.raise(data); // echo back
 
             switch (_currentInputMode)
             {
             case InputMode::Line:
                 if (data.size() > 0 && gsl::at(data, 0) == UNICODE_CARRIAGERETURN)
                 {
-                    _TerminalOutputHandlers(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
+                    TerminalOutput.raise(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
                     _currentInputMode = InputMode::None; // toggling the mode indicates completion
                     _inputEvent.notify_one();
                     break;
@@ -279,7 +279,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if (_hOutputThread)
             {
-                // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
+                // Waiting for the output thread to exit ensures that all pending TerminalOutput.raise()
                 // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
                 // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
                 WaitForSingleObject(_hOutputThread.get(), INFINITE);
@@ -422,7 +422,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                             }
 
                             // Pass the output to our registered event handlers
-                            _TerminalOutputHandlers(_u16Str);
+                            TerminalOutput.raise(_u16Str);
                             break;
                         }
                         case WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE:
@@ -765,7 +765,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto shellType = _ParsePreferredShellType(settingsResponse);
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
-        _TerminalOutputHandlers(L"\r\n");
+        TerminalOutput.raise(L"\r\n");
 
         //// Step 8: connecting to said terminal
         {
