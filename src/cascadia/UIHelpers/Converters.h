@@ -9,19 +9,25 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 {
     struct Converters
     {
-        Converters() = default;
-        static winrt::hstring AppendPercentageSign(double value);
-        static winrt::Windows::UI::Text::FontWeight DoubleToFontWeight(double value);
-        static winrt::Windows::UI::Xaml::Media::SolidColorBrush ColorToBrush(const winrt::Windows::UI::Color& color);
-        static double FontWeightToDouble(const winrt::Windows::UI::Text::FontWeight& fontWeight);
+        // Booleans
         static bool InvertBoolean(bool value);
         static winrt::Windows::UI::Xaml::Visibility InvertedBooleanToVisibility(bool value);
-        static double MaxValueFromPaddingString(const winrt::hstring& paddingString);
-        static int PercentageToPercentageValue(double value);
+
+        // Numbers
+        static double PercentageToPercentageValue(double value);
         static double PercentageValueToPercentage(double value);
+        static winrt::hstring PercentageToPercentageString(double value);
+
+        // Strings
         static bool StringsAreNotEqual(const winrt::hstring& expected, const winrt::hstring& actual);
         static winrt::Windows::UI::Xaml::Visibility StringNotEmptyToVisibility(const winrt::hstring& value);
         static winrt::hstring StringOrEmptyIfPlaceholder(const winrt::hstring& placeholder, const winrt::hstring& value);
+
+        // Misc
+        static winrt::Windows::UI::Text::FontWeight DoubleToFontWeight(double value);
+        static winrt::Windows::UI::Xaml::Media::SolidColorBrush ColorToBrush(winrt::Windows::UI::Color color);
+        static double FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight);
+        static double MaxValueFromPaddingString(const winrt::hstring& paddingString);
     };
 }
 

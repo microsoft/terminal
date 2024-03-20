@@ -9,7 +9,7 @@ namespace TerminalApp
 {
     [default_interface] runtimeclass TerminalPaneContent : IPaneContent, ISnappable
     {
-        Microsoft.Terminal.Control.TermControl GetTerminal();
+        Microsoft.Terminal.Control.TermControl GetTermControl();
 
         void UpdateTerminalSettings(TerminalSettingsCache cache);
 

@@ -97,6 +97,8 @@ namespace winrt::TerminalApp::implementation
             return _tabStatus;
         }
 
+        til::typed_event<TerminalApp::TerminalPaneContent> RestartTerminalRequested;
+
         WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
@@ -132,11 +134,14 @@ namespace winrt::TerminalApp::implementation
             winrt::TerminalApp::IPaneContent::ConnectionStateChanged_revoker ConnectionStateChanged;
             winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
             winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
+            winrt::TerminalApp::IPaneContent::CloseRequested_revoker CloseRequested;
 
             // These events literally only apply if the content is a TermControl.
             winrt::Microsoft::Terminal::Control::TermControl::KeySent_revoker KeySent;
             winrt::Microsoft::Terminal::Control::TermControl::CharSent_revoker CharSent;
             winrt::Microsoft::Terminal::Control::TermControl::StringSent_revoker StringSent;
+
+            winrt::TerminalApp::TerminalPaneContent::RestartTerminalRequested_revoker RestartTerminalRequested;
         };
         std::unordered_map<uint32_t, ContentEventTokens> _contentEvents;
 
@@ -194,6 +199,8 @@ namespace winrt::TerminalApp::implementation
         void _exportTextClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _moveTabToNewWindowClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _findClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+
+        void _bubbleRestartTerminalRequested(TerminalApp::TerminalPaneContent sender, const winrt::Windows::Foundation::IInspectable& args);
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
