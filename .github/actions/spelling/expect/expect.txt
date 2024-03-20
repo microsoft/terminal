@@ -1883,7 +1883,6 @@ UPDATEDISPLAY
 UPDOWN
 UPKEY
 upss
-UPSS
 uregex
 URegular
 usebackq
