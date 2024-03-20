@@ -86,6 +86,13 @@ namespace Microsoft::Console::Render::Atlas
         return val < min ? min : (max < val ? max : val);
     }
 
+    template<typename T>
+    constexpr T alignForward(T val, T alignment) noexcept
+    {
+        assert((alignment & (alignment - 1)) == 0); // alignment should be a power of 2
+        return (val + alignment - 1) & ~(alignment - 1);
+    }
+
     inline constexpr D2D1_RECT_F GlyphRunEmptyBounds{ 1e38f, 1e38f, -1e38f, -1e38f };
     void GlyphRunAccumulateBounds(const ID2D1DeviceContext* d2dRenderTarget, D2D1_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, D2D1_RECT_F& bounds);
 

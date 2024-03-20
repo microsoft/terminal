@@ -126,3 +126,4 @@
 ^tools/ReleaseEngineering/ServicingPipeline\.ps1$
 ^XamlStyler\.json$
 ignore$
+Resources/(?!en)
