@@ -1246,35 +1246,31 @@ namespace winrt::TerminalApp::implementation
                         if (termControl.HasSelection())
                         {
                             const auto selections{ termControl.SelectedText(true) };
-                            auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                            const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
                             realArgs.Commandline(selection);
                         }
                     }
                 }
 
-                winrt::Microsoft::Terminal::Control::KeyChord keyChord = nullptr;
-                if (!realArgs.KeyChord().empty())
+                try
                 {
-                    try
+                    KeyChord keyChord = nullptr;
+                    hstring keyChordText = L"None";
+                    if (!realArgs.KeyChord().empty())
                     {
                         keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
-                        _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
-                        _settings.WriteSettingsToDisk();
-                        ActionSaved(realArgs.Commandline(), realArgs.Name(), KeyChordSerialization::ToString(keyChord));
+                        keyChordText = KeyChordSerialization::ToString(keyChord);
                     }
-                    catch (const winrt::hresult_error& ex)
-                    {
-                        auto code = ex.code();
-                        auto message = ex.message();
-                        ActionSaveFailed(message);
-                        args.Handled(true);
-                        return;
-                    }
-                }
 
-                _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
-                _settings.WriteSettingsToDisk();
-                ActionSaved(realArgs.Commandline(), realArgs.Name(), L"None");
+                    _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
+                    ActionSaved(realArgs.Commandline(), realArgs.Name(), keyChordText);
+                    _settings.WriteSettingsToDisk();
+                }
+                catch (const winrt::hresult_error& ex)
+                {
+                    const auto message = ex.message();
+                    ActionSaveFailed(message);
+                }
 
                 args.Handled(true);
             }
