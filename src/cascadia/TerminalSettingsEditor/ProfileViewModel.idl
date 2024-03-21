@@ -40,7 +40,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
-        event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfile;
+        event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
 
@@ -74,7 +74,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean EditableUnfocusedAppearance { get; };
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
+
         Boolean VtPassthroughAvailable { get; };
+        Boolean ShowMarksAvailable { get; };
+        Boolean AutoMarkPromptsAvailable { get; };
+        Boolean RepositionCursorWithMouseAvailable { get; };
 
         String EvaluatedIcon { get; };
 
@@ -109,5 +113,9 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, VtPassthrough);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RightClickContextMenu);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ShowMarks);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AutoMarkPrompts);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
     }
 }

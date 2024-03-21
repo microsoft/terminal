@@ -467,7 +467,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-        _OpenJsonHandlers(nullptr, target);
+        OpenJson.raise(nullptr, target);
     }
 
     void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
@@ -475,7 +475,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
         {
             const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-            _OpenJsonHandlers(nullptr, target);
+            OpenJson.raise(nullptr, target);
         }
     }
 
@@ -622,7 +622,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
 
         // Add an event handler for when the user wants to delete a profile.
-        profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
+        profile.DeleteProfileRequested({ this, &MainPage::_DeleteProfile });
 
         return profileNavItem;
     }
