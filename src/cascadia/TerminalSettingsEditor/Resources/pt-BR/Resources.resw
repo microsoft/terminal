@@ -914,6 +914,14 @@
     <value>Quando habilitado, o terminal desenha glifos personalizados para caracteres de desenho de elemento de bloco e caixa em vez de usar a fonte. Esse recurso só funciona quando a Aceleração de GPU está disponível.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>Emoji colorido</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>Quando habilitado, o Emoji é exibido em cores.</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Peso da fonte</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>

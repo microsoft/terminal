@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+        til::event<TerminalOutputHandler> TerminalOutput;
 
     private:
         til::CoordType _initialRows{};

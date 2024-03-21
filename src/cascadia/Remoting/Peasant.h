@@ -68,24 +68,24 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::hstring GetWindowLayout();
         void SendContent(const winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs& args);
 
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs> WindowActivated;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::CommandlineArgs> ExecuteCommandlineRequested;
+        til::typed_event<> IdentifyWindowsRequested;
+        til::typed_event<> DisplayWindowIdRequested;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RenameRequestArgs> RenameRequested;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior> SummonRequested;
+
+        til::typed_event<> ShowNotificationIconRequested;
+        til::typed_event<> HideNotificationIconRequested;
+        til::typed_event<> QuitAllRequested;
+        til::typed_event<> QuitRequested;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs> GetWindowLayoutRequested;
+
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest> AttachRequested;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs> SendContentRequested;
+
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, ActiveTabTitle);
-
-        TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs);
-        TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::CommandlineArgs);
-        TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RenameRequestArgs);
-        TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
-
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
-
-        TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
-        TYPED_EVENT(SendContentRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs);
 
     private:
         Peasant(const uint64_t testPID);

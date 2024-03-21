@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void InteractivityAutomationPeer::SignalSelectionChanged()
     {
-        _SelectionChangedHandlers(*this, nullptr);
+        SelectionChanged.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void InteractivityAutomationPeer::SignalTextChanged()
     {
-        _TextChangedHandlers(*this, nullptr);
+        TextChanged.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -90,12 +90,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void InteractivityAutomationPeer::SignalCursorChanged()
     {
-        _CursorChangedHandlers(*this, nullptr);
+        CursorChanged.raise(*this, nullptr);
     }
 
     void InteractivityAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
     {
-        _NewOutputHandlers(*this, hstring{ newOutput });
+        NewOutput.raise(*this, hstring{ newOutput });
     }
 
 #pragma region ITextProvider

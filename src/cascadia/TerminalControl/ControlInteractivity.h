@@ -91,13 +91,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t Id();
         void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
-        TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
-        TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
-        TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
-        TYPED_EVENT(ContextMenuRequested, IInspectable, Control::ContextMenuRequestedEventArgs);
+        til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
+        til::typed_event<IInspectable, Control::PasteFromClipboardEventArgs> PasteFromClipboard;
+        til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
+        til::typed_event<IInspectable, Control::ContextMenuRequestedEventArgs> ContextMenuRequested;
 
-        TYPED_EVENT(Attached, IInspectable, IInspectable);
-        TYPED_EVENT(Closed, IInspectable, IInspectable);
+        til::typed_event<IInspectable, IInspectable> Attached;
+        til::typed_event<IInspectable, IInspectable> Closed;
 
     private:
         // NOTE: _uiaEngine must be ordered before _core.

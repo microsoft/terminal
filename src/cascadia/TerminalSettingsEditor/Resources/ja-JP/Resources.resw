@@ -914,6 +914,14 @@
     <value>有効にすると、ターミナルは、フォントを使用する代わりに、ブロック要素とボックス描画文字のカスタム グリフを描画します。この機能は、GPU アクセラレーションが使用可能な場合にのみ機能します。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>フル カラーの絵文字</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>有効にすると、絵文字がフル カラーで表示されます。</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>フォントの太さ</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
