@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Raise an event with these args. The AppHost will listen for this
         // event to know when to take these args and dispatch them to a
         // currently-running window.
-        _ExecuteCommandlineRequestedHandlers(*this, args);
+        ExecuteCommandlineRequested.raise(*this, args);
 
         return true;
     }
@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // by the monarch. The monarch might have died. If they have, this
             // will throw an exception. Just eat it, the election thread will
             // handle hooking up the new one.
-            _WindowActivatedHandlers(*this, args);
+            WindowActivated.raise(*this, args);
             successfullyNotified = true;
         }
         catch (...)
@@ -146,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-        _SummonRequestedHandlers(*this, localCopy);
+        SummonRequested.raise(*this, localCopy);
     }
 
     // Method Description:
@@ -161,7 +161,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         // Not worried about try/catching this. The handler is in AppHost, which
         // is in-proc for us.
-        _DisplayWindowIdRequestedHandlers(*this, nullptr);
+        DisplayWindowIdRequested.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // by the monarch. The monarch might have died. If they have, this
             // will throw an exception. Just eat it, the election thread will
             // handle hooking up the new one.
-            _IdentifyWindowsRequestedHandlers(*this, nullptr);
+            IdentifyWindowsRequested.raise(*this, nullptr);
             successfullyNotified = true;
         }
         catch (...)
@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // by the monarch. The monarch might have died. If they have, this
             // will throw an exception. Just eat it, the election thread will
             // handle hooking up the new one.
-            _RenameRequestedHandlers(*this, args);
+            RenameRequested.raise(*this, args);
             if (args.Succeeded())
             {
                 _WindowName = args.NewName();
@@ -233,7 +233,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            _ShowNotificationIconRequestedHandlers(*this, nullptr);
+            ShowNotificationIconRequested.raise(*this, nullptr);
         }
         catch (...)
         {
@@ -249,7 +249,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            _HideNotificationIconRequestedHandlers(*this, nullptr);
+            HideNotificationIconRequested.raise(*this, nullptr);
         }
         catch (...)
         {
@@ -265,7 +265,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            _QuitAllRequestedHandlers(*this, nullptr);
+            QuitAllRequested.raise(*this, nullptr);
         }
         catch (...)
         {
@@ -281,7 +281,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            _AttachRequestedHandlers(*this, request);
+            AttachRequested.raise(*this, request);
         }
         catch (...)
         {
@@ -297,7 +297,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            _QuitRequestedHandlers(*this, nullptr);
+            QuitRequested.raise(*this, nullptr);
         }
         catch (...)
         {
@@ -318,7 +318,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     hstring Peasant::GetWindowLayout()
     {
         auto args = winrt::make_self<implementation::GetWindowLayoutArgs>();
-        _GetWindowLayoutRequestedHandlers(nullptr, *args);
+        GetWindowLayoutRequested.raise(nullptr, *args);
         if (const auto op = args->WindowLayoutJsonAsync())
         {
             // This will fail if called on the UI thread, so the monarch should
@@ -331,6 +331,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void Peasant::SendContent(const Remoting::RequestReceiveContentArgs& args)
     {
-        _SendContentRequestedHandlers(*this, args);
+        SendContentRequested.raise(*this, args);
     }
 }
