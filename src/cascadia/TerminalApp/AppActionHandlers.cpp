@@ -1255,7 +1255,7 @@ namespace winrt::TerminalApp::implementation
                 try
                 {
                     KeyChord keyChord = nullptr;
-                    hstring keyChordText = L"None";
+                    hstring keyChordText = L"";
                     if (!realArgs.KeyChord().empty())
                     {
                         keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
