@@ -509,7 +509,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return {};
         }
-        // TerminalArgs don't have a type. 
+        // TerminalArgs don't have a type.
         if (contentArgs.Type().empty())
         {
             return winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs::ToJson(contentArgs.try_as<Model::NewTerminalArgs>());
@@ -561,6 +561,7 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::INewContentA
         if (value)
         {
             h.write(value.Type());
+            h.write(value.Hash());
         }
     }
 };

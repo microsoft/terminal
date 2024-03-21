@@ -473,7 +473,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"", cmdline);
@@ -486,7 +487,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"--profile \"foo\"", cmdline);
@@ -499,7 +501,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"--profile \"foo\"", cmdline);
@@ -512,7 +515,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"-- \"bar.exe\"", cmdline);
@@ -525,7 +529,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -540,7 +545,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -555,7 +561,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -570,7 +577,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -585,7 +593,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
