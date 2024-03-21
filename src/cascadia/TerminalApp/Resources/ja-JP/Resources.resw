@@ -764,18 +764,11 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>終了動作は、プロファイルの詳細設定で構成できます。</value>
   </data>
-  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
-    <value>Windows ターミナルは、設定で既定のターミナル アプリケーションとして設定できます。</value>
-  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>今後表示しない</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>このターミナル ウィンドウは管理者として実行されています</value>
-  </data>
-  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
-    <value>設定を開く</value>
-    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>候補が見つかりました: {0} 件</value>
