@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AttemptAcceptChanges();
         void AttemptAcceptChanges(const Control::KeyChord newKeys);
         void CancelChanges();
-        void DeleteKeyBinding() { _DeleteKeyBindingRequestedHandlers(*this, _CurrentKeys); }
+        void DeleteKeyBinding() { DeleteKeyBindingRequested.raise(*this, _CurrentKeys); }
 
         // ProposedAction:   the entry selected by the combo box; may disagree with the settings model.
         // CurrentAction:    the combo box item that maps to the settings model value.
@@ -89,9 +89,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsContainerFocused, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsEditButtonFocused, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Media::Brush, ContainerBackground, nullptr);
-        TYPED_EVENT(ModifyKeyBindingRequested, Editor::KeyBindingViewModel, Editor::ModifyKeyBindingEventArgs);
-        TYPED_EVENT(DeleteKeyBindingRequested, Editor::KeyBindingViewModel, Terminal::Control::KeyChord);
-        TYPED_EVENT(DeleteNewlyAddedKeyBinding, Editor::KeyBindingViewModel, IInspectable);
+
+    public:
+        til::typed_event<Editor::KeyBindingViewModel, Editor::ModifyKeyBindingEventArgs> ModifyKeyBindingRequested;
+        til::typed_event<Editor::KeyBindingViewModel, Terminal::Control::KeyChord> DeleteKeyBindingRequested;
+        til::typed_event<Editor::KeyBindingViewModel, IInspectable> DeleteNewlyAddedKeyBinding;
 
     private:
         hstring _KeyChordText{};
@@ -105,9 +107,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnAutomationPeerAttached();
         void AddNewKeybinding();
 
+        til::typed_event<IInspectable, IInspectable> FocusContainer;
+        til::typed_event<IInspectable, IInspectable> UpdateBackground;
+
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
-        TYPED_EVENT(FocusContainer, IInspectable, IInspectable);
-        TYPED_EVENT(UpdateBackground, IInspectable, IInspectable);
 
     private:
         bool _AutomationPeerAttached{ false };

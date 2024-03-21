@@ -763,18 +763,11 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Le comportement d’arrêt peut être configuré dans les paramètres de profil avancés.</value>
   </data>
-  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
-    <value>Terminal Windows peut être défini comme application de terminal par défaut dans vos paramètres.</value>
-  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Ne plus afficher</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Cette fenêtre de terminal s’exécute en tant qu’Administrateur</value>
-  </data>
-  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
-    <value>Ouvrir les paramètres</value>
-    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>{0} suggestions trouvées</value>
