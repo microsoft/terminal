@@ -398,7 +398,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ProfileViewModel::DeleteProfile()
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
-        _DeleteProfileHandlers(*this, *deleteProfileArgs);
+        DeleteProfileRequested.raise(*this, *deleteProfileArgs);
     }
 
     void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList)

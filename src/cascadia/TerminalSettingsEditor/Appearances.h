@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         int32_t AxisIndex();
         void AxisIndex(int32_t axisIndex);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        til::property_changed_event PropertyChanged;
 
     private:
         winrt::hstring _AxisKey;
@@ -93,7 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         int32_t FeatureIndex();
         void FeatureIndex(int32_t featureIndex);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        til::property_changed_event PropertyChanged;
 
     private:
         winrt::hstring _FeatureKey;
@@ -205,19 +205,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::IInspectable CurrentFontWeight() const;
         void CurrentFontWeight(const Windows::Foundation::IInspectable& enumEntry);
         bool IsCustomFontWeight();
+
+        til::property_changed_event PropertyChanged;
+
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
-        WINRT_OBSERVABLE_PROPERTY(bool, ShowProportionalFontWarning, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(bool, ShowProportionalFontWarning, PropertyChanged.raise, nullptr);
 
     private:
         bool _ShowAllFonts;

@@ -95,8 +95,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
             peasant.RenameRequested({ this, &Monarch::_renameRequested });
 
-            peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
-            peasant.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
+            peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { ShowNotificationIconRequested.raise(*this, nullptr); });
+            peasant.HideNotificationIconRequested([this](auto&&, auto&&) { HideNotificationIconRequested.raise(*this, nullptr); });
             peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
             {
@@ -111,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-            _WindowCreatedHandlers(nullptr, nullptr);
+            WindowCreated.raise(nullptr, nullptr);
             return newPeasantsId;
         }
         catch (...)
@@ -141,7 +141,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Let the process hosting the monarch run any needed logic before
         // closing all windows.
         auto args = winrt::make_self<implementation::QuitAllRequestedArgs>();
-        _QuitAllRequestedHandlers(*this, *args);
+        QuitAllRequested.raise(*this, *args);
 
         if (const auto action = args->BeforeQuitAllAction())
         {
@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             std::unique_lock lock{ _peasantsMutex };
             _peasants.erase(peasantId);
         }
-        _WindowClosedHandlers(nullptr, nullptr);
+        WindowClosed.raise(nullptr, nullptr);
     }
 
     // Method Description:
@@ -650,7 +650,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto findWindowArgs{ winrt::make_self<Remoting::implementation::FindTargetWindowArgs>(args) };
 
         // This is handled by some handler in-proc
-        _FindTargetWindowRequestedHandlers(*this, *findWindowArgs);
+        FindTargetWindowRequested.raise(*this, *findWindowArgs);
 
         // After the event was handled, ResultTargetWindow() will be filled with
         // the parsed result.
@@ -741,7 +741,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     result->WindowName(targetWindowName);
                     result->ShouldCreateWindow(true);
 
-                    _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+                    RequestNewWindow.raise(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
 
                     // If this fails, it'll be logged in the following
                     // TraceLoggingWrite statement, with succeeded=false
@@ -779,7 +779,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 result->Id(windowID);
                 result->WindowName(targetWindowName);
 
-                _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+                RequestNewWindow.raise(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
 
                 return *result;
             }
@@ -796,7 +796,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
         result->WindowName(targetWindowName);
 
-        _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+        RequestNewWindow.raise(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
 
         return *result;
     }
@@ -1115,7 +1115,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             auto request = winrt::make_self<implementation::WindowRequestedArgs>(nameIsReserved ? L"" : window,
                                                                                  content,
                                                                                  windowBounds);
-            _RequestNewWindowHandlers(*this, *request);
+            RequestNewWindow.raise(*this, *request);
         }
     }
 

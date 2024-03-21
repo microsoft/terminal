@@ -774,18 +774,11 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Termination behavior can be configured in advanced profile settings.</value>
   </data>
-  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
-    <value>Windows Terminal can be set as the default terminal application in your settings.</value>
-  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Don't show again</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>This Terminal window is running as Admin</value>
-  </data>
-  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
-    <value>Open Settings</value>
-    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Suggestions found: {0}</value>

@@ -62,5 +62,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsEditorProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/winrt.h>
 
 #include <cppwinrt_utils.h>
