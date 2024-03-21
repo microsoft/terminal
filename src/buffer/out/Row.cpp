@@ -5,10 +5,8 @@
 #include "Row.hpp"
 
 #include <isa_availability.h>
-#include <til/unicode.h>
 
-#include "textBuffer.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/CodepointWidthDetector.hpp"
 
 // It would be nice to add checked array access in the future, but it's a little annoying to do so without impacting
 // performance (including Debug performance). Other languages are a little bit more ergonomic there than C++.
@@ -646,60 +644,45 @@ catch (...)
     //
     // We can infer the "end" from the amount of columns we're given (colLimit - colBeg),
     // because ASCII is always 1 column wide per character.
-    auto it = chars.begin();
-    const auto end = it + std::min<size_t>(chars.size(), colLimit - colBeg);
+    const auto len = std::min<size_t>(chars.size(), colLimit - colBeg);
     size_t ch = chBeg;
 
-    while (it != end)
+    for (size_t off = 0; off < len; ++off)
     {
-        if (*it >= 0x80) [[unlikely]]
+        if (chars[off] >= 0x80) [[unlikely]]
         {
-            _replaceTextUnicode(ch, it);
+            _replaceTextUnicode(ch, off);
             return;
         }
 
         til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(ch);
         ++colEnd;
         ++ch;
-        ++it;
     }
 
     colEndDirty = colEnd;
     charsConsumed = ch - chBeg;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
+[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off)
 {
-    const auto end = chars.end();
+    auto& cwd = CodepointWidthDetector::Singleton();
+    const auto len = chars.size();
 
-    while (it != end)
+    // The non-ASCII character we have encountered may be a combining mark, like "a^" which is then displayed as "â".
+    // In order to recognize both characters as a single grapheme, we need to back up by 1 ASCII character
+    // and let MeasureNext() find the next proper grapheme boundary.
+    if (off != 0)
     {
-        unsigned int width = 1;
-        auto ptr = &*it;
-        const auto wch = *ptr;
-        size_t advance = 1;
+        --colEnd;
+        --ch;
+        --off;
+    }
 
-        ++it;
-
-        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
-        // It also allows us to skip the surrogate pair decoding at the same time.
-        if (wch >= 0x80)
-        {
-            if (til::is_surrogate(wch))
-            {
-                if (it != end && til::is_leading_surrogate(wch) && til::is_trailing_surrogate(*it))
-                {
-                    advance = 2;
-                    ++it;
-                }
-                else
-                {
-                    ptr = &UNICODE_REPLACEMENT;
-                }
-            }
-
-            width = IsGlyphFullWidth({ ptr, advance }) + 1u;
-        }
+    while (off < len)
+    {
+        int width;
+        const auto end = cwd.GraphemeNext(chars, off, &width);
 
         const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
         if (colEndNew > colLimit)
@@ -719,7 +702,8 @@ catch (...)
             til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
         }
 
-        ch += advance;
+        ch += end - off;
+        off = end;
     }
 
     colEndDirty = colEnd;
@@ -1062,7 +1046,7 @@ std::wstring_view ROW::GetText() const noexcept
 
 std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
 {
-    const til::CoordType columns = _columnCount;
+    const auto columns = GetReadableColumnCount();
     const auto colBeg = clamp(columnBegin, 0, columns);
     const auto colEnd = clamp(columnEnd, colBeg, columns);
     const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));

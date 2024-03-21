@@ -2,16 +2,13 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "textBuffer.hpp"
 
 #include <til/hash.h>
-#include <til/unicode.h>
 
 #include "UTextAdapter.h"
-#include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../renderer/base/renderer.hpp"
-#include "../types/inc/convert.hpp"
 #include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
@@ -408,17 +405,17 @@ void TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 // Given the character offset `position` in the `chars` string, this function returns the starting position of the next grapheme.
 // For instance, given a `chars` of L"x\uD83D\uDE42y" and a `position` of 1 it'll return 3.
 // GraphemePrev would do the exact inverse of this operation.
-// In the future, these functions are expected to also deliver information about how many columns a grapheme occupies.
-// (I know that mere UTF-16 code point iteration doesn't handle graphemes, but that's what we're working towards.)
 size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position) noexcept
 {
-    return til::utf16_iterate_next(chars, position);
+    auto& cwd = CodepointWidthDetector::Singleton();
+    return cwd.GraphemeNext(chars, position, nullptr);
 }
 
 // It's the counterpart to GraphemeNext. See GraphemeNext.
 size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position) noexcept
 {
-    return til::utf16_iterate_prev(chars, position);
+    auto& cwd = CodepointWidthDetector::Singleton();
+    return cwd.GraphemePrev(chars, position, nullptr);
 }
 
 // Ever wondered how much space a piece of text needs before inserting it? This function will tell you!
@@ -445,7 +442,7 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
     {
     }
 
-    const auto dist = gsl::narrow_cast<size_t>(it - beg);
+    auto dist = gsl::narrow_cast<size_t>(it - beg);
     auto col = gsl::narrow_cast<til::CoordType>(dist);
 
     if (it == asciiEnd) [[likely]]
@@ -455,33 +452,23 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
     }
 
     // Unicode slow-path where we need to count text and columns separately.
-    for (;;)
+    auto& cwd = CodepointWidthDetector::Singleton();
+    const auto len = chars.size();
+
+    // The non-ASCII character we have encountered may be a combining mark, like "a^" which is then displayed as "â".
+    // In order to recognize both characters as a single grapheme, we need to back up by 1 ASCII character
+    // and let GraphemeNext() find the next proper grapheme boundary.
+    if (dist != 0)
     {
-        auto ptr = &*it;
-        const auto wch = *ptr;
-        size_t len = 1;
+        dist--;
+        col--;
+    }
 
-        col++;
-
-        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
-        // It also allows us to skip the surrogate pair decoding at the same time.
-        if (wch >= 0x80)
-        {
-            if (til::is_surrogate(wch))
-            {
-                const auto it2 = it + 1;
-                if (til::is_leading_surrogate(wch) && it2 != end && til::is_trailing_surrogate(*it2))
-                {
-                    len = 2;
-                }
-                else
-                {
-                    ptr = &UNICODE_REPLACEMENT;
-                }
-            }
-
-            col += IsGlyphFullWidth({ ptr, len });
-        }
+    while (dist < len)
+    {
+        int width;
+        dist = cwd.GraphemeNext(chars, dist, &width);
+        col += width;
 
         // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
         // because if we tried inserting a wide glyph into just 1 remaining column it will
@@ -490,17 +477,13 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         if (col > columnLimit)
         {
             columns = columnLimit;
-            return gsl::narrow_cast<size_t>(it - beg);
-        }
-
-        // But if we simply ran out of text we just need to return the actual number of columns.
-        it += len;
-        if (it == end)
-        {
-            columns = col;
-            return chars.size();
+            return dist;
         }
     }
+
+    // But if we simply ran out of text we just need to return the actual number of columns.
+    columns = col;
+    return chars.size();
 }
 
 // Pretend as if `position` is a regular cursor in the TextBuffer.

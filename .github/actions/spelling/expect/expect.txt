@@ -144,6 +144,7 @@ bytebuffer
 cac
 cacafire
 CALLCONV
+CANDRABINDU
 capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
@@ -155,6 +156,7 @@ cbiex
 CBN
 CBoolean
 cbt
+Ccc
 CCCBB
 cch
 CCHAR
@@ -180,6 +182,7 @@ chaof
 charinfo
 CHARSETINFO
 chh
+chonker
 chshdng
 CHT
 Cic
@@ -598,7 +601,9 @@ FEEF
 fesb
 FFAF
 FFDE
+FFFD
 FFFDb
+FFrom
 fgbg
 FGCOLOR
 FGHIJ
@@ -617,6 +622,7 @@ FINDDOWN
 FINDSTRINGEXACT
 FINDUP
 FIter
+FITZPATRICK
 FIXEDCONVERTED
 FIXEDFILEINFO
 Flg
@@ -888,11 +894,13 @@ jconcpp
 JLO
 JOBOBJECT
 JOBOBJECTINFOCLASS
+JONGSEONG
 JPN
 jsoncpp
 Jsons
 jsprovider
 jumplist
+JUNGSEONG
 KAttrs
 kawa
 Kazu
@@ -911,6 +919,7 @@ keyups
 KILLACTIVE
 KILLFOCUS
 kinda
+KIYEOK
 KLF
 KLMNO
 KLMNOPQRST
@@ -1020,6 +1029,7 @@ luma
 lval
 LVB
 LVERTICAL
+LVT
 LWA
 LWIN
 lwkmvj
@@ -1049,6 +1059,7 @@ mdmerge
 MDs
 MEASUREITEM
 megamix
+Meh
 memallocator
 meme
 MENUCHAR
@@ -1164,6 +1175,7 @@ NOMINMAX
 NOMOVE
 NONALERT
 nonbreaking
+noncharacter
 nonclient
 NONINFRINGEMENT
 NONPREROTATED
@@ -1212,6 +1224,7 @@ ntuser
 NTVDM
 ntverp
 nugetversions
+NUKTA
 nullness
 nullonfailure
 nullopts
@@ -1489,6 +1502,7 @@ renderengine
 rendersize
 reparented
 reparenting
+REPH
 replatformed
 Replymessage
 repositorypath
@@ -1517,6 +1531,7 @@ rgw
 RIGHTALIGN
 RIGHTBUTTON
 riid
+ris
 RIS
 roadmap
 robomac
@@ -1883,6 +1898,7 @@ UPDATEDISPLAY
 UPDOWN
 UPKEY
 upss
+UPSS
 uregex
 URegular
 usebackq
@@ -1925,6 +1941,7 @@ vga
 vgaoem
 viewkind
 viewports
+VIRAMA
 Virt
 VIRTTERM
 vkey
@@ -2165,6 +2182,7 @@ Zabcdefghijklmn
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl
+ZWJs
 zxcvbnm
 ZYXWVU
 ZYXWVUTd

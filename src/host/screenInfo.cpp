@@ -2,23 +2,12 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "screenInfo.hpp"
-#include "dbcs.h"
+
 #include "output.h"
-#include "_output.h"
-#include "misc.h"
-#include "handle.h"
-
-#include <cmath>
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../types/inc/Viewport.hpp"
-#include "../types/inc/GlyphWidth.hpp"
-#include "../terminal/parser/OutputStateMachineEngine.hpp"
-
+#include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/convert.hpp"
-
-#pragma hdrstop
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -533,7 +522,7 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
                                                                        GetDesiredFont(),
                                                                        GetCurrentFont());
 
-            NotifyGlyphWidthFontChanged();
+            CodepointWidthDetector::Singleton().ClearFallbackCache();
         }
     }
 }

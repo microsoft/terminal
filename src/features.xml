@@ -169,4 +169,14 @@
         </alwaysEnabledBrandingTokens>
     </feature>
 
+    <feature>
+        <name>Feature_Graphemes</name>
+        <description>Enables support for grapheme clusters</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>
