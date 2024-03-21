@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        _CloseRequestedHandlers(nullptr, nullptr);
+        CloseRequested.raise(nullptr, nullptr);
         args.Handled(true);
     }
 
@@ -951,7 +951,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
-        _IdentifyWindowsRequestedHandlers(*this, nullptr);
+        IdentifyWindowsRequested.raise(*this, nullptr);
         args.Handled(true);
     }
 
@@ -980,7 +980,7 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto newName = realArgs.Name();
                 const auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
-                _RenameWindowRequestedHandlers(*this, *request);
+                RenameWindowRequested.raise(*this, *request);
                 args.Handled(true);
             }
         }
@@ -1150,7 +1150,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenSystemMenu(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        _OpenSystemMenuHandlers(*this, nullptr);
+        OpenSystemMenu.raise(*this, nullptr);
         args.Handled(true);
     }
 
