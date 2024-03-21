@@ -53,7 +53,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers();
+                tab->RequestFocusActiveControl.raise();
             }
         });
         _AppendCloseMenuItems(contextMenuFlyout);
@@ -106,7 +106,7 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_CloseRequestedHandlers(nullptr, nullptr);
+                tab->CloseRequested.raise(nullptr, nullptr);
             }
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));
@@ -260,7 +260,7 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().Tapped([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers();
+                tab->RequestFocusActiveControl.raise();
             }
         });
 
