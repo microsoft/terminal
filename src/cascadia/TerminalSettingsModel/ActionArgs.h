@@ -505,6 +505,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
     static Json::Value ContentArgsToJson(const Model::INewContentArgs& contentArgs)
     {
+        if (contentArgs == nullptr)
+        {
+            return {};
+        }
+        // TerminalArgs don't have a type. 
         if (contentArgs.Type().empty())
         {
             return winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs::ToJson(contentArgs.try_as<Model::NewTerminalArgs>());
