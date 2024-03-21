@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{C17E1BF3-9D34-4779-9458-A8EF98CC5662}</ProjectGuid>
@@ -6,7 +6,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Conhost.UIA.Tests</RootNamespace>
     <AssemblyName>Conhost.UIA.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -149,7 +149,7 @@
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir &quot;$(OutDir)\WinAppDriver&quot; 2&gt;nul &amp; copy &quot;$(SolutionDir)\dep\WinAppDriver\*&quot; &quot;$(OutDir)\WinAppDriver\&quot;</PostBuildEvent>
+    <PostBuildEvent>mkdir "$(OutDir)\WinAppDriver" 2&gt;nul &amp; copy "$(SolutionDir)\dep\WinAppDriver\*" "$(OutDir)\WinAppDriver\"</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\..\common.nugetversions.targets" />
 </Project>
