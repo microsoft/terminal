@@ -33,7 +33,7 @@ public:
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
 
-    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
+    til::event<winrt::delegate<void()>> UpdateSettingsRequested;
 
 private:
     std::unique_ptr<IslandWindow> _window;

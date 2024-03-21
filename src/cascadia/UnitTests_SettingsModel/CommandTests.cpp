@@ -48,19 +48,19 @@ namespace SettingsModelUnitTests
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands1Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands1Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
         VERIFY_ARE_EQUAL(2u, commands.Size());
 
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands2Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands2Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
         VERIFY_ARE_EQUAL(4u, commands.Size());
@@ -82,7 +82,7 @@ namespace SettingsModelUnitTests
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
@@ -93,7 +93,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
         }
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands1Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands1Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
@@ -103,7 +103,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NULL(command.ActionAndArgs().Args());
         }
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands2Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands2Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
@@ -115,7 +115,7 @@ namespace SettingsModelUnitTests
         }
         {
             // This last command should "unbind" the action.
-            auto warnings = implementation::Command::LayerJson(commands, commands3Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands3Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(0u, commands.Size());
         }
@@ -143,7 +143,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
         VERIFY_ARE_EQUAL(9u, commands.Size());
 
@@ -261,7 +261,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(3u, warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
@@ -288,7 +288,7 @@ namespace SettingsModelUnitTests
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
 
@@ -329,7 +329,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
 
         // There are only 5 commands here: all of the `"none"`, `"auto"`,
@@ -399,7 +399,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
@@ -462,7 +462,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
         VERIFY_ARE_EQUAL(9u, commands.Size());
 

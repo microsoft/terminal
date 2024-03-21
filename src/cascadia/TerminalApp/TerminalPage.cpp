@@ -188,7 +188,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Inform the host that our titlebar content has changed.
-            _SetTitleBarContentHandlers(*this, _tabRow);
+            SetTitleBarContent.raise(*this, _tabRow);
 
             // GH#13143 Manually set the tab row's background to transparent here.
             //
@@ -284,8 +284,6 @@ namespace winrt::TerminalApp::implementation
             _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
         }
         CATCH_LOG();
-
-        ShowSetAsDefaultInfoBar();
     }
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
@@ -660,7 +658,7 @@ namespace winrt::TerminalApp::implementation
         // have a tab yet, but will once we're initialized.
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
-            _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(false));
+            LastTabClosed.raise(*this, winrt::make<LastTabClosedEventArgs>(false));
             co_return;
         }
         else
@@ -691,7 +689,7 @@ namespace winrt::TerminalApp::implementation
             Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weak = get_weak()]() {
                 if (auto self{ weak.get() })
                 {
-                    self->_InitializedHandlers(*self, nullptr);
+                    self->Initialized.raise(*self, nullptr);
                 }
             });
         }
@@ -1630,7 +1628,7 @@ namespace winrt::TerminalApp::implementation
 
         if (tab == _GetFocusedTab())
         {
-            _TitleChangedHandlers(*this, newTabTitle);
+            TitleChanged.raise(*this, newTabTitle);
         }
     }
 
@@ -1896,7 +1894,7 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
 
-            _QuitRequestedHandlers(nullptr, nullptr);
+            QuitRequested.raise(nullptr, nullptr);
         }
     }
 
@@ -2184,7 +2182,7 @@ namespace winrt::TerminalApp::implementation
         {
             request->WindowPosition(dragPoint->to_winrt_point());
         }
-        _RequestMoveContentHandlers(*this, *request);
+        RequestMoveContent.raise(*this, *request);
     }
 
     bool TerminalPage::_MoveTab(winrt::com_ptr<TerminalTab> tab, MoveTabArgs args)
@@ -2949,7 +2947,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
         co_await wil::resume_foreground(Dispatcher());
-        _SetTaskbarProgressHandlers(*this, nullptr);
+        SetTaskbarProgress.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -2959,7 +2957,7 @@ namespace winrt::TerminalApp::implementation
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
     void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
-        _ShowWindowChangedHandlers(*this, args);
+        ShowWindowChanged.raise(*this, args);
     }
 
     // Method Description:
@@ -3368,7 +3366,7 @@ namespace winrt::TerminalApp::implementation
         // will let the user hot-reload this setting, but any runtime changes to
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
-        _AlwaysOnTopChangedHandlers(*this, nullptr);
+        AlwaysOnTopChanged.raise(*this, nullptr);
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -3576,7 +3574,7 @@ namespace winrt::TerminalApp::implementation
         {
             _isInFocusMode = newInFocusMode;
             _UpdateTabView();
-            _FocusModeChangedHandlers(*this, nullptr);
+            FocusModeChanged.raise(*this, nullptr);
         }
     }
 
@@ -3601,7 +3599,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ToggleAlwaysOnTop()
     {
         _isAlwaysOnTop = !_isAlwaysOnTop;
-        _AlwaysOnTopChangedHandlers(*this, nullptr);
+        AlwaysOnTopChanged.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -3802,7 +3800,7 @@ namespace winrt::TerminalApp::implementation
         }
         _isFullscreen = newFullscreen;
         _UpdateTabView();
-        _FullscreenChangedHandlers(*this, nullptr);
+        FullscreenChanged.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -3821,7 +3819,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
         _isMaximized = newMaximized;
-        _ChangeMaximizeRequestedHandlers(*this, nullptr);
+        ChangeMaximizeRequested.raise(*this, nullptr);
     }
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
@@ -3864,10 +3862,7 @@ namespace winrt::TerminalApp::implementation
             _CreateNewTabFromPane(newPane);
 
             // Request a summon of this window to the foreground
-            _SummonWindowRequestedHandlers(*this, nullptr);
-
-            const IInspectable unused{ nullptr };
-            _SetAsDefaultDismissHandler(unused, unused);
+            SummonWindowRequested.raise(*this, nullptr);
 
             // TEMPORARY SOLUTION
             // If the connection has requested for the window to be maximized,
@@ -4010,35 +4005,6 @@ namespace winrt::TerminalApp::implementation
             {
                 keyboardServiceWarningInfoBar.IsOpen(true);
             }
-        }
-    }
-
-    // Method Description:
-    // - Displays a info popup guiding the user into setting their default terminal.
-    void TerminalPage::ShowSetAsDefaultInfoBar() const
-    {
-        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::TerminalApp::App>() == nullptr)
-        {
-            // Just ignore this in the tests (where the Application::Current()
-            // is not a TerminalApp::App)
-            return;
-        }
-        if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
-        {
-            return;
-        }
-
-        // If the user has already configured any terminal for hand-off we
-        // shouldn't inform them again about the possibility to do so.
-        if (CascadiaSettings::IsDefaultTerminalSet())
-        {
-            _DismissMessage(InfoBarMessage::SetAsDefault);
-            return;
-        }
-
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(true);
         }
     }
 
@@ -4282,7 +4248,7 @@ namespace winrt::TerminalApp::implementation
         {
             WindowRenamer().IsOpen(false);
         }
-        _RenameWindowRequestedHandlers(*this, request);
+        RenameWindowRequested.raise(*this, request);
         // We can't just use request.Successful here, because the handler might
         // (will) be handling this asynchronously, so when control returns to
         // us, this hasn't actually been handled yet. We'll get called back in
@@ -4501,40 +4467,6 @@ namespace winrt::TerminalApp::implementation
         {
             infoBar.IsOpen(false);
         }
-    }
-
-    // Method Description:
-    // - Persists the user's choice not to show the information bar warning about "Windows Terminal can be set as your default terminal application"
-    // Then hides this information buffer.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SetAsDefaultDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        _DismissMessage(InfoBarMessage::SetAsDefault);
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-
-        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipDismissed", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        _FocusCurrentTab(true);
-    }
-
-    // Method Description:
-    // - Dismisses the Default Terminal tip and opens the settings.
-    void TerminalPage::_SetAsDefaultOpenSettingsHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-
-        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipInteracted", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        OpenSettingsUI();
     }
 
     // Method Description:
@@ -5091,7 +5023,7 @@ namespace winrt::TerminalApp::implementation
             // This will go up to the monarch, who will then dispatch the request
             // back down to the source TerminalPage, who will then perform a
             // RequestMoveContent to move their tab to us.
-            _RequestReceiveContentHandlers(*this, *request);
+            RequestReceiveContent.raise(*this, *request);
         }
     }
 

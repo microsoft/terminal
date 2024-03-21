@@ -914,6 +914,14 @@
     <value>Wenn diese Option aktiviert ist, zeichnet das Terminal benutzerdefinierte Glyphen für Blockelement- und Feldzeichnungszeichen, anstatt die Schriftart zu verwenden. Dieses Feature funktioniert nur, wenn GPU-Beschleunigung verfügbar ist.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>Vollfarb-Emoji</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>Wenn diese Option aktiviert ist, werden Emojis in Vollfarbe angezeigt.</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Schriftstärke</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
