@@ -1072,7 +1072,7 @@ namespace winrt::TerminalApp::implementation
                     {
                         // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
                         // In this part of the chain we bubble it from the hosting tab to the page
-                        tab->_TabRaiseVisualBellHandlers();
+                        tab->TabRaiseVisualBell.raise();
                     }
 
                     // Show the bell indicator in the tab header
@@ -1359,30 +1359,6 @@ namespace winrt::TerminalApp::implementation
                             break;
                         }
                     }
-                }
-            }
-        });
-
-        // Add a PaneRaiseBell event handler to the Pane
-        auto bellToken = pane->PaneRaiseBell([weakThis](auto&& /*s*/, auto&& visual) {
-            if (auto tab{ weakThis.get() })
-            {
-                if (visual)
-                {
-                    // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
-                    // In this part of the chain we bubble it from the hosting tab to the page
-                    tab->TabRaiseVisualBell.raise();
-                }
-
-                // Show the bell indicator in the tab header
-                tab->ShowBellIndicator(true);
-
-                // If this tab is focused, activate the bell indicator timer, which will
-                // remove the bell indicator once it fires
-                // (otherwise, the indicator is removed when the tab gets focus)
-                if (tab->_focusState != WUX::FocusState::Unfocused)
-                {
-                    tab->ActivateBellIndicatorTimer();
                 }
             }
         });
