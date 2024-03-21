@@ -540,7 +540,7 @@ void AppCommandlineArgs::_buildFocusPaneParser()
 
 void AppCommandlineArgs::_buildSaveParser()
 {
-    _saveCommand = _app.add_subcommand("save", RS_A(L"SaveActionDesc"));
+    _saveCommand = _app.add_subcommand("x-save", RS_A(L"SaveActionDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
         subcommand->add_option("--name,-n", _saveInputName, RS_A(L"SaveActionArgDesc"));
