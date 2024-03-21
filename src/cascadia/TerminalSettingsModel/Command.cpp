@@ -8,6 +8,8 @@
 #include <LibraryResources.h>
 #include <til/replace.h>
 
+#include "KeyChordSerialization.h"
+
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace ::Microsoft::Terminal::Settings::Model;
