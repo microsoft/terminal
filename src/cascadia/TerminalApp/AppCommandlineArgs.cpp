@@ -576,6 +576,8 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
         _inheritEnvironment,
         RS_A(L"CmdInheritEnvDesc"));
 
+    subcommand.keepOpenOption = subcommand.subcommand->add_flag("-o,--keepOpen", _keepOpenOption, RS_A(L"CmdKeepOpenDesc"));
+
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -675,6 +677,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     }
     args.ReloadEnvironmentVariables(!inheritEnv);
 
+    if (*subcommand.keepOpenOption)
+    {
+        args.KeepOpen(_keepOpenOption);
+    }
+
     return args;
 }
 
@@ -720,6 +727,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _commandline.clear();
     _suppressApplicationTitle = false;
     _appendCommandLineOption = false;
+    _keepOpenOption = false;
 
     _splitVertical = false;
     _splitHorizontal = false;
