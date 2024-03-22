@@ -3000,7 +3000,7 @@ std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const ti
 
             if (markKind == MarkKind::Command)
             {
-                row.GetText(x, nextX);
+                commandBuilder += row.GetText(x, nextX);
             }
             // advance to next run of text
             x = nextX;

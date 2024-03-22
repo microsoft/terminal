@@ -264,6 +264,8 @@ class ScreenBufferTests
     TEST_METHOD(DelayedWrapReset);
 
     TEST_METHOD(EraseColorMode);
+
+    TEST_METHOD(SimpleMarkCommand);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -8403,4 +8405,40 @@ void ScreenBufferTests::EraseColorMode()
     const auto cellData = si.GetCellDataAt(op.erasePos);
     VERIFY_ARE_EQUAL(expectedEraseAttr, cellData->TextAttr());
     VERIFY_ARE_EQUAL(L" ", cellData->Chars());
+}
+
+void ScreenBufferTests::SimpleMarkCommand()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // Process the opening osc 8 sequence with no custom id
+    stateMachine.ProcessString(L"Zero\n");
+
+    {
+        const auto currentRowOffset = tbi.GetCursor().GetPosition().y;
+        auto& currentRow = tbi.GetRowByOffset(currentRowOffset);
+
+        stateMachine.ProcessString(L"\x1b]133;A\x1b\\A Prompt\x1b]133;B\x1b\\my_command\x1b]133;C\x1b\\\n");
+
+        VERIFY_IS_TRUE(currentRow.GetPromptData().has_value());
+    }
+
+    stateMachine.ProcessString(L"Two\n");
+    // DebugBreak();
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"my_command");
+
+    stateMachine.ProcessString(L"\x1b]133;D\x1b\\\x1b]133;A\x1b\\B Prompt\x1b]133;B\x1b\\");
+
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"");
+
+    stateMachine.ProcessString(L"some of a command");
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command");
+    stateMachine.ProcessString(L"\x1b[31m");
+    stateMachine.ProcessString(L" & more of a command");
+
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command & more of a command");
 }

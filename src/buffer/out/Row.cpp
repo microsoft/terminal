@@ -1191,7 +1191,7 @@ void ROW::StartPrompt() noexcept
 {
     if (!_promptData.has_value())
     {
-        _promptData = {};
+        _promptData = MarkData{};
     }
 }
 void ROW::EndCommand(uint32_t exitCode) noexcept
