@@ -1500,49 +1500,44 @@ void Terminal::ClearAllMarks()
     _NotifyScrollEvent();
 }
 
-// const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
-// {
-//     // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
-//     // We want to return _no_ marks when we're in the alt buffer, to effectively
-//     // hide them. We need to return a reference, so we can't just ctor an empty
-//     // list here just for when we're in the alt buffer.
-//     return _activeBuffer().GetMarks();
-// }
+std::vector<ScrollMark> Terminal::GetScrollMarks() const noexcept
+{
+    // We want to return _no_ marks when we're in the alt buffer, to effectively
+    // hide them.
+    return _inAltBuffer() ? std::vector<ScrollMark>{} : std::move(_activeBuffer().GetMarks());
+}
 
-// til::color Terminal::GetColorForMark(const ScrollMark& mark) const
-// {
-//     if (mark.color.has_value())
-//     {
-//         return *mark.color;
-//     }
+til::color Terminal::GetColorForMark(const ScrollMark& mark) const
+{
+    if (mark.data.color.has_value())
+    {
+        return *mark.data.color;
+    }
 
-//     const auto& renderSettings = GetRenderSettings();
+    const auto& renderSettings = GetRenderSettings();
 
-//     switch (mark.category)
-//     {
-//     case MarkCategory::Prompt:
-//     {
-//         return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
-//     }
-//     case MarkCategory::Error:
-//     {
-//         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
-//     }
-//     case MarkCategory::Warning:
-//     {
-//         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
-//     }
-//     case MarkCategory::Success:
-//     {
-//         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
-//     }
-//     default:
-//     case MarkCategory::Info:
-//     {
-//         return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
-//     }
-//     }
-// }
+    switch (mark.data.category)
+    {
+    case MarkCategory::Error:
+    {
+        return renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
+    }
+    case MarkCategory::Warning:
+    {
+        return renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
+    }
+    case MarkCategory::Success:
+    {
+        return renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
+    }
+    case MarkCategory::Prompt:
+    case MarkCategory::Default:
+    default:
+    {
+        return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
+    }
+    }
+}
 
 std::wstring_view Terminal::CurrentCommand() const
 {

@@ -1206,7 +1206,11 @@ void ROW::StartPrompt() noexcept
 
     if (!_promptData.has_value())
     {
-        _promptData = MarkData{};
+        _promptData = MarkData{
+            .color = std::nullopt,
+            .exitCode = std::nullopt,
+            .category = MarkCategory::Prompt
+        };
     }
 }
 void ROW::EndCommand(uint32_t exitCode) noexcept
@@ -1214,5 +1218,6 @@ void ROW::EndCommand(uint32_t exitCode) noexcept
     if (_promptData.has_value())
     {
         _promptData->exitCode = exitCode;
+        _promptData->category = exitCode == 0 ? MarkCategory::Success : MarkCategory::Error;
     }
 }

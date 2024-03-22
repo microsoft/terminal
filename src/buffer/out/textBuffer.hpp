@@ -66,31 +66,37 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
+// struct ScrollMark
+// {
+//     std::optional<til::color> color;
+//     til::point start;
+//     til::point end; // exclusive
+//     std::optional<til::point> commandEnd;
+//     std::optional<til::point> outputEnd;
+
+//     MarkCategory category{ MarkCategory::Info };
+//     // Other things we may want to think about in the future are listed in
+//     // GH#11000
+
+//     bool HasCommand() const noexcept
+//     {
+//         return commandEnd.has_value() && *commandEnd != end;
+//     }
+//     bool HasOutput() const noexcept
+//     {
+//         return outputEnd.has_value() && *outputEnd != *commandEnd;
+//     }
+//     std::pair<til::point, til::point> GetExtent() const
+//     {
+//         til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
+//         return std::make_pair(til::point{ start }, realEnd);
+//     }
+// };
+
 struct ScrollMark
 {
-    std::optional<til::color> color;
-    til::point start;
-    til::point end; // exclusive
-    std::optional<til::point> commandEnd;
-    std::optional<til::point> outputEnd;
-
-    MarkCategory category{ MarkCategory::Info };
-    // Other things we may want to think about in the future are listed in
-    // GH#11000
-
-    bool HasCommand() const noexcept
-    {
-        return commandEnd.has_value() && *commandEnd != end;
-    }
-    bool HasOutput() const noexcept
-    {
-        return outputEnd.has_value() && *outputEnd != *commandEnd;
-    }
-    std::pair<til::point, til::point> GetExtent() const
-    {
-        til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
-        return std::make_pair(til::point{ start }, realEnd);
-    }
+    til::CoordType row{ 0 };
+    MarkData data;
 };
 
 class TextBuffer final
@@ -322,7 +328,7 @@ public:
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
-    // const std::vector<ScrollMark>& GetMarks() const noexcept;
+    std::vector<ScrollMark> GetMarks() const noexcept;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
     // void ScrollMarks(const int delta);

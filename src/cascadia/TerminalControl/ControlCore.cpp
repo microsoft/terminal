@@ -1884,68 +1884,70 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // approach, but it's good enough to bring value to 90% of use cases.
             const auto cursorPos{ _terminal->GetCursorPosition() };
 
-            // Does the current buffer line have a mark on it?
-            const auto& marks{ _terminal->GetScrollMarks() };
-            if (!marks.empty())
-            {
-                const auto& last{ marks.back() };
-                const auto [start, end] = last.GetExtent();
-                const auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+            // TODO! yea this all needs re-writing vvvvv
 
-                // If the user clicked off to the right side of the prompt, we
-                // want to send keystrokes to the last character in the prompt +1.
-                //
-                // We don't want to send too many here. In CMD, if the user's
-                // last command is longer than what they've currently typed, and
-                // they press right arrow at the end of the prompt, COOKED_READ
-                // will fill in characters from the previous command.
-                //
-                // By only sending keypresses to the end of the command + 1, we
-                // should leave the cursor at the very end of the prompt,
-                // without adding any characters from a previous command.
-                auto clampedClick = terminalPosition;
-                if (terminalPosition > lastNonSpace)
-                {
-                    clampedClick = lastNonSpace + til::point{ 1, 0 };
-                    _terminal->GetTextBuffer().GetSize().Clamp(clampedClick);
-                }
+            // // Does the current buffer line have a mark on it?
+            // const auto& marks{ _terminal->GetScrollMarks() };
+            // if (!marks.empty())
+            // {
+            //     const auto& last{ marks.back() };
+            //     const auto [start, end] = last.GetExtent();
+            //     const auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
 
-                if (clampedClick >= end)
-                {
-                    // Get the distance between the cursor and the click, in cells.
-                    const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+            //     // If the user clicked off to the right side of the prompt, we
+            //     // want to send keystrokes to the last character in the prompt +1.
+            //     //
+            //     // We don't want to send too many here. In CMD, if the user's
+            //     // last command is longer than what they've currently typed, and
+            //     // they press right arrow at the end of the prompt, COOKED_READ
+            //     // will fill in characters from the previous command.
+            //     //
+            //     // By only sending keypresses to the end of the command + 1, we
+            //     // should leave the cursor at the very end of the prompt,
+            //     // without adding any characters from a previous command.
+            //     auto clampedClick = terminalPosition;
+            //     if (terminalPosition > lastNonSpace)
+            //     {
+            //         clampedClick = lastNonSpace + til::point{ 1, 0 };
+            //         _terminal->GetTextBuffer().GetSize().Clamp(clampedClick);
+            //     }
 
-                    // First, make sure to iterate from the first point to the
-                    // second. The user may have clicked _earlier_ in the
-                    // buffer!
-                    auto goRight = clampedClick > cursorPos;
-                    const auto startPoint = goRight ? cursorPos : clampedClick;
-                    const auto endPoint = goRight ? clampedClick : cursorPos;
+            //     if (clampedClick >= end)
+            //     {
+            //         // Get the distance between the cursor and the click, in cells.
+            //         const auto bufferSize = _terminal->GetTextBuffer().GetSize();
 
-                    const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
-                    const WORD key = goRight ? VK_RIGHT : VK_LEFT;
+            //         // First, make sure to iterate from the first point to the
+            //         // second. The user may have clicked _earlier_ in the
+            //         // buffer!
+            //         auto goRight = clampedClick > cursorPos;
+            //         const auto startPoint = goRight ? cursorPos : clampedClick;
+            //         const auto endPoint = goRight ? clampedClick : cursorPos;
 
-                    std::wstring buffer;
-                    const auto append = [&](TerminalInput::OutputType&& out) {
-                        if (out)
-                        {
-                            buffer.append(std::move(*out));
-                        }
-                    };
+            //         const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
+            //         const WORD key = goRight ? VK_RIGHT : VK_LEFT;
 
-                    // Send an up and a down once per cell. This won't
-                    // accurately handle wide characters, or continuation
-                    // prompts, or cases where a single escape character in the
-                    // command (e.g. ^[) takes up two cells.
-                    for (size_t i = 0u; i < delta; i++)
-                    {
-                        append(_terminal->SendKeyEvent(key, 0, {}, true));
-                        append(_terminal->SendKeyEvent(key, 0, {}, false));
-                    }
+            //         std::wstring buffer;
+            //         const auto append = [&](TerminalInput::OutputType&& out) {
+            //             if (out)
+            //             {
+            //                 buffer.append(std::move(*out));
+            //             }
+            //         };
 
-                    _sendInputToConnection(buffer);
-                }
-            }
+            //         // Send an up and a down once per cell. This won't
+            //         // accurately handle wide characters, or continuation
+            //         // prompts, or cases where a single escape character in the
+            //         // command (e.g. ^[) takes up two cells.
+            //         for (size_t i = 0u; i < delta; i++)
+            //         {
+            //             append(_terminal->SendKeyEvent(key, 0, {}, true));
+            //             append(_terminal->SendKeyEvent(key, 0, {}, false));
+            //         }
+
+            //         _sendInputToConnection(buffer);
+            //     }
+            // }
         }
         _updateSelectionUI();
     }
@@ -2090,32 +2092,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto& textBuffer = _terminal->GetTextBuffer();
 
         std::vector<winrt::hstring> commands;
-
-        for (const auto& mark : _terminal->GetScrollMarks())
+        const auto bufferCommands{ textBuffer.Commands() };
+        for (const auto& commandInBuffer : bufferCommands)
         {
-            // The command text is between the `end` (which denotes the end of
-            // the prompt) and the `commandEnd`.
-            bool markHasCommand = mark.commandEnd.has_value() &&
-                                  mark.commandEnd != mark.end;
-            if (!markHasCommand)
-            {
-                continue;
-            }
-
-            // Get the text of the command
-            const auto line = mark.end.y;
-            const auto& row = textBuffer.GetRowByOffset(line);
-            const auto commandText = row.GetText(mark.end.x, mark.commandEnd->x);
-
-            // Trim off trailing spaces.
-            const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
+            const auto strEnd = commandInBuffer.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
-                const auto trimmed = commandText.substr(0, strEnd + 1);
+                const auto trimmed = commandInBuffer.substr(0, strEnd + 1);
 
                 commands.push_back(winrt::hstring{ trimmed });
             }
         }
+
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
 
@@ -2338,37 +2326,38 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         for (const auto& mark : internalMarks)
         {
             v.emplace_back(
-                mark.start.to_core_point(),
-                mark.end.to_core_point(),
+                mark.row,
                 OptionalFromColor(_terminal->GetColorForMark(mark)));
         }
 
         return winrt::single_threaded_vector(std::move(v));
     }
 
-    void ControlCore::AddMark(const Control::ScrollMark& mark)
+    void ControlCore::AddMark(const Control::ScrollMark& /*mark*/)
     {
-        const auto lock = _terminal->LockForReading();
-        ::ScrollMark m{};
+        // TODO! Re-implement adding a mark in the UI
 
-        if (mark.Color.HasValue)
-        {
-            m.color = til::color{ mark.Color.Color };
-        }
+        // const auto lock = _terminal->LockForReading();
+        // ::ScrollMark m{};
 
-        if (_terminal->IsSelectionActive())
-        {
-            m.start = til::point{ _terminal->GetSelectionAnchor() };
-            m.end = til::point{ _terminal->GetSelectionEnd() };
-        }
-        else
-        {
-            m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
-        }
+        // if (mark.Color.HasValue)
+        // {
+        //     m.color = til::color{ mark.Color.Color };
+        // }
 
-        // The version of this that only accepts a ScrollMark will automatically
-        // set the start & end to the cursor position.
-        _terminal->AddMark(m, m.start, m.end, true);
+        // if (_terminal->IsSelectionActive())
+        // {
+        //     m.start = til::point{ _terminal->GetSelectionAnchor() };
+        //     m.end = til::point{ _terminal->GetSelectionEnd() };
+        // }
+        // else
+        // {
+        //     m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
+        // }
+
+        // // The version of this that only accepts a ScrollMark will automatically
+        // // set the start & end to the cursor position.
+        // _terminal->AddMark(m, m.start, m.end, true);
     }
 
     void ControlCore::ClearMark()
@@ -2398,7 +2387,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int highest = currentOffset;
             for (const auto& mark : marks)
             {
-                const auto newY = mark.start.y;
+                const auto newY = mark.row;
                 if (newY > highest)
                 {
                     tgt = mark;
@@ -2412,7 +2401,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int lowest = currentOffset;
             for (const auto& mark : marks)
             {
-                const auto newY = mark.start.y;
+                const auto newY = mark.row;
                 if (newY < lowest)
                 {
                     tgt = mark;
@@ -2426,7 +2415,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int minDistance = INT_MAX;
             for (const auto& mark : marks)
             {
-                const auto delta = mark.start.y - currentOffset;
+                const auto delta = mark.row - currentOffset;
                 if (delta > 0 && delta < minDistance)
                 {
                     tgt = mark;
@@ -2441,7 +2430,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int minDistance = INT_MAX;
             for (const auto& mark : marks)
             {
-                const auto delta = currentOffset - mark.start.y;
+                const auto delta = currentOffset - mark.row;
                 if (delta > 0 && delta < minDistance)
                 {
                     tgt = mark;
@@ -2459,8 +2448,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
         if (tgt.has_value())
         {
-            UserScrollViewport(tgt->start.y);
-            _terminalScrollPositionChanged(tgt->start.y, viewHeight, bufferSize);
+            UserScrollViewport(tgt->row);
+            _terminalScrollPositionChanged(tgt->row, viewHeight, bufferSize);
         }
         else
         {
@@ -2512,30 +2501,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
-        til::point bestDistance{ worst };
+        // TODO!!!!
 
-        for (const auto& m : marks)
-        {
-            if (!m.HasCommand())
-            {
-                continue;
-            }
+        // static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
+        // til::point bestDistance{ worst };
 
-            const auto distance = goUp ? start - m.end : m.end - start;
-            if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
-            {
-                nearest = m;
-                bestDistance = distance;
-            }
-        }
+        // for (const auto& m : marks)
+        // {
+        //     if (!m.HasCommand())
+        //     {
+        //         continue;
+        //     }
 
-        if (nearest.has_value())
-        {
-            const auto start = nearest->end;
-            auto end = *nearest->commandEnd;
-            _selectSpan(til::point_span{ start, end });
-        }
+        //     const auto distance = goUp ? start - m.end : m.end - start;
+        //     if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
+        //     {
+        //         nearest = m;
+        //         bestDistance = distance;
+        //     }
+        // }
+
+        // if (nearest.has_value())
+        // {
+        //     const auto start = nearest->end;
+        //     auto end = *nearest->commandEnd;
+        //     _selectSpan(til::point_span{ start, end });
+        // }
     }
 
     void ControlCore::SelectOutput(const bool goUp)
@@ -2547,31 +2538,33 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
+        marks;
+        // TODO!!!!
 
-        static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
-        til::point bestDistance{ worst };
+        // static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
+        // til::point bestDistance{ worst };
 
-        for (const auto& m : marks)
-        {
-            if (!m.HasOutput())
-            {
-                continue;
-            }
+        // for (const auto& m : marks)
+        // {
+        //     if (!m.HasOutput())
+        //     {
+        //         continue;
+        //     }
 
-            const auto distance = goUp ? start - *m.commandEnd : *m.commandEnd - start;
-            if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
-            {
-                nearest = m;
-                bestDistance = distance;
-            }
-        }
+        //     const auto distance = goUp ? start - *m.commandEnd : *m.commandEnd - start;
+        //     if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
+        //     {
+        //         nearest = m;
+        //         bestDistance = distance;
+        //     }
+        // }
 
-        if (nearest.has_value())
-        {
-            const auto start = *nearest->commandEnd;
-            auto end = *nearest->outputEnd;
-            _selectSpan(til::point_span{ start, end });
-        }
+        // if (nearest.has_value())
+        // {
+        //     const auto start = *nearest->commandEnd;
+        //     auto end = *nearest->outputEnd;
+        //     _selectSpan(til::point_span{ start, end });
+        // }
     }
 
     void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
@@ -2621,7 +2614,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     void ControlCore::_contextMenuSelectMark(
-        const til::point& pos,
+        const til::point& /*pos*/,
         bool (*filter)(const ::ScrollMark&),
         til::point_span (*getSpan)(const ::ScrollMark&))
     {
@@ -2633,6 +2626,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
         const auto& marks{ _terminal->GetScrollMarks() };
+
+        // TODO! this'll all need to be redone.
+
         for (auto&& m : marks)
         {
             // If the caller gave us a way to filter marks, check that now.
@@ -2641,32 +2637,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 continue;
             }
-            // If they clicked _anywhere_ in the mark...
-            const auto [markStart, markEnd] = m.GetExtent();
-            if (markStart <= pos &&
-                markEnd >= pos)
-            {
-                // ... select the part of the mark the caller told us about.
-                _selectSpan(getSpan(m));
-                // And quick bail
-                return;
-            }
+            // // If they clicked _anywhere_ in the mark...
+            // const auto [markStart, markEnd] = m.GetExtent();
+            // if (markStart <= pos &&
+            //     markEnd >= pos)
+            // {
+            //     // ... select the part of the mark the caller told us about.
+            //     _selectSpan(getSpan(m));
+            //     // And quick bail
+            //     return;
+            // }
         }
     }
 
     void ControlCore::ContextMenuSelectCommand()
     {
-        _contextMenuSelectMark(
-            _contextMenuBufferPosition,
-            [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); },
-            [](const ::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
+        // _contextMenuSelectMark(
+        //     _contextMenuBufferPosition,
+        //     [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); },
+        //     [](const ::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
     }
     void ControlCore::ContextMenuSelectOutput()
     {
-        _contextMenuSelectMark(
-            _contextMenuBufferPosition,
-            [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); },
-            [](const ::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
+        // _contextMenuSelectMark(
+        //     _contextMenuBufferPosition,
+        //     [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); },
+        //     [](const ::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
     }
 
     bool ControlCore::_clickedOnMark(
@@ -2691,12 +2687,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 continue;
             }
-            const auto [start, end] = m.GetExtent();
-            if (start <= pos &&
-                end >= pos)
-            {
-                return true;
-            }
+            // TODO! redo all of me
+
+            // const auto [start, end] = m.GetExtent();
+            // if (start <= pos &&
+            //     end >= pos)
+            // {
+            //     return true;
+            // }
         }
 
         // Didn't click on a mark with a command - don't show.
@@ -2709,17 +2707,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // * Otherwise yea, show it.
     bool ControlCore::ShouldShowSelectCommand()
     {
-        // Relies on the anchor set in AnchorContextMenu
-        return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); });
+        return false; // TODO!
+
+        // // Relies on the anchor set in AnchorContextMenu
+        // return _clickedOnMark(_contextMenuBufferPosition,
+        //                       [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); });
     }
 
     // Method Description:
     // * Same as ShouldShowSelectCommand, but with the mark needing output
     bool ControlCore::ShouldShowSelectOutput()
     {
-        // Relies on the anchor set in AnchorContextMenu
-        return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
+        return false; // TODO!
+
+        // // Relies on the anchor set in AnchorContextMenu
+        // return _clickedOnMark(_contextMenuBufferPosition,
+        //                       [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
     }
 }

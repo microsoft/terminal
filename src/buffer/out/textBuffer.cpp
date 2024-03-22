@@ -2887,6 +2887,21 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 
     return results;
 }
+std::vector<ScrollMark> TextBuffer::GetMarks() const noexcept
+{
+    std::vector<ScrollMark> marks;
+    const auto bottom = _estimateOffsetOfLastCommittedRow();
+    for (auto y = 0; y <= bottom; y++)
+    {
+        const auto& row = GetRowByOffset(y);
+        const auto& data{ row.GetPromptData() };
+        if (data.has_value())
+        {
+            marks.emplace_back(y, *data);
+        }
+    }
+    return std::move(marks);
+}
 
 // const std::vector<ScrollMark>& TextBuffer::GetMarks() const noexcept
 // {
