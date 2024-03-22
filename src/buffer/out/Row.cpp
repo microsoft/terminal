@@ -664,7 +664,7 @@ catch (...)
     charsConsumed = ch - chBeg;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off)
+[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
     const auto len = chars.size();
