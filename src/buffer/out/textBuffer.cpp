@@ -2889,17 +2889,43 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 }
 std::vector<ScrollMark> TextBuffer::GetMarks() const noexcept
 {
-    std::vector<ScrollMark> marks;
+    // std::vector<ScrollMark> marks;
+    // const auto bottom = _estimateOffsetOfLastCommittedRow();
+    // for (auto y = 0; y <= bottom; y++)
+    // {
+    //     const auto& row = GetRowByOffset(y);
+    //     const auto& data{ row.GetPromptData() };
+    //     if (data.has_value())
+    //     {
+    //         marks.emplace_back(y, *data);
+    //     }
+    // }
+    // return std::move(marks);
+
+    std::vector<ScrollMark> marks{};
     const auto bottom = _estimateOffsetOfLastCommittedRow();
-    for (auto y = 0; y <= bottom; y++)
+    auto lastPromptY = bottom;
+    for (auto promptY = bottom; promptY >= 0; promptY--)
     {
-        const auto& row = GetRowByOffset(y);
-        const auto& data{ row.GetPromptData() };
-        if (data.has_value())
+        const auto& currRow = GetRowByOffset(promptY);
+        auto& rowPromptData = currRow.GetPromptData();
+        if (!rowPromptData.has_value())
         {
-            marks.emplace_back(y, *data);
+            // This row didn't start a prompt, don't even look here.
+            continue;
         }
+
+        // This row did start a prompt! Find the prompt that starts here.
+        // Presumably, no rows below us will have prompts, so pass in the last
+        // row with text as the bottom
+        marks.push_back(_scrollMarkForRow(promptY, lastPromptY));
+        // if (!foundCommand.empty())
+        // {
+        //     commands.emplace_back(std::move(foundCommand));
+        // }
+        lastPromptY = promptY;
     }
+    std::reverse(marks.begin(), marks.end());
     return std::move(marks);
 }
 
@@ -2982,6 +3008,102 @@ void TextBuffer::ClearAllMarks() noexcept
 //         return (m.start.y < 0) || (m.start.y >= height);
 //     });
 // }
+ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
+{
+    const auto& startRow = GetRowByOffset(rowOffset);
+    const auto& rowPromptData = startRow.GetPromptData();
+    assert(rowPromptData.has_value());
+
+    ScrollMark mark{
+        .data = *rowPromptData,
+    };
+
+    bool startedPrompt = false;
+    // bool foundEnd = false;
+    bool startedCommand = false;
+    bool startedOutput = false;
+    MarkKind lastMarkKind = MarkKind::Output;
+
+    const auto endThisMark = [&](auto x, auto y) {
+        if (!startedCommand)
+        {
+            mark.end = til::point{ x, y };
+        }
+        else if (!startedOutput) // startedCommand = true
+        {
+            mark.commandEnd = til::point{ x, y };
+        }
+        else if (startedOutput)
+        {
+            mark.outputEnd = til::point{ x, y };
+        }
+    };
+    auto x = 0;
+    auto y = rowOffset;
+
+    for (; y <= bottomInclusive; y++)
+    {
+        // Now we need to iterate over text attributes. We need to find a
+        // segment of Prompt attributes, we'll skip those. Then there should be
+        // Command attributes. Collect up all of those, till we get to the next
+        // Output attribute.
+
+        const auto& row = GetRowByOffset(y);
+        const auto runs = row.Attributes().runs();
+        x = 0;
+        for (const auto& [attr, length] : runs)
+        {
+            const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+            const auto markKind{ attr.GetMarkAttributes() };
+            if (markKind != lastMarkKind)
+            {
+                if (markKind == MarkKind::Prompt)
+                {
+                    if (startedPrompt)
+                    {
+                        // we got a _new_ prompt. bail out.
+                        endThisMark(x, y);
+                        break;
+                    }
+                    else
+                    {
+                        // We entered the first prompt here
+                        startedPrompt = true;
+                        mark.start = til::point{ x, y };
+                    }
+                }
+                else if (markKind == MarkKind::Command && startedPrompt)
+                {
+                    // mark.end = til::point{x, y};
+                    // foundEnd = true;
+                    endThisMark(x, y);
+                    startedCommand = true;
+                }
+                else if (markKind == MarkKind::Output && startedPrompt)
+                {
+                    endThisMark(x, y);
+                    startedOutput = true;
+                    // if (!foundEnd)
+                    // {
+                    //     mark.end = til::point{x, y};
+                    //     foundEnd = true;
+                    // }
+                    // mark.commandEnd = til::point{x, y};
+                }
+                // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
+                lastMarkKind = markKind;
+            }
+
+            // advance to next run of text
+            x = nextX;
+        }
+        // we went over all the runs in this row, but we're not done yet. Keep iterating on the next row.
+    }
+
+    // Okay, we're at the bottom of the buffer? Yea, just return what we found.
+    // endThisMark(x, y);
+    return mark;
+}
 
 std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
 {

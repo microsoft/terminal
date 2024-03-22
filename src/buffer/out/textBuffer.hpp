@@ -66,38 +66,40 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
-// struct ScrollMark
-// {
-//     std::optional<til::color> color;
-//     til::point start;
-//     til::point end; // exclusive
-//     std::optional<til::point> commandEnd;
-//     std::optional<til::point> outputEnd;
-
-//     MarkCategory category{ MarkCategory::Info };
-//     // Other things we may want to think about in the future are listed in
-//     // GH#11000
-
-//     bool HasCommand() const noexcept
-//     {
-//         return commandEnd.has_value() && *commandEnd != end;
-//     }
-//     bool HasOutput() const noexcept
-//     {
-//         return outputEnd.has_value() && *outputEnd != *commandEnd;
-//     }
-//     std::pair<til::point, til::point> GetExtent() const
-//     {
-//         til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
-//         return std::make_pair(til::point{ start }, realEnd);
-//     }
-// };
-
 struct ScrollMark
 {
-    til::CoordType row{ 0 };
     MarkData data;
+
+    // std::optional<til::color> color;
+    til::point start;
+    til::point end; // exclusive
+    std::optional<til::point> commandEnd;
+    std::optional<til::point> outputEnd;
+
+    // MarkCategory category{ MarkCategory::Info };
+    // Other things we may want to think about in the future are listed in
+    // GH#11000
+
+    bool HasCommand() const noexcept
+    {
+        return commandEnd.has_value() && *commandEnd != end;
+    }
+    bool HasOutput() const noexcept
+    {
+        return outputEnd.has_value() && *outputEnd != *commandEnd;
+    }
+    std::pair<til::point, til::point> GetExtent() const
+    {
+        til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
+        return std::make_pair(til::point{ start }, realEnd);
+    }
 };
+
+// struct ScrollMark
+// {
+//     til::CoordType row{ 0 };
+//     MarkData data;
+// };
 
 class TextBuffer final
 {
@@ -339,6 +341,7 @@ public:
     // void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
     std::wstring CurrentCommand() const;
     std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
+    ScrollMark _scrollMarkForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
     std::vector<std::wstring> Commands() const;
 
     void StartPrompt();

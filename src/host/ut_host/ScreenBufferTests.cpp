@@ -267,6 +267,7 @@ class ScreenBufferTests
 
     TEST_METHOD(SimpleMarkCommand);
     TEST_METHOD(SimpleWrappedCommand);
+    TEST_METHOD(ComplicatedPromptRegions);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -8504,4 +8505,80 @@ void ScreenBufferTests::SimpleWrappedCommand()
     std::vector<std::wstring> expectedCommands{ oneHundredZeros,
                                                 L"some of a command & more of a command" };
     VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
+}
+
+void _writePrompt(StateMachine& stateMachine, const auto& path)
+{
+    stateMachine.ProcessString(L"\x1b]133;D\x7");
+    stateMachine.ProcessString(L"\x1b]133;A\x7");
+    stateMachine.ProcessString(L"\x1b]9;9;");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"\x7");
+    stateMachine.ProcessString(L"PWSH ");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"> ");
+    stateMachine.ProcessString(L"\x1b]133;B\x7");
+}
+
+void ScreenBufferTests::ComplicatedPromptRegions()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // A prompt looks like:
+    // `PWSH C:\Windows> `
+    //
+    // which is 17 characters for C:\Windows
+
+    _writePrompt(stateMachine, L"C:\\Windows");
+    stateMachine.ProcessString(L"Foo-bar");
+    stateMachine.ProcessString(L"\x1b]133;C\x7");
+    stateMachine.ProcessString(L"\r\n");
+    stateMachine.ProcessString(L"This is some text     \r\n"); // y=1
+    stateMachine.ProcessString(L"with varying amounts  \r\n"); // y=2
+    stateMachine.ProcessString(L"of whitespace         \r\n"); // y=3
+
+    _writePrompt(stateMachine, L"C:\\Windows"); // y=4
+
+    Log::Comment(L"Check the buffer contents");
+    const auto& cursor = tbi.GetCursor();
+
+    {
+        const til::point expectedCursor{ 17, 4 };
+        VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+    }
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    const auto& row0 = tbi.GetRowByOffset(0);
+    const auto& row4 = tbi.GetRowByOffset(4);
+    VERIFY_IS_TRUE(row0.GetPromptData().has_value());
+    VERIFY_IS_TRUE(row4.GetPromptData().has_value());
+
+    const auto marks = tbi.GetMarks();
+    VERIFY_ARE_EQUAL(2u, marks.size());
+
+    {
+        auto& mark = marks[0];
+        const til::point expectedStart{ 0, 0 };
+        const til::point expectedEnd{ 17, 0 };
+        const til::point expectedOutputStart{ 24, 0 }; // `Foo-Bar` is 7 characters
+        const til::point expectedOutputEnd{ 0, 4 };
+        VERIFY_ARE_EQUAL(expectedStart, mark.start);
+        VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+        VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+        VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+    }
+    {
+        auto& mark = marks[1];
+        const til::point expectedStart{ 0, 4 };
+        const til::point expectedEnd{ 17, 4 };
+        VERIFY_ARE_EQUAL(expectedStart, mark.start);
+        VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+        VERIFY_IS_FALSE(mark.commandEnd.has_value());
+        VERIFY_IS_FALSE(mark.outputEnd.has_value());
+    }
 }

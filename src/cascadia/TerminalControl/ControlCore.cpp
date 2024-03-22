@@ -2326,7 +2326,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         for (const auto& mark : internalMarks)
         {
             v.emplace_back(
-                mark.row,
+                mark.start.y,
                 OptionalFromColor(_terminal->GetColorForMark(mark)));
         }
 
@@ -2387,7 +2387,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int highest = currentOffset;
             for (const auto& mark : marks)
             {
-                const auto newY = mark.row;
+                const auto newY = mark.start.y;
                 if (newY > highest)
                 {
                     tgt = mark;
@@ -2401,7 +2401,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int lowest = currentOffset;
             for (const auto& mark : marks)
             {
-                const auto newY = mark.row;
+                const auto newY = mark.start.y;
                 if (newY < lowest)
                 {
                     tgt = mark;
@@ -2415,7 +2415,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int minDistance = INT_MAX;
             for (const auto& mark : marks)
             {
-                const auto delta = mark.row - currentOffset;
+                const auto delta = mark.start.y - currentOffset;
                 if (delta > 0 && delta < minDistance)
                 {
                     tgt = mark;
@@ -2430,7 +2430,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             int minDistance = INT_MAX;
             for (const auto& mark : marks)
             {
-                const auto delta = currentOffset - mark.row;
+                const auto delta = currentOffset - mark.start.y;
                 if (delta > 0 && delta < minDistance)
                 {
                     tgt = mark;
@@ -2448,8 +2448,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
         if (tgt.has_value())
         {
-            UserScrollViewport(tgt->row);
-            _terminalScrollPositionChanged(tgt->row, viewHeight, bufferSize);
+            UserScrollViewport(tgt->start.y);
+            _terminalScrollPositionChanged(tgt->start.y, viewHeight, bufferSize);
         }
         else
         {
@@ -2501,32 +2501,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        // TODO!!!!
+        static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
+        til::point bestDistance{ worst };
 
-        // static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
-        // til::point bestDistance{ worst };
+        for (const auto& m : marks)
+        {
+            if (!m.HasCommand())
+            {
+                continue;
+            }
 
-        // for (const auto& m : marks)
-        // {
-        //     if (!m.HasCommand())
-        //     {
-        //         continue;
-        //     }
+            const auto distance = goUp ? start - m.end : m.end - start;
+            if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
+            {
+                nearest = m;
+                bestDistance = distance;
+            }
+        }
 
-        //     const auto distance = goUp ? start - m.end : m.end - start;
-        //     if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
-        //     {
-        //         nearest = m;
-        //         bestDistance = distance;
-        //     }
-        // }
-
-        // if (nearest.has_value())
-        // {
-        //     const auto start = nearest->end;
-        //     auto end = *nearest->commandEnd;
-        //     _selectSpan(til::point_span{ start, end });
-        // }
+        if (nearest.has_value())
+        {
+            const auto start = nearest->end;
+            auto end = *nearest->commandEnd;
+            _selectSpan(til::point_span{ start, end });
+        }
     }
 
     void ControlCore::SelectOutput(const bool goUp)
@@ -2538,33 +2536,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
-        marks;
-        // TODO!!!!
 
-        // static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
-        // til::point bestDistance{ worst };
+        static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
+        til::point bestDistance{ worst };
 
-        // for (const auto& m : marks)
-        // {
-        //     if (!m.HasOutput())
-        //     {
-        //         continue;
-        //     }
+        for (const auto& m : marks)
+        {
+            if (!m.HasOutput())
+            {
+                continue;
+            }
 
-        //     const auto distance = goUp ? start - *m.commandEnd : *m.commandEnd - start;
-        //     if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
-        //     {
-        //         nearest = m;
-        //         bestDistance = distance;
-        //     }
-        // }
+            const auto distance = goUp ? start - *m.commandEnd : *m.commandEnd - start;
+            if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
+            {
+                nearest = m;
+                bestDistance = distance;
+            }
+        }
 
-        // if (nearest.has_value())
-        // {
-        //     const auto start = *nearest->commandEnd;
-        //     auto end = *nearest->outputEnd;
-        //     _selectSpan(til::point_span{ start, end });
-        // }
+        if (nearest.has_value())
+        {
+            const auto start = *nearest->commandEnd;
+            auto end = *nearest->outputEnd;
+            _selectSpan(til::point_span{ start, end });
+        }
     }
 
     void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
@@ -2614,7 +2610,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     void ControlCore::_contextMenuSelectMark(
-        const til::point& /*pos*/,
+        const til::point& pos,
         bool (*filter)(const ::ScrollMark&),
         til::point_span (*getSpan)(const ::ScrollMark&))
     {
@@ -2627,8 +2623,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         const auto& marks{ _terminal->GetScrollMarks() };
 
-        // TODO! this'll all need to be redone.
-
         for (auto&& m : marks)
         {
             // If the caller gave us a way to filter marks, check that now.
@@ -2637,32 +2631,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 continue;
             }
-            // // If they clicked _anywhere_ in the mark...
-            // const auto [markStart, markEnd] = m.GetExtent();
-            // if (markStart <= pos &&
-            //     markEnd >= pos)
-            // {
-            //     // ... select the part of the mark the caller told us about.
-            //     _selectSpan(getSpan(m));
-            //     // And quick bail
-            //     return;
-            // }
+            // If they clicked _anywhere_ in the mark...
+            const auto [markStart, markEnd] = m.GetExtent();
+            if (markStart <= pos &&
+                markEnd >= pos)
+            {
+                // ... select the part of the mark the caller told us about.
+                _selectSpan(getSpan(m));
+                // And quick bail
+                return;
+            }
         }
     }
 
     void ControlCore::ContextMenuSelectCommand()
     {
-        // _contextMenuSelectMark(
-        //     _contextMenuBufferPosition,
-        //     [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); },
-        //     [](const ::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
+        _contextMenuSelectMark(
+            _contextMenuBufferPosition,
+            [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); },
+            [](const ::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
     }
     void ControlCore::ContextMenuSelectOutput()
     {
-        // _contextMenuSelectMark(
-        //     _contextMenuBufferPosition,
-        //     [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); },
-        //     [](const ::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
+        _contextMenuSelectMark(
+            _contextMenuBufferPosition,
+            [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); },
+            [](const ::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
     }
 
     bool ControlCore::_clickedOnMark(
@@ -2687,14 +2681,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 continue;
             }
-            // TODO! redo all of me
 
-            // const auto [start, end] = m.GetExtent();
-            // if (start <= pos &&
-            //     end >= pos)
-            // {
-            //     return true;
-            // }
+            const auto [start, end] = m.GetExtent();
+            if (start <= pos &&
+                end >= pos)
+            {
+                return true;
+            }
         }
 
         // Didn't click on a mark with a command - don't show.
@@ -2707,21 +2700,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // * Otherwise yea, show it.
     bool ControlCore::ShouldShowSelectCommand()
     {
-        return false; // TODO!
-
-        // // Relies on the anchor set in AnchorContextMenu
-        // return _clickedOnMark(_contextMenuBufferPosition,
-        //                       [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); });
+        // Relies on the anchor set in AnchorContextMenu
+        return _clickedOnMark(_contextMenuBufferPosition,
+                              [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); });
     }
 
     // Method Description:
     // * Same as ShouldShowSelectCommand, but with the mark needing output
     bool ControlCore::ShouldShowSelectOutput()
     {
-        return false; // TODO!
-
-        // // Relies on the anchor set in AnchorContextMenu
-        // return _clickedOnMark(_contextMenuBufferPosition,
-        //                       [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
+        // Relies on the anchor set in AnchorContextMenu
+        return _clickedOnMark(_contextMenuBufferPosition,
+                              [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
     }
 }
