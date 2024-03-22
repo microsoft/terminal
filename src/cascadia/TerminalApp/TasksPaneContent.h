@@ -87,7 +87,7 @@ namespace winrt::TerminalApp::implementation
                 c.UpdateFilter(filter);
             }
 
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
+            PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
         }
 
         winrt::hstring Input()
