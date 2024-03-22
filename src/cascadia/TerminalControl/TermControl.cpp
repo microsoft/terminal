@@ -3534,7 +3534,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_searchBox)
         {
             _searchBox->NavigationEnabled(true);
-            if (args.State() == Control::SearchState::InActive)
+            if (args.State() == Control::SearchState::Inactive)
             {
                 _searchBox->ClearStatus();
             }

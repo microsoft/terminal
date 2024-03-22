@@ -1579,7 +1579,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // send an UpdateSearchResults event to the UI to put the Search UI into inactive state.
         auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
-        evArgs->State(SearchState::InActive);
+        evArgs->State(SearchState::Inactive);
         UpdateSearchResults.raise(*this, *evArgs);
     }
 
@@ -1661,7 +1661,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
-        evArgs->State(SearchState::InActive);
+        evArgs->State(SearchState::Inactive);
         if (!text.empty())
         {
             evArgs->State(SearchState::Active);

@@ -81,7 +81,7 @@ namespace Microsoft.Terminal.Control
 
     enum SearchState
     {
-        InActive = 0,
+        Inactive = 0,
         Active = 1,
     };
 
