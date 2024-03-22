@@ -7,7 +7,7 @@ struct CodepointWidthDetector
 {
     static CodepointWidthDetector& Singleton() noexcept;
 
-    CodepointWidthDetector();
+    CodepointWidthDetector() noexcept;
 
     size_t GraphemeNext(const std::wstring_view& str, size_t offset, int* width) noexcept;
     size_t GraphemePrev(const std::wstring_view& str, size_t offset, int* width) noexcept;
