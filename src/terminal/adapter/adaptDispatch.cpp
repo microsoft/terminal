@@ -3695,7 +3695,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     {
         // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        return false;
+        // return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3714,9 +3714,15 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
     if (action == L"SetMark")
     {
-        ScrollMark mark;
-        mark.category = MarkCategory::Prompt;
-        _api.MarkPrompt(mark);
+        // ScrollMark mark;
+        // mark.category = MarkCategory::Prompt;
+        // _api.MarkPrompt(mark);
+
+        auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+        attr.SetMarkAttributes(MarkKind::Prompt);
+        _api.SetTextAttributes(attr);
+        _api.GetTextBuffer().StartPrompt();
+
         return true;
     }
     return false;
@@ -3739,7 +3745,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     {
         // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        return false;
+        // return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3762,19 +3768,26 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         case L'A': // FTCS_PROMPT
         {
             // Simply just mark this line as a prompt line.
-            ScrollMark mark;
-            mark.category = MarkCategory::Prompt;
-            _api.MarkPrompt(mark);
+            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            attr.SetMarkAttributes(MarkKind::Prompt);
+            _api.SetTextAttributes(attr);
+            _api.GetTextBuffer().StartPrompt();
             return true;
         }
         case L'B': // FTCS_COMMAND_START
         {
-            _api.MarkCommandStart();
+            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            attr.SetMarkAttributes(MarkKind::Command);
+            _api.SetTextAttributes(attr);
+            _api.GetTextBuffer().StartPrompt();
             return true;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
-            _api.MarkOutputStart();
+            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            attr.SetMarkAttributes(MarkKind::Output);
+            _api.SetTextAttributes(attr);
+            _api.GetTextBuffer().StartPrompt();
             return true;
         }
         case L'D': // FTCS_COMMAND_FINISHED
@@ -3793,7 +3806,12 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                 error = Utils::StringToUint(errorString, parsedError) ? parsedError :
                                                                         UINT_MAX;
             }
-            _api.MarkCommandFinish(error);
+
+            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            attr.SetMarkAttributes(MarkKind::Output);
+            _api.SetTextAttributes(attr);
+            _api.GetTextBuffer().EndCommand(error);
+            // _api.MarkCommandFinish(error);
             return true;
         }
         default:

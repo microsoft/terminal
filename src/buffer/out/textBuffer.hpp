@@ -66,7 +66,7 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
-enum class MarkCategory
+enum class MarkCategory : uint8_t
 {
     Prompt = 0,
     Error = 1,
@@ -330,16 +330,21 @@ public:
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
-    const std::vector<ScrollMark>& GetMarks() const noexcept;
+    // const std::vector<ScrollMark>& GetMarks() const noexcept;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
-    void ScrollMarks(const int delta);
-    void StartPromptMark(const ScrollMark& m);
-    void AddMark(const ScrollMark& m);
-    void SetCurrentPromptEnd(const til::point pos) noexcept;
-    void SetCurrentCommandEnd(const til::point pos) noexcept;
-    void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
-    std::wstring_view CurrentCommand() const;
+    // void ScrollMarks(const int delta);
+    // void StartPromptMark(const ScrollMark& m);
+    // void AddMark(const ScrollMark& m);
+    // void SetCurrentPromptEnd(const til::point pos) noexcept;
+    // void SetCurrentCommandEnd(const til::point pos) noexcept;
+    // void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
+    std::wstring CurrentCommand() const;
+    std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
+    std::vector<std::wstring> Commands() const;
+
+    void StartPrompt();
+    void EndCommand(std::optional<unsigned int> error);
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
@@ -364,7 +369,7 @@ private:
     til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;
     til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     void _PruneHyperlinks();
-    void _trimMarksOutsideBuffer();
+    // void _trimMarksOutsideBuffer();
     std::tuple<til::CoordType, til::CoordType, bool> _RowCopyHelper(const CopyRequest& req, const til::CoordType iRow, const ROW& row) const;
 
     static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
@@ -437,7 +442,7 @@ private:
     uint64_t _lastMutationId = 0;
 
     Cursor _cursor;
-    std::vector<ScrollMark> _marks;
+    // std::vector<ScrollMark> _marks;
     bool _isActiveBuffer = false;
 
 #ifdef UNIT_TESTING

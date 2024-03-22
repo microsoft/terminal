@@ -87,6 +87,15 @@ private:
     til::CoordType _currentColumn;
 };
 
+struct MarkData
+{
+    // Scrollbar marks may have been given a color, or not.
+    std::optional<til::color> color;
+    // Prompts without an exit code haven't had a matching FTCS CommandEnd
+    // called yet. Any value other than 0 is an error.
+    std::optional<uint32_t> exitCode;
+};
+
 class ROW final
 {
 public:
@@ -166,6 +175,10 @@ public:
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
     auto AttrEnd() const noexcept { return _attr.end(); }
+
+    const std::optional<MarkData>& GetPromptData() const noexcept;
+    void StartPrompt() noexcept;
+    void EndCommand(uint32_t exitCode) noexcept;
 
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
@@ -299,6 +312,8 @@ private:
     bool _wrapForced = false;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded = false;
+
+    std::optional<MarkData> _promptData = std::nullopt;
 };
 
 #ifdef UNIT_TESTING

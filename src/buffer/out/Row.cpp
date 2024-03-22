@@ -1181,3 +1181,23 @@ CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexce
     const auto guessedColumn = gsl::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
     return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
 }
+
+const std::optional<MarkData>& ROW::GetPromptData() const noexcept
+{
+    return _promptData;
+}
+
+void ROW::StartPrompt() noexcept
+{
+    if (!_promptData.has_value())
+    {
+        _promptData = {};
+    }
+}
+void ROW::EndCommand(uint32_t exitCode) noexcept
+{
+    if (_promptData.has_value())
+    {
+        _promptData->exitCode = exitCode;
+    }
+}
