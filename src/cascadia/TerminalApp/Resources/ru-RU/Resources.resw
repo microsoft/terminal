@@ -763,18 +763,11 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Поведение завершения можно настроить в дополнительных параметрах профиля.</value>
   </data>
-  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
-    <value>Терминал Windows можно настроить в параметрах как приложение терминала по умолчанию.</value>
-  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Больше не показывать</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Это окно терминала запущено от имени администратора</value>
-  </data>
-  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
-    <value>Открыть параметры</value>
-    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Найдено рекомендаций: {0}</value>
