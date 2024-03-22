@@ -763,18 +763,11 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>您可以在進階設定檔設定中設定終止行為。</value>
   </data>
-  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
-    <value>Windows 終端機可在您的設定中設定為預設終端機應用程式。</value>
-  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>不要再顯示</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>此終端機視窗目前以系統管理員身分執行</value>
-  </data>
-  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
-    <value>開啟設定</value>
-    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>找到的建議: {0}</value>

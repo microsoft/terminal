@@ -423,7 +423,7 @@ namespace winrt::TerminalApp::implementation
                                                                   _settingsLoadExceptionText,
                                                                   warnings,
                                                                   _settings);
-                _SettingsChangedHandlers(*this, *ev);
+                SettingsChanged.raise(*this, *ev);
                 return;
             }
         }
@@ -452,7 +452,7 @@ namespace winrt::TerminalApp::implementation
                                                           _settingsLoadExceptionText,
                                                           warnings,
                                                           _settings);
-        _SettingsChangedHandlers(*this, *ev);
+        SettingsChanged.raise(*this, *ev);
     }
 
     // This is a continuation of AppLogic::Create() and includes the more expensive parts.

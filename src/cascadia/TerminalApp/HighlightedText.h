@@ -13,9 +13,9 @@ namespace winrt::TerminalApp::implementation
         HighlightedTextSegment() = default;
         HighlightedTextSegment(const winrt::hstring& text, bool isHighlighted);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, TextSegment, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(bool, IsHighlighted, _PropertyChangedHandlers);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, TextSegment, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(bool, IsHighlighted, PropertyChanged.raise);
     };
 
     struct HighlightedText : HighlightedTextT<HighlightedText>
@@ -23,8 +23,8 @@ namespace winrt::TerminalApp::implementation
         HighlightedText() = default;
         HighlightedText(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>& segments);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>, Segments, _PropertyChangedHandlers);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>, Segments, PropertyChanged.raise);
     };
 }
 
