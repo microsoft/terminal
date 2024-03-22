@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings,
+                                                const OriginTag origin,
                                                 const bool parseKeys = true);
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
@@ -47,7 +48,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                    Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
 
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
-                                                           const Json::Value& json);
+                                                           const Json::Value& json,
+                                                           const OriginTag origin);
         Json::Value ToJson() const;
 
         bool HasNestedCommands() const;
@@ -75,6 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
+        WINRT_PROPERTY(OriginTag, Origin);
 
     private:
         Json::Value _originalJson;

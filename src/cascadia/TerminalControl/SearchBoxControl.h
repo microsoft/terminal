@@ -52,10 +52,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SearchBoxPointerPressedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void SearchBoxPointerReleasedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
-        WINRT_CALLBACK(PropertyChanged, winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_CALLBACK(Search, SearchHandler);
-        WINRT_CALLBACK(SearchChanged, SearchHandler);
-        TYPED_EVENT(Closed, Control::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+        til::event<SearchHandler> Search;
+        til::event<SearchHandler> SearchChanged;
+        til::typed_event<Control::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs> Closed;
+        til::property_changed_event PropertyChanged;
 
     private:
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;

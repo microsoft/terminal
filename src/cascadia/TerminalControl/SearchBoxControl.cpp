@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (rect != _contentClipRect)
         {
             _contentClipRect = rect;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"ContentClipRect" });
+            PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"ContentClipRect" });
         }
     }
 
@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (y != _openAnimationStartPoint)
         {
             _openAnimationStartPoint = y;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"OpenAnimationStartPoint" });
+            PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"OpenAnimationStartPoint" });
         }
     }
 
@@ -240,11 +240,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                _SearchHandlers(TextBox().Text(), !_GoForward(), _CaseSensitive());
+                Search.raise(TextBox().Text(), !_GoForward(), _CaseSensitive());
             }
             else
             {
-                _SearchHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
+                Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
             }
             e.Handled(true);
         }
@@ -264,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
-            _ClosedHandlers(*this, e);
+            Closed.raise(*this, e);
             e.Handled(true);
         }
     }
@@ -335,7 +335,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        _SearchHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
+        Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:
@@ -356,7 +356,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        _SearchHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
+        Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:
@@ -369,7 +369,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/, const RoutedEventArgs& e)
     {
-        _ClosedHandlers(*this, e);
+        Closed.raise(*this, e);
     }
 
     // Method Description:
@@ -394,7 +394,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        _SearchChangedHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
+        SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:
@@ -406,7 +406,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        _SearchChangedHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
+        SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:

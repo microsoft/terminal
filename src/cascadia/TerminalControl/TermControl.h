@@ -165,7 +165,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        til::property_changed_event PropertyChanged;
+
+        til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
+        til::typed_event<IInspectable, Control::NoticeEventArgs> RaiseNotice;
+        til::typed_event<> HidePointerCursor;
+        til::typed_event<> RestorePointerCursor;
+        til::typed_event<> ReadOnlyChanged;
+        til::typed_event<IInspectable, IInspectable> FocusFollowMouseRequested;
+        til::typed_event<Control::TermControl, Windows::UI::Xaml::RoutedEventArgs> Initialized;
+        til::typed_event<> WarningBell;
+        til::typed_event<IInspectable, Control::KeySentEventArgs> KeySent;
+        til::typed_event<IInspectable, Control::CharSentEventArgs> CharSent;
+        til::typed_event<IInspectable, Control::StringSentEventArgs> StringSent;
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
@@ -182,20 +194,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
-        TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
-        TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
-        TYPED_EVENT(HidePointerCursor,         IInspectable, IInspectable);
-        TYPED_EVENT(RestorePointerCursor,      IInspectable, IInspectable);
-        TYPED_EVENT(ReadOnlyChanged,           IInspectable, IInspectable);
-        TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
-        TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
-        TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
-        TYPED_EVENT(KeySent,                   IInspectable, Control::KeySentEventArgs);
-        TYPED_EVENT(CharSent,                  IInspectable, Control::CharSentEventArgs);
-        TYPED_EVENT(StringSent,                IInspectable, Control::StringSentEventArgs);
         // clang-format on
 
-        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, PropertyChanged.raise, nullptr);
 
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers

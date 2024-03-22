@@ -145,7 +145,6 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::TaskbarState TaskbarState() const;
 
         void ShowKeyboardServiceWarning() const;
-        void ShowSetAsDefaultInfoBar() const;
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
@@ -172,33 +171,33 @@ namespace winrt::TerminalApp::implementation
 
         uint32_t NumberOfTabs() const;
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        til::property_changed_event PropertyChanged;
 
         // -------------------------------- WinRT Events ---------------------------------
-        TYPED_EVENT(TitleChanged, IInspectable, winrt::hstring);
-        TYPED_EVENT(LastTabClosed, IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
-        TYPED_EVENT(SetTitleBarContent, IInspectable, winrt::Windows::UI::Xaml::UIElement);
-        TYPED_EVENT(FocusModeChanged, IInspectable, IInspectable);
-        TYPED_EVENT(FullscreenChanged, IInspectable, IInspectable);
-        TYPED_EVENT(ChangeMaximizeRequested, IInspectable, IInspectable);
-        TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
-        TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
-        TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
-        TYPED_EVENT(Initialized, IInspectable, IInspectable);
-        TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
-        TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
-        TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+        til::typed_event<IInspectable, winrt::hstring> TitleChanged;
+        til::typed_event<IInspectable, winrt::TerminalApp::LastTabClosedEventArgs> LastTabClosed;
+        til::typed_event<IInspectable, winrt::Windows::UI::Xaml::UIElement> SetTitleBarContent;
+        til::typed_event<IInspectable, IInspectable> FocusModeChanged;
+        til::typed_event<IInspectable, IInspectable> FullscreenChanged;
+        til::typed_event<IInspectable, IInspectable> ChangeMaximizeRequested;
+        til::typed_event<IInspectable, IInspectable> AlwaysOnTopChanged;
+        til::typed_event<IInspectable, IInspectable> RaiseVisualBell;
+        til::typed_event<IInspectable, IInspectable> SetTaskbarProgress;
+        til::typed_event<IInspectable, IInspectable> Initialized;
+        til::typed_event<IInspectable, IInspectable> IdentifyWindowsRequested;
+        til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs> RenameWindowRequested;
+        til::typed_event<IInspectable, IInspectable> SummonWindowRequested;
 
-        TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
-        TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
-        TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
-        TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
+        til::typed_event<IInspectable, IInspectable> CloseRequested;
+        til::typed_event<IInspectable, IInspectable> OpenSystemMenu;
+        til::typed_event<IInspectable, IInspectable> QuitRequested;
+        til::typed_event<IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs> ShowWindowChanged;
 
-        TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs);
-        TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs);
+        til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs> RequestMoveContent;
+        til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs> RequestReceiveContent;
 
-        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -507,8 +506,6 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         void _KeyboardServiceWarningInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
-        void _SetAsDefaultDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
-        void _SetAsDefaultOpenSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 

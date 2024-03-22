@@ -43,6 +43,8 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_METHOD(TestEvent);
 
     TEST_METHOD(TestTypedEvent);
+
+    TEST_METHOD(TestPropertyChanged);
 };
 
 void TilWinRtHelpersTests::TestPropertySimple()
@@ -242,4 +244,23 @@ void TilWinRtHelpersTests::TestTypedEvent()
     MyEvent.raise(L"sure", 42);
     VERIFY_ARE_EQUAL(true, handledOne);
     VERIFY_ARE_EQUAL(true, handledTwo);
+}
+
+void TilWinRtHelpersTests::TestPropertyChanged()
+{
+    auto handler = [&](const auto& /*sender*/, const auto& args) -> void {
+        VERIFY_ARE_EQUAL(L"BackgroundBrush", args.PropertyName());
+    };
+
+    til::property_changed_event PropertyChanged;
+    PropertyChanged(handler);
+
+    // We can't actually run this test in our usual unit tests. As you may
+    // suspect, because the PropertyChanged event is a _XAML_ event, it expects
+    // to be run on the UI thread. Which, we most definitely don't have here.
+    //
+    // At least, this does compile. We use this everywhere, so the scream test is LOUD.
+
+    // winrt::Windows::Foundation::IInspectable mySender{};
+    // PropertyChanged.raise(mySender, winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
 }
