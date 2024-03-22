@@ -3,7 +3,6 @@
 
 #pragma once
 #include "TasksPaneContent.g.h"
-#include "TaskViewModel.g.h"
 #include "FilteredTask.g.h"
 #include "FilteredCommand.h"
 #include "ActionPaletteItem.h"
@@ -18,7 +17,7 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
 
-        winrt::Windows::Foundation::Size MinSize();
+        winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
@@ -88,7 +87,7 @@ namespace winrt::TerminalApp::implementation
                 c.UpdateFilter(filter);
             }
 
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
+            PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
         }
 
         winrt::hstring Input()
@@ -138,5 +137,4 @@ namespace winrt::TerminalApp::implementation
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(TasksPaneContent);
-    BASIC_FACTORY(TaskViewModel);
 }

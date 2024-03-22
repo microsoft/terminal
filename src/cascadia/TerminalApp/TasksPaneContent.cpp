@@ -3,9 +3,7 @@
 
 #include "pch.h"
 #include "TasksPaneContent.h"
-#include "PaneArgs.h"
 #include "TasksPaneContent.g.cpp"
-#include "TaskViewModel.g.cpp"
 #include "FilteredTask.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -74,7 +72,7 @@ namespace winrt::TerminalApp::implementation
     {
         return *this;
     }
-    winrt::Windows::Foundation::Size TasksPaneContent::MinSize()
+    winrt::Windows::Foundation::Size TasksPaneContent::MinimumSize()
     {
         return { 1, 1 };
     }

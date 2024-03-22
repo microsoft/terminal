@@ -1261,7 +1261,7 @@ namespace winrt::TerminalApp::implementation
         const auto content{ pane->GetContent() };
         if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
         {
-            const auto& termControl{ termContent.GetTerminal() };
+            const auto& termControl{ termContent.GetTermControl() };
             _rootPane->WalkTree([termControl](const auto& p) {
                 if (const auto& taskPane{ p->GetContent().try_as<TasksPaneContent>() })
                 {
