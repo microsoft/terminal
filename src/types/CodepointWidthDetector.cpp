@@ -4,6 +4,9 @@
 #include "precomp.h"
 #include "inc/CodepointWidthDetector.hpp"
 
+// Due to the Feature_Graphemes::IsEnabled() feature flagging, some code may be disabled.
+#pragma warning(disable : 4702) // unreachable code
+
 // I was trying to minimize dependencies in this code so that it's easier to port to other terminal applications.
 // Also, it has to be fast / have minimal overhead, since it potentially parses every single input character.
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
@@ -946,16 +949,17 @@ CodepointWidthDetector& CodepointWidthDetector::Singleton() noexcept
     return s_codepointWidthDetector;
 }
 
-CodepointWidthDetector::CodepointWidthDetector() noexcept :
-    _enableGraphemes{ Feature_Graphemes::IsEnabled() }
-{
-}
-
 size_t CodepointWidthDetector::GraphemeNext(const std::wstring_view& str, size_t offset, int* width) noexcept
 {
-    if (!_enableGraphemes.load(std::memory_order_relaxed))
+    if constexpr (!Feature_Graphemes::IsEnabled())
     {
         return _graphemeNextOld(str, offset, width);
+    }
+
+    int widthIgnored;
+    if (!width)
+    {
+        width = &widthIgnored;
     }
 
     const auto beg = str.begin();
@@ -964,7 +968,8 @@ size_t CodepointWidthDetector::GraphemeNext(const std::wstring_view& str, size_t
 
     if (it == end)
     {
-        return 0;
+        *width = 1;
+        return offset;
     }
 
     char32_t cp;
@@ -1000,19 +1005,22 @@ size_t CodepointWidthDetector::GraphemeNext(const std::wstring_view& str, size_t
         lead = trail;
     }
 
-    if (width)
-    {
-        *width = totalWidth < 1 ? 1 : (totalWidth > 2 ? 2 : totalWidth);
-    }
+    *width = totalWidth < 1 ? 1 : (totalWidth > 2 ? 2 : totalWidth);
     return it - beg;
 }
 
 // This code is identical to GraphemeNext() but with the order of operations reversed since we're iterating backwards.
 size_t CodepointWidthDetector::GraphemePrev(const std::wstring_view& str, size_t offset, int* width) noexcept
 {
-    if (!_enableGraphemes.load(std::memory_order_relaxed))
+    if constexpr (!Feature_Graphemes::IsEnabled())
     {
         return _graphemePrevOld(str, offset, width);
+    }
+
+    int widthIgnored;
+    if (!width)
+    {
+        width = &widthIgnored;
     }
 
     const auto beg = str.begin();
@@ -1020,6 +1028,7 @@ size_t CodepointWidthDetector::GraphemePrev(const std::wstring_view& str, size_t
 
     if (it == beg)
     {
+        *width = 1;
         return 0;
     }
 
@@ -1056,10 +1065,7 @@ size_t CodepointWidthDetector::GraphemePrev(const std::wstring_view& str, size_t
         trail = lead;
     }
 
-    if (width)
-    {
-        *width = totalWidth < 1 ? 1 : (totalWidth > 2 ? 2 : totalWidth);
-    }
+    *width = totalWidth < 1 ? 1 : (totalWidth > 2 ? 2 : totalWidth);
     return it - beg;
 }
 
@@ -1162,11 +1168,6 @@ catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
     return 1;
-}
-
-void CodepointWidthDetector::SetEnableGraphemes(const bool enable) noexcept
-{
-    _enableGraphemes.store(enable, std::memory_order_relaxed);
 }
 
 // Method Description:

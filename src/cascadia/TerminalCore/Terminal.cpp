@@ -14,8 +14,6 @@
 #include <til/hash.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
-#include "../../types/inc/CodepointWidthDetector.hpp"
-
 using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;
@@ -99,7 +97,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _autoMarkPrompts = settings.AutoMarkPrompts();
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
-    CodepointWidthDetector::Singleton().SetEnableGraphemes(settings.Graphemes());
 
     if (settings.TabColor() == nullptr)
     {

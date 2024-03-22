@@ -364,7 +364,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _ForceVTInput = globalSettings.ForceVTInput();
-        _Graphemes = globalSettings.Graphemes();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
         _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();

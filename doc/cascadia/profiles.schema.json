@@ -2344,11 +2344,6 @@
           "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
           "type": "boolean"
         },
-        "experimental.graphemes": {
-          "default": true,
-          "description": "When set to true, the terminal will use grapheme cluster boundaries for cursor movement. Otherwise, the terminal will use codepoint boundaries.",
-          "type": "boolean"
-        },
         "experimental.useBackgroundImageForWindow": {
           "default": false,
           "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",

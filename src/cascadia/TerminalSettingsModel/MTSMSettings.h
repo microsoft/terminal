@@ -28,7 +28,6 @@ Author(s):
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                                                              \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
-    X(bool, Graphemes, "experimental.graphemes", Feature_Graphemes::IsEnabled())                                                                                                                      \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \

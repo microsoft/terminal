@@ -46,7 +46,6 @@
     X(bool, TrimBlockSelection, true)                                                                             \
     X(bool, SuppressApplicationTitle)                                                                             \
     X(bool, ForceVTInput, false)                                                                                  \
-    X(bool, Graphemes, false)                                                                                     \
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, VtPassthrough, false)                                                                                 \

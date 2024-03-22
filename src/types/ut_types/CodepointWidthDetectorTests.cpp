@@ -6,6 +6,9 @@
 
 #include "../types/inc/CodepointWidthDetector.hpp"
 
+// Due to the Feature_Graphemes::IsEnabled() feature flagging, some code may be disabled.
+#pragma warning(disable : 4702) // unreachable code
+
 // FYI at the time of writing you may have to generate this table in cmd with
 //   go run CodepointWidthDetectorTests_gen.go > temp.txt
 // because PowerShell garbles Unicode text between piped commands.
@@ -1228,6 +1231,11 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(GraphemeBreakTest)
     {
+        if constexpr (!Feature_Graphemes::IsEnabled())
+        {
+            return;
+        }
+
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
         WEX::TestExecution::SetVerifyOutput verifyOutputScope{ WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures };
 
@@ -1277,6 +1285,11 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(BasicGraphemes)
     {
+        if constexpr (!Feature_Graphemes::IsEnabled())
+        {
+            return;
+        }
+
         static constexpr std::wstring_view text{ L"a\u0363e\u0364\u0364i\u0365" };
 
         auto& cwd = CodepointWidthDetector::Singleton();
@@ -1319,6 +1332,11 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(DevanagariConjunctLinker)
     {
+        if constexpr (!Feature_Graphemes::IsEnabled())
+        {
+            return;
+        }
+
         static constexpr std::wstring_view text{ L"\u0915\u094D\u094D\u0924" };
 
         auto& cwd = CodepointWidthDetector::Singleton();
