@@ -3779,7 +3779,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             auto attr = _api.GetTextBuffer().GetCurrentAttributes();
             attr.SetMarkAttributes(MarkKind::Command);
             _api.SetTextAttributes(attr);
-            _api.GetTextBuffer().StartPrompt();
+
             return true;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
@@ -3787,7 +3787,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             auto attr = _api.GetTextBuffer().GetCurrentAttributes();
             attr.SetMarkAttributes(MarkKind::Output);
             _api.SetTextAttributes(attr);
-            _api.GetTextBuffer().StartPrompt();
+
             return true;
         }
         case L'D': // FTCS_COMMAND_FINISHED

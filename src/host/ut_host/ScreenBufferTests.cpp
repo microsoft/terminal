@@ -266,6 +266,7 @@ class ScreenBufferTests
     TEST_METHOD(EraseColorMode);
 
     TEST_METHOD(SimpleMarkCommand);
+    TEST_METHOD(SimpleWrappedCommand);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -8407,6 +8408,11 @@ void ScreenBufferTests::EraseColorMode()
     VERIFY_ARE_EQUAL(L" ", cellData->Chars());
 }
 
+#define FTCS_A L"\x1b]133;A\x1b\\"
+#define FTCS_B L"\x1b]133;B\x1b\\"
+#define FTCS_C L"\x1b]133;C\x1b\\"
+#define FTCS_D L"\x1b]133;D\x1b\\"
+
 void ScreenBufferTests::SimpleMarkCommand()
 {
     auto& g = ServiceLocator::LocateGlobals();
@@ -8422,23 +8428,80 @@ void ScreenBufferTests::SimpleMarkCommand()
         const auto currentRowOffset = tbi.GetCursor().GetPosition().y;
         auto& currentRow = tbi.GetRowByOffset(currentRowOffset);
 
-        stateMachine.ProcessString(L"\x1b]133;A\x1b\\A Prompt\x1b]133;B\x1b\\my_command\x1b]133;C\x1b\\\n");
+        stateMachine.ProcessString(FTCS_A L"A Prompt" FTCS_B L"my_command" FTCS_C L"\n");
 
         VERIFY_IS_TRUE(currentRow.GetPromptData().has_value());
     }
 
     stateMachine.ProcessString(L"Two\n");
-    // DebugBreak();
-    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"my_command");
+    VERIFY_ARE_EQUAL(L"my_command", tbi.CurrentCommand());
 
-    stateMachine.ProcessString(L"\x1b]133;D\x1b\\\x1b]133;A\x1b\\B Prompt\x1b]133;B\x1b\\");
+    stateMachine.ProcessString(FTCS_D FTCS_A L"B Prompt" FTCS_B);
 
     VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"");
 
     stateMachine.ProcessString(L"some of a command");
     VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command");
+    // Now add some color in the middle of the command:
     stateMachine.ProcessString(L"\x1b[31m");
     stateMachine.ProcessString(L" & more of a command");
 
-    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command & more of a command");
+    VERIFY_ARE_EQUAL(L"some of a command & more of a command", tbi.CurrentCommand());
+
+    std::vector<std::wstring> expectedCommands{ L"my_command",
+                                                L"some of a command & more of a command" };
+    VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
+}
+
+void ScreenBufferTests::SimpleWrappedCommand()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // Process the opening osc 8 sequence with no custom id
+    stateMachine.ProcessString(L"Zero\n");
+
+    const auto oneHundredZeros = std::wstring(100, L'0');
+    {
+        const auto originalRowOffset = tbi.GetCursor().GetPosition().y;
+        auto& originalRow = tbi.GetRowByOffset(originalRowOffset);
+        stateMachine.ProcessString(FTCS_A L"A Prompt" FTCS_B);
+
+        // This command is literally 100 '0' characters, so that we _know_ we wrapped.
+        stateMachine.ProcessString(oneHundredZeros);
+
+        const auto secondRowOffset = tbi.GetCursor().GetPosition().y;
+        VERIFY_ARE_NOT_EQUAL(originalRowOffset, secondRowOffset);
+        auto& secondRow = tbi.GetRowByOffset(secondRowOffset);
+
+        VERIFY_IS_TRUE(originalRow.GetPromptData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetPromptData().has_value());
+
+        stateMachine.ProcessString(FTCS_C L"\n");
+
+        VERIFY_IS_TRUE(originalRow.GetPromptData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetPromptData().has_value());
+    }
+
+    stateMachine.ProcessString(L"Two\n");
+    VERIFY_ARE_EQUAL(oneHundredZeros, tbi.CurrentCommand());
+
+    stateMachine.ProcessString(FTCS_D FTCS_A L"B Prompt" FTCS_B);
+
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"");
+
+    stateMachine.ProcessString(L"some of a command");
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command");
+    // Now add some color in the middle of the command:
+    stateMachine.ProcessString(L"\x1b[31m");
+    stateMachine.ProcessString(L" & more of a command");
+
+    VERIFY_ARE_EQUAL(L"some of a command & more of a command", tbi.CurrentCommand());
+
+    std::vector<std::wstring> expectedCommands{ oneHundredZeros,
+                                                L"some of a command & more of a command" };
+    VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
 }

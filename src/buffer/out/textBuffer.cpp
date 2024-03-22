@@ -3070,6 +3070,7 @@ std::vector<std::wstring> TextBuffer::Commands() const
         }
         lastPromptY = promptY;
     }
+    std::reverse(commands.begin(), commands.end());
     return std::move(commands);
 }
 
