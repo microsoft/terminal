@@ -734,6 +734,8 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         //
         // Fortunately, MarkOutputStart will do all this logic for us!
         MarkOutputStart();
+
+        // TODO! ^^^^^^^^^^ that's not on Terminal anymore. That's a text attr now.
     }
 
     const auto keyDown = SynthesizeKeyEvent(true, 1, vkey, scanCode, ch, states.Value());
@@ -1435,36 +1437,39 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMark(const ScrollMark& mark,
-                       const til::point& start,
-                       const til::point& end,
-                       const bool fromUi)
+void Terminal::AddMark(const ScrollMark& /*mark*/,
+                       const til::point& /*start*/,
+                       const til::point& /*end*/,
+                       const bool /*fromUi*/)
 {
-    if (_inAltBuffer())
-    {
-        return;
-    }
+    // TODO!
+    // Basically, entirely kill this?
 
-    ScrollMark m = mark;
-    m.start = start;
-    m.end = end;
+    // if (_inAltBuffer())
+    // {
+    //     return;
+    // }
 
-    // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
-    if (fromUi)
-    {
-        _activeBuffer().AddMark(m);
-    }
-    else
-    {
-        _activeBuffer().StartPromptMark(m);
-    }
+    // ScrollMark m = mark;
+    // m.start = start;
+    // m.end = end;
 
-    // Tell the control that the scrollbar has somehow changed. Used as a
-    // workaround to force the control to redraw any scrollbar marks
-    _NotifyScrollEvent();
+    // // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
+    // if (fromUi)
+    // {
+    //     _activeBuffer().AddMark(m);
+    // }
+    // else
+    // {
+    //     _activeBuffer().StartPromptMark(m);
+    // }
 
-    // DON'T set _currentPrompt. The VT impl will do that for you. We don't want
-    // UI-driven marks to set that.
+    // // Tell the control that the scrollbar has somehow changed. Used as a
+    // // workaround to force the control to redraw any scrollbar marks
+    // _NotifyScrollEvent();
+
+    // // DON'T set _currentPrompt. The VT impl will do that for you. We don't want
+    // // UI-driven marks to set that.
 }
 
 void Terminal::ClearMark()
@@ -1495,56 +1500,56 @@ void Terminal::ClearAllMarks()
     _NotifyScrollEvent();
 }
 
-const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
-{
-    // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
-    // We want to return _no_ marks when we're in the alt buffer, to effectively
-    // hide them. We need to return a reference, so we can't just ctor an empty
-    // list here just for when we're in the alt buffer.
-    return _activeBuffer().GetMarks();
-}
+// const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
+// {
+//     // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
+//     // We want to return _no_ marks when we're in the alt buffer, to effectively
+//     // hide them. We need to return a reference, so we can't just ctor an empty
+//     // list here just for when we're in the alt buffer.
+//     return _activeBuffer().GetMarks();
+// }
 
-til::color Terminal::GetColorForMark(const ScrollMark& mark) const
-{
-    if (mark.color.has_value())
-    {
-        return *mark.color;
-    }
+// til::color Terminal::GetColorForMark(const ScrollMark& mark) const
+// {
+//     if (mark.color.has_value())
+//     {
+//         return *mark.color;
+//     }
 
-    const auto& renderSettings = GetRenderSettings();
+//     const auto& renderSettings = GetRenderSettings();
 
-    switch (mark.category)
-    {
-    case MarkCategory::Prompt:
-    {
-        return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
-    }
-    case MarkCategory::Error:
-    {
-        return renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
-    }
-    case MarkCategory::Warning:
-    {
-        return renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
-    }
-    case MarkCategory::Success:
-    {
-        return renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
-    }
-    default:
-    case MarkCategory::Info:
-    {
-        return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
-    }
-    }
-}
+//     switch (mark.category)
+//     {
+//     case MarkCategory::Prompt:
+//     {
+//         return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
+//     }
+//     case MarkCategory::Error:
+//     {
+//         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
+//     }
+//     case MarkCategory::Warning:
+//     {
+//         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
+//     }
+//     case MarkCategory::Success:
+//     {
+//         return renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
+//     }
+//     default:
+//     case MarkCategory::Info:
+//     {
+//         return renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
+//     }
+//     }
+// }
 
 std::wstring_view Terminal::CurrentCommand() const
 {
-    if (_currentPromptState != PromptState::Command)
-    {
-        return L"";
-    }
+    // if (_currentPromptState != PromptState::Command)
+    // {
+    //     return L"";
+    // }
 
     return _activeBuffer().CurrentCommand();
 }

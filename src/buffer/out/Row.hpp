@@ -87,6 +87,14 @@ private:
     til::CoordType _currentColumn;
 };
 
+enum class MarkCategory : uint8_t
+{
+    Prompt = 0,
+    Error = 1,
+    Warning = 2,
+    Success = 3,
+    Info = 4
+};
 struct MarkData
 {
     // Scrollbar marks may have been given a color, or not.
@@ -94,6 +102,12 @@ struct MarkData
     // Prompts without an exit code haven't had a matching FTCS CommandEnd
     // called yet. Any value other than 0 is an error.
     std::optional<uint32_t> exitCode;
+
+    // TODO! MarkCategory used to be an element of a mark. Maybe we want to keep
+    // that?
+
+    // Future consideration: stick the literal command as a string on here, if
+    // we were given it with the 633;E sequence.
 };
 
 class ROW final

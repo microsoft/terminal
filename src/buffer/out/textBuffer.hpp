@@ -66,14 +66,6 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
-enum class MarkCategory : uint8_t
-{
-    Prompt = 0,
-    Error = 1,
-    Warning = 2,
-    Success = 3,
-    Info = 4
-};
 struct ScrollMark
 {
     std::optional<til::color> color;

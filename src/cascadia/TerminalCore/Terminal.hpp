@@ -167,7 +167,7 @@ public:
 
     void ClearMark();
     void ClearAllMarks();
-    til::color GetColorForMark(const ScrollMark& mark) const;
+    // til::color GetColorForMark(const ScrollMark& mark) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
@@ -433,15 +433,6 @@ private:
         WORD ScanCode;
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
-
-    enum class PromptState : uint32_t
-    {
-        None = 0,
-        Prompt,
-        Command,
-        Output,
-    };
-    PromptState _currentPromptState{ PromptState::None };
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;
