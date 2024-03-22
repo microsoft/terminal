@@ -580,6 +580,10 @@
     <value>Set background opacity to {0}%</value>
     <comment>A command to change how transparent the background of the window is</comment>
   </data>
+  <data name="ToggleAcrylicCommandKey" xml:space="preserve">
+    <value>Toggle acrylic</value>
+    <comment>A command to toggle whether the "acrylic" window effect is enabled or not. "Acrylic" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
+  </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
     <value>Restore the last closed pane or tab</value>
   </data>

@@ -1222,6 +1222,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleToggleAcrylic(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        const auto res = _ApplyToActiveControls([&](auto& control) {
+            control.ToggleAcrylic();
+        });
+        args.Handled(res);
+    }
+
     void TerminalPage::_HandleSelectAll(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
