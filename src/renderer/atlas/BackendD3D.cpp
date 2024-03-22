@@ -1430,19 +1430,19 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     _d2dBeginDrawing();
 
     auto shadingType = ShadingType::TextGrayscale;
+    const D2D1_RECT_F r{
+        static_cast<f32>(rect.x),
+        static_cast<f32>(rect.y),
+        static_cast<f32>(rect.x + rect.w),
+        static_cast<f32>(rect.y + rect.h),
+    };
 
     if (BuiltinGlyphs::IsSoftFontChar(glyphIndex))
     {
-        _drawSoftFontGlyph(p, rect, glyphIndex);
+        _drawSoftFontGlyph(p, r, glyphIndex);
     }
     else
     {
-        const D2D1_RECT_F r{
-            static_cast<f32>(rect.x),
-            static_cast<f32>(rect.y),
-            static_cast<f32>(rect.x + rect.w),
-            static_cast<f32>(rect.y + rect.h),
-        };
         BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
         shadingType = ShadingType::TextBuiltinGlyph;
     }
@@ -1465,15 +1465,31 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     return glyphEntry;
 }
 
-void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect& rect, u32 glyphIndex)
+void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex)
 {
+    _d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
+    const auto restoreD2D = wil::scope_exit([&]() {
+        _d2dRenderTarget->PopAxisAlignedClip();
+    });
+
+    const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
+    const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
+    const auto softFontIndex = glyphIndex - 0xEF20u;
+    const auto data = til::clamp_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
+
+    if (data.empty() || data.size() != height)
+    {
+        _d2dRenderTarget->Clear();
+        return;
+    }
+
     if (!_softFontBitmap)
     {
         // Allocating such a tiny texture is very wasteful (min. texture size on GPUs
-        // right now is 64kB), but this is a seldomly used feature so it's fine...
+        // right now is 64kB), but this is a seldom used feature, so it's fine...
         const D2D1_SIZE_U size{
-            static_cast<UINT32>(p.s->font->softFontCellSize.width),
-            static_cast<UINT32>(p.s->font->softFontCellSize.height),
+            static_cast<UINT32>(width),
+            static_cast<UINT32>(height),
         };
         const D2D1_BITMAP_PROPERTIES1 bitmapProperties{
             .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
@@ -1484,17 +1500,11 @@ void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect&
     }
 
     {
-        const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
-        const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
-
         auto bitmapData = Buffer<u32>{ width * height };
-        const auto softFontIndex = glyphIndex - 0xEF20u;
-        auto src = p.s->font->softFontPattern.begin() + height * softFontIndex;
         auto dst = bitmapData.begin();
 
-        for (size_t y = 0; y < height; y++)
+        for (auto srcBits : data)
         {
-            auto srcBits = *src++;
             for (size_t x = 0; x < width; x++)
             {
                 const auto srcBitIsSet = (srcBits & 0x8000) != 0;
@@ -1508,15 +1518,7 @@ void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const stbrp_rect&
     }
 
     const auto interpolation = p.s->font->antialiasingMode == AntialiasingMode::Aliased ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
-    const D2D1_RECT_F dest{
-        static_cast<f32>(rect.x),
-        static_cast<f32>(rect.y),
-        static_cast<f32>(rect.x + rect.w),
-        static_cast<f32>(rect.y + rect.h),
-    };
-
-    _d2dBeginDrawing();
-    _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
+    _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &rect, 1, interpolation, nullptr, nullptr);
 }
 
 void BackendD3D::_drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect)
