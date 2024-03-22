@@ -13,7 +13,6 @@
         "DBG",
         "NT_SUCCESS",
         "UNICODE",
-        // defines for unit testing
         "UNIT_TESTING",
         "INLINE_TEST_METHOD_MARKUP",
     ],
