@@ -16,6 +16,7 @@ Author(s):
 
 #include "../../host/conimeinfo.h"
 #include "../../buffer/out/TextAttribute.hpp"
+#include "../base/lib/QuickSelectAlphabet.h"
 
 class Cursor;
 
@@ -76,5 +77,7 @@ namespace Microsoft::Console::Render
         virtual const til::point GetSelectionAnchor() const noexcept = 0;
         virtual const til::point GetSelectionEnd() const noexcept = 0;
         virtual const bool IsUiaDataInitialized() const noexcept = 0;
+        virtual QuickSelectState GetQuickSelectState() noexcept = 0;
+        virtual bool InQuickSelectMode() = 0;
     };
 }

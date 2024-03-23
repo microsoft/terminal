@@ -14,4 +14,5 @@ namespace Microsoft::Console::ICU
     UText UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd) noexcept;
     unique_uregex CreateRegex(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept;
     til::point_span BufferRangeFromMatch(UText* ut, URegularExpression* re);
+    UText UTextForWrappableRow(const TextBuffer& textBuffer, til::CoordType& row) noexcept;
 }

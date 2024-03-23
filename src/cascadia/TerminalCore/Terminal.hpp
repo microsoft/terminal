@@ -225,8 +225,13 @@ public:
     const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override;
+    bool InQuickSelectMode() override;
+    Microsoft::Console::Render::QuickSelectState GetQuickSelectState() noexcept override;
+    void SetQuickSelectAlphabet(std::shared_ptr<Console::Render::QuickSelectAlphabet> val);
 #pragma endregion
 
+    int32_t NumberOfVisibleSearchSelections();
+    std::optional<std::tuple<til::point, til::point>> GetViewportSelectionAtIndex(int32_t index);
     void SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
@@ -370,6 +375,7 @@ private:
     size_t _hyperlinkPatternId = 0;
 
     std::wstring _workingDirectory;
+    std::shared_ptr<Console::Render::QuickSelectAlphabet> _quickSelectAlphabet;
 
     // This default fake font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.

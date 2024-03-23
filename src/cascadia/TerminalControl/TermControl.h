@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SelectAll();
         bool ToggleBlockSelection();
         void ToggleMarkMode();
+        void QuickSelect(const winrt::hstring& text, bool copy);
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
         void Close();

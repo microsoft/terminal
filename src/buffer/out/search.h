@@ -26,7 +26,7 @@ public:
     Search() = default;
 
     bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
-
+    void QuickSelectRegex(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive);
     void MoveToCurrentSelection();
     void MoveToPoint(til::point anchor) noexcept;
     void MovePastPoint(til::point anchor) noexcept;
@@ -49,4 +49,5 @@ private:
     std::vector<til::point_span> _results;
     ptrdiff_t _index = 0;
     ptrdiff_t _step = 0;
+    static std::vector<til::point_span> _regexSearch(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive);
 };

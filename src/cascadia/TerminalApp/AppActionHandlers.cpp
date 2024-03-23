@@ -561,6 +561,20 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleQuickSelect(const IInspectable& sender,
+                                          const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<QuickSelectArgs>())
+        {
+            if (const auto activeTab{ _senderOrFocusedTab(sender) })
+            {
+                _SetFocusedTab(*activeTab);
+                _QuickSelect(*activeTab, realArgs.Input(), realArgs.ShouldCopy());
+            }
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {

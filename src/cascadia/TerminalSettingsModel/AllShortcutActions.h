@@ -35,6 +35,7 @@
     ON_ALL_ACTIONS(NextTab)                 \
     ON_ALL_ACTIONS(PrevTab)                 \
     ON_ALL_ACTIONS(SendInput)               \
+    ON_ALL_ACTIONS(QuickSelect)             \
     ON_ALL_ACTIONS(SplitPane)               \
     ON_ALL_ACTIONS(ToggleSplitOrientation)  \
     ON_ALL_ACTIONS(TogglePaneZoom)          \
@@ -142,6 +143,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(ScrollToMark)         \
     ON_ALL_ACTIONS_WITH_ARGS(AddMark)              \
     ON_ALL_ACTIONS_WITH_ARGS(SendInput)            \
+    ON_ALL_ACTIONS_WITH_ARGS(QuickSelect)          \
     ON_ALL_ACTIONS_WITH_ARGS(SetColorScheme)       \
     ON_ALL_ACTIONS_WITH_ARGS(SetTabColor)          \
     ON_ALL_ACTIONS_WITH_ARGS(SplitPane)            \

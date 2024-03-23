@@ -411,6 +411,9 @@
     <value>Send Input: "{0}"</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>
   </data>
+  <data name="QuickSelectCommandKey" xml:space="preserve">
+    <value>Quick Select</value>
+  </data>
   <data name="SetColorSchemeCommandKey" xml:space="preserve">
     <value>Set color scheme to {0}</value>
     <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
