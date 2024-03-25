@@ -583,17 +583,17 @@ void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, Row
 
     // Restore trailing text from our backup in scratch.
     RowWriteState restoreState{
-        .text = scratch.GetText(state.columnBegin, til::CoordTypeMax),
+        .text = scratch.GetText(state.columnBegin, state.columnLimit),
         .columnBegin = state.columnEnd,
+        .columnLimit = state.columnLimit,
     };
     r.ReplaceText(restoreState);
 
     // Restore trailing attributes as well.
     auto& rowAttr = r.Attributes();
     const auto& scratchAttr = scratch.Attributes();
-    const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), scratch.size());
-    rowAttr.replace(gsl::narrow<uint16_t>(state.columnEnd), scratch.size(), restoreAttr);
-    rowAttr.resize_trailing_extent(r.size());
+    const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), gsl::narrow<uint16_t>(state.columnLimit));
+    rowAttr.replace(gsl::narrow<uint16_t>(state.columnEnd), gsl::narrow<uint16_t>(state.columnEnd + restoreAttr.size()), restoreAttr);
 
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, restoreState.columnEndDirty, row + 1 }));
 }
@@ -1112,7 +1112,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         if (lineRendition != LineRendition::SingleWidth)
         {
             const auto fillOffset = GetLineWidth(rowIndex);
-            FillRect({ fillOffset, rowIndex, til::CoordTypeMax, rowIndex }, L" ", fillAttributes);
+            FillRect({ fillOffset, rowIndex, til::CoordTypeMax, rowIndex + 1 }, L" ", fillAttributes);
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
