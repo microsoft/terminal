@@ -69,10 +69,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return hstring{ fmt::format(FMT_COMPILE(L"{} RGB({}, {}, {})"), _Name, _Color.R, _Color.G, _Color.B) };
         }
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(IInspectable, Tag, _PropertyChangedHandlers);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(IInspectable, Tag, PropertyChanged.raise);
 
     private:
         Windows::UI::Color _color;

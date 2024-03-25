@@ -220,7 +220,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _baseMap.Remove(_AxisKey);
             _AxisValue = axisValue;
             _baseMap.Insert(_AxisKey, _AxisValue);
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisValue" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"AxisValue" });
         }
     }
 
@@ -231,7 +231,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _baseMap.Remove(_AxisKey);
             _AxisKey = axisKey;
             _baseMap.Insert(_AxisKey, _AxisValue);
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AxisKey" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"AxisKey" });
         }
     }
 
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _baseMap.Remove(_FeatureKey);
             _FeatureValue = featureValue;
             _baseMap.Insert(_FeatureKey, _FeatureValue);
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"FeatureValue" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"FeatureValue" });
         }
     }
 
@@ -312,7 +312,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _baseMap.Remove(_FeatureKey);
             _FeatureKey = featureKey;
             _baseMap.Insert(_FeatureKey, _FeatureValue);
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"FeatureKey" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"FeatureKey" });
         }
     }
 
@@ -878,7 +878,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_ShowAllFonts != value)
         {
             _ShowAllFonts = value;
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
         }
     }
 
@@ -974,16 +974,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto settingName{ args.PropertyName() };
                 if (settingName == L"CursorShape")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
                 else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
                 }
                 else if (settingName == L"BackgroundImageStretchMode")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
                 }
                 else if (settingName == L"BackgroundImageAlignment")
                 {
@@ -991,8 +991,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else if (settingName == L"FontWeight")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
                 }
                 else if (settingName == L"FontFace" || settingName == L"CurrentFontList")
                 {
@@ -1001,28 +1001,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         _ShowAllFonts = true;
                     }
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
                 }
                 else if (settingName == L"IntenseTextStyle")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
                 }
                 else if (settingName == L"AdjustIndistinguishableColors")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
                 }
                 else if (settingName == L"ShowProportionalFontWarning")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
                 }
                 // YOU THERE ADDING A NEW APPEARANCE SETTING
                 // Make sure you add a block like
                 //
                 //   else if (settingName == L"MyNewSetting")
                 //   {
-                //       _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentMyNewSetting" });
+                //       PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentMyNewSetting" });
                 //   }
                 //
                 // To make sure that changes to the AppearanceViewModel will
@@ -1036,19 +1036,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // make sure to send all the property changed events once here
             // we do this in the case an old appearance was deleted and then a new one is created,
             // the old settings need to be updated in xaml
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
             _UpdateBIAlignmentControl(static_cast<int32_t>(Appearance().BackgroundImageAlignment()));
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
         }
     }
 
@@ -1150,7 +1150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // So the TwoWay binding doesn't update on the State --> Slider direction
                 FontWeightSlider().Value(weight);
             }
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
         }
     }
 

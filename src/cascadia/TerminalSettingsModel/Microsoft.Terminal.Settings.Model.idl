@@ -521,9 +521,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     enum InfoBarMessage
     {
-        CloseOnExitInfo = 0,
-        KeyboardServiceWarning,
-        SetAsDefault,
+        // We need a sentinel value to map deleted keys to, as we can't actually delete them (GH#16874)
+        IgnoredDeprecatedEntry = 0,
+        CloseOnExitInfo,
     };
 
     runtimeclass WindowLayout
@@ -642,7 +642,7 @@ namespace Microsoft.Terminal.Settings.Model
         ShortcutAction Action;
     };
 
-    runtimeclass Command
+    runtimeclass Command : ISettingsModelObject
     {
         Command();
 
@@ -702,6 +702,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
         INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
         INHERITABLE_FONT_SETTING(Boolean, EnableBuiltinGlyphs);
+        INHERITABLE_FONT_SETTING(Boolean, EnableColorGlyphs);
         INHERITABLE_FONT_SETTING(String, CellWidth);
         INHERITABLE_FONT_SETTING(String, CellHeight);
     }

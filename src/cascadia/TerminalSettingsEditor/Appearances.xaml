@@ -423,6 +423,15 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Color Glyphs  -->
+            <local:SettingContainer x:Uid="Profile_EnableColorGlyphs"
+                                    ClearSettingValue="{x:Bind Appearance.ClearEnableColorGlyphs}"
+                                    HasSettingValue="{x:Bind Appearance.HasEnableColorGlyphs, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.EnableColorGlyphsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.EnableColorGlyphs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Retro Terminal Effect  -->
             <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
@@ -730,13 +739,12 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Slider x:Name="BIOpacitySlider"
-                            x:Uid="Profile_BackgroundImageOpacitySlider"
+                    <Slider x:Uid="Profile_BackgroundImageOpacitySlider"
                             Grid.Column="0"
                             Value="{x:Bind mtu:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
                                Style="{StaticResource SliderValueLabelStyle}"
-                               Text="{x:Bind mtu:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
+                               Text="{x:Bind mtu:Converters.PercentageToPercentageString(Appearance.BackgroundImageOpacity), Mode=OneWay}" />
                 </Grid>
             </local:SettingContainer>
         </StackPanel>
