@@ -3029,7 +3029,7 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
         {
             mark.end = til::point{ x, y };
         }
-        else if (!startedOutput) // startedCommand = true
+        else if (!startedOutput /*|| !mark.commandEnd.has_value()*/) // startedCommand = true
         {
             mark.commandEnd = til::point{ x, y };
         }
@@ -3055,7 +3055,8 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
         {
             const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
             const auto markKind{ attr.GetMarkAttributes() };
-            if (markKind != lastMarkKind)
+            if (/*markKind != MarkKind::None &&*/
+                markKind != lastMarkKind)
             {
                 if (markKind == MarkKind::Prompt)
                 {
@@ -3079,7 +3080,7 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
                     endThisMark(x, y);
                     startedCommand = true;
                 }
-                else if (markKind == MarkKind::Output && startedPrompt)
+                else if ((markKind == MarkKind::Output || markKind == MarkKind::None) && startedPrompt)
                 {
                     endThisMark(x, y);
                     startedOutput = true;

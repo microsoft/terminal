@@ -233,6 +233,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(TestNoExtendedAttrsOptimization);
     TEST_METHOD(TestNoBackgroundAttrsOptimization);
 
+    TEST_METHOD(ComplicatedPromptRegions);
+
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
@@ -4309,6 +4311,105 @@ void ConptyRoundtripTests::TestNoBackgroundAttrsOptimization()
     Log::Comment(L"========== Check host buffer ==========");
     verifyBuffer(*hostTb);
 
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void _writePrompt(StateMachine& stateMachine, const auto& path)
+{
+    stateMachine.ProcessString(L"\x1b]133;D\x7");
+    stateMachine.ProcessString(L"\x1b]133;A\x7");
+    stateMachine.ProcessString(L"\x1b]9;9;");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"\x7");
+    stateMachine.ProcessString(L"PWSH ");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"> ");
+    stateMachine.ProcessString(L"\x1b]133;B\x7");
+}
+
+void ConptyRoundtripTests::ComplicatedPromptRegions()
+{
+    Log::Comment(L"Same as the ScreenBufferTests::ComplicatedPromptRegions, but in conpty");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        const auto& cursor = tb.GetCursor();
+        {
+            const til::point expectedCursor{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+        const auto& row0 = tb.GetRowByOffset(0);
+        const auto& row4 = tb.GetRowByOffset(4);
+        VERIFY_IS_TRUE(row0.GetPromptData().has_value());
+        VERIFY_IS_TRUE(row4.GetPromptData().has_value());
+
+        const auto marks = tb.GetMarks();
+        VERIFY_ARE_EQUAL(2u, marks.size());
+
+        {
+            auto& mark = marks[0];
+            const til::point expectedStart{ 0, 0 };
+            const til::point expectedEnd{ 17, 0 };
+            const til::point expectedOutputStart{ 24, 0 }; // `Foo-Bar` is 7 characters
+            const til::point expectedOutputEnd{ 0, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            auto& mark = marks[1];
+            const til::point expectedStart{ 0, 4 };
+            const til::point expectedEnd{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+            VERIFY_IS_FALSE(mark.commandEnd.has_value());
+            VERIFY_IS_FALSE(mark.outputEnd.has_value());
+        }
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    // A prompt looks like:
+    // `PWSH C:\Windows> `
+    //
+    // which is 17 characters for C:\Windows
+
+    _writePrompt(sm, L"C:\\Windows");
+    sm.ProcessString(L"Foo-bar");
+    sm.ProcessString(L"\x1b]133;C\x7");
+    sm.ProcessString(L"\r\n");
+    sm.ProcessString(L"This is some text     \r\n"); // y=1
+    sm.ProcessString(L"with varying amounts  \r\n"); // y=2
+    sm.ProcessString(L"of whitespace         \r\n"); // y=3
+
+    _writePrompt(sm, L"C:\\Windows"); // y=4
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+    // DebugBreak();
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 

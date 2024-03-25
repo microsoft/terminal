@@ -3695,7 +3695,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     {
         // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        // return false;
+        return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3741,12 +3741,6 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
     // This is not implemented in conhost.
-    if (_api.IsConsolePty())
-    {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
-        // return false;
-    }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
     {
@@ -3759,7 +3753,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     {
         return false;
     }
-
+    bool handled = false;
     const auto action = til::at(parts, 0);
     if (action.size() == 1)
     {
@@ -3772,7 +3766,9 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             attr.SetMarkAttributes(MarkKind::Prompt);
             _api.SetTextAttributes(attr);
             _api.GetTextBuffer().StartPrompt();
-            return true;
+
+            handled = true;
+            break;
         }
         case L'B': // FTCS_COMMAND_START
         {
@@ -3780,7 +3776,8 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             attr.SetMarkAttributes(MarkKind::Command);
             _api.SetTextAttributes(attr);
 
-            return true;
+            handled = true;
+            break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
@@ -3788,7 +3785,8 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             attr.SetMarkAttributes(MarkKind::Output);
             _api.SetTextAttributes(attr);
 
-            return true;
+            handled = true;
+            break;
         }
         case L'D': // FTCS_COMMAND_FINISHED
         {
@@ -3812,20 +3810,30 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             _api.SetTextAttributes(attr);
             _api.GetTextBuffer().EndCommand(error);
             // _api.MarkCommandFinish(error);
-            return true;
+
+            handled = true;
+            break;
         }
         default:
         {
-            return false;
+            handled = false;
         }
         }
+    }
+
+    if (_api.IsConsolePty())
+    {
+        // DebugBreak();
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
     }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
-    return false;
+    return handled;
 }
 // Method Description:
 // - Performs a VsCode action
