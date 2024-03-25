@@ -187,6 +187,9 @@
   <data name="Quit" xml:space="preserve">
     <value>Qùíт !</value>
   </data>
+  <data name="CloseWindowWarningTitle" xml:space="preserve">
+    <value>Đǿ ÿõű ŵãŋт тŏ ¢ľòŝê ăŀľ ŧãвŝ? !!! !!! !!!</value>
+  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Мµļтíрłĕ φдпėŝ !!! !</value>
   </data>
@@ -336,9 +339,6 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Θφêп шĩτћ ťнě ģìνēή ρѓøƒìĺę. Âćĉеφťś ёĩτĥėŗ τђė йάмє øя ĠŮΪÐ õƒ а φŕóƒίℓè !!! !!! !!! !!! !!! !!! !!! </value>
-  </data>
-  <data name="CmdSessionIdArgDesc" xml:space="preserve">
-    <value>Šέŧś ŧћэ ẀŦ_ŜÉŜŜІΟΝ νăяíåьłé; mµśτ вэ â ĢŨÎĐ !!! !!! !!! !!! !</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Ĉґéáŧе д ήэẅ ŝφĺĭτ рãňё !!! !!! </value>
