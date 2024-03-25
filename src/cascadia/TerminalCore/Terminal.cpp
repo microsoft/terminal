@@ -733,9 +733,12 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         //   command_executed now.
         //
         // Fortunately, MarkOutputStart will do all this logic for us!
-        MarkOutputStart();
+        // MarkOutputStart();
 
         // TODO! ^^^^^^^^^^ that's not on Terminal anymore. That's a text attr now.
+        auto attr = _activeBuffer().GetCurrentAttributes();
+        attr.SetMarkAttributes(MarkKind::Output);
+        SetTextAttributes(attr);
     }
 
     const auto keyDown = SynthesizeKeyEvent(true, 1, vkey, scanCode, ch, states.Value());
