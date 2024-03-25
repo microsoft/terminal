@@ -319,6 +319,8 @@ public:
                        const bool isIntenseBold,
                        std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
+    void Serialize(const wchar_t* destination) const;
+
     struct PositionInformation
     {
         til::CoordType mutableViewportTop{ 0 };

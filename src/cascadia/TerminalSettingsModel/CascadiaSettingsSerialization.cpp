@@ -1244,6 +1244,13 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
     return winrt::hstring{ hash };
 }
 
+// This returns something akin to %LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState
+// just like SettingsPath(), but without the trailing \settings.json.
+winrt::hstring CascadiaSettings::SettingsDirectory()
+{
+    return winrt::hstring{ GetBaseSettingsPath().native() };
+}
+
 // function Description:
 // - Returns the full path to the settings file, either within the application
 //   package, or in its unpackaged location. This path is under the "Local

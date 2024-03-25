@@ -267,7 +267,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_root)
         {
-            _root->CloseWindow(true);
+            _root->PersistState();
         }
     }
 
@@ -916,32 +916,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalWindow::CloseWindow(LaunchPosition pos, const bool isLastWindow)
+    void TerminalWindow::CloseWindow()
     {
         if (_root)
         {
-            // If persisted layout is enabled and we are the last window closing
-            // we should save our state.
-            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && isLastWindow)
-            {
-                if (const auto layout = _root->GetWindowLayout())
-                {
-                    layout.InitialPosition(pos);
-                    const auto state = ApplicationState::SharedInstance();
-                    state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
-                }
-            }
-
-            _root->CloseWindow(false);
-        }
-    }
-
-    void TerminalWindow::ClearPersistedWindowState()
-    {
-        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
-        {
-            auto state = ApplicationState::SharedInstance();
-            state.PersistedWindowLayouts(nullptr);
+            _root->CloseWindow();
         }
     }
 
@@ -1132,19 +1111,6 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring TerminalWindow::ParseCommandlineMessage()
     {
         return winrt::to_hstring(_appArgs.GetExitMessage());
-    }
-
-    hstring TerminalWindow::GetWindowLayoutJson(LaunchPosition position)
-    {
-        if (_root != nullptr)
-        {
-            if (const auto layout = _root->GetWindowLayout())
-            {
-                layout.InitialPosition(position);
-                return WindowLayout::ToJson(layout);
-            }
-        }
-        return L"";
     }
 
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)

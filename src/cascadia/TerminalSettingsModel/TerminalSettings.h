@@ -119,6 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, guid, SessionId);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, EnableUnfocusedAcrylic, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
         INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);

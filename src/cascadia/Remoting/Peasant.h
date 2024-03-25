@@ -65,7 +65,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
 
-        winrt::hstring GetWindowLayout();
         void SendContent(const winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs& args);
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs> WindowActivated;
@@ -79,7 +78,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         til::typed_event<> HideNotificationIconRequested;
         til::typed_event<> QuitAllRequested;
         til::typed_event<> QuitRequested;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs> GetWindowLayoutRequested;
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest> AttachRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs> SendContentRequested;

@@ -1549,6 +1549,11 @@ std::wstring_view Terminal::CurrentCommand() const
     return _activeBuffer().CurrentCommand();
 }
 
+void Terminal::SerializeMainBuffer(const wchar_t* destination) const
+{
+    _mainBuffer->Serialize(destination);
+}
+
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
     const auto colorSelection = [this](const til::point coordStart, const til::point coordEnd, const TextAttribute& attr) {

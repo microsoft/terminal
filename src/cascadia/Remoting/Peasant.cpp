@@ -5,7 +5,6 @@
 #include "Peasant.h"
 #include "CommandlineArgs.h"
 #include "SummonWindowBehavior.h"
-#include "GetWindowLayoutArgs.h"
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 #include "AttachRequest.g.cpp"
@@ -307,26 +306,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Peasant_Quit",
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-    }
-
-    // Method Description:
-    // - Request and return the window layout from the current TerminalPage
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the window layout as a json string
-    hstring Peasant::GetWindowLayout()
-    {
-        auto args = winrt::make_self<implementation::GetWindowLayoutArgs>();
-        GetWindowLayoutRequested.raise(nullptr, *args);
-        if (const auto op = args->WindowLayoutJsonAsync())
-        {
-            // This will fail if called on the UI thread, so the monarch should
-            // never set WindowLayoutJsonAsync.
-            auto str = op.get();
-            return str;
-        }
-        return args->WindowLayoutJson();
     }
 
     void Peasant::SendContent(const Remoting::RequestReceiveContentArgs& args)

@@ -45,6 +45,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleMarkMode();
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
+        void RestoreFromPath(winrt::hstring path);
+        void PersistToPath(const winrt::hstring& path) const;
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
@@ -249,6 +251,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SafeDispatcherTimer _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        winrt::hstring _restorePath;
         bool _showMarksInScrollbar{ false };
 
         bool _isBackgroundLight{ false };

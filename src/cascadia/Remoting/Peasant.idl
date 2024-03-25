@@ -32,12 +32,6 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.DateTime ActivatedTime { get; };
     };
 
-    [default_interface] runtimeclass GetWindowLayoutArgs {
-        GetWindowLayoutArgs();
-        String WindowLayoutJson;
-        Windows.Foundation.IAsyncOperation<String> WindowLayoutJsonAsync;
-    }
-
     enum MonitorBehavior
     {
         InPlace,
@@ -88,7 +82,6 @@ namespace Microsoft.Terminal.Remoting
         void RequestHideNotificationIcon();
         void RequestQuitAll();
         void Quit();
-        String GetWindowLayout();
 
         void AttachContentToWindow(AttachRequest request);
         void SendContent(RequestReceiveContentArgs args);
@@ -102,7 +95,6 @@ namespace Microsoft.Terminal.Remoting
 
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
 

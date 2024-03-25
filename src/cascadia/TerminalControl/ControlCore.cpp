@@ -9,10 +9,10 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
+#include <LibraryResources.h>
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>
-#include <LibraryResources.h>
 
 #include "EventArgs.h"
 #include "../../buffer/out/search.h"
@@ -48,20 +48,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Core::OptionalColor result;
         result.Color = c;
         result.HasValue = true;
-        return result;
-    }
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
-    {
-        Core::OptionalColor result;
-        if (c.has_value())
-        {
-            result.Color = *c;
-            result.HasValue = true;
-        }
-        else
-        {
-            result.HasValue = false;
-        }
         return result;
     }
 
@@ -401,10 +387,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
-
-        // Start the connection outside of lock, because it could
-        // start writing output immediately.
-        _connection.Start();
 
         return true;
     }
@@ -1708,6 +1690,49 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _connectionStateChangedRevoker.revoke();
             _connection.Close();
         }
+    }
+
+    void ControlCore::PersistToPath(const wchar_t* path) const
+    {
+        const auto lock = _terminal->LockForReading();
+        _terminal->SerializeMainBuffer(path);
+    }
+
+    void ControlCore::RestoreFromPath(const wchar_t* path) const
+    {
+        const wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        if (!file)
+        {
+            return;
+        }
+
+        wchar_t buffer[32 * 1024];
+        DWORD read = 0;
+
+        // Ensure the text file starts with a UTF-16 BOM.
+        if (!ReadFile(file.get(), &buffer[0], 2, &read, nullptr) || read < 2 || buffer[0] != L'\uFEFF')
+        {
+            return;
+        }
+
+        for (;;)
+        {
+            if (!ReadFile(file.get(), &buffer[0], sizeof(buffer), &read, nullptr))
+            {
+                break;
+            }
+
+            const auto lock = _terminal->LockForReading();
+            _terminal->Write({ &buffer[0], read / 2 });
+
+            if (read < sizeof(buffer))
+            {
+                break;
+            }
+        }
+
+        const auto lock = _terminal->LockForReading();
+        _terminal->Write(L"\x1b[2J");
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)

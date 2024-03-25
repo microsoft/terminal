@@ -44,8 +44,6 @@ private:
 
     til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _oldThreads;
 
-    std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
-
     winrt::event_token _WindowCreatedToken;
     winrt::event_token _WindowClosedToken;
 
@@ -61,14 +59,9 @@ private:
 
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
-    void _quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
-                           const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&);
 
     winrt::fire_and_forget _windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable args);
     winrt::fire_and_forget _windowRequestUpdateSettings();
-
-    winrt::Windows::Foundation::IAsyncAction _saveWindowLayouts();
-    winrt::fire_and_forget _saveWindowLayoutsRepeat();
 
     void _createMessageWindow();
 
@@ -90,6 +83,5 @@ private:
     {
         winrt::Microsoft::Terminal::Remoting::WindowManager::WindowCreated_revoker WindowCreated;
         winrt::Microsoft::Terminal::Remoting::WindowManager::WindowClosed_revoker WindowClosed;
-        winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
     } _revokers{};
 };

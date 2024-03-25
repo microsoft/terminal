@@ -46,11 +46,6 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.IReference<UInt64> WindowID;
     }
 
-    [default_interface] runtimeclass QuitAllRequestedArgs {
-        QuitAllRequestedArgs();
-        Windows.Foundation.IAsyncAction BeforeQuitAllAction;
-    }
-
     struct PeasantInfo
     {
         UInt64 Id;
@@ -72,7 +67,6 @@ namespace Microsoft.Terminal.Remoting
         void SummonAllWindows();
         Boolean DoesQuakeWindowExist();
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos { get; };
-        Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
 
         void RequestMoveContent(String window, String content, UInt32 tabIndex, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
         void RequestSendContent(RequestReceiveContentArgs args);
@@ -82,7 +76,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
-        event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     };

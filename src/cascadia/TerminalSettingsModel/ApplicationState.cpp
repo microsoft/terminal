@@ -294,6 +294,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return root;
     }
 
+    void ApplicationState::AppendPersistedWindowLayout(Model::WindowLayout layout)
+    {
+        {
+            const auto state = _state.lock();
+            if (!state->PersistedWindowLayouts || !*state->PersistedWindowLayouts)
+            {
+                state->PersistedWindowLayouts = winrt::single_threaded_vector<Model::WindowLayout>();
+            }
+            state->PersistedWindowLayouts->Append(std::move(layout));
+        }
+
+        _throttler();
+    }
+
     // Generate all getter/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     type ApplicationState::name() const noexcept                 \

@@ -69,6 +69,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void FromJson(const Json::Value& root, FileSource parseSource) const noexcept;
         Json::Value ToJson(FileSource parseSource) const noexcept;
 
+        void AppendPersistedWindowLayout(Model::WindowLayout layout);
+
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     type name() const noexcept;                                  \

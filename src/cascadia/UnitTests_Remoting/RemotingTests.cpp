@@ -82,7 +82,6 @@ namespace RemotingUnitTests
         void Summon(const Remoting::SummonWindowBehavior& /*args*/) DIE;
         void RequestShowNotificationIcon() DIE;
         void RequestHideNotificationIcon() DIE;
-        winrt::hstring GetWindowLayout() DIE;
         void RequestQuitAll() DIE;
         void Quit() DIE;
         void AttachContentToWindow(Remoting::AttachRequest) DIE;
@@ -97,7 +96,6 @@ namespace RemotingUnitTests
         til::typed_event<> HideNotificationIconRequested;
         til::typed_event<> QuitAllRequested;
         til::typed_event<> QuitRequested;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs> GetWindowLayoutRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest> AttachRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs> SendContentRequested;
     };
@@ -117,7 +115,6 @@ namespace RemotingUnitTests
         void SummonAllWindows() DIE;
         bool DoesQuakeWindowExist() DIE;
         winrt::Windows::Foundation::Collections::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
-        winrt::Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
         void RequestMoveContent(winrt::hstring, winrt::hstring, uint32_t, winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect>) DIE;
         void RequestSendContent(Remoting::RequestReceiveContentArgs) DIE;
 
@@ -126,7 +123,6 @@ namespace RemotingUnitTests
         til::typed_event<> HideNotificationIconRequested;
         til::typed_event<> WindowCreated;
         til::typed_event<> WindowClosed;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, Remoting::QuitAllRequestedArgs> QuitAllRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, Remoting::WindowRequestedArgs> RequestNewWindow;
     };
 

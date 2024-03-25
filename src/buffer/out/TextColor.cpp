@@ -62,6 +62,11 @@ bool TextColor::CanBeBrightened() const noexcept
     return IsIndex16() || IsDefault();
 }
 
+ColorType TextColor::GetType() const noexcept
+{
+    return _meta;
+}
+
 bool TextColor::IsLegacy() const noexcept
 {
     return (IsIndex16() || IsIndex256()) && _index < 16;
@@ -279,6 +284,26 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
                                    ((_blue >> 6) & 0b00000011);
         return til::at(CompressedRgbToIndex16, compressedRgb);
     }
+}
+
+BYTE TextColor::GetIndex() const noexcept
+{
+    return _index;
+}
+
+BYTE TextColor::GetR() const noexcept
+{
+    return _red;
+}
+
+BYTE TextColor::GetG() const noexcept
+{
+    return _green;
+}
+
+BYTE TextColor::GetB() const noexcept
+{
+    return _blue;
 }
 
 // Method Description:

@@ -549,6 +549,9 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.profileNameOption = subcommand.subcommand->add_option("-p,--profile",
                                                                      _profileName,
                                                                      RS_A(L"CmdProfileArgDesc"));
+    subcommand.sessionIdOption = subcommand.subcommand->add_option("--sessionId",
+                                                                   _sessionId,
+                                                                   RS_A(L"CmdSessionIdArgDesc"));
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
                                                                            RS_A(L"CmdStartingDirArgDesc"));
@@ -626,6 +629,13 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     if (*subcommand.profileNameOption)
     {
         args.Profile(winrt::to_hstring(_profileName));
+    }
+
+    if (*subcommand.sessionIdOption)
+    {
+        const auto str = winrt::to_hstring(_sessionId);
+        const auto id = ::Microsoft::Console::Utils::GuidFromString(str.c_str());
+        args.SessionId(id);
     }
 
     if (*subcommand.startingDirectoryOption)
@@ -714,6 +724,7 @@ bool AppCommandlineArgs::_noCommandsProvided()
 void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName.clear();
+    _sessionId.clear();
     _startingDirectory.clear();
     _startingTitle.clear();
     _startingTabColor.clear();
