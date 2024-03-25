@@ -204,5 +204,34 @@
                          Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
                          x:Load="False"
                          IsLightDismissEnabled="True" />
+
+        <mux:TeachingTip x:Name="ActionSavedToast"
+                         x:Uid="ActionSavedToast"
+                         Title="Action Saved"
+                         HorizontalAlignment="Stretch"
+                         x:Load="False"
+                         IsLightDismissEnabled="True">
+            <mux:TeachingTip.Content>
+                <StackPanel HorizontalAlignment="Stretch"
+                            Orientation="Vertical">
+                    <TextBlock x:Name="ActionSavedNameText"
+                               Text="" />
+                    <TextBlock x:Name="ActionSavedKeyChordText"
+                               Text="" />
+                    <TextBlock x:Name="ActionSavedCommandLineText"
+                               Text="" />
+                </StackPanel>
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
+        <mux:TeachingTip x:Name="ActionSaveFailedToast"
+                         x:Uid="ActionSaveFailedToast"
+                         Title="Action Save Failed"
+                         x:Load="False"
+                         IsLightDismissEnabled="True">
+            <mux:TeachingTip.Content>
+                <TextBlock x:Name="ActionSaveFailedMessage"
+                           Text="" />
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 </Page>

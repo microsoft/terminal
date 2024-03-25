@@ -148,6 +148,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
+        winrt::fire_and_forget ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord);
+        winrt::fire_and_forget ActionSaveFailed(winrt::hstring message);
         winrt::fire_and_forget RenameFailed();
         winrt::fire_and_forget ShowTerminalWorkingDirectory();
 
@@ -259,6 +261,8 @@ namespace winrt::TerminalApp::implementation
         bool _isEmbeddingInboundListener{ false };
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
+        std::shared_ptr<Toast> _actionSavedToast{ nullptr };
+        std::shared_ptr<Toast> _actionSaveFailedToast{ nullptr };
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
         std::shared_ptr<Toast> _windowCwdToast{ nullptr };
 

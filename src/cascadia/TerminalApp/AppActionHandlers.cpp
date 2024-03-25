@@ -1232,6 +1232,51 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
+            {
+                if (realArgs.Commandline().empty())
+                {
+                    if (const auto termControl{ _GetActiveControl() })
+                    {
+                        if (termControl.HasSelection())
+                        {
+                            const auto selections{ termControl.SelectedText(true) };
+                            const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                            realArgs.Commandline(selection);
+                        }
+                    }
+                }
+
+                try
+                {
+                    KeyChord keyChord = nullptr;
+                    hstring keyChordText = L"";
+                    if (!realArgs.KeyChord().empty())
+                    {
+                        keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                        keyChordText = KeyChordSerialization::ToString(keyChord);
+                    }
+
+                    _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
+                    ActionSaved(realArgs.Commandline(), realArgs.Name(), keyChordText);
+                    _settings.WriteSettingsToDisk();
+                }
+                catch (const winrt::hresult_error& ex)
+                {
+                    const auto message = ex.message();
+                    ActionSaveFailed(message);
+                }
+
+                args.Handled(true);
+            }
+        }
+    }
+
     void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {

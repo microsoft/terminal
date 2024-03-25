@@ -75,6 +75,7 @@
     ON_ALL_ACTIONS(CloseTabsAfter)          \
     ON_ALL_ACTIONS(TabSearch)               \
     ON_ALL_ACTIONS(MoveTab)                 \
+    ON_ALL_ACTIONS(SaveTask)                \
     ON_ALL_ACTIONS(BreakIntoDebugger)       \
     ON_ALL_ACTIONS(TogglePaneReadOnly)      \
     ON_ALL_ACTIONS(EnablePaneReadOnly)      \
@@ -147,6 +148,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(SplitPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \
+    ON_ALL_ACTIONS_WITH_ARGS(SaveTask)             \
     ON_ALL_ACTIONS_WITH_ARGS(FocusPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(ExportBuffer)         \
     ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
