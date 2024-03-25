@@ -3671,7 +3671,8 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
     else if (subParam == 12)
     {
-        _api.MarkCommandStart();
+        // _api.MarkCommandStart();
+        _api.GetTextBuffer().StartCommand();
         return true;
     }
 
@@ -3762,9 +3763,9 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         case L'A': // FTCS_PROMPT
         {
             // Simply just mark this line as a prompt line.
-            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            attr.SetMarkAttributes(MarkKind::Prompt);
-            _api.SetTextAttributes(attr);
+            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            // attr.SetMarkAttributes(MarkKind::Prompt);
+            // _api.SetTextAttributes(attr);
             _api.GetTextBuffer().StartPrompt();
             // auto& tb = _api.GetTextBuffer();
             // auto& cursor=  tb.GetCursor();
@@ -3775,18 +3776,22 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         }
         case L'B': // FTCS_COMMAND_START
         {
-            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            attr.SetMarkAttributes(MarkKind::Command);
-            _api.SetTextAttributes(attr);
+            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            // attr.SetMarkAttributes(MarkKind::Command);
+            // _api.SetTextAttributes(attr);
+
+            _api.GetTextBuffer().StartCommand();
 
             handled = true;
             break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
-            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            attr.SetMarkAttributes(MarkKind::Output);
-            _api.SetTextAttributes(attr);
+            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            // attr.SetMarkAttributes(MarkKind::Output);
+            // _api.SetTextAttributes(attr);
+
+            _api.GetTextBuffer().StartOutput();
 
             handled = true;
             break;
@@ -3808,10 +3813,10 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                                                                         UINT_MAX;
             }
 
-            auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            attr.SetMarkAttributes(MarkKind::Output);
-            _api.SetTextAttributes(attr);
-            _api.GetTextBuffer().EndCommand(error);
+            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+            // attr.SetMarkAttributes(MarkKind::Output);
+            // _api.SetTextAttributes(attr);
+            _api.GetTextBuffer().EndOutput(error);
             // _api.MarkCommandFinish(error);
 
             handled = true;

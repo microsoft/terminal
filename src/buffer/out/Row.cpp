@@ -1189,21 +1189,6 @@ const std::optional<MarkData>& ROW::GetPromptData() const noexcept
 
 void ROW::StartPrompt() noexcept
 {
-    // TODO! resurrect somehow
-
-    // static bool logged = false;
-    // if (!logged)
-    // {
-    //     TraceLoggingWrite(
-    //         g_hCTerminalCoreProvider,
-    //         "ShellIntegrationMarkAdded",
-    //         TraceLoggingDescription("A mark was added via VT at least once"),
-    //         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-    //         TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-    //     logged = true;
-    // }
-
     if (!_promptData.has_value())
     {
         _promptData = MarkData{
@@ -1213,7 +1198,8 @@ void ROW::StartPrompt() noexcept
         };
     }
 }
-void ROW::EndCommand(std::optional<unsigned int> error) noexcept
+
+void ROW::EndOutput(std::optional<unsigned int> error) noexcept
 {
     if (_promptData.has_value())
     {

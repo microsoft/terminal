@@ -3032,7 +3032,6 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
     };
 
     bool startedPrompt = false;
-    // bool foundEnd = false;
     bool startedCommand = false;
     bool startedOutput = false;
     MarkKind lastMarkKind = MarkKind::Output;
@@ -3042,11 +3041,11 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
         {
             mark.outputEnd = til::point{ x, y };
         }
-        /*else */ if (!startedOutput && startedCommand /*|| !mark.commandEnd.has_value()*/) // startedCommand = true
+        if (!startedOutput && startedCommand)
         {
             mark.commandEnd = til::point{ x, y };
         }
-        /*else */ if (!startedCommand)
+        if (!startedCommand)
         {
             mark.end = til::point{ x, y };
         }
@@ -3172,19 +3171,6 @@ std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const ti
 
 std::wstring TextBuffer::CurrentCommand() const
 {
-    // if (_marks.size() == 0)
-    // {
-    //     return L"";
-    // }
-
-    // const auto& curr{ _marks.back() };
-    // const auto& start{ curr.end };
-    // const auto& end{ GetCursor().GetPosition() };
-
-    // const auto line = start.y;
-    // const auto& row = GetRowByOffset(line);
-    // return row.GetText(start.x, end.x);
-
     auto promptY = GetCursor().GetPosition().y;
     for (; promptY >= 0; promptY--)
     {
@@ -3233,47 +3219,138 @@ std::vector<std::wstring> TextBuffer::Commands() const
     return std::move(commands);
 }
 
-// void TextBuffer::SetCurrentPromptEnd(const til::point pos) noexcept
-// {
-//     if (_marks.empty())
-//     {
-//         return;
-//     }
-//     auto& curr{ _marks.back() };
-//     curr.end = pos;
-// }
-// void TextBuffer::SetCurrentCommandEnd(const til::point pos) noexcept
-// {
-//     if (_marks.empty())
-//     {
-//         return;
-//     }
-//     auto& curr{ _marks.back() };
-//     curr.commandEnd = pos;
-// }
-// void TextBuffer::SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept
-// {
-//     if (_marks.empty())
-//     {
-//         return;
-//     }
-//     auto& curr{ _marks.back() };
-//     curr.outputEnd = pos;
-//     curr.category = category;
-// }
-
 void TextBuffer::StartPrompt()
 {
     const auto currentRowOffset = GetCursor().GetPosition().y;
     auto& currentRow = GetMutableRowByOffset(currentRowOffset);
     currentRow.StartPrompt();
-    // auto& rowPromptData = currRow.GetPromptData();
-    // if (!rowPromptData.has_value())
-    // {
-    //     rowPromptData = MarkData{};
-    // }
+
+    auto attr = GetCurrentAttributes();
+    attr.SetMarkAttributes(MarkKind::Prompt);
+    SetCurrentAttributes(attr);
 }
-void TextBuffer::EndCommand(std::optional<unsigned int> error)
+
+void TextBuffer::StartCommand()
+{
+    const auto mostRecentMarks = GetMarkExtents(1u);
+    if (!mostRecentMarks.empty())
+    {
+        const auto& mostRecentMark = mostRecentMarks[0];
+        if (mostRecentMark.HasOutput())
+        {
+            // The most recent command mark had output. That suggests that either:
+            // * shell integration wasn't enabled (but the user would still
+            //   like lines with enters to be marked as prompts)
+            // * or we're in the middle of a command that's ongoing.
+
+            // If the mark doesn't have any command - then we know we're
+            // playing silly games with just marking whole lines as prompts,
+            // then immediately going to output.
+            //   --> add a new mark to this row, set all the attrs in this
+            //   row to be Prompt, and set the current attrs to Output.
+            //
+            // If it does have a command, then we're still in the output of
+            // that command.
+            //   --> the current attrs should already be set to Output.
+            if (!mostRecentMark.HasCommand())
+            {
+                auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
+                row.StartPrompt();
+                // for (auto& [attr, len] : row.Attributes().runs())
+                // {
+                //     attr.SetMarkAttributes(MarkKind::Prompt);
+                // }
+                // // This changed the scrollbar marks - raise a notification to update them
+                // _NotifyScrollEvent();
+            }
+        }
+        else
+        {
+            // The most recent command mark _didn't_ have output yet. Great!
+            // we'll leave it alone, and just start treating text as Command.
+        }
+    }
+    else
+    {
+        // There were no marks at all!
+        //   --> add a new mark to this row, set all the attrs in this row
+        //   to be Prompt, and set the current attrs to Output.
+
+        auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
+        row.StartPrompt();
+        // for (auto& [attr, len] : row.Attributes().runs())
+        // {
+        //     attr.SetMarkAttributes(MarkKind::Prompt);
+        // }
+        // // This changed the scrollbar marks - raise a notification to update them
+        // _NotifyScrollEvent();
+    }
+
+    auto attr = GetCurrentAttributes();
+    attr.SetMarkAttributes(MarkKind::Command);
+    SetCurrentAttributes(attr);
+}
+void TextBuffer::StartOutput()
+{
+    const auto mostRecentMarks = GetMarkExtents(1u);
+    if (!mostRecentMarks.empty())
+    {
+        const auto& mostRecentMark = mostRecentMarks[0];
+        if (mostRecentMark.HasOutput())
+        {
+            // The most recent command mark had output. That suggests that either:
+            // * shell integration wasn't enabled (but the user would still
+            //   like lines with enters to be marked as prompts)
+            // * or we're in the middle of a command that's ongoing.
+
+            // If the mark doesn't have any command - then we know we're
+            // playing silly games with just marking whole lines as prompts,
+            // then immediately going to output.
+            //   --> add a new mark to this row, set all the attrs in this
+            //   row to be Prompt, and set the current attrs to Output.
+            //
+            // If it does have a command, then we're still in the output of
+            // that command.
+            //   --> the current attrs should already be set to Output.
+            if (!mostRecentMark.HasCommand())
+            {
+                auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
+                row.StartPrompt();
+                // for (auto& [attr, len] : row.Attributes().runs())
+                // {
+                //     attr.SetMarkAttributes(MarkKind::Prompt);
+                // }
+                // // This changed the scrollbar marks - raise a notification to update them
+                // _NotifyScrollEvent();
+            }
+        }
+        else
+        {
+            // The most recent command mark _didn't_ have output yet. Great!
+            // we'll leave it alone, and just start treating text as Output.
+        }
+    }
+    else
+    {
+        // There were no marks at all!
+        //   --> add a new mark to this row, set all the attrs in this row
+        //   to be Prompt, and set the current attrs to Output.
+
+        auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
+        row.StartPrompt();
+        // for (auto& [attr, len] : row.Attributes().runs())
+        // {
+        //     attr.SetMarkAttributes(MarkKind::Prompt);
+        // }
+        // // This changed the scrollbar marks - raise a notification to update them
+        // _NotifyScrollEvent();
+    }
+    auto attr = GetCurrentAttributes();
+    attr.SetMarkAttributes(MarkKind::Output);
+    SetCurrentAttributes(attr);
+}
+
+void TextBuffer::EndOutput(std::optional<unsigned int> error)
 {
     for (auto y = GetCursor().GetPosition().y; y >= 0; y--)
     {
@@ -3281,7 +3358,7 @@ void TextBuffer::EndCommand(std::optional<unsigned int> error)
         auto& rowPromptData = currRow.GetPromptData();
         if (rowPromptData.has_value())
         {
-            currRow.EndCommand(error.value_or(0u));
+            currRow.EndOutput(error);
             return;
         }
     }

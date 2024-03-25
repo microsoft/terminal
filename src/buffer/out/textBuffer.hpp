@@ -334,19 +334,15 @@ public:
     std::vector<MarkExtents> GetMarkExtents(std::optional<size_t> limit = std::nullopt) const noexcept;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
-    // void ScrollMarks(const int delta);
-    // void StartPromptMark(const ScrollMark& m);
-    // void AddMark(const ScrollMark& m);
-    // void SetCurrentPromptEnd(const til::point pos) noexcept;
-    // void SetCurrentCommandEnd(const til::point pos) noexcept;
-    // void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
     std::wstring CurrentCommand() const;
     std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
     MarkExtents _scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
     std::vector<std::wstring> Commands() const;
 
     void StartPrompt();
-    void EndCommand(std::optional<unsigned int> error);
+    void StartCommand();
+    void StartOutput();
+    void EndOutput(std::optional<unsigned int> error);
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);

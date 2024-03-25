@@ -190,7 +190,7 @@ public:
 
     const std::optional<MarkData>& GetPromptData() const noexcept;
     void StartPrompt() noexcept;
-    void EndCommand(std::optional<unsigned int> error) noexcept;
+    void EndOutput(std::optional<unsigned int> error) noexcept;
 
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
