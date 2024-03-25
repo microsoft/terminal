@@ -3055,35 +3055,45 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
         {
             const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
             const auto markKind{ attr.GetMarkAttributes() };
-            if (markKind != MarkKind::None &&
-                markKind != lastMarkKind)
+
+            if (markKind != MarkKind::None)
             {
+                lastMarkedText = { nextX, y };
+                // }
+
+                // if (markKind != MarkKind::None &&
+                //     markKind != lastMarkKind)
+                // {
                 if (markKind == MarkKind::Prompt)
                 {
-                    if (startedPrompt)
+                    if (startedCommand || startedOutput)
                     {
                         // we got a _new_ prompt. bail out.
-                        endThisMark(x, y);
+                        // endThisMark(x, y);
+                        // endThisMark(lastMarkedText.x, lastMarkedText.y);
                         break;
                     }
-                    else
+                    if (!startedPrompt)
                     {
                         // We entered the first prompt here
                         startedPrompt = true;
                         mark.start = til::point{ x, y };
                     }
+                    endThisMark(lastMarkedText.x, lastMarkedText.y);
                 }
                 else if (markKind == MarkKind::Command && startedPrompt)
                 {
                     // mark.end = til::point{x, y};
                     // foundEnd = true;
-                    endThisMark(x, y);
+                    // endThisMark(x, y);
                     startedCommand = true;
+                    endThisMark(lastMarkedText.x, lastMarkedText.y);
                 }
                 else if ((markKind == MarkKind::Output /*|| markKind == MarkKind::None*/) && startedPrompt)
                 {
-                    endThisMark(x, y);
+                    // endThisMark(x, y);
                     startedOutput = true;
+                    endThisMark(lastMarkedText.x, lastMarkedText.y);
                     // if (!foundEnd)
                     // {
                     //     mark.end = til::point{x, y};
@@ -3096,10 +3106,6 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
                 {
                     lastMarkKind = markKind;
                 }
-            }
-            if (markKind != MarkKind::None)
-            {
-                lastMarkedText = { nextX, y };
             }
             // advance to next run of text
             x = nextX;
