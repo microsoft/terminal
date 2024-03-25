@@ -337,11 +337,12 @@ public:
     std::wstring CurrentCommand() const;
     std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
     MarkExtents _scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
+    bool _createPromptMarkIfNeeded();
     std::vector<std::wstring> Commands() const;
 
     void StartPrompt();
-    void StartCommand();
-    void StartOutput();
+    bool StartCommand();
+    bool StartOutput();
     void EndOutput(std::optional<unsigned int> error);
 
 private:
