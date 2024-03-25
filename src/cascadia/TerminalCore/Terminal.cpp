@@ -1503,23 +1503,29 @@ void Terminal::ClearAllMarks()
     _NotifyScrollEvent();
 }
 
-std::vector<ScrollMark> Terminal::GetScrollMarks() const noexcept
+std::vector<ScrollMark> Terminal::GetMarkRows() const noexcept
 {
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them.
-    return _inAltBuffer() ? std::vector<ScrollMark>{} : std::move(_activeBuffer().GetMarks());
+    return _inAltBuffer() ? std::vector<ScrollMark>{} : std::move(_activeBuffer().GetMarkRows());
+}
+std::vector<MarkExtents> Terminal::GetMarkExtents() const noexcept
+{
+    // We want to return _no_ marks when we're in the alt buffer, to effectively
+    // hide them.
+    return _inAltBuffer() ? std::vector<MarkExtents>{} : std::move(_activeBuffer().GetMarkExtents());
 }
 
-til::color Terminal::GetColorForMark(const ScrollMark& mark) const
+til::color Terminal::GetColorForMark(const MarkData& markData) const
 {
-    if (mark.data.color.has_value())
+    if (markData.color.has_value())
     {
-        return *mark.data.color;
+        return *markData.color;
     }
 
     const auto& renderSettings = GetRenderSettings();
 
-    switch (mark.data.category)
+    switch (markData.category)
     {
     case MarkCategory::Error:
     {
@@ -1544,11 +1550,6 @@ til::color Terminal::GetColorForMark(const ScrollMark& mark) const
 
 std::wstring_view Terminal::CurrentCommand() const
 {
-    // if (_currentPromptState != PromptState::Command)
-    // {
-    //     return L"";
-    // }
-
     return _activeBuffer().CurrentCommand();
 }
 

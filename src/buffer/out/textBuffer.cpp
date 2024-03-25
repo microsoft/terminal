@@ -2887,22 +2887,24 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 
     return results;
 }
-std::vector<ScrollMark> TextBuffer::GetMarks() const noexcept
+std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
 {
-    // std::vector<ScrollMark> marks;
-    // const auto bottom = _estimateOffsetOfLastCommittedRow();
-    // for (auto y = 0; y <= bottom; y++)
-    // {
-    //     const auto& row = GetRowByOffset(y);
-    //     const auto& data{ row.GetPromptData() };
-    //     if (data.has_value())
-    //     {
-    //         marks.emplace_back(y, *data);
-    //     }
-    // }
-    // return std::move(marks);
-
-    std::vector<ScrollMark> marks{};
+    std::vector<ScrollMark> marks;
+    const auto bottom = _estimateOffsetOfLastCommittedRow();
+    for (auto y = 0; y <= bottom; y++)
+    {
+        const auto& row = GetRowByOffset(y);
+        const auto& data{ row.GetPromptData() };
+        if (data.has_value())
+        {
+            marks.emplace_back(y, *data);
+        }
+    }
+    return std::move(marks);
+}
+std::vector<MarkExtents> TextBuffer::GetMarkExtents() const noexcept
+{
+    std::vector<MarkExtents> marks{};
     const auto bottom = _estimateOffsetOfLastCommittedRow();
     auto lastPromptY = bottom;
     for (auto promptY = bottom; promptY >= 0; promptY--)
@@ -2918,11 +2920,8 @@ std::vector<ScrollMark> TextBuffer::GetMarks() const noexcept
         // This row did start a prompt! Find the prompt that starts here.
         // Presumably, no rows below us will have prompts, so pass in the last
         // row with text as the bottom
-        marks.push_back(_scrollMarkForRow(promptY, lastPromptY));
-        // if (!foundCommand.empty())
-        // {
-        //     commands.emplace_back(std::move(foundCommand));
-        // }
+        marks.push_back(_scrollMarkExtentForRow(promptY, lastPromptY));
+
         lastPromptY = promptY;
     }
     std::reverse(marks.begin(), marks.end());
@@ -3008,13 +3007,13 @@ void TextBuffer::ClearAllMarks() noexcept
 //         return (m.start.y < 0) || (m.start.y >= height);
 //     });
 // }
-ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
+MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
 {
     const auto& startRow = GetRowByOffset(rowOffset);
     const auto& rowPromptData = startRow.GetPromptData();
     assert(rowPromptData.has_value());
 
-    ScrollMark mark{
+    MarkExtents mark{
         .data = *rowPromptData,
     };
 

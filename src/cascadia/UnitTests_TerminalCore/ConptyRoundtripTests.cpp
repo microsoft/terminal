@@ -4353,7 +4353,7 @@ void ConptyRoundtripTests::SimplePromptRegions()
         VERIFY_IS_TRUE(row0.GetPromptData().has_value());
         VERIFY_IS_TRUE(row4.GetPromptData().has_value());
 
-        const auto marks = tb.GetMarks();
+        const auto marks = tb.GetMarkExtents();
         VERIFY_ARE_EQUAL(2u, marks.size());
 
         {
@@ -4450,7 +4450,7 @@ void ConptyRoundtripTests::MultilinePromptRegions()
         VERIFY_IS_TRUE(row0.GetPromptData().has_value());
         VERIFY_IS_TRUE(row5.GetPromptData().has_value());
 
-        const auto marks = tb.GetMarks();
+        const auto marks = tb.GetMarkExtents();
         VERIFY_ARE_EQUAL(2u, marks.size());
 
         {
@@ -4634,7 +4634,7 @@ void ConptyRoundtripTests::ManyMultilinePromptsWithTrailingSpaces()
         }
         const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
 
-        const auto marks = tb.GetMarks();
+        const auto marks = tb.GetMarkExtents();
         VERIFY_ARE_EQUAL(3u, marks.size());
 
         Log::Comment(L"Row 0");

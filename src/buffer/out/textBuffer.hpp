@@ -66,7 +66,7 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
-struct ScrollMark
+struct MarkExtents
 {
     MarkData data;
 
@@ -95,11 +95,11 @@ struct ScrollMark
     }
 };
 
-// struct ScrollMark
-// {
-//     til::CoordType row{ 0 };
-//     MarkData data;
-// };
+struct ScrollMark
+{
+    til::CoordType row{ 0 };
+    MarkData data;
+};
 
 class TextBuffer final
 {
@@ -330,7 +330,8 @@ public:
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
-    std::vector<ScrollMark> GetMarks() const noexcept;
+    std::vector<ScrollMark> GetMarkRows() const noexcept;
+    std::vector<MarkExtents> GetMarkExtents() const noexcept;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
     // void ScrollMarks(const int delta);
@@ -341,7 +342,7 @@ public:
     // void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
     std::wstring CurrentCommand() const;
     std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
-    ScrollMark _scrollMarkForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
+    MarkExtents _scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
     std::vector<std::wstring> Commands() const;
 
     void StartPrompt();

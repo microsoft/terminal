@@ -117,7 +117,8 @@ public:
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
 
-    std::vector<ScrollMark> GetScrollMarks() const noexcept;
+    std::vector<ScrollMark> GetMarkRows() const noexcept;
+    std::vector<MarkExtents> GetMarkExtents() const noexcept;
     void AddMark(const ScrollMark& mark,
                  const til::point& start,
                  const til::point& end,
@@ -167,7 +168,7 @@ public:
 
     void ClearMark();
     void ClearAllMarks();
-    til::color GetColorForMark(const ScrollMark& mark) const;
+    til::color GetColorForMark(const MarkData& markData) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp

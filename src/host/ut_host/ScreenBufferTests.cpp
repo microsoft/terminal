@@ -8557,7 +8557,7 @@ void ScreenBufferTests::SimplePromptRegions()
     VERIFY_IS_TRUE(row0.GetPromptData().has_value());
     VERIFY_IS_TRUE(row4.GetPromptData().has_value());
 
-    const auto marks = tbi.GetMarks();
+    const auto marks = tbi.GetMarkExtents();
     VERIFY_ARE_EQUAL(2u, marks.size());
 
     {
