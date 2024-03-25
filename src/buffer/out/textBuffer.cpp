@@ -3040,7 +3040,7 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
     };
     auto x = 0;
     auto y = rowOffset;
-
+    til::point lastMarkedText{ x, y };
     for (; y <= bottomInclusive; y++)
     {
         // Now we need to iterate over text attributes. We need to find a
@@ -3055,7 +3055,7 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
         {
             const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
             const auto markKind{ attr.GetMarkAttributes() };
-            if (/*markKind != MarkKind::None &&*/
+            if (markKind != MarkKind::None &&
                 markKind != lastMarkKind)
             {
                 if (markKind == MarkKind::Prompt)
@@ -3080,7 +3080,7 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
                     endThisMark(x, y);
                     startedCommand = true;
                 }
-                else if ((markKind == MarkKind::Output || markKind == MarkKind::None) && startedPrompt)
+                else if ((markKind == MarkKind::Output /*|| markKind == MarkKind::None*/) && startedPrompt)
                 {
                     endThisMark(x, y);
                     startedOutput = true;
@@ -3092,9 +3092,15 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
                     // mark.commandEnd = til::point{x, y};
                 }
                 // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
-                lastMarkKind = markKind;
+                if (markKind != MarkKind::None)
+                {
+                    lastMarkKind = markKind;
+                }
             }
-
+            if (markKind != MarkKind::None)
+            {
+                lastMarkedText = { nextX, y };
+            }
             // advance to next run of text
             x = nextX;
         }
@@ -3102,7 +3108,10 @@ ScrollMark TextBuffer::_scrollMarkForRow(const til::CoordType rowOffset, const t
     }
 
     // Okay, we're at the bottom of the buffer? Yea, just return what we found.
-    // endThisMark(x, y);
+    if (!startedCommand)
+    {
+        endThisMark(lastMarkedText.x, lastMarkedText.y);
+    }
     return mark;
 }
 

@@ -3766,6 +3766,9 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             attr.SetMarkAttributes(MarkKind::Prompt);
             _api.SetTextAttributes(attr);
             _api.GetTextBuffer().StartPrompt();
+            // auto& tb = _api.GetTextBuffer();
+            // auto& cursor=  tb.GetCursor();
+            // auto& row = tb.GetRowByOffset(cursor.GetPosition().y);
 
             handled = true;
             break;

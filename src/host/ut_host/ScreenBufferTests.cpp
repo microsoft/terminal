@@ -267,7 +267,7 @@ class ScreenBufferTests
 
     TEST_METHOD(SimpleMarkCommand);
     TEST_METHOD(SimpleWrappedCommand);
-    TEST_METHOD(ComplicatedPromptRegions);
+    TEST_METHOD(SimplePromptRegions);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -8520,7 +8520,7 @@ void _writePrompt(StateMachine& stateMachine, const auto& path)
     stateMachine.ProcessString(L"\x1b]133;B\x7");
 }
 
-void ScreenBufferTests::ComplicatedPromptRegions()
+void ScreenBufferTests::SimplePromptRegions()
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
