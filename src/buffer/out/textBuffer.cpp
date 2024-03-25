@@ -2902,8 +2902,15 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
     }
     return std::move(marks);
 }
-std::vector<MarkExtents> TextBuffer::GetMarkExtents() const noexcept
+
+std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit) const noexcept
 {
+    if (limit.has_value() &&
+        *limit == 0)
+    {
+        return {};
+    }
+
     std::vector<MarkExtents> marks{};
     const auto bottom = _estimateOffsetOfLastCommittedRow();
     auto lastPromptY = bottom;
@@ -2922,8 +2929,15 @@ std::vector<MarkExtents> TextBuffer::GetMarkExtents() const noexcept
         // row with text as the bottom
         marks.push_back(_scrollMarkExtentForRow(promptY, lastPromptY));
 
+        if (limit.has_value() &&
+            marks.size() >= *limit)
+        {
+            break;
+        }
+
         lastPromptY = promptY;
     }
+
     std::reverse(marks.begin(), marks.end());
     return std::move(marks);
 }
@@ -3024,17 +3038,17 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
     MarkKind lastMarkKind = MarkKind::Output;
 
     const auto endThisMark = [&](auto x, auto y) {
-        if (!startedCommand)
+        if (startedOutput)
         {
-            mark.end = til::point{ x, y };
+            mark.outputEnd = til::point{ x, y };
         }
-        else if (!startedOutput /*|| !mark.commandEnd.has_value()*/) // startedCommand = true
+        /*else */ if (!startedOutput && startedCommand /*|| !mark.commandEnd.has_value()*/) // startedCommand = true
         {
             mark.commandEnd = til::point{ x, y };
         }
-        else if (startedOutput)
+        /*else */ if (!startedCommand)
         {
-            mark.outputEnd = til::point{ x, y };
+            mark.end = til::point{ x, y };
         }
     };
     auto x = 0;
@@ -3092,6 +3106,13 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
                 {
                     // endThisMark(x, y);
                     startedOutput = true;
+                    if (!mark.commandEnd.has_value())
+                    {
+                        // immediately just end the command at the start here, so we can treat this whole run as output
+                        mark.commandEnd = mark.end; // til::point{ x, y };
+                        startedCommand = true;
+                    }
+
                     endThisMark(lastMarkedText.x, lastMarkedText.y);
                     // if (!foundEnd)
                     // {

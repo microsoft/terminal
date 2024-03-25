@@ -736,6 +736,71 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         // MarkOutputStart();
 
         // TODO! ^^^^^^^^^^ that's not on Terminal anymore. That's a text attr now.
+
+        // We need to be a little tricky here, to try and support folks that are
+        // auto-marking prompts, but don't necessarily have the rest of shell
+        // integration enabled.
+        //
+        // We'll set the current attributes to Output, so that the output after
+        // here is marked as the command output. But we also need to make sure
+        // that a mark was started.
+        //
+        // We can't just check if the current row has a mark - there could be a
+        // multiline prompt.
+        //
+        // What we're gonna do is get the most recent mark above the cursor. If it's got an outputEnd, then
+
+        // Only get the most recent mark.
+        const auto mostRecentMarks = _activeBuffer().GetMarkExtents(1u);
+        if (!mostRecentMarks.empty())
+        {
+            const auto& mostRecentMark = mostRecentMarks[0];
+            if (mostRecentMark.HasOutput())
+            {
+                // The most recent command mark had output. That suggests that either:
+                // * shell integration wasn't enabled (but the user would still
+                //   like lines with enters to be marked as prompts)
+                // * or we're in the middle of a command that's ongoing.
+
+                // If the mark doesn't have any command - then we know we're
+                // playing silly games with just marking whole lines as prompts,
+                // then immediately going to output.
+                //   --> add a new mark to this row, set all the attrs in this
+                //   row to be Prompt, and set the current attrs to Output.
+                //
+                // If it does have a command, then we're still in the output of
+                // that command.
+                //   --> the current attrs should already be set to Output.
+                if (!mostRecentMark.HasCommand())
+                {
+                    auto& row = _activeBuffer().GetMutableRowByOffset(_activeBuffer().GetCursor().GetPosition().y);
+                    row.StartPrompt();
+                    for (auto& [attr, len] : row.Attributes().runs())
+                    {
+                        attr.SetMarkAttributes(MarkKind::Prompt);
+                    }
+                }
+            }
+            else
+            {
+                // The most recent command mark _didn't_ have output yet. Great!
+                // we'll leave it alone, and just start treating text as Output.
+            }
+        }
+        else
+        {
+            // There were no marks at all!
+            //   --> add a new mark to this row, set all the attrs in this row
+            //   to be Prompt, and set the current attrs to Output.
+
+            auto& row = _activeBuffer().GetMutableRowByOffset(_activeBuffer().GetCursor().GetPosition().y);
+            row.StartPrompt();
+            for (auto& [attr, len] : row.Attributes().runs())
+            {
+                attr.SetMarkAttributes(MarkKind::Prompt);
+            }
+        }
+
         auto attr = _activeBuffer().GetCurrentAttributes();
         attr.SetMarkAttributes(MarkKind::Output);
         SetTextAttributes(attr);
