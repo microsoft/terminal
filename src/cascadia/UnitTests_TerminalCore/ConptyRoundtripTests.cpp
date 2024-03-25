@@ -4361,7 +4361,7 @@ void ConptyRoundtripTests::SimplePromptRegions()
             const til::point expectedStart{ 0, 0 };
             const til::point expectedEnd{ 17, 0 };
             const til::point expectedOutputStart{ 24, 0 }; // `Foo-Bar` is 7 characters
-            const til::point expectedOutputEnd{ 0, 4 };
+            const til::point expectedOutputEnd{ 13, 3 };
             VERIFY_ARE_EQUAL(expectedStart, mark.start);
             VERIFY_ARE_EQUAL(expectedEnd, mark.end);
 
@@ -4403,7 +4403,7 @@ void ConptyRoundtripTests::SimplePromptRegions()
     sm.ProcessString(L"\r\n");
     sm.ProcessString(L"This is some text     \r\n"); // y=1
     sm.ProcessString(L"with varying amounts  \r\n"); // y=2
-    sm.ProcessString(L"of whitespace         \r\n"); // y=3
+    sm.ProcessString(L"of whitespace\r\n"); // y=3
 
     _writePrompt(sm, L"C:\\Windows"); // y=4
 
@@ -4518,11 +4518,8 @@ void ConptyRoundtripTests::MultilinePromptRegions()
             auto& mark = marks[0];
             const til::point expectedStart{ 0, 0 };
             const til::point expectedEnd{ 2, 1 };
-            // const til::point expectedOutputStart{ 9, 1 }; // `Foo-Bar` is 7 characters
-            // The command technically ends at {9,1} (the end of the Foo-Bar string).
-            // However, the first character in the output is at {0,2}.
-            const til::point expectedOutputStart{ 0, 2 }; // `Foo-Bar` is 7 characters
-            const til::point expectedOutputEnd{ 0, 5 };
+            const til::point expectedOutputStart{ 9, 1 }; // `Foo-Bar` is 7 characters
+            const til::point expectedOutputEnd{ 13, 4 };
             VERIFY_ARE_EQUAL(expectedStart, mark.start);
             VERIFY_ARE_EQUAL(expectedEnd, mark.end);
 
@@ -4566,7 +4563,7 @@ void ConptyRoundtripTests::MultilinePromptRegions()
     sm.ProcessString(L"\r\n");
     sm.ProcessString(L"This is some text     \r\n"); // y=2
     sm.ProcessString(L"with varying amounts  \r\n"); // y=3
-    sm.ProcessString(L"of whitespace         \r\n"); // y=4
+    sm.ProcessString(L"of whitespace\r\n"); // y=4
 
     _writePrompt(sm, L"C:\\Windows"); // y=5, 6
 
