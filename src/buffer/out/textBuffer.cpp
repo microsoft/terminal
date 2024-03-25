@@ -3072,18 +3072,12 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
             if (markKind != MarkKind::None)
             {
                 lastMarkedText = { nextX, y };
-                // }
 
-                // if (markKind != MarkKind::None &&
-                //     markKind != lastMarkKind)
-                // {
                 if (markKind == MarkKind::Prompt)
                 {
                     if (startedCommand || startedOutput)
                     {
                         // we got a _new_ prompt. bail out.
-                        // endThisMark(x, y);
-                        // endThisMark(lastMarkedText.x, lastMarkedText.y);
                         break;
                     }
                     if (!startedPrompt)
@@ -3096,15 +3090,11 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
                 }
                 else if (markKind == MarkKind::Command && startedPrompt)
                 {
-                    // mark.end = til::point{x, y};
-                    // foundEnd = true;
-                    // endThisMark(x, y);
                     startedCommand = true;
                     endThisMark(lastMarkedText.x, lastMarkedText.y);
                 }
-                else if ((markKind == MarkKind::Output /*|| markKind == MarkKind::None*/) && startedPrompt)
+                else if ((markKind == MarkKind::Output) && startedPrompt)
                 {
-                    // endThisMark(x, y);
                     startedOutput = true;
                     if (!mark.commandEnd.has_value())
                     {
@@ -3114,12 +3104,6 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
                     }
 
                     endThisMark(lastMarkedText.x, lastMarkedText.y);
-                    // if (!foundEnd)
-                    // {
-                    //     mark.end = til::point{x, y};
-                    //     foundEnd = true;
-                    // }
-                    // mark.commandEnd = til::point{x, y};
                 }
                 // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
                 if (markKind != MarkKind::None)
@@ -3136,6 +3120,8 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
     // Okay, we're at the bottom of the buffer? Yea, just return what we found.
     if (!startedCommand)
     {
+        // If we never got to a Command or Output run, then we never set .end.
+        // Set it here to the last run we saw.
         endThisMark(lastMarkedText.x, lastMarkedText.y);
     }
     return mark;

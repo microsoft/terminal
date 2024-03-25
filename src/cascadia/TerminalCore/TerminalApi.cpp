@@ -497,13 +497,6 @@ void Terminal::NotifyBufferRotation(const int delta)
     // manually erase our pattern intervals since the locations have changed now
     _patternIntervalTree = {};
 
-    // auto& marks{ _activeBuffer().GetMarks() };
-    // const auto hasScrollMarks = marks.size() > 0;
-    // if (hasScrollMarks)
-    // {
-    //     _activeBuffer().ScrollMarks(-delta);
-    // }
-
     const auto oldScrollOffset = _scrollOffset;
     _PreserveUserScrollOffset(delta);
     if (_scrollOffset != oldScrollOffset || AlwaysNotifyOnBufferRotation())

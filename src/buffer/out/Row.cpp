@@ -1213,11 +1213,14 @@ void ROW::StartPrompt() noexcept
         };
     }
 }
-void ROW::EndCommand(uint32_t exitCode) noexcept
+void ROW::EndCommand(std::optional<unsigned int> error) noexcept
 {
     if (_promptData.has_value())
     {
-        _promptData->exitCode = exitCode;
-        _promptData->category = exitCode == 0 ? MarkCategory::Success : MarkCategory::Error;
+        _promptData->exitCode = error;
+        if (error.has_value())
+        {
+            _promptData->category = *error == 0 ? MarkCategory::Success : MarkCategory::Error;
+        }
     }
 }

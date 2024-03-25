@@ -720,23 +720,6 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
     // Then treat this line like it's a prompt mark.
     if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
     {
-        // * If we have a current prompt:
-        //   - Then we did know that the prompt started, (we may have also
-        //     already gotten a MarkCommandStart sequence). The user has pressed
-        //     enter, and we're treating that like the prompt has now ended.
-        //     - Perform a FTCS_COMMAND_EXECUTED, so that we start marking this
-        //       as output.
-        //     - This enables CMD to have full FTCS support, even though there's
-        //       no point in CMD to insert a "pre exec" hook
-        // * Else: We don't have a prompt. We don't know anything else, but we
-        //   can set the whole line as the prompt, no command, and start the
-        //   command_executed now.
-        //
-        // Fortunately, MarkOutputStart will do all this logic for us!
-        // MarkOutputStart();
-
-        // TODO! ^^^^^^^^^^ that's not on Terminal anymore. That's a text attr now.
-
         // We need to be a little tricky here, to try and support folks that are
         // auto-marking prompts, but don't necessarily have the rest of shell
         // integration enabled.
@@ -779,6 +762,8 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
                     {
                         attr.SetMarkAttributes(MarkKind::Prompt);
                     }
+                    // This changed the scrollbar marks - raise a notification to update them
+                    _NotifyScrollEvent();
                 }
             }
             else
@@ -799,6 +784,8 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
             {
                 attr.SetMarkAttributes(MarkKind::Prompt);
             }
+            // This changed the scrollbar marks - raise a notification to update them
+            _NotifyScrollEvent();
         }
 
         auto attr = _activeBuffer().GetCurrentAttributes();
