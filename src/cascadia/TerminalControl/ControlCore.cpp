@@ -216,6 +216,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ControlCore::~ControlCore()
     {
         Close();
+
+        _renderer.reset();
+        _renderEngine.reset();
     }
 
     void ControlCore::Detach()
