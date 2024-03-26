@@ -43,9 +43,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Close();
 
         // -------------------------------- WinRT Events ---------------------------------
-        TYPED_EVENT(CurrentCursorPosition, Control::TSFInputControl, Control::CursorPositionEventArgs);
-        TYPED_EVENT(CurrentFontInfo, Control::TSFInputControl, Control::FontInfoEventArgs);
-        WINRT_CALLBACK(CompositionCompleted, Control::CompositionCompletedEventArgs);
+        til::typed_event<Control::TSFInputControl, Control::CursorPositionEventArgs> CurrentCursorPosition;
+        til::typed_event<Control::TSFInputControl, Control::FontInfoEventArgs> CurrentFontInfo;
+        til::event<Control::CompositionCompletedEventArgs> CompositionCompleted;
 
     private:
         void _layoutRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs& args);

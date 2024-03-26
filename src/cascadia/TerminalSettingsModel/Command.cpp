@@ -5,11 +5,10 @@
 #include "Command.h"
 #include "Command.g.cpp"
 
-#include "ActionAndArgs.h"
-#include "KeyChordSerialization.h"
 #include <LibraryResources.h>
-#include "TerminalSettingsSerializationHelpers.h"
-#include "CascadiaSettings.h"
+#include <til/replace.h>
+
+#include "KeyChordSerialization.h"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Foundation::Collections;
@@ -25,7 +24,6 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view IDKey{ "id" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view ActionKey{ "command" };
-static constexpr std::string_view ArgsKey{ "args" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
 static constexpr std::string_view KeysKey{ "keys" };
