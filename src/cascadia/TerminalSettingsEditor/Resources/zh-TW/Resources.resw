@@ -914,6 +914,14 @@
     <value>啟用時，終端機會為區塊元素和方塊繪圖字元繪製自訂字符，而非使用字型。此功能僅在可使用 GPU 加速時作用。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>全彩表情圖示</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>啟用時，表情圖示會以全彩顯示。</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>字型粗細</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -1209,6 +1217,38 @@
   <data name="Profile_VtPassthrough.Header" xml:space="preserve">
     <value>啟用實驗性虛擬終端機通道</value>
     <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
+    <value>在以滑鼠右鍵按一下時顯示選單</value>
+    <comment>This controls how a right-click behaves in the terminal</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+    <value>啟用時，終端機會在單擊滑鼠右鍵時顯示功能表。停用時，若沒有選取專案)，按鼠右鍵將會複製選取的文字 (或貼上。</value>
+    <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
+  </data>
+  <data name="Profile_ShowMarks.Header" xml:space="preserve">
+    <value>在捲軸上顯示標記</value>
+    <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
+  </data>
+  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+    <value>啟用時，當搜尋文字或啟用殼層整合時，終端機會在滾動條中顯示標記。</value>
+    <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
+    <value>按下 Enter 鍵時自動標記提示</value>
+    <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+    <value>啟用時，當您按下 Enter 時，終端機會自動新增指示命令結尾位置的標記。</value>
+    <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
+    <value>實驗性: 使用滑鼠點擊來調整游標位置</value>
+    <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+    <value>啟用時，按一下提示內部就會將游標移到該位置。這需要啟用您殼層中的殼層整合，才能如預期地運作。</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>有聲</value>

@@ -914,6 +914,14 @@
     <value>Quando habilitado, o terminal desenha glifos personalizados para caracteres de desenho de elemento de bloco e caixa em vez de usar a fonte. Esse recurso só funciona quando a Aceleração de GPU está disponível.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>Emoji colorido</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>Quando habilitado, o Emoji é exibido em cores.</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Peso da fonte</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -1209,6 +1217,38 @@
   <data name="Profile_VtPassthrough.Header" xml:space="preserve">
     <value>Habilitar passagem de terminal virtual experimental</value>
     <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
+    <value>Exibir um menu ao clicar com o botão direito do mouse</value>
+    <comment>This controls how a right-click behaves in the terminal</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+    <value>Quando habilitado, o Terminal exibirá um menu ao clicar com o botão direito do mouse. Quando desabilitado, clicar com o botão direito do mouse copiará o texto selecionado (ou colará se não houver seleção).</value>
+    <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
+  </data>
+  <data name="Profile_ShowMarks.Header" xml:space="preserve">
+    <value>Exibir marcas na barra de rolagem</value>
+    <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
+  </data>
+  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+    <value>Quando habilitado, o Terminal exibirá marcas na barra de rolagem ao procurar texto ou quando a integração do shell estiver habilitada.</value>
+    <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
+    <value>Marcar automaticamente os prompts ao pressionar Enter</value>
+    <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+    <value>Quando habilitado, o Terminal adiciona automaticamente uma marca indicando a posição do final do comando quando você pressiona Enter.</value>
+    <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
+    <value>Experimental: reposicionar o cursor com cliques do mouse</value>
+    <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+    <value>Quando habilitado, clicar dentro do prompt moverá o cursor para essa posição. Isso exige que a integração do shell seja habilitada no shell para funcionar conforme o esperado.</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Audível</value>

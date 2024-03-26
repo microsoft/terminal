@@ -914,6 +914,14 @@
     <value>有効にすると、ターミナルは、フォントを使用する代わりに、ブロック要素とボックス描画文字のカスタム グリフを描画します。この機能は、GPU アクセラレーションが使用可能な場合にのみ機能します。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>フル カラーの絵文字</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>有効にすると、絵文字がフル カラーで表示されます。</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>フォントの太さ</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -1209,6 +1217,38 @@
   <data name="Profile_VtPassthrough.Header" xml:space="preserve">
     <value>試験的な仮想ターミナル パススルーを有効にする</value>
     <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
+    <value>右クリックでメニューを表示する</value>
+    <comment>This controls how a right-click behaves in the terminal</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+    <value>有効にすると、ターミナルは右クリックでメニューを表示します。無効にすると、右クリックすると選択したテキストがコピーされます (選択されていない場合は貼り付けます)。</value>
+    <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
+  </data>
+  <data name="Profile_ShowMarks.Header" xml:space="preserve">
+    <value>スクロール バーにマークを表示する</value>
+    <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
+  </data>
+  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+    <value>有効にすると、ターミナルでテキストを検索するとき、またはシェル統合が有効になっているときに、スクロール バーにマークが表示されます。</value>
+    <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
+    <value>Enter キーを押したときにプロンプトを自動的にマークする</value>
+    <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+    <value>有効にすると、ターミナルは Enter キーを押したときにコマンドの終了位置を示すマークを自動的に追加します。</value>
+    <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
+    <value>試験段階: マウスのクリックでカーソルの位置を変更する</value>
+    <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+    <value>有効にすると、プロンプト内をクリック時にカーソルがその位置に移動します。これを行うには、シェルでシェル統合を有効にし、期待どおりに動作させる必要があります。</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>音によるチャイム</value>

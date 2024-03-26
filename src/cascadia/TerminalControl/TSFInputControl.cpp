@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
-        _CurrentCursorPositionHandlers(*this, *cursorArgs);
+        CurrentCursorPosition.raise(*this, *cursorArgs);
         const til::point cursorPos{ til::math::flooring, cursorArgs->CurrentPosition() };
 
         const auto actualCanvasWidth{ Canvas().ActualWidth() };
@@ -159,7 +159,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
-        _CurrentFontInfoHandlers(*this, *fontArgs);
+        CurrentFontInfo.raise(*this, *fontArgs);
 
         const til::size fontSize{ til::math::flooring, fontArgs->FontSize() };
 
@@ -408,7 +408,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _CompositionCompletedHandlers(text);
+        CompositionCompleted.raise(text);
 
         _activeTextStart = _inputBuffer.size();
 

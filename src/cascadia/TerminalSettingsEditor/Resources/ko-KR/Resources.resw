@@ -914,6 +914,14 @@
     <value>사용하도록 설정하면 터미널은 글꼴을 사용하는 대신 블록 요소 및 상자 그리기 문자에 대한 사용자 지정 문자 모양을 그립니다. 이 기능은 GPU 가속을 사용할 수 있는 경우에만 작동합니다.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>풀 컬러 이모지</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>사용하도록 설정하면 이모지가 풀 컬러로 표시됩니다.</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>글꼴 두께</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -1209,6 +1217,38 @@
   <data name="Profile_VtPassthrough.Header" xml:space="preserve">
     <value>실험적 가상 터미널 통과 사용</value>
     <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
+    <value>마우스 오른쪽 단추를 클릭할 때 메뉴 표시</value>
+    <comment>This controls how a right-click behaves in the terminal</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+    <value>사용하도록 설정하면 터미널에서 마우스 오른쪽 단추를 클릭할 때 메뉴가 표시됩니다. 사용하지 않도록 설정하면 마우스 오른쪽 단추를 클릭하면 선택한 텍스트가 복사됩니다(또는 선택 항목이 없는 경우 붙여넣기).</value>
+    <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
+  </data>
+  <data name="Profile_ShowMarks.Header" xml:space="preserve">
+    <value>스크롤 막대에 마크 표시</value>
+    <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
+  </data>
+  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+    <value>사용하도록 설정하면 터미널은 텍스트를 검색하거나 셸 통합을 사용할 때 스크롤 막대에 표시를 표시합니다.</value>
+    <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
+    <value>&lt;Enter&gt; 키를 누를 때 자동으로 프롬프트 표시</value>
+    <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+    <value>사용하도록 설정하면 Enter 키를 누를 때 터미널에서 명령의 끝 위치를 나타내는 표시를 자동으로 추가합니다.</value>
+    <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
+    <value>실험적: 마우스 클릭으로 커서 위치 변경</value>
+    <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+    <value>활성화된 경우 프롬프트 내부를 클릭하면 커서가 해당 위치로 이동합니다. 예상대로 작동하려면 셸에서 셸 통합이 활성화되어 있어야 합니다.</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>들을 수 있음</value>

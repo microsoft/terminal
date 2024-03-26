@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
+    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         //
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr, existingConnection));
+        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr));
         return S_OK;
     }
     CATCH_RETURN();
@@ -148,7 +148,7 @@ namespace winrt::TerminalApp::implementation
                 // Update the taskbar progress as well. We'll raise our own
                 // SetTaskbarProgress event here, to get tell the hosting
                 // application to re-query this value from us.
-                page->_SetTaskbarProgressHandlers(*page, nullptr);
+                page->SetTaskbarProgress.raise(*page, nullptr);
 
                 auto profile = tab->GetFocusedProfile();
                 page->_UpdateBackground(profile);
@@ -164,7 +164,7 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                page->_RaiseVisualBellHandlers(nullptr, nullptr);
+                page->RaiseVisualBell.raise(nullptr, nullptr);
             }
         });
 
@@ -486,7 +486,7 @@ namespace winrt::TerminalApp::implementation
             // if the user manually closed all tabs.
             // Do this only if we are the last window; the monarch will notice
             // we are missing and remove us that way otherwise.
-            _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(!_maintainStateOnTabClose));
+            LastTabClosed.raise(*this, winrt::make<LastTabClosedEventArgs>(!_maintainStateOnTabClose));
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
         {
@@ -954,7 +954,7 @@ namespace winrt::TerminalApp::implementation
             // Raise an event that our title changed
             if (_settings.GlobalSettings().ShowTitleInTitlebar())
             {
-                _TitleChangedHandlers(*this, tab.Title());
+                TitleChanged.raise(*this, tab.Title());
             }
 
             _updateThemeColors();
