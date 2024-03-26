@@ -1297,15 +1297,20 @@ namespace winrt::TerminalApp::implementation
         return connection;
     }
 
-    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(std::shared_ptr<Pane> pane)
+    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent)
     {
-        const auto& control{ pane->GetTerminalControl() };
+        if (paneContent == nullptr)
+        {
+            return nullptr;
+        }
+
+        const auto& control{ paneContent.GetTermControl() };
         if (control == nullptr)
         {
             return nullptr;
         }
         const auto& connection = control.Connection();
-        auto profile{ pane->GetProfile() };
+        auto profile{ paneContent.GetProfile() };
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
 
@@ -1724,11 +1729,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-    }
 
-    void TerminalPage::_RegisterPaneEvents(std::shared_ptr<Pane>& pane)
-    {
-        pane->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+        hostingTab.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
     }
 
     // Method Description:
@@ -2376,13 +2378,6 @@ namespace winrt::TerminalApp::implementation
 
         _UnZoomIfNeeded();
         auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
-
-        // When we split the pane, the Pane itself will create a _new_ Pane
-        // instance for the original content. We need to make sure we also
-        // re-add our event handler to that newly created pane.
-        //
-        // _MakePane will already call this for the newly created pane.
-        _RegisterPaneEvents(original);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
@@ -3114,10 +3109,9 @@ namespace winrt::TerminalApp::implementation
             // Don't need to worry about duplicating or anything - we'll
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
-
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-
-            return std::make_shared<Pane>(profile, control);
+            auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+            return std::make_shared<Pane>(paneContent);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -3173,13 +3167,15 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
-        auto resultPane = std::make_shared<Pane>(profile, control);
+        auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+        auto resultPane = std::make_shared<Pane>(paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugPane = std::make_shared<Pane>(profile, newControl);
+            auto debugContent{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            auto debugPane = std::make_shared<Pane>(debugContent);
 
             // Since we're doing this split directly on the pane (instead of going through TerminalTab,
             // we need to handle the panes 'active' states
@@ -3193,16 +3189,20 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
-        _RegisterPaneEvents(resultPane);
-
         return resultPane;
     }
 
-    void TerminalPage::_restartPaneConnection(const std::shared_ptr<Pane>& pane)
+    void TerminalPage::_restartPaneConnection(
+        const TerminalApp::TerminalPaneContent& paneContent,
+        const winrt::Windows::Foundation::IInspectable&)
     {
-        if (const auto& connection{ _duplicateConnectionForRestart(pane) })
+        // Note: callers are likely passing in `nullptr` as the args here, as
+        // the TermControl.RestartTerminalRequested event doesn't actually pass
+        // any args upwards itself. If we ever change this, make sure you check
+        // for nulls
+        if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            pane->GetTerminalControl().Connection(connection);
+            paneContent.GetTermControl().Connection(connection);
             connection.Start();
         }
     }

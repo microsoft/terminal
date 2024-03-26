@@ -1401,7 +1401,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto activePane{ activeTab->GetActivePane() })
             {
-                _restartPaneConnection(activePane);
+                _restartPaneConnection(activePane->GetContent().try_as<TerminalApp::TerminalPaneContent>(), nullptr);
             }
         }
         args.Handled(true);
