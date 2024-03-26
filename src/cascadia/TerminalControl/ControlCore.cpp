@@ -2335,31 +2335,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return winrt::single_threaded_vector(std::move(v));
     }
 
-    void ControlCore::AddMark(const Control::ScrollMark& /*mark*/)
+    void ControlCore::AddMark(const Control::ScrollMark& mark)
     {
-        // TODO! Re-implement adding a mark in the UI
+        const auto lock = _terminal->LockForReading();
+        ::MarkData m{};
 
-        // const auto lock = _terminal->LockForReading();
-        // ::ScrollMark m{};
+        if (mark.Color.HasValue)
+        {
+            m.color = til::color{ mark.Color.Color };
+        }
+        const auto row = (_terminal->IsSelectionActive()) ?
+                             _terminal->GetSelectionAnchor().y :
+                             _terminal->GetTextBuffer().GetCursor().GetPosition().y;
 
-        // if (mark.Color.HasValue)
-        // {
-        //     m.color = til::color{ mark.Color.Color };
-        // }
-
-        // if (_terminal->IsSelectionActive())
-        // {
-        //     m.start = til::point{ _terminal->GetSelectionAnchor() };
-        //     m.end = til::point{ _terminal->GetSelectionEnd() };
-        // }
-        // else
-        // {
-        //     m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
-        // }
-
-        // // The version of this that only accepts a ScrollMark will automatically
-        // // set the start & end to the cursor position.
-        // _terminal->AddMark(m, m.start, m.end, true);
+        _terminal->AddMarkFromUI(m, row);
     }
 
     void ControlCore::ClearMark()

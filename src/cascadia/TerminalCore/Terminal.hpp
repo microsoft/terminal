@@ -119,10 +119,7 @@ public:
 
     std::vector<ScrollMark> GetMarkRows() const noexcept;
     std::vector<MarkExtents> GetMarkExtents() const noexcept;
-    void AddMark(const ScrollMark& mark,
-                 const til::point& start,
-                 const til::point& end,
-                 const bool fromUi);
+    void AddMarkFromUI(MarkData mark, const til::CoordType& y);
 
     til::property<bool> AlwaysNotifyOnBufferRotation;
 

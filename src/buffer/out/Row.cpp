@@ -1186,6 +1186,10 @@ const std::optional<MarkData>& ROW::GetPromptData() const noexcept
 {
     return _promptData;
 }
+void ROW::SetPromptData(std::optional<MarkData> data) noexcept
+{
+    _promptData = data;
+}
 
 void ROW::StartPrompt() noexcept
 {

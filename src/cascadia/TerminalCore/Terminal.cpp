@@ -1444,39 +1444,20 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMark(const ScrollMark& /*mark*/,
-                       const til::point& /*start*/,
-                       const til::point& /*end*/,
-                       const bool /*fromUi*/)
+void Terminal::AddMarkFromUI(MarkData mark,
+                             const til::CoordType& y)
 {
-    // TODO!
-    // Basically, entirely kill this?
+    if (_inAltBuffer())
+    {
+        return;
+    }
 
-    // if (_inAltBuffer())
-    // {
-    //     return;
-    // }
+    auto& row = _activeBuffer().GetMutableRowByOffset(y);
+    row.SetPromptData(mark);
 
-    // ScrollMark m = mark;
-    // m.start = start;
-    // m.end = end;
-
-    // // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
-    // if (fromUi)
-    // {
-    //     _activeBuffer().AddMark(m);
-    // }
-    // else
-    // {
-    //     _activeBuffer().StartPromptMark(m);
-    // }
-
-    // // Tell the control that the scrollbar has somehow changed. Used as a
-    // // workaround to force the control to redraw any scrollbar marks
-    // _NotifyScrollEvent();
-
-    // // DON'T set _currentPrompt. The VT impl will do that for you. We don't want
-    // // UI-driven marks to set that.
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks
+    _NotifyScrollEvent();
 }
 
 void Terminal::ClearMark()

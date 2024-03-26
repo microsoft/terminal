@@ -189,6 +189,7 @@ public:
     auto AttrEnd() const noexcept { return _attr.end(); }
 
     const std::optional<MarkData>& GetPromptData() const noexcept;
+    void SetPromptData(std::optional<MarkData> data) noexcept;
     void StartPrompt() noexcept;
     void EndOutput(std::optional<unsigned int> error) noexcept;
 

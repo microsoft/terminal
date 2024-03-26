@@ -2924,6 +2924,19 @@ std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit)
             continue;
         }
 
+        // Future thought! In #11000 & #14792, we considered the possibility of
+        // scrolling to only an error mark, or something like that. Perhaps in
+        // the future, add a customizable filter that's a set of types of mark
+        // to include?
+        //
+        // For now, skip any "Default" marks, since those came from the UI. We
+        // just want the ones that correspond to shell integration.
+
+        if (rowPromptData->category == MarkCategory::Default)
+        {
+            continue;
+        }
+
         // This row did start a prompt! Find the prompt that starts here.
         // Presumably, no rows below us will have prompts, so pass in the last
         // row with text as the bottom
