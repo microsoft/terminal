@@ -9,14 +9,13 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
-#include <unicode.hpp>
 #include <utils.hpp>
-#include <WinUser.h>
 #include <LibraryResources.h>
 
 #include "EventArgs.h"
-#include "../../buffer/out/search.h"
 #include "../../renderer/atlas/AtlasEngine.h"
+#include "../../renderer/base/renderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
@@ -43,26 +42,26 @@ constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c) noexcept
     {
         Core::OptionalColor result;
         result.Color = c;
         result.HasValue = true;
         return result;
     }
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
+
+    static ::Microsoft::Console::Render::Atlas::GraphicsAPI parseGraphicsAPI(GraphicsAPI api) noexcept
     {
-        Core::OptionalColor result;
-        if (c.has_value())
+        using GA = ::Microsoft::Console::Render::Atlas::GraphicsAPI;
+        switch (api)
         {
-            result.Color = *c;
-            result.HasValue = true;
+        case GraphicsAPI::Direct2D:
+            return GA::Direct2D;
+        case GraphicsAPI::Direct3D11:
+            return GA::Direct3D11;
+        default:
+            return GA::Automatic;
         }
-        else
-        {
-            result.HasValue = false;
-        }
-        return result;
     }
 
     TextColor SelectionColor::AsTextColor() const noexcept
@@ -387,7 +386,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
             _renderEngine->SetPixelShaderImagePath(_settings->PixelShaderImagePath());
-            _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+            _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
+            _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
 
             _updateAntiAliasingMode();
@@ -395,8 +395,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
             _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
-
-            THROW_IF_FAILED(_renderEngine->Enable());
 
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
@@ -882,7 +880,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+        _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
+        _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
@@ -943,6 +942,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _renderer->TriggerRedrawAll(true, true);
         }
+    }
+
+    Control::IControlSettings ControlCore::Settings()
+    {
+        return *_settings;
+    }
+
+    Control::IControlAppearance ControlCore::FocusedAppearance() const
+    {
+        return *_settings->FocusedAppearance();
+    }
+
+    Control::IControlAppearance ControlCore::UnfocusedAppearance() const
+    {
+        return *_settings->UnfocusedAppearance();
     }
 
     void ControlCore::_updateAntiAliasingMode()
@@ -1947,13 +1961,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UpdateSelectionMarkers.raise(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(!showMarkers));
     }
 
-    void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
+    void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine)
     {
         // _renderer will always exist since it's introduced in the ctor
         const auto lock = _terminal->LockForWriting();
         _renderer->AddRenderEngine(pEngine);
     }
-    void ControlCore::DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
+    void ControlCore::DetachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine)
     {
         const auto lock = _terminal->LockForWriting();
         _renderer->RemoveRenderEngine(pEngine);

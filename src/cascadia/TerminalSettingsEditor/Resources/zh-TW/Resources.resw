@@ -311,13 +311,13 @@
     <value>當執行命令列應用程式且不使用現有工作模式而啟動的終端機應用程式 (例如從 [開始] 功能表或 [執行] 對話方塊)。</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
     <value>顯示更新時，重新繪製整個螢幕</value>
     <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
     <value>停用時，終端機只會轉譯框架間螢幕的更新。</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
+    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_DisablePartialInvalidation.Header".</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>欄</value>
@@ -445,10 +445,6 @@
   <data name="Globals_WindowingBehaviorUseExisting.Content" xml:space="preserve">
     <value>附加到此桌面最近使用的視窗</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
-  </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>這些設定可能有助於解決問題，但會影響效能。</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>隱藏標題列 (需要重新啟動)</value>

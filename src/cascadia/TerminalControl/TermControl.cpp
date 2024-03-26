@@ -2418,7 +2418,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         LOG_IF_FAILED(engine->UpdateDpi(dpi));
         LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
 
-        const auto scale = engine->GetScaling();
+        const auto scale = dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the

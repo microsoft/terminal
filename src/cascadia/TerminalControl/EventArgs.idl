@@ -11,6 +11,12 @@ namespace Microsoft.Terminal.Control
         All = 0xffffffff
     };
 
+    enum GraphicsAPI
+    {
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
 
     runtimeclass FontSizeChangedArgs
     {

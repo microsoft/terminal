@@ -58,7 +58,8 @@ namespace Microsoft.Terminal.Control
         TextAntialiasingMode AntialiasingMode { get; };
 
         // Experimental Settings
-        Boolean ForceFullRepaintRendering { get; };
+        Microsoft.Terminal.Control.GraphicsAPI GraphicsAPI { get; };
+        Boolean DisablePartialInvalidation { get; };
         Boolean SoftwareRendering { get; };
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
