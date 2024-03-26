@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ScratchpadContent.h"
-#include "ScratchpadContent.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
