@@ -118,77 +118,77 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AzureCodeExpiry" xml:space="preserve">
-    <value>Ťђĩš ¢бðĕ щΐľĺ é×φΐŗè ίń 15 міņūťèś. !!! !!! !!! !</value>
+    <value>Ŧнιŝ ςøδё ẅіℓŀ зхρîґέ íи 15 mїπųŧęś. !!! !!! !!! !</value>
   </data>
   <data name="AzureEnterTenant" xml:space="preserve">
-    <value>Ρℓēάśě єñτęŕ τђĕ đĕśìŗéđ ŧ℮йάит ήůmъεř. !!! !!! !!! !!!</value>
+    <value>Рĺέåŝē еňţéŗ τĥĕ ďєśįřєđ τëņåńŧ иџмьэŗ. !!! !!! !!! !!!</value>
   </data>
   <data name="AzureNewLogin" xml:space="preserve">
-    <value>Єŋťĕř {0} ťο ļòġįи ώιťĥ ā ņĕŵ аċсôúñţ !!! !!! !!! !!</value>
+    <value>Ĕńťèѓ {0} ťō łøģΐŋ ώіŧĥ ā ńèώ άčĉøŭпţ !!! !!! !!! !!</value>
     <comment>{0} will be replaced with the resource from AzureUserEntry_NewLogin; it is intended to be a single-character shorthand for "new account"</comment>
   </data>
   <data name="AzureRemoveStored" xml:space="preserve">
-    <value>Епŧěя {0} ŧό ŗęmбνε τђέ αвòνė şāνέđ ċóпñêçťĩбñ şéţŧįήģѕ. !!! !!! !!! !!! !!! !</value>
+    <value>Σлтзґ {0} ŧø ŕэмôνз τђε авóνе şǻνеð сσñńзčťιôⁿ ѕĕťťїňġš. !!! !!! !!! !!! !!! !</value>
     <comment>{0} will be replaced with the resource from AzureUserEntry_RemoveStored; it is intended to be a single-character shorthand for "remove stored"</comment>
   </data>
   <data name="AzureInvalidAccessInput" xml:space="preserve">
-    <value>Рℓёäśэ èŋţęґ à νăℓіδ ńцmвєя ťό α¢čëşš тће şτθŗэď ςöйŉесţїôⁿ ѕзτťϊňğş, {0} τö ℓöġ ίη ẃĭţĥ ã ñеẁ åċčσųńт, οŗ {1} ŧθ ґèmöνе ťнě ѕāνεđ ćǿπйёсťìöл šèţтіŉġѕ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <value>Рľεдşê ěπτэг ă νàĺįδ йΰmьēя ŧó àсĉĕŝѕ тђέ ŝтøяěð çøⁿñέĉтïǿŋ šєţτĭηģś, {0} тø ľóĝ īп ẅϊτђ â лęщ āς¢òŭñŧ, ôѓ {1} ŧŏ язмôνё тħέ śάνēδ čσňпęċτīôη šėŧŧíпĝѕ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
     <comment>{0} will be replaced with the resource from AzureUserEntry_NewLogin, and {1} will be replaced with AzureUserEntry_RemoveStored. This is an error message, used after AzureNewLogin/AzureRemoveStored if the user enters an invalid value.</comment>
   </data>
   <data name="AzureNonNumberError" xml:space="preserve">
-    <value>Рł℮āѕê êηţěŗ а ñцmвēг. !!! !!! </value>
+    <value>Ρŀєáśе ёňŧεг ª ňύмъēг. !!! !!! </value>
   </data>
   <data name="AzureNumOutOfBoundsError" xml:space="preserve">
-    <value>Νűmъεґ όµŧ бƒ ьσΰиδš. Рŀ℮âŝэ ëŉтзř â νаℓįð πúmъêŗ. !!! !!! !!! !!! !!!</value>
+    <value>Пϋмъęґ óΰť õƒ воµήďş. Ρŀεäŝé эⁿťєг â νãŀϊδ пцмъёř. !!! !!! !!! !!! !!!</value>
   </data>
   <data name="AzureNoTenants" xml:space="preserve">
-    <value>Сουļδ ńǿŧ ƒïŋď āπγ ţέⁿаŉτŝ. !!! !!! !!</value>
+    <value>Сôµłď ηǿť ƒіπđ ãñŷ ţ℮ηáńŧş. !!! !!! !!</value>
   </data>
   <data name="AzureNoCloudAccount" xml:space="preserve">
-    <value>Ỳōù ћανē ŋŏт ѕęţ ΰρ ỳõûř ćľòùđ şĥěļŀ à¢ćōŭŉť ýėτ. Ρļèάšέ ĝø тσ https://shell.azure.com τò ѕ℮ť їτ ũρ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <value>Ϋσΰ ђáνě ņоť śéт ūφ ỳθϋг сŀоůδ šђęļĺ áćçθùηт ўеτ. Рĺėåŝê ĝο ŧό https://shell.azure.com το šёť ΐт úр. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
     <comment>{Locked="https://shell.azure.com"} This URL should not be localized. Everything else should.</comment>
   </data>
   <data name="AzureStorePrompt" xml:space="preserve">
-    <value>Ðό ýóü шаήт τǿ ŝąνę τĥęŝê ¢øŉńέсţĩōи şéтτîиĝś ƒōŕ ƒùτµřê ļøĝĩπş? [{0}/{1}] !!! !!! !!! !!! !!! !!! !!! !</value>
+    <value>Đò ÿóΰ ẁâňт ŧŏ ŝàνè ťђėšē сôиⁿе¢ŧιŏñ şετтΐńģѕ ƒøѓ ƒϋŧûґē ĺоġΐñş? [{0}/{1}] !!! !!! !!! !!! !!! !!! !!! !</value>
     <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. They are single-character shorthands for "yes" and "no" in this language.</comment>
   </data>
   <data name="AzureInvalidStoreInput" xml:space="preserve">
-    <value>Ρľ℮аşě ęпτэř {0} óг {1} !!! !!! </value>
+    <value>Ρĺèªѕê εňţēŕ {0} оŗ {1} !!! !!! </value>
     <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. This resource will be used as an error response after AzureStorePrompt.</comment>
   </data>
   <data name="AzureRequestingCloud" xml:space="preserve">
-    <value>Řèqυėşтϊŉĝ д ćĺοûđ šĥēłĺ įŉŝťàňčĕ... !!! !!! !!! !</value>
+    <value>Ґĕqμ℮šŧїŋĝ ã ćŀòμð śнёĺŀ íņşťąňċз... !!! !!! !!! !</value>
   </data>
   <data name="AzureSuccess" xml:space="preserve">
-    <value>Śŭ¢¢εēðéď. !!!</value>
+    <value>Śűċćêёđέď. !!!</value>
   </data>
   <data name="AzureRequestingTerminal" xml:space="preserve">
-    <value>Геqūеѕтĭńģ α ťёямϊⁿдļ (ŧђīŝ мïğћτ тáκē á щħìŀė)... !!! !!! !!! !!! !!!</value>
+    <value>Яεqůęŝτίñĝ д тėґmΐπаľ (ťнĭś мìģĥť ţªќĕ ā ẁĥΐĺé)... !!! !!! !!! !!! !!!</value>
   </data>
   <data name="AzureTokensStored" xml:space="preserve">
-    <value>Ύθμг čöŋπεċτĩθņ śεťţιŋĝŝ ђáνę ьέêй śăν℮ď ƒőŕ ƒџтцгē ℓőĝϊлş. !!! !!! !!! !!! !!! !!!</value>
+    <value>Ỳσûř čθñňĕ¢ţįõŉ ѕεтţĭňğš наνē вёэŉ śǻνēδ ƒόг ƒμţüŗè ĺõģìйś. !!! !!! !!! !!! !!! !!!</value>
   </data>
   <data name="AzureNoTokens" xml:space="preserve">
-    <value>Ňö ťσĸëиѕ ţö гĕmŏνē. !!! !!!</value>
+    <value>Ňŏ ŧōкèйś ţő яэmονе. !!! !!!</value>
   </data>
   <data name="AzureTokensRemoved" xml:space="preserve">
-    <value>Śªνёð ćōňиēĉτîóл ѕėτтілġş řĕмǿνêđ. !!! !!! !!! !</value>
+    <value>Śανеđ ċσйñз¢ťìόń şєŧтιŋğѕ яёмǿνёđ. !!! !!! !!! !</value>
   </data>
   <data name="AzureOldCredentialsFlushedMessage" xml:space="preserve">
-    <value>Άūтћĕлŧĭĉªтίοñ рäѓàmëтεґş ¢нåñğēď. Ўοů'ŀĺ ŉęёð ţθ ĺоģ ίñ ąġаĩň. !!! !!! !!! !!! !!! !!! </value>
+    <value>Āΰτнėиŧΐċâтīбŋ рářáмęŧéгŝ сħåⁿģëď. Ϋοц'ļľ ⁿêэð τô ĺσĝ ϊņ àġαĭπ. !!! !!! !!! !!! !!! !!! </value>
   </data>
   <data name="AzureUnknownTenantName" xml:space="preserve">
-    <value>&lt;ūŋкиόώň τёńдⁿτ ñªmĕ&gt; !!! !!!</value>
+    <value>&lt;ϋпкйôẁи ŧēņàлτ ňămё&gt; !!! !!!</value>
   </data>
   <data name="AzureIthTenant" xml:space="preserve">
-    <value>Τεиäиţ {0}: {1} ({2}) !!! !!!</value>
+    <value>Ťėηªŋт {0}: {1} ({2}) !!! !!!</value>
     <comment>{0} is the tenant's number, which the user will enter to connect to the tenant. {1} is the tenant's display name, which will be meaningful for the user. {2} is the tenant's internal ID number.</comment>
   </data>
   <data name="AzureSuccessfullyAuthenticated" xml:space="preserve">
-    <value>Àůтнęńтīċаτέđ. !!! !</value>
+    <value>Ąűŧħēπτįсáτèđ. !!! !</value>
   </data>
   <data name="AzureUserEntry_NewLogin" xml:space="preserve">
-    <value>ŉ</value>
+    <value>ņ</value>
     <comment>This is shorthand for "new login". The user must enter this character to activate the New Login feature (AzureInvalidAccessInput, AzureNewLogin)</comment>
   </data>
   <data name="AzureUserEntry_RemoveStored" xml:space="preserve">
@@ -196,28 +196,28 @@
     <comment>This is shorthand for "remove saved connections". The user must enter this character to activate the Remove Saved Logins feature (AzureRemoveStored, AzureInvalidAccessInput)</comment>
   </data>
   <data name="AzureUserEntry_Yes" xml:space="preserve">
-    <value>ŷ</value>
+    <value>ў</value>
     <comment>This is shorthand for "yes". The user must enter this character to CONFIRM a prompt.</comment>
   </data>
   <data name="AzureUserEntry_No" xml:space="preserve">
-    <value>η</value>
+    <value>ń</value>
     <comment>This is shorthand for "no". The user must enter this character to DECLINE a prompt.</comment>
   </data>
   <data name="ProcessExited" xml:space="preserve">
-    <value>[рřøĉзšŝ èхіťзď ώīťћ ċőδе {0}] !!! !!! !!!</value>
+    <value>[рѓос℮śš ёхіţεð ẃιţĥ ćōďë {0}] !!! !!! !!!</value>
     <comment>The first argument {0} is the error code of the process. When there is no error, the number ZERO will be displayed. </comment>
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
-    <value>Ŷóц çåп ñøώ ćŀõśĕ ťћίś ŧεѓміήāļ ẁĩţђ Ćţѓℓ+Ď, ǿя φяεŝѕ Ēήτеř тб ґêşţâŕť. !!! !!! !!! !!! !!! !!! !!!</value>
+    <value>Ỳóŭ ćǻή иòω сĺøѕè ťнįş тёѓмîήªŀ ωīťђ Çťѓℓ+Ď, όг ргéšѕ Σñтèř το ґèšтªят. !!! !!! !!! !!! !!! !!! !!!</value>
 	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
-    <value>[ĕяґöґ {0} ẁĥęл ŀǻûŋċħīņģ `{1}'] !!! !!! !!! </value>
+    <value>[℮ѓѓŏŕ {0} ωĥєй łåύñćђίηğ `{1}'] !!! !!! !!! </value>
     <comment>The first argument {0} is the error code. The second argument {1} is the user-specified path to a program.
       If this string is broken to multiple lines, it will not be displayed properly.</comment>
   </data>
   <data name="BadPathText" xml:space="preserve">
-    <value>Ĉǿΰļδ ŉбτ ãċсёśŝ ѕţăŕŧîñġ đіřêςţóяγ "{0}" !!! !!! !!! !!!</value>
+    <value>Ċőŭľđ йōť ª¢čеѕş şτāŗťΐиğ ðιѓεςтоŗγ "{0}" !!! !!! !!! !!!</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
   </data>
 </root>
