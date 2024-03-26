@@ -6,6 +6,7 @@
 #include "ActionArgs.h"
 
 #include "ActionEventArgs.g.cpp"
+#include "GenericContentArgs.g.cpp"
 #include "NewTerminalArgs.g.cpp"
 #include "CopyTextArgs.g.cpp"
 #include "NewTabArgs.g.cpp"
@@ -238,9 +239,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring NewTabArgs::GenerateName() const
     {
         winrt::hstring newTerminalArgsStr;
-        if (TerminalArgs())
+        if (ContentArgs())
         {
-            newTerminalArgsStr = TerminalArgs().GenerateName();
+            newTerminalArgsStr = ContentArgs().GenerateName();
         }
 
         if (newTerminalArgsStr.empty())
@@ -458,9 +459,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         winrt::hstring newTerminalArgsStr;
-        if (TerminalArgs())
+        if (ContentArgs())
         {
-            newTerminalArgsStr = TerminalArgs().GenerateName();
+            newTerminalArgsStr = ContentArgs().GenerateName();
         }
 
         if (SplitMode() != SplitType::Duplicate && !newTerminalArgsStr.empty())
@@ -762,9 +763,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring NewWindowArgs::GenerateName() const
     {
         winrt::hstring newTerminalArgsStr;
-        if (TerminalArgs())
+        if (ContentArgs())
         {
-            newTerminalArgsStr = TerminalArgs().GenerateName();
+            newTerminalArgsStr = ContentArgs().GenerateName();
         }
 
         if (newTerminalArgsStr.empty())

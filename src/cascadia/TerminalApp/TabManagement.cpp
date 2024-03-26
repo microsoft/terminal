@@ -62,30 +62,33 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
+    HRESULT TerminalPage::_OpenNewTab(const INewContentArgs& newContentArgs)
     try
     {
-        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-        // GH#11114: GetProfileForArgs can return null if the index is higher
-        // than the number of available profiles.
-        if (!profile)
+        if (const auto& newTerminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            return S_FALSE;
-        }
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            // GH#11114: GetProfileForArgs can return null if the index is higher
+            // than the number of available profiles.
+            if (!profile)
+            {
+                return S_FALSE;
+            }
+            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        // Try to handle auto-elevation
-        if (_maybeElevate(newTerminalArgs, settings, profile))
-        {
-            return S_OK;
+            // Try to handle auto-elevation
+            if (_maybeElevate(newTerminalArgs, settings, profile))
+            {
+                return S_OK;
+            }
+            // We can't go in the other direction (elevated->unelevated)
+            // unfortunately. This seems to be due to Centennial quirks. It works
+            // unpackaged, but not packaged.
         }
-        // We can't go in the other direction (elevated->unelevated)
-        // unfortunately. This seems to be due to Centennial quirks. It works
-        // unpackaged, but not packaged.
-        //
+
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr));
+        _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
         return S_OK;
     }
     CATCH_RETURN();
