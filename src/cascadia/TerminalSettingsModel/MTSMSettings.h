@@ -24,6 +24,7 @@ Author(s):
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
     X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                      \
     X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                              \
+    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "experimental.rendering.graphicsAPI")                                                                                            \
     X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                                                              \
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                                                              \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \

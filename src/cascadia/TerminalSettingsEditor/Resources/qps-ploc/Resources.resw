@@ -446,10 +446,6 @@
     <value>Äţŧαĉђ τǿ τħе mοѕт ѓěςęńτļγ ûѕєď ŵíñðοω øи тћϊѕ ďёšкτǿφ !!! !!! !!! !!! !!! !</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>Τћέŝė ѕëτтίņģš мâу ьê üѕēƒµľ ƒόґ τřóųьŀėѕĥбοτілġ ǻл іŝśü℮, нσώéνєŕ τĥêў ŵīŀł ΐmρåςť убŭя ρěгƒόґмåñĉę. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Ĥìđε тħê τīţĺё ъªř (ŗėqūΐŗêś яеľаϋŉčћ) !!! !!! !!! !!</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>

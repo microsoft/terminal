@@ -220,8 +220,21 @@ const std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarni
 // - <none>
 // Return Value:
 // - the JsonObject representing this instance
-Json::Value GlobalAppSettings::ToJson() const
+Json::Value GlobalAppSettings::ToJson()
 {
+    if (_GraphicsAPI == Control::GraphicsAPI::Automatic)
+    {
+        _GraphicsAPI.reset();
+    }
+    if (_ForceFullRepaintRendering == false)
+    {
+        _ForceFullRepaintRendering.reset();
+    }
+    if (_SoftwareRendering == false)
+    {
+        _SoftwareRendering.reset();
+    }
+
     Json::Value json{ Json::ValueType::objectValue };
 
     JsonUtils::SetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);

@@ -446,10 +446,6 @@
     <value>附加到此桌面最近使用的視窗</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>這些設定可能有助於解決問題，但會影響效能。</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>隱藏標題列 (需要重新啟動)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>

@@ -58,6 +58,7 @@ namespace Microsoft.Terminal.Control
         TextAntialiasingMode AntialiasingMode { get; };
 
         // Experimental Settings
+        Microsoft.Terminal.Control.GraphicsAPI GraphicsAPI { get; };
         Boolean ForceFullRepaintRendering { get; };
         Boolean SoftwareRendering { get; };
         Boolean ShowMarks { get; };

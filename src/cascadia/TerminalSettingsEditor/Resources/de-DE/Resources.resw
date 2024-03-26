@@ -446,10 +446,6 @@
     <value>An das zuletzt verwendete Fenster auf diesem Desktop anhängen</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>Diese Einstellungen eignen sich möglicherweise für die Problembehandlung, Sie wirken sich jedoch auf die Leistung aus.</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Titelleiste ausblenden (Neustart erforderlich)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>

@@ -311,11 +311,20 @@ namespace Microsoft::Console::Render::Atlas
         DWRITE_SCRIPT_ANALYSIS analysis;
     };
 
+    enum class GraphicsAPI
+    {
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
+
     struct TargetSettings
     {
         HWND hwnd = nullptr;
         bool useAlpha = false;
-        bool useSoftwareRendering = false;
+        bool useWARP = false;
+        bool disablePresent1 = false;
+        GraphicsAPI graphicsAPI = GraphicsAPI::Automatic;
     };
 
     enum class AntialiasingMode : u8

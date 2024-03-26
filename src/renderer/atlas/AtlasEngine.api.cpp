@@ -316,31 +316,16 @@ CATCH_RETURN()
 
 #pragma endregion
 
-#pragma region DxRenderer
-
-HRESULT AtlasEngine::Enable() noexcept
-{
-    return S_OK;
-}
+#pragma region getter
 
 [[nodiscard]] std::wstring_view AtlasEngine::GetPixelShaderPath() noexcept
 {
     return _api.s->misc->customPixelShaderPath;
 }
 
-[[nodiscard]] std::wstring_view AtlasEngine::GetPixelShaderImagePath() noexcept
-{
-    return _api.s->misc->customPixelShaderImagePath;
-}
-
 [[nodiscard]] bool AtlasEngine::GetRetroTerminalEffect() const noexcept
 {
     return _api.s->misc->useRetroTerminalEffect;
-}
-
-[[nodiscard]] float AtlasEngine::GetScaling() const noexcept
-{
-    return static_cast<f32>(_api.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI);
 }
 
 [[nodiscard]] Microsoft::Console::Types::Viewport AtlasEngine::GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept
@@ -356,6 +341,10 @@ HRESULT AtlasEngine::Enable() noexcept
     assert(_api.s->font->cellSize.y != 0);
     return Types::Viewport::FromDimensions(viewInCharacters.Origin(), { viewInCharacters.Width() * _api.s->font->cellSize.x, viewInCharacters.Height() * _api.s->font->cellSize.y });
 }
+
+#pragma endregion
+
+#pragma region setter
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
@@ -379,10 +368,6 @@ void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
         _api.enableTransparentBackground = isTransparent;
         _resolveTransparencySettings();
     }
-}
-
-void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
-{
 }
 
 [[nodiscard]] HRESULT AtlasEngine::SetHwnd(const HWND hwnd) noexcept
@@ -436,9 +421,25 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha
 
 void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
 {
-    if (_api.s->target->useSoftwareRendering != enable)
+    if (_api.s->target->useWARP != enable)
     {
-        _api.s.write()->target.write()->useSoftwareRendering = enable;
+        _api.s.write()->target.write()->useWARP = enable;
+    }
+}
+
+void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
+{
+    if (_api.s->target->disablePresent1 != enable)
+    {
+        _api.s.write()->target.write()->disablePresent1 = enable;
+    }
+}
+
+void AtlasEngine::SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept
+{
+    if (_api.s->target->graphicsAPI != graphicsAPI)
+    {
+        _api.s.write()->target.write()->graphicsAPI = graphicsAPI;
     }
 }
 

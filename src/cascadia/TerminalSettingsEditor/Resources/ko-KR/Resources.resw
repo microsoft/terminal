@@ -446,10 +446,6 @@
     <value>이 데스크톱에서 가장 최근에 사용한 창에 첨부</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>이런 설정은 문제를 해결하는 데는 유용할 수 있지만 성능에 영향을 미칩니다.</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>제목 표시줄 숨기기(다시 시작해야 함)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>

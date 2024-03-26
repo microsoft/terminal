@@ -446,10 +446,6 @@
     <value>このデスクトップで最近使用したウィンドウに接続する</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>これらの設定は問題のトラブルシューティングに役立つ場合がありますが、パフォーマンスに影響を与えます。</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>タイトル バーを非表示にする (再起動が必要)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
