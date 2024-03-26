@@ -48,7 +48,6 @@
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="EnumEntry.h">
-      <DependentUpon>EnumEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="GlobalAppearance.h">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -75,35 +74,27 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="ProfileViewModel.h">
-      <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ActionsViewModel.h">
-      <DependentUpon>ActionsViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ColorSchemeViewModel.h">
-      <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ColorSchemesPageViewModel.h">
-      <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="RenderingViewModel.h">
-      <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="InteractionViewModel.h">
-      <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="GlobalAppearanceViewModel.h">
-      <DependentUpon>GlobalAppearanceViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="LaunchViewModel.h">
-      <DependentUpon>LaunchViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Profiles_Base.h">
@@ -126,7 +117,6 @@
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingContainer.h">
-      <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
@@ -218,35 +208,27 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="ProfileViewModel.cpp">
-      <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="ActionsViewModel.cpp">
-      <DependentUpon>ActionsViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="ColorSchemeViewModel.cpp">
-      <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="ColorSchemesPageViewModel.cpp">
-      <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="RenderingViewModel.cpp">
-      <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="InteractionViewModel.cpp">
-      <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="GlobalAppearanceViewModel.cpp">
-      <DependentUpon>GlobalAppearanceViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="LaunchViewModel.cpp">
-      <DependentUpon>LaunchViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Profiles_Base.cpp">
@@ -269,7 +251,6 @@
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="SettingContainer.cpp">
-      <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="PreviewConnection.cpp">
@@ -278,71 +259,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="Actions.idl">
-      <DependentUpon>Actions.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="AddProfile.idl">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="EnumEntry.idl" />
-    <Midl Include="GlobalAppearance.idl">
-      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="ColorSchemes.idl">
-      <DependentUpon>ColorSchemes.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="EditColorScheme.idl">
-      <DependentUpon>EditColorScheme.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="KeyChordListener.idl">
-      <DependentUpon>KeyChordListener.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Launch.idl">
-      <DependentUpon>Launch.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Interaction.idl">
-      <DependentUpon>Interaction.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Rendering.idl">
-      <DependentUpon>Rendering.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="MainPage.idl">
-      <DependentUpon>MainPage.xaml</DependentUpon>
-    </Midl>
-    <Midl Include="ProfileViewModel.idl" />
-    <Midl Include="ActionsViewModel.idl" />
-    <Midl Include="ColorSchemeViewModel.idl" />
-    <Midl Include="ColorSchemesPageViewModel.idl" />
-    <Midl Include="RenderingViewModel.idl" />
-    <Midl Include="InteractionViewModel.idl" />
-    <Midl Include="GlobalAppearanceViewModel.idl" />
-    <Midl Include="LaunchViewModel.idl" />
-    <Midl Include="Profiles_Base.idl">
-      <DependentUpon>Profiles_Base.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Profiles_Advanced.idl">
-      <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Profiles_Appearance.idl">
-      <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Appearances.idl">
-      <DependentUpon>Appearances.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="SettingContainer.idl">
+    <Midl Include="Microsoft.Terminal.Settings.Editor.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
