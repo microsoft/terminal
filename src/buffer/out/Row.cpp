@@ -92,47 +92,35 @@ CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* cha
 
 // If given a position (`offset`) inside the ROW's text, this function will return the corresponding column.
 // This function in particular returns the glyph's first column.
-til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t offset) noexcept
+til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept
 {
-    offset = clamp(offset, 0, _lastCharOffset);
+    targetOffset = clamp(targetOffset, 0, _lastCharOffset);
+
+    // This code needs to fulfill two conditions on top of the obvious (a forward/backward search):
+    // A: We never want to stop on a column that is marked with CharOffsetsTrailer (= "GetLeadingColumn").
+    // B: With these parameters we always want to stop at currentOffset=4:
+    //      _charOffsets={4, 6}
+    //      currentOffset=4 *OR* 6
+    //      targetOffset=5
+    //    This is because we're being asked for a "LeadingColumn", while the caller gave us the offset of a
+    //    trailing surrogate pair or similar. Returning the column of the leading half is the correct choice.
 
     auto col = _currentColumn;
-    const auto currentOffset = _charOffsets[col];
+    auto currentOffset = _charOffsets[col];
 
-    // Goal: Move the _currentColumn cursor to a cell which contains the given target offset.
-    // Depending on where the target offset is we have to either search forward or backward.
-    if (offset < currentOffset)
+    // A plain forward-search until we find our targetOffset.
+    // This loop may iterate too far and thus violate our example in condition B, however...
+    while (targetOffset > (currentOffset & CharOffsetsMask))
     {
-        // Backward search.
-        // Goal: Find the first preceding column where the offset is <= the target offset. This results in the first
-        // cell that contains our target offset, even if that offset is in the middle of a long grapheme.
-        //
-        // We abuse the fact that the trailing half of wide glyphs is marked with CharOffsetsTrailer to our advantage.
-        // Since they're >0x8000, the `offset < _charOffsets[col]` check will always be true and ensure we iterate over them.
-        //
-        // Since _charOffsets cannot contain negative values and because offset has been
-        // clamped to be positive we naturally exit when reaching the first column.
-        for (; offset < _charOffsets[col - 1]; --col)
-        {
-        }
+        currentOffset = _charOffsets[++col];
     }
-    else if (offset > currentOffset)
+    // This backward-search is not just a counter-part to the above, but simultaneously also handles conditions A and B.
+    // It abuses the fact that columns marked with CharOffsetsTrailer are >0x8000 and targetOffset is always <0x8000.
+    // This means we skip all "trailer" columns when iterating backwards, and only stop on a non-trailer (= condition A).
+    // Condition B is fixed simply because we iterate backwards after the forward-search (in that exact order).
+    while (targetOffset < currentOffset)
     {
-        // Forward search.
-        // Goal: Find the first subsequent column where the offset is > the target offset.
-        // We stop 1 column before that however so that the next loop works correctly.
-        // It's the inverse of the loop above.
-        //
-        // Since offset has been clamped to be at most 1 less than the maximum
-        // _charOffsets value the loop naturally exits before hitting the end.
-        for (; offset >= (_charOffsets[col + 1] & CharOffsetsMask); ++col)
-        {
-        }
-        // Now that we found the cell that definitely includes this char offset,
-        // we have to iterate back to the cell's starting column.
-        for (; WI_IsFlagSet(_charOffsets[col], CharOffsetsTrailer); --col)
-        {
-        }
+        currentOffset = _charOffsets[--col];
     }
 
     _currentColumn = col;

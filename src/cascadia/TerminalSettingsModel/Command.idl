@@ -31,7 +31,7 @@ namespace Microsoft.Terminal.Settings.Model
         ShortcutAction Action;
     };
 
-    [default_interface] runtimeclass Command
+    [default_interface] runtimeclass Command : ISettingsModelObject
     {
         Command();
 

@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -17,7 +18,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <model:IconPathConverter x:Key="IconSourceConverter" />
         </ResourceDictionary>
     </Page.Resources>
 
@@ -59,7 +59,7 @@
                                 <IconSourceElement Grid.Column="0"
                                                    Width="16"
                                                    Height="16"
-                                                   IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind Name}" />

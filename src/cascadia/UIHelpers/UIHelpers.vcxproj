@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</ProjectGuid>
+    <ProjectName>Microsoft.Terminal.UI</ProjectName>
+    <RootNamespace>Microsoft.Terminal.UI</RootNamespace>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Converters.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="IconPathConverter.h">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ResourceString.h">
+      <DependentUpon>ResourceString.idl</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Converters.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="IconPathConverter.cpp">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ResourceString.cpp">
+      <DependentUpon>ResourceString.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Converters.idl" />
+    <Midl Include="IconPathConverter.idl" />
+    <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="ResourceString.idl" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies);user32.lib;shell32.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+</Project>

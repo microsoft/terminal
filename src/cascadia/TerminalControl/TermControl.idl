@@ -4,13 +4,19 @@
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "ControlInteractivity.idl";
-import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
 import "ControlCore.idl";
 
 namespace Microsoft.Terminal.Control
 {
+    // This matches the definition in M.T.UI.
+    // Having it here prevents us from having to refer to M.T.UI in **all consuming projects**.
+    // WinRT is a trip.
+    [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")]
+    interface IDirectKeyListener {
+        Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
+    }
 
     enum CursorDisplayState
     {

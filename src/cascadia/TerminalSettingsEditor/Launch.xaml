@@ -9,6 +9,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -22,7 +23,6 @@
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
-            <SettingsModel:IconPathConverter x:Key="IconSourceConverter" />
             <Style x:Key="LaunchSizeNumberBoxStyle"
                    BasedOn="{StaticResource NumberBoxSettingStyle}"
                    TargetType="muxc:NumberBox">
@@ -64,7 +64,7 @@
                                 <IconSourceElement Grid.Column="0"
                                                    Width="16"
                                                    Height="16"
-                                                   IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind Name}" />
@@ -111,7 +111,7 @@
                                                    Width="24"
                                                    Height="24"
                                                    VerticalAlignment="Center"
-                                                   IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
 
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
@@ -124,14 +124,14 @@
                                            AutomationProperties.AccessibilityView="Raw"
                                            Style="{ThemeResource SecondaryTextBlockStyle}"
                                            Text="{x:Bind Author}"
-                                           Visibility="{x:Bind local:Converters.StringNotEmptyToVisibility(Author)}" />
+                                           Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Author)}" />
 
                                 <TextBlock Grid.Row="1"
                                            Grid.Column="2"
                                            AutomationProperties.AccessibilityView="Raw"
                                            Style="{ThemeResource SecondaryTextBlockStyle}"
                                            Text="{x:Bind Version}"
-                                           Visibility="{x:Bind local:Converters.StringNotEmptyToVisibility(Version)}" />
+                                           Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Version)}" />
 
                             </Grid>
                         </DataTemplate>
@@ -248,7 +248,7 @@
                                         Grid.Row="0"
                                         Grid.Column="0"
                                         Width="118"
-                                        IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                        IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
                                         Style="{StaticResource LaunchPositionNumberBoxStyle}"
                                         Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
                         <muxc:NumberBox x:Name="PosYBox"
@@ -256,7 +256,7 @@
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Width="118"
-                                        IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                        IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
                                         Style="{StaticResource LaunchPositionNumberBoxStyle}"
                                         Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
                         <CheckBox x:Name="UseDefaultLaunchPositionCheckbox"

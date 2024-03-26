@@ -61,6 +61,7 @@ namespace Microsoft::Console::Render::Atlas
         // DxRenderer - getter
         HRESULT Enable() noexcept override;
         [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept override;
+        [[nodiscard]] std::wstring_view GetPixelShaderImagePath() noexcept override;
         [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
         [[nodiscard]] float GetScaling() const noexcept override;
         [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
@@ -72,6 +73,7 @@ namespace Microsoft::Console::Render::Atlas
         void SetForceFullRepaintRendering(bool enable) noexcept override;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
         void SetPixelShaderPath(std::wstring_view value) noexcept override;
+        void SetPixelShaderImagePath(std::wstring_view value) noexcept override;
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;
@@ -86,6 +88,8 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateFontDependentResources();
         void _recreateCellCountDependentResources();
         void _flushBufferLine();
+        void _mapRegularText(size_t offBeg, size_t offEnd);
+        void _mapBuiltinGlyphs(size_t offBeg, size_t offEnd);
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
         ATLAS_ATTR_COLD void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
@@ -117,6 +121,18 @@ namespace Microsoft::Console::Render::Atlas
         std::unique_ptr<IBackend> _b;
         RenderingPayload _p;
 
+        // _p.s->font->builtinGlyphs is the setting which decides whether we should map box drawing glyphs to
+        // our own builtin versions. There's just one problem: BackendD2D doesn't have this functionality.
+        // But since AtlasEngine shapes the text before it's handed to the backends, it would need to know
+        // whether BackendD2D is in use, before BackendD2D even exists. These two flags solve the issue
+        // by triggering a complete, immediate redraw whenever the backend type changes.
+        //
+        // The proper solution is to move text shaping into the backends.
+        // Someone just needs to write a generic "TextBuffer to DWRITE_GLYPH_RUN" function.
+        bool _hackIsBackendD2D = false;
+        bool _hackWantsBuiltinGlyphs = true;
+        bool _hackTriggerRedrawAll = false;
+
         struct ApiState
         {
             GenerationalSettings s = DirtyGenerationalSettings();
@@ -132,8 +148,6 @@ namespace Microsoft::Console::Render::Atlas
 
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
-
-            std::wstring userLocaleName;
 
             std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;

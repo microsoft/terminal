@@ -32,7 +32,7 @@ using namespace Microsoft::Console::Render::Atlas;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
-    if (!_p.dxgi.adapter || !_p.dxgi.factory->IsCurrent())
+    if (!_p.dxgi.adapter)
     {
         _recreateAdapter();
     }
@@ -77,7 +77,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw());
+    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw()) || _hackTriggerRedrawAll;
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -276,12 +276,14 @@ void AtlasEngine::_recreateBackend()
         _b = std::make_unique<BackendD3D>(_p);
     }
 
-    // !!! NOTE !!!
-    // Normally the viewport is indirectly marked as dirty by `AtlasEngine::_handleSettingsUpdate()` whenever
-    // the settings change, but the `!_p.dxgi.factory->IsCurrent()` check is not part of the settings change
-    // flow and so we have to manually recreate how AtlasEngine.cpp marks viewports as dirty here.
-    // This ensures that the backends redraw their entire viewports whenever a new swap chain is created.
+    // This ensures that the backends redraw their entire viewports whenever a new swap chain is created,
+    // EVEN IF we got called when no actual settings changed (i.e. rendering failure, etc.).
     _p.MarkAllAsDirty();
+
+    const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !d2dMode;
+    _hackTriggerRedrawAll = _hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs;
+    _hackIsBackendD2D = d2dMode;
+    _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
 }
 
 void AtlasEngine::_handleSwapChainUpdate()
@@ -319,13 +321,15 @@ void AtlasEngine::_createSwapChain()
         // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
         .BufferCount = 3,
         .Scaling = DXGI_SCALING_NONE,
-        // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
-        // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
+        // DXGI_SWAP_EFFECT_FLIP_DISCARD is the easiest to use, because it's fast and uses little memory.
+        // But it's a mode that was created at a time were display drivers lacked support
+        // for Multiplane Overlays (MPO) and were copying buffers was expensive.
         // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
         // With faster GPU memory in general and with support for MPO in particular this isn't
         // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
         // more "intelligent" composition and display updates to occur like Panel Self Refresh
         // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
+        // We were asked by DWM folks to use DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL for this reason (PSR).
         .SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
         // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
         // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.

@@ -74,7 +74,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
-        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
 
     private:
         bool _isElevated{ false };

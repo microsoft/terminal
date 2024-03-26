@@ -276,6 +276,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         til::point start;
         til::point end;
+
+        constexpr bool operator==(const point_span& rhs) const noexcept
+        {
+            // `__builtin_memcmp` isn't an official standard, but it's the
+            // only way at the time of writing to get a constexpr `memcmp`.
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
+        }
+
+        constexpr bool operator!=(const point_span& rhs) const noexcept
+        {
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
+        }
     };
 }
 
