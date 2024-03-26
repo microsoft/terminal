@@ -9,6 +9,7 @@
 #include "KeyChordSerialization.h"
 #include <LibraryResources.h>
 #include "TerminalSettingsSerializationHelpers.h"
+#include "CascadiaSettings.h"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Foundation::Collections;
@@ -21,6 +22,7 @@ namespace winrt
 }
 
 static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view IDKey{ "id" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view ArgsKey{ "args" };
@@ -40,7 +42,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
-        command->_Origin = OriginTag::User;
+        command->_Origin = _Origin;
+        command->_ID = _ID;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         command->_keyMappings = _keyMappings;
         command->_iconPath = _iconPath;
@@ -57,6 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 command->_subcommands.Insert(kv.Key(), *subCmd->Copy());
             }
         }
+
         return command;
     }
 
@@ -112,6 +116,44 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // we have no name
             return {};
+        }
+    }
+
+    hstring Command::ID() const noexcept
+    {
+        return hstring{ _ID };
+    }
+
+    // Function Description:
+    // - generate an ID for this command and populate the _ID field
+    // - this function _will_ overwrite an existing ID if there is one, it is
+    //   on the caller to make sure that either there was no ID or the overwrite is okay
+    // - this function should only be called to generate IDs for user-created commands
+    void Command::_generateID()
+    {
+        if (_ActionAndArgs)
+        {
+            // lambda function to remove whitespace and capitalize each letter after a removed space
+            auto removeWhitespaceAndCapitalize = [](wchar_t& x, bool& capitalizeNext) {
+                if (std::iswspace(x))
+                {
+                    capitalizeNext = true; // Capitalize the next character
+                    return true; // Remove the whitespace
+                }
+                else if (capitalizeNext)
+                {
+                    x = std::towupper(x); // Capitalize the letter
+                    capitalizeNext = false; // Reset flag
+                }
+                return false; // Keep the character
+            };
+
+            std::wstring noWhitespaceName{ get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateName() };
+            bool capitalizeNext;
+            noWhitespaceName.erase(std::remove_if(noWhitespaceName.begin(), noWhitespaceName.end(), [&capitalizeNext, removeWhitespaceAndCapitalize](wchar_t& x) {
+                                       return removeWhitespaceAndCapitalize(x, capitalizeNext);
+            }), noWhitespaceName.end());
+            _ID = RS_(L"OriginTagUser") + L"." + noWhitespaceName;
         }
     }
 
@@ -307,6 +349,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
                 result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
+
+                // we might need to generate an ID, check these:
+                //   1. the action is valid
+                //   2. there isn't already an ID
+                //   3. the origin is User
+                if (result->_ActionAndArgs.Action() != ShortcutAction::Invalid)
+                {
+                    if (const auto id{ json[JsonKey("id")] })
+                    {
+                        result->_ID = JsonUtils::GetValue<std::wstring>(id);
+                    }
+                    else if (origin == OriginTag::User)
+                    {
+                        result->_generateID();
+                    }
+                }
             }
             else
             {
@@ -424,6 +482,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Json::Value cmdJson{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+            if (!_ID.empty())
+            {
+                JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
+            }
 
             if (_ActionAndArgs)
             {
@@ -444,6 +506,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // First iteration also writes icon and name
                     JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
                     JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+                    if (!_ID.empty())
+                    {
+                        JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
+                    }
                 }
 
                 if (_ActionAndArgs)
@@ -455,7 +521,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 cmdList.append(cmdJson);
             }
         }
-
         return cmdList;
     }
 

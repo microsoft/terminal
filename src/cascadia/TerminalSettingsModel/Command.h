@@ -61,6 +61,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring Name() const noexcept;
         void Name(const hstring& name);
 
+        hstring ID() const noexcept;
+
         Control::KeyChord Keys() const noexcept;
         hstring KeyChordText() const noexcept;
         std::vector<Control::KeyChord> KeyMappings() const noexcept;
@@ -78,15 +80,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
         WINRT_PROPERTY(OriginTag, Origin);
-        WINRT_PROPERTY(hstring, ID);
 
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
         std::vector<Control::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
+        std::wstring _ID;
         std::optional<std::wstring> _iconPath;
         bool _nestedCommand{ false };
+
+        void _generateID();
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
