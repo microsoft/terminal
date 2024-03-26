@@ -205,16 +205,14 @@
                               IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
-            <muxc:InfoBar x:Uid="Profile_MissingFontFaces"
-                          IsClosable="False"
-                          IsOpen="{x:Bind mtu:Converters.StringNotEmpty(Appearance.MissingFontFaces), Mode=OneWay}"
-                          Message="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
-                          Severity="Error" />
-            <muxc:InfoBar x:Uid="Profile_ProportionalFontFaces"
-                          IsClosable="False"
-                          IsOpen="{x:Bind mtu:Converters.StringNotEmpty(Appearance.ProportionalFontFaces), Mode=OneWay}"
-                          Message="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
-                          Severity="Warning" />
+            <local:SettingContainer x:Uid="Profile_MissingFontFaces"
+                                    HelpText="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
+                                    Style="{StaticResource SettingContainerErrorStyle}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.MissingFontFaces), Mode=OneWay}" />
+            <local:SettingContainer x:Uid="Profile_ProportionalFontFaces"
+                                    HelpText="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
+                                    Style="{StaticResource SettingContainerWarningStyle}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.ProportionalFontFaces), Mode=OneWay}" />
 
             <!--  Font Size  -->
             <local:SettingContainer x:Uid="Profile_FontSize"
