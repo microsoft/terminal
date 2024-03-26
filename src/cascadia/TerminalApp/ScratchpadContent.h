@@ -2,12 +2,13 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "ScratchpadContent.g.h"
+#include "winrt/TerminalApp.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct ScratchpadContent : ScratchpadContentT<ScratchpadContent>
+    class ScratchpadContent : public winrt::implements<ScratchpadContent, IPaneContent>
     {
+    public:
         ScratchpadContent();
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
