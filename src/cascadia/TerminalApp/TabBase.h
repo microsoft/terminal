@@ -17,38 +17,6 @@ namespace winrt::TerminalApp::implementation
     struct TabBase : TabBaseT<TabBase>
     {
     public:
-        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
-
-        void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
-        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
-
-        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
-                        const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
-                        const til::color& tabRowColor);
-
-        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility CloseButtonVisibility();
-        void CloseButtonVisibility(Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility visible);
-
-        til::event<winrt::delegate<void()>> RequestFocusActiveControl;
-
-        til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> Closed;
-        til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> CloseRequested;
-        til::property_changed_event PropertyChanged;
-
-        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
-        WINRT_PROPERTY(uint32_t, TabViewIndex, 0);
-        // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
-        WINRT_PROPERTY(uint32_t, TabViewNumTabs, 0);
-
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Title, PropertyChanged.raise);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Icon, PropertyChanged.raise);
-        WINRT_OBSERVABLE_PROPERTY(bool, ReadOnly, PropertyChanged.raise, false);
-        WINRT_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
-
-        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, PropertyChanged.raise, nullptr);
-
-#pragma region(TerminalTab)
-    public:
         TabBase(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
@@ -128,13 +96,56 @@ namespace winrt::TerminalApp::implementation
             return _tabStatus;
         }
 
+        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
+
+        void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
+        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
+
+        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
+                        const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
+                        const til::color& tabRowColor);
+
+        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility CloseButtonVisibility();
+        void CloseButtonVisibility(Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility visible);
+
+        til::event<winrt::delegate<void()>> RequestFocusActiveControl;
+
         til::typed_event<TerminalApp::TerminalPaneContent> RestartTerminalRequested;
 
         til::event<winrt::delegate<>> ActivePaneChanged;
         til::event<winrt::delegate<>> TabRaiseVisualBell;
         til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
 
-    private:
+        til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> Closed;
+        til::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> CloseRequested;
+        til::property_changed_event PropertyChanged;
+
+        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
+        WINRT_PROPERTY(uint32_t, TabViewIndex, 0);
+        // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
+        WINRT_PROPERTY(uint32_t, TabViewNumTabs, 0);
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Title, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Icon, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(bool, ReadOnly, PropertyChanged.raise, false);
+        WINRT_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, PropertyChanged.raise, nullptr);
+
+    protected:
+        winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
+        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+        Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
+        winrt::hstring _keyChord{};
+
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _unfocusedThemeColor{ nullptr };
+        til::color _tabRowColor;
+
+        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility _closeButtonVisibility{ Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always };
+
         static constexpr double HeaderRenameBoxWidthDefault{ 165 };
         static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
 
@@ -189,6 +200,20 @@ namespace winrt::TerminalApp::implementation
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
+        void _EnableCloseMenuItems();
+        void _CloseTabsAfter();
+        void _CloseOtherTabs();
+        void _UpdateSwitchToTabKeyChord();
+        void _UpdateToolTip();
+
+        void _RecalculateAndApplyTabColor();
+        void _ApplyTabColorOnUIThread(const winrt::Windows::UI::Color& color);
+        void _ClearTabBackgroundColor();
+        void _RefreshVisualState();
+        bool _focused() const noexcept;
+        void _updateIsClosable();
+
         void _Setup();
 
         SafeDispatcherTimer _bellIndicatorTimer;
@@ -232,35 +257,6 @@ namespace winrt::TerminalApp::implementation
         void _findClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         void _bubbleRestartTerminalRequested(TerminalApp::TerminalPaneContent sender, const winrt::Windows::Foundation::IInspectable& args);
-#pragma endregion
-
-    protected:
-        winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
-        Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
-        winrt::hstring _keyChord{};
-
-        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
-        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _unfocusedThemeColor{ nullptr };
-        til::color _tabRowColor;
-
-        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility _closeButtonVisibility{ Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always };
-
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
-        void _EnableCloseMenuItems();
-        void _CloseTabsAfter();
-        void _CloseOtherTabs();
-        void _UpdateSwitchToTabKeyChord();
-        void _UpdateToolTip();
-
-        void _RecalculateAndApplyTabColor();
-        void _ApplyTabColorOnUIThread(const winrt::Windows::UI::Color& color);
-        void _ClearTabBackgroundColor();
-        void _RefreshVisualState();
-        bool _focused() const noexcept;
-        void _updateIsClosable();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
