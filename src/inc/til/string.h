@@ -404,13 +404,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     void iterate_font_families(const std::wstring_view& families, auto&& callback)
     {
         std::wstring family;
-        bool backspace = false;
+        bool escape = false;
         bool delayedSpace = false;
         wchar_t stringType = 0;
 
         for (const auto ch : families)
         {
-            if (!backspace)
+            if (!escape)
             {
                 switch (ch)
                 {
@@ -445,7 +445,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     }
                     continue;
                 case '\\':
-                    backspace = true;
+                    escape = true;
                     continue;
                 default:
                     break;
@@ -461,7 +461,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             family.push_back(ch);
-            backspace = false;
+            escape = false;
         }
 
         // Just like the comma handler above.

@@ -413,13 +413,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.addressof(), FALSE));
 
         const auto fontFace = FontFace();
-        std::wstring_view remainingFaceNames{ fontFace };
         std::wstring primaryFontName;
         std::wstring missingFonts;
         std::wstring proportionalFonts;
         BOOL hasPowerlineCharacters = FALSE;
 
-        til::iterate_font_families(remainingFaceNames, [&](wil::zwstring_view name) {
+        til::iterate_font_families(fontFace, [&](wil::zwstring_view name) {
             std::wstring* accumulator = nullptr;
 
             UINT32 index = 0;
