@@ -2619,7 +2619,11 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
         // Immediately copy this mark over to our new row. The positions of the
         // marks themselves will be preserved, since they're just text
-        // attributes. But the "bookmar"
+        // attributes. But the "bookmark" needs to get moved to the new row too.
+        // * If a row wraps as it reflows, that's fine - we want to leave the
+        //   mark on the row it started on.
+        // * If the second row of a wrapped row had a mark, and it de-flows onto a
+        //   single row, that's fine! The mark was on that logical row.
         if (oldRow.GetScrollbarData().has_value())
         {
             newBuffer.GetMutableRowByOffset(newY).SetScrollbarData(oldRow.GetScrollbarData());
@@ -2918,7 +2922,7 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
 // Marks will be returned in top-down order.
 //
 // This possibly iterates over every run in the buffer, so don't do this on a
-// hot path. Just do this once pwe user input, if at all possible.
+// hot path. Just do this once per user input, if at all possible.
 //
 // Use `limit` to control how many you get, _starting from the bottom_. (e.g.
 // limit=1 will just give you the "most recent mark").

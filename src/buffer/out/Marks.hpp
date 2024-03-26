@@ -52,7 +52,7 @@ struct ScrollbarData
 // * The Output is between the commandEnd & outputEnd
 //
 // These are not actually stored in the buffer. The buffer can produce them for
-// callers, to make resoning about regions of the buffer easier.
+// callers, to make reasoning about regions of the buffer easier.
 struct MarkExtents
 {
     // Data from the row
