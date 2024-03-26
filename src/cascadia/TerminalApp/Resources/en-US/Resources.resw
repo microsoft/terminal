@@ -898,16 +898,4 @@
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Restart the active pane connection</value>
   </data>
-  <data name="CommandNotFoundInfoBar.Title" xml:space="preserve">
-    <value>Windows Package Manager — WinGet</value>
-  </data>
-  <data name="CommandNotFoundInfoBarHeader" xml:space="preserve">
-    <value>Try installing this package using winget:</value>
-  </data>
-  <data name="CommandNotFoundInfoBarFooter" xml:space="preserve">
-    <value>Additional results can be found using the following command:</value>
-  </data>
-  <data name="CommandNotFoundInfoBarButtonCaption" xml:space="preserve">
-    <value>Insert Suggestion</value>
-  </data>
 </root>

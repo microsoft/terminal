@@ -2958,12 +2958,6 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
     {
-        // If the user doesn't want to see this message again,
-        // don't even bother trying to search for the command
-        if (_IsMessageDismissed(InfoBarMessage::CommandNotFound))
-        {
-            return;
-        }
 #if 0
         static constexpr CLSID CLSID_PackageManager = { 0xC53A4F16, 0x787E, 0x42A4, 0xB3, 0x04, 0x29, 0xEF, 0xFB, 0x4B, 0xF5, 0x97 }; //C53A4F16-787E-42A4-B304-29EFFB4BF597
         static constexpr CLSID CLSID_FindPackagesOptions = { 0x572DED96, 0x9C60, 0x4526, { 0x8F, 0x92, 0xEE, 0x7D, 0x91, 0xD3, 0x8C, 0x1A } }; //572DED96-9C60-4526-8F92-EE7D91D38C1A
@@ -3107,7 +3101,8 @@ namespace winrt::TerminalApp::implementation
                                       fmt::format(L"winget search --{} {}", searchOption, missingCmd) :
                                       L"";
 
-            ShowCommandNotFoundInfoBar(suggestions, footer);
+            // TODO CARLOS: no more info bar; replace!
+            //ShowCommandNotFoundInfoBar(suggestions, footer);
         }
 #elif defined(DEBUG) || defined(_DEBUG) || defined(DBG)
         const bool tooManySuggestions = false;
@@ -3125,84 +3120,9 @@ namespace winrt::TerminalApp::implementation
                                   fmt::format(L"winget search --{} {}", searchOption, missingCmd) :
                                   L"";
 
-        ShowCommandNotFoundInfoBar(suggestions, footer);
+        // TODO CARLOS: no more info bar; replace!
+        //ShowCommandNotFoundInfoBar(suggestions, footer);
 #endif
-    }
-
-    winrt::fire_and_forget TerminalPage::ShowCommandNotFoundInfoBar(const std::vector<std::wstring> suggestions, std::wstring footerCmd)
-    {
-        co_await wil::resume_foreground(Dispatcher());
-        auto infoBar = FindName(L"CommandNotFoundInfoBar").try_as<MUX::Controls::InfoBar>();
-
-        // Insert the message as custom content so we can make it selectable
-        RichTextBlock infoBarMsg;
-        Windows::UI::Xaml::Documents::Paragraph paragraph;
-
-        // Append header
-        Windows::UI::Xaml::Documents::Run header;
-        header.Text(RS_(L"CommandNotFoundInfoBarHeader"));
-        paragraph.Inlines().Append(header);
-
-        // Append each suggestion (and format the code blocks)
-        for (auto suggestion : suggestions)
-        {
-            Windows::UI::Xaml::Documents::LineBreak lineBreak;
-            paragraph.Inlines().Append(lineBreak);
-
-            Windows::UI::Xaml::Documents::Run bulletPoint;
-            bulletPoint.Text(L"• ");
-            paragraph.Inlines().Append(bulletPoint);
-
-            Windows::UI::Xaml::Documents::Run suggestionRun;
-            suggestionRun.Text(suggestion);
-            suggestionRun.FontFamily(Media::FontFamily{ L"Cascadia Code" });
-            paragraph.Inlines().Append(suggestionRun);
-        }
-
-        // Append the footer, if appropriate
-        if (!footerCmd.empty())
-        {
-            Windows::UI::Xaml::Documents::LineBreak lineBreak;
-            paragraph.Inlines().Append(lineBreak);
-
-            Windows::UI::Xaml::Documents::Run footerRun;
-            footerRun.Text(RS_(L"CommandNotFoundInfoBarFooter") + L" ");
-            paragraph.Inlines().Append(footerRun);
-
-            Windows::UI::Xaml::Documents::Run footerCmdRun;
-            footerCmdRun.Text(footerCmd);
-            footerCmdRun.FontFamily(Media::FontFamily{ L"Cascadia Code" });
-            paragraph.Inlines().Append(footerCmdRun);
-        }
-
-        infoBarMsg.Blocks().Append(paragraph);
-        infoBarMsg.IsTextSelectionEnabled(true);
-
-        // Set up the action button, if appropriate
-        // We have to use a stack panel here to force the button to be on the bottom
-        StackPanel infoBarContent;
-        infoBarContent.Children().Append(infoBarMsg);
-        if (suggestions.size() == 1)
-        {
-            Button infoBarBtn;
-            infoBarBtn.Content(box_value(RS_(L"CommandNotFoundInfoBarButtonCaption")));
-            // upon clicking the action button, we inject the suggestion into the active terminal
-            infoBarBtn.Click([weakThis{ get_weak() }, infoBar, suggestion{ suggestions.at(0) }](auto&&, auto&&) {
-                if (auto page{ weakThis.get() })
-                {
-                    if (auto termControl = page->_GetActiveControl())
-                    {
-                        termControl.SendInput(suggestion);
-                    }
-                }
-                infoBar.IsOpen(false);
-            });
-
-            infoBarContent.Children().Append(infoBarBtn);
-        }
-
-        infoBar.Content(infoBarContent);
-        infoBar.IsOpen(true);
     }
 
     // Method Description:
@@ -4750,15 +4670,6 @@ namespace winrt::TerminalApp::implementation
     {
         _DismissMessage(InfoBarMessage::KeyboardServiceWarning);
         if (const auto infoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-    }
-
-    void TerminalPage::_CommandNotFoundDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
-    {
-        _DismissMessage(InfoBarMessage::CommandNotFound);
-        if (const auto infoBar = FindName(L"CommandNotFoundInfoBar").try_as<MUX::Controls::InfoBar>())
         {
             infoBar.IsOpen(false);
         }

@@ -146,7 +146,6 @@ namespace winrt::TerminalApp::implementation
 
         void ShowKeyboardServiceWarning() const;
         winrt::hstring KeyboardServiceDisabledText();
-        winrt::fire_and_forget ShowCommandNotFoundInfoBar(const std::vector<std::wstring> suggestions, std::wstring footer);
 
         winrt::fire_and_forget IdentifyWindow();
         winrt::fire_and_forget RenameFailed();

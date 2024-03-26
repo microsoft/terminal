@@ -1587,7 +1587,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand)
     {
-        _SearchMissingCommandHandlers(*this, winrt::make<implementation::SearchMissingCommandEventArgs>(winrt::hstring{ missingCommand }));
+        SearchMissingCommand.raise(*this, winrt::make<implementation::SearchMissingCommandEventArgs>(winrt::hstring{ missingCommand }));
     }
 
     bool ControlCore::HasSelection() const
