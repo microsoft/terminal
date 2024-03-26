@@ -58,7 +58,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 command->_subcommands.Insert(kv.Key(), *subCmd->Copy());
             }
         }
-
         return command;
     }
 
