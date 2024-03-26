@@ -2333,7 +2333,7 @@
           "type": "array"
         },
         "rendering.graphicsAPI": {
-          "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option "Automatic" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
+          "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
           "enum": [
             "direct2d",
