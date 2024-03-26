@@ -798,7 +798,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
 
-    IVector<Model::Command> Command::ToSendInputCommands(IVector<hstring> commands)
+    IVector<Model::Command> Command::ToSendInputCommands(IVector<hstring> commands, hstring iconPath)
     {
         if (!commands)
         {
@@ -814,7 +814,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto c = winrt::make_self<Command>();
             c->_ActionAndArgs = actionAndArgs;
             c->_name = command;
-            c->_iconPath = L"\ue74c"; // OEM icon
+            c->_iconPath = iconPath;
             result.push_back(*c);
         }
 

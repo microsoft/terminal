@@ -20,7 +20,6 @@
 #include "KeySentEventArgs.g.h"
 #include "CharSentEventArgs.g.h"
 #include "StringSentEventArgs.g.h"
-#include "SearchMissingCommandEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -251,15 +250,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _Text(text) {}
 
         WINRT_PROPERTY(winrt::hstring, Text);
-    };
-
-    struct SearchMissingCommandEventArgs : public SearchMissingCommandEventArgsT<SearchMissingCommandEventArgs>
-    {
-    public:
-        SearchMissingCommandEventArgs(const winrt::hstring& missingCommand) :
-            _MissingCommand(missingCommand) {}
-
-        WINRT_PROPERTY(winrt::hstring, MissingCommand);
     };
 }
 

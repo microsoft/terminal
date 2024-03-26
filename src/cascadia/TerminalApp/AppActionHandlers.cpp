@@ -1351,7 +1351,8 @@ namespace winrt::TerminalApp::implementation
                 if (WI_IsFlagSet(source, SuggestionsSource::WinGetCommandNotFound) &&
                     context != nullptr)
                 {
-                    const auto recentCommands = Command::ToSendInputCommands(context.WinGetSuggestions());
+                    // use OEM icon
+                    const auto recentCommands = Command::ToSendInputCommands(context.WinGetSuggestions(), hstring{ L"\ue74c" });
                     for (const auto& t : recentCommands)
                     {
                         commandsCollection.push_back(t);

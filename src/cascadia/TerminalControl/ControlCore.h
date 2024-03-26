@@ -276,7 +276,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
         til::typed_event<IInspectable, Control::CompletionsChangedEventArgs> CompletionsChanged;
-        til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
