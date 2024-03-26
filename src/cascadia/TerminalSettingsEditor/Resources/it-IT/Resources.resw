@@ -311,13 +311,13 @@
     <value>L'applicazione terminale che viene avviata quando viene eseguita un'applicazione della riga di comando senza una sessione esistente, ad esempio dalla finestra di dialogo menu Start o Esegui.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
     <value>Ridisegna l'intero schermo durante la visualizzazione degli aggiornamenti</value>
     <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
     <value>Se disabilitato, il terminale eseguirà il rendering solo degli aggiornamenti sullo schermo tra i fotogrammi.</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
+    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_DisablePartialInvalidation.Header".</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colonne</value>
@@ -445,10 +445,6 @@
   <data name="Globals_WindowingBehaviorUseExisting.Content" xml:space="preserve">
     <value>Allega alla finestra usata più di recente su questo desktop</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
-  </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>Queste impostazioni potrebbero essere utili per la risoluzione di un problema, ma influiranno sulle prestazioni.</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Nascondi la barra del titolo (sarà necessario riavviare)</value>

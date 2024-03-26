@@ -550,7 +550,7 @@ void AtlasEngine::_handleSettingsUpdate()
 
     if (targetChanged)
     {
-        // target->useSoftwareRendering affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
+        // target->useWARP affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
         // This will indirectly also recreate the backend, when AtlasEngine::_recreateAdapter() detects this change.
         _p.dxgi = {};
     }

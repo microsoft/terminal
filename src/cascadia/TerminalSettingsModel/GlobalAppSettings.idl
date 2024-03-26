@@ -76,7 +76,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
-        INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.GraphicsAPI, GraphicsAPI);
+        INHERITABLE_SETTING(Boolean, DisablePartialInvalidation);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
