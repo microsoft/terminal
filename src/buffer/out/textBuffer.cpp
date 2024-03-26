@@ -2902,7 +2902,7 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 
 // Collect up all the rows that were marked, and the data marked on that row.
 // This is what should be used for hot paths, like updating the scrollbar.
-std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
+std::vector<ScrollMark> TextBuffer::GetMarkRows() const
 {
     std::vector<ScrollMark> marks;
     const auto bottom = _estimateOffsetOfLastCommittedRow();
@@ -2915,7 +2915,7 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
             marks.emplace_back(y, *data);
         }
     }
-    return std::move(marks);
+    return marks;
 }
 
 // Get all the regions for all the shell integration marks in the buffer.
@@ -2926,7 +2926,7 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
 //
 // Use `limit` to control how many you get, _starting from the bottom_. (e.g.
 // limit=1 will just give you the "most recent mark").
-std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit) const noexcept
+std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit) const
 {
     if (limit.has_value() &&
         *limit == 0)
@@ -2975,7 +2975,7 @@ std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit)
     }
 
     std::reverse(marks.begin(), marks.end());
-    return std::move(marks);
+    return marks;
 }
 
 // Remove all marks between `start` & `end`, inclusive.
@@ -2997,7 +2997,7 @@ void TextBuffer::ClearMarksInRange(
         }
     }
 }
-void TextBuffer::ClearAllMarks() noexcept
+void TextBuffer::ClearAllMarks()
 {
     ClearMarksInRange({ 0, 0 }, { _width - 1, _height - 1 });
 }
@@ -3200,7 +3200,7 @@ std::vector<std::wstring> TextBuffer::Commands() const
         lastPromptY = promptY;
     }
     std::reverse(commands.begin(), commands.end());
-    return std::move(commands);
+    return commands;
 }
 
 void TextBuffer::StartPrompt()
@@ -3224,7 +3224,7 @@ bool TextBuffer::_createPromptMarkIfNeeded()
     const auto mostRecentMarks = GetMarkExtents(1u);
     if (!mostRecentMarks.empty())
     {
-        const auto& mostRecentMark = mostRecentMarks[0];
+        const auto& mostRecentMark = til::at(mostRecentMarks, 0);
         if (mostRecentMark.HasOutput())
         {
             // The most recent command mark had output. That suggests that either:

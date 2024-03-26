@@ -296,10 +296,10 @@ public:
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
     // Mark handling
-    std::vector<ScrollMark> GetMarkRows() const noexcept;
-    std::vector<MarkExtents> GetMarkExtents(std::optional<size_t> limit = std::nullopt) const noexcept;
+    std::vector<ScrollMark> GetMarkRows() const;
+    std::vector<MarkExtents> GetMarkExtents(std::optional<size_t> limit = std::nullopt) const;
     void ClearMarksInRange(const til::point start, const til::point end);
-    void ClearAllMarks() noexcept;
+    void ClearAllMarks();
     std::wstring CurrentCommand() const;
     std::vector<std::wstring> Commands() const;
     void StartPrompt();

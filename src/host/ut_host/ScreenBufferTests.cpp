@@ -8565,7 +8565,7 @@ void ScreenBufferTests::SimplePromptRegions()
         const til::point expectedStart{ 0, 0 };
         const til::point expectedEnd{ 17, 0 };
         const til::point expectedOutputStart{ 24, 0 }; // `Foo-Bar` is 7 characters
-        const til::point expectedOutputEnd{ 0, 4 };
+        const til::point expectedOutputEnd{ 22, 3 };
         VERIFY_ARE_EQUAL(expectedStart, mark.start);
         VERIFY_ARE_EQUAL(expectedEnd, mark.end);
 
