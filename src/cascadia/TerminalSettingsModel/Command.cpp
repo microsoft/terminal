@@ -150,7 +150,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             bool capitalizeNext;
             noWhitespaceName.erase(std::remove_if(noWhitespaceName.begin(), noWhitespaceName.end(), [&capitalizeNext, removeWhitespaceAndCapitalize](wchar_t& x) {
                                        return removeWhitespaceAndCapitalize(x, capitalizeNext);
-            }), noWhitespaceName.end());
+                                   }),
+                                   noWhitespaceName.end());
             _ID = RS_(L"OriginTagUser") + L"." + noWhitespaceName;
         }
     }
