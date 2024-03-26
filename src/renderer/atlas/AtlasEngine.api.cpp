@@ -427,7 +427,7 @@ void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
     }
 }
 
-void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
+void AtlasEngine::SetDisablePartialInvalidation(bool enable) noexcept
 {
     if (_api.s->target->disablePresent1 != enable)
     {

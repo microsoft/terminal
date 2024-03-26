@@ -328,6 +328,14 @@
   <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
     <value>Direct3D 11</value>
   </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>Disable partial Swap Chain invalidation</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>By default, the text renderer uses a FLIP_SEQUENTIAL Swap Chain and declares dirty rectangles via the Present1 API. When this setting is enabled, a FLIP_DISCARD Swap Chain will be used instead, and no dirty rectangles will be declared. Whether one or the other is better depends on your hardware and various other factors.</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
     <value>Use software rendering (WARP)</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
@@ -335,14 +343,6 @@
   <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
     <value>When enabled, the terminal will use a software rasterizer (WARP). This setting should be left disabled under almost all circumstances.</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
-  </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
-    <value>Disable partial Swap Chain invalidation</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
-    <value>By default, the text renderer uses a FLIP_SEQUENTIAL Swap Chain and declares dirty rectangles via the Present1 API. When this setting is enabled, a FLIP_DISCARD Swap Chain will be used instead, and no dirty rectangles will be declared. Whether one or the other is better depends on your hardware and various other factors.</value>
-    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columns</value>

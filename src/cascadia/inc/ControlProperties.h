@@ -74,7 +74,7 @@
     X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI)                                                                                     \
-    X(bool, ForceFullRepaintRendering, false)                                                                                                            \
+    X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \

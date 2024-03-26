@@ -14,7 +14,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         explicit RenderingViewModel(Model::CascadiaSettings settings) noexcept;
 
         GETSET_BINDABLE_ENUM_SETTING(GraphicsAPI, winrt::Microsoft::Terminal::Control::GraphicsAPI, _settings.GlobalSettings().GraphicsAPI);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), ForceFullRepaintRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), DisablePartialInvalidation);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), SoftwareRendering);
 
     private:

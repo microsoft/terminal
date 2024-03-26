@@ -311,13 +311,13 @@
     <value>Aplicación de terminal que se inicia cuando se ejecuta una aplicación de línea de comandos sin una sesión existente, como en el menú Inicio o en el cuadro de diálogo Ejecutar.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
     <value>Redibujar toda la pantalla cuando se muestren actualizaciones</value>
     <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
     <value>Cuando está deshabilitada, el terminal representará solo las actualizaciones de la pantalla entre fotogramas.</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
+    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_DisablePartialInvalidation.Header".</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columnas</value>

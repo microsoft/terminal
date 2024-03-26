@@ -311,13 +311,13 @@
     <value>시작 메뉴나 실행 대화 상자와 같이 기존 세션이 없으면 명령 줄 응용 프로그램을 실행하고 있는 터미널 응용 프로그램입니다.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
     <value>업데이트를 표시할 때 전체 화면 다시 그리기</value>
     <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
     <value>사용하지 않도록 설정하면 터미널이 프레임 간 화면 업데이트만 렌더링합니다.</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
+    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_DisablePartialInvalidation.Header".</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>열</value>

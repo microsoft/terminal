@@ -267,9 +267,8 @@ void AtlasEngine::_recreateBackend()
         else if (featureLevel < D3D_FEATURE_LEVEL_11_0)
         {
             D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options{};
-            // I'm assuming if `CheckFeatureSupport` fails, it'll leave `options` untouched which will result in `d2dMode |= true`.
-            std::ignore = device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options));
-            if (!options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)
+            if (FAILED(device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options))) ||
+                !options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)
             {
                 graphicsAPI = GraphicsAPI::Direct2D;
             }
@@ -497,9 +496,12 @@ void AtlasEngine::_present()
     }
 
     auto hr = _p.swapChain.swapChain->Present1(1, 0, &params);
-    if (Feature_AtlasEnginePresentFallback::IsEnabled() && FAILED(hr) && params.DirtyRectsCount != 0)
+    if constexpr (Feature_AtlasEnginePresentFallback::IsEnabled())
     {
-        hr = _p.swapChain.swapChain->Present(1, 0);
+        if (FAILED(hr) && params.DirtyRectsCount != 0)
+        {
+            hr = _p.swapChain.swapChain->Present(1, 0);
+        }
     }
     THROW_IF_FAILED(hr);
 

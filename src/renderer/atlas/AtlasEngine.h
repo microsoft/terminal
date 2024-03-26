@@ -74,7 +74,7 @@ namespace Microsoft::Console::Render::Atlas
         void SetRetroTerminalEffect(bool enable) noexcept;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept;
         void SetSoftwareRendering(bool enable) noexcept;
-        void SetForceFullRepaintRendering(bool enable) noexcept;
+        void SetDisablePartialInvalidation(bool enable) noexcept;
         void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
         void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept;
         [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept;

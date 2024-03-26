@@ -222,13 +222,16 @@ const std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarni
 // - the JsonObject representing this instance
 Json::Value GlobalAppSettings::ToJson()
 {
+    // These experimental options should be removed from the settings file if they're at their default value.
+    // This prevents them from sticking around forever, even if the user was just experimenting with them.
+    // One could consider this a workaround for the settings UI right now not having a "reset to default" button for these.
     if (_GraphicsAPI == Control::GraphicsAPI::Automatic)
     {
         _GraphicsAPI.reset();
     }
-    if (_ForceFullRepaintRendering == false)
+    if (_DisablePartialInvalidation == false)
     {
-        _ForceFullRepaintRendering.reset();
+        _DisablePartialInvalidation.reset();
     }
     if (_SoftwareRendering == false)
     {

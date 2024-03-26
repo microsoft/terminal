@@ -59,7 +59,7 @@ namespace Microsoft.Terminal.Control
 
         // Experimental Settings
         Microsoft.Terminal.Control.GraphicsAPI GraphicsAPI { get; };
-        Boolean ForceFullRepaintRendering { get; };
+        Boolean DisablePartialInvalidation { get; };
         Boolean SoftwareRendering { get; };
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };

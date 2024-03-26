@@ -361,7 +361,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _CopyFormatting = globalSettings.CopyFormatting();
         _FocusFollowMouse = globalSettings.FocusFollowMouse();
         _GraphicsAPI = globalSettings.GraphicsAPI();
-        _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
+        _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _ForceVTInput = globalSettings.ForceVTInput();

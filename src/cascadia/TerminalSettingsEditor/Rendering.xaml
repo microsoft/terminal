@@ -32,13 +32,11 @@
                       Style="{StaticResource ComboBoxSettingStyle}" />
         </local:SettingContainer>
 
-        <!--  Force Full Repaint  -->
-        <local:SettingContainer x:Uid="Globals_ForceFullRepaint">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.ForceFullRepaintRendering, Mode=TwoWay}"
+        <local:SettingContainer x:Uid="Globals_DisablePartialInvalidation">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.DisablePartialInvalidation, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
-        <!--  Software Rendering  -->
         <local:SettingContainer x:Uid="Globals_SoftwareRendering">
             <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />

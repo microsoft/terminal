@@ -388,7 +388,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
             _renderEngine->SetPixelShaderImagePath(_settings->PixelShaderImagePath());
             _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
-            _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+            _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
 
             _updateAntiAliasingMode();
@@ -882,7 +882,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
-        _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+        _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
