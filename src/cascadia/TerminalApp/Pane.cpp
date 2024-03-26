@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Pane.h"
+
 #include "AppLogic.h"
 
 #include "Utils.h"
@@ -33,19 +34,21 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
-    _control{ control },
-    _lastActive{ lastFocused },
-    _profile{ profile }
+Pane::Pane(const IPaneContent& content, const bool lastFocused) :
+    _content{ content },
+    _lastActive{ lastFocused }
 {
     _root.Children().Append(_borderFirst);
-    _borderFirst.Child(_control);
 
-    _setupControlEvents();
+    const auto& control{ _content.GetRoot() };
+    _borderFirst.Child(control);
 
     // Register an event with the control to have it inform us when it gains focus.
-    _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-    _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+    if (control)
+    {
+        _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ContentGotFocusHandler });
+        _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
+    }
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -102,19 +105,6 @@ Pane::Pane(std::shared_ptr<Pane> first,
     });
 }
 
-void Pane::_setupControlEvents()
-{
-    _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
-    _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
-    _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
-    _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &Pane::_RestartTerminalRequestedHandler });
-    _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { this, &Pane::_ControlReadOnlyChangedHandler });
-}
-void Pane::_removeControlEvents()
-{
-    _controlEvents = {};
-}
-
 // Method Description:
 // - Extract the terminal settings from the current (leaf) pane's control
 //   to be used to create an equivalent control
@@ -129,55 +119,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
     // Leaves are the only things that have controls
     assert(_IsLeaf());
 
-    NewTerminalArgs args{};
-    auto controlSettings = _control.Settings();
-
-    args.Profile(controlSettings.ProfileName());
-    // If we know the user's working directory use it instead of the profile.
-    if (const auto dir = _control.WorkingDirectory(); !dir.empty())
-    {
-        args.StartingDirectory(dir);
-    }
-    else
-    {
-        args.StartingDirectory(controlSettings.StartingDirectory());
-    }
-    args.TabTitle(controlSettings.StartingTitle());
-    args.Commandline(controlSettings.Commandline());
-    args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
-    if (controlSettings.TabColor() || controlSettings.StartingTabColor())
-    {
-        til::color c;
-        // StartingTabColor is prioritized over other colors
-        if (const auto color = controlSettings.StartingTabColor())
-        {
-            c = til::color(color.Value());
-        }
-        else
-        {
-            c = til::color(controlSettings.TabColor().Value());
-        }
-
-        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>{ static_cast<winrt::Windows::UI::Color>(c) });
-    }
-
-    // TODO:GH#9800 - we used to be able to persist the color scheme that a
-    // TermControl was initialized with, by name. With the change to having the
-    // control own its own copy of its settings, this isn't possible anymore.
-    //
-    // We may be able to get around this by storing the Name in the Core::Scheme
-    // object. That would work for schemes set by the Terminal, but not ones set
-    // by VT, but that seems good enough.
-
-    // Only fill in the ContentId if absolutely needed. If you fill in a number
-    // here (even 0), we'll serialize that number, AND treat that action as an
-    // "attach existing" rather than a "create"
-    if (asContent)
-    {
-        args.ContentId(_control.ContentId());
-    }
-
-    return args;
+    return _content.GetNewTerminalArgs(asContent);
 }
 
 // Method Description:
@@ -1022,181 +964,18 @@ Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> 
 }
 
 // Method Description:
-// - Called when our attached control is closed. Triggers listeners to our close
-//   event, if we're a leaf pane.
-// - If this was called, and we became a parent pane (due to work on another
-//   thread), this function will do nothing (allowing the control's new parent
-//   to handle the event instead).
+// - Returns true if the connection state of this pane is closed.
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-winrt::fire_and_forget Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                                                   const winrt::Windows::Foundation::IInspectable& /*args*/)
+// - true if the connection state of this Pane is closed.
+bool Pane::IsConnectionClosed() const
 {
-    auto newConnectionState = ConnectionState::Closed;
-    if (const auto coreState = sender.try_as<ICoreState>())
+    if (const auto& control{ GetTerminalControl() })
     {
-        newConnectionState = coreState.ConnectionState();
+        return control.ConnectionState() >= ConnectionState::Closed;
     }
-
-    const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
-    if (newConnectionState < ConnectionState::Closed)
-    {
-        // Pane doesn't care if the connection isn't entering a terminal state.
-        co_return;
-    }
-
-    const auto weakThis = weak_from_this();
-    co_await wil::resume_foreground(_root.Dispatcher());
-    const auto strongThis = weakThis.lock();
-    if (!strongThis)
-    {
-        co_return;
-    }
-
-    // It's possible that this event handler started being executed, scheduled
-    // on the UI thread, another child got created. So our control is
-    // actually no longer _our_ control, and instead could be a descendant.
-    //
-    // When the control's new Pane takes ownership of the control, the new
-    // parent will register its own event handler. That event handler will get
-    // fired after this handler returns, and will properly cleanup state.
-    if (!_IsLeaf())
-    {
-        co_return;
-    }
-
-    if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
-    {
-        // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".
-        // This is to prevent a misconfiguration (closeOnExit: always, startingDirectory: garbage) resulting
-        // in Terminal flashing open and immediately closed.
-        co_return;
-    }
-
-    if (_profile)
-    {
-        if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
-        {
-            // For 'automatic', we only care about the connection state if we were launched by Terminal
-            // Since we were launched via defterm, ignore the connection state (i.e. we treat the
-            // close on exit mode as 'always', see GH #13325 for discussion)
-            Close();
-        }
-
-        const auto mode = _profile.CloseOnExit();
-        if ((mode == CloseOnExitMode::Always) ||
-            ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
-        {
-            Close();
-        }
-    }
-}
-
-void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    // It's possible that this event handler started being executed, then before
-    // we got the lock, another thread created another child. So our control is
-    // actually no longer _our_ control, and instead could be a descendant.
-    //
-    // When the control's new Pane takes ownership of the control, the new
-    // parent will register its own event handler. That event handler will get
-    // fired after this handler returns, and will properly cleanup state.
-    if (!_IsLeaf())
-    {
-        return;
-    }
-
-    Close();
-}
-
-void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                            const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    if (!_IsLeaf())
-    {
-        return;
-    }
-    RestartTerminalRequested.raise(shared_from_this());
-}
-
-winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
-{
-    auto weakThis{ weak_from_this() };
-
-    co_await wil::resume_foreground(_root.Dispatcher());
-    if (auto pane{ weakThis.lock() })
-    {
-        if (!_bellPlayerCreated)
-        {
-            // The MediaPlayer might not exist on Windows N SKU.
-            try
-            {
-                _bellPlayerCreated = true;
-                _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-                // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
-                _bellPlayer.CommandManager().IsEnabled(false);
-            }
-            CATCH_LOG();
-        }
-        if (_bellPlayer)
-        {
-            const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-            const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-            _bellPlayer.Source(item);
-            _bellPlayer.Play();
-        }
-    }
-}
-
-// Method Description:
-// - Plays a warning note when triggered by the BEL control character,
-//   using the sound configured for the "Critical Stop" system event.`
-//   This matches the behavior of the Windows Console host.
-// - Will also flash the taskbar if the bellStyle setting for this profile
-//   has the 'visual' flag set
-// Arguments:
-// - <unused>
-void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                      const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
-{
-    if (!_IsLeaf())
-    {
-        return;
-    }
-    if (_profile)
-    {
-        // We don't want to do anything if nothing is set, so check for that first
-        if (static_cast<int>(_profile.BellStyle()) != 0)
-        {
-            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
-            {
-                // Audible is set, play the sound
-                auto sounds{ _profile.BellSound() };
-                if (sounds && sounds.Size() > 0)
-                {
-                    winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
-                    winrt::Windows::Foundation::Uri uri{ soundPath };
-                    _playBellSound(uri);
-                }
-                else
-                {
-                    const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                }
-            }
-
-            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
-            {
-                _control.BellLightOn();
-            }
-
-            // raise the event with the bool value corresponding to the taskbar flag
-            PaneRaiseBell.raise(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
-        }
-    }
+    return false;
 }
 
 // Event Description:
@@ -1207,7 +986,7 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
 // - <unused>
 // Return Value:
 // - <none>
-void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+void Pane::_ContentGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                    const RoutedEventArgs& /* args */)
 {
     auto f = FocusState::Programmatic;
@@ -1222,7 +1001,7 @@ void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectabl
 // - Called when our control loses focus. We'll use this to trigger our LostFocus
 //   callback. The tab that's hosting us should have registered a callback which
 //   can be used to update its own internal focus state
-void Pane::_ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
+void Pane::_ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
                                     const RoutedEventArgs& /* args */)
 {
     LostFocus.raise(shared_from_this());
@@ -1245,21 +1024,9 @@ void Pane::Close()
 //   and connections beneath it.
 void Pane::Shutdown()
 {
-    // Clear out our media player callbacks, and stop any playing media. This
-    // will prevent the callback from being triggered after we've closed, and
-    // also make sure that our sound stops when we're closed.
-    if (_bellPlayer)
-    {
-        _bellPlayer.Pause();
-        _bellPlayer.Source(nullptr);
-        _bellPlayer.Close();
-        _bellPlayer = nullptr;
-        _bellPlayerCreated = false;
-    }
-
     if (_IsLeaf())
     {
-        _control.Close();
+        _content.Close();
     }
     else
     {
@@ -1314,7 +1081,7 @@ TermControl Pane::GetLastFocusedTerminalControl()
             {
                 if (p->_IsLeaf())
                 {
-                    return p->_control;
+                    return p->GetTerminalControl();
                 }
                 pane = p;
             }
@@ -1322,7 +1089,8 @@ TermControl Pane::GetLastFocusedTerminalControl()
         }
         return _firstChild->GetLastFocusedTerminalControl();
     }
-    return _control;
+    // we _are_ a leaf.
+    return GetTerminalControl();
 }
 
 // Method Description:
@@ -1332,9 +1100,16 @@ TermControl Pane::GetLastFocusedTerminalControl()
 // - <none>
 // Return Value:
 // - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
-TermControl Pane::GetTerminalControl()
+TermControl Pane::GetTerminalControl() const
 {
-    return _IsLeaf() ? _control : nullptr;
+    if (const auto& terminalPane{ _getTerminalContent() })
+    {
+        return terminalPane.GetTermControl();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 // Method Description:
@@ -1381,19 +1156,11 @@ void Pane::SetActive()
 Profile Pane::GetFocusedProfile()
 {
     auto lastFocused = GetActivePane();
-    return lastFocused ? lastFocused->_profile : nullptr;
-}
-
-// Method Description:
-// - Returns true if the connection state of this pane is closed. If this Pane is not a leaf this will
-//   return false.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the connection state of this Pane is closed.
-bool Pane::IsConnectionClosed() const
-{
-    return _control && _control.ConnectionState() >= ConnectionState::Closed;
+    if (const auto& terminalPane{ lastFocused->_getTerminalContent() })
+    {
+        return terminalPane.GetProfile();
+    }
+    return nullptr;
 }
 
 // Method Description:
@@ -1466,10 +1233,7 @@ void Pane::UpdateVisuals()
 void Pane::_Focus()
 {
     GotFocus.raise(shared_from_this(), FocusState::Programmatic);
-    if (const auto& control = GetLastFocusedTerminalControl())
-    {
-        control.Focus(FocusState::Programmatic);
-    }
+    _content.Focus(FocusState::Programmatic);
 }
 
 // Method Description:
@@ -1519,9 +1283,10 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
 {
     assert(_IsLeaf());
 
-    _profile = profile;
-
-    _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+    if (const auto& terminalPane{ _getTerminalContent() })
+    {
+        return terminalPane.UpdateSettings(settings, profile);
+    }
 }
 
 // Method Description:
@@ -1573,7 +1338,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         auto detached = isFirstChild ? _firstChild : _secondChild;
         // Remove the child from the tree, replace the current node with the
         // other child.
-        _CloseChild(isFirstChild, true);
+        _CloseChild(isFirstChild);
 
         // Update the borders on this pane and any children to match if we have
         // no parent.
@@ -1602,12 +1367,9 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 // Arguments:
 // - closeFirst: if true, the first child should be closed, and the second
 //   should be preserved, and vice-versa for false.
-// - isDetaching: if true, then the pane event handlers for the closed child
-//   should be kept, this way they don't have to be recreated when it is later
-//   reattached to a tree somewhere as the control moves with the pane.
 // Return Value:
 // - <none>
-void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
+void Pane::_CloseChild(const bool closeFirst)
 {
     // If we're a leaf, then chances are both our children closed in close
     // succession. We waited on the lock while the other child was closed, so
@@ -1643,35 +1405,16 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _borders = _GetCommonBorders();
 
         // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
-        _control = remainingChild->_control;
-        _connectionState = remainingChild->_connectionState;
-        _profile = remainingChild->_profile;
+        _content = remainingChild->_content;
         _id = remainingChild->Id();
-        _isDefTermSession = remainingChild->_isDefTermSession;
-
-        // Add our new event handler before revoking the old one.
-        _setupControlEvents();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
         // closing. At this point, if the remaining child's control is closed,
         // they'll trigger only our event handler for the control's close.
 
-        // However, if we are detaching the pane we want to keep its control
-        // handlers since it is just getting moved.
-        if (!isDetaching)
-        {
-            closedChild->WalkTree([](auto p) {
-                if (p->_IsLeaf())
-                {
-                    p->_removeControlEvents();
-                }
-            });
-        }
-
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
-        remainingChild->_removeControlEvents();
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1691,7 +1434,8 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 
         // Reattach the TermControl to our grid.
         _root.Children().Append(_borderFirst);
-        _borderFirst.Child(_control);
+        const auto& control{ _content.GetRoot() };
+        _borderFirst.Child(control);
 
         // Make sure to set our _splitState before focusing the control. If you
         // fail to do this, when the tab handles the GotFocus event and asks us
@@ -1700,14 +1444,17 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _splitState = SplitState::None;
 
         // re-attach our handler for the control's GotFocus event.
-        _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-        _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+        if (control)
+        {
+            _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ContentGotFocusHandler });
+            _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
+        }
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
         if (usedToFocusClosedChildsTerminal || _lastActive)
         {
-            _control.Focus(FocusState::Programmatic);
+            _content.Focus(FocusState::Programmatic);
 
             // See GH#7252
             // Manually fire off the GotFocus event. Typically, this is done
@@ -1746,15 +1493,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Remove the event handlers on the old children
         remainingChild->Closed(remainingChildClosedToken);
         closedChild->Closed(closedChildClosedToken);
-        if (!isDetaching)
-        {
-            closedChild->WalkTree([](auto p) {
-                if (p->_IsLeaf())
-                {
-                    p->_removeControlEvents();
-                }
-            });
-        }
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1847,7 +1585,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
     // this one doesn't seem to.
     if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
     {
-        _CloseChild(closeFirst, false);
+        _CloseChild(closeFirst);
         return;
     }
 
@@ -1950,7 +1688,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
         {
             // We don't need to manually undo any of the above trickiness.
             // We're going to re-parent the child's content into us anyways
-            pane->_CloseChild(closeFirst, false);
+            pane->_CloseChild(closeFirst);
         }
     });
 }
@@ -2173,7 +1911,7 @@ void Pane::_SetupEntranceAnimation()
         auto child = isFirstChild ? _firstChild : _secondChild;
         auto childGrid = child->_root;
         // If we are splitting a parent pane this may be null
-        auto control = child->_control;
+        auto control = child->_content.GetRoot();
         // Build up our animation:
         // * it'll take as long as our duration (200ms)
         // * it'll change the value of our property from 0 to secondSize
@@ -2494,9 +2232,6 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 
     if (_IsLeaf())
     {
-        // revoke our handler - the child will take care of the control now.
-        _removeControlEvents();
-
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new
         // parent.
@@ -2525,11 +2260,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     else
     {
         //   Move our control, guid, isDefTermSession into the first one.
-        _firstChild = std::make_shared<Pane>(_profile, _control);
-        _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
-        _profile = nullptr;
-        _control = { nullptr };
-        _firstChild->_isDefTermSession = _isDefTermSession;
+        _firstChild = std::make_shared<Pane>(_content);
+        _content = nullptr;
         _firstChild->_broadcastEnabled = _broadcastEnabled;
     }
 
@@ -2852,8 +2584,16 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 //   If requested size is already snapped, then both returned values equal this value.
 Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
 {
+    const auto direction{ widthOrHeight ? PaneSnapDirection::Width : PaneSnapDirection::Height };
+
     if (_IsLeaf())
     {
+        const auto& snappable{ _content.try_as<ISnappable>() };
+        if (!snappable)
+        {
+            return { dimension, dimension };
+        }
+
         // If we're a leaf pane, align to the grid of controlling terminal
 
         const auto minSize = _GetMinSize();
@@ -2864,8 +2604,10 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
             return { minDimension, minDimension };
         }
 
-        auto lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
-        if (widthOrHeight)
+        auto lower = snappable.SnapDownToGrid(widthOrHeight ? PaneSnapDirection::Width : PaneSnapDirection::Height,
+                                              dimension);
+
+        if (direction == PaneSnapDirection::Width)
         {
             lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
             lower += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
@@ -2884,8 +2626,10 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
         }
         else
         {
-            const auto cellSize = _control.CharacterDimensions();
-            const auto higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
+            const auto cellSize = snappable.GridUnitSize();
+            const auto higher = lower + (direction == PaneSnapDirection::Width ?
+                                             cellSize.Width :
+                                             cellSize.Height);
             return { lower, higher };
         }
     }
@@ -2931,21 +2675,34 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
 {
     if (_IsLeaf())
     {
-        // We're a leaf pane, so just add one more row or column (unless isMinimumSize
-        // is true, see below).
-
-        if (sizeNode.isMinimumSize)
+        const auto& snappable{ _content.try_as<ISnappable>() };
+        if (snappable)
         {
-            // If the node is of its minimum size, this size might not be snapped (it might
-            // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
-            // however be already snapped, so add 1 to make sure it really increases
-            // (not strictly necessary but to avoid surprises).
-            sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
+            // We're a leaf pane, so just add one more row or column (unless isMinimumSize
+            // is true, see below).
+
+            if (sizeNode.isMinimumSize)
+            {
+                // If the node is of its minimum size, this size might not be snapped (it might
+                // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
+                // however be already snapped, so add 1 to make sure it really increases
+                // (not strictly necessary but to avoid surprises).
+                sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
+            }
+            else
+            {
+                const auto cellSize = snappable.GridUnitSize();
+                sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
+            }
         }
         else
         {
-            const auto cellSize = _control.CharacterDimensions();
-            sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
+            // If we're a leaf that didn't have a TermControl, then just increment
+            // by one. We have to increment by _some_ value, because this is used in
+            // a while() loop to find the next bigger size we can snap to. But since
+            // a non-terminal control doesn't really care what size it's snapped to,
+            // we can just say "one pixel larger is the next snap point"
+            sizeNode.size += 1;
         }
     }
     else
@@ -3050,7 +2807,7 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        auto controlSize = _control.MinimumSize();
+        auto controlSize = _content.MinimumSize();
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
@@ -3148,14 +2905,17 @@ int Pane::GetLeafPaneCount() const noexcept
 //   created via default handoff
 void Pane::FinalizeConfigurationGivenDefault()
 {
-    _isDefTermSession = true;
+    if (const auto& terminalPane{ _content.try_as<TerminalPaneContent>() })
+    {
+        terminalPane.MarkAsDefterm();
+    }
 }
 
 // Method Description:
 // - Returns true if the pane or one of its descendants is read-only
 bool Pane::ContainsReadOnly() const
 {
-    return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+    return _IsLeaf() ? _content.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
 // Method Description:
@@ -3170,8 +2930,8 @@ void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& s
 {
     if (_IsLeaf())
     {
-        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_control.TaskbarState(),
-                                                                                    _control.TaskbarProgress()) };
+        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_content.TaskbarState(),
+                                                                                    _content.TaskbarProgress()) };
         states.push_back(tbState);
     }
     else
@@ -3186,9 +2946,12 @@ void Pane::EnableBroadcast(bool enabled)
     if (_IsLeaf())
     {
         _broadcastEnabled = enabled;
-        _control.CursorVisibility(enabled ?
-                                      CursorDisplayState::Shown :
-                                      CursorDisplayState::Default);
+        if (const auto& termControl{ GetTerminalControl() })
+        {
+            termControl.CursorVisibility(enabled ?
+                                             CursorDisplayState::Shown :
+                                             CursorDisplayState::Default);
+        }
         UpdateVisuals();
     }
     else
@@ -3205,9 +2968,12 @@ void Pane::BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& 
                         const bool keyDown)
 {
     WalkTree([&](const auto& pane) {
-        if (pane->_IsLeaf() && pane->_control != sourceControl && !pane->_control.ReadOnly())
+        if (const auto& termControl{ pane->GetTerminalControl() })
         {
-            pane->_control.RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
+            if (termControl != sourceControl && !termControl.ReadOnly())
+            {
+                termControl.RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
+            }
         }
     });
 }
@@ -3218,9 +2984,12 @@ void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl&
                          const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
 {
     WalkTree([&](const auto& pane) {
-        if (pane->_IsLeaf() && pane->_control != sourceControl && !pane->_control.ReadOnly())
+        if (const auto& termControl{ pane->GetTerminalControl() })
         {
-            pane->_control.RawWriteChar(character, scanCode, modifiers);
+            if (termControl != sourceControl && !termControl.ReadOnly())
+            {
+                termControl.RawWriteChar(character, scanCode, modifiers);
+            }
         }
     });
 }
@@ -3229,17 +2998,14 @@ void Pane::BroadcastString(const winrt::Microsoft::Terminal::Control::TermContro
                            const winrt::hstring& text)
 {
     WalkTree([&](const auto& pane) {
-        if (pane->_IsLeaf() && pane->_control != sourceControl && !pane->_control.ReadOnly())
+        if (const auto& termControl{ pane->GetTerminalControl() })
         {
-            pane->_control.RawWriteString(text);
+            if (termControl != sourceControl && !termControl.ReadOnly())
+            {
+                termControl.RawWriteString(text);
+            }
         }
     });
-}
-
-void Pane::_ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                          const winrt::Windows::Foundation::IInspectable& /*e*/)
-{
-    UpdateVisuals();
 }
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
@@ -3249,7 +3015,7 @@ winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
         return _themeResources.focusedBorderBrush;
     }
 
-    if (_broadcastEnabled && (_IsLeaf() && !_control.ReadOnly()))
+    if (_broadcastEnabled && (_IsLeaf() && !_content.ReadOnly()))
     {
         return _themeResources.broadcastBorderBrush;
     }

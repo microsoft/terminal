@@ -160,6 +160,17 @@
     </feature>
 
     <feature>
+        <name>Feature_ScratchpadPane</name>
+        <description>Allow the user to create scratchpad panes. Mostly just exists to validate non-terminal panes.</description>
+        <id>997</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_KeypadModeEnabled</name>
         <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
         <id>16654</id>
