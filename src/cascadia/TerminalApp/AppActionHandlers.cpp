@@ -1308,7 +1308,7 @@ namespace winrt::TerminalApp::implementation
                 //       requires context from the control)
                 // then get that here.
                 const bool shouldGetContext = realArgs.UseCommandline() ||
-                                              WI_IsFlagSet(source, SuggestionsSource::CommandHistory);
+                                              WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::WinGetCommandNotFound);
                 if (shouldGetContext)
                 {
                     if (const auto& control{ _GetActiveControl() })
@@ -1342,6 +1342,16 @@ namespace winrt::TerminalApp::implementation
                     context != nullptr)
                 {
                     const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
+                    for (const auto& t : recentCommands)
+                    {
+                        commandsCollection.push_back(t);
+                    }
+                }
+
+                if (WI_IsFlagSet(source, SuggestionsSource::WinGetCommandNotFound) &&
+                    context != nullptr)
+                {
+                    const auto recentCommands = Command::ToSendInputCommands(context.WinGetSuggestions());
                     for (const auto& t : recentCommands)
                     {
                         commandsCollection.push_back(t);

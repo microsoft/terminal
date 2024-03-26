@@ -62,6 +62,7 @@ namespace Microsoft.Terminal.Control
     {
         IVector<String> History { get; };
         String CurrentCommandline { get; };
+        IVector<String> WinGetSuggestions { get; };
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState
@@ -185,7 +186,6 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
-        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
 

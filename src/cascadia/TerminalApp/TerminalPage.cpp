@@ -1672,7 +1672,7 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
-        term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
+        //term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
 
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
@@ -2956,7 +2956,7 @@ namespace winrt::TerminalApp::implementation
         ShowWindowChanged.raise(*this, args);
     }
 
-    void TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    void TerminalPage::_SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
     {
 #if 0
         static constexpr CLSID CLSID_PackageManager = { 0xC53A4F16, 0x787E, 0x42A4, 0xB3, 0x04, 0x29, 0xEF, 0xFB, 0x4B, 0xF5, 0x97 }; //C53A4F16-787E-42A4-B304-29EFFB4BF597
@@ -3105,23 +3105,39 @@ namespace winrt::TerminalApp::implementation
             //ShowCommandNotFoundInfoBar(suggestions, footer);
         }
 #elif defined(DEBUG) || defined(_DEBUG) || defined(DBG)
-        const bool tooManySuggestions = false;
-        const std::wstring searchOption = L"command";
+        //const bool tooManySuggestions = false;
+        //const std::wstring searchOption = L"command";
         const std::wstring missingCmd = args.MissingCommand().data();
         std::vector<std::wstring> pkgList = { L"pkg1", L"pkg2", L"pkg3" };
-        std::vector<std::wstring> suggestions;
+        std::vector<hstring> suggestions;
         suggestions.reserve(pkgList.size());
         for (auto pkg : pkgList)
         {
             suggestions.emplace_back(fmt::format(L"winget install --id {}", pkg));
         }
 
-        std::wstring footer = tooManySuggestions ?
-                                  fmt::format(L"winget search --{} {}", searchOption, missingCmd) :
-                                  L"";
+        // This will come in on a background (not-UI, not output) thread.
 
-        // TODO CARLOS: no more info bar; replace!
-        //ShowCommandNotFoundInfoBar(suggestions, footer);
+        // Parse the json string into a collection of actions
+        try
+        {
+            //auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
+            //                                                               args.ReplacementLength());
+
+            auto suggestionsWinRT = winrt::single_threaded_vector<hstring>(std::move(suggestions));
+            auto commandsCollection = Command::ToSendInputCommands(suggestionsWinRT);
+
+            //auto weakThis{ get_weak() };
+            //Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, commandsCollection, sender]() {
+            //    // On the UI thread...
+            //    if (const auto& page{ weakThis.get() })
+            //    {
+            //        // Open the Suggestions UI with the commands from the control
+            //        page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu, L"");
+            //    }
+            //});
+        }
+        CATCH_LOG();
 #endif
     }
 

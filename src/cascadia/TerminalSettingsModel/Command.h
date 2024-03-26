@@ -74,6 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
                                                                                            winrt::hstring currentCommandline,
                                                                                            bool directories);
+        static Windows::Foundation::Collections::IVector<Model::Command> ToSendInputCommands(Windows::Foundation::Collections::IVector<winrt::hstring> commands);
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);

@@ -797,4 +797,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
+
+    IVector<Model::Command> Command::ToSendInputCommands(IVector<hstring> commands)
+    {
+        if (!commands)
+        {
+            return single_threaded_vector<Model::Command>();
+        }
+
+        auto result = std::vector<Model::Command>();
+        for (const auto& command : commands)
+        {
+            auto args = winrt::make_self<SendInputArgs>(command);
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto c = winrt::make_self<Command>();
+            c->_ActionAndArgs = actionAndArgs;
+            c->_name = command;
+            c->_iconPath = L"\ue74c"; // OEM icon
+            result.push_back(*c);
+        }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
+    }
 }

@@ -70,7 +70,6 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
         event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
         event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
-        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
 
         Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };

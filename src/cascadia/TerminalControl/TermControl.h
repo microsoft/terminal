@@ -191,7 +191,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested,   IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,       IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(SearchMissingCommand,     IInspectable, Control::SearchMissingCommandEventArgs);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
@@ -405,7 +404,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
-            Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
