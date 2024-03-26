@@ -4,7 +4,7 @@
 #pragma once
 
 #include "TerminalPage.g.h"
-#include "TerminalTab.h"
+#include "TabBase.h"
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
 #include "LastTabClosedEventArgs.g.h"
@@ -219,11 +219,11 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
-        static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
+        static winrt::com_ptr<TabBase> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
 
         void _UpdateTabIndices();
 
-        TerminalApp::TerminalTab _settingsTab{ nullptr };
+        TerminalApp::TabBase _settingsTab{ nullptr };
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
@@ -304,7 +304,7 @@ namespace winrt::TerminalApp::implementation
 
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
-        TerminalApp::TerminalTab _CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition = -1);
+        TerminalApp::TabBase _CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition = -1);
 
         std::wstring _evaluatePathForCwd(std::wstring_view path);
 
@@ -327,25 +327,25 @@ namespace winrt::TerminalApp::implementation
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap) noexcept;
         void _RegisterActionCallbacks();
 
-        void _UpdateTitle(const TerminalTab& tab);
-        void _UpdateTabIcon(TerminalTab& tab);
+        void _UpdateTitle(const TabBase& tab);
+        void _UpdateTabIcon(TabBase& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance);
 
         void _DuplicateFocusedTab();
-        void _DuplicateTab(const TerminalTab& tab);
+        void _DuplicateTab(const TabBase& tab);
 
-        winrt::fire_and_forget _ExportTab(const TerminalTab& tab, winrt::hstring filepath);
+        winrt::fire_and_forget _ExportTab(const TabBase& tab, winrt::hstring filepath);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
         void _CloseTabAtIndex(uint32_t index);
         void _RemoveTab(const winrt::TerminalApp::TabBase& tab);
         winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
 
-        void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition = -1);
+        void _InitializeTab(winrt::com_ptr<TabBase> newTabImpl, uint32_t insertPosition = -1);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
-        void _RegisterTabEvents(TerminalTab& hostingTab);
+        void _RegisterTabEvents(TabBase& hostingTab);
 
         void _DismissTabContextMenus();
         void _FocusCurrentTab(const bool focusAlways);
@@ -357,7 +357,7 @@ namespace winrt::TerminalApp::implementation
         bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
-        bool _MoveTab(winrt::com_ptr<TerminalTab> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
+        bool _MoveTab(winrt::com_ptr<TabBase> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
         template<typename F>
         bool _ApplyToActiveControls(F f)
@@ -383,19 +383,19 @@ namespace winrt::TerminalApp::implementation
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         std::optional<uint32_t> _GetTabIndex(const TerminalApp::TabBase& tab) const noexcept;
         TerminalApp::TabBase _GetFocusedTab() const noexcept;
-        winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
+        winrt::com_ptr<TabBase> _GetFocusedTabImpl() const noexcept;
         TerminalApp::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
 
         void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
         winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
-        void _ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds);
+        void _ClosePanes(weak_ref<TabBase> weakTab, std::vector<uint32_t> paneIds);
         winrt::Windows::Foundation::IAsyncOperation<bool> _PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane);
         void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
 
-        void _SplitPane(const winrt::com_ptr<TerminalTab>& tab,
+        void _SplitPane(const winrt::com_ptr<TabBase>& tab,
                         const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                         const float splitSize,
                         std::shared_ptr<Pane> newPane);
@@ -440,7 +440,7 @@ namespace winrt::TerminalApp::implementation
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
-        void _Find(const TerminalTab& tab);
+        void _Find(const TabBase& tab);
 
         winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                                      const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
@@ -539,7 +539,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyout _CreateRunAsAdminFlyout(int profileIndex);
 
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);
-        winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
+        winrt::com_ptr<TabBase> _senderOrFocusedTab(const IInspectable& sender);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

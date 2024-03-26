@@ -96,9 +96,6 @@
     <ClInclude Include="TaskbarState.h">
       <DependentUpon>TaskbarState.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TerminalTab.h">
-      <DependentUpon>TerminalTab.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -197,7 +194,7 @@
       <DependentUpon>TaskbarState.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalTab.cpp">
-      <DependentUpon>TerminalTab.idl</DependentUpon>
+      <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
@@ -313,7 +310,6 @@
     <Midl Include="TabBase.idl" />
     <Midl Include="TabPaletteItem.idl" />
     <Midl Include="TaskbarState.idl" />
-    <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>

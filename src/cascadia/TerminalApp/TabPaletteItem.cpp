@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "TabPaletteItem.h"
-#include "TerminalTab.h"
+#include "TabBase.h"
 #include <LibraryResources.h>
 
 #include "TabPaletteItem.g.cpp"
@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TabBase>() })
         {
             const auto status = terminalTab.TabStatus();
             TabStatus(status);

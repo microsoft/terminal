@@ -8,7 +8,7 @@
 #include "../TerminalApp/MinMaxCloseControl.h"
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
-#include "../TerminalApp/TerminalTab.h"
+#include "../TerminalApp/TabBase.h"
 #include "../TerminalApp/CommandPalette.h"
 #include "../TerminalApp/ContentManager.h"
 #include "CppWinrtTailored.h"

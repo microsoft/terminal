@@ -41,11 +41,11 @@ namespace winrt::TerminalApp::implementation
         }
         return _GetActiveControl();
     }
-    winrt::com_ptr<TerminalTab> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
+    winrt::com_ptr<TabBase> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
     {
         if (sender)
         {
-            if (auto tab{ sender.try_as<TerminalApp::TerminalTab>() })
+            if (auto tab{ sender.try_as<TerminalApp::TabBase>() })
             {
                 return _GetTerminalTabImpl(tab);
             }

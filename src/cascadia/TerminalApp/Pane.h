@@ -31,7 +31,7 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TerminalTab;
+    struct TabBase;
 }
 
 enum class Borders : int
@@ -397,6 +397,6 @@ private:
         LayoutSizeNode& operator=(const LayoutSizeNode& other);
     };
 
-    friend struct winrt::TerminalApp::implementation::TerminalTab;
+    friend struct winrt::TerminalApp::implementation::TabBase;
     friend class ::TerminalAppLocalTests::TabTests;
 };

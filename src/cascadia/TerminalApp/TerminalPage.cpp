@@ -1620,7 +1620,7 @@ namespace winrt::TerminalApp::implementation
     //   TitleChanged event.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTitle(const TerminalTab& tab)
+    void TerminalPage::_UpdateTitle(const TabBase& tab)
     {
         auto newTabTitle = tab.Title();
 
@@ -1697,7 +1697,7 @@ namespace winrt::TerminalApp::implementation
     //    * the Color{Selected,Cleared} events to change the color of a tab.
     // Arguments:
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void TerminalPage::_RegisterTabEvents(TerminalTab& hostingTab)
+    void TerminalPage::_RegisterTabEvents(TabBase& hostingTab)
     {
         auto weakTab{ hostingTab.get_weak() };
         auto weakThis{ get_weak() };
@@ -2149,13 +2149,10 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TabBase>& tab)
     {
-        if (const auto terminalTab = tab.try_as<TerminalTab>())
+        // Detach the root pane, which will act like the whole tab got detached.
+        if (const auto rootPane = tab->GetRootPane())
         {
-            // Detach the root pane, which will act like the whole tab got detached.
-            if (const auto rootPane = terminalTab->GetRootPane())
-            {
-                _DetachPaneFromWindow(rootPane);
-            }
+            _DetachPaneFromWindow(rootPane);
         }
     }
 
@@ -2183,7 +2180,7 @@ namespace winrt::TerminalApp::implementation
         RequestMoveContent.raise(*this, *request);
     }
 
-    bool TerminalPage::_MoveTab(winrt::com_ptr<TerminalTab> tab, MoveTabArgs args)
+    bool TerminalPage::_MoveTab(winrt::com_ptr<TabBase> tab, MoveTabArgs args)
     {
         if (!tab)
         {
@@ -2324,7 +2321,7 @@ namespace winrt::TerminalApp::implementation
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
-    void TerminalPage::_SplitPane(const winrt::com_ptr<TerminalTab>& tab,
+    void TerminalPage::_SplitPane(const winrt::com_ptr<TabBase>& tab,
                                   const SplitDirection splitDirection,
                                   const float splitSize,
                                   std::shared_ptr<Pane> newPane)
@@ -3513,7 +3510,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: the tab where the search box should be created
     // Return Value:
     // - <none>
-    void TerminalPage::_Find(const TerminalTab& tab)
+    void TerminalPage::_Find(const TabBase& tab)
     {
         if (const auto& control{ tab.GetActiveTerminalControl() })
         {
@@ -3908,18 +3905,11 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - If the tab is a TerminalTab, a com_ptr to the implementation type.
     //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab)
+    winrt::com_ptr<TabBase> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab)
     {
-        if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
-        {
-            winrt::com_ptr<TerminalTab> tabImpl;
-            tabImpl.copy_from(winrt::get_self<TerminalTab>(terminalTab));
-            return tabImpl;
-        }
-        else
-        {
-            return nullptr;
-        }
+        winrt::com_ptr<TabBase> tabImpl;
+        tabImpl.copy_from(winrt::get_self<TabBase>(tab));
+        return tabImpl;
     }
 
     // Method Description:

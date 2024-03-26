@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "ShortcutActionDispatch.idl";
+import "TerminalTabStatus.idl";
 
 namespace TerminalApp
 {
@@ -10,6 +11,8 @@ namespace TerminalApp
         String Icon { get; };
         Boolean ReadOnly { get; };
         Microsoft.Terminal.Settings.Model.TabCloseButtonVisibility CloseButtonVisibility { get; set; };
+
+        TerminalTabStatus TabStatus { get; };
 
         Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
         Windows.UI.Xaml.FrameworkElement Content { get; };

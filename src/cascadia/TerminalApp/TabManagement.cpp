@@ -95,7 +95,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - newTabImpl: the uninitialized tab.
     // - insertPosition: Optional parameter to indicate the position of tab.
-    void TerminalPage::_InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition)
+    void TerminalPage::_InitializeTab(winrt::com_ptr<TabBase> newTabImpl, uint32_t insertPosition)
     {
         newTabImpl->Initialize();
 
@@ -216,11 +216,11 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - pane: The pane to use as the root.
     // - insertPosition: Optional parameter to indicate the position of tab.
-    TerminalApp::TerminalTab TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition)
+    TerminalApp::TabBase TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition)
     {
         if (pane)
         {
-            auto newTabImpl = winrt::make_self<TerminalTab>(pane);
+            auto newTabImpl = winrt::make_self<TabBase>(pane);
             _InitializeTab(newTabImpl, insertPosition);
             return *newTabImpl;
         }
@@ -232,7 +232,7 @@ namespace winrt::TerminalApp::implementation
     //   tab's icon to that icon.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTabIcon(TerminalTab& tab)
+    void TerminalPage::_UpdateTabIcon(TabBase& tab)
     {
         if (const auto content{ tab.GetActiveContent() })
         {
@@ -290,7 +290,7 @@ namespace winrt::TerminalApp::implementation
     // - Duplicates specified tab
     // Arguments:
     // - tab: tab to duplicate
-    void TerminalPage::_DuplicateTab(const TerminalTab& tab)
+    void TerminalPage::_DuplicateTab(const TabBase& tab)
     {
         try
         {
@@ -323,7 +323,7 @@ namespace winrt::TerminalApp::implementation
     // - Exports the content of the Terminal Buffer inside the tab
     // Arguments:
     // - tab: tab to export
-    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
+    winrt::fire_and_forget TerminalPage::_ExportTab(const TabBase& tab, winrt::hstring filepath)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -661,7 +661,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns a com_ptr to the currently focused tab implementation. This might return null,
     //   so make sure to check the result!
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetFocusedTabImpl() const noexcept
+    winrt::com_ptr<TabBase> TerminalPage::_GetFocusedTabImpl() const noexcept
     {
         if (auto tab{ _GetFocusedTab() })
         {
@@ -801,7 +801,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - weakTab: weak reference to the tab that the pane belongs to.
     // - paneIds: collection of the IDs of the panes that are marked for removal.
-    void TerminalPage::_ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds)
+    void TerminalPage::_ClosePanes(weak_ref<TabBase> weakTab, std::vector<uint32_t> paneIds)
     {
         if (auto strongTab{ weakTab.get() })
         {

@@ -25,41 +25,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-
-    // Method Description:
-    // - Prepares this tab for being removed from the UI hierarchy
-    void TabBase::Shutdown()
-    {
-        ASSERT_UI_THREAD();
-
-        Content(nullptr);
-    }
-
-    // Method Description:
-    // - Creates a context menu attached to the tab.
-    // Currently contains elements allowing the user to close the selected tab
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TabBase::_CreateContextMenu()
-    {
-        auto weakThis{ get_weak() };
-
-        // Build the menu
-        Controls::MenuFlyout contextMenuFlyout;
-        // GH#5750 - When the context menu is dismissed with ESC, toss the focus
-        // back to our control.
-        contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->RequestFocusActiveControl.raise();
-            }
-        });
-        _AppendCloseMenuItems(contextMenuFlyout);
-        TabViewItem().ContextFlyout(contextMenuFlyout);
-    }
-
     // Method Description:
     // - Append the close menu items to the context menu flyout
     // Arguments:
@@ -205,17 +170,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Creates a text for the title run in the tool tip by returning tab title
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The value to populate in the title run of the tool tip
-    winrt::hstring TabBase::_CreateToolTipTitle()
-    {
-        return _Title;
-    }
-
-    // Method Description:
     // - Sets tab tool tip to a concatenation of title and key chord
     // Arguments:
     // - <none>
@@ -243,46 +197,6 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTip toolTip{};
         toolTip.Content(textBlock);
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
-    }
-
-    // Method Description:
-    // - Initializes a TabViewItem for this Tab instance.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TabBase::_MakeTabViewItem()
-    {
-        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
-
-        // GH#3609 If the tab was tapped, and no one else was around to handle
-        // it, then ask our parent to toss focus into the active control.
-        TabViewItem().Tapped([weakThis{ get_weak() }](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->RequestFocusActiveControl.raise();
-            }
-        });
-
-        // BODGY: When the tab is drag/dropped, the TabView gets a
-        // TabDragStarting. However, the way it is implemented[^1], the
-        // TabViewItem needs either an Item or a Content for the event to
-        // include the correct TabViewItem. Otherwise, it will just return the
-        // first TabViewItem in the TabView with the same Content as the dragged
-        // tab (which, if the Content is null, will be the _first_ tab).
-        //
-        // So here, we'll stick an empty border in, just so that every tab has a
-        // Content which is not equal to the others.
-        //
-        // [^1]: microsoft-ui-xaml/blob/92fbfcd55f05c92ac65569f5d284c5b36492091e/dev/TabView/TabView.cpp#L751-L758
-        TabViewItem().Content(winrt::WUX::Controls::Border{});
-    }
-
-    std::optional<winrt::Windows::UI::Color> TabBase::GetTabColor()
-    {
-        ASSERT_UI_THREAD();
-
-        return std::nullopt;
     }
 
     void TabBase::ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
