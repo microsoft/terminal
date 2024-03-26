@@ -5,6 +5,7 @@
 #include <LibraryResources.h>
 #include "ColorPickupFlyout.h"
 #include "TerminalTab.h"
+#include "SettingsPaneContent.h"
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"

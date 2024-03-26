@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "SettingsPaneContent.h"
-#include "SettingsPaneContent.g.cpp"
 #include "Utils.h"
 
 using namespace winrt::Windows::Foundation;

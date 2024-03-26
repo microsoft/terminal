@@ -2,13 +2,14 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "SettingsPaneContent.g.h"
+#include "winrt/TerminalApp.h"
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
 {
-    struct SettingsPaneContent : SettingsPaneContentT<SettingsPaneContent>
+    class SettingsPaneContent : public winrt::implements<SettingsPaneContent, IPaneContent>
     {
+    public:
         SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
@@ -42,9 +43,4 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Editor::MainPage _sui{ nullptr };
         winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
     };
-}
-
-namespace winrt::TerminalApp::factory_implementation
-{
-    BASIC_FACTORY(SettingsPaneContent);
 }
