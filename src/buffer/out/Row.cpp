@@ -1182,11 +1182,11 @@ CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexce
     return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
 }
 
-const std::optional<MarkData>& ROW::GetPromptData() const noexcept
+const std::optional<ScrollbarData>& ROW::GetScrollbarData() const noexcept
 {
     return _promptData;
 }
-void ROW::SetPromptData(std::optional<MarkData> data) noexcept
+void ROW::SetScrollbarData(std::optional<ScrollbarData> data) noexcept
 {
     _promptData = data;
 }
@@ -1195,10 +1195,10 @@ void ROW::StartPrompt() noexcept
 {
     if (!_promptData.has_value())
     {
-        _promptData = MarkData{
+        _promptData = ScrollbarData{
+            .category = MarkCategory::Prompt,
             .color = std::nullopt,
             .exitCode = std::nullopt,
-            .category = MarkCategory::Prompt
         };
     }
 }

@@ -8,6 +8,7 @@
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
+#include "Marks.hpp"
 
 class ROW;
 class TextBuffer;
@@ -85,27 +86,6 @@ private:
     const uint16_t* _charOffsets;
     ptrdiff_t _lastCharOffset;
     til::CoordType _currentColumn;
-};
-
-enum class MarkCategory : uint8_t
-{
-    Default = 0,
-    Error = 1,
-    Warning = 2,
-    Success = 3,
-    Prompt = 4
-};
-struct MarkData
-{
-    // Scrollbar marks may have been given a color, or not.
-    std::optional<til::color> color;
-    // Prompts without an exit code haven't had a matching FTCS CommandEnd
-    // called yet. Any value other than 0 is an error.
-    std::optional<uint32_t> exitCode;
-    MarkCategory category{ MarkCategory::Default };
-
-    // Future consideration: stick the literal command as a string on here, if
-    // we were given it with the 633;E sequence.
 };
 
 class ROW final
@@ -188,8 +168,8 @@ public:
     auto AttrBegin() const noexcept { return _attr.begin(); }
     auto AttrEnd() const noexcept { return _attr.end(); }
 
-    const std::optional<MarkData>& GetPromptData() const noexcept;
-    void SetPromptData(std::optional<MarkData> data) noexcept;
+    const std::optional<ScrollbarData>& GetScrollbarData() const noexcept;
+    void SetScrollbarData(std::optional<ScrollbarData> data) noexcept;
     void StartPrompt() noexcept;
     void EndOutput(std::optional<unsigned int> error) noexcept;
 
@@ -326,7 +306,7 @@ private:
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded = false;
 
-    std::optional<MarkData> _promptData = std::nullopt;
+    std::optional<ScrollbarData> _promptData = std::nullopt;
 };
 
 #ifdef UNIT_TESTING

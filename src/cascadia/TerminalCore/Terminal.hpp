@@ -119,7 +119,7 @@ public:
 
     std::vector<ScrollMark> GetMarkRows() const noexcept;
     std::vector<MarkExtents> GetMarkExtents() const noexcept;
-    void AddMarkFromUI(MarkData mark, const til::CoordType& y);
+    void AddMarkFromUI(ScrollbarData mark, const til::CoordType& y);
 
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
@@ -160,7 +160,7 @@ public:
 
     void ClearMark();
     void ClearAllMarks();
-    til::color GetColorForMark(const MarkData& markData) const;
+    til::color GetColorForMark(const ScrollbarData& markData) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp

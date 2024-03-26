@@ -66,41 +66,6 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
-struct MarkExtents
-{
-    MarkData data;
-
-    // std::optional<til::color> color;
-    til::point start;
-    til::point end; // exclusive
-    std::optional<til::point> commandEnd;
-    std::optional<til::point> outputEnd;
-
-    // MarkCategory category{ MarkCategory::Info };
-    // Other things we may want to think about in the future are listed in
-    // GH#11000
-
-    bool HasCommand() const noexcept
-    {
-        return commandEnd.has_value() && *commandEnd != end;
-    }
-    bool HasOutput() const noexcept
-    {
-        return outputEnd.has_value() && *outputEnd != *commandEnd;
-    }
-    std::pair<til::point, til::point> GetExtent() const
-    {
-        til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
-        return std::make_pair(til::point{ start }, realEnd);
-    }
-};
-
-struct ScrollMark
-{
-    til::CoordType row{ 0 };
-    MarkData data;
-};
-
 class TextBuffer final
 {
 public:
@@ -442,7 +407,6 @@ private:
     uint64_t _lastMutationId = 0;
 
     Cursor _cursor;
-    // std::vector<ScrollMark> _marks;
     bool _isActiveBuffer = false;
 
 #ifdef UNIT_TESTING

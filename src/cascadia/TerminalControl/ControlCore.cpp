@@ -2338,7 +2338,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::AddMark(const Control::ScrollMark& mark)
     {
         const auto lock = _terminal->LockForReading();
-        ::MarkData m{};
+        ::ScrollbarData m{};
 
         if (mark.Color.HasValue)
         {

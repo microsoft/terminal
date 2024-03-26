@@ -1444,7 +1444,7 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMarkFromUI(MarkData mark,
+void Terminal::AddMarkFromUI(ScrollbarData mark,
                              const til::CoordType& y)
 {
     if (_inAltBuffer())
@@ -1453,7 +1453,7 @@ void Terminal::AddMarkFromUI(MarkData mark,
     }
 
     auto& row = _activeBuffer().GetMutableRowByOffset(y);
-    row.SetPromptData(mark);
+    row.SetScrollbarData(mark);
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
@@ -1501,7 +1501,7 @@ std::vector<MarkExtents> Terminal::GetMarkExtents() const noexcept
     return _inAltBuffer() ? std::vector<MarkExtents>{} : std::move(_activeBuffer().GetMarkExtents());
 }
 
-til::color Terminal::GetColorForMark(const MarkData& markData) const
+til::color Terminal::GetColorForMark(const ScrollbarData& markData) const
 {
     if (markData.color.has_value())
     {

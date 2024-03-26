@@ -8431,7 +8431,7 @@ void ScreenBufferTests::SimpleMarkCommand()
 
         stateMachine.ProcessString(FTCS_A L"A Prompt" FTCS_B L"my_command" FTCS_C L"\n");
 
-        VERIFY_IS_TRUE(currentRow.GetPromptData().has_value());
+        VERIFY_IS_TRUE(currentRow.GetScrollbarData().has_value());
     }
 
     stateMachine.ProcessString(L"Two\n");
@@ -8478,13 +8478,13 @@ void ScreenBufferTests::SimpleWrappedCommand()
         VERIFY_ARE_NOT_EQUAL(originalRowOffset, secondRowOffset);
         auto& secondRow = tbi.GetRowByOffset(secondRowOffset);
 
-        VERIFY_IS_TRUE(originalRow.GetPromptData().has_value());
-        VERIFY_IS_FALSE(secondRow.GetPromptData().has_value());
+        VERIFY_IS_TRUE(originalRow.GetScrollbarData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetScrollbarData().has_value());
 
         stateMachine.ProcessString(FTCS_C L"\n");
 
-        VERIFY_IS_TRUE(originalRow.GetPromptData().has_value());
-        VERIFY_IS_FALSE(secondRow.GetPromptData().has_value());
+        VERIFY_IS_TRUE(originalRow.GetScrollbarData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetScrollbarData().has_value());
     }
 
     stateMachine.ProcessString(L"Two\n");
@@ -8554,8 +8554,8 @@ void ScreenBufferTests::SimplePromptRegions()
 
     const auto& row0 = tbi.GetRowByOffset(0);
     const auto& row4 = tbi.GetRowByOffset(4);
-    VERIFY_IS_TRUE(row0.GetPromptData().has_value());
-    VERIFY_IS_TRUE(row4.GetPromptData().has_value());
+    VERIFY_IS_TRUE(row0.GetScrollbarData().has_value());
+    VERIFY_IS_TRUE(row4.GetScrollbarData().has_value());
 
     const auto marks = tbi.GetMarkExtents();
     VERIFY_ARE_EQUAL(2u, marks.size());

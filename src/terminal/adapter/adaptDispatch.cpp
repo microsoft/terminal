@@ -3671,7 +3671,6 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
     else if (subParam == 12)
     {
-        // _api.MarkCommandStart();
         _api.GetTextBuffer().StartCommand();
         return true;
     }
@@ -3691,12 +3690,12 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty())
+    const auto isConPty = _api.IsConsolePty();
+    if (isConPty)
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        // Flush the frame manually, to make sure marks end up on the right
+        // line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3713,20 +3712,14 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
     const auto action = til::at(parts, 0);
 
+    bool handled = false;
     if (action == L"SetMark")
     {
-        // ScrollMark mark;
-        // mark.category = MarkCategory::Prompt;
-        // _api.MarkPrompt(mark);
-
-        auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-        attr.SetMarkAttributes(MarkKind::Prompt);
-        _api.SetTextAttributes(attr);
         _api.GetTextBuffer().StartPrompt();
-
-        return true;
+        handled = true;
     }
-    return false;
+
+    return handled && !isConPty;
 }
 
 // Method Description:
@@ -3741,7 +3734,13 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
+    const auto isConPty = _api.IsConsolePty();
+    if (isConPty)
+    {
+        // Flush the frame manually, to make sure marks end up on the right
+        // line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+    }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
     {
@@ -3762,37 +3761,19 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         {
         case L'A': // FTCS_PROMPT
         {
-            // Simply just mark this line as a prompt line.
-            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            // attr.SetMarkAttributes(MarkKind::Prompt);
-            // _api.SetTextAttributes(attr);
             _api.GetTextBuffer().StartPrompt();
-            // auto& tb = _api.GetTextBuffer();
-            // auto& cursor=  tb.GetCursor();
-            // auto& row = tb.GetRowByOffset(cursor.GetPosition().y);
-
             handled = true;
             break;
         }
         case L'B': // FTCS_COMMAND_START
         {
-            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            // attr.SetMarkAttributes(MarkKind::Command);
-            // _api.SetTextAttributes(attr);
-
             _api.GetTextBuffer().StartCommand();
-
             handled = true;
             break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
-            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            // attr.SetMarkAttributes(MarkKind::Output);
-            // _api.SetTextAttributes(attr);
-
             _api.GetTextBuffer().StartOutput();
-
             handled = true;
             break;
         }
@@ -3813,11 +3794,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                                                                         UINT_MAX;
             }
 
-            // auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-            // attr.SetMarkAttributes(MarkKind::Output);
-            // _api.SetTextAttributes(attr);
             _api.GetTextBuffer().EndOutput(error);
-            // _api.MarkCommandFinish(error);
 
             handled = true;
             break;
@@ -3829,19 +3806,11 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         }
     }
 
-    if (_api.IsConsolePty())
-    {
-        // DebugBreak();
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
-        return false;
-    }
-
     // When we add the rest of the FTCS sequences (GH#11000), we should add a
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
-    return handled;
+    return handled && !isConPty;
 }
 // Method Description:
 // - Performs a VsCode action

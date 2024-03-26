@@ -4350,8 +4350,8 @@ void ConptyRoundtripTests::SimplePromptRegions()
 
         const auto& row0 = tb.GetRowByOffset(0);
         const auto& row4 = tb.GetRowByOffset(4);
-        VERIFY_IS_TRUE(row0.GetPromptData().has_value());
-        VERIFY_IS_TRUE(row4.GetPromptData().has_value());
+        VERIFY_IS_TRUE(row0.GetScrollbarData().has_value());
+        VERIFY_IS_TRUE(row4.GetScrollbarData().has_value());
 
         const auto marks = tb.GetMarkExtents();
         VERIFY_ARE_EQUAL(2u, marks.size());
@@ -4447,8 +4447,8 @@ void ConptyRoundtripTests::MultilinePromptRegions()
 
         const auto& row0 = tb.GetRowByOffset(0);
         const auto& row5 = tb.GetRowByOffset(5);
-        VERIFY_IS_TRUE(row0.GetPromptData().has_value());
-        VERIFY_IS_TRUE(row5.GetPromptData().has_value());
+        VERIFY_IS_TRUE(row0.GetScrollbarData().has_value());
+        VERIFY_IS_TRUE(row5.GetScrollbarData().has_value());
 
         const auto marks = tb.GetMarkExtents();
         VERIFY_ARE_EQUAL(2u, marks.size());

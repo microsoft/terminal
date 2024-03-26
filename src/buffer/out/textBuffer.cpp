@@ -2620,9 +2620,9 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
         // Immediately copy this mark over to our new row. The positions of the
         // marks themselves will be preserved, since they're just text
         // attributes. But the "bookmar"
-        if (oldRow.GetPromptData().has_value())
+        if (oldRow.GetScrollbarData().has_value())
         {
-            newBuffer.GetMutableRowByOffset(newY).SetPromptData(oldRow.GetPromptData());
+            newBuffer.GetMutableRowByOffset(newY).SetScrollbarData(oldRow.GetScrollbarData());
         }
 
         til::CoordType oldX = 0;
@@ -2895,6 +2895,9 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 
     return results;
 }
+
+// Collect up all the rows that were marked, and the data marked on that row.
+// This is what should be used for hot paths, like updating the scrollbar.
 std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
 {
     std::vector<ScrollMark> marks;
@@ -2902,7 +2905,7 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
     for (auto y = 0; y <= bottom; y++)
     {
         const auto& row = GetRowByOffset(y);
-        const auto& data{ row.GetPromptData() };
+        const auto& data{ row.GetScrollbarData() };
         if (data.has_value())
         {
             marks.emplace_back(y, *data);
@@ -2911,6 +2914,14 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const noexcept
     return std::move(marks);
 }
 
+// Get all the regions for all the shell integration marks in the buffer.
+// Marks will be returned in top-down order.
+//
+// This possibly iterates over every run in the buffer, so don't do this on a
+// hot path. Just do this once pwe user input, if at all possible.
+//
+// Use `limit` to control how many you get, _starting from the bottom_. (e.g.
+// limit=1 will just give you the "most recent mark").
 std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit) const noexcept
 {
     if (limit.has_value() &&
@@ -2925,7 +2936,7 @@ std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit)
     for (auto promptY = bottom; promptY >= 0; promptY--)
     {
         const auto& currRow = GetRowByOffset(promptY);
-        auto& rowPromptData = currRow.GetPromptData();
+        auto& rowPromptData = currRow.GetScrollbarData();
         if (!rowPromptData.has_value())
         {
             // This row didn't start a prompt, don't even look here.
@@ -2975,7 +2986,7 @@ void TextBuffer::ClearMarksInRange(
     {
         auto& row = GetMutableRowByOffset(y);
         auto& runs = row.Attributes().runs();
-        row.SetPromptData(std::nullopt);
+        row.SetScrollbarData(std::nullopt);
         for (auto& [attr, length] : runs)
         {
             attr.SetMarkAttributes(MarkKind::None);
@@ -2987,10 +2998,13 @@ void TextBuffer::ClearAllMarks() noexcept
     ClearMarksInRange({ 0, 0 }, { _width - 1, _height - 1 });
 }
 
-MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
+// Collect up the extent of the prompt and possibly command and output for the
+// mark that starts on this row.
+MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
+                                                const til::CoordType bottomInclusive) const
 {
     const auto& startRow = GetRowByOffset(rowOffset);
-    const auto& rowPromptData = startRow.GetPromptData();
+    const auto& rowPromptData = startRow.GetScrollbarData();
     assert(rowPromptData.has_value());
 
     MarkExtents mark{
@@ -3064,7 +3078,7 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset, 
                     if (!mark.commandEnd.has_value())
                     {
                         // immediately just end the command at the start here, so we can treat this whole run as output
-                        mark.commandEnd = mark.end; // til::point{ x, y };
+                        mark.commandEnd = mark.end;
                         startedCommand = true;
                     }
 
@@ -3141,7 +3155,7 @@ std::wstring TextBuffer::CurrentCommand() const
     for (; promptY >= 0; promptY--)
     {
         const auto& currRow = GetRowByOffset(promptY);
-        auto& rowPromptData = currRow.GetPromptData();
+        auto& rowPromptData = currRow.GetScrollbarData();
         if (!rowPromptData.has_value())
         {
             // This row didn't start a prompt, don't even look here.
@@ -3164,7 +3178,7 @@ std::vector<std::wstring> TextBuffer::Commands() const
     for (auto promptY = bottom; promptY >= 0; promptY--)
     {
         const auto& currRow = GetRowByOffset(promptY);
-        auto& rowPromptData = currRow.GetPromptData();
+        auto& rowPromptData = currRow.GetScrollbarData();
         if (!rowPromptData.has_value())
         {
             // This row didn't start a prompt, don't even look here.
@@ -3271,7 +3285,7 @@ void TextBuffer::EndOutput(std::optional<unsigned int> error)
     for (auto y = GetCursor().GetPosition().y; y >= 0; y--)
     {
         auto& currRow = GetMutableRowByOffset(y);
-        auto& rowPromptData = currRow.GetPromptData();
+        auto& rowPromptData = currRow.GetScrollbarData();
         if (rowPromptData.has_value())
         {
             currRow.EndOutput(error);
