@@ -2617,6 +2617,14 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             oldRowLimit = std::max(oldRowLimit, oldCursorPos.x + 1);
         }
 
+        // Immediately copy this mark over to our new row. The positions of the
+        // marks themselves will be preserved, since they're just text
+        // attributes. But the "bookmar"
+        if (oldRow.GetPromptData().has_value())
+        {
+            newBuffer.GetMutableRowByOffset(newY).SetPromptData(oldRow.GetPromptData());
+        }
+
         til::CoordType oldX = 0;
 
         // Copy oldRow into newBuffer until oldRow has been fully consumed.
