@@ -77,7 +77,8 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass RendererWarningArgs
     {
-        UInt64 Result { get; };
+        HRESULT Result { get; };
+        String Parameter { get; };
     }
 
     runtimeclass TransparencyChangedEventArgs

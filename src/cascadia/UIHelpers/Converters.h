@@ -20,6 +20,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         // Strings
         static bool StringsAreNotEqual(const winrt::hstring& expected, const winrt::hstring& actual);
+        static bool StringNotEmpty(const winrt::hstring& value);
         static winrt::Windows::UI::Xaml::Visibility StringNotEmptyToVisibility(const winrt::hstring& value);
         static winrt::hstring StringOrEmptyIfPlaceholder(const winrt::hstring& placeholder, const winrt::hstring& value);
 

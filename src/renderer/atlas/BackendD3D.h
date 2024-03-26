@@ -215,7 +215,7 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _drawTextOverlapSplit(const RenderingPayload& p, u16 y);
         [[nodiscard]] ATLAS_ATTR_COLD AtlasGlyphEntry* _drawGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         AtlasGlyphEntry* _drawBuiltinGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
-        void _drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex);
+        ShadingType _drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex);
         void _drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect);
         static AtlasGlyphEntry* _drawGlyphAllocateEntry(const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         static void _splitDoubleHeightGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, AtlasGlyphEntry* glyphEntry);

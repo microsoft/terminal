@@ -28,16 +28,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile = args.Profile();
         _windowRoot = args.WindowRoot();
 
-        // generate the font list, if we don't have one
-        if (_Profile.CompleteFontList() || !_Profile.MonospaceFontList())
-        {
-            ProfileViewModel::UpdateFontList();
-        }
-
         if (!_previewControl)
         {
             const auto settings = _Profile.TermSettings();
-            _previewConnection->DisplayPowerlineGlyphs(_looksLikePowerlineFont());
+            _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
             _previewControl = Control::TermControl(settings, settings, *_previewConnection);
             _previewControl.IsEnabled(false);
             _previewControl.AllowFocusWhenDisabled(false);
@@ -70,25 +64,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile.DeleteUnfocusedAppearance();
     }
 
-    bool Profiles_Appearance::_looksLikePowerlineFont() const
-    {
-        if (_Profile && _Profile.DefaultAppearance())
-        {
-            if (const auto fontName = _Profile.DefaultAppearance().FontFace(); !fontName.empty())
-            {
-                if (const auto font = ProfileViewModel::FindFontWithLocalizedName(fontName))
-                {
-                    return font.HasPowerlineCharacters();
-                }
-            }
-        }
-        return false;
-    }
-
     void Profiles_Appearance::_onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&) const
     {
         const auto settings = _Profile.TermSettings();
-        _previewConnection->DisplayPowerlineGlyphs(_looksLikePowerlineFont());
+        _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
         _previewControl.UpdateControlSettings(settings, settings);
     }
 }
