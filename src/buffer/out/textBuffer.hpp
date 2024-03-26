@@ -330,16 +330,13 @@ public:
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
+    // Mark handling
     std::vector<ScrollMark> GetMarkRows() const noexcept;
     std::vector<MarkExtents> GetMarkExtents(std::optional<size_t> limit = std::nullopt) const noexcept;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
     std::wstring CurrentCommand() const;
-    std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
-    MarkExtents _scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
-    bool _createPromptMarkIfNeeded();
     std::vector<std::wstring> Commands() const;
-
     void StartPrompt();
     bool StartCommand();
     bool StartOutput();
@@ -368,7 +365,11 @@ private:
     til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;
     til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     void _PruneHyperlinks();
-    // void _trimMarksOutsideBuffer();
+
+    std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
+    MarkExtents _scrollMarkExtentForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const;
+    bool _createPromptMarkIfNeeded();
+
     std::tuple<til::CoordType, til::CoordType, bool> _RowCopyHelper(const CopyRequest& req, const til::CoordType iRow, const ROW& row) const;
 
     static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
