@@ -34,6 +34,7 @@ namespace WindowsTerminal.UIA.Tests.Elements
         public IOSDriver<IOSElement> Session { get; private set; }
         public Actions Actions { get; private set; }
         public AppiumWebElement UIRoot { get; private set; }
+        public int ProcessId { get; private set; }
 
         private bool isDisposed = false;
 
@@ -137,7 +138,8 @@ namespace WindowsTerminal.UIA.Tests.Elements
                 out pi),
                 "Attempting to create child host window process.");
 
-            Log.Comment($"Host window PID: {pi.dwProcessId}");
+            ProcessId = pi.dwProcessId;
+            Log.Comment($"Host window PID: {ProcessId}");
 
             NativeMethods.Win32BoolHelper(WinBase.AssignProcessToJobObject(job, pi.hProcess), "Assigning new host window (suspended) to job object.");
             NativeMethods.Win32BoolHelper(-1 != WinBase.ResumeThread(pi.hThread), "Resume host window process now that it is attached and its launch of the child application will be caught in the job object.");
