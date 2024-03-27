@@ -3049,8 +3049,8 @@ namespace winrt::TerminalApp::implementation
                     {
                         allPathsString.push_back(quotesChar);
                     }
-                    sender.try_as<TermControl>().RawWriteString(allPathsString);
                 }
+                sender.try_as<TermControl>().RawWriteString(allPathsString);
             }
         }
         CATCH_LOG();
