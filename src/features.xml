@@ -90,6 +90,9 @@
         <name>Feature_TerminalChatJailbreakFilter</name>
         <description>If enabled, we check if the provided Azure OpenAI LLM uses a jailbreak filter.</description>
         <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
     <feature>
