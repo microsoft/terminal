@@ -314,7 +314,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
 
-                // we might need to generate an ID, check these:
+                // we need to generate an ID if all these are true:
                 //   1. the action is valid
                 //   2. there isn't already an ID
                 //   3. the origin is User
@@ -485,6 +485,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 cmdList.append(cmdJson);
             }
         }
+
         return cmdList;
     }
 
