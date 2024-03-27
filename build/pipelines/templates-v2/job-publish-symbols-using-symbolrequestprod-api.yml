@@ -59,6 +59,7 @@ jobs:
   - task: AzurePowerShell@5
     inputs:
       azureSubscription: ${{ parameters.subscription }}
+      azurePowerShellVersion: LatestVersion
       pwsh: true
       ScriptType: InlineScript
       Inline: |-
