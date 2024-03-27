@@ -137,11 +137,9 @@
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>この配色は、組み込みの設定またはインストールされている拡張機能の一部です</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
     <value>この配色パターンを変更するには、コピーを作成する必要があります。</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
     <value>コピーを作成</value>
@@ -311,14 +309,6 @@
     <value>[スタート] メニューや [ファイル名を指定して実行] ダイアログなど、既存のセッションなしでコマンドライン アプリケーションを実行したときに起動するターミナル アプリケーション。</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
-    <value>ディスプレイの更新時に画面全体を再描画する</value>
-    <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
-  </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
-    <value>無効にすると、ターミナルはフレームとフレームの間において情報更新分のみレンダリングします。</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
-  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>列</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -446,10 +436,6 @@
     <value>このデスクトップで最近使用したウィンドウに接続する</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>これらの設定は問題のトラブルシューティングに役立つ場合がありますが、パフォーマンスに影響を与えます。</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>タイトル バーを非表示にする (再起動が必要)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
@@ -477,14 +463,6 @@
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>無効にすると、ウィンドウがスムーズにサイズ変更されます。</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>ソフトウェア レンダリングを使用する</value>
-    <comment>Header for a control to toggle whether the terminal should use software to render content instead of the hardware.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
-    <value>有効にすると、ターミナルはハードウェアの代わりにソフトウェア レンダラー (別名 WARP) を使用します。</value>
-    <comment>A description for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>コンピューターのスタートアップ時に起動</value>
@@ -1792,13 +1770,5 @@
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>詳細をご覧ください。</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
-  </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
-    <value>警告:</value>
-    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
-  </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
-    <value>非等幅フォントを選択すると、視覚的なアーティファクトが発生する可能性があります。 ご自身の判断でご利用ください。</value>
-    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
 </root>

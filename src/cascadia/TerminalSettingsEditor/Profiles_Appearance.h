@@ -27,7 +27,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         void _onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&) const;
-        bool _looksLikePowerlineFont() const;
 
         winrt::com_ptr<PreviewConnection> _previewConnection{ nullptr };
         Microsoft::Terminal::Control::TermControl _previewControl{ nullptr };

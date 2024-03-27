@@ -21,7 +21,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         String Name { get; };
         String LocalizedName { get; };
-        Boolean HasPowerlineCharacters { get; };
         Windows.Foundation.Collections.IMap<String, String> FontAxesTagsAndNames { get; };
         Windows.Foundation.Collections.IMap<String, String> FontFeaturesTagsAndNames { get; };
     }
@@ -58,6 +57,10 @@ namespace Microsoft.Terminal.Settings.Editor
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
+
+        String MissingFontFaces { get; };
+        String ProportionalFontFaces { get; };
+        Boolean HasPowerlineCharacters { get; };
 
         void AddNewAxisKeyValuePair();
         void DeleteAxisKeyValuePair(String key);
@@ -103,9 +106,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IHostedInWindow WindowRoot;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
-        Boolean UsingMonospaceFont { get; };
+        Windows.Foundation.Collections.IObservableVector<Font> FilteredFontList { get; };
         Boolean ShowAllFonts;
-        Boolean ShowProportionalFontWarning;
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };
@@ -120,8 +122,6 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentFontWeight;
         Boolean IsCustomFontWeight { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
-
-        IInspectable CurrentFontFace { get; };
 
         IInspectable CurrentIntenseTextStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };

@@ -137,11 +137,9 @@
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>Dieses Farbschema ist Teil der integrierten Einstellungen oder einer installierten Erweiterung.</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
     <value>Um Änderungen an diesem Farbschema vorzunehmen, müssen Sie eine Kopie davon erstellen.</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
     <value>Kopie erstellen</value>
@@ -311,14 +309,6 @@
     <value>Die Terminalanwendung, die gestartet wird, wenn eine Befehlszeilenanwendung ohne vorhandene Sitzung gestartet wird, beispielsweise vom Startmenü oder über das Dialogfeld "Ausführen".</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
-    <value>Gesamten Bildschirm beim Anzeigen von Updates aktualisieren</value>
-    <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
-  </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
-    <value>Wenn diese Option deaktiviert ist, rendert das Terminal die Aktualisierungen nur zwischen den Frames auf den Bildschirm.</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
-  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Spalten</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -446,10 +436,6 @@
     <value>An das zuletzt verwendete Fenster auf diesem Desktop anhängen</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>Diese Einstellungen eignen sich möglicherweise für die Problembehandlung, Sie wirken sich jedoch auf die Leistung aus.</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Titelleiste ausblenden (Neustart erforderlich)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
@@ -477,14 +463,6 @@
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>Wenn diese Option deaktiviert ist, wird die Größe des Fensters reibungslos geändert.</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>Software-Rendering verwenden</value>
-    <comment>Header for a control to toggle whether the terminal should use software to render content instead of the hardware.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
-    <value>Wenn diese Option aktiviert ist, verwendet das Terminal den Software-Renderer (alias WARP) anstelle des Hardware-Renderers.</value>
-    <comment>A description for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>Beim Starten des Computers starten</value>
@@ -1792,13 +1770,5 @@
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>Weitere Informationen.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
-  </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
-    <value>Warnung:</value>
-    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
-  </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
-    <value>Die Auswahl einer Nicht-Monospace-Schriftart führt wahrscheinlich zu visuellen Artefakten. Verwenden Sie sie nach eigenem Ermessen.</value>
-    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
 </root>

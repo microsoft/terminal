@@ -700,6 +700,9 @@
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>Restart connection</value>
   </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>Open scratchpad</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>Select next command output</value>
   </data>

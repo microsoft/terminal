@@ -137,11 +137,9 @@
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>Ţħīѕ ċøłǿґ ŝςħèм℮ îś рăŗţ õƒ тнè ъûĩľт-íπ śéţťΐлĝś õř дŋ íńşťªłĺèð èжťęлşίοη !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
     <value>Ţό màќз ¢ћдņĝзş тő ťђїš ĉǿℓöř śсђзmė, ÿŏú мũŝт măĸę α сòφў σƒ ΐť. !!! !!! !!! !!! !!! !!! !</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
     <value>Маĸέ α ċōρý !!!</value>
@@ -311,13 +309,38 @@
     <value>Ťђě ţэřмīηãĺ ǻφφℓï¢ǻтΐбň ŧђáт łáůйčĥēś ẅĥэп ā сöмmǻńđ-ľіŉэ ăρρĺįċāτΐôⁿ ϊš яųñ шíţћöυţ ªņ ĕхϊŝŧĭñğ şěŝѕïŏπ, ŀĩĸė ƒѓом ţћĕ Ŝτáґт Μęπü бг Яųņ ďīäℓöğ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
-    <value>Ŗёδѓªŵ еñţιŗę šĉřέëŋ шн℮й đĩşρℓâў υρďάţëš !!! !!! !!! !!!</value>
-    <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
+  <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
+    <value>Ĝŗäрђΐсѕ ÃРΪ !!! </value>
+    <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
-    <value>Щħ℮п đįѕāъĺèđ, ťђέ тèřмΐņäľ ωìľľ řεŉďęŗ όŉľŷ ŧђέ ŭρďăţзŝ τö ŧђë šсгèзņ вêţшзэŉ ƒяāméş. !!! !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Đĩŗěćŧ3Đ 11 рґóνϊďèš ă мõřе φ℮ŕƒóŗmąņт аŉđ ƒеǻŧùґê-яĩςђ ℮жφéѓιęŉςè, ώђēѓėªŝ Ðìгëçť2Ď ĩś мθяë ŝţдвłē. Ţĥé δęƒаűłτ ōφτιоⁿ "Ãúτσмάτīč" щĩłł φìçк ţђë ÁΡĨ ţħǻτ ъёšť ƒīтѕ уōûґ ğřǻφђі¢ѕ нąŗďщǻѓê. Íƒ ўöџ ê×ρёřįėŉċê ѕįġńїƒϊĉâⁿт îśşΰёś, соńśϊδеŗ üśίńğ Đΐřěċτ2Đ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>Άůтǿмąťí¢ !!!</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct2d.Text" xml:space="preserve">
+    <value>Đîяе¢ť2Đ !!</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
+    <value>Ďїřèĉт3Ď 11 !!!</value>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>Ďіşǻьłэ рàґτíàľ Šŵąр Ċнаιŋ ĭήνάŀïδαţίбπ !!! !!! !!! !!!</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>Бў ďēƒăüℓţ, ťћэ ţèхţ ř℮ŋðěґĕґ υŝ℮ŝ ä FLIP_SEQUENTIAL Ŝωăр Сђáϊп åπδ ďεĉℓάŗέş δΐŗŧў ŗēćŧăñġℓέš νïд ťĥĕ Present1 ĀРĪ. Щĥêи тћїŝ ŝєŧŧΐñğ įѕ ℮лάьłзδ, α FLIP_DISCARD Şẁαр Ċħāīŉ ŵīĺļ ьё υѕėð íπśťεαď, āлδ ŋо ďīŗŧý ŕęсŧдиĝℓэş шīľĺ ъĕ δеĉľāŗэð. Ẃħέтħêґ òñё σř ŧнé ōтħεř ΐś ъёţŧęґ δéρ℮ήđѕ σή ÿούг ħäґďшάřέ ªήð νăŕιούѕ ǿτђēř ƒαстόяš. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
+    <value>Ųѕε ŝόƒťщаřė яĕŋðεříлğ (WARP) !!! !!! !!!</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>Ẅнέⁿ éñâвĺĕď, ŧĥë тěřmϊñăľ шîľĺ ŭşē ă şóƒтшářě яãѕтĕгīżεŕ (WARP). Тћįş ŝеţŧΐπģ śнσύŀδ вё ĺєƒŧ δїşâьĺεδ ύπďέя ªℓмôšţ áŀł ćϊŕçϋмśтąпćēѕ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Ċσŀùмñѕ !!</value>
@@ -446,10 +469,6 @@
     <value>Äţŧαĉђ τǿ τħе mοѕт ѓěςęńτļγ ûѕєď ŵíñðοω øи тћϊѕ ďёšкτǿφ !!! !!! !!! !!! !!! !</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>Τћέŝė ѕëτтίņģš мâу ьê üѕēƒµľ ƒόґ τřóųьŀėѕĥбοτілġ ǻл іŝśü℮, нσώéνєŕ τĥêў ŵīŀł ΐmρåςť убŭя ρěгƒόґмåñĉę. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Ĥìđε тħê τīţĺё ъªř (ŗėqūΐŗêś яеľаϋŉčћ) !!! !!! !!! !!</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
@@ -477,14 +496,6 @@
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>Ẅн℮ñ ðìşāьļĕð, τĥė ŵΐņďòώ ẃíļĺ řėŝîżē šмõόтнłγ. !!! !!! !!! !!! !!</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>Ųѕε ŝόƒťщаřė яĕŋðεříлğ !!! !!! </value>
-    <comment>Header for a control to toggle whether the terminal should use software to render content instead of the hardware.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
-    <value>Ẅнέⁿ éñâвĺĕď, ŧĥë тěřmϊñăľ шîľĺ ŭşē ŧнé šбƒţẅāяē ґэпδėѓεŕ (д.к.ă. ẀÅЃΡ) ĭñŝτéāđ оƒ тħё ĥάґđẃаяē οлε. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>A description for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>₤áϋпςħ ôл мαςĥĭñę ŝťąřťûρ !!! !!! !</value>
@@ -1797,12 +1808,12 @@
     <value>Ļĕдŗⁿ мõгĕ. !!!</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
   </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
-    <value>Ẃãялíŉĝ: !!</value>
-    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  <data name="Profile_MissingFontFaces.Header" xml:space="preserve">
+    <value>Μįŝşìηğ ƒòńтš: !!! !</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
   </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
-    <value>€ħσõśïŉğ ą ñой-мõποşφãĉєδ ƒŏŋţ ẅіľľ łîķέℓў ŕєŝùłţ íй νΐşūαℓ āѓťīƒдςţŝ. Џŝè àţ ÿοùŗ øẁη δíśčґ℮ťîбņ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
-    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
+    <value>Νόņ-mσиόšραςз ƒоŉтŝ: !!! !!!</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
 </root>
