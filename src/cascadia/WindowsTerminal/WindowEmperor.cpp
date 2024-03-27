@@ -307,6 +307,17 @@ void WindowEmperor::_decrementWindowCount()
     }
 }
 
+// Function Description
+// * Adds a `WT_FOLDER_PATH` env var to our own environment block, that points
+//   at our parent directory. This allows portable installs to refer to files in
+//   the portable install using %WT_FOLDER_PATH%
+static void _setupFolderPathEnvVar()
+{
+    std::wstring path = wil::GetModuleFileNameW<std::wstring>();
+    auto folderPath = path.substr(0, path.find_last_of(L"\\"));
+    SetEnvironmentVariableW(L"WT_FOLDER_PATH", folderPath.c_str());
+}
+
 // Method Description:
 // - Set up all sorts of handlers now that we've determined that we're a process
 //   that will end up hosting the windows. These include:
@@ -320,6 +331,11 @@ void WindowEmperor::_decrementWindowCount()
 // - <none>
 void WindowEmperor::_becomeMonarch()
 {
+    // Do this here, rather than at the top of main. This will prevent us from
+    // including this variable in the vars we serialize in the
+    // Remoting::CommandlineArgs up in HandleCommandlineArgs.
+    _setupFolderPathEnvVar();
+
     // Add a callback to the window manager so that when the Monarch wants a new
     // window made, they come to us
     _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
