@@ -24,9 +24,6 @@
     <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
-    <ClCompile Include="SettingsTab.cpp">
-      <Filter>tab</Filter>
-    </ClCompile>
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
@@ -64,9 +61,6 @@
     <ClInclude Include="Tab.h">
       <Filter>tab</Filter>
     </ClInclude>
-    <ClInclude Include="SettingsTab.h">
-      <Filter>tab</Filter>
-    </ClInclude>
     <ClInclude Include="FilteredCommand.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
@@ -98,6 +92,7 @@
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
+    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="SettingsTab.idl">
       <Filter>tab</Filter>
     </Midl>
