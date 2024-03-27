@@ -1488,13 +1488,13 @@ void Terminal::ClearAllMarks()
     _NotifyScrollEvent();
 }
 
-std::vector<ScrollMark> Terminal::GetMarkRows() const noexcept
+std::vector<ScrollMark> Terminal::GetMarkRows() const
 {
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them.
     return _inAltBuffer() ? std::vector<ScrollMark>{} : std::move(_activeBuffer().GetMarkRows());
 }
-std::vector<MarkExtents> Terminal::GetMarkExtents() const noexcept
+std::vector<MarkExtents> Terminal::GetMarkExtents() const
 {
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them.
@@ -1533,7 +1533,7 @@ til::color Terminal::GetColorForMark(const ScrollbarData& markData) const
     }
 }
 
-std::wstring_view Terminal::CurrentCommand() const
+std::wstring Terminal::CurrentCommand() const
 {
     return _activeBuffer().CurrentCommand();
 }

@@ -4458,7 +4458,7 @@ void ConptyRoundtripTests::MultilinePromptRegions()
             const auto& row = tb.GetRowByOffset(0);
             const auto& attrs = row.Attributes();
             const auto& runs = attrs.runs();
-            VERIFY_ARE_EQUAL(2, runs.size());
+            VERIFY_ARE_EQUAL(2u, runs.size());
             auto run0 = runs[0];
             auto run1 = runs[1];
             VERIFY_ARE_EQUAL(17, run0.length);
@@ -4472,7 +4472,7 @@ void ConptyRoundtripTests::MultilinePromptRegions()
             const auto& row = tb.GetRowByOffset(1);
             const auto& attrs = row.Attributes();
             const auto& runs = attrs.runs();
-            VERIFY_ARE_EQUAL(3, runs.size());
+            VERIFY_ARE_EQUAL(3u, runs.size());
             auto run0 = runs[0];
             auto run1 = runs[1];
             auto run2 = runs[2];
@@ -4490,7 +4490,7 @@ void ConptyRoundtripTests::MultilinePromptRegions()
             const auto& row = tb.GetRowByOffset(2);
             const auto& attrs = row.Attributes();
             const auto& runs = attrs.runs();
-            VERIFY_ARE_EQUAL(2, runs.size());
+            VERIFY_ARE_EQUAL(2u, runs.size());
             auto run0 = runs[0];
             auto run1 = runs[1];
             VERIFY_ARE_EQUAL(22, run0.length);
@@ -4504,7 +4504,7 @@ void ConptyRoundtripTests::MultilinePromptRegions()
             const auto& row = tb.GetRowByOffset(3);
             const auto& attrs = row.Attributes();
             const auto& runs = attrs.runs();
-            VERIFY_ARE_EQUAL(2, runs.size());
+            VERIFY_ARE_EQUAL(2u, runs.size());
             auto run0 = runs[0];
             auto run1 = runs[1];
             VERIFY_ARE_EQUAL(22, run0.length);
@@ -4600,7 +4600,7 @@ void ConptyRoundtripTests::ManyMultilinePromptsWithTrailingSpaces()
     auto verifyFirstRowOfPrompt = [&](const ROW& row) {
         const auto& attrs = row.Attributes();
         const auto& runs = attrs.runs();
-        VERIFY_ARE_EQUAL(2, runs.size());
+        VERIFY_ARE_EQUAL(2u, runs.size());
         auto run0 = runs[0];
         auto run1 = runs[1];
         VERIFY_ARE_EQUAL(17, run0.length);
@@ -4612,7 +4612,7 @@ void ConptyRoundtripTests::ManyMultilinePromptsWithTrailingSpaces()
     auto verifySecondRowOfPrompt = [&](const ROW& row, const auto expectedCommandLength) {
         const auto& attrs = row.Attributes();
         const auto& runs = attrs.runs();
-        VERIFY_ARE_EQUAL(3, runs.size());
+        VERIFY_ARE_EQUAL(3u, runs.size());
         auto run0 = runs[0];
         auto run1 = runs[1];
         auto run2 = runs[2];
@@ -4648,7 +4648,7 @@ void ConptyRoundtripTests::ManyMultilinePromptsWithTrailingSpaces()
             const auto& row = tb.GetRowByOffset(2);
             const auto& attrs = row.Attributes();
             const auto& runs = attrs.runs();
-            VERIFY_ARE_EQUAL(2, runs.size());
+            VERIFY_ARE_EQUAL(2u, runs.size());
             auto run0 = runs[0];
             auto run1 = runs[1];
             VERIFY_ARE_EQUAL(22, run0.length);
@@ -4662,7 +4662,7 @@ void ConptyRoundtripTests::ManyMultilinePromptsWithTrailingSpaces()
             const auto& row = tb.GetRowByOffset(3);
             const auto& attrs = row.Attributes();
             const auto& runs = attrs.runs();
-            VERIFY_ARE_EQUAL(2, runs.size());
+            VERIFY_ARE_EQUAL(2u, runs.size());
             auto run0 = runs[0];
             auto run1 = runs[1];
             VERIFY_ARE_EQUAL(22, run0.length);

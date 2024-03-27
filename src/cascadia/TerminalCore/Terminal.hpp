@@ -117,13 +117,13 @@ public:
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
 
-    std::vector<ScrollMark> GetMarkRows() const noexcept;
-    std::vector<MarkExtents> GetMarkExtents() const noexcept;
+    std::vector<ScrollMark> GetMarkRows() const;
+    std::vector<MarkExtents> GetMarkExtents() const;
     void AddMarkFromUI(ScrollbarData mark, const til::CoordType& y);
 
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
-    std::wstring_view CurrentCommand() const;
+    std::wstring CurrentCommand() const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
