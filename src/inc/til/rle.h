@@ -587,7 +587,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef UNIT_TESTING
         [[nodiscard]] std::wstring to_string() const
         {
-            std::wstring str;
+            std::wstringstream ss;
             bool beginning = true;
 
             for (const auto& run : _runs)
@@ -598,20 +598,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 else
                 {
-                    str.push_back('|');
+                    ss << '|';
                 }
 
                 for (size_t i = 0; i < run.length; ++i)
                 {
                     if (i != 0)
                     {
-                        str.push_back(' ');
+                        ss << ' ';
                     }
-                    fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"{}"), run.value);
+
+                    ss << run.value;
                 }
             }
 
-            return str;
+            return ss.str();
         }
 #endif
 

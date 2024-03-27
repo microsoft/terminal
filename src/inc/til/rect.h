@@ -31,8 +31,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         explicit constexpr operator bool() const noexcept
         {
-            return (left >= 0) & (top >= 0) &
-                   (right >= left) & (bottom >= top);
+            return left >= 0 && top >= 0 && right >= left && bottom >= top;
         }
     };
 
@@ -565,14 +564,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool contains(point pt) const noexcept
         {
-            return (pt.x >= left) & (pt.x < right) &
-                   (pt.y >= top) & (pt.y < bottom);
+            return pt.x >= left && pt.x < right && pt.y >= top && pt.y < bottom;
         }
 
         constexpr bool contains(const rect& rc) const noexcept
         {
-            return (rc.left >= left) & (rc.top >= top) &
-                   (rc.right <= right) & (rc.bottom <= bottom);
+            return rc.left >= left && rc.top >= top && rc.right <= right && rc.bottom <= bottom;
         }
 
         template<typename T = CoordType>
