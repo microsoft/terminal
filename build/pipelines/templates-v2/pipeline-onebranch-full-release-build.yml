@@ -52,6 +52,10 @@ parameters:
   - name: publishVpackToWindows
     type: boolean
     default: false
+  - name: symbolPublishingSubscription
+    type: string
+  - name: symbolPublishingProject
+    type: string
 
   - name: extraPublishJobs
     type: object
@@ -253,8 +257,8 @@ extends:
               pool: { type: windows }
               includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
               symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
-              subscription: $(SymbolPublishingServiceConnection)
-              symbolProject: $(SymbolPublishingProject)
+              subscription: ${{ parameters.symbolPublishingSubscription }}
+              symbolProject: ${{ parameters.symbolPublishingProject }}
               variables:
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
