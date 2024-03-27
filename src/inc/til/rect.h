@@ -4,11 +4,11 @@
 #pragma once
 
 #include "bit.h"
-#include "some.h"
 #include "math.h"
 #include "size.h"
 #include "point.h"
 #include "operators.h"
+#include "small_vector.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
@@ -204,8 +204,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         explicit constexpr operator bool() const noexcept
         {
-            return (left >= 0) & (top >= 0) &
-                   (right > left) & (bottom > top);
+            return left >= 0 && top >= 0 && right > left && bottom > top;
         }
 
         constexpr const_iterator begin() const
@@ -294,9 +293,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // - = subtract
-        constexpr some<rect, 4> operator-(const rect& other) const
+        small_vector<rect, 4> operator-(const rect& other) const
         {
-            some<rect, 4> result;
+            small_vector<rect, 4> result;
 
             // We could have up to four rectangles describing the area resulting when you take removeMe out of main.
             // Find the intersection of the two so we know which bits of removeMe are actually applicable

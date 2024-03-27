@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "small_vector.h"
-
 #ifdef UNIT_TESTING
 class RunLengthEncodingTests;
 #endif
@@ -589,7 +587,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef UNIT_TESTING
         [[nodiscard]] std::wstring to_string() const
         {
-            std::wstringstream ss;
+            std::wstring str;
             bool beginning = true;
 
             for (const auto& run : _runs)
@@ -600,21 +598,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 else
                 {
-                    ss << '|';
+                    str.push_back('|');
                 }
 
                 for (size_t i = 0; i < run.length; ++i)
                 {
                     if (i != 0)
                     {
-                        ss << ' ';
+                        str.push_back(' ');
                     }
-
-                    ss << run.value;
+                    fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"{}"), run.value);
                 }
             }
 
-            return ss.str();
+            return str;
         }
 #endif
 

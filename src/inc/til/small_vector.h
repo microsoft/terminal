@@ -922,7 +922,10 @@ namespace til
         T* _data;
         size_t _capacity;
         size_t _size;
-        T _buffer[N];
+        union
+        {
+            T _buffer[N];
+        };
     };
 }
 
