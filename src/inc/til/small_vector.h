@@ -644,7 +644,7 @@ namespace til
         reference emplace_back(Args&&... args)
         {
             const auto new_size = _ensure_fits(1);
-            const auto it = new (_data + _size) T(std::forward<Args>(args)...);
+            const auto it = std::construct_at(_data + _size, std::forward<Args>(args)...);
             _size = new_size;
             return *it;
         }
