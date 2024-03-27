@@ -138,14 +138,12 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
-    const BOOL bPassthroughMode = (dwFlags & PSEUDOCONSOLE_PASSTHROUGH_MODE) == PSEUDOCONSOLE_PASSTHROUGH_MODE;
     swprintf_s(cmd,
                MAX_PATH,
                pwszFormat,
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
                bResizeQuirk ? L"--resizeQuirk " : L"",
-               bPassthroughMode ? L"--passthrough " : L"",
                size.X,
                size.Y,
                signalPipeConhostSide.get(),

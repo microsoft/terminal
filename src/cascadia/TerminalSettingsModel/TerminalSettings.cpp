@@ -297,7 +297,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();
-        _VtPassthrough = profile.VtPassthrough();
 
         _StartingDirectory = profile.EvaluatedStartingDirectory();
 
