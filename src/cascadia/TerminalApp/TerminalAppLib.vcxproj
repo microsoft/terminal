@@ -158,6 +158,12 @@
     <ClInclude Include="SettingsLoadEventArgs.h">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TerminalPaneContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ScratchpadContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
@@ -262,6 +268,12 @@
     <ClCompile Include="TerminalWindow.cpp">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TerminalPaneContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ScratchpadContent.cpp">
+      <DependentUpon>ScratchpadContent.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="SuggestionsControl.cpp">
@@ -334,6 +346,8 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />
+    <Midl Include="IPaneContent.idl" />
+    <Midl Include="TerminalPaneContent.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

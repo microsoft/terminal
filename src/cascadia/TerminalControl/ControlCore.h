@@ -18,12 +18,22 @@
 #include "ControlCore.g.h"
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
+
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
-#include "../../renderer/base/Renderer.hpp"
+#include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "../buffer/out/search.h"
-#include "../buffer/out/TextColor.h"
+#include "../../renderer/inc/FontInfoDesired.hpp"
+
+namespace Microsoft::Console::Render::Atlas
+{
+    class AtlasEngine;
+}
+
+namespace Microsoft::Console::Render
+{
+    class UiaEngine;
+}
 
 namespace ControlUnitTests
 {
@@ -82,9 +92,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
-        Control::IControlSettings Settings() { return *_settings; };
-        Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
-        Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
+        Control::IControlSettings Settings();
+        Control::IControlAppearance FocusedAppearance() const;
+        Control::IControlAppearance UnfocusedAppearance() const;
         bool HasUnfocusedAppearance() const;
 
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
@@ -219,8 +229,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  const bool isOnOriginalPosition,
                                  bool& selectionNeedsToBeCopied);
 
-        void AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
-        void DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
+        void AttachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine);
+        void DetachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine);
 
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
@@ -306,7 +316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // As _renderer has a dependency on _renderEngine (through a raw pointer)
         // we must ensure the _renderer is deallocated first.
         // (C++ class members are destroyed in reverse order.)
-        std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
+        std::unique_ptr<::Microsoft::Console::Render::Atlas::AtlasEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Search _searcher;
@@ -380,7 +390,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
 #pragma region RendererCallbacks
-        void _rendererWarning(const HRESULT hr);
+        void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
         winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();

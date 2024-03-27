@@ -155,7 +155,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RetroTerminalEffect, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, DisablePartialInvalidation, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseBackgroundImageForWindow, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);

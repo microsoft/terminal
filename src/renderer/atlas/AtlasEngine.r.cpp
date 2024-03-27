@@ -65,7 +65,7 @@ catch (const wil::ResultException& exception)
     {
         try
         {
-            _p.warningCallback(hr);
+            _p.warningCallback(hr, {});
         }
         CATCH_LOG()
     }
@@ -134,7 +134,7 @@ void AtlasEngine::_recreateAdapter()
     DXGI_ADAPTER_DESC1 desc{};
 
     {
-        const auto useSoftwareRendering = _p.s->target->useSoftwareRendering;
+        const auto useWARP = _p.s->target->useWARP;
         UINT index = 0;
 
         do
@@ -142,13 +142,13 @@ void AtlasEngine::_recreateAdapter()
             THROW_IF_FAILED(_p.dxgi.factory->EnumAdapters1(index++, adapter.put()));
             THROW_IF_FAILED(adapter->GetDesc1(&desc));
 
-            // If useSoftwareRendering is false we exit during the first iteration. Using the default adapter (index 0)
+            // If useWARP is false we exit during the first iteration. Using the default adapter (index 0)
             // is the right thing to do under most circumstances, unless you _really_ want to get your hands dirty.
             // The alternative is to track the window rectangle in respect to all IDXGIOutputs and select the right
             // IDXGIAdapter, while also considering the "graphics preference" override in the windows settings app, etc.
             //
-            // If useSoftwareRendering is true we search until we find the first WARP adapter (usually the last adapter).
-        } while (useSoftwareRendering && WI_IsFlagClear(desc.Flags, DXGI_ADAPTER_FLAG_SOFTWARE));
+            // If useWARP is true we search until we find the first WARP adapter (usually the last adapter).
+        } while (useWARP && WI_IsFlagClear(desc.Flags, DXGI_ADAPTER_FLAG_SOFTWARE));
     }
 
     if (memcmp(&_p.dxgi.adapterLuid, &desc.AdapterLuid, sizeof(LUID)) != 0)
@@ -166,7 +166,8 @@ void AtlasEngine::_recreateBackend()
     // HWND, IWindow, or composition surface at a time. --> Destroy it while we still have the old device.
     _destroySwapChain();
 
-    auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
+    auto graphicsAPI = _p.s->target->graphicsAPI;
+
     auto deviceFlags =
         D3D11_CREATE_DEVICE_SINGLETHREADED
 #ifndef NDEBUG
@@ -182,8 +183,14 @@ void AtlasEngine::_recreateBackend()
 
     if (WI_IsFlagSet(_p.dxgi.adapterFlags, DXGI_ADAPTER_FLAG_SOFTWARE))
     {
+        // If we're using WARP we don't want to disable those optimizations of course.
         WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS);
-        d2dMode = true;
+
+        // I'm not sure whether Direct2D is actually faster on WARP, but it's definitely better tested.
+        if (graphicsAPI == GraphicsAPI::Automatic)
+        {
+            graphicsAPI = GraphicsAPI::Direct2D;
+        }
     }
 
     wil::com_ptr<ID3D11Device> device0;
@@ -202,17 +209,16 @@ void AtlasEngine::_recreateBackend()
 
 #pragma warning(suppress : 26496) // The variable 'hr' does not change after construction, mark it as const (con.4).
     auto hr = D3D11CreateDevice(
-        /* pAdapter */ _p.dxgi.adapter.get(),
-        /* DriverType */ D3D_DRIVER_TYPE_UNKNOWN,
-        /* Software */ nullptr,
-        /* Flags */ deviceFlags,
-        /* pFeatureLevels */ featureLevels.data(),
-        /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
-        /* SDKVersion */ D3D11_SDK_VERSION,
-        /* ppDevice */ device0.put(),
-        /* pFeatureLevel */ &featureLevel,
+        /* pAdapter           */ _p.dxgi.adapter.get(),
+        /* DriverType         */ D3D_DRIVER_TYPE_UNKNOWN,
+        /* Software           */ nullptr,
+        /* Flags              */ deviceFlags,
+        /* pFeatureLevels     */ featureLevels.data(),
+        /* FeatureLevels      */ gsl::narrow_cast<UINT>(featureLevels.size()),
+        /* SDKVersion         */ D3D11_SDK_VERSION,
+        /* ppDevice           */ device0.put(),
+        /* pFeatureLevel      */ &featureLevel,
         /* ppImmediateContext */ deviceContext0.put());
-
 #ifndef NDEBUG
     if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING)
     {
@@ -222,15 +228,15 @@ void AtlasEngine::_recreateBackend()
         WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_DEBUG);
 
         hr = D3D11CreateDevice(
-            /* pAdapter */ _p.dxgi.adapter.get(),
-            /* DriverType */ D3D_DRIVER_TYPE_UNKNOWN,
-            /* Software */ nullptr,
-            /* Flags */ deviceFlags,
-            /* pFeatureLevels */ featureLevels.data(),
-            /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
-            /* SDKVersion */ D3D11_SDK_VERSION,
-            /* ppDevice */ device0.put(),
-            /* pFeatureLevel */ &featureLevel,
+            /* pAdapter           */ _p.dxgi.adapter.get(),
+            /* DriverType         */ D3D_DRIVER_TYPE_UNKNOWN,
+            /* Software           */ nullptr,
+            /* Flags              */ deviceFlags,
+            /* pFeatureLevels     */ featureLevels.data(),
+            /* FeatureLevels      */ gsl::narrow_cast<UINT>(featureLevels.size()),
+            /* SDKVersion         */ D3D11_SDK_VERSION,
+            /* ppDevice           */ device0.put(),
+            /* pFeatureLevel      */ &featureLevel,
             /* ppImmediateContext */ deviceContext0.put());
     }
 #endif
@@ -252,37 +258,44 @@ void AtlasEngine::_recreateBackend()
     }
 #endif
 
-    if (featureLevel < D3D_FEATURE_LEVEL_10_0)
+    if (graphicsAPI == GraphicsAPI::Automatic)
     {
-        d2dMode = true;
-    }
-    else if (featureLevel < D3D_FEATURE_LEVEL_11_0)
-    {
-        D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options{};
-        // I'm assuming if `CheckFeatureSupport` fails, it'll leave `options` untouched which will result in `d2dMode |= true`.
-        std::ignore = device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options));
-        d2dMode |= !options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x;
+        if (featureLevel < D3D_FEATURE_LEVEL_10_0)
+        {
+            graphicsAPI = GraphicsAPI::Direct2D;
+        }
+        else if (featureLevel < D3D_FEATURE_LEVEL_11_0)
+        {
+            D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options{};
+            if (FAILED(device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options))) ||
+                !options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)
+            {
+                graphicsAPI = GraphicsAPI::Direct2D;
+            }
+        }
     }
 
     _p.device = std::move(device);
     _p.deviceContext = std::move(deviceContext);
 
-    if (d2dMode)
+    switch (graphicsAPI)
     {
+    case GraphicsAPI::Direct2D:
         _b = std::make_unique<BackendD2D>();
-    }
-    else
-    {
+        _hackIsBackendD2D = true;
+        break;
+    default:
         _b = std::make_unique<BackendD3D>(_p);
+        _hackIsBackendD2D = false;
+        break;
     }
 
     // This ensures that the backends redraw their entire viewports whenever a new swap chain is created,
     // EVEN IF we got called when no actual settings changed (i.e. rendering failure, etc.).
     _p.MarkAllAsDirty();
 
-    const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !d2dMode;
+    const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !_hackIsBackendD2D;
     _hackTriggerRedrawAll = _hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs;
-    _hackIsBackendD2D = d2dMode;
     _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
 }
 
@@ -330,7 +343,7 @@ void AtlasEngine::_createSwapChain()
         // more "intelligent" composition and display updates to occur like Panel Self Refresh
         // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
         // We were asked by DWM folks to use DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL for this reason (PSR).
-        .SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+        .SwapEffect = _p.s->target->disablePresent1 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
         // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
         // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
         .AlphaMode = _p.s->target->useAlpha ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
@@ -458,44 +471,39 @@ void AtlasEngine::_present()
         return;
     }
 
-    if constexpr (!ATLAS_DEBUG_SHOW_DIRTY)
+    if (!ATLAS_DEBUG_SHOW_DIRTY && !_p.s->target->disablePresent1 && memcmp(&dirtyRect, &fullRect, sizeof(RECT)) != 0)
     {
-        if (memcmp(&dirtyRect, &fullRect, sizeof(RECT)) != 0)
+        params.DirtyRectsCount = 1;
+        params.pDirtyRects = &dirtyRect;
+
+        if (_p.scrollOffset)
         {
-            params.DirtyRectsCount = 1;
-            params.pDirtyRects = &dirtyRect;
+            const auto offsetInPx = _p.scrollOffset * _p.s->font->cellSize.y;
+            const auto width = _p.s->targetSize.x;
+            // We don't use targetSize.y here, because "height" refers to the bottom coordinate of the last text row
+            // in the buffer. We then add the "offsetInPx" (which is negative when scrolling text upwards) and thus
+            // end up with a "bottom" value that is the bottom of the last row of text that we haven't invalidated.
+            const auto height = _p.s->viewportCellCount.y * _p.s->font->cellSize.y;
+            const auto top = std::max(0, offsetInPx);
+            const auto bottom = height + std::min(0, offsetInPx);
 
-            if (_p.scrollOffset)
-            {
-                const auto offsetInPx = _p.scrollOffset * _p.s->font->cellSize.y;
-                const auto width = _p.s->targetSize.x;
-                // We don't use targetSize.y here, because "height" refers to the bottom coordinate of the last text row
-                // in the buffer. We then add the "offsetInPx" (which is negative when scrolling text upwards) and thus
-                // end up with a "bottom" value that is the bottom of the last row of text that we haven't invalidated.
-                const auto height = _p.s->viewportCellCount.y * _p.s->font->cellSize.y;
-                const auto top = std::max(0, offsetInPx);
-                const auto bottom = height + std::min(0, offsetInPx);
+            scrollRect = { 0, top, width, bottom };
+            scrollOffset = { 0, offsetInPx };
 
-                scrollRect = { 0, top, width, bottom };
-                scrollOffset = { 0, offsetInPx };
-
-                params.pScrollRect = &scrollRect;
-                params.pScrollOffset = &scrollOffset;
-            }
+            params.pScrollRect = &scrollRect;
+            params.pScrollOffset = &scrollOffset;
         }
     }
 
+    auto hr = _p.swapChain.swapChain->Present1(1, 0, &params);
     if constexpr (Feature_AtlasEnginePresentFallback::IsEnabled())
     {
-        if (FAILED_LOG(_p.swapChain.swapChain->Present1(1, 0, &params)))
+        if (FAILED(hr) && params.DirtyRectsCount != 0)
         {
-            THROW_IF_FAILED(_p.swapChain.swapChain->Present(1, 0));
+            hr = _p.swapChain.swapChain->Present(1, 0);
         }
     }
-    else
-    {
-        THROW_IF_FAILED(_p.swapChain.swapChain->Present1(1, 0, &params));
-    }
+    THROW_IF_FAILED(hr);
 
     _p.swapChain.waitForPresentation = true;
 }
