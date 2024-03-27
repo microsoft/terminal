@@ -491,7 +491,7 @@
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+numpad_minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
         { "command": "resetFontSize", "keys": "ctrl+numpad_0" },
-
+        { "command": "openFileDialog", "keys": "ctrl+o" },
         // Other commands
         {
             // Select color scheme...

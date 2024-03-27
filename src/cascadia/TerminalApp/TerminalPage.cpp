@@ -32,6 +32,7 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI;
@@ -701,6 +702,7 @@ namespace winrt::TerminalApp::implementation
     {
         _ShowDialogHelper(L"AboutDialog");
     }
+
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
     {
@@ -2955,6 +2957,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
         ShowWindowChanged.raise(*this, args);
+    }
+
+    // Method Description:
+    // - Open an file dialog and paste the selected filepath in tothe current active control
+    winrt::fire_and_forget TerminalPage::_OpenFileDialog(const IInspectable sender)
+    {
+        co_await winrt::resume_background();
+        try
+        {
+            auto weakThis{ get_weak() };
+            if (const auto& page{ weakThis.get() })
+            {
+                FileOpenPicker openPicker;
+                openPicker.as<::IInitializeWithWindow>()->Initialize((HWND)sender.try_as<TermControl>().OwningHwnd());
+                openPicker.FileTypeFilter().Append(L"*");
+                openPicker.ViewMode(PickerViewMode::List);
+                winrt::Windows::Storage::StorageFile file = co_await openPicker.PickSingleFileAsync();
+                if (file == nullptr)
+                {
+                    co_return;
+                }
+                sender.try_as<TermControl>().RawWriteString('"' + file.Path() + '"');
+            }
+        }
+        CATCH_LOG();
+        co_return;
     }
 
     // Method Description:

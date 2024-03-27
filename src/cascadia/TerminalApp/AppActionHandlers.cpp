@@ -19,6 +19,7 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
+
 using namespace ::TerminalApp;
 
 namespace winrt
@@ -1420,6 +1421,16 @@ namespace winrt::TerminalApp::implementation
                                         const ActionEventArgs& args)
     {
         _ShowAboutDialog();
+        args.Handled(true);
+    }
+
+     void TerminalPage::_HandleOpenFileDialog(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            _OpenFileDialog(control);
+        }   
         args.Handled(true);
     }
 }

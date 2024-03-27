@@ -416,6 +416,7 @@ namespace winrt::TerminalApp::implementation
         bool _CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::Control::CopyFormat>& formats);
 
         winrt::fire_and_forget _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
+        winrt::fire_and_forget _OpenFileDialog(const IInspectable sender);
 
         void _PasteText();
 
