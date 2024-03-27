@@ -93,7 +93,7 @@ jobs:
   - pwsh: |-
       # Prepare the defaults for IRM
       $PSDefaultParameterValues['Invoke-RestMethod:Headers'] = @{ Authorization = "Bearer $(SymbolAccessToken)" }
-      $PSDefaultParameterValues['Invoke-RestMethod:Content-Type'] = "application/json"
+      $PSDefaultParameterValues['Invoke-RestMethod:ContentType'] = "application/json"
       $PSDefaultParameterValues['Invoke-RestMethod:Method'] = "POST"
 
       $BaseUri = "https://symbolrequestprod.trafficmanager.net/projects/${{ parameters.symbolProject }}/requests"
@@ -105,7 +105,7 @@ jobs:
         expirationTime = $expiration.ToString();
       }
       Write-Host "##[debug]Starting request $($createRequestBody.requestName) with expiration date of $($createRequestBody.expirationTime)"
-      Invoke-RestMethod -Uri "$BaseUri" -Body $createRequestBody -Verbose
+      Invoke-RestMethod -Uri "$BaseUri" -Body ($createRequestBody | ConvertTo-Json -Compress) -Verbose
 
       # Request symbol publication
       $publishRequestBody = @{
@@ -113,5 +113,5 @@ jobs:
         publishToPublicServer = $${{ parameters.includePublicSymbolServer }};
       }
       Write-Host "##[debug]Submitting request $($createRequestBody.requestName) ($($publishRequestBody | ConvertTo-Json -Compress))"
-      Invoke-RestMethod -Uri "$BaseUri/$($createRequestBody.requestName)" -Body $publishRequestBody -Verbose
+      Invoke-RestMethod -Uri "$BaseUri/$($createRequestBody.requestName)" -Body ($publishRequestBody | ConvertTo-Json -Compress) -Verbose
     displayName: Publish Symbols using internal REST API
