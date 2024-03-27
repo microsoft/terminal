@@ -25,6 +25,8 @@
 #include "TabRowControl.h"
 #include "Utils.h"
 
+#include "Blackbox.cpp"
+
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -1281,6 +1283,21 @@ namespace winrt::TerminalApp::implementation
         {
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
         }
+
+        auto _b{ std::make_shared<Blackbox>() };
+        connection.TerminalOutput([bbox = _b](const winrt::hstring& h) {
+            bbox->Log(h);
+        });
+        connection.StateChanged([bbox = _b](auto&& sender, auto&&) {
+            if (auto c = sender.try_as<ITerminalConnection>())
+            {
+                auto st = c.State();
+                if (st == ConnectionState::Failed || st == ConnectionState::Closed)
+                {
+                    bbox->Close();
+                }
+            }
+        });
 
         connection.Initialize(valueSet);
 
