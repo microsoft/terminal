@@ -1904,17 +1904,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // By only sending keypresses to the end of the command + 1, we
                 // should leave the cursor at the very end of the prompt,
                 // without adding any characters from a previous command.
-                auto clampedClick = terminalPosition;
-                if (terminalPosition > lastNonSpace)
+
+                // terminalPosition is viewport-relative.
+                const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
+                const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+
+                auto clampedClick = bufferPos;
+                if (clampedClick.y > lastNonSpace.y)
+                {
+                    // Clicked under the prompt. Bail.
+                    return;
+                }
+                else if (clampedClick > lastNonSpace)
                 {
                     clampedClick = lastNonSpace + til::point{ 1, 0 };
-                    _terminal->GetTextBuffer().GetSize().Clamp(clampedClick);
+                    bufferSize.Clamp(clampedClick);
                 }
 
                 if (clampedClick >= end)
                 {
                     // Get the distance between the cursor and the click, in cells.
-                    const auto bufferSize = _terminal->GetTextBuffer().GetSize();
 
                     // First, make sure to iterate from the first point to the
                     // second. The user may have clicked _earlier_ in the
@@ -1944,7 +1953,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         append(_terminal->SendKeyEvent(key, 0, {}, false));
                     }
 
-                    _sendInputToConnection(buffer);
+                    {
+                        // Sending input requrires that we're unlocked, because writing the input pipe may block indefinitely.
+                        const auto suspension = _terminal->SuspendLock();
+                        _sendInputToConnection(buffer);
+                    }
                 }
             }
         }
