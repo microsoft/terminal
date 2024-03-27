@@ -31,13 +31,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetExpanded(bool expanded);
 
+        til::typed_event<Editor::SettingContainer, Windows::Foundation::IInspectable> ClearSettingValue;
+
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(hstring, HelpText);
         DEPENDENCY_PROPERTY(hstring, CurrentValue);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
         DEPENDENCY_PROPERTY(bool, StartExpanded);
         DEPENDENCY_PROPERTY(IInspectable, SettingOverrideSource);
-        TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);
 
     private:
         static void _InitializeProperties();

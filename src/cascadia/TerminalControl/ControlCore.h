@@ -18,12 +18,22 @@
 #include "ControlCore.g.h"
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
+
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
-#include "../../renderer/base/Renderer.hpp"
+#include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "../buffer/out/search.h"
-#include "../buffer/out/TextColor.h"
+#include "../../renderer/inc/FontInfoDesired.hpp"
+
+namespace Microsoft::Console::Render::Atlas
+{
+    class AtlasEngine;
+}
+
+namespace Microsoft::Console::Render
+{
+    class UiaEngine;
+}
 
 namespace ControlUnitTests
 {
@@ -82,9 +92,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
-        Control::IControlSettings Settings() { return *_settings; };
-        Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
-        Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
+        Control::IControlSettings Settings();
+        Control::IControlAppearance FocusedAppearance() const;
+        Control::IControlAppearance UnfocusedAppearance() const;
         bool HasUnfocusedAppearance() const;
 
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
@@ -219,8 +229,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  const bool isOnOriginalPosition,
                                  bool& selectionNeedsToBeCopied);
 
-        void AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
-        void DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
+        void AttachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine);
+        void DetachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine);
 
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
@@ -252,34 +262,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        TYPED_EVENT(FontSizeChanged,           IInspectable, Control::FontSizeChangedArgs);
+        til::typed_event<IInspectable, Control::FontSizeChangedArgs> FontSizeChanged;
 
-        TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
-        TYPED_EVENT(TitleChanged,              IInspectable, Control::TitleChangedEventArgs);
-        TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
-        TYPED_EVENT(TabColorChanged,           IInspectable, IInspectable);
-        TYPED_EVENT(BackgroundColorChanged,    IInspectable, IInspectable);
-        TYPED_EVENT(ScrollPositionChanged,     IInspectable, Control::ScrollPositionChangedArgs);
-        TYPED_EVENT(CursorPositionChanged,     IInspectable, IInspectable);
-        TYPED_EVENT(TaskbarProgressChanged,    IInspectable, IInspectable);
-        TYPED_EVENT(ConnectionStateChanged,    IInspectable, IInspectable);
-        TYPED_EVENT(HoveredHyperlinkChanged,   IInspectable, IInspectable);
-        TYPED_EVENT(RendererEnteredErrorState, IInspectable, IInspectable);
-        TYPED_EVENT(SwapChainChanged,          IInspectable, IInspectable);
-        TYPED_EVENT(RendererWarning,           IInspectable, Control::RendererWarningArgs);
-        TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
-        TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
-        TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
-        TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
-        TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
-        TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
-        TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
-        TYPED_EVENT(CompletionsChanged,        IInspectable, Control::CompletionsChangedEventArgs);
+        til::typed_event<IInspectable, Control::CopyToClipboardEventArgs> CopyToClipboard;
+        til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
+        til::typed_event<> WarningBell;
+        til::typed_event<> TabColorChanged;
+        til::typed_event<> BackgroundColorChanged;
+        til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
+        til::typed_event<> CursorPositionChanged;
+        til::typed_event<> TaskbarProgressChanged;
+        til::typed_event<> ConnectionStateChanged;
+        til::typed_event<> HoveredHyperlinkChanged;
+        til::typed_event<IInspectable, IInspectable> RendererEnteredErrorState;
+        til::typed_event<> SwapChainChanged;
+        til::typed_event<IInspectable, Control::RendererWarningArgs> RendererWarning;
+        til::typed_event<IInspectable, Control::NoticeEventArgs> RaiseNotice;
+        til::typed_event<IInspectable, Control::TransparencyChangedEventArgs> TransparencyChanged;
+        til::typed_event<> ReceivedOutput;
+        til::typed_event<IInspectable, Control::FoundResultsArgs> FoundMatch;
+        til::typed_event<IInspectable, Control::ShowWindowArgs> ShowWindowChanged;
+        til::typed_event<IInspectable, Control::UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
+        til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
+        til::typed_event<IInspectable, Control::CompletionsChangedEventArgs> CompletionsChanged;
 
-        TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
-        TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
+        til::typed_event<> CloseTerminalRequested;
+        til::typed_event<> RestartTerminalRequested;
 
-        TYPED_EVENT(Attached,                  IInspectable, IInspectable);
+        til::typed_event<> Attached;
         // clang-format on
 
     private:
@@ -306,7 +316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // As _renderer has a dependency on _renderEngine (through a raw pointer)
         // we must ensure the _renderer is deallocated first.
         // (C++ class members are destroyed in reverse order.)
-        std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
+        std::unique_ptr<::Microsoft::Console::Render::Atlas::AtlasEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Search _searcher;
@@ -380,7 +390,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
 #pragma region RendererCallbacks
-        void _rendererWarning(const HRESULT hr);
+        void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
         winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();

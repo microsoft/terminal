@@ -209,7 +209,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto propertyName{ args.PropertyName() };
         if (propertyName == L"Color" || propertyName == L"Name")
         {
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"AccessibleName" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"AccessibleName" });
         }
     }
 

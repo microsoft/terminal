@@ -127,6 +127,35 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  RightClickContextMenu  -->
+            <local:SettingContainer x:Uid="Profile_RightClickContextMenu"
+                                    ClearSettingValue="{x:Bind Profile.ClearRightClickContextMenu}"
+                                    HasSettingValue="{x:Bind Profile.HasRightClickContextMenu, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.RightClickContextMenuOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Profile.RightClickContextMenu, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  ShowMarks  -->
+            <local:SettingContainer x:Uid="Profile_ShowMarks"
+                                    ClearSettingValue="{x:Bind Profile.ClearShowMarks}"
+                                    HasSettingValue="{x:Bind Profile.HasShowMarks, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.ShowMarksOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Profile.ShowMarksAvailable}">
+                <ToggleSwitch IsOn="{x:Bind Profile.ShowMarks, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  AutoMarkPrompts  -->
+            <local:SettingContainer x:Uid="Profile_AutoMarkPrompts"
+                                    ClearSettingValue="{x:Bind Profile.ClearAutoMarkPrompts}"
+                                    HasSettingValue="{x:Bind Profile.HasAutoMarkPrompts, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AutoMarkPromptsOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Profile.AutoMarkPromptsAvailable}">
+                <ToggleSwitch IsOn="{x:Bind Profile.AutoMarkPrompts, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  ReloadEnvVars  -->
             <local:SettingContainer x:Uid="Profile_ReloadEnvVars"
                                     ClearSettingValue="{x:Bind Profile.ClearReloadEnvironmentVariables}"
@@ -135,6 +164,17 @@
                 <ToggleSwitch IsOn="{x:Bind Profile.ReloadEnvironmentVariables, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
+
+            <!--  RepositionCursorWithMouse  -->
+            <local:SettingContainer x:Uid="Profile_RepositionCursorWithMouse"
+                                    ClearSettingValue="{x:Bind Profile.ClearRepositionCursorWithMouse}"
+                                    HasSettingValue="{x:Bind Profile.HasRepositionCursorWithMouse, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.RepositionCursorWithMouseOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Profile.RepositionCursorWithMouseAvailable}">
+                <ToggleSwitch IsOn="{x:Bind Profile.RepositionCursorWithMouse, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
         </StackPanel>
     </Grid>
 </Page>

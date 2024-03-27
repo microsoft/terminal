@@ -107,8 +107,6 @@ namespace SettingsModelUnitTests
                 "trimPaste": true,
 
                 "experimental.input.forceVT": false,
-                "experimental.rendering.forceFullRepaint": false,
-                "experimental.rendering.software": false,
 
                 "actions": []
             })" };

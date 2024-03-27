@@ -2332,12 +2332,20 @@
           },
           "type": "array"
         },
-        "experimental.rendering.forceFullRepaint": {
-          "description": "When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames.",
+        "rendering.graphicsAPI": {
+          "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
+          "type": "string",
+          "enum": [
+            "direct2d",
+            "direct3d11"
+          ]
+        },
+        "rendering.disablePartialInvalidation": {
+          "description": "By default, the text renderer uses a FLIP_SEQUENTIAL Swap Chain and declares dirty rectangles via the Present1 API. When this setting is enabled, a FLIP_DISCARD Swap Chain will be used instead, and no dirty rectangles will be declared. Whether one or the other is better depends on your hardware and various other factors.",
           "type": "boolean"
         },
-        "experimental.rendering.software": {
-          "description": "When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one.",
+        "rendering.software": {
+          "description": "When enabled, the terminal will use a software rasterizer (WARP). This setting should be left disabled under almost all circumstances.",
           "type": "boolean"
         },
         "experimental.input.forceVT": {

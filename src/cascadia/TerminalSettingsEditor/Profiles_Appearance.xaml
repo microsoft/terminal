@@ -76,13 +76,12 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Slider x:Name="OpacitySlider"
-                                    x:Uid="Profile_OpacitySlider"
+                            <Slider x:Uid="Profile_OpacitySlider"
                                     Grid.Column="0"
                                     Value="{x:Bind mtu:Converters.PercentageToPercentageValue(Profile.Opacity), BindBack=Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
                             <TextBlock Grid.Column="1"
                                        Style="{StaticResource SliderValueLabelStyle}"
-                                       Text="{x:Bind mtu:Converters.AppendPercentageSign(OpacitySlider.Value), Mode=OneWay}" />
+                                       Text="{x:Bind mtu:Converters.PercentageToPercentageString(Profile.Opacity), Mode=OneWay}" />
                         </Grid>
                     </StackPanel>
                 </local:SettingContainer>
