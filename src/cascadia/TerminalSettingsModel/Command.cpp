@@ -121,40 +121,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hstring{ _ID };
     }
 
-    // Function Description:
-    // - generate an ID for this command and populate the _ID field
-    // - this function _will_ overwrite an existing ID if there is one, it is
-    //   on the caller to make sure that either there was no ID or the overwrite is okay
-    // - this function should only be called to generate IDs for user-created commands
-    void Command::_generateID()
-    {
-        if (_ActionAndArgs)
-        {
-            // lambda function to remove whitespace and capitalize each letter after a removed space
-            auto removeWhitespaceAndCapitalize = [](wchar_t& x, bool& capitalizeNext) {
-                if (std::iswspace(x))
-                {
-                    capitalizeNext = true; // Capitalize the next character
-                    return true; // Remove the whitespace
-                }
-                else if (capitalizeNext)
-                {
-                    x = std::towupper(x); // Capitalize the letter
-                    capitalizeNext = false; // Reset flag
-                }
-                return false; // Keep the character
-            };
-
-            std::wstring noWhitespaceName{ get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateName() };
-            bool capitalizeNext;
-            noWhitespaceName.erase(std::remove_if(noWhitespaceName.begin(), noWhitespaceName.end(), [&capitalizeNext, removeWhitespaceAndCapitalize](wchar_t& x) {
-                                       return removeWhitespaceAndCapitalize(x, capitalizeNext);
-                                   }),
-                                   noWhitespaceName.end());
-            _ID = RS_(L"OriginTagUser") + L"." + noWhitespaceName;
-        }
-    }
-
     void Command::Name(const hstring& value)
     {
         if (!_name.has_value() || _name.value() != value)
@@ -360,7 +326,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     }
                     else if (origin == OriginTag::User)
                     {
-                        result->_generateID();
+                        result->_ID = get_self<implementation::ActionAndArgs>(result->_ActionAndArgs)->GenerateID();
                     }
                 }
             }

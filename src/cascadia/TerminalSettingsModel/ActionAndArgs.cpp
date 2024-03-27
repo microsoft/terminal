@@ -448,6 +448,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return found != GeneratedActionNames.end() ? found->second : L"";
     }
 
+    // Function Description:
+    // - This will generate an ID for this ActionAndArgs, based on the ShortcutAction and the Args
+    // - It will always create the same ID if the ShortcutAction and the Args are the same
+    // - Note: this should only be called for User-created actions
+    // - Example: The "SendInput 'abc'" action will have the generated ID "User.sendInput.<hash of 'abc'>"
+    // Return Value:
+    // - The ID, based on the ShortcutAction and the Args
+    winrt::hstring ActionAndArgs::GenerateID() const
+    {
+        if (_Action != ShortcutAction::Invalid)
+        {
+            auto actionKeyString = ActionToStringMap.find(_Action)->second;
+            auto result = RS_(L"OriginTagUser") + L"." + std::wstring{ actionKeyString.begin(), actionKeyString.end() };
+            if (_Args)
+            {
+                // If there are args, append the hash of the args
+                result = result + L"." + std::to_wstring(_Args.Hash());
+            }
+            return result;
+        }
+        return L"";
+    }
+
     winrt::hstring ActionAndArgs::Serialize(const winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs>& args)
     {
         Json::Value json{ Json::objectValue };

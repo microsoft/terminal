@@ -90,8 +90,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<std::wstring> _iconPath;
         bool _nestedCommand{ false };
 
-        void _generateID();
-
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
                                                           Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
