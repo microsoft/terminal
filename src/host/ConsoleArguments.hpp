@@ -200,7 +200,7 @@ namespace WEX
                                                            s_ToBoolString(ci.HasSignalHandle()),
                                                            ci.GetSignalHandle(),
                                                            s_ToBoolString(ci.GetInheritCursor()),
-                                                           s_ToBoolString(ci.ShouldRunAsComServer());
+                                                           s_ToBoolString(ci.ShouldRunAsComServer()));
             }
 
         private:
