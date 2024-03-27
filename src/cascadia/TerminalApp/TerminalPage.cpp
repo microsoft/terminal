@@ -11,7 +11,6 @@
 #include "RequestReceiveContentArgs.g.cpp"
 
 #include <filesystem>
-#include <winrt/Microsoft.Management.Deployment.h>
 
 #include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
@@ -27,7 +26,6 @@
 #include "Utils.h"
 
 using namespace winrt;
-using namespace winrt::Microsoft::Management::Deployment;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;

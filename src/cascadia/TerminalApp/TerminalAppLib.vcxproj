@@ -439,11 +439,6 @@
       <ResolvedFrom>CppWinRTImplicitlyExpandTargetPlatform</ResolvedFrom>
       <IsSystemReference>True</IsSystemReference>
     </Reference>
-    <Reference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\Microsoft.Management.Deployment.winmd">
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>

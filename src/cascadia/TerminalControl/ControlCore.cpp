@@ -13,6 +13,7 @@
 #include <utils.hpp>
 #include <WinUser.h>
 #include <LibraryResources.h>
+//#include <winrt/Microsoft.Management.Deployment.h>
 
 #include "EventArgs.h"
 #include "../../buffer/out/search.h"
@@ -21,6 +22,7 @@
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
+//using namespace winrt::Microsoft::Management::Deployment;
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
@@ -125,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
         _terminal->CompletionsChangedCallback(pfnCompletionsChanged);
 
-        auto pfnSearchMissingCommand = std::bind(&ControlCore::_terminalSearchMissingCommand, this, std::placeholders::_1);
+        auto pfnSearchMissingCommand = [this](auto&& PH1) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
@@ -1745,7 +1747,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             suggestions.emplace_back(fmt::format(L"winget install --id {}", pkg));
         }
 
-        _cachedWinGetSuggestions = winrt::single_threaded_vector<hstring>(std::move(suggestions));
+        _cachedQuickFixes = winrt::single_threaded_vector<hstring>(std::move(suggestions));
 #endif
     }
 
@@ -2288,7 +2290,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // TODO CARLOS: should we delete this after a new command is run? Or delete it after a suggestion is used? Or just after the next winget suggestion (current impl)?
         //              No clue which we should do. Thoughts?
-        context->WinGetSuggestions(_cachedWinGetSuggestions);
+        context->QuickFixes(_cachedQuickFixes);
 
         return *context;
     }

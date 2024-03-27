@@ -62,7 +62,7 @@ namespace Microsoft.Terminal.Control
     {
         IVector<String> History { get; };
         String CurrentCommandline { get; };
-        IVector<String> WinGetSuggestions { get; };
+        IVector<String> QuickFixes { get; };
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState

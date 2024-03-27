@@ -756,7 +756,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   the command will be run as a directory change instead.
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
                                                        winrt::hstring currentCommandline,
-                                                       bool directories)
+                                                       bool directories,
+                                                       hstring iconPath)
     {
         std::wstring cdText = directories ? L"cd " : L"";
         auto result = std::vector<Model::Command>();
@@ -788,34 +789,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
             command->_name = winrt::hstring{ line };
-            command->_iconPath = directories ?
-                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
-                                     L"\ue81c"; // History icon
+            command->_iconPath = iconPath;
             result.push_back(*command);
             foundCommands[line] = true;
-        }
-
-        return winrt::single_threaded_vector<Model::Command>(std::move(result));
-    }
-
-    IVector<Model::Command> Command::ToSendInputCommands(IVector<hstring> commands, hstring iconPath)
-    {
-        if (!commands)
-        {
-            return single_threaded_vector<Model::Command>();
-        }
-
-        auto result = std::vector<Model::Command>();
-        for (const auto& command : commands)
-        {
-            auto args = winrt::make_self<SendInputArgs>(command);
-            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
-
-            auto c = winrt::make_self<Command>();
-            c->_ActionAndArgs = actionAndArgs;
-            c->_name = command;
-            c->_iconPath = iconPath;
-            result.push_back(*c);
         }
 
         return winrt::single_threaded_vector<Model::Command>(std::move(result));

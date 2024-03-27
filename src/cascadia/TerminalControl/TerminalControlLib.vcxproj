@@ -182,6 +182,13 @@
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\Microsoft.Management.Deployment.winmd">
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>

@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> History;
         til::property<winrt::hstring> CurrentCommandline;
-        til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> WinGetSuggestions;
+        til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> QuickFixes;
 
         CommandHistoryContext(std::vector<winrt::hstring>&& history)
         {
@@ -347,7 +347,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point _contextMenuBufferPosition{ 0, 0 };
 
         Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ nullptr };
-        Windows::Foundation::Collections::IVector<hstring> _cachedWinGetSuggestions{ nullptr };
+        Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
 
         void _setupDispatcherAndCallbacks();
 
