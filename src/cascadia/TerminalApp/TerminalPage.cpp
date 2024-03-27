@@ -2973,12 +2973,84 @@ namespace winrt::TerminalApp::implementation
                 openPicker.as<::IInitializeWithWindow>()->Initialize((HWND)sender.try_as<TermControl>().OwningHwnd());
                 openPicker.FileTypeFilter().Append(L"*");
                 openPicker.ViewMode(PickerViewMode::List);
-                winrt::Windows::Storage::StorageFile file = co_await openPicker.PickSingleFileAsync();
-                if (file == nullptr)
+                const auto& files = co_await openPicker.PickMultipleFilesAsync();
+                const auto count = files.Size();
+
+                if (count == 0)
                 {
                     co_return;
                 }
-                sender.try_as<TermControl>().RawWriteString('"' + file.Path() + '"');
+
+                std::vector<std::wstring> fullPaths(count);
+
+                for (unsigned int i = 0; i < count; i++)
+                {
+                    fullPaths.emplace_back(std::wstring{ files.GetAt(i).Path() });
+                }
+
+                // GH#3158
+                // Have to find an way to access if we should ManglePathsForWsl here.
+                //const auto isWSL = sender.try_as<TermControl>().ManglePathsForWsl();
+                std::wstring allPathsString;
+
+                for (auto& fullPath : fullPaths)
+                {
+                    // Join the paths with spaces
+                    if (!allPathsString.empty())
+                    {
+                        allPathsString += L" ";
+                    }
+
+                    // Fix path for WSL, still has to be implemented
+                    if (false /*IsWsl*/)
+                    {
+                        std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
+
+                        if (fullPath.size() >= 2 && fullPath.at(1) == L':')
+                        {
+                            // C:/foo/bar -> Cc/foo/bar
+                            fullPath.at(1) = til::tolower_ascii(fullPath.at(0));
+                            // Cc/foo/bar -> /mnt/c/foo/bar
+                            fullPath.replace(0, 1, L"/mnt/");
+                        }
+                        else
+                        {
+                            static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
+                            for (auto prefix : wslPathPrefixes)
+                            {
+                                if (til::starts_with(fullPath, prefix))
+                                {
+                                    if (const auto idx = fullPath.find(L'/', prefix.size()); idx != std::wstring::npos)
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
+                                        fullPath.erase(0, idx);
+                                    }
+                                    else
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04 -> /
+                                        fullPath = L"/";
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    const auto quotesNeeded = false /*IsWsl*/ || fullPath.find(L' ') != std::wstring::npos;
+                    const auto quotesChar = false /*IsWsl*/ ? L'\'' : L'"';
+
+                    // Append fullPath and also wrap it in quotes if needed
+                    if (quotesNeeded)
+                    {
+                        allPathsString.push_back(quotesChar);
+                    }
+                    allPathsString.append(fullPath);
+                    if (quotesNeeded)
+                    {
+                        allPathsString.push_back(quotesChar);
+                    }
+                    sender.try_as<TermControl>().RawWriteString(allPathsString);
+                }
             }
         }
         CATCH_LOG();
