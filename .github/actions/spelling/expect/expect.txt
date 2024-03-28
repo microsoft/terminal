@@ -412,6 +412,7 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+DECPCCM
 DECPCTERM
 DECPS
 DECRARA
@@ -420,6 +421,7 @@ DECREQTPARM
 DECRLM
 DECRPM
 DECRQCRA
+DECRQDE
 DECRQM
 DECRQPSR
 DECRQSS
@@ -2138,6 +2140,7 @@ xinxinchaof
 XManifest
 XMath
 xorg
+XPan
 XResource
 xsi
 xstyler
@@ -2157,6 +2160,7 @@ YCast
 YCENTER
 YCount
 YLimit
+YPan
 YSubstantial
 YVIRTUALSCREEN
 YWalk

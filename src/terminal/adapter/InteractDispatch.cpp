@@ -108,7 +108,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
         _api.ShowWindow(false);
         return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _api.GetTextBuffer().TriggerRedrawAll();
+        _api.GetBufferAndViewport().buffer.TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
@@ -135,7 +135,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
     // First retrieve some information about the buffer
-    const auto viewport = _api.GetViewport();
+    const auto viewport = _api.GetBufferAndViewport().viewport;
 
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.

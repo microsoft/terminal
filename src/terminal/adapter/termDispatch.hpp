@@ -42,6 +42,12 @@ public:
     bool DeleteCharacter(const VTInt /*count*/) override { return false; } // DCH
     bool ScrollUp(const VTInt /*distance*/) override { return false; } // SU
     bool ScrollDown(const VTInt /*distance*/) override { return false; } // SD
+    bool NextPage(const VTInt /*pageCount*/) override { return false; } // NP
+    bool PrecedingPage(const VTInt /*pageCount*/) override { return false; } // PP
+    bool PagePositionAbsolute(const VTInt /*page*/) override { return false; } // PPA
+    bool PagePositionRelative(const VTInt /*pageCount*/) override { return false; } // PPR
+    bool PagePositionBack(const VTInt /*pageCount*/) override { return false; } // PPB
+    bool RequestDisplayedExtent() override { return false; } // DECRQDE
     bool InsertLine(const VTInt /*distance*/) override { return false; } // IL
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
     bool InsertColumn(const VTInt /*distance*/) override { return false; } // DECIC

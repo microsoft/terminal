@@ -49,6 +49,12 @@ public:
     virtual bool DeleteCharacter(const VTInt count) = 0; // DCH
     virtual bool ScrollUp(const VTInt distance) = 0; // SU
     virtual bool ScrollDown(const VTInt distance) = 0; // SD
+    virtual bool NextPage(const VTInt pageCount) = 0; // NP
+    virtual bool PrecedingPage(const VTInt pageCount) = 0; // PP
+    virtual bool PagePositionAbsolute(const VTInt page) = 0; // PPA
+    virtual bool PagePositionRelative(const VTInt pageCount) = 0; // PPR
+    virtual bool PagePositionBack(const VTInt pageCount) = 0; // PPB
+    virtual bool RequestDisplayedExtent() = 0; // DECRQDE
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
     virtual bool InsertColumn(const VTInt distance) = 0; // DECIC
