@@ -1891,7 +1891,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 const auto& last{ marks.back() };
                 const auto [start, end] = last.GetExtent();
-                const auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+                const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+                auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+                bufferSize.IncrementInBounds(lastNonSpace, true);
 
                 // If the user clicked off to the right side of the prompt, we
                 // want to send keystrokes to the last character in the prompt +1.
@@ -1907,19 +1909,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                 // terminalPosition is viewport-relative.
                 const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
-                const auto bufferSize = _terminal->GetTextBuffer().GetSize();
-
-                auto clampedClick = bufferPos;
-                if (clampedClick.y > lastNonSpace.y)
+                if (bufferPos.y > lastNonSpace.y)
                 {
                     // Clicked under the prompt. Bail.
                     return;
                 }
-                else if (clampedClick > lastNonSpace)
-                {
-                    clampedClick = lastNonSpace + til::point{ 1, 0 };
-                    bufferSize.Clamp(clampedClick);
-                }
+
+                // Limit the click to 1 past the last character on the last line.
+                const auto clampedClick = std::min(bufferPos, lastNonSpace);
 
                 if (clampedClick >= end)
                 {
@@ -1954,7 +1951,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
 
                     {
-                        // Sending input requrires that we're unlocked, because writing the input pipe may block indefinitely.
+                        // Sending input requires that we're unlocked, because
+                        // writing the input pipe may block indefinitely.
                         const auto suspension = _terminal->SuspendLock();
                         _sendInputToConnection(buffer);
                     }
