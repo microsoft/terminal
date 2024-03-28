@@ -309,6 +309,10 @@
     <value>L’application Terminal qui se lance lorsqu’une application de ligne de commande est exécutée sans session existante, par exemple à partir du menu Démarrer ou de la boîte de dialogue Exécuter.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>Automatique</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colonnes</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
