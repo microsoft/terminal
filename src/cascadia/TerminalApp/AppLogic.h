@@ -113,6 +113,8 @@ namespace winrt::TerminalApp::implementation
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
 
+        void _setupFolderPathEnvVar();
+
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;
 #endif
