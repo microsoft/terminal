@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void Name(const hstring& name);
 
         hstring ID() const noexcept;
-        void ID(hstring id);
+        bool GenerateID();
 
         Control::KeyChord Keys() const noexcept;
         hstring KeyChordText() const noexcept;

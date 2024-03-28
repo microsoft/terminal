@@ -121,9 +121,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hstring{ _ID };
     }
 
-    void Command::ID(hstring id)
+    bool Command::GenerateID()
     {
-        _ID = id;
+        auto actionAndArgsImpl{ winrt::get_self<implementation::ActionAndArgs>(_ActionAndArgs) };
+        if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
+        {
+            _ID = generatedID;
+            return true;
+        }
+        return false;
     }
 
     void Command::Name(const hstring& value)
@@ -276,6 +282,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto result = winrt::make_self<Command>();
         result->_Origin = origin;
+        JsonUtils::GetValueForKey(json, IDKey, result->_ID);
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);

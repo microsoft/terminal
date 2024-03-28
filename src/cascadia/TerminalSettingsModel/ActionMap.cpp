@@ -804,12 +804,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto cmdImpl{ winrt::get_self<Command>(actionPair.second) };
             if (cmdImpl->ID().empty())
             {
-                auto actionAndArgsImpl{ winrt::get_self<ActionAndArgs>(cmdImpl->ActionAndArgs()) };
-                if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
-                {
-                    cmdImpl->ID(generatedID);
-                    fixedUp = true;
-                }
+                fixedUp = cmdImpl->GenerateID() || fixedUp;
             }
         }
         return fixedUp;
