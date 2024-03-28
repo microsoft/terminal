@@ -424,6 +424,10 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
+void ConhostInternalGetSet::NotifyTextLayoutUpdated()
+{
+}
+
 void ConhostInternalGetSet::MarkPrompt(const ::ScrollMark& /*mark*/)
 {
     // Not implemented for conhost.

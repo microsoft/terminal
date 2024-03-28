@@ -215,6 +215,11 @@ public:
         Log::Comment(L"NotifyBufferRotation MOCK called...");
     }
 
+    void NotifyTextLayoutUpdated() override
+    {
+        Log::Comment(L"NotifyTextLayoutUpdated MOCK called...");
+    }
+
     void MarkPrompt(const ScrollMark& /*mark*/) override
     {
         Log::Comment(L"MarkPrompt MOCK called...");

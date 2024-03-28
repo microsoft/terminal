@@ -274,11 +274,6 @@ public:
         return std::vector<Microsoft::Console::Types::Viewport>{};
     }
 
-    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override
-    {
-        return std::vector<Microsoft::Console::Types::Viewport>{};
-    }
-
     void LockConsole() noexcept override
     {
     }
@@ -360,8 +355,22 @@ public:
     {
     }
 
-    void SelectSearchRegions(std::vector<til::inclusive_rect> /*source*/) override
+    void SetSearchHighlights(std::vector<til::inclusive_rect> /*highlights*/) noexcept override
     {
+    }
+
+    std::vector<til::inclusive_rect> GetSearchHighlights() const noexcept override
+    {
+        return {};
+    }
+
+    void SetSearchHighlightFocused(std::vector<til::inclusive_rect> /*highlight*/) override
+    {
+    }
+
+    std::vector<til::inclusive_rect> GetSearchHighlightFocused() const noexcept override
+    {
+        return {};
     }
 
     const til::point GetSelectionAnchor() const noexcept

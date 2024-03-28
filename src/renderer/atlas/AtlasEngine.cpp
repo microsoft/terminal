@@ -285,8 +285,12 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(RenderFrameInfo info) noexcept
 {
+    _api.searchHighlightsAll = std::move(info.searchHighlights);
+    _api.searchHighlightFocusedAll = std::move(info.searchHighlightFocused);
+    _api.searchHighlights = { _api.searchHighlightsAll };
+    _api.searchHighlightFocused = { _api.searchHighlightFocusedAll };
     return S_OK;
 }
 
@@ -307,6 +311,66 @@ CATCH_RETURN()
 {
     return S_OK;
 }
+
+// Method Description:
+//  - Applies highlighting colors to the columns of highlighted regions in a given range
+// Arguments:
+//  - highlights: the list of highlighted regions
+//  - row: the row for which highlighted regions are to be painted
+//  - end: the last (exclusive) column of the row to paint up to (in Buffer coord)
+//  - fgColor: the foreground color to use for highlighting
+//  - bgColor: the background color to use for highlighting
+// Returns:
+//  - S_OK if we painted successfully, else an appropriate HRESULT error code
+[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::rect>& highlights, const u16 row, const u16 end, const u32 fgColor, const u32 bgColor) noexcept
+try
+{
+    const auto y = static_cast<til::CoordType>(row);
+
+    // highlighted regions are in viewport coordinate so convert `end` to viewport coordinate as well
+    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
+    const auto colEnd = static_cast<til::CoordType>(end) << shift;
+
+    auto hi = highlights.begin();
+    const auto hiEnd = highlights.end();
+
+    // nothing to paint if it's empty or we haven't reached the point where the
+    // first highlighted region starts
+    if (hi == hiEnd || hi->top > y || hi->left >= colEnd)
+    {
+        return S_OK;
+    }
+
+    const auto bg = _p.backgroundBitmap.data() + _p.colorBitmapRowStride * y;
+    const auto fg = _p.foregroundBitmap.data() + _p.colorBitmapRowStride * y;
+
+    // paint the highlighted regions that lie before colEnd in the row
+    while (hi != hiEnd && y == hi->top && hi->right <= colEnd)
+    {
+        std::fill(bg + hi->left, bg + hi->right, bgColor);
+        std::fill(fg + hi->left, fg + hi->right, fgColor);
+        ++hi;
+    }
+
+    // draw the next region if some part of it still lies before colEnd
+    if (hi != hiEnd && hi->top == y && hi->left < colEnd)
+    {
+        std::fill(bg + hi->left, bg + colEnd, bgColor);
+        std::fill(fg + hi->left, fg + colEnd, fgColor);
+        // don't move the iterator, we still need to paint the rest of this region later
+    }
+
+    // shorten the list by removing processed regions
+    highlights = { hi, hiEnd };
+
+    for (int i = 0; i < 2; ++i)
+    {
+        _p.colorBitmapGenerations[i].bump();
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
@@ -374,6 +438,10 @@ try
         }
     }
 
+    // apply highlighting colors to columns in the (search) highlighted areas.
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, columnEnd, u32ColorPremultiply(highlightFg), highlightBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, columnEnd, u32ColorPremultiply(highlightFocusFg), highlightFocusBg));
+
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
 }
@@ -414,40 +482,6 @@ try
     _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
     _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
     _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
-    return S_OK;
-}
-CATCH_RETURN()
-
-[[nodiscard]] HRESULT AtlasEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
-try
-{
-    if (rects.empty())
-    {
-        return S_OK;
-    }
-
-    for (const auto& rect : rects)
-    {
-        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
-        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
-
-        if (rect.bottom <= 0 || rect.top >= _p.s->viewportCellCount.y)
-        {
-            continue;
-        }
-
-        const auto bg = &_p.backgroundBitmap[_p.colorBitmapRowStride * y];
-        const auto fg = &_p.foregroundBitmap[_p.colorBitmapRowStride * y];
-        std::fill(bg + from, bg + to, 0xff3296ff);
-        std::fill(fg + from, fg + to, 0xff000000);
-    }
-
-    for (int i = 0; i < 2; ++i)
-    {
-        _p.colorBitmapGenerations[i].bump();
-    }
-
     return S_OK;
 }
 CATCH_RETURN()

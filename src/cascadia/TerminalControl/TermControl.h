@@ -350,6 +350,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void _UpdateSearchScrollMarks();
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
@@ -363,7 +364,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
-        winrt::fire_and_forget _coreFoundMatch(const IInspectable& sender, Control::FoundResultsArgs args);
+        winrt::fire_and_forget _coreUpdateSearchResults(const IInspectable& sender, Control::UpdateSearchResultsEventArgs args);
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
@@ -392,7 +393,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::TransparencyChanged_revoker TransparencyChanged;
             Control::ControlCore::RaiseNotice_revoker RaiseNotice;
             Control::ControlCore::HoveredHyperlinkChanged_revoker HoveredHyperlinkChanged;
-            Control::ControlCore::FoundMatch_revoker FoundMatch;
+            Control::ControlCore::UpdateSearchResults_revoker UpdateSearchResults;
             Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
             Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
             Control::ControlCore::CopyToClipboard_revoker CopyToClipboard;

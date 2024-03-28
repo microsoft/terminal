@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PopulateTextbox(const winrt::hstring& text);
         bool ContainsFocus();
         void SetStatus(int32_t totalMatches, int32_t currentMatch);
+        void ClearStatus();
         bool NavigationEnabled();
         void NavigationEnabled(bool enabled);
 
@@ -48,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void SearchBoxPointerPressedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        void SearchBoxPointerReleasedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
         til::event<SearchHandler> Search;
         til::event<SearchHandler> SearchChanged;

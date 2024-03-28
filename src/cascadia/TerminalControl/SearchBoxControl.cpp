@@ -26,18 +26,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
-        this->RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            // Once the control is visible again we trigger SearchChanged event.
-            // We do this since we probably have a value from the previous search,
-            // and in such case logically the search changes from "nothing" to this value.
-            // A good example for SearchChanged event consumer is Terminal Control.
-            // Once the Search Box is open we want the Terminal Control
-            // to immediately perform the search with the value appearing in the box.
-            if (Visibility() == Visibility::Visible)
-            {
-                SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
-            }
-        });
 
         _focusableElements.insert(TextBox());
         _focusableElements.insert(CloseButton());
@@ -422,6 +410,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Handler for searchbox pointer-pressed.
+    // - Marks pointer events as handled so they don't bubble up to the terminal.
+    void SearchBoxControl::SearchBoxPointerPressedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e)
+    {
+        e.Handled(true);
+    }
+
+    // Method Description:
+    // - Handler for searchbox pointer-released.
+    // - Marks pointer events as handled so they don't bubble up to the terminal.
+    void SearchBoxControl::SearchBoxPointerReleasedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e)
+    {
+        e.Handled(true);
+    }
+
+    // Method Description:
     // - Formats a status message representing the search state:
     // * "Searching" - if totalMatches is negative
     // * "No results" - if totalMatches is 0
@@ -516,6 +520,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto status = _FormatStatus(totalMatches, currentMatch);
         StatusBox().Text(status);
+    }
+
+    // Method Description:
+    // - Removes the status message in the status box.
+    void SearchBoxControl::ClearStatus()
+    {
+        StatusBox().Text(L"");
     }
 
     // Method Description:

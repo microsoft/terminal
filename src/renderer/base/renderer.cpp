@@ -362,7 +362,6 @@ void Renderer::TriggerSelection()
     {
         // Get selection rectangles
         auto rects = _GetSelectionRects();
-        auto searchSelections = _GetSearchSelectionRects();
 
         // Make a viewport representing the coordinates that are currently presentable.
         const til::rect viewport{ _pData->GetViewport().Dimensions() };
@@ -375,15 +374,42 @@ void Renderer::TriggerSelection()
 
         FOREACH_ENGINE(pEngine)
         {
-            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSearchSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
-            LOG_IF_FAILED(pEngine->InvalidateSelection(searchSelections));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
         }
 
         _previousSelection = std::move(rects);
-        _previousSearchSelection = std::move(searchSelections);
+        NotifyPaintFrame();
+    }
+    CATCH_LOG();
+}
 
+// Routine Description:
+// - Called when the search highlight areas in the console have changed.
+void Renderer::TriggerSearchHighlight()
+{
+    try
+    {
+        // get a rect representing the viewport.
+        // GetViewport() is in buffer coordinate, but we need `viewport` rect
+        // to start at {0, 0} and end at {vp-width, vp-height}. We will then use
+        // this rect to clamp search rects within the viewport.
+        const auto viewport = til::rect{ _pData->GetViewport().Dimensions() };
+        for (auto& sr : _currentSearchHighlights.all)
+        {
+            sr &= viewport;
+        }
+
+        auto newSearchHighlights = _GetSearchHighlights();
+        FOREACH_ENGINE(pEngine)
+        {
+            // no need to invalidate focused search rects separately as they are
+            // already part of "all" search highlights.
+            LOG_IF_FAILED(pEngine->InvalidateHighlight(_currentSearchHighlights.all));
+            LOG_IF_FAILED(pEngine->InvalidateHighlight(newSearchHighlights.all));
+        }
+
+        _currentSearchHighlights = std::move(newSearchHighlights);
         NotifyPaintFrame();
     }
     CATCH_LOG();
@@ -419,6 +445,7 @@ bool Renderer::_CheckViewportAndScroll()
     }
 
     _ScrollPreviousSelection(coordDelta);
+    _ScrollSearchHighlights(coordDelta);
     return true;
 }
 
@@ -1128,7 +1155,12 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
     RenderFrameInfo info;
     info.cursorInfo = _GetCursorInfo();
-    return pEngine->PrepareRenderInfo(info);
+
+    auto [searchRects, searchFocusedRects] = _GetDirtySearchHighlights(pEngine);
+    info.searchHighlights = std::move(searchRects);
+    info.searchHighlightFocused = std::move(searchFocusedRects);
+
+    return pEngine->PrepareRenderInfo(std::move(info));
 }
 
 // Routine Description:
@@ -1210,19 +1242,10 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
-        const auto searchRectangles = _GetSearchSelectionRects();
 
         std::vector<til::rect> dirtySearchRectangles;
         for (auto& dirtyRect : dirtyAreas)
         {
-            for (const auto& sr : searchRectangles)
-            {
-                if (const auto rectCopy = sr & dirtyRect)
-                {
-                    dirtySearchRectangles.emplace_back(rectCopy);
-                }
-            }
-
             for (const auto& rect : rectangles)
             {
                 if (const auto rectCopy = rect & dirtyRect)
@@ -1231,13 +1254,38 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
                 }
             }
         }
-
-        if (!dirtySearchRectangles.empty())
-        {
-            LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
-        }
     }
     CATCH_LOG();
+}
+
+// Routine Description:
+// - returns search highlighted areas within the dirty regions of the window
+SearchHighlights Renderer::_GetDirtySearchHighlights(IRenderEngine* const pEngine) const
+{
+    std::span<const til::rect> dirtyAreas;
+    LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
+
+    SearchHighlights dirtySearchRects;
+    for (const auto& dirtyRect : dirtyAreas)
+    {
+        for (const auto& sr : _currentSearchHighlights.all)
+        {
+            if (const auto rectCopy = sr & dirtyRect)
+            {
+                dirtySearchRects.all.emplace_back(rectCopy);
+            }
+        }
+
+        for (const auto& sr : _currentSearchHighlights.focused)
+        {
+            if (const auto rectCopy = sr & dirtyRect)
+            {
+                dirtySearchRects.focused.emplace_back(rectCopy);
+            }
+        }
+    }
+
+    return dirtySearchRects;
 }
 
 // Routine Description:
@@ -1301,23 +1349,29 @@ std::vector<til::rect> Renderer::_GetSelectionRects() const
     return result;
 }
 
-std::vector<til::rect> Renderer::_GetSearchSelectionRects() const
+// Method Description:
+// - Returns search highlighted rects in the buffer relative to the viewport.
+SearchHighlights Renderer::_GetSearchHighlights() const
 {
-    const auto& buffer = _pData->GetTextBuffer();
-    auto rects = _pData->GetSearchSelectionRects();
-    // Adjust rectangles to viewport
-    auto view = _pData->GetViewport();
+    SearchHighlights result;
+    const auto rects = _pData->GetSearchHighlights();
+    const auto rectsFocused = _pData->GetSearchHighlightFocused();
+    result.all.reserve(rects.size());
+    result.focused.reserve(rectsFocused.size());
 
-    std::vector<til::rect> result;
-    result.reserve(rects.size());
+    const auto adjustRectToViewport = [&buffer = _pData->GetTextBuffer(), view = _pData->GetViewport()](const auto& rect) {
+        const auto lineRendition = buffer.GetLineRendition(rect.top);
+        const auto rectVp = Viewport::FromInclusive(BufferToScreenLine(rect, lineRendition));
+        return view.ConvertToOrigin(rectVp).ToExclusive();
+    };
 
-    for (auto rect : rects)
+    for (const auto& rect : rects)
     {
-        // Convert buffer offsets to the equivalent range of screen cells
-        // expected by callers, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(rect.Top());
-        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
-        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
+        result.all.emplace_back(adjustRectToViewport(rect));
+    }
+    for (const auto& rect : rectsFocused)
+    {
+        result.focused.emplace_back(adjustRectToViewport(rect));
     }
 
     return result;
@@ -1337,6 +1391,27 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
     if (delta != til::point{ 0, 0 })
     {
         for (auto& rc : _previousSelection)
+        {
+            rc += delta;
+        }
+    }
+}
+
+// Method Description:
+// - Similar to _ScrollPreviousSelection, but for search highlights.
+// - Updates the offsets for each search highlight rects after the viewport
+//   is scrolled.
+// Arguments:
+// - delta - The scroll delta
+void Renderer::_ScrollSearchHighlights(const til::point delta)
+{
+    if (delta != til::point{ 0, 0 })
+    {
+        for (auto& rc : _currentSearchHighlights.all)
+        {
+            rc += delta;
+        }
+        for (auto& rc : _currentSearchHighlights.focused)
         {
             rc += delta;
         }
