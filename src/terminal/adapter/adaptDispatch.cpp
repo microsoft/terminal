@@ -5,7 +5,6 @@
 
 #include "adaptDispatch.hpp"
 #include "../../renderer/base/renderer.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
@@ -119,26 +118,17 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             }
         }
 
-        if (_modes.test(Mode::InsertReplace))
-        {
-            // If insert-replace mode is enabled, we first measure how many cells
-            // the string will occupy, and scroll the target area right by that
-            // amount to make space for the incoming text.
-            const OutputCellIterator it(state.text, attributes);
-            auto measureIt = it;
-            while (measureIt && measureIt.GetCellDistance(it) < state.columnLimit)
-            {
-                ++measureIt;
-            }
-            const auto row = cursorPosition.y;
-            const auto cellCount = measureIt.GetCellDistance(it);
-            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, state.columnLimit, row + 1 }, cellCount);
-        }
-
         state.columnBegin = cursorPosition.x;
 
         const auto textPositionBefore = state.text.data();
-        textBuffer.Write(cursorPosition.y, attributes, state);
+        if (_modes.test(Mode::InsertReplace))
+        {
+            textBuffer.Insert(cursorPosition.y, attributes, state);
+        }
+        else
+        {
+            textBuffer.Replace(cursorPosition.y, attributes, state);
+        }
         const auto textPositionAfter = state.text.data();
 
         // TODO: A row should not be marked as wrapped just because we wrote the last column.
@@ -190,8 +180,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     // Notify UIA of new text.
     // It's important to do this here instead of in TextBuffer, because here you
-    // have access to the entire line of text, whereas TextBuffer writes it one
-    // character at a time via the OutputCellIterator.
+    // have access to the entire line of text.
     textBuffer.TriggerNewTextNotification(string);
 }
 

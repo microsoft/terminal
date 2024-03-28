@@ -41,7 +41,7 @@ class UTextAdapterTests
         RowWriteState state{
             .text = L"abc 𝒶𝒷𝒸 abc ネコちゃん",
         };
-        buffer.Write(0, TextAttribute{}, state);
+        buffer.Replace(0, TextAttribute{}, state);
         VERIFY_IS_TRUE(state.text.empty());
 
         static constexpr auto s = [](til::CoordType beg, til::CoordType end) -> til::point_span {

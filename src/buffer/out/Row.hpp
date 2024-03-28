@@ -131,7 +131,6 @@ public:
     til::CoordType GetReadableColumnCount() const noexcept;
 
     void Reset(const TextAttribute& attr) noexcept;
-    void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
     void CopyFrom(const ROW& source);
 
     til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
