@@ -1,36 +1,24 @@
-/*++
-Copyright (c) Microsoft Corporation
-
-Module Name:
-- CodepointWidthDetector.hpp
-
-Abstract:
-- Object used to measure the width of a codepoint when it's rendered
-
-Author:
-- Austin Diviness (AustDi) 18-May-2018
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
-#include "convert.hpp"
-
-// use to measure the width of a codepoint
-class CodepointWidthDetector final
+struct CodepointWidthDetector
 {
-public:
-    CodepointWidth GetWidth(const std::wstring_view& glyph) noexcept;
-    bool IsWide(const std::wstring_view& glyph) noexcept;
-    void SetFallbackMethod(std::function<bool(const std::wstring_view&)> pfnFallback) noexcept;
-    void NotifyFontChanged() noexcept;
+    static CodepointWidthDetector& Singleton() noexcept;
 
-#ifdef UNIT_TESTING
-    friend class CodepointWidthDetectorTests;
-#endif
+    size_t GraphemeNext(const std::wstring_view& str, size_t offset, int* width) noexcept;
+    size_t GraphemePrev(const std::wstring_view& str, size_t offset, int* width) noexcept;
+
+    void SetFallbackMethod(std::function<bool(const std::wstring_view&)> pfnFallback) noexcept;
+    void ClearFallbackCache() noexcept;
 
 private:
-    uint8_t _lookupGlyphWidth(char32_t codepoint, const std::wstring_view& glyph) noexcept;
-    uint8_t _checkFallbackViaCache(char32_t codepoint, const std::wstring_view& glyph) noexcept;
+    __declspec(noinline) int _checkFallbackViaCache(char32_t codepoint) noexcept;
+
+    size_t _graphemeNextOld(const std::wstring_view& str, size_t offset, int* width) noexcept;
+    size_t _graphemePrevOld(const std::wstring_view& str, size_t offset, int* width) noexcept;
+    int _getWidthOld(char32_t cp) noexcept;
 
     std::unordered_map<char32_t, uint8_t> _fallbackCache;
     std::function<bool(const std::wstring_view&)> _pfnFallbackMethod;

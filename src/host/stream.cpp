@@ -2,18 +2,11 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
-#include "_stream.h"
 #include "stream.h"
 
 #include "handle.h"
 #include "misc.h"
 #include "readDataRaw.hpp"
-
-#include "ApiRoutines.h"
-
-#include "../types/inc/GlyphWidth.hpp"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
