@@ -137,7 +137,9 @@ namespace Microsoft::Console::Render
 
         bool _resizeQuirk{ false };
         bool _passthrough{ false };
+        bool _noFlushOnEnd{ false };
         bool _corked{ false };
+        bool _flushRequested{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _WriteFill(const size_t n, const char c) noexcept;
