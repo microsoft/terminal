@@ -763,18 +763,11 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>可以在高级配置文件设置中配置终止行为。</value>
   </data>
-  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
-    <value>Windows 终端可在设置中设置为默认终端应用程序。</value>
-  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>不再显示</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>此终端窗口正在以管理员身份运行</value>
-  </data>
-  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
-    <value>打开设置</value>
-    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>找到的建议: {0}</value>

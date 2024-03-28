@@ -46,6 +46,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
 
         void WaitUntilCanRender() noexcept override;
+        void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept override;
 
     protected:
         [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept = 0;

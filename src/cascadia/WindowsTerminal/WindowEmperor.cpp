@@ -493,25 +493,28 @@ void WindowEmperor::_finalizeSessionPersistence() const
 
     // Get the "buffer_{guid}.txt" files that we expect to be there
     std::unordered_set<winrt::guid> sessionIds;
-    for (const auto& windowLayout : state.PersistedWindowLayouts())
+    if (const auto layouts = state.PersistedWindowLayouts())
     {
-        for (const auto& actionAndArgs : windowLayout.TabLayout())
+        for (const auto& windowLayout : layouts)
         {
-            const auto args = actionAndArgs.Args();
-            NewTerminalArgs terminalArgs{ nullptr };
+            for (const auto& actionAndArgs : windowLayout.TabLayout())
+            {
+                const auto args = actionAndArgs.Args();
+                NewTerminalArgs terminalArgs{ nullptr };
 
-            if (const auto tabArgs = args.try_as<NewTabArgs>())
-            {
-                terminalArgs = tabArgs.TerminalArgs();
-            }
-            else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
-            {
-                terminalArgs = paneArgs.TerminalArgs();
-            }
+                if (const auto tabArgs = args.try_as<NewTabArgs>())
+                {
+                    terminalArgs = tabArgs.TerminalArgs();
+                }
+                else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
+                {
+                    terminalArgs = paneArgs.TerminalArgs();
+                }
 
-            if (terminalArgs)
-            {
-                sessionIds.emplace(terminalArgs.SessionId());
+                if (terminalArgs)
+                {
+                    sessionIds.emplace(terminalArgs.SessionId());
+                }
             }
         }
     }

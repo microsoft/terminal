@@ -282,8 +282,6 @@ namespace winrt::TerminalApp::implementation
             _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
         }
         CATCH_LOG();
-
-        ShowSetAsDefaultInfoBar();
     }
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
@@ -1283,11 +1281,6 @@ namespace winrt::TerminalApp::implementation
             valueSet.Insert(L"sessionId", Windows::Foundation::PropertyValue::CreateGuid(id));
         }
 
-        if constexpr (Feature_VtPassthroughMode::IsEnabled())
-        {
-            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-        }
-
         connection.Initialize(valueSet);
 
         TraceLoggingWrite(
@@ -1303,15 +1296,20 @@ namespace winrt::TerminalApp::implementation
         return connection;
     }
 
-    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(std::shared_ptr<Pane> pane)
+    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent)
     {
-        const auto& control{ pane->GetTerminalControl() };
+        if (paneContent == nullptr)
+        {
+            return nullptr;
+        }
+
+        const auto& control{ paneContent.GetTermControl() };
         if (control == nullptr)
         {
             return nullptr;
         }
         const auto& connection = control.Connection();
-        auto profile{ pane->GetProfile() };
+        auto profile{ paneContent.GetProfile() };
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
 
@@ -1730,11 +1728,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-    }
 
-    void TerminalPage::_RegisterPaneEvents(std::shared_ptr<Pane>& pane)
-    {
-        pane->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+        hostingTab.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
     }
 
     // Method Description:
@@ -1905,11 +1900,6 @@ namespace winrt::TerminalApp::implementation
         if (_startupState != StartupState::Initialized)
         {
             return;
-        }
-
-        for (const auto& tab : _tabs)
-        {
-            tab.Shutdown();
         }
 
         std::vector<ActionAndArgs> actions;
@@ -2366,13 +2356,6 @@ namespace winrt::TerminalApp::implementation
 
         _UnZoomIfNeeded();
         auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
-
-        // When we split the pane, the Pane itself will create a _new_ Pane
-        // instance for the original content. We need to make sure we also
-        // re-add our event handler to that newly created pane.
-        //
-        // _MakePane will already call this for the newly created pane.
-        _RegisterPaneEvents(original);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
@@ -3114,10 +3097,9 @@ namespace winrt::TerminalApp::implementation
             // Don't need to worry about duplicating or anything - we'll
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
-
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-
-            return std::make_shared<Pane>(profile, control);
+            auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+            return std::make_shared<Pane>(paneContent);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -3173,13 +3155,15 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
-        auto resultPane = std::make_shared<Pane>(profile, control);
+        auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+        auto resultPane = std::make_shared<Pane>(paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugPane = std::make_shared<Pane>(profile, newControl);
+            auto debugContent{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            auto debugPane = std::make_shared<Pane>(debugContent);
 
             // Since we're doing this split directly on the pane (instead of going through TerminalTab,
             // we need to handle the panes 'active' states
@@ -3193,16 +3177,20 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
-        _RegisterPaneEvents(resultPane);
-
         return resultPane;
     }
 
-    void TerminalPage::_restartPaneConnection(const std::shared_ptr<Pane>& pane)
+    void TerminalPage::_restartPaneConnection(
+        const TerminalApp::TerminalPaneContent& paneContent,
+        const winrt::Windows::Foundation::IInspectable&)
     {
-        if (const auto& connection{ _duplicateConnectionForRestart(pane) })
+        // Note: callers are likely passing in `nullptr` as the args here, as
+        // the TermControl.RestartTerminalRequested event doesn't actually pass
+        // any args upwards itself. If we ever change this, make sure you check
+        // for nulls
+        if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            pane->GetTerminalControl().Connection(connection);
+            paneContent.GetTermControl().Connection(connection);
             connection.Start();
         }
     }
@@ -3860,9 +3848,6 @@ namespace winrt::TerminalApp::implementation
             // Request a summon of this window to the foreground
             SummonWindowRequested.raise(*this, nullptr);
 
-            const IInspectable unused{ nullptr };
-            _SetAsDefaultDismissHandler(unused, unused);
-
             // TEMPORARY SOLUTION
             // If the connection has requested for the window to be maximized,
             // manually maximize it here. Ideally, we should be _initializing_
@@ -4041,35 +4026,6 @@ namespace winrt::TerminalApp::implementation
             {
                 keyboardServiceWarningInfoBar.IsOpen(true);
             }
-        }
-    }
-
-    // Method Description:
-    // - Displays a info popup guiding the user into setting their default terminal.
-    void TerminalPage::ShowSetAsDefaultInfoBar() const
-    {
-        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::TerminalApp::App>() == nullptr)
-        {
-            // Just ignore this in the tests (where the Application::Current()
-            // is not a TerminalApp::App)
-            return;
-        }
-        if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
-        {
-            return;
-        }
-
-        // If the user has already configured any terminal for hand-off we
-        // shouldn't inform them again about the possibility to do so.
-        if (CascadiaSettings::IsDefaultTerminalSet())
-        {
-            _DismissMessage(InfoBarMessage::SetAsDefault);
-            return;
-        }
-
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(true);
         }
     }
 
@@ -4532,40 +4488,6 @@ namespace winrt::TerminalApp::implementation
         {
             infoBar.IsOpen(false);
         }
-    }
-
-    // Method Description:
-    // - Persists the user's choice not to show the information bar warning about "Windows Terminal can be set as your default terminal application"
-    // Then hides this information buffer.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SetAsDefaultDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        _DismissMessage(InfoBarMessage::SetAsDefault);
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-
-        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipDismissed", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        _FocusCurrentTab(true);
-    }
-
-    // Method Description:
-    // - Dismisses the Default Terminal tip and opens the settings.
-    void TerminalPage::_SetAsDefaultOpenSettingsHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-
-        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipInteracted", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        OpenSettingsUI();
     }
 
     // Method Description:

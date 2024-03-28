@@ -10,8 +10,6 @@ namespace TerminalAppLocalTests
     class TabTests;
 };
 
-enum class BuildStartupKind;
-
 namespace winrt::TerminalApp::implementation
 {
     struct TabBase : TabBaseT<TabBase>
