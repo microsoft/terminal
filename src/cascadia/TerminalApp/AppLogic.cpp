@@ -726,13 +726,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description
-    // * Adds a `WT_SETTINGS_PATH` env var to our own environment block, that
+    // * Adds a `WT_SETTINGS_DIR` env var to our own environment block, that
     //   points at our settings directory. This allows portable installs to
-    //   refer to files in the portable install using %WT_SETTINGS_PATH%
+    //   refer to files in the portable install using %WT_SETTINGS_DIR%
     void AppLogic::_setupFolderPathEnvVar()
     {
         std::wstring path{ CascadiaSettings::SettingsPath() };
         auto folderPath = path.substr(0, path.find_last_of(L"\\"));
-        SetEnvironmentVariableW(L"WT_SETTINGS_PATH", folderPath.c_str());
+        SetEnvironmentVariableW(L"WT_SETTINGS_DIR", folderPath.c_str());
     }
 }
