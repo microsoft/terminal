@@ -182,14 +182,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
         // the core ever gets detached & reattached to another window.
-        BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs);
-        BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
-        BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
-        BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,     IInspectable, Control::CompletionsChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,          IInspectable, Control::CopyToClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,             IInspectable, Control::TitleChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,          IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,       IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged,   IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,        IInspectable, Control::ShowWindowArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested,   IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,       IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);

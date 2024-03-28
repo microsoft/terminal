@@ -1250,6 +1250,11 @@ void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::functi
     _pfnCompletionsChanged.swap(pfn);
 }
 
+void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept
+{
+    _pfnSearchMissingCommand.swap(pfn);
+}
+
 Scheme Terminal::GetColorScheme() const
 {
     const auto& renderSettings = GetRenderSettings();

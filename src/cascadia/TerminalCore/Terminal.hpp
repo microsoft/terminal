@@ -163,6 +163,8 @@ public:
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
+    void SearchMissingCommand(const std::wstring_view command) override;
+
 #pragma endregion
 
     void ClearMark();
@@ -237,6 +239,7 @@ public:
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
+    void SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept;
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
@@ -345,6 +348,7 @@ private:
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
+    std::function<void(std::wstring_view)> _pfnSearchMissingCommand;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
