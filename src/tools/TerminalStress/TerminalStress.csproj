@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <RuntimeFrameworkVersion>6.0.9</RuntimeFrameworkVersion>
+    <FileUpgradeFlags>40</FileUpgradeFlags>
+    <UpgradeBackupLocation>C:\Users\ian\source\repos\windows_terminal\Backup\src\tools\TerminalStress\</UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
   </PropertyGroup>
-
   <!-- This project has no PGO, but the build will fail if the target doesn't exist. -->
   <Target Name="MergePGOCounts" />
-
 </Project>

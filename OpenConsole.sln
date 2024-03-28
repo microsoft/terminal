@@ -1,22 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.2.32422.2
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Terminal", "Terminal", "{59840756-302F-44DF-AA47-441A9D673202}"
-EndProject
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "CascadiaPackage", "src\cascadia\CascadiaPackage\CascadiaPackage.wapproj", "{CA5CAD1A-224A-4171-B13A-F16E576FDD12}"
-	ProjectSection(ProjectDependencies) = postProject
-		{F2ED628A-DB22-446F-A081-4CC845B51A2B} = {F2ED628A-DB22-446F-A081-4CC845B51A2B}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{0CF235BD-2DA0-407E-90EE-C467E8BBC714} = {0CF235BD-2DA0-407E-90EE-C467E8BBC714}
-		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239} = {5D23E8E1-3C64-4CC1-A8F7-6861677F7239}
-		{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF} = {71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PropertiesLibrary", "src\propslib\propslib.vcxproj", "{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Dependencies", "_Dependencies", "{81C352DB-1818-45B7-A284-18E259F1CC87}"
 EndProject
@@ -40,6 +26,97 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{D578
 	ProjectSection(SolutionItems) = preProject
 		dep\Console\winconp.h = dep\Console\winconp.h
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build Common", "_Build Common", "{04170EEF-983A-4195-BFEF-2321E5E38A1E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Tools", "_Tools", "{A10C4720-DCA4-4640-9749-67F4314F527C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{16376381-CE22-42BE-B667-C6B35007008D}"
+	ProjectSection(SolutionItems) = preProject
+		dep\gsl\include\gsl\gsl = dep\gsl\include\gsl\gsl
+		dep\gsl\include\gsl\gsl_algorithm = dep\gsl\include\gsl\gsl_algorithm
+		dep\gsl\include\gsl\gsl_assert = dep\gsl\include\gsl\gsl_assert
+		dep\gsl\include\gsl\gsl_byte = dep\gsl\include\gsl\gsl_byte
+		dep\gsl\include\gsl\gsl_util = dep\gsl\include\gsl\gsl_util
+		dep\gsl\include\gsl\multi_span = dep\gsl\include\gsl\multi_span
+		dep\gsl\include\gsl\pointers = dep\gsl\include\gsl\pointers
+		dep\gsl\include\gsl\span = dep\gsl\include\gsl\span
+		dep\gsl\include\gsl\string_span = dep\gsl\include\gsl\string_span
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Virtual Terminal", "Virtual Terminal", "{F1995847-4AE5-479A-BBAF-382E51A63532}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Rendering", "Rendering", "{05500DEF-2294-41E3-AF9A-24E580B82836}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Conhost", "Conhost", "{E8F24881-5E37-4362-B191-A3BA0ED7F4EB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Buffer", "Buffer", "{1E4A062E-293B-4817-B20D-BF16B979E350}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{89CDCC5C-9F53-4054-97A4-639D99F169CD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{BDB237B6-1D1D-400F-84CC-40A58FA59C8E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common Props", "Common Props", "{53DD5520-E64C-4C06-B472-7CE62CA539C9}"
+	ProjectSection(SolutionItems) = preProject
+		src\common.build.post.props = src\common.build.post.props
+		src\common.build.pre.props = src\common.build.pre.props
+		src\common.build.tests.props = src\common.build.tests.props
+		src\common.nugetversions.props = src\common.nugetversions.props
+		src\common.nugetversions.targets = src\common.nugetversions.targets
+		common.openconsole.props = common.openconsole.props
+		src\cppwinrt.build.post.props = src\cppwinrt.build.post.props
+		src\cppwinrt.build.pre.props = src\cppwinrt.build.pre.props
+		dep\nuget\packages.config = dep\nuget\packages.config
+		src\wap-common.build.post.props = src\wap-common.build.post.props
+		src\wap-common.build.pre.props = src\wap-common.build.pre.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "YAML", "YAML", "{6B5A44ED-918D-4747-BFB1-2472A1FCA173}"
+	ProjectSection(SolutionItems) = preProject
+		build\pipelines\templates\build-console-audit-job.yml = build\pipelines\templates\build-console-audit-job.yml
+		build\pipelines\templates\build-console-ci.yml = build\pipelines\templates\build-console-ci.yml
+		build\pipelines\templates\build-console-int.yml = build\pipelines\templates\build-console-int.yml
+		build\pipelines\templates\build-console-steps.yml = build\pipelines\templates\build-console-steps.yml
+		build\pipelines\templates\check-formatting.yml = build\pipelines\templates\check-formatting.yml
+		build\pipelines\ci.yml = build\pipelines\ci.yml
+		build\pipelines\templates\release-sign-and-bundle.yml = build\pipelines\templates\release-sign-and-bundle.yml
+		build\pipelines\release.yml = build\pipelines\release.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{D3EF7B96-CD5E-47C9-B9A9-136259563033}"
+	ProjectSection(SolutionItems) = preProject
+		build\scripts\Create-AppxBundle.ps1 = build\scripts\Create-AppxBundle.ps1
+		build\scripts\Index-Pdbs.ps1 = build\scripts\Index-Pdbs.ps1
+		build\scripts\Invoke-FormattingCheck.ps1 = build\scripts\Invoke-FormattingCheck.ps1
+		build\scripts\Run-Tests.ps1 = build\scripts\Run-Tests.ps1
+		build\scripts\Test-WindowsTerminalPackage.ps1 = build\scripts\Test-WindowsTerminalPackage.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wpf", "wpf", "{4DAF0299-495E-4CD1-A982-9BAC16A45932}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Window", "Window", "{2D17E75D-2DDC-42C4-AD70-704D95A937AE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Settings", "Settings", "{77875138-BB08-49F9-8BB1-409C2150E0E1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Control", "Control", "{9921CA0A-320C-4460-8623-3A3196E7F4CB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{61901E80-E97D-4D61-A9BB-E8F2FDA8B40C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Audio", "Audio", "{40BD8415-DD93-4200-8D82-498DDDC08CC8}"
+EndProject
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "CascadiaPackage", "src\cascadia\CascadiaPackage\CascadiaPackage.wapproj", "{CA5CAD1A-224A-4171-B13A-F16E576FDD12}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F2ED628A-DB22-446F-A081-4CC845B51A2B} = {F2ED628A-DB22-446F-A081-4CC845B51A2B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0CF235BD-2DA0-407E-90EE-C467E8BBC714} = {0CF235BD-2DA0-407E-90EE-C467E8BBC714}
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239} = {5D23E8E1-3C64-4CC1-A8F7-6861677F7239}
+		{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF} = {71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PropertiesLibrary", "src\propslib\propslib.vcxproj", "{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextServicesFramework", "src\tsf\tsf.vcxproj", "{2FD12FBB-1DDB-46D8-B818-1023C624CACA}"
 EndProject
@@ -104,8 +181,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.FuzzWrapper"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Propsheet.DLL", "src\propsheet\propsheet.vcxproj", "{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build Common", "_Build Common", "{04170EEF-983A-4195-BFEF-2321E5E38A1E}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "src\server\lib\server.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820262}"
 	ProjectSection(ProjectDependencies) = postProject
 		{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF} = {71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}
@@ -119,8 +194,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Host.Tests.UIA", "src\host\
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VTApp", "src\tools\vtapp\VTApp.csproj", "{099193A0-1E43-4BBC-BA7F-7B351E1342DF}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Tools", "_Tools", "{A10C4720-DCA4-4640-9749-67F4314F527C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nihilist", "src\tools\nihilist\Nihilist.vcxproj", "{FC802440-AD6A-4919-8F2C-7701F2B38D79}"
 EndProject
@@ -211,29 +284,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_TerminalCore", "s
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Internal", "src\internal\internal.vcxproj", "{EF3E32A7-5FF6-42B4-B6E2-96CD7D033F00}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{16376381-CE22-42BE-B667-C6B35007008D}"
-	ProjectSection(SolutionItems) = preProject
-		dep\gsl\include\gsl\gsl = dep\gsl\include\gsl\gsl
-		dep\gsl\include\gsl\gsl_algorithm = dep\gsl\include\gsl\gsl_algorithm
-		dep\gsl\include\gsl\gsl_assert = dep\gsl\include\gsl\gsl_assert
-		dep\gsl\include\gsl\gsl_byte = dep\gsl\include\gsl\gsl_byte
-		dep\gsl\include\gsl\gsl_util = dep\gsl\include\gsl\gsl_util
-		dep\gsl\include\gsl\multi_span = dep\gsl\include\gsl\multi_span
-		dep\gsl\include\gsl\pointers = dep\gsl\include\gsl\pointers
-		dep\gsl\include\gsl\span = dep\gsl\include\gsl\span
-		dep\gsl\include\gsl\string_span = dep\gsl\include\gsl\string_span
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Virtual Terminal", "Virtual Terminal", "{F1995847-4AE5-479A-BBAF-382E51A63532}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Rendering", "Rendering", "{05500DEF-2294-41E3-AF9A-24E580B82836}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Conhost", "Conhost", "{E8F24881-5E37-4362-B191-A3BA0ED7F4EB}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Buffer", "Buffer", "{1E4A062E-293B-4817-B20D-BF16B979E350}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{89CDCC5C-9F53-4054-97A4-639D99F169CD}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types.Unit.Tests", "src\types\ut_types\Types.Unit.Tests.vcxproj", "{34DE34D3-1CD6-4EE3-8BD9-A26B5B27EC73}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfTerminalControl", "src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj", "{376FE273-6B84-4EB5-8B30-8DE9D21B022C}"
@@ -273,47 +323,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestHostApp", "src\cascadia
 		{CA5CAD1A-B11C-4DDB-A4FE-C3AFAE9B5506} = {CA5CAD1A-B11C-4DDB-A4FE-C3AFAE9B5506}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{BDB237B6-1D1D-400F-84CC-40A58FA59C8E}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "til.unit.tests", "src\til\ut_til\til.unit.tests.vcxproj", "{767268EE-174A-46FE-96F0-EEE698A1BBC9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "U8U16Test", "src\tools\U8U16Test\U8U16Test.vcxproj", "{A602A555-BAAC-46E1-A91D-3DAB0475C5A1}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common Props", "Common Props", "{53DD5520-E64C-4C06-B472-7CE62CA539C9}"
-	ProjectSection(SolutionItems) = preProject
-		src\common.build.post.props = src\common.build.post.props
-		src\common.build.pre.props = src\common.build.pre.props
-		src\common.build.tests.props = src\common.build.tests.props
-		src\common.nugetversions.props = src\common.nugetversions.props
-		src\common.nugetversions.targets = src\common.nugetversions.targets
-		common.openconsole.props = common.openconsole.props
-		src\cppwinrt.build.post.props = src\cppwinrt.build.post.props
-		src\cppwinrt.build.pre.props = src\cppwinrt.build.pre.props
-		dep\nuget\packages.config = dep\nuget\packages.config
-		src\wap-common.build.post.props = src\wap-common.build.post.props
-		src\wap-common.build.pre.props = src\wap-common.build.pre.props
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "YAML", "YAML", "{6B5A44ED-918D-4747-BFB1-2472A1FCA173}"
-	ProjectSection(SolutionItems) = preProject
-		build\pipelines\templates\build-console-audit-job.yml = build\pipelines\templates\build-console-audit-job.yml
-		build\pipelines\templates\build-console-ci.yml = build\pipelines\templates\build-console-ci.yml
-		build\pipelines\templates\build-console-int.yml = build\pipelines\templates\build-console-int.yml
-		build\pipelines\templates\build-console-steps.yml = build\pipelines\templates\build-console-steps.yml
-		build\pipelines\templates\check-formatting.yml = build\pipelines\templates\check-formatting.yml
-		build\pipelines\ci.yml = build\pipelines\ci.yml
-		build\pipelines\templates\release-sign-and-bundle.yml = build\pipelines\templates\release-sign-and-bundle.yml
-		build\pipelines\release.yml = build\pipelines\release.yml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{D3EF7B96-CD5E-47C9-B9A9-136259563033}"
-	ProjectSection(SolutionItems) = preProject
-		build\scripts\Create-AppxBundle.ps1 = build\scripts\Create-AppxBundle.ps1
-		build\scripts\Index-Pdbs.ps1 = build\scripts\Index-Pdbs.ps1
-		build\scripts\Invoke-FormattingCheck.ps1 = build\scripts\Invoke-FormattingCheck.ps1
-		build\scripts\Run-Tests.ps1 = build\scripts\Run-Tests.ps1
-		build\scripts\Test-WindowsTerminalPackage.ps1 = build\scripts\Test-WindowsTerminalPackage.ps1
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winconpty.Tests.Feature", "src\winconpty\ft_pty\winconpty.FeatureTests.vcxproj", "{024052DE-83FB-4653-AEA4-90790D29D5BD}"
 EndProject
@@ -377,15 +389,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_Remoting", "src\c
 		{43CE4CE5-0010-4B99-9569-672670D26E26} = {43CE4CE5-0010-4B99-9569-672670D26E26}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wpf", "wpf", "{4DAF0299-495E-4CD1-A982-9BAC16A45932}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenConsoleProxy", "src\host\proxy\Host.Proxy.vcxproj", "{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Window", "Window", "{2D17E75D-2DDC-42C4-AD70-704D95A937AE}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Settings", "Settings", "{77875138-BB08-49F9-8BB1-409C2150E0E1}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Control", "Control", "{9921CA0A-320C-4460-8623-3A3196E7F4CB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.FuzzWrapper", "src\host\ft_fuzzer\Host.FuzzWrapper.vcxproj", "{05D9052F-D78F-478F-968A-2DE38A6DB996}"
 EndProject
@@ -396,15 +400,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_Control", "src\ca
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsTerminal.UIA.Tests", "src\cascadia\WindowsTerminal_UIATests\WindowsTerminal.UIA.Tests.csproj", "{F19DACD5-0C6E-40DC-B6E4-767A3200542C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{61901E80-E97D-4D61-A9BB-E8F2FDA8B40C}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererAtlas", "src\renderer\atlas\atlas.vcxproj", "{8222900C-8B6C-452A-91AC-BE95DB04B95F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InteractivityOneCore", "src\interactivity\onecore\lib\onecore.LIB.vcxproj", "{06EC74CB-9A12-428C-B551-8537EC964726}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererWddmCon", "src\renderer\wddmcon\lib\wddmcon.vcxproj", "{75C6F576-18E9-4566-978A-F0A301CAC090}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Audio", "Audio", "{40BD8415-DD93-4200-8D82-498DDDC08CC8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MidiAudio", "src\audio\midi\lib\midi.vcxproj", "{3C67784E-1453-49C2-9660-483E2CC7F7AD}"
 EndProject
@@ -2438,11 +2438,25 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{4C8E6BB0-4713-4ADB-BD04-81628ECEAF20} = {81C352DB-1818-45B7-A284-18E259F1CC87}
+		{D57841D1-8294-4F2B-BB8B-D2A35738DECD} = {81C352DB-1818-45B7-A284-18E259F1CC87}
+		{16376381-CE22-42BE-B667-C6B35007008D} = {81C352DB-1818-45B7-A284-18E259F1CC87}
+		{F1995847-4AE5-479A-BBAF-382E51A63532} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
+		{05500DEF-2294-41E3-AF9A-24E580B82836} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
+		{1E4A062E-293B-4817-B20D-BF16B979E350} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
+		{BDB237B6-1D1D-400F-84CC-40A58FA59C8E} = {59840756-302F-44DF-AA47-441A9D673202}
+		{53DD5520-E64C-4C06-B472-7CE62CA539C9} = {04170EEF-983A-4195-BFEF-2321E5E38A1E}
+		{6B5A44ED-918D-4747-BFB1-2472A1FCA173} = {04170EEF-983A-4195-BFEF-2321E5E38A1E}
+		{D3EF7B96-CD5E-47C9-B9A9-136259563033} = {04170EEF-983A-4195-BFEF-2321E5E38A1E}
+		{4DAF0299-495E-4CD1-A982-9BAC16A45932} = {59840756-302F-44DF-AA47-441A9D673202}
+		{2D17E75D-2DDC-42C4-AD70-704D95A937AE} = {59840756-302F-44DF-AA47-441A9D673202}
+		{77875138-BB08-49F9-8BB1-409C2150E0E1} = {59840756-302F-44DF-AA47-441A9D673202}
+		{9921CA0A-320C-4460-8623-3A3196E7F4CB} = {59840756-302F-44DF-AA47-441A9D673202}
+		{61901E80-E97D-4D61-A9BB-E8F2FDA8B40C} = {59840756-302F-44DF-AA47-441A9D673202}
+		{40BD8415-DD93-4200-8D82-498DDDC08CC8} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
 		{CA5CAD1A-224A-4171-B13A-F16E576FDD12} = {59840756-302F-44DF-AA47-441A9D673202}
 		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
 		{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
-		{4C8E6BB0-4713-4ADB-BD04-81628ECEAF20} = {81C352DB-1818-45B7-A284-18E259F1CC87}
-		{D57841D1-8294-4F2B-BB8B-D2A35738DECD} = {81C352DB-1818-45B7-A284-18E259F1CC87}
 		{2FD12FBB-1DDB-46D8-B818-1023C624CACA} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
 		{3AE13314-1939-4DFA-9C14-38CA0834050C} = {F1995847-4AE5-479A-BBAF-382E51A63532}
 		{DCF55140-EF6A-4736-A403-957E4F7430BB} = {F1995847-4AE5-479A-BBAF-382E51A63532}
@@ -2485,10 +2499,6 @@ Global
 		{F2ED628A-DB22-446F-A081-4CC845B51A2B} = {2D17E75D-2DDC-42C4-AD70-704D95A937AE}
 		{2C2BEEF4-9333-4D05-B12A-1905CBF112F9} = {BDB237B6-1D1D-400F-84CC-40A58FA59C8E}
 		{EF3E32A7-5FF6-42B4-B6E2-96CD7D033F00} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
-		{16376381-CE22-42BE-B667-C6B35007008D} = {81C352DB-1818-45B7-A284-18E259F1CC87}
-		{F1995847-4AE5-479A-BBAF-382E51A63532} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
-		{05500DEF-2294-41E3-AF9A-24E580B82836} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
-		{1E4A062E-293B-4817-B20D-BF16B979E350} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
 		{34DE34D3-1CD6-4EE3-8BD9-A26B5B27EC73} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C} = {4DAF0299-495E-4CD1-A982-9BAC16A45932}
 		{CA5CAD1A-9333-4D05-B12A-1905CBF112F9} = {BDB237B6-1D1D-400F-84CC-40A58FA59C8E}
@@ -2499,12 +2509,8 @@ Global
 		{58A03BB2-DF5A-4B66-91A0-7EF3BA01269A} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
 		{A22EC5F6-7851-4B88-AC52-47249D437A52} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
 		{A021EDFF-45C8-4DC2-BEF7-36E1B3B8CFE8} = {BDB237B6-1D1D-400F-84CC-40A58FA59C8E}
-		{BDB237B6-1D1D-400F-84CC-40A58FA59C8E} = {59840756-302F-44DF-AA47-441A9D673202}
 		{767268EE-174A-46FE-96F0-EEE698A1BBC9} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
 		{A602A555-BAAC-46E1-A91D-3DAB0475C5A1} = {A10C4720-DCA4-4640-9749-67F4314F527C}
-		{53DD5520-E64C-4C06-B472-7CE62CA539C9} = {04170EEF-983A-4195-BFEF-2321E5E38A1E}
-		{6B5A44ED-918D-4747-BFB1-2472A1FCA173} = {04170EEF-983A-4195-BFEF-2321E5E38A1E}
-		{D3EF7B96-CD5E-47C9-B9A9-136259563033} = {04170EEF-983A-4195-BFEF-2321E5E38A1E}
 		{024052DE-83FB-4653-AEA4-90790D29D5BD} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
 		{067F0A06-FCB7-472C-96E9-B03B54E8E18D} = {61901E80-E97D-4D61-A9BB-E8F2FDA8B40C}
 		{6BAE5851-50D5-4934-8D5E-30361A8A40F3} = {81C352DB-1818-45B7-A284-18E259F1CC87}
@@ -2520,19 +2526,13 @@ Global
 		{43CE4CE5-0010-4B99-9569-672670D26E26} = {2D17E75D-2DDC-42C4-AD70-704D95A937AE}
 		{27B5AAEB-A548-44CF-9777-F8BAA32AF7AE} = {2D17E75D-2DDC-42C4-AD70-704D95A937AE}
 		{68A10CD3-AA64-465B-AF5F-ED4E9700543C} = {BDB237B6-1D1D-400F-84CC-40A58FA59C8E}
-		{4DAF0299-495E-4CD1-A982-9BAC16A45932} = {59840756-302F-44DF-AA47-441A9D673202}
 		{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
-		{2D17E75D-2DDC-42C4-AD70-704D95A937AE} = {59840756-302F-44DF-AA47-441A9D673202}
-		{77875138-BB08-49F9-8BB1-409C2150E0E1} = {59840756-302F-44DF-AA47-441A9D673202}
-		{9921CA0A-320C-4460-8623-3A3196E7F4CB} = {59840756-302F-44DF-AA47-441A9D673202}
 		{05D9052F-D78F-478F-968A-2DE38A6DB996} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
 		{C323DAEE-B307-4C7B-ACE5-7293CBEFCB5B} = {BDB237B6-1D1D-400F-84CC-40A58FA59C8E}
 		{F19DACD5-0C6E-40DC-B6E4-767A3200542C} = {BDB237B6-1D1D-400F-84CC-40A58FA59C8E}
-		{61901E80-E97D-4D61-A9BB-E8F2FDA8B40C} = {59840756-302F-44DF-AA47-441A9D673202}
 		{8222900C-8B6C-452A-91AC-BE95DB04B95F} = {05500DEF-2294-41E3-AF9A-24E580B82836}
 		{06EC74CB-9A12-428C-B551-8537EC964726} = {E8F24881-5E37-4362-B191-A3BA0ED7F4EB}
 		{75C6F576-18E9-4566-978A-F0A301CAC090} = {05500DEF-2294-41E3-AF9A-24E580B82836}
-		{40BD8415-DD93-4200-8D82-498DDDC08CC8} = {89CDCC5C-9F53-4054-97A4-639D99F169CD}
 		{3C67784E-1453-49C2-9660-483E2CC7F7AD} = {40BD8415-DD93-4200-8D82-498DDDC08CC8}
 		{613CCB57-5FA9-48EF-80D0-6B1E319E20C4} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{37C995E0-2349-4154-8E77-4A52C0C7F46D} = {A10C4720-DCA4-4640-9749-67F4314F527C}

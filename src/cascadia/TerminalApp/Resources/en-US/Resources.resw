@@ -156,7 +156,7 @@
     <value>Warning:</value>
   </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>The "{0}" isn't running on your machine. This can prevent the Terminal from receiving keyboard input.</value>
+    <value>The "{0}" isn't running on your machine. This can prevent the terminal from receiving keyboard input.</value>
     <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
   </data>
   <data name="Ok" xml:space="preserve">
@@ -194,28 +194,28 @@
     <value>Multiple panes</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Close...</value>
+    <value>Close</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>Close Tabs to the Right</value>
+    <value>Close tabs to the right</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Close Other Tabs</value>
+    <value>Close other Tabs</value>
   </data>
   <data name="TabClose" xml:space="preserve">
-    <value>Close Tab</value>
+    <value>Close tab</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
-    <value>Close Pane</value>
+    <value>Close pane</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>Split Tab</value>
+    <value>Split tab</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Split Pane</value>
+    <value>Split pane</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
-    <value>Web Search</value>
+    <value>Web search</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
@@ -227,10 +227,10 @@
     <value>Reset</value>
   </data>
   <data name="RenameTabText" xml:space="preserve">
-    <value>Rename Tab</value>
+    <value>Rename tab</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>Duplicate Tab</value>
+    <value>Duplicate tab</value>
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
@@ -423,7 +423,7 @@
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>New Tab</value>
+    <value>New tab</value>
   </data>
   <data name="NewTabRun.Text" xml:space="preserve">
     <value>Open a new tab</value>
@@ -462,7 +462,7 @@
     <value>About</value>
   </data>
   <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Send Feedback</value>
+    <value>Send feedback</value>
   </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
@@ -472,11 +472,11 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Getting Started</value>
+    <value>Getting started</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
-    <value>Source Code</value>
+    <value>Source code</value>
     <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
@@ -484,15 +484,15 @@
     <comment>A hyperlink name for user documentation</comment>
   </data>
   <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
-    <value>Release Notes</value>
+    <value>Release notes</value>
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>Privacy Policy</value>
+    <value>Privacy policy</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Third-Party Notices</value>
+    <value>Third-Party notices</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -579,10 +579,10 @@
     <value>Failed parsing command line:</value>
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
-    <value>Command Palette</value>
+    <value>Command palette</value>
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
-    <value>Tab Switcher</value>
+    <value>Tab switcher</value>
   </data>
   <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
     <value>Type a tab name...</value>
@@ -618,31 +618,31 @@
     <value>Crimson</value>
   </data>
   <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Steel Blue</value>
+    <value>Steel blue</value>
   </data>
   <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Medium Sea Green</value>
+    <value>Medium sea green</value>
   </data>
   <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Dark Orange</value>
+    <value>Dark orange</value>
   </data>
   <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Medium Violet Red</value>
+    <value>Medium violet red</value>
   </data>
   <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Dodger Blue</value>
+    <value>Dodger blue</value>
   </data>
   <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Lime Green</value>
+    <value>Lime green</value>
   </data>
   <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Yellow</value>
   </data>
   <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Blue Violet</value>
+    <value>Blue violet</value>
   </data>
   <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Slate Blue</value>
+    <value>Slate blue</value>
   </data>
   <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Lime</value>
@@ -657,10 +657,10 @@
     <value>Cyan</value>
   </data>
   <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Sky Blue</value>
+    <value>Sky blue</value>
   </data>
   <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Dark Gray</value>
+    <value>Dark gray</value>
   </data>
   <data name="InvalidUriText" xml:space="preserve">
     <value>This link is invalid:</value>
@@ -731,13 +731,13 @@
     <value>Maximize</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Restore Down</value>
+    <value>Restore down</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
-    <value>Command Palette</value>
+    <value>Command palette</value>
   </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
-    <value>Focus Terminal</value>
+    <value>Focus terminal</value>
     <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
   </data>
   <data name="NotificationIconWindowSubmenu" xml:space="preserve">
@@ -754,7 +754,7 @@
     <value>Split the window and start in given directory</value>
   </data>
   <data name="ExportTabText" xml:space="preserve">
-    <value>Export Text</value>
+    <value>Export text</value>
   </data>
   <data name="ExportFailure" xml:space="preserve">
     <value>Failed to export terminal content</value>
@@ -766,7 +766,7 @@
     <value>Find</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>Plain Text</value>
+    <value>Plain text</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Termination behavior can be configured in advanced profile settings.</value>
@@ -775,7 +775,7 @@
     <value>Don't show again</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>This Terminal window is running as Admin</value>
+    <value>This terminal window is running as administrator</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Suggestions found: {0}</value>
@@ -838,7 +838,7 @@
     <value>Empty...</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
-    <value>Close Pane</value>
+    <value>Close pane</value>
   </data>
   <data name="ClosePaneToolTip" xml:space="preserve">
     <value>Close the active pane if multiple panes are present</value>
@@ -848,13 +848,13 @@
     <comment>Text used to identify the reset button</comment>
   </data>
   <data name="MoveTabToNewWindowText" xml:space="preserve">
-    <value>Move Tab to New Window</value>
+    <value>Move tab to new window</value>
   </data>
   <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
     <value>Moves tab to a new window </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>Run as Administrator</value>
+    <value>Run as administrator</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
@@ -893,7 +893,7 @@
     <value>If set, the command will be appended to the profile's default command instead of replacing it.</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>Restart Connection</value>
+    <value>Restart connection</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Restart the active pane connection</value>
