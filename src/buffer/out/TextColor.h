@@ -134,11 +134,11 @@ public:
     COLORREF GetColor(const std::array<COLORREF, TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
-    BYTE GetIndex() const noexcept;
-    BYTE GetR() const noexcept;
-    BYTE GetG() const noexcept;
-    BYTE GetB() const noexcept;
-    COLORREF GetRGB() const noexcept;
+    constexpr BYTE GetIndex() const noexcept { return _index; }
+    constexpr BYTE GetR() const noexcept { return _red; }
+    constexpr BYTE GetG() const noexcept { return _green; }
+    constexpr BYTE GetB() const noexcept { return _blue; }
+    constexpr COLORREF GetRGB() const noexcept { return RGB(_red, _green, _blue); }
 
     static constexpr BYTE TransposeLegacyIndex(const size_t index)
     {

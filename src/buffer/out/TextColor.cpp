@@ -285,35 +285,3 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
         return til::at(CompressedRgbToIndex16, compressedRgb);
     }
 }
-
-BYTE TextColor::GetIndex() const noexcept
-{
-    return _index;
-}
-
-BYTE TextColor::GetR() const noexcept
-{
-    return _red;
-}
-
-BYTE TextColor::GetG() const noexcept
-{
-    return _green;
-}
-
-BYTE TextColor::GetB() const noexcept
-{
-    return _blue;
-}
-
-// Method Description:
-// - Return a COLORREF containing our stored value. Will return garbage if this
-//attribute is not a RGB attribute.
-// Arguments:
-// - <none>
-// Return Value:
-// - a COLORREF containing our stored value
-COLORREF TextColor::GetRGB() const noexcept
-{
-    return RGB(_red, _green, _blue);
-}
