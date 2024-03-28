@@ -2960,7 +2960,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Open an file dialog and paste the selected filepath in tothe current active control
+    // - Open an file dialog and paste the selected filepath(s) in to the current active control
     winrt::fire_and_forget TerminalPage::_OpenFileDialog(const IInspectable sender)
     {
         co_await winrt::resume_background();
