@@ -95,6 +95,7 @@ qps
 Remappings
 Retargets
 rclt
+regexes
 reimplementation
 reserialization
 reserialize
