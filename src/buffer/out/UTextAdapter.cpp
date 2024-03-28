@@ -327,3 +327,18 @@ til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegula
 
     return ret;
 }
+
+UText Microsoft::Console::ICU::UTextForWrappableRow(const TextBuffer& textBuffer, til::CoordType& row) noexcept
+{
+    const auto startRow = row;
+    auto length = 0;
+    while (textBuffer.GetRowByOffset(row).WasWrapForced())
+    {
+        row++;
+        length += textBuffer.GetRowByOffset(row).size();
+    }
+    length += textBuffer.GetRowByOffset(row).size();
+    const auto ut = UTextFromTextBuffer(textBuffer, startRow, row + 1);
+
+    return ut;
+}

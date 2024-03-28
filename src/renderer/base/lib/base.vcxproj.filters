@@ -48,6 +48,9 @@
     <ClCompile Include="..\CSSLengthPercentage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\QuickSelectAlphabet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -95,8 +98,12 @@
     <ClInclude Include="..\..\inc\CSSLengthPercentage.h">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
+    <ClInclude Include="QuickSelectAlphabet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
 </Project>

@@ -218,6 +218,13 @@ namespace Microsoft.Terminal.Settings.Model
         String Input { get; };
     };
 
+    [default_interface] runtimeclass QuickSelectArgs : IActionArgs
+    {
+        QuickSelectArgs();
+        String Input { get; };
+        Boolean ShouldCopy { get; };
+    };
+
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
         SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);

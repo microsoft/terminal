@@ -456,6 +456,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _searchBox->TextBox().FocusState() == FocusState::Keyboard;
     }
 
+    void TermControl::QuickSelect(const winrt::hstring& text, bool copy)
+    {
+        _core.EnterQuickSelectMode(text, copy);
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user clicks the
     //   search button, presses enter, or changes the search criteria.

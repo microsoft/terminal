@@ -700,6 +700,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         LOG_IF_FAILED(pEngine->ResetLineTransform());
     });
 
+    auto quickSelectState = _pData->GetQuickSelectState();
+
     for (const auto& dirtyRect : dirtyAreas)
     {
         if (!dirtyRect)
@@ -753,8 +755,9 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Prepare the appropriate line transform for the current row and viewport offset.
             LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.y, view.Left()));
 
+            auto smIt = quickSelectState.selectionMap.find(row);
             // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
+            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped, smIt != quickSelectState.selectionMap.end() ? smIt->second : decltype(smIt->second)());
         }
     }
 }
@@ -768,7 +771,8 @@ static bool _IsAllSpaces(const std::wstring_view v)
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
                                         const til::point target,
-                                        const bool lineWrapped)
+                                        const bool lineWrapped,
+                                        std::vector<QuickSelectSelection> highlights)
 {
     auto globalInvert{ _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) };
 
@@ -826,21 +830,58 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Run contains wide character (>1 columns)
             auto containsWideCharacter = false;
 
+            std::wstring charOverrides;
+
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
             // We also accumulate clusters according to regex patterns
             do
             {
+                auto origAttr = it->TextAttr();
+                if (_pData->InQuickSelectMode())
+                {
+                    bool isHighlight = false;
+                    QuickSelectSelection overlay;
+                    auto tx = screenPoint.x + cols;
+                    for (auto highlight : highlights)
+                    {
+                        if (tx >= highlight.selection.Left() && tx <= highlight.selection.RightInclusive())
+                        {
+                            overlay = highlight;
+                            isHighlight = true;
+                            break;
+                        }
+                    }
+
+                    //Override all formating to make it easier to see whats selectable and not
+                    origAttr.SetDefaultForeground();
+                    origAttr.SetDefaultBackground();
+                    if (isHighlight)
+                    {
+                        origAttr.SetBackground(0xff3c3836);
+                        auto overlayOffset = screenPoint.x + cols - overlay.selection.Left();
+                        if (overlayOffset < overlay.chars.size())
+                        {
+                            auto ch = overlay.chars[overlayOffset];
+                            COLORREF colorref = ch.isMatch ? 0xFF0028FF : 0xFF00A5FF;
+                            origAttr.SetForeground(colorref);
+                            charOverrides += ch.val;
+                        }
+                    }
+                }
+
+                auto clusterChars = charOverrides.size() > 0 ? std::wstring_view{ charOverrides.data() + cols, 1 } : it->Chars();
+
                 til::point thisPoint{ screenPoint.x + cols, screenPoint.y };
                 const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
                 const auto thisUsingSoftFont = s_IsSoftFontChar(it->Chars(), _firstSoftFontChar, _lastSoftFontChar);
                 const auto changedPatternOrFont = patternIds != thisPointPatterns || usingSoftFont != thisUsingSoftFont;
-                if (color != it->TextAttr() || changedPatternOrFont)
+                if (color != origAttr || changedPatternOrFont)
                 {
-                    auto newAttr{ it->TextAttr() };
+                    auto newAttr{ origAttr };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || changedPatternOrFont)
+                    if (!_IsAllSpaces(clusterChars) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || changedPatternOrFont)
                     {
                         color = newAttr;
                         patternIds = thisPointPatterns;
@@ -871,7 +912,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Advance the cluster and column counts.
-                _clusterBuffer.emplace_back(it->Chars(), columnCount);
+                _clusterBuffer.emplace_back(clusterChars, columnCount);
                 it += std::max(it->Columns(), 1); // prevent infinite loop for no visible columns
                 cols += columnCount;
 
@@ -1165,7 +1206,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 
                     auto it = overlay.buffer.GetCellLineDataAt(source);
 
-                    _PaintBufferOutputHelper(&engine, it, target, false);
+                    _PaintBufferOutputHelper(&engine, it, target, false, {});
                 }
             }
         }
@@ -1205,36 +1246,39 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        std::span<const til::rect> dirtyAreas;
-        LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
-
-        // Get selection rectangles
-        const auto rectangles = _GetSelectionRects();
-        const auto searchRectangles = _GetSearchSelectionRects();
-
-        std::vector<til::rect> dirtySearchRectangles;
-        for (auto& dirtyRect : dirtyAreas)
+        if (!_pData->InQuickSelectMode())
         {
-            for (const auto& sr : searchRectangles)
+            std::span<const til::rect> dirtyAreas;
+            LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
+
+            // Get selection rectangles
+            const auto rectangles = _GetSelectionRects();
+            const auto searchRectangles = _GetSearchSelectionRects();
+
+            std::vector<til::rect> dirtySearchRectangles;
+            for (auto& dirtyRect : dirtyAreas)
             {
-                if (const auto rectCopy = sr & dirtyRect)
+                for (const auto& sr : searchRectangles)
                 {
-                    dirtySearchRectangles.emplace_back(rectCopy);
+                    if (const auto rectCopy = sr & dirtyRect)
+                    {
+                        dirtySearchRectangles.emplace_back(rectCopy);
+                    }
+                }
+
+                for (const auto& rect : rectangles)
+                {
+                    if (const auto rectCopy = rect & dirtyRect)
+                    {
+                        LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
+                    }
                 }
             }
 
-            for (const auto& rect : rectangles)
+            if (!dirtySearchRectangles.empty())
             {
-                if (const auto rectCopy = rect & dirtyRect)
-                {
-                    LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
-                }
-            }
-        }
-
-        if (!dirtySearchRectangles.empty())
-        {
-            LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
+                LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
+            }   
         }
     }
     CATCH_LOG();

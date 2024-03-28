@@ -260,3 +260,84 @@ const bool Terminal::IsUiaDataInitialized() const noexcept
     _assertLocked();
     return !!_mainBuffer;
 }
+
+void Terminal::SetQuickSelectAlphabet(std::shared_ptr<QuickSelectAlphabet> val)
+{
+    _quickSelectAlphabet = val;
+}
+
+QuickSelectState Terminal::GetQuickSelectState() noexcept
+try
+{
+    auto result = QuickSelectState{};
+    if (!InQuickSelectMode())
+    {
+        return result;
+    }
+
+    const auto lowerIt = std::lower_bound(_searchSelections.begin(), _searchSelections.end(), _GetVisibleViewport().Top(), [](const til::inclusive_rect& rect, til::CoordType value) {
+        return rect.top < value;
+    });
+
+    const auto upperIt = std::upper_bound(_searchSelections.begin(), _searchSelections.end(), _GetVisibleViewport().BottomExclusive(), [](til::CoordType value, const til::inclusive_rect& rect) {
+        return value < rect.top;
+    });
+
+    const auto num = static_cast<int32_t>(std::distance(lowerIt, upperIt));
+
+    const auto chars = _quickSelectAlphabet->GetQuickSelectChars(num);
+
+    til::CoordType lastY = -1;
+    for (int i = 0; i < num; i++)
+    {
+        auto ch = chars[i];
+        if (ch.isCurrentMatch)
+        {
+            const til::inclusive_rect selection = lowerIt[i];
+            const auto start = til::point{ selection.left, selection.top };
+            const auto end = til::point{ selection.right, selection.bottom };
+            const auto adj = _activeBuffer().GetTextRects(start, end, _blockSelection, false);
+
+            if (adj[0].right - adj[0].left + 1 >= ch.chars.size())
+            {
+                for (auto j = 0; j < adj.size(); j++)
+                {
+                    QuickSelectSelection toAdd;
+                    if (j > 0)
+                    {
+                        toAdd = QuickSelectSelection{};
+                    }
+                    else
+                    {
+                        toAdd = ch;
+                    }
+                    toAdd.selection = Viewport::FromInclusive(adj[j]);
+                    toAdd.isCurrentMatch = ch.isCurrentMatch;
+                    if (lastY == toAdd.selection.Top())
+                    {
+                        result.selectionMap.at(toAdd.selection.Top()).emplace_back(toAdd);
+                    }
+                    else
+                    {
+                        auto rowSelections = std::vector<QuickSelectSelection>{};
+                        rowSelections.emplace_back(toAdd);
+                        result.selectionMap.emplace(toAdd.selection.Top(), rowSelections);
+                        lastY = toAdd.selection.Top();
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+
+bool Terminal::InQuickSelectMode()
+{
+    return _quickSelectAlphabet->Enabled();
+}

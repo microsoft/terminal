@@ -18,6 +18,7 @@
 #include "../../renderer/uia/UiaRenderer.hpp"
 
 #include "ControlCore.g.cpp"
+#include "QuickSelectHandler.h"
 #include "SelectionColor.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
@@ -149,6 +150,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         UpdateSettings(settings, unfocusedAppearance);
+
+        auto quickSelectAlphabet = std::make_shared<::Microsoft::Console::Render::QuickSelectAlphabet>();
+        _terminal->SetQuickSelectAlphabet(quickSelectAlphabet);
+        _quickSelectHandler = std::make_unique<QuickSelectHandler>(
+            _terminal,
+            quickSelectAlphabet);
     }
 
     void ControlCore::_setupDispatcherAndCallbacks()
@@ -536,6 +543,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
 
+        if (_quickSelectHandler->Enabled())
+        {
+            if (_renderer)
+            {
+                _quickSelectHandler->HandleChar(vkey, _renderer.get());
+                _updateSelectionUI();
+            }
+            return true;
+        }
+
         if (_shouldTryUpdateSelection(vkey) && _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark)
         {
             if (vkey == 'A' && !mods.IsAltPressed() && !mods.IsShiftPressed() && mods.IsCtrlPressed())
@@ -686,6 +703,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // This is a scroll event that wasn't initiated by the terminal
             //      itself - it was initiated by the mouse wheel, or the scrollbar.
             const auto lock = _terminal->LockForWriting();
+            if (_quickSelectHandler->Enabled())
+            {
+                LOG_IF_FAILED(_renderEngine->InvalidateAll());
+            }
             _terminal->UserScrollViewport(viewTop);
         }
 
@@ -1662,6 +1683,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
         FoundMatch.raise(*this, *foundResults);
+    }
+
+    void ControlCore::EnterQuickSelectMode(const winrt::hstring& text, bool copy)
+    {
+        const auto lock = _terminal->LockForWriting();
+        _quickSelectHandler->EnterQuickSelectMode(text, copy, _searcher, _renderer.get());
     }
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()

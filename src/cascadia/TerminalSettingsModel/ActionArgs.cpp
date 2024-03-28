@@ -17,6 +17,7 @@
 #include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
+#include "QuickSelectArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
 #include "SetFocusModeArgs.g.cpp"
@@ -409,6 +410,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         auto escapedInput = til::visualize_control_codes(Input());
         auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+        return winrt::hstring{ name };
+    }
+
+    winrt::hstring QuickSelectArgs::GenerateName() const
+    {
+        // The string will be similar to the following:
+        // * "Send Input: ...input..."
+
+        auto escapedInput = til::visualize_control_codes(Input());
+        auto name = fmt::format(std::wstring_view(RS_(L"QuickSelectCommandKey")), escapedInput);
         return winrt::hstring{ name };
     }
 
