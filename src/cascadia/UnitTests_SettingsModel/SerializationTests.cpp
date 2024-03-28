@@ -493,7 +493,7 @@ namespace SettingsModelUnitTests
                 }
             ],
             "actions": [
-                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "keys": "ctrl+k" }
+                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "id" : "User.sendInput.15093368865568800249", "keys": "ctrl+k" }
             ],
             "theme": "system",
             "themes": []
