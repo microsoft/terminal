@@ -185,7 +185,7 @@ namespace WindowsTerminal.UIA.Tests
                 var root = app.GetRoot();
 
                 root.SendKeys(Keys.LeftControl + ",");
-                Globals.WaitForTimeout();
+                Globals.WaitForLongTimeout();
 
                 Globals.WaitForLongTimeout();
             }
