@@ -145,8 +145,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                bResizeQuirk ? L"--resizeQuirk " : L"",
                size.X,
                size.Y,
-               reinterpret_cast<uintptr_t>(signalPipeConhostSide.get()),
-               reinterpret_cast<uintptr_t>(serverHandle.get()));
+               std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
+               std::bit_cast<uintptr_t>(serverHandle.get()));
 
     STARTUPINFOEXW siEx{ 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
