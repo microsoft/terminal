@@ -233,6 +233,10 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(TestNoExtendedAttrsOptimization);
     TEST_METHOD(TestNoBackgroundAttrsOptimization);
 
+    TEST_METHOD(SimplePromptRegions);
+    TEST_METHOD(MultilinePromptRegions);
+    TEST_METHOD(ManyMultilinePromptsWithTrailingSpaces);
+
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
@@ -4309,6 +4313,466 @@ void ConptyRoundtripTests::TestNoBackgroundAttrsOptimization()
     Log::Comment(L"========== Check host buffer ==========");
     verifyBuffer(*hostTb);
 
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void ConptyRoundtripTests::SimplePromptRegions()
+{
+    Log::Comment(L"Same as the ScreenBufferTests::ComplicatedPromptRegions, but in conpty");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        const auto& cursor = tb.GetCursor();
+        {
+            const til::point expectedCursor{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+        const auto& row0 = tb.GetRowByOffset(0);
+        const auto& row4 = tb.GetRowByOffset(4);
+        VERIFY_IS_TRUE(row0.GetScrollbarData().has_value());
+        VERIFY_IS_TRUE(row4.GetScrollbarData().has_value());
+
+        const auto marks = tb.GetMarkExtents();
+        VERIFY_ARE_EQUAL(2u, marks.size());
+
+        {
+            auto& mark = marks[0];
+            const til::point expectedStart{ 0, 0 };
+            const til::point expectedEnd{ 17, 0 };
+            const til::point expectedOutputStart{ 24, 0 }; // `Foo-Bar` is 7 characters
+            const til::point expectedOutputEnd{ 13, 3 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            auto& mark = marks[1];
+            const til::point expectedStart{ 0, 4 };
+            const til::point expectedEnd{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+            VERIFY_IS_FALSE(mark.commandEnd.has_value());
+            VERIFY_IS_FALSE(mark.outputEnd.has_value());
+        }
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    auto _writePrompt = [](StateMachine& stateMachine, const auto& path) {
+        // A prompt looks like:
+        // `PWSH C:\Windows> `
+        //
+        // which is 17 characters for C:\Windows
+        stateMachine.ProcessString(L"\x1b]133;D\x7");
+        stateMachine.ProcessString(L"\x1b]133;A\x7");
+        stateMachine.ProcessString(L"\x1b]9;9;");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"\x7");
+        stateMachine.ProcessString(L"PWSH ");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"> ");
+        stateMachine.ProcessString(L"\x1b]133;B\x7");
+    };
+
+    _writePrompt(sm, L"C:\\Windows");
+    sm.ProcessString(L"Foo-bar");
+    sm.ProcessString(L"\x1b]133;C\x7");
+    sm.ProcessString(L"\r\n");
+    sm.ProcessString(L"This is some text     \r\n"); // y=1
+    sm.ProcessString(L"with varying amounts  \r\n"); // y=2
+    sm.ProcessString(L"of whitespace\r\n"); // y=3
+
+    _writePrompt(sm, L"C:\\Windows"); // y=4
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+    // DebugBreak();
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void ConptyRoundtripTests::MultilinePromptRegions()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    auto bufferWidth = term->GetViewport().Width();
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        const auto& cursor = tb.GetCursor();
+        {
+            const til::point expectedCursor{ 2, 6 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+        const auto& row0 = tb.GetRowByOffset(0);
+        const auto& row5 = tb.GetRowByOffset(5);
+        VERIFY_IS_TRUE(row0.GetScrollbarData().has_value());
+        VERIFY_IS_TRUE(row5.GetScrollbarData().has_value());
+
+        const auto marks = tb.GetMarkExtents();
+        VERIFY_ARE_EQUAL(2u, marks.size());
+
+        {
+            Log::Comment(L"Row 0");
+            const auto& row = tb.GetRowByOffset(0);
+            const auto& attrs = row.Attributes();
+            const auto& runs = attrs.runs();
+            VERIFY_ARE_EQUAL(2u, runs.size());
+            auto run0 = runs[0];
+            auto run1 = runs[1];
+            VERIFY_ARE_EQUAL(17, run0.length);
+            VERIFY_ARE_EQUAL(MarkKind::Prompt, run0.value.GetMarkAttributes());
+
+            VERIFY_ARE_EQUAL(bufferWidth - 17, run1.length);
+            VERIFY_ARE_EQUAL(MarkKind::None, run1.value.GetMarkAttributes());
+        }
+        {
+            Log::Comment(L"Row 1");
+            const auto& row = tb.GetRowByOffset(1);
+            const auto& attrs = row.Attributes();
+            const auto& runs = attrs.runs();
+            VERIFY_ARE_EQUAL(3u, runs.size());
+            auto run0 = runs[0];
+            auto run1 = runs[1];
+            auto run2 = runs[2];
+            VERIFY_ARE_EQUAL(2, run0.length);
+            VERIFY_ARE_EQUAL(MarkKind::Prompt, run0.value.GetMarkAttributes());
+
+            VERIFY_ARE_EQUAL(7, run1.length);
+            VERIFY_ARE_EQUAL(MarkKind::Command, run1.value.GetMarkAttributes());
+
+            VERIFY_ARE_EQUAL(bufferWidth - 9, run2.length);
+            VERIFY_ARE_EQUAL(MarkKind::None, run2.value.GetMarkAttributes());
+        }
+        {
+            Log::Comment(L"Row 2");
+            const auto& row = tb.GetRowByOffset(2);
+            const auto& attrs = row.Attributes();
+            const auto& runs = attrs.runs();
+            VERIFY_ARE_EQUAL(2u, runs.size());
+            auto run0 = runs[0];
+            auto run1 = runs[1];
+            VERIFY_ARE_EQUAL(22, run0.length);
+            VERIFY_ARE_EQUAL(MarkKind::Output, run0.value.GetMarkAttributes());
+
+            VERIFY_ARE_EQUAL(bufferWidth - 22, run1.length);
+            VERIFY_ARE_EQUAL(MarkKind::None, run1.value.GetMarkAttributes());
+        }
+        {
+            Log::Comment(L"Row 3");
+            const auto& row = tb.GetRowByOffset(3);
+            const auto& attrs = row.Attributes();
+            const auto& runs = attrs.runs();
+            VERIFY_ARE_EQUAL(2u, runs.size());
+            auto run0 = runs[0];
+            auto run1 = runs[1];
+            VERIFY_ARE_EQUAL(22, run0.length);
+            VERIFY_ARE_EQUAL(MarkKind::Output, run0.value.GetMarkAttributes());
+
+            VERIFY_ARE_EQUAL(bufferWidth - 22, run1.length);
+            VERIFY_ARE_EQUAL(MarkKind::None, run1.value.GetMarkAttributes());
+        }
+
+        {
+            auto& mark = marks[0];
+            const til::point expectedStart{ 0, 0 };
+            const til::point expectedEnd{ 2, 1 };
+            const til::point expectedOutputStart{ 9, 1 }; // `Foo-Bar` is 7 characters
+            const til::point expectedOutputEnd{ 13, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            auto& mark = marks[1];
+            const til::point expectedStart{ 0, 5 };
+            const til::point expectedEnd{ 2, 6 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+            VERIFY_IS_FALSE(mark.commandEnd.has_value());
+            VERIFY_IS_FALSE(mark.outputEnd.has_value());
+        }
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    auto _writePrompt = [](StateMachine& stateMachine, const auto& path) {
+        // A prompt looks like:
+        // `PWSH C:\Windows >`
+        // `> `
+        //
+        // which two rows. The first is 17 characters for C:\Windows
+        stateMachine.ProcessString(L"\x1b]133;D\x7");
+        stateMachine.ProcessString(L"\x1b]133;A\x7");
+        stateMachine.ProcessString(L"\x1b]9;9;");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"\x7");
+        stateMachine.ProcessString(L"PWSH ");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L" >\r\n");
+        stateMachine.ProcessString(L"> ");
+        stateMachine.ProcessString(L"\x1b]133;B\x7");
+    };
+
+    _writePrompt(sm, L"C:\\Windows"); // y=0,1
+    sm.ProcessString(L"Foo-bar");
+    sm.ProcessString(L"\x1b]133;C\x7");
+    sm.ProcessString(L"\r\n");
+    sm.ProcessString(L"This is some text     \r\n"); // y=2
+    sm.ProcessString(L"with varying amounts  \r\n"); // y=3
+    sm.ProcessString(L"of whitespace\r\n"); // y=4
+
+    _writePrompt(sm, L"C:\\Windows"); // y=5, 6
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+    // DebugBreak();
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void ConptyRoundtripTests::ManyMultilinePromptsWithTrailingSpaces()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    auto bufferWidth = term->GetViewport().Width();
+
+    auto verifyFirstRowOfPrompt = [&](const ROW& row) {
+        const auto& attrs = row.Attributes();
+        const auto& runs = attrs.runs();
+        VERIFY_ARE_EQUAL(2u, runs.size());
+        auto run0 = runs[0];
+        auto run1 = runs[1];
+        VERIFY_ARE_EQUAL(17, run0.length);
+        VERIFY_ARE_EQUAL(MarkKind::Prompt, run0.value.GetMarkAttributes());
+
+        VERIFY_ARE_EQUAL(bufferWidth - 17, run1.length);
+        VERIFY_ARE_EQUAL(MarkKind::None, run1.value.GetMarkAttributes());
+    };
+    auto verifySecondRowOfPrompt = [&](const ROW& row, const auto expectedCommandLength) {
+        const auto& attrs = row.Attributes();
+        const auto& runs = attrs.runs();
+        VERIFY_ARE_EQUAL(3u, runs.size());
+        auto run0 = runs[0];
+        auto run1 = runs[1];
+        auto run2 = runs[2];
+        VERIFY_ARE_EQUAL(2, run0.length);
+        VERIFY_ARE_EQUAL(MarkKind::Prompt, run0.value.GetMarkAttributes());
+
+        VERIFY_ARE_EQUAL(expectedCommandLength, run1.length);
+        VERIFY_ARE_EQUAL(MarkKind::Command, run1.value.GetMarkAttributes());
+
+        VERIFY_ARE_EQUAL(bufferWidth - (2 + expectedCommandLength), run2.length);
+        VERIFY_ARE_EQUAL(MarkKind::None, run2.value.GetMarkAttributes());
+    };
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        const auto& cursor = tb.GetCursor();
+        {
+            const til::point expectedCursor{ 0, 11 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+        const auto marks = tb.GetMarkExtents();
+        VERIFY_ARE_EQUAL(3u, marks.size());
+
+        Log::Comment(L"Row 0");
+        verifyFirstRowOfPrompt(tb.GetRowByOffset(0));
+
+        Log::Comment(L"Row 1");
+        verifySecondRowOfPrompt(tb.GetRowByOffset(1), 7);
+
+        {
+            Log::Comment(L"Row 2");
+            const auto& row = tb.GetRowByOffset(2);
+            const auto& attrs = row.Attributes();
+            const auto& runs = attrs.runs();
+            VERIFY_ARE_EQUAL(2u, runs.size());
+            auto run0 = runs[0];
+            auto run1 = runs[1];
+            VERIFY_ARE_EQUAL(22, run0.length);
+            VERIFY_ARE_EQUAL(MarkKind::Output, run0.value.GetMarkAttributes());
+
+            VERIFY_ARE_EQUAL(bufferWidth - 22, run1.length);
+            VERIFY_ARE_EQUAL(MarkKind::None, run1.value.GetMarkAttributes());
+        }
+        {
+            Log::Comment(L"Row 3");
+            const auto& row = tb.GetRowByOffset(3);
+            const auto& attrs = row.Attributes();
+            const auto& runs = attrs.runs();
+            VERIFY_ARE_EQUAL(2u, runs.size());
+            auto run0 = runs[0];
+            auto run1 = runs[1];
+            VERIFY_ARE_EQUAL(22, run0.length);
+            VERIFY_ARE_EQUAL(MarkKind::Output, run0.value.GetMarkAttributes());
+
+            VERIFY_ARE_EQUAL(bufferWidth - 22, run1.length);
+            VERIFY_ARE_EQUAL(MarkKind::None, run1.value.GetMarkAttributes());
+        }
+
+        Log::Comment(L"Row 5");
+        verifyFirstRowOfPrompt(tb.GetRowByOffset(5));
+
+        Log::Comment(L"Row 6");
+        verifySecondRowOfPrompt(tb.GetRowByOffset(6), 7);
+
+        Log::Comment(L"Row 8");
+        verifyFirstRowOfPrompt(tb.GetRowByOffset(8));
+
+        Log::Comment(L"Row 9");
+        verifySecondRowOfPrompt(tb.GetRowByOffset(9), 6);
+
+        {
+            Log::Comment(L"Foo-bar mark on rows 0 & 1");
+
+            auto& mark = marks[0];
+            const til::point expectedStart{ 0, 0 };
+            const til::point expectedEnd{ 2, 1 };
+
+            // The command ends at {9,1} (the end of the Foo-Bar string).
+            // However, the first character in the output is at {0,2}.
+            const til::point expectedOutputStart{ 9, 1 }; // `Foo-Bar` is 7 characters
+            const til::point expectedOutputEnd{ 13, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            Log::Comment(L"Boo-far mark on rows 5 & 6");
+            auto& mark = marks[1];
+            const til::point expectedStart{ 0, 5 };
+            const til::point expectedEnd{ 2, 6 };
+            const til::point expectedOutputStart{ 9, 6 }; // `Boo-far` is 7 characters
+            const til::point expectedOutputEnd{ 22, 7 };
+
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            Log::Comment(L"yikes? mark on rows 8 & 9");
+            auto& mark = marks[2];
+            const til::point expectedStart{ 0, 8 };
+            const til::point expectedEnd{ 2, 9 };
+            const til::point expectedOutputStart{ 8, 9 }; // `yikes?` is 6 characters
+            const til::point expectedOutputEnd{ 22, 10 };
+
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    auto writePrompt = [](StateMachine& stateMachine, const auto& path) {
+        // A prompt looks like:
+        // `PWSH C:\Windows >`
+        // `> `
+        //
+        // which two rows. The first is 17 characters for C:\Windows
+        stateMachine.ProcessString(L"\x1b]133;D\x7");
+        stateMachine.ProcessString(L"\x1b]133;A\x7");
+        stateMachine.ProcessString(L"\x1b]9;9;");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"\x7");
+        stateMachine.ProcessString(L"PWSH ");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L" >\r\n");
+        stateMachine.ProcessString(L"> ");
+        stateMachine.ProcessString(L"\x1b]133;B\x7");
+    };
+    auto writeCommand = [](StateMachine& stateMachine, const auto& cmd) {
+        stateMachine.ProcessString(cmd);
+        stateMachine.ProcessString(L"\x1b]133;C\x7");
+        stateMachine.ProcessString(L"\r\n");
+    };
+
+    writePrompt(sm, L"C:\\Windows"); // y=0,1
+    writeCommand(sm, L"Foo-bar");
+    sm.ProcessString(L"This is some text     \r\n"); // y=2
+    sm.ProcessString(L"with varying amounts  \r\n"); // y=3
+    sm.ProcessString(L"of whitespace\r\n"); // y=4
+
+    writePrompt(sm, L"C:\\Windows"); // y=5, 6
+    writeCommand(sm, L"Boo-far"); // y=6
+    sm.ProcessString(L"This is more text     \r\n"); // y=7
+
+    writePrompt(sm, L"C:\\Windows"); // y=8,9
+    writeCommand(sm, L"yikes?"); // y=9
+    sm.ProcessString(L"This is even more     \r\n"); // y=10
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+    // DebugBreak();
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 

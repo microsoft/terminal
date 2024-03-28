@@ -1181,3 +1181,36 @@ CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexce
     const auto guessedColumn = gsl::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
     return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
 }
+
+const std::optional<ScrollbarData>& ROW::GetScrollbarData() const noexcept
+{
+    return _promptData;
+}
+void ROW::SetScrollbarData(std::optional<ScrollbarData> data) noexcept
+{
+    _promptData = data;
+}
+
+void ROW::StartPrompt() noexcept
+{
+    if (!_promptData.has_value())
+    {
+        _promptData = ScrollbarData{
+            .category = MarkCategory::Prompt,
+            .color = std::nullopt,
+            .exitCode = std::nullopt,
+        };
+    }
+}
+
+void ROW::EndOutput(std::optional<unsigned int> error) noexcept
+{
+    if (_promptData.has_value())
+    {
+        _promptData->exitCode = error;
+        if (error.has_value())
+        {
+            _promptData->category = *error == 0 ? MarkCategory::Success : MarkCategory::Error;
+        }
+    }
+}

@@ -300,140 +300,6 @@ void Terminal::UseMainScreenBuffer()
     _activeBuffer().TriggerRedrawAll();
 }
 
-// NOTE: This is the version of AddMark that comes from VT
-void Terminal::MarkPrompt(const ScrollMark& mark)
-{
-    _assertLocked();
-
-    static bool logged = false;
-    if (!logged)
-    {
-        TraceLoggingWrite(
-            g_hCTerminalCoreProvider,
-            "ShellIntegrationMarkAdded",
-            TraceLoggingDescription("A mark was added via VT at least once"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        logged = true;
-    }
-
-    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    AddMark(mark, cursorPos, cursorPos, false);
-
-    if (mark.category == MarkCategory::Prompt)
-    {
-        _currentPromptState = PromptState::Prompt;
-    }
-}
-
-void Terminal::MarkCommandStart()
-{
-    _assertLocked();
-
-    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-
-    if ((_currentPromptState == PromptState::Prompt) &&
-        (_activeBuffer().GetMarks().size() > 0))
-    {
-        // We were in the right state, and there's a previous mark to work
-        // with.
-        //
-        //We can just do the work below safely.
-    }
-    else if (_currentPromptState == PromptState::Command)
-    {
-        // We're already in the command state. We don't want to end the current
-        // mark. We don't want to make a new one. We want to just leave the
-        // current command going.
-        return;
-    }
-    else
-    {
-        // If there was no last mark, or we're in a weird state,
-        // then abandon the current state, and just insert a new Prompt mark that
-        // start's & ends here, and got to State::Command.
-
-        ScrollMark mark;
-        mark.category = MarkCategory::Prompt;
-        AddMark(mark, cursorPos, cursorPos, false);
-    }
-    _activeBuffer().SetCurrentPromptEnd(cursorPos);
-    _currentPromptState = PromptState::Command;
-}
-
-void Terminal::MarkOutputStart()
-{
-    _assertLocked();
-
-    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-
-    if ((_currentPromptState == PromptState::Command) &&
-        (_activeBuffer().GetMarks().size() > 0))
-    {
-        // We were in the right state, and there's a previous mark to work
-        // with.
-        //
-        //We can just do the work below safely.
-    }
-    else if (_currentPromptState == PromptState::Output)
-    {
-        // We're already in the output state. We don't want to end the current
-        // mark. We don't want to make a new one. We want to just leave the
-        // current output going.
-        return;
-    }
-    else
-    {
-        // If there was no last mark, or we're in a weird state,
-        // then abandon the current state, and just insert a new Prompt mark that
-        // start's & ends here, and the command ends here, and go to State::Output.
-
-        ScrollMark mark;
-        mark.category = MarkCategory::Prompt;
-        AddMark(mark, cursorPos, cursorPos, false);
-    }
-    _activeBuffer().SetCurrentCommandEnd(cursorPos);
-    _currentPromptState = PromptState::Output;
-}
-
-void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
-{
-    _assertLocked();
-
-    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    auto category = MarkCategory::Prompt;
-    if (error.has_value())
-    {
-        category = *error == 0u ?
-                       MarkCategory::Success :
-                       MarkCategory::Error;
-    }
-
-    if ((_currentPromptState == PromptState::Output) &&
-        (_activeBuffer().GetMarks().size() > 0))
-    {
-        // We were in the right state, and there's a previous mark to work
-        // with.
-        //
-        //We can just do the work below safely.
-    }
-    else
-    {
-        // If there was no last mark, or we're in a weird state, then abandon
-        // the current state, and just insert a new Prompt mark that start's &
-        // ends here, and the command ends here, AND the output ends here. and
-        // go to State::Output.
-
-        ScrollMark mark;
-        mark.category = MarkCategory::Prompt;
-        AddMark(mark, cursorPos, cursorPos, false);
-        _activeBuffer().SetCurrentCommandEnd(cursorPos);
-    }
-    _activeBuffer().SetCurrentOutputEnd(cursorPos, category);
-    _currentPromptState = PromptState::None;
-}
-
 // Method Description:
 // - Reacts to a client asking us to show or hide the window.
 // Arguments:
@@ -497,16 +363,9 @@ void Terminal::NotifyBufferRotation(const int delta)
     // manually erase our pattern intervals since the locations have changed now
     _patternIntervalTree = {};
 
-    auto& marks{ _activeBuffer().GetMarks() };
-    const auto hasScrollMarks = marks.size() > 0;
-    if (hasScrollMarks)
-    {
-        _activeBuffer().ScrollMarks(-delta);
-    }
-
     const auto oldScrollOffset = _scrollOffset;
     _PreserveUserScrollOffset(delta);
-    if (_scrollOffset != oldScrollOffset || hasScrollMarks || AlwaysNotifyOnBufferRotation())
+    if (_scrollOffset != oldScrollOffset || AlwaysNotifyOnBufferRotation())
     {
         _NotifyScrollEvent();
     }

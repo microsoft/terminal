@@ -69,11 +69,6 @@ public:
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
     void NotifyBufferRotation(const int delta) override;
 
-    void MarkPrompt(const ScrollMark& mark) override;
-    void MarkCommandStart() override;
-    void MarkOutputStart() override;
-    void MarkCommandFinish(std::optional<unsigned int> error) override;
-
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
 private:

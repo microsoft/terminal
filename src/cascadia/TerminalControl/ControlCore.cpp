@@ -1886,7 +1886,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto cursorPos{ _terminal->GetCursorPosition() };
 
             // Does the current buffer line have a mark on it?
-            const auto& marks{ _terminal->GetScrollMarks() };
+            const auto& marks{ _terminal->GetMarkExtents() };
             if (!marks.empty())
             {
                 const auto& last{ marks.back() };
@@ -2102,32 +2102,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto& textBuffer = _terminal->GetTextBuffer();
 
         std::vector<winrt::hstring> commands;
-
-        for (const auto& mark : _terminal->GetScrollMarks())
+        const auto bufferCommands{ textBuffer.Commands() };
+        for (const auto& commandInBuffer : bufferCommands)
         {
-            // The command text is between the `end` (which denotes the end of
-            // the prompt) and the `commandEnd`.
-            bool markHasCommand = mark.commandEnd.has_value() &&
-                                  mark.commandEnd != mark.end;
-            if (!markHasCommand)
-            {
-                continue;
-            }
-
-            // Get the text of the command
-            const auto line = mark.end.y;
-            const auto& row = textBuffer.GetRowByOffset(line);
-            const auto commandText = row.GetText(mark.end.x, mark.commandEnd->x);
-
-            // Trim off trailing spaces.
-            const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
+            const auto strEnd = commandInBuffer.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
-                const auto trimmed = commandText.substr(0, strEnd + 1);
+                const auto trimmed = commandInBuffer.substr(0, strEnd + 1);
 
                 commands.push_back(winrt::hstring{ trimmed });
             }
         }
+
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
 
@@ -2339,20 +2325,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _owningHwnd = owner;
     }
 
+    // This one is fairly hot! it gets called every time we redraw the scrollbar
+    // marks, which is frequently. Fortunately, we don't need to bother with
+    // collecting up the actual extents of the marks in here - we just need the
+    // rows they start on.
     Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
     {
         const auto lock = _terminal->LockForReading();
-        const auto& internalMarks = _terminal->GetScrollMarks();
+        const auto& markRows = _terminal->GetMarkRows();
         std::vector<Control::ScrollMark> v;
 
-        v.reserve(internalMarks.size());
+        v.reserve(markRows.size());
 
-        for (const auto& mark : internalMarks)
+        for (const auto& mark : markRows)
         {
             v.emplace_back(
-                mark.start.to_core_point(),
-                mark.end.to_core_point(),
-                OptionalFromColor(_terminal->GetColorForMark(mark)));
+                mark.row,
+                OptionalFromColor(_terminal->GetColorForMark(mark.data)));
         }
 
         return winrt::single_threaded_vector(std::move(v));
@@ -2361,26 +2350,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::AddMark(const Control::ScrollMark& mark)
     {
         const auto lock = _terminal->LockForReading();
-        ::ScrollMark m{};
+        ::ScrollbarData m{};
 
         if (mark.Color.HasValue)
         {
             m.color = til::color{ mark.Color.Color };
         }
+        const auto row = (_terminal->IsSelectionActive()) ?
+                             _terminal->GetSelectionAnchor().y :
+                             _terminal->GetTextBuffer().GetCursor().GetPosition().y;
 
-        if (_terminal->IsSelectionActive())
-        {
-            m.start = til::point{ _terminal->GetSelectionAnchor() };
-            m.end = til::point{ _terminal->GetSelectionEnd() };
-        }
-        else
-        {
-            m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
-        }
-
-        // The version of this that only accepts a ScrollMark will automatically
-        // set the start & end to the cursor position.
-        _terminal->AddMark(m, m.start, m.end, true);
+        _terminal->AddMarkFromUI(m, row);
     }
 
     void ControlCore::ClearMark()
@@ -2399,9 +2379,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
         const auto currentOffset = ScrollOffset();
-        const auto& marks{ _terminal->GetScrollMarks() };
+        const auto& marks{ _terminal->GetMarkExtents() };
 
-        std::optional<::ScrollMark> tgt;
+        std::optional<::MarkExtents> tgt;
 
         switch (direction)
         {
@@ -2515,8 +2495,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point start = _terminal->IsSelectionActive() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
 
-        std::optional<::ScrollMark> nearest{ std::nullopt };
-        const auto& marks{ _terminal->GetScrollMarks() };
+        std::optional<::MarkExtents> nearest{ std::nullopt };
+        const auto& marks{ _terminal->GetMarkExtents() };
 
         // Early return so we don't have to check for the validity of `nearest` below after the loop exits.
         if (marks.empty())
@@ -2557,8 +2537,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point start = _terminal->IsSelectionActive() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
 
-        std::optional<::ScrollMark> nearest{ std::nullopt };
-        const auto& marks{ _terminal->GetScrollMarks() };
+        std::optional<::MarkExtents> nearest{ std::nullopt };
+        const auto& marks{ _terminal->GetMarkExtents() };
 
         static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
         til::point bestDistance{ worst };
@@ -2634,8 +2614,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_contextMenuSelectMark(
         const til::point& pos,
-        bool (*filter)(const ::ScrollMark&),
-        til::point_span (*getSpan)(const ::ScrollMark&))
+        bool (*filter)(const ::MarkExtents&),
+        til::point_span (*getSpan)(const ::MarkExtents&))
     {
         const auto lock = _terminal->LockForWriting();
 
@@ -2644,7 +2624,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        const auto& marks{ _terminal->GetScrollMarks() };
+        const auto& marks{ _terminal->GetMarkExtents() };
+
         for (auto&& m : marks)
         {
             // If the caller gave us a way to filter marks, check that now.
@@ -2670,20 +2651,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _contextMenuSelectMark(
             _contextMenuBufferPosition,
-            [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); },
-            [](const ::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
+            [](const ::MarkExtents& m) -> bool { return !m.HasCommand(); },
+            [](const ::MarkExtents& m) { return til::point_span{ m.end, *m.commandEnd }; });
     }
     void ControlCore::ContextMenuSelectOutput()
     {
         _contextMenuSelectMark(
             _contextMenuBufferPosition,
-            [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); },
-            [](const ::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
+            [](const ::MarkExtents& m) -> bool { return !m.HasOutput(); },
+            [](const ::MarkExtents& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
     }
 
     bool ControlCore::_clickedOnMark(
         const til::point& pos,
-        bool (*filter)(const ::ScrollMark&))
+        bool (*filter)(const ::MarkExtents&))
     {
         const auto lock = _terminal->LockForWriting();
 
@@ -2696,13 +2677,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // DO show this if the click was on a mark with a command
-        const auto& marks{ _terminal->GetScrollMarks() };
+        const auto& marks{ _terminal->GetMarkExtents() };
         for (auto&& m : marks)
         {
             if (filter && filter(m))
             {
                 continue;
             }
+
             const auto [start, end] = m.GetExtent();
             if (start <= pos &&
                 end >= pos)
@@ -2723,7 +2705,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Relies on the anchor set in AnchorContextMenu
         return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); });
+                              [](const ::MarkExtents& m) -> bool { return !m.HasCommand(); });
     }
 
     // Method Description:
@@ -2732,6 +2714,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Relies on the anchor set in AnchorContextMenu
         return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
+                              [](const ::MarkExtents& m) -> bool { return !m.HasOutput(); });
     }
 }

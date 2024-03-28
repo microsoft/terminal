@@ -424,25 +424,6 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
-void ConhostInternalGetSet::MarkPrompt(const ::ScrollMark& /*mark*/)
-{
-    // Not implemented for conhost.
-}
-
-void ConhostInternalGetSet::MarkCommandStart()
-{
-    // Not implemented for conhost.
-}
-
-void ConhostInternalGetSet::MarkOutputStart()
-{
-    // Not implemented for conhost.
-}
-
-void ConhostInternalGetSet::MarkCommandFinish(std::optional<unsigned int> /*error*/)
-{
-    // Not implemented for conhost.
-}
 void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
 {
     // Not implemented for conhost.

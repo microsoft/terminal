@@ -13,11 +13,8 @@ namespace Microsoft.Terminal.Control
 
     struct ScrollMark
     {
-        // There are other members of DispatchTypes::ScrollMark, but these are
-        // all we need to expose up and set downwards currently. Additional
-        // members can be bubbled as necessary.
-        Microsoft.Terminal.Core.Point Start;
-        Microsoft.Terminal.Core.Point End; // exclusive
+        // Additional members can be bubbled as necessary.
+        Int32 Row;
         Microsoft.Terminal.Core.OptionalColor Color;
     };
 
