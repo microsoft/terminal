@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <til/small_vector.h>
-
 #define ALT_PRESSED (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
 #define CTRL_PRESSED (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
 #define MOD_PRESSED (SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED)

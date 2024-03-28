@@ -20,8 +20,6 @@ Revision History:
 #include "ApiMessageState.h"
 #include "IApiRoutines.h"
 
-#include <til/small_vector.h>
-
 class ConsoleProcessHandle;
 class ConsoleHandleData;
 

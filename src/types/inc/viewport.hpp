@@ -17,7 +17,7 @@ namespace Microsoft::Console::Types
 {
     class Viewport;
 
-    using SomeViewports = til::some<Viewport, 4>;
+    using SomeViewports = til::small_vector<Viewport, 4>;
 
     class Viewport final
     {

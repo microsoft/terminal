@@ -868,7 +868,7 @@ class BitmapTests
         // C _ D D
         // _ _ E _
         // _ F F _
-        til::some<til::rect, 6> expected;
+        std::vector<til::rect> expected;
         expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 2, 1 } });
         expected.push_back(til::rect{ til::point{ 3, 0 }, til::size{ 1, 1 } });
         expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 1, 1 } });
@@ -877,7 +877,7 @@ class BitmapTests
         expected.push_back(til::rect{ til::point{ 1, 3 }, til::size{ 2, 1 } });
 
         Log::Comment(L"Run the iterator and collect the runs.");
-        til::some<til::rect, 6> actual;
+        std::vector<til::rect> actual;
         for (auto run : map.runs())
         {
             actual.push_back(run);
@@ -1006,7 +1006,7 @@ class BitmapTests
         // C _ D D
         // _ _ E _
         // _ F F _
-        til::some<til::rect, 6> expected;
+        std::vector<til::rect> expected;
         expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 2, 1 } });
         expected.push_back(til::rect{ til::point{ 3, 0 }, til::size{ 1, 1 } });
         expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 1, 1 } });
@@ -1015,7 +1015,7 @@ class BitmapTests
         expected.push_back(til::rect{ til::point{ 1, 3 }, til::size{ 2, 1 } });
 
         Log::Comment(L"Run the iterator and collect the runs.");
-        til::some<til::rect, 6> actual;
+        std::vector<til::rect> actual;
         for (auto run : map.runs())
         {
             actual.push_back(run);

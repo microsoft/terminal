@@ -221,6 +221,24 @@ class PointTests
         }
     }
 
+    TEST_METHOD(Boolean)
+    {
+        SetVerifyOutput verifyOutputScope{ VerifyOutputSettings::LogOnlyFailures };
+
+        static constexpr til::CoordType values[] = { til::CoordTypeMin, -1, 0, 1, til::CoordTypeMax };
+
+        for (const auto x : values)
+        {
+            for (const auto y : values)
+            {
+                const til::point p{ x, y };
+                const auto expected = x >= 0 && y >= 0;
+                const auto actual = static_cast<bool>(p);
+                VERIFY_ARE_EQUAL(expected, actual);
+            }
+        }
+    }
+
     TEST_METHOD(Addition)
     {
         Log::Comment(L"Addition of two things that should be in bounds.");

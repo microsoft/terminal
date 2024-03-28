@@ -32,7 +32,6 @@
     <ClCompile Include="RunLengthEncodingTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="SmallVectorTests.cpp" />
-    <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="string.cpp" />
@@ -64,7 +63,6 @@
     <ClInclude Include="..\..\inc\til\rle.h" />
     <ClInclude Include="..\..\inc\til\size.h" />
     <ClInclude Include="..\..\inc\til\small_vector.h" />
-    <ClInclude Include="..\..\inc\til\some.h" />
     <ClInclude Include="..\..\inc\til\spsc.h" />
     <ClInclude Include="..\..\inc\til\static_map.h" />
     <ClInclude Include="..\..\inc\til\string.h" />

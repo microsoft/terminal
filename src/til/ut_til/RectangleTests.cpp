@@ -300,22 +300,26 @@ class RectangleTests
 
     TEST_METHOD(Boolean)
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:left", L"{0,10}")
-            TEST_METHOD_PROPERTY(L"Data:top", L"{0,10}")
-            TEST_METHOD_PROPERTY(L"Data:right", L"{0,10}")
-            TEST_METHOD_PROPERTY(L"Data:bottom", L"{0,10}")
-        END_TEST_METHOD_PROPERTIES()
+        SetVerifyOutput verifyOutputScope{ VerifyOutputSettings::LogOnlyFailures };
 
-        til::CoordType left, top, right, bottom;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"left", left));
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"top", top));
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"right", right));
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"bottom", bottom));
+        static constexpr til::CoordType values[] = { til::CoordTypeMin, -1, 0, 1, til::CoordTypeMax };
 
-        const auto expected = left < right && top < bottom;
-        const til::rect actual{ left, top, right, bottom };
-        VERIFY_ARE_EQUAL(expected, (bool)actual);
+        for (const auto left : values)
+        {
+            for (const auto top : values)
+            {
+                for (const auto right : values)
+                {
+                    for (const auto bottom : values)
+                    {
+                        const til::rect r{ left, top, right, bottom };
+                        const auto expected = left >= 0 && top >= 0 && right > left && bottom > top;
+                        const auto actual = static_cast<bool>(r);
+                        VERIFY_ARE_EQUAL(expected, actual);
+                    }
+                }
+            }
+        }
     }
 
     TEST_METHOD(OrUnion)
@@ -364,7 +368,7 @@ class RectangleTests
         const auto removal = original;
 
         // Since it's the same rectangle, nothing's left. We should get no results.
-        const til::some<til::rect, 4> expected;
+        const til::small_vector<til::rect, 4> expected;
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
     }
@@ -375,7 +379,7 @@ class RectangleTests
         const til::rect removal{ 12, 12, 15, 15 };
 
         // Since they don't overlap, we expect the original to be given back.
-        const til::some<til::rect, 4> expected{ original };
+        const til::small_vector<til::rect, 4> expected{ original };
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
     }
@@ -401,7 +405,7 @@ class RectangleTests
         const til::rect original{ 0, 0, 10, 10 };
         const til::rect removal{ -12, 3, 15, 15 };
 
-        const til::some<til::rect, 4> expected{
+        const til::small_vector<til::rect, 4> expected{
             til::rect{ original.left, original.top, original.right, removal.top }
         };
         const auto actual = original - removal;
@@ -428,7 +432,7 @@ class RectangleTests
         const til::rect original{ 0, 0, 10, 10 };
         const til::rect removal{ 3, 3, 15, 15 };
 
-        const til::some<til::rect, 4> expected{
+        const til::small_vector<til::rect, 4> expected{
             til::rect{ original.left, original.top, original.right, removal.top },
             til::rect{ original.left, removal.top, removal.left, original.bottom }
         };
@@ -452,7 +456,7 @@ class RectangleTests
         const til::rect original{ 0, 0, 10, 10 };
         const til::rect removal{ 3, 3, 15, 6 };
 
-        const til::some<til::rect, 4> expected{
+        const til::small_vector<til::rect, 4> expected{
             til::rect{ original.left, original.top, original.right, removal.top },
             til::rect{ original.left, removal.bottom, original.right, original.bottom },
             til::rect{ original.left, removal.top, removal.left, removal.bottom }
@@ -483,7 +487,7 @@ class RectangleTests
         const til::rect original{ 0, 0, 10, 10 };
         const til::rect removal{ 3, 3, 6, 6 };
 
-        const til::some<til::rect, 4> expected{
+        const til::small_vector<til::rect, 4> expected{
             til::rect{ original.left, original.top, original.right, removal.top },
             til::rect{ original.left, removal.bottom, original.right, original.bottom },
             til::rect{ original.left, removal.top, removal.left, removal.bottom },
@@ -704,26 +708,6 @@ class RectangleTests
         const til::rect rc{ 5, 10, 15, 20 };
         const til::size expected{ 10, 10 };
         VERIFY_ARE_EQUAL(expected, rc.size());
-    }
-
-    TEST_METHOD(Empty)
-    {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:left", L"{0,10}")
-            TEST_METHOD_PROPERTY(L"Data:top", L"{0,10}")
-            TEST_METHOD_PROPERTY(L"Data:right", L"{0,10}")
-            TEST_METHOD_PROPERTY(L"Data:bottom", L"{0,10}")
-        END_TEST_METHOD_PROPERTIES()
-
-        til::CoordType left, top, right, bottom;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"left", left));
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"top", top));
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"right", right));
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"bottom", bottom));
-
-        const auto expected = !(left < right && top < bottom);
-        const til::rect actual{ left, top, right, bottom };
-        VERIFY_ARE_EQUAL(expected, actual.empty());
     }
 
     TEST_METHOD(ContainsPoint)
