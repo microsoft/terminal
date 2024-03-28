@@ -309,6 +309,21 @@
     <value>Aplicación de terminal que se inicia cuando se ejecuta una aplicación de línea de comandos sin una sesión existente, como en el menú Inicio o en el cuadro de diálogo Ejecutar.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11 proporciona una experiencia con más rendimiento y características, mientras que Direct2D es más estable. La opción predeterminada "Automático" seleccionará la API que mejor se adapte a su hardware gráfico. Si experimenta problemas importantes, considere la posibilidad de usar Direct2D.</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>Automático</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>De forma predeterminada, el representador de texto usa una cadena de intercambio de FLIP_SEQUENTIAL y declara rectángulos modificados a través de la API de Present1. Cuando esta configuración está habilitada, se usará una cadena de intercambio de FLIP_DISCARD y no se declarará ningún rectángulo con modificaciones. Si uno u otro es mejor depende de su hardware y de otros factores.</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>Cuando está habilitado, el terminal usará un rasterizador de software (WARP). Esta configuración debe dejarse deshabilitada en casi todas las circunstancias.</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columnas</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>

@@ -309,6 +309,21 @@
     <value>L'applicazione terminale che viene avviata quando viene eseguita un'applicazione della riga di comando senza una sessione esistente, ad esempio dalla finestra di dialogo menu Start o Esegui.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11 offre un'esperienza più performante e con funzionalità più elevate, mentre Direct2D è più stabile. L'opzione predefinita "Automatico" sceglierà l'API più adatta all'hardware grafico. Se si verificano problemi significativi, provare a usare Direct2D.</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>Automatico</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>Per impostazione predefinita, il renderer di testo usa una catena di scambio FLIP_SEQUENTIAL e dichiara rettangoli modificati ma non modificati tramite l'API Present1. Quando questa impostazione è abilitata, verrà utilizzata una catena di scambio FLIP_DISCARD e non verranno dichiarati rettangoli modificati ma non modificati. Il miglioramento dell'uno o dell'altro dipende dall'hardware e da vari altri fattori.</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>Se questa opzione è abilitata, il terminale userà un rasterizzatore software (WARP). Questa impostazione deve essere lasciata disabilitata in quasi tutte le circostanze.</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colonne</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
