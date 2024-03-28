@@ -74,12 +74,6 @@
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
 
-// Chromium Numerics (safe math)
-#pragma warning(push)
-#pragma warning(disable:4100) // unreferenced parameter
-#include <base/numerics/safe_math.h>
-#pragma warning(pop)
-
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>

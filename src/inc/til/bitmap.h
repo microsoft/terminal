@@ -102,7 +102,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // pos is now at the first on bit.
                     // If no next set bit can be found, npos is returned, which is SIZE_T_MAX.
                     // saturated_cast can ensure that this will be converted to CoordType's max (which is greater than _end).
-                    const auto runStart = _rc.point_at(base::saturated_cast<CoordType>(_nextPos));
+                    const auto runStart = _rc.point_at(static_cast<CoordType>(_nextPos));
 
                     // We'll only count up until the end of this row.
                     // a run can be a max of one row tall.
@@ -120,7 +120,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // Keep going until we reach end of row, end of the buffer, or the next bit is off.
 
                     // Assemble and store that run.
-                    _run = til::rect{ runStart, til::size{ base::saturated_cast<CoordType>(runLength), 1 } };
+                    _run = til::rect{ runStart, til::size{ static_cast<CoordType>(runLength), 1 } };
                 }
                 else
                 {
@@ -584,15 +584,10 @@ namespace WEX::TestExecution
             return &expected == &actual;
         }
 
-        static bool IsLessThan(const ::til::details::bitmap<T>& expectedLess, const ::til::details::bitmap<T>& expectedGreater) = delete;
-
-        static bool IsGreaterThan(const ::til::details::bitmap<T>& expectedGreater, const ::til::details::bitmap<T>& expectedLess) = delete;
-
-        static bool IsNull(const ::til::details::bitmap<T>& object) noexcept
+        static bool IsLessThan(const ::til::details::bitmap<T>& lessThan, const ::til::details::bitmap<T>& greaterThan) noexcept
         {
-            return object == til::details::bitmap<T>{};
+            return lessThan.size().area() < greaterThan.size().area();
         }
     };
-
-};
+}
 #endif
