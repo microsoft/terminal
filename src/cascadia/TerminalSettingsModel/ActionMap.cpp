@@ -795,9 +795,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
-    // Note: this should only be called for the action map in the user's settings file
     bool ActionMap::GenerateIDsForActions()
     {
+        // Note: this should ONLY be called for the action map in the user's settings file
         bool fixedUp{ false };
         for (auto actionPair : _ActionMap)
         {
