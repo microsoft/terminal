@@ -121,6 +121,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hstring{ _ID };
     }
 
+    void Command::ID(hstring id)
+    {
+        _ID = id;
+    }
+
     void Command::Name(const hstring& value)
     {
         if (!_name.has_value() || _name.value() != value)
@@ -313,22 +318,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
                 result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
-
-                // we need to generate an ID if all these are true:
-                //   1. the action is valid
-                //   2. there isn't already an ID
-                //   3. the origin is User
-                if (result->_ActionAndArgs.Action() != ShortcutAction::Invalid)
-                {
-                    if (const auto id{ json[JsonKey("id")] })
-                    {
-                        result->_ID = JsonUtils::GetValue<std::wstring>(id);
-                    }
-                    else if (origin == OriginTag::User)
-                    {
-                        result->_ID = get_self<implementation::ActionAndArgs>(result->_ActionAndArgs)->GenerateID();
-                    }
-                }
             }
             else
             {

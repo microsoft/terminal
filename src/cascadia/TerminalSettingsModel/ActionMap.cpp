@@ -795,6 +795,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
+    std::unordered_map<InternalActionID, Model::Command> ActionMap::AllActions()
+    {
+        return _ActionMap;
+    }
+
     // Method Description:
     // - Rebinds a key binding to a new key chord
     // Arguments:

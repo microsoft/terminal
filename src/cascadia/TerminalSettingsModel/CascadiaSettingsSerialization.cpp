@@ -504,6 +504,22 @@ bool SettingsLoader::FixupUserSettings()
         fixedUp = true;
     }
 
+    // we need to generate an ID for a command in the user settings if it doesn't already have one
+    auto actionMap{ winrt::get_self<ActionMap>(userSettings.globals->ActionMap()) };
+    for (auto actionPair : actionMap->AllActions())
+    {
+        auto cmdImpl{ winrt::get_self<Command>(actionPair.second) };
+        if (cmdImpl->ID().empty())
+        {
+            auto actionAndArgsImpl{ winrt::get_self<ActionAndArgs>(cmdImpl->ActionAndArgs()) };
+            if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
+            {
+                cmdImpl->ID(generatedID);
+                fixedUp = true;
+            }
+        }
+    }
+
     return fixedUp;
 }
 
