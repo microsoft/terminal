@@ -795,9 +795,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
-    std::unordered_map<InternalActionID, Model::Command> ActionMap::AllActions()
+    // Note: this should only be called for the action map in the user's settings file
+    bool ActionMap::GenerateIDsForActions()
     {
-        return _ActionMap;
+        bool fixedUp{ false };
+        for (auto actionPair : _ActionMap)
+        {
+            auto cmdImpl{ winrt::get_self<Command>(actionPair.second) };
+            if (cmdImpl->ID().empty())
+            {
+                auto actionAndArgsImpl{ winrt::get_self<ActionAndArgs>(cmdImpl->ActionAndArgs()) };
+                if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
+                {
+                    cmdImpl->ID(generatedID);
+                    fixedUp = true;
+                }
+            }
+        }
+        return fixedUp;
     }
 
     // Method Description:
