@@ -1277,11 +1277,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if constexpr (Feature_VtPassthroughMode::IsEnabled())
-        {
-            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-        }
-
         connection.Initialize(valueSet);
 
         TraceLoggingWrite(

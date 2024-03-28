@@ -298,10 +298,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _unfocusedAppearanceViewModel;
     }
 
-    bool ProfileViewModel::VtPassthroughAvailable() const noexcept
-    {
-        return Feature_VtPassthroughMode::IsEnabled() && Feature_VtPassthroughModeSettingInUI::IsEnabled();
-    }
     bool ProfileViewModel::ShowMarksAvailable() const noexcept
     {
         return Feature_ScrollbarMarks::IsEnabled();
