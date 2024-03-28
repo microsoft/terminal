@@ -795,6 +795,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
+    bool ActionMap::GenerateIDsForActions()
+    {
+        // Note: this should ONLY be called for the action map in the user's settings file
+        bool fixedUp{ false };
+        for (auto actionPair : _ActionMap)
+        {
+            auto cmdImpl{ winrt::get_self<Command>(actionPair.second) };
+            if (cmdImpl->ID().empty())
+            {
+                fixedUp = cmdImpl->GenerateID() || fixedUp;
+            }
+        }
+        return fixedUp;
+    }
+
     // Method Description:
     // - Rebinds a key binding to a new key chord
     // Arguments:
