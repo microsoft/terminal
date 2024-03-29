@@ -700,6 +700,9 @@
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>Reiniciar conexión</value>
   </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>Abrir el bloc de notas</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>Seleccionar salida del comando siguiente</value>
   </data>

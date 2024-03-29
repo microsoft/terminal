@@ -989,10 +989,6 @@
     <value>以系統管理員身分執行此設定檔</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>如果啟用，設定檔將會自動在管理終端機視窗中開啟。如果目前的視窗已以系統管理員身分執行，則會在此視窗中開啟。</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
-  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>歷史大小</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1224,10 +1220,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>啟用時，終端機將在使用此設定檔建立新索引標籤或窗格時產生新的環境區塊。停用時，索引標籤/窗格將改為繼承終端機啟動時的變數。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>啟用實驗性虛擬終端機通道</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>在以滑鼠右鍵按一下時顯示選單</value>

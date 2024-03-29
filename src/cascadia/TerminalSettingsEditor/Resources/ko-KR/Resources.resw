@@ -989,10 +989,6 @@
     <value>이 프로필을 관리자 권한으로 실행</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>사용하도록 설정하면 프로필이 관리 터미널 창에서 자동으로 열립니다. 현재 창이 관리자 권한으로 이미 실행되고 있는 경우 이 창에서 열립니다.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
-  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>기록 크기</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1224,10 +1220,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>사용하도록 설정하면 이 프로필을 사용하여 새 탭이나 창을 만들 때 터미널이 새 환경 블록을 생성합니다. 사용하지 않도록 설정하면 탭이나 창이 터미널이 시작된 변수를 상속합니다.</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>실험적 가상 터미널 통과 사용</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>마우스 오른쪽 단추를 클릭할 때 메뉴 표시</value>

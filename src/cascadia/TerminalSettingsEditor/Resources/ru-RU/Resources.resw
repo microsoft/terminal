@@ -989,10 +989,6 @@
     <value>Запустить этот профиль от имени администратора</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>Если этот параметр включен, профиль будет автоматически открываться в окне терминала администратора. Если текущее окно уже запущено от имени администратора, он откроется в этом окне.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
-  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Размер журнала</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1224,10 +1220,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>Если этот параметр включен, Терминал будет создавать новый блок среды при создании новых вкладок или панелей с этим профилем. Если этот параметр отключен, вкладка или панель будет наследовать переменные, с которыми запущен Терминал.</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>Включить экспериментальную сквозную проверку на виртуальном терминале</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>Отображать меню при щелчке правой кнопкой мыши</value>

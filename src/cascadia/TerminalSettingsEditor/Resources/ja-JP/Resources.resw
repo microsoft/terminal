@@ -989,10 +989,6 @@
     <value>このプロファイルを管理者として実行する</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>有効にすると、プロファイルは管理者ターミナル ウィンドウで自動的に開きます。現在のウィンドウが既に管理者として実行されている場合は、このウィンドウで開きます。</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
-  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>履歴のサイズ</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1224,10 +1220,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはウィンドウを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>試験的な仮想ターミナル パススルーを有効にする</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>右クリックでメニューを表示する</value>

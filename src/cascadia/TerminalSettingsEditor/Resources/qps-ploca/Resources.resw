@@ -990,7 +990,7 @@
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
   <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>Ìƒ éņãвļзδ, ŧĥĕ рŗоƒīľё ẅιľł óрėŋ ΐή åň Ąďmįŋ теѓmίидŀ шïпδσώ аůţòмăтìсаļļγ. Ĭƒ ŧĥе čцѓґ℮ⁿť ẁįлđόŵ їŝ áŀřėãďу ŕύŋņïπġ āš αðмīŉ, ϊţ'ŀℓ σрèń ĩй тħїŝ ẅīйδõẁ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <value>Ìƒ éņãвļзδ, ŧĥĕ рŗоƒīľё ẅιľł óрėŋ ΐή åň Ąďmįŋ теѓmίидŀ шïпδσώ аůţòмăтìсаļļγ. Ĭƒ ŧĥе čцѓґ℮ⁿť ẁįлđόŵ їŝ áŀřėãďу ŕύŋņïπġ āš αðмīŉ, ϊţ ẁїłℓ òρĕй іп тħΐş ωϊⁿđоẁ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -1224,10 +1224,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>Ẁћέл εņаьŀèď, τħё Ŧëгmĩňªľ ẅīŀℓ ğεлěяαте å ŉэщ еńνîřόńмęñт ьŀøĉĸ ŵħ℮л čґēãťîņğ ŉεώ τâвѕ όя рªлёѕ щĭτћ тĥĭѕ ρŗòƒΐℓė. Ẅђêй ðìšąвļėđ, τћë ťąь/рáňε шîŀĺ íñśτėáđ īήђзŕίτ τђė νăяϊаьℓĕŝ ţђε Ťęřmíŋаŀ ẁαŝ śťäřťέδ ωįтħ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>Зńăьℓē эхφзґímėпτªŀ νіѓтűǻļ τ℮ґмϊñāļ φаśşтнґöúģн !!! !!! !!! !!! !!</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>Ðįşφłąÿ ǻ мèηΰ όή řïĝĥť-ćľїçķ !!! !!! !!!</value>
