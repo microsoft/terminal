@@ -36,6 +36,10 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles);
         TEST_METHOD(RoundtripUserDeletedColorSchemeCollision);
 
+        TEST_METHOD(RoundtripGenerateActionID);
+        TEST_METHOD(DoNotGenerateActionID);
+        TEST_METHOD(RoundtripActionIDsAreSame);
+
     private:
         // Method Description:
         // - deserializes and reserializes a json string representing a settings object model of type T
@@ -947,5 +951,127 @@ namespace SettingsModelUnitTests
         const auto newResult{ newSettings->ToJson() };
 
         VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripGenerateActionID()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+
+        // Key difference: the close pane action now has a generated ID
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w",
+                    "id" : "User.closePane"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::DoNotGenerateActionID()
+    {
+        // for iterable commands, nested commands, and user-defined actions that already have
+        // an ID, we do not need to generate an ID
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w",
+                    "id": "thisIsMyClosePane"
+                },
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}",
+                    "command": { "action": "newTab", "profile": "${profile.name}" }
+                },
+                {
+                    "name": "Change font size...",
+                    "commands": [
+                        { "command": { "action": "adjustFontSize", "delta": 1.0 } },
+                        { "command": { "action": "adjustFontSize", "delta": -1.0 } },
+                        { "command": "resetFontSize" },
+                    ]
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(oldLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+    }
+
+    void SerializationTests::RoundtripActionIDsAreSame()
+    {
+        static constexpr std::string_view settingsJson1{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": { "action": "sendInput", "input": "VT Griese Mode" },
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        // Both settings files define the same action, so the generated ID should be the same for both
+        static constexpr std::string_view settingsJson2{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": { "action": "sendInput", "input": "VT Griese Mode" },
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader1{ settingsJson1, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader1.MergeInboxIntoUserSettings();
+        loader1.FinalizeLayering();
+        VERIFY_IS_TRUE(loader1.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings1 = winrt::make_self<implementation::CascadiaSettings>(std::move(loader1));
+        const auto result1{ settings1->ToJson() };
+
+        implementation::SettingsLoader loader2{ settingsJson2, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader2.MergeInboxIntoUserSettings();
+        loader2.FinalizeLayering();
+        VERIFY_IS_TRUE(loader2.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings2 = winrt::make_self<implementation::CascadiaSettings>(std::move(loader2));
+        const auto result2{ settings2->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(result1), toString(result2));
     }
 }
