@@ -700,6 +700,9 @@
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>接続の再起動</value>
   </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>スクラッチパッドを開く</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>次のコマンド出力を選択</value>
   </data>

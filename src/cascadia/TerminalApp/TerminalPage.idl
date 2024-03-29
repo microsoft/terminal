@@ -14,11 +14,6 @@ namespace TerminalApp
         void Detach(Microsoft.Terminal.Control.TermControl control);
     }
 
-    [default_interface] runtimeclass LastTabClosedEventArgs
-    {
-        Boolean ClearPersistedState { get; };
-    };
-
     [default_interface] runtimeclass RenameWindowRequestedArgs
     {
         String ProposedName { get; };
@@ -86,7 +81,7 @@ namespace TerminalApp
         void SendContentToOther(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;

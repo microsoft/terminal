@@ -50,7 +50,7 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs SettingsPaneContent::GetNewTerminalArgs(const bool /* asContent */) const
+    NewTerminalArgs SettingsPaneContent::GetNewTerminalArgs(const BuildStartupKind /*kind*/) const
     {
         // For now, we're doing a terrible thing in TerminalTab itself to
         // generate an OpenSettings action manually, without asking for the pane

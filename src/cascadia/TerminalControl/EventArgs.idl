@@ -11,6 +11,12 @@ namespace Microsoft.Terminal.Control
         All = 0xffffffff
     };
 
+    enum GraphicsAPI
+    {
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
 
     runtimeclass FontSizeChangedArgs
     {
@@ -71,7 +77,8 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass RendererWarningArgs
     {
-        UInt64 Result { get; };
+        HRESULT Result { get; };
+        String Parameter { get; };
     }
 
     runtimeclass TransparencyChangedEventArgs
@@ -90,7 +97,7 @@ namespace Microsoft.Terminal.Control
     {
         Boolean ShowOrHide { get; };
     }
-    
+
     runtimeclass UpdateSelectionMarkersEventArgs
     {
         Boolean ClearMarkers { get; };

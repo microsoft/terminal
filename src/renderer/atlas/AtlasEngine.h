@@ -57,30 +57,28 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT GetFontSize(_Out_ til::size* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
         [[nodiscard]] HRESULT UpdateTitle(std::wstring_view newTitle) noexcept override;
-
-        // DxRenderer - getter
-        HRESULT Enable() noexcept override;
-        [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept override;
-        [[nodiscard]] std::wstring_view GetPixelShaderImagePath() noexcept override;
-        [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
-        [[nodiscard]] float GetScaling() const noexcept override;
-        [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
-        [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept override;
-        // DxRenderer - setter
-        void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
-        void SetCallback(std::function<void(HANDLE)> pfn) noexcept override;
-        void EnableTransparentBackground(const bool isTransparent) noexcept override;
-        void SetForceFullRepaintRendering(bool enable) noexcept override;
-        [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
-        void SetPixelShaderPath(std::wstring_view value) noexcept override;
-        void SetPixelShaderImagePath(std::wstring_view value) noexcept override;
-        void SetRetroTerminalEffect(bool enable) noexcept override;
-        void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
-        void SetSoftwareRendering(bool enable) noexcept override;
-        void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
-        [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept override;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
+
+        // getter
+        [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept;
+        [[nodiscard]] bool GetRetroTerminalEffect() const noexcept;
+        [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept;
+        [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept;
+        // setter
+        void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
+        void SetCallback(std::function<void(HANDLE)> pfn) noexcept;
+        void EnableTransparentBackground(const bool isTransparent) noexcept;
+        [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept;
+        void SetPixelShaderPath(std::wstring_view value) noexcept;
+        void SetPixelShaderImagePath(std::wstring_view value) noexcept;
+        void SetRetroTerminalEffect(bool enable) noexcept;
+        void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept;
+        void SetSoftwareRendering(bool enable) noexcept;
+        void SetDisablePartialInvalidation(bool enable) noexcept;
+        void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
+        void SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept;
+        [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
 
     private:
         // AtlasEngine.cpp
@@ -96,8 +94,8 @@ namespace Microsoft::Console::Render::Atlas
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
-        void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
-        void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
+        void _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
+        void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
         ATLAS_ATTR_COLD void _recreateAdapter();
@@ -158,6 +156,7 @@ namespace Microsoft::Console::Render::Atlas
             Buffer<f32> glyphAdvances;
             Buffer<DWRITE_GLYPH_OFFSET> glyphOffsets;
 
+            wil::com_ptr<IDWriteFontFallback> systemFontFallback;
             wil::com_ptr<IDWriteFontFace2> replacementCharacterFontFace;
             u16 replacementCharacterGlyphIndex = 0;
             bool replacementCharacterLookedUp = false;
