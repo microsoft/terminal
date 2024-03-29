@@ -309,6 +309,39 @@
     <value>시작 메뉴나 실행 대화 상자와 같이 기존 세션이 없으면 명령 줄 응용 프로그램을 실행하고 있는 터미널 응용 프로그램입니다.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
+  <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
+    <value>Graphics API</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11은 성능과 기능이 풍부한 환경을 제공하는 반면 Direct2D는 더욱 안정적입니다. 기본 옵션 "자동"은 그래픽 하드웨어에 가장 적합한 API를 선택합니다. 심각한 문제가 발생하는 경우 Direct2D를 사용하는 것이 좋습니다.</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>자동</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct2d.Text" xml:space="preserve">
+    <value>Direct2D</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
+    <value>Direct3D 11</value>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>부분 스왑 체인 무효화 사용 안 함</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>기본적으로 텍스트 렌더러는 FLIP_SEQUENTIAL 스왑 체인을 사용하고 Present1 API를 통해 더티 사각형을 선언합니다. 이 설정을 사용하면 FLIP_DISCARD 스왑 체인이 대신 사용되며 더티 사각형이 선언되지 않습니다. 하나 또는 다른 요소가 더 좋은지 여부는 하드웨어 및 다양한 다른 요인에 따라 달라집니다.</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
+    <value>소프트웨어 렌더링(WARP) 사용</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>사용하도록 설정하면 터미널에서 소프트웨어 래스터라이저(WARP)를 사용합니다. 거의 모든 상황에서는 이 설정을 사용하지 않도록 설정해야 합니다.</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>열</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -956,10 +989,6 @@
     <value>이 프로필을 관리자 권한으로 실행</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>사용하도록 설정하면 프로필이 관리 터미널 창에서 자동으로 열립니다. 현재 창이 관리자 권한으로 이미 실행되고 있는 경우 이 창에서 열립니다.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
-  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>기록 크기</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1191,10 +1220,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>사용하도록 설정하면 이 프로필을 사용하여 새 탭이나 창을 만들 때 터미널이 새 환경 블록을 생성합니다. 사용하지 않도록 설정하면 탭이나 창이 터미널이 시작된 변수를 상속합니다.</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>실험적 가상 터미널 통과 사용</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>마우스 오른쪽 단추를 클릭할 때 메뉴 표시</value>
@@ -1770,5 +1795,13 @@
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>자세히 알아보세요.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
+  </data>
+  <data name="Profile_MissingFontFaces.Header" xml:space="preserve">
+    <value>누락된 글꼴:</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
+  </data>
+  <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
+    <value>고정 폭이 아닌 글꼴:</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
 </root>

@@ -3,6 +3,13 @@
 
 namespace TerminalApp
 {
+    enum BuildStartupKind
+    {
+        None,
+        Content,
+        MovePane,
+        Persist,
+    };
 
     runtimeclass BellEventArgs
     {
@@ -20,7 +27,7 @@ namespace TerminalApp
         UInt64 TaskbarProgress { get; };
         Boolean ReadOnly { get; };
 
-        Microsoft.Terminal.Settings.Model.NewTerminalArgs GetNewTerminalArgs(Boolean asContent);
+        Microsoft.Terminal.Settings.Model.NewTerminalArgs GetNewTerminalArgs(BuildStartupKind kind);
 
         void Focus(Windows.UI.Xaml.FocusState reason);
 

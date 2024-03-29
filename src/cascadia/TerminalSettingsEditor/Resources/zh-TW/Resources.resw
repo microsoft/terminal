@@ -309,6 +309,39 @@
     <value>當執行命令列應用程式且不使用現有工作模式而啟動的終端機應用程式 (例如從 [開始] 功能表或 [執行] 對話方塊)。</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
+  <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
+    <value>圖形 API</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11 提供更具效能且功能更豐富的體驗，而 Direct2D 則較穩定。默認選項 [自動] 會挑選最適合您圖形硬體的 API。如果您遇到重大問題，請考慮使用 Direct2D。</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>自動</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct2d.Text" xml:space="preserve">
+    <value>Direct2D</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
+    <value>Direct3D 11</value>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>停用部分 [交換鏈結] 失效</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>根據預設，文字轉譯器會使用 FLIP_SEQUENTIAL 交換鏈結，並透過 Present1 API 宣告變更的矩形。啟用此設定時，將改為使用 FLIP_DISCARD 交換鏈結，而且不會宣告任何已變更的矩形。一個或另一個比較好取決於您的硬體和各種其他因素。</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
+    <value>使用軟體呈現 (WARP)</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>啟用時，終端機將使用軟體點陣器 (WARP)。在幾乎所有情況下，此設定都應該保留停用。</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>欄</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -956,10 +989,6 @@
     <value>以系統管理員身分執行此設定檔</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>如果啟用，設定檔將會自動在管理終端機視窗中開啟。如果目前的視窗已以系統管理員身分執行，則會在此視窗中開啟。</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
-  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>歷史大小</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1191,10 +1220,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>啟用時，終端機將在使用此設定檔建立新索引標籤或窗格時產生新的環境區塊。停用時，索引標籤/窗格將改為繼承終端機啟動時的變數。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>啟用實驗性虛擬終端機通道</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>在以滑鼠右鍵按一下時顯示選單</value>
@@ -1770,5 +1795,13 @@
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>深入了解。</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
+  </data>
+  <data name="Profile_MissingFontFaces.Header" xml:space="preserve">
+    <value>缺少的字型:</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
+  </data>
+  <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
+    <value>非等寬字型:</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
 </root>

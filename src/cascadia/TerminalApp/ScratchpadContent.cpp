@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs ScratchpadContent::GetNewTerminalArgs(const bool /* asContent */) const
+    NewTerminalArgs ScratchpadContent::GetNewTerminalArgs(const BuildStartupKind /* kind */) const
     {
         return nullptr;
     }
