@@ -2557,7 +2557,32 @@ void TextBuffer::Serialize(const wchar_t* destination) const
 
             if (previousAttr != attr)
             {
-                const auto attrDelta = attr ^ previousAttr;
+                auto attrDelta = attr ^ previousAttr;
+
+                // There's no escape sequence that only turns off either bold/intense or dim/faint. SGR 22 turns off both.
+                // This results in two issues in our generic "Mapping" code below. Assuming, both Intense and Faint were on...
+                // * ...and either turned off, it would emit SGR 22 which turns both attributes off = Wrong.
+                // * ...and both are now off, it would emit SGR 22 twice.
+                //
+                // This extra branch takes care of both issues. If both attributes turned off it'll emit a single \x1b[22m,
+                // if faint turned off \x1b[22;1m (intense is still on), and \x1b[22;2m if intense turned off (vice versa).
+                if (WI_AreAllFlagsSet(previousAttr, CharacterAttributes::Intense | CharacterAttributes::Faint) &&
+                    WI_IsAnyFlagSet(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint))
+                {
+                    wchar_t buf[8] = L"\x1b[22m";
+                    size_t len = 5;
+
+                    if (WI_IsAnyFlagSet(attr, CharacterAttributes::Intense | CharacterAttributes::Faint))
+                    {
+                        buf[4] = L';';
+                        buf[5] = WI_IsAnyFlagSet(attr, CharacterAttributes::Intense) ? L'1' : L'2';
+                        buf[6] = L'm';
+                        len = 7;
+                    }
+
+                    buffer.append(&buf[0], len);
+                    WI_ClearAllFlags(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint);
+                }
 
                 {
                     struct Mapping
@@ -2574,7 +2599,6 @@ void TextBuffer::Serialize(const wchar_t* destination) const
                         { CharacterAttributes::Faint, { 22, 2 } },
                         { CharacterAttributes::TopGridline, { 55, 53 } },
                         { CharacterAttributes::ReverseVideo, { 27, 7 } },
-                        { CharacterAttributes::BottomGridline, { 24, 4 } },
                     };
                     for (const auto& mapping : mappings)
                     {
