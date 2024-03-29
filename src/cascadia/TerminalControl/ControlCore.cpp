@@ -9,8 +9,10 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
-#include <utils.hpp>
 #include <LibraryResources.h>
+#include <unicode.hpp>
+#include <utils.hpp>
+#include <WinUser.h>
 
 #include "EventArgs.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -398,10 +400,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
-
-        // Start the connection outside of lock, because it could
-        // start writing output immediately.
-        _connection.Start();
 
         return true;
     }
@@ -1709,6 +1707,50 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _connectionStateChangedRevoker.revoke();
             _connection.Close();
         }
+    }
+
+    void ControlCore::PersistToPath(const wchar_t* path) const
+    {
+        const auto lock = _terminal->LockForReading();
+        _terminal->SerializeMainBuffer(path);
+    }
+
+    void ControlCore::RestoreFromPath(const wchar_t* path) const
+    {
+        const wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        if (!file)
+        {
+            return;
+        }
+
+        wchar_t buffer[32 * 1024];
+        DWORD read = 0;
+
+        // Ensure the text file starts with a UTF-16 BOM.
+        if (!ReadFile(file.get(), &buffer[0], 2, &read, nullptr) || read < 2 || buffer[0] != L'\uFEFF')
+        {
+            return;
+        }
+
+        for (;;)
+        {
+            if (!ReadFile(file.get(), &buffer[0], sizeof(buffer), &read, nullptr))
+            {
+                break;
+            }
+
+            const auto lock = _terminal->LockForWriting();
+            _terminal->Write({ &buffer[0], read / 2 });
+
+            if (read < sizeof(buffer))
+            {
+                break;
+            }
+        }
+
+        // This pushes the restored contents up into the scrollback.
+        const auto lock = _terminal->LockForWriting();
+        _terminal->Write(L"\x1b[2J");
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr, wil::zwstring_view parameter)

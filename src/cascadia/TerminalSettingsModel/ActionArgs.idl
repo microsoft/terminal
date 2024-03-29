@@ -132,6 +132,7 @@ namespace Microsoft.Terminal.Settings.Model
         String TabTitle;
         Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        Guid SessionId;
         Boolean AppendCommandLine;
 
         // We use IReference<> to treat some args as nullable where null means
