@@ -966,7 +966,6 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-
         // Key difference: the close pane action now has a generated ID
         static constexpr std::string_view newSettingsJson{ R"(
         {
