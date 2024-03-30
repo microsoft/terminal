@@ -21,12 +21,6 @@ enum class LineRendition : uint8_t
     DoubleHeightBottom
 };
 
-constexpr til::rect ScreenToBufferLine(const til::rect& line, const LineRendition lineRendition)
-{
-    const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
-    return { line.left >> scale, line.top, line.right >> scale, line.bottom };
-}
-
 constexpr til::inclusive_rect ScreenToBufferLine(const til::inclusive_rect& line, const LineRendition lineRendition)
 {
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
