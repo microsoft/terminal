@@ -1894,8 +1894,8 @@ std::vector<til::point_span> TextBuffer::GetTextSpans(til::point start, til::poi
         // equivalent buffer offsets, taking line rendition into account.
         if (!bufferCoordinates)
         {
-            higherCoord = ScreenToBufferLine(higherCoord, GetLineRendition(higherCoord.y));
-            lowerCoord = ScreenToBufferLine(lowerCoord, GetLineRendition(lowerCoord.y));
+            higherCoord = ScreenToBufferLineInclusive(higherCoord, GetLineRendition(higherCoord.y));
+            lowerCoord = ScreenToBufferLineInclusive(lowerCoord, GetLineRendition(lowerCoord.y));
         }
 
         til::inclusive_rect asRect = { higherCoord.x, higherCoord.y, lowerCoord.x, lowerCoord.y };
@@ -2006,8 +2006,8 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
     if (req.blockSelection)
     {
         const auto lineRendition = row.GetLineRendition();
-        const auto minX = req.bufferCoordinates ? req.minX : ScreenToBufferLine(til::point{ req.minX, iRow }, lineRendition).x;
-        const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLine(til::point{ req.maxX, iRow }, lineRendition).x;
+        const auto minX = req.bufferCoordinates ? req.minX : ScreenToBufferLineInclusive(til::point{ req.minX, iRow }, lineRendition).x;
+        const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLineInclusive(til::point{ req.maxX, iRow }, lineRendition).x;
 
         rowBeg = minX;
         rowEnd = maxX + 1; // +1 to get an exclusive end
@@ -2015,8 +2015,8 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
     else
     {
         const auto lineRendition = row.GetLineRendition();
-        const auto beg = req.bufferCoordinates ? req.beg : ScreenToBufferLine(req.beg, lineRendition);
-        const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLine(req.end, lineRendition);
+        const auto beg = req.bufferCoordinates ? req.beg : ScreenToBufferLineInclusive(req.beg, lineRendition);
+        const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLineInclusive(req.end, lineRendition);
 
         rowBeg = iRow != beg.y ? 0 : beg.x;
         rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x + 1; // +1 to get an exclusive end
