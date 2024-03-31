@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void PreviewConnection::Start() noexcept
     {
         // Send the preview text
-        _TerminalOutputHandlers(fmt::format(PreviewText, _displayPowerlineGlyphs ? PromptTextPowerline : PromptTextPlain));
+        TerminalOutput.raise(fmt::format(PreviewText, _displayPowerlineGlyphs ? PromptTextPowerline : PromptTextPlain));
     }
 
     void PreviewConnection::Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) noexcept

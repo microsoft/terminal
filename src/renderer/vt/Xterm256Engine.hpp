@@ -18,8 +18,6 @@ Author(s):
 
 #include "XtermEngine.hpp"
 
-class VtApiRoutines;
-
 namespace Microsoft::Console::Render
 {
     class Xterm256Engine : public XtermEngine
@@ -37,8 +35,6 @@ namespace Microsoft::Console::Render
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
-
-        friend class ::VtApiRoutines;
 
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept;
