@@ -14,8 +14,6 @@
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
 
-#include "VtApiRoutines.h"
-
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -71,7 +69,6 @@ VtIo::VtIo() :
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
-    _passthroughMode = pArgs->IsPassthroughMode();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -162,26 +159,6 @@ VtIo::VtIo() :
             {
                 auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                        initialViewport);
-                if constexpr (Feature_VtPassthroughMode::IsEnabled())
-                {
-                    if (_passthroughMode)
-                    {
-                        auto vtapi = new VtApiRoutines();
-                        vtapi->m_pVtEngine = xterm256Engine.get();
-                        vtapi->m_pUsualRoutines = globals.api;
-
-                        xterm256Engine->SetPassthroughMode(true);
-
-                        if (_pVtInputThread)
-                        {
-                            auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
-                            xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
-                        }
-
-                        globals.api = vtapi;
-                    }
-                }
-
                 _pVtRenderEngine = std::move(xterm256Engine);
                 break;
             }
@@ -190,10 +167,6 @@ VtIo::VtIo() :
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  false);
-                if (_passthroughMode)
-                {
-                    return E_NOTIMPL;
-                }
                 break;
             }
             case VtIoMode::XTERM_ASCII:
@@ -201,11 +174,6 @@ VtIo::VtIo() :
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  true);
-
-                if (_passthroughMode)
-                {
-                    return E_NOTIMPL;
-                }
                 break;
             }
             default:

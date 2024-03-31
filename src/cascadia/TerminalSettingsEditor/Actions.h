@@ -20,8 +20,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AddNew_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ActionsViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(Editor::ActionsViewModel, ViewModel, PropertyChanged.raise, nullptr);
     };
 }
 

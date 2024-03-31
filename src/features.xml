@@ -87,28 +87,6 @@
     </feature>
 
     <feature>
-        <name>Feature_VtPassthroughMode</name>
-        <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
-        <stage>AlwaysDisabled</stage>
-        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
-        <alwaysEnabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-            <brandingToken>Canary</brandingToken>
-            <brandingToken>Preview</brandingToken>
-        </alwaysEnabledBrandingTokens>
-    </feature>
-
-    <feature>
-        <name>Feature_VtPassthroughModeSettingInUI</name>
-        <description>Enables the setting gated by Feature_VtPassthroughMode to appear in the UI</description>
-        <stage>AlwaysDisabled</stage>
-        <alwaysEnabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-	    <!-- Unlike Feature_VtPassthroughMode, this is not enabled in Preview -->
-        </alwaysEnabledBrandingTokens>
-    </feature>
-
-    <feature>
         <name>Feature_ScrollbarMarks</name>
         <description>Enables the experimental scrollbar marks feature.</description>
         <stage>AlwaysDisabled</stage>
@@ -156,6 +134,17 @@
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_ScratchpadPane</name>
+        <description>Allow the user to create scratchpad panes. Mostly just exists to validate non-terminal panes.</description>
+        <id>997</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 

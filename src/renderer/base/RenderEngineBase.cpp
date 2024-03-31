@@ -77,6 +77,10 @@ void RenderEngineBase::WaitUntilCanRender() noexcept
     Sleep(8);
 }
 
+void RenderEngineBase::UpdateHyperlinkHoveredId(const uint16_t /*hoveredId*/) noexcept
+{
+}
+
 // Routine Description:
 // - Notifies us that we're about to circle the buffer, giving us a chance to
 //   force a repaint before the buffer contents are lost.

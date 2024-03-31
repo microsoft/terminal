@@ -700,6 +700,9 @@
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>연결 다시 시작</value>
   </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>스크래치 패드 열기</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>다음 명령 출력 선택</value>
   </data>

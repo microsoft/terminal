@@ -5,6 +5,7 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -117,7 +118,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        _CloseRequestedHandlers(nullptr, nullptr);
+        CloseRequested.raise(nullptr, nullptr);
         args.Handled(true);
     }
 
@@ -948,7 +949,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
-        _IdentifyWindowsRequestedHandlers(*this, nullptr);
+        IdentifyWindowsRequested.raise(*this, nullptr);
         args.Handled(true);
     }
 
@@ -977,7 +978,7 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto newName = realArgs.Name();
                 const auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
-                _RenameWindowRequestedHandlers(*this, *request);
+                RenameWindowRequested.raise(*this, *request);
                 args.Handled(true);
             }
         }
@@ -1147,7 +1148,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenSystemMenu(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        _OpenSystemMenuHandlers(*this, nullptr);
+        OpenSystemMenu.raise(*this, nullptr);
         args.Handled(true);
     }
 
@@ -1401,7 +1402,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto activePane{ activeTab->GetActivePane() })
             {
-                _restartPaneConnection(activePane);
+                _restartPaneConnection(activePane->GetContent().try_as<TerminalApp::TerminalPaneContent>(), nullptr);
             }
         }
         args.Handled(true);
@@ -1416,6 +1417,25 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleOpenScratchpad(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        if (Feature_ScratchpadPane::IsEnabled())
+        {
+            const auto& scratchPane{ winrt::make_self<ScratchpadContent>() };
+
+            // This is maybe a little wacky - add our key event handler to the pane
+            // we made. So that we can get actions for keys that the content didn't
+            // handle.
+            scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+            const auto resultPane = std::make_shared<Pane>(*scratchPane);
+            _SplitPane(_GetFocusedTabImpl(), SplitDirection::Automatic, 0.5f, resultPane);
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleOpenAbout(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
