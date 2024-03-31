@@ -58,9 +58,6 @@ typedef struct _PseudoConsole
 #ifndef PSEUDOCONSOLE_WIN32_INPUT_MODE
 #define PSEUDOCONSOLE_WIN32_INPUT_MODE (0x4)
 #endif
-#ifndef PSEUDOCONSOLE_PASSTHROUGH_MODE
-#define PSEUDOCONSOLE_PASSTHROUGH_MODE (0x8)
-#endif
 
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,

@@ -66,8 +66,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddAction(const Model::Command& cmd);
 
         // JSON
-        static com_ptr<ActionMap> FromJson(const Json::Value& json);
-        std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json, const bool withKeybindings = true);
+        static com_ptr<ActionMap> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
+        std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings = true);
         Json::Value ToJson() const;
 
         // modification

@@ -52,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })
             {
-                self->_AttachedHandlers(*self, nullptr);
+                self->Attached.raise(*self, nullptr);
             }
         });
     }
@@ -117,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::Close()
     {
-        _ClosedHandlers(*this, nullptr);
+        Closed.raise(*this, nullptr);
         if (_core)
         {
             _core->Close();
@@ -230,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core->BracketedPasteEnabled());
 
         // send paste event up to TermApp
-        _PasteFromClipboardHandlers(*this, std::move(args));
+        PasteFromClipboard.raise(*this, std::move(args));
     }
 
     void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _core->AnchorContextMenu(terminalPosition);
 
                 auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
-                _ContextMenuRequestedHandlers(*this, contextArgs);
+                ContextMenuRequested.raise(*this, contextArgs);
             }
             else
             {
@@ -616,16 +616,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core->UserScrollViewport(viewTop);
 
             // _core->ScrollOffset() is now set to newValue
-            _ScrollPositionChangedHandlers(*this,
-                                           winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                                  _core->ViewHeight(),
-                                                                                  _core->BufferHeight()));
+            ScrollPositionChanged.raise(*this,
+                                        winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
+                                                                               _core->ViewHeight(),
+                                                                               _core->BufferHeight()));
         }
     }
 
     void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)
     {
-        _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+        OpenHyperlink.raise(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
     }
 
     bool ControlInteractivity::_canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)

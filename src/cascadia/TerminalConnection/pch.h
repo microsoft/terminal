@@ -37,5 +37,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalConnectionProvider);
 #include <telemetry/ProjectTelemetry.h>
 
 #include "til.h"
+#include <til/winrt.h>
 
 #include <cppwinrt_utils.h>
