@@ -62,6 +62,7 @@ private:
         CLI::App* subcommand;
         CLI::Option* commandlineOption;
         CLI::Option* profileNameOption;
+        CLI::Option* sessionIdOption;
         CLI::Option* startingDirectoryOption;
         CLI::Option* titleOption;
         CLI::Option* tabColorOption;
@@ -96,6 +97,7 @@ private:
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
     std::string _profileName;
+    std::string _sessionId;
     std::string _startingDirectory;
     std::string _startingTitle;
     std::string _startingTabColor;

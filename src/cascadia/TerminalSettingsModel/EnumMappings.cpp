@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::CopyFormat, CopyFormat);
     DEFINE_ENUM_MAP(Model::WindowingMode, WindowingMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::MatchMode, MatchMode);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI);
 
     // Profile Settings
     DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExitMode);

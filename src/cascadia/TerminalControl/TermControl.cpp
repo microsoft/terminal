@@ -5,6 +5,7 @@
 #include "TermControl.h"
 
 #include <LibraryResources.h>
+#include <utils.hpp>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -131,7 +132,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
-                    control->_WarningBellHandlers(*control, nullptr);
+                    control->WarningBell.raise(*control, nullptr);
                 }
             });
 
@@ -333,7 +334,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // (The window has a min. size that ensures that there's always a scrollbar thumb.)
             if (drawableRange < 0)
             {
-                assert(false);
                 return;
             }
 
@@ -615,9 +615,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (_StringSentHandlers)
+        if (StringSent)
         {
-            _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(wstr));
+            StringSent.raise(*this, winrt::make<StringSentEventArgs>(wstr));
         }
 
         RawWriteString(wstr);
@@ -867,7 +867,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // Firing it manually makes sure it does.
         _BackgroundBrush = RootGrid().Background();
-        _PropertyChangedHandlers(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
+        PropertyChanged.raise(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
 
         _isBackgroundLight = _isColorLight(bg);
     }
@@ -920,7 +920,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // transparency of the titlebar too.
         if (changed)
         {
-            _PropertyChangedHandlers(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
+            PropertyChanged.raise(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
         }
     }
 
@@ -992,36 +992,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - hr: an  HRESULT describing the warning
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/,
-                                                         Control::RendererWarningArgs args)
+    winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/, Control::RendererWarningArgs args)
     {
-        const auto hr = static_cast<HRESULT>(args.Result());
-
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
 
-        if (auto control{ weakThis.get() })
+        const auto control = weakThis.get();
+        if (!control)
         {
-            winrt::hstring message;
-            if (HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) == hr ||
-                HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
-            {
-                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
-                                                      (_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance()).PixelShaderPath()) };
-            }
-            else if (D2DERR_SHADER_COMPILE_FAILED == hr)
-            {
-                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
-            }
-            else
-            {
-                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
-                                                      hr) };
-            }
-
-            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
-            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
+            co_return;
         }
+
+        const auto hr = args.Result();
+        const auto parameter = args.Parameter();
+        winrt::hstring message;
+
+        switch (hr)
+        {
+        case HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND):
+        case HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND):
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, parameter) };
+            break;
+        case D2DERR_SHADER_COMPILE_FAILED:
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            break;
+        case DWRITE_E_NOFONT:
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };
+            break;
+        default:
+        {
+            wchar_t buf[512];
+            const auto len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &buf[0], ARRAYSIZE(buf), nullptr);
+            const std::wstring_view msg{ &buf[0], len };
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorOther") }, hr, msg) };
+            break;
+        }
+        }
+
+        auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
+        control->RaiseNotice.raise(*control, std::move(noticeArgs));
     }
 
     void TermControl::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
@@ -1060,7 +1069,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 return false;
             }
+
             _interactivity.Initialize();
+
+            if (!_restorePath.empty())
+            {
+                winrt::get_self<ControlCore>(_core)->RestoreFromPath(_restorePath.c_str());
+                _restorePath = {};
+            }
+
+            _core.Connection().Start();
         }
         else
         {
@@ -1141,7 +1159,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
-        _InitializedHandlers(*this, nullptr);
+        Initialized.raise(*this, nullptr);
         return true;
     }
 
@@ -1166,7 +1184,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // to simply force TSF to clear its text whenever we have input focus.
         TSFInputControl().ClearBuffer();
 
-        _HidePointerCursorHandlers(*this, nullptr);
+        HidePointerCursor.raise(*this, nullptr);
 
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();
@@ -1180,10 +1198,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Broadcast the character to all listeners
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (_CharSentHandlers)
+        if (CharSent)
         {
             auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
-            _CharSentHandlers(*this, charSentArgs);
+            CharSent.raise(*this, charSentArgs);
         }
 
         const auto handled = RawWriteChar(ch, scanCode, modifiers);
@@ -1452,10 +1470,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Broadcast the key  to all listeners
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (_KeySentHandlers)
+        if (KeySent)
         {
             auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
-            _KeySentHandlers(*this, keySentArgs);
+            KeySent.raise(*this, keySentArgs);
         }
 
         return RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
@@ -1518,7 +1536,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _RestorePointerCursorHandlers(*this, nullptr);
+        RestorePointerCursor.raise(*this, nullptr);
 
         _CapturePointer(sender, args);
 
@@ -1573,7 +1591,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _RestorePointerCursorHandlers(*this, nullptr);
+        RestorePointerCursor.raise(*this, nullptr);
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
@@ -1583,7 +1601,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (!_focused && _core.Settings().FocusFollowMouse())
         {
-            _FocusFollowMouseRequestedHandlers(*this, nullptr);
+            FocusFollowMouseRequested.raise(*this, nullptr);
         }
 
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
@@ -1699,7 +1717,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _RestorePointerCursorHandlers(*this, nullptr);
+        RestorePointerCursor.raise(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
         // GH#10329 - we don't need to handle horizontal scrolls. Only vertical ones.
@@ -1993,7 +2011,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _RestorePointerCursorHandlers(*this, nullptr);
+        RestorePointerCursor.raise(*this, nullptr);
 
         _focused = false;
 
@@ -2251,6 +2269,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ExpandSelectionToWord();
     }
 
+    void TermControl::RestoreFromPath(winrt::hstring path)
+    {
+        _restorePath = std::move(path);
+    }
+
+    void TermControl::PersistToPath(const winrt::hstring& path) const
+    {
+        winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())
@@ -2262,7 +2290,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 autoPeerImpl->Close();
             }
 
-            _RestorePointerCursorHandlers(*this, nullptr);
+            RestorePointerCursor.raise(*this, nullptr);
 
             _revokers = {};
 
@@ -2285,6 +2313,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
+
     void TermControl::Detach()
     {
         _revokers = {};
@@ -2410,7 +2439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         LOG_IF_FAILED(engine->UpdateDpi(dpi));
         LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
 
-        const auto scale = engine->GetScaling();
+        const auto scale = dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
@@ -2961,9 +2990,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_pasteTextWithBroadcast(const winrt::hstring& text)
     {
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (_StringSentHandlers)
+        if (StringSent)
         {
-            _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(text));
+            StringSent.raise(*this, winrt::make<StringSentEventArgs>(text));
         }
         _core.PasteText(text);
     }
@@ -3032,7 +3061,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // (like ShellExecute pumping our messaging thread...GH#7994)
         co_await winrt::resume_foreground(Dispatcher());
 
-        _OpenHyperlinkHandlers(*strongThis, args);
+        OpenHyperlink.raise(*strongThis, args);
     }
 
     // Method Description:
@@ -3166,7 +3195,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ToggleReadOnly()
     {
         _core.ToggleReadOnlyMode();
-        _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
+        ReadOnlyChanged.raise(*this, winrt::box_value(_core.IsInReadOnlyMode()));
     }
 
     // Method Description:
@@ -3174,7 +3203,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::SetReadOnly(const bool readOnlyState)
     {
         _core.SetReadOnlyMode(readOnlyState);
-        _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
+        ReadOnlyChanged.raise(*this, winrt::box_value(_core.IsInReadOnlyMode()));
     }
 
     // Method Description:
@@ -3387,7 +3416,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // while it's holding its write lock. If the handlers calls back to some
         // method on the TermControl on the same thread, and _that_ method calls
         // to ControlCore, we might be in danger of deadlocking.
-        _RaiseNoticeHandlers(*this, eventArgs);
+        RaiseNotice.raise(*this, eventArgs);
     }
 
     Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)

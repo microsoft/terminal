@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Settings.Model
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
 
+        static String SettingsDirectory { get; };
         static String SettingsPath { get; };
         static String DefaultSettingsPath { get; };
         static Boolean IsPortableMode { get; };
