@@ -183,9 +183,9 @@
                     <muxc:NumberBox x:Uid="Globals_InitialColsBox"
                                     Grid.Row="0"
                                     Grid.Column="1"
-                                    Minimum="1"
-                                    Maximum="999"
                                     VerticalAlignment="Center"
+                                    Maximum="999"
+                                    Minimum="1"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
                     <TextBlock x:Uid="Globals_InitialRows"
@@ -196,9 +196,9 @@
                     <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
                                     Grid.Row="1"
                                     Grid.Column="1"
-                                    Minimum="1"
-                                    Maximum="999"
                                     VerticalAlignment="Center"
+                                    Maximum="999"
+                                    Minimum="1"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
                 </Grid>
