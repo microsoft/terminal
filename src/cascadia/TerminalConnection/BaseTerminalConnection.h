@@ -17,7 +17,30 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return _connectionState;
         }
 
+        uint32_t Columns() const noexcept
+        {
+            return _cols;
+        }
+
+        uint32_t Rows() const noexcept
+        {
+            return _rows;
+        }
+
+        void Resize(uint32_t rows, uint32_t columns)
+        {
+            bool emit{ false };
+            emit = rows != _rows || columns != _cols;
+            _rows = rows;
+            _cols = columns;
+            if (emit)
+            {
+                StateChanged.raise(*static_cast<T*>(this), nullptr);
+            }
+        }
+
         til::typed_event<ITerminalConnection, winrt::Windows::Foundation::IInspectable> StateChanged;
+        til::typed_event<ITerminalConnection, winrt::Windows::Foundation::IInspectable> SizeChanged;
 
     protected:
         template<typename U>
@@ -102,6 +125,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         winrt::guid _sessionId{};
+
+        til::CoordType _rows{};
+        til::CoordType _cols{};
 
     private:
         std::atomic<ConnectionState> _connectionState{ ConnectionState::NotConnected };

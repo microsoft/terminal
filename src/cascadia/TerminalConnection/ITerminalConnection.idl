@@ -29,5 +29,9 @@ namespace Microsoft.Terminal.TerminalConnection
 
         Guid SessionId { get; };
         ConnectionState State { get; };
+
+        event Windows.Foundation.TypedEventHandler<ITerminalConnection, Object> SizeChanged;
+        UInt32 Columns { get; };
+        UInt32 Rows { get; };
     };
 }

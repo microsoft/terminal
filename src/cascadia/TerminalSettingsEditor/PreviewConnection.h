@@ -26,6 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
+        uint32_t Rows() noexcept { return 0; }
+        uint32_t Columns() noexcept { return 0; }
 
         void DisplayPowerlineGlyphs(bool d) noexcept;
 
@@ -34,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         til::event<winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler> TerminalOutput;
         til::typed_event<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, IInspectable> StateChanged;
+        til::typed_event<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, IInspectable> SizeChanged;
 
     private:
         bool _displayPowerlineGlyphs{ false };

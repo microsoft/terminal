@@ -471,8 +471,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
     {
         // Always keep these in case we ever want to disconnect/restart
-        _rows = rows;
-        _cols = columns;
+        BaseTerminalConnection::Resize(rows, columns);
 
         if (_isConnected())
         {
