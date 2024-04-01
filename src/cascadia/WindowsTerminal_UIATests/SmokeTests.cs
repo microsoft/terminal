@@ -184,6 +184,11 @@ namespace WindowsTerminal.UIA.Tests
             {
                 var root = app.GetRoot();
 
+                // This _should_ do nothing, but if there's a warning dialog, then
+                // this will dismiss the dialog.
+                // TODO! Remove me! We shouldn't be warning in PGO harness
+                root.SendKeys(Keys.Escape);
+
                 root.SendKeys(Keys.LeftControl + ",");
                 Globals.WaitForTimeout();
 
