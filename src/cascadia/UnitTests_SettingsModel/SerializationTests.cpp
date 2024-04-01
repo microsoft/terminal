@@ -960,21 +960,23 @@ namespace SettingsModelUnitTests
             "actions": [
                 {
                     "name": "foo",
-                    "command": "closePane",
+                    "command": { "action": "sendInput", "input": "just some input" },
                     "keys": "ctrl+shift+w"
                 }
             ]
         })" };
 
-        // Key difference: the close pane action now has a generated ID
+        // Key differences: - the sendInput action now has a generated ID
+        //                  - this generated ID was created at the time of writing this test,
+        //                    and should remain robust (i.e. everytime we hash the args we should get the same result)
         static constexpr std::string_view newSettingsJson{ R"(
         {
             "actions": [
                 {
                     "name": "foo",
-                    "command": "closePane",
+                    "command": { "action": "sendInput", "input": "just some input" },
                     "keys": "ctrl+shift+w",
-                    "id" : "User.closePane"
+                    "id" : "User.sendInput.3448838294654165202"
                 }
             ]
         })" };
@@ -1039,7 +1041,7 @@ namespace SettingsModelUnitTests
             "actions": [
                 {
                     "name": "foo",
-                    "command": { "action": "sendInput", "input": "VT Griese Mode" },
+                    "command": { "action": "sendInput", "input": "this is some other input string" },
                     "keys": "ctrl+shift+w"
                 }
             ]
@@ -1051,7 +1053,7 @@ namespace SettingsModelUnitTests
             "actions": [
                 {
                     "name": "foo",
-                    "command": { "action": "sendInput", "input": "VT Griese Mode" },
+                    "command": { "action": "sendInput", "input": "this is some other input string" },
                     "keys": "ctrl+shift+w"
                 }
             ]
