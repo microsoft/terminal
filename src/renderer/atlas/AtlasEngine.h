@@ -96,7 +96,7 @@ namespace Microsoft::Console::Render::Atlas
         void _resolveTransparencySettings() noexcept;
         [[nodiscard]] HRESULT _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
         void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr);
-        bool _updateWithNearbyFontCollection();
+        [[nodiscard]] bool _updateWithNearbyFontCollection();
 
         // AtlasEngine.r.cpp
         ATLAS_ATTR_COLD void _recreateAdapter();

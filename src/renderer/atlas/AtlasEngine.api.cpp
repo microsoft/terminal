@@ -869,7 +869,11 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     }
 }
 
-bool AtlasEngine::_updateWithNearbyFontCollection()
+// Nearby fonts are described a couple times throughout the file.
+// This abstraction in particular helps us avoid retrying when it's pointless:
+// After all, if the font collection didn't change (no nearby fonts, loading failed, it's already loaded),
+// we don't need to try it again. It returns true if retrying is necessary.
+[[nodiscard]] bool AtlasEngine::_updateWithNearbyFontCollection()
 {
     // _resolveFontMetrics() checks `_api.s->font->fontCollection` for a pre-existing font collection,
     // before falling back to using the system font collection. This way we can inject our custom one.
