@@ -187,6 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 UpdateFontList();
             }
             const auto& currentFontList{ CompleteFontList() };
+            fallbackFont = currentFontList.First().Current();
             for (const auto& font : currentFontList)
             {
                 if (font.LocalizedName() == name)
