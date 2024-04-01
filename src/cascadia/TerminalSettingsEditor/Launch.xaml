@@ -183,6 +183,8 @@
                     <muxc:NumberBox x:Uid="Globals_InitialColsBox"
                                     Grid.Row="0"
                                     Grid.Column="1"
+                                    Minimum="1"
+                                    Maximum="999"
                                     VerticalAlignment="Center"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
@@ -194,6 +196,8 @@
                     <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
                                     Grid.Row="1"
                                     Grid.Column="1"
+                                    Minimum="1"
+                                    Maximum="999"
                                     VerticalAlignment="Center"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
