@@ -250,11 +250,11 @@ IInteractDispatch::StringHandler InteractDispatch::ReportSetting()
     return [buffer = std::wstring{}, &outputSMEngine = _api.GetStateMachine().Engine()](const auto ch) mutable {
         if (ch == AsciiChars::ESC)
         {
-            // Undercurl attribute is set which tells us that the terminal supports it.
-            // Enable support for extended underline styles so we can accept those sequences
-            // from the application.
             if (buffer == L"0;4:3m" || buffer == L"4:3m")
             {
+                // Undercurl attribute is set which tells us that the terminal supports it.
+                // Enable support for extended underline styles so we can accept those sequences
+                // from the application.
                 outputSMEngine.UseExtendedUnderlineStyle(true);
             }
 
