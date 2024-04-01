@@ -237,6 +237,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                              const bool thisClickFocused,
                                               const Core::Point pixelPosition)
     {
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
@@ -309,8 +310,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
                 ContextMenuRequested.raise(*this, contextArgs);
             }
-            else
+            else if (!thisClickFocused)
             {
+                // GH#15803: Don't do this if this click activated our terminal
+                // window. We don't want right-click activations of the window
+                // to immediately paste the clipboard.
+
                 // Try to copy the text and clear the selection
                 const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
                 _core->ClearSelection();

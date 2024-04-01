@@ -1550,7 +1550,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // again to bring it up.
         InputPane::GetForCurrentView().TryShow();
 
-        if (!_focused)
+        const bool thisClickFocused = !_focused;
+
+        if (thisClickFocused)
         {
             Focus(FocusState::Pointer);
         }
@@ -1572,6 +1574,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           TermControl::GetPointerUpdateKind(point),
                                           point.Timestamp(),
                                           ControlKeyStates{ args.KeyModifiers() },
+                                          thisClickFocused,
                                           _toTerminalOrigin(cursorPosition).to_core_point());
         }
 

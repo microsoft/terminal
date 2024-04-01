@@ -55,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                            const bool thisClickFocused,
                             const Core::Point pixelPosition);
         void TouchPressed(const Core::Point contactPoint);
 
