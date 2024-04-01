@@ -21,12 +21,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         winrt::guid SessionId() const noexcept { return {}; }
         ConnectionState State() const noexcept { return ConnectionState::Connected; }
 
-        uint32_t Rows() { return 0; }
-        uint32_t Columns() { return 0; }
-
         til::event<TerminalOutputHandler> TerminalOutput;
         til::typed_event<ITerminalConnection, IInspectable> StateChanged;
-        til::typed_event<ITerminalConnection, IInspectable> SizeChanged;
     };
 }
 

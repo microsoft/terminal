@@ -1284,6 +1284,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         auto _b{ std::make_shared<Blackbox>(L"c:\\users\\dustin\\desktop\\foo.cast") };
+        _b->Start();
         connection.TerminalOutput([bbox = _b](const winrt::hstring& h) {
             bbox->Log(h);
         });
@@ -1295,16 +1296,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     bbox->Close();
                 }
-                else if (st == ConnectionState::Started)
-                {
-                    bbox->Start();
-                }
-            }
-        });
-        connection.SizeChanged([bbox = _b](auto&& sender, auto&&) {
-            if (auto c = sender.try_as<ITerminalConnection>())
-            {
-                bbox->LogResize(c.Columns(), c.Rows());
             }
         });
 
