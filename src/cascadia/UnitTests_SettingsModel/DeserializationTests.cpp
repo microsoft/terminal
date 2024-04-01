@@ -1306,7 +1306,8 @@ namespace SettingsModelUnitTests
     {
         static constexpr std::string_view inputSettings{ R"({
             "initialCols" : 1000000,
-            "initialRows" : -1000000
+            "initialRows" : -1000000,
+            "profiles": [{ "name": "profile0" }]
         })" };
 
         const auto settings = createSettings(inputSettings);

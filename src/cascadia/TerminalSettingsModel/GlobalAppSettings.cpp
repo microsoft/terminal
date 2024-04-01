@@ -133,14 +133,21 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);   
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
     // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values
-    this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
-    this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
-
+    // We only want to assign if the value did change through clamping,
+    // otherwise we could end up setting defaults that get persisted
+    if (this->InitialCols() != std::clamp(this->InitialCols(), 1, 999))
+    {
+        this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
+    }
+    if (this->InitialRows() != std::clamp(this->InitialRows(), 1, 999))
+    {
+        this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
+    }
     LayerActionsFrom(json, origin, true);
 
     JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
