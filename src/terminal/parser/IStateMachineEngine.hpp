@@ -29,6 +29,7 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine& operator=(IStateMachineEngine&&) = default;
 
         virtual bool EncounteredWin32InputModeSequence() const noexcept = 0;
+        virtual void UseExtendedUnderlineStyle(bool enable) noexcept = 0;
 
         virtual bool ActionExecute(const wchar_t wch) = 0;
         virtual bool ActionExecuteFromEscape(const wchar_t wch) = 0;

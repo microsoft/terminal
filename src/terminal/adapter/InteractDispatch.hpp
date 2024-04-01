@@ -37,6 +37,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool FocusChanged(const bool focused) const override;
 
+        IInteractDispatch::StringHandler ReportSetting() override; // DECRPSS
     private:
         ConhostInternalGetSet _api;
     };

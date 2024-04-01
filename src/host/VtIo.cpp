@@ -249,6 +249,15 @@ bool VtIo::IsUsingVt() const
         }
     }
 
+    // In Conpty mode, we need to detect if the connected terminal supports extended
+    // underline styles before we can use SGR 4:x sequences. We do this by sending
+    // a DECRQSS query to the connected terminal. If the terminal supports extended
+    // underline styles, we'll get a response back as a DECRPSS response with one of
+    // the extended underline style set — at which point we'll turn the usage of
+    // SGR 4:X sequences on.
+    g.getConsoleInformation().GetActiveOutputBuffer().GetStateMachine().Engine().UseExtendedUnderlineStyle(false);
+    LOG_IF_FAILED(_pVtRenderEngine->SendExtendedUnderlineStyleQuery());
+
     // GH#4999 - Send a sequence to the connected terminal to request
     // win32-input-mode from them. This will enable the connected terminal to
     // send us full INPUT_RECORDs as input. If the terminal doesn't understand

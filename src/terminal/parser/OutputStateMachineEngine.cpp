@@ -28,6 +28,16 @@ bool OutputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcep
     return false;
 }
 
+// Method Description:
+// - Enables consumption of extended underline style sequences (SGR 4:X) in the adapter.
+// Arguments:
+// - enable - when true, adapter will take an action when SGR 4:X sequence is
+//            received, when false, adapter will ignore it.
+void OutputStateMachineEngine::UseExtendedUnderlineStyle(bool enable) noexcept
+{
+    _dispatch->UseExtendedUnderlineStyle(enable);
+}
+
 const ITermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
 {
     return *_dispatch;

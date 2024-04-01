@@ -17,6 +17,7 @@
 #include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
@@ -237,4 +238,40 @@ bool InteractDispatch::FocusChanged(const bool focused) const
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
 
     return true;
+}
+
+IInteractDispatch::StringHandler InteractDispatch::ReportSetting()
+{
+    // We create a StringHandler to receive the rest of the sequence data. We
+    // collect the characters from the string data into a buffer. Later when we
+    // receive an ESC character, we'll stop the collection and take an action
+    // based on the buffer. Additionally, we stop parsing if the sequence is
+    // too long.
+    return [buffer = std::wstring{}, &outputSMEngine = _api.GetStateMachine().Engine()](const auto ch) mutable {
+        if (ch == AsciiChars::ESC)
+        {
+            // Undercurl attribute is set which tells us that the terminal supports it.
+            // Enable support for extended underline styles so we can accept those sequences
+            // from the application.
+            if (buffer == L"0;4:3m" || buffer == L"4:3m")
+            {
+                outputSMEngine.UseExtendedUnderlineStyle(true);
+            }
+
+            buffer.clear();
+            return false;
+        }
+        else
+        {
+            if (buffer.length() >= 4096)
+            {
+                // stop parsing the sequence, it's too big
+                buffer.clear();
+                return false;
+            }
+
+            buffer += ch;
+            return true;
+        }
+    };
 }

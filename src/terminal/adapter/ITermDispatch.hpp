@@ -166,6 +166,8 @@ public:
     virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
 
     virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
+
+    virtual void UseExtendedUnderlineStyle(bool enabled) noexcept = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

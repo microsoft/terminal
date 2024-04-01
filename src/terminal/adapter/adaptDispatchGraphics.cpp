@@ -381,7 +381,12 @@ void AdaptDispatch::_ApplyGraphicsOptionWithSubParams(const VTParameter option,
     switch (option)
     {
     case Underline:
-        _SetUnderlineStyleHelper(subParams.at(0), attr);
+        // In conpty mode, we block extended underline styles if the connected terminal
+        // doesn't support it.
+        if (_useExtendedUnderlineStyle)
+        {
+            _SetUnderlineStyleHelper(subParams.at(0), attr);
+        }
         break;
     case ForegroundExtended:
     case BackgroundExtended:

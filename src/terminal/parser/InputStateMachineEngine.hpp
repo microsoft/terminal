@@ -133,6 +133,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const bool lookingForDSR);
 
         bool EncounteredWin32InputModeSequence() const noexcept override;
+        void UseExtendedUnderlineStyle(bool enable) noexcept override;
         void SetLookingForDSR(const bool looking) noexcept;
 
         bool ActionExecute(const wchar_t wch) override;
@@ -172,6 +173,16 @@ namespace Microsoft::Console::VirtualTerminal
         std::optional<til::point> _lastMouseClickPos{};
         std::optional<std::chrono::steady_clock::time_point> _lastMouseClickTime{};
         std::optional<size_t> _lastMouseClickButton{};
+
+        enum EscActionCodes : uint64_t
+        {
+            ST_StringTerminator = VTID("\\"),
+        };
+
+        enum DcsActionCodes : uint64_t
+        {
+            DECRPSS_ReportSetting = VTID("$r"),
+        };
 
         DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
         DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;

@@ -23,6 +23,8 @@ namespace Microsoft::Console::VirtualTerminal
     class IInteractDispatch
     {
     public:
+        using StringHandler = std::function<bool(const wchar_t)>;
+
 #pragma warning(push)
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
         virtual ~IInteractDispatch() = default;
@@ -44,5 +46,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool IsVtInputEnabled() const = 0;
 
         virtual bool FocusChanged(const bool focused) const = 0;
+
+        virtual StringHandler ReportSetting() = 0;
     };
 }

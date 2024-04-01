@@ -107,6 +107,12 @@ bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
     return _encounteredWin32InputModeSequence;
 }
 
+// Method Description:
+// - This is a no-op for the input state machine engine.
+void InputStateMachineEngine::UseExtendedUnderlineStyle(bool /*enable*/) noexcept
+{
+}
+
 void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
 {
     _lookingForDSR = looking;
@@ -307,6 +313,12 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
+    // We receive a string terminator (ST) after a DECRPSS, which we treat as a no-op.
+    if (id == EscActionCodes::ST_StringTerminator)
+    {
+        return true;
+    }
+
     if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
     {
         return _pfnFlushToInputQueue();
@@ -473,10 +485,21 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
 // - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - the data string handler function or nullptr if the sequence is not supported
-IStateMachineEngine::StringHandler InputStateMachineEngine::ActionDcsDispatch(const VTID /*id*/, const VTParameters /*parameters*/) noexcept
+IStateMachineEngine::StringHandler InputStateMachineEngine::ActionDcsDispatch(const VTID id, const VTParameters /*parameters*/) noexcept
 {
-    // DCS escape sequences are not used in the input state machine.
-    return nullptr;
+    StringHandler handler = nullptr;
+
+    switch (id)
+    {
+    // what do we do when we receive '0' in \eP0$r? Ignore the sequence?
+    case DcsActionCodes::DECRPSS_ReportSetting:
+        handler = _pDispatch->ReportSetting();
+        break;
+    default:
+        break;
+    }
+
+    return handler;
 }
 
 // Routine Description:

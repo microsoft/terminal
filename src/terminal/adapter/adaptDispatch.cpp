@@ -4901,3 +4901,8 @@ ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
     }
     return nullptr;
 }
+
+void AdaptDispatch::UseExtendedUnderlineStyle(bool enable) noexcept
+{
+    _useExtendedUnderlineStyle = enable;
+}

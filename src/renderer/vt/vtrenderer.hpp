@@ -89,6 +89,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT SetWindowVisibility(const bool showOrHide) noexcept = 0;
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer) noexcept;
         [[nodiscard]] HRESULT RequestMouseMode(bool enable) noexcept;
+        [[nodiscard]] HRESULT SendExtendedUnderlineStyleQuery() noexcept;
         void Cork(bool corked) noexcept;
 
     protected:

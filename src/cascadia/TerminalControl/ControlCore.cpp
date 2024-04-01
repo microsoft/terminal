@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Connection(connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
+            const auto suspension = _terminal->SuspendLock();
             _sendInputToConnection(wstr);
         });
 

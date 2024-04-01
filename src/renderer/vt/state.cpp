@@ -552,3 +552,15 @@ HRESULT VtEngine::RequestMouseMode(const bool enable) noexcept
     _Flush();
     return status;
 }
+
+HRESULT VtEngine::SendExtendedUnderlineStyleQuery() noexcept
+{
+    // We reset the attributes first, set the undercurl, and then add the query
+    // sequence to the end. Resetting ensures that the DECRPSS response we get
+    // will only contain the undercurl attribute set which simplifies the parsing.
+    // Finally, we'll reset the attributes again so that the underline doesn't
+    // remain set.
+    RETURN_IF_FAILED(_Write("\x1b[0m;\x1b[4:3m\x1bP$qm\x1b[0m"));
+    _Flush();
+    return S_OK;
+}

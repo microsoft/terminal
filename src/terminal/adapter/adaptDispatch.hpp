@@ -169,6 +169,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool PlaySounds(const VTParameters parameters) override; // DECPS
 
+        void UseExtendedUnderlineStyle(bool enable) noexcept override;
+
     private:
         enum class Mode
         {
@@ -284,6 +286,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
+        bool _useExtendedUnderlineStyle = true;
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer
