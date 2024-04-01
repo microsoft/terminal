@@ -968,7 +968,7 @@ namespace SettingsModelUnitTests
 
         // Key differences: - the sendInput action now has a generated ID
         //                  - this generated ID was created at the time of writing this test,
-        //                    and should remain robust (i.e. everytime we hash the args we should get the same result)
+        //                    and should remain robust (i.e. every time we hash the args we should get the same result)
         static constexpr std::string_view newSettingsJson{ R"(
         {
             "actions": [
