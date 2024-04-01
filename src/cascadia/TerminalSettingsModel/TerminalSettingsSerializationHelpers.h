@@ -761,3 +761,12 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         return "SelectionColor (#rrggbb, #rgb, #rrggbbaa, iNN)";
     }
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "direct2d", ValueType::Direct2D },
+        pair_type{ "direct3d11", ValueType::Direct3D11 },
+    };
+};

@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
+    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         //
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr, existingConnection));
+        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr));
         return S_OK;
     }
     CATCH_RETURN();
@@ -429,7 +429,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         auto t = winrt::get_self<implementation::TabBase>(tab);
-        auto actions = t->BuildStartupActions();
+        auto actions = t->BuildStartupActions(BuildStartupKind::None);
         _AddPreviouslyClosedPaneOrTab(std::move(actions));
 
         _RemoveTab(tab);
@@ -486,7 +486,7 @@ namespace winrt::TerminalApp::implementation
             // if the user manually closed all tabs.
             // Do this only if we are the last window; the monarch will notice
             // we are missing and remove us that way otherwise.
-            LastTabClosed.raise(*this, winrt::make<LastTabClosedEventArgs>(!_maintainStateOnTabClose));
+            CloseWindowRequested.raise(*this, nullptr);
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
         {
@@ -767,11 +767,11 @@ namespace winrt::TerminalApp::implementation
         // This doesn't handle refocusing anything in particular, the
         // result will be that the last pane created is focused. In the
         // case of a single pane that is the desired behavior anyways.
-        auto state = pane->BuildStartupActions(0, 1);
+        auto state = pane->BuildStartupActions(0, 1, BuildStartupKind::None);
         {
             ActionAndArgs splitPaneAction{};
             splitPaneAction.Action(ShortcutAction::SplitPane);
-            SplitPaneArgs splitPaneArgs{ SplitDirection::Automatic, state.firstPane->GetTerminalArgsForPane() };
+            SplitPaneArgs splitPaneArgs{ SplitDirection::Automatic, state.firstPane->GetTerminalArgsForPane(BuildStartupKind::None) };
             splitPaneAction.Args(splitPaneArgs);
 
             state.args.emplace(state.args.begin(), std::move(splitPaneAction));
@@ -1138,13 +1138,5 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::_HasMultipleTabs() const
     {
         return _tabs.Size() > 1;
-    }
-
-    void TerminalPage::_RemoveAllTabs()
-    {
-        // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-        std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
-        std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
-        _RemoveTabs(tabsToRemove);
     }
 }

@@ -217,7 +217,6 @@ HRESULT HwndTerminal::Initialize()
 
     auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
     RETURN_IF_FAILED(engine->SetHwnd(_hwnd.get()));
-    RETURN_IF_FAILED(engine->Enable());
     _renderer->AddRenderEngine(engine.get());
 
     _UpdateFont(USER_DEFAULT_SCREEN_DPI);
