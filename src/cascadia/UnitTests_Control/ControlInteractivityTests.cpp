@@ -319,6 +319,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
         Log::Comment(L"Verify that there's not yet a selection");
 
@@ -367,6 +368,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition3.to_core_point());
         Log::Comment(L"Verify that there's now no selection");
         VERIFY_IS_FALSE(core->HasSelection());
@@ -419,6 +421,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
 
         Log::Comment(L"Verify that there's not yet a selection");
@@ -568,6 +571,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
 
         Log::Comment(L"Verify that there's not yet a selection");
@@ -613,6 +617,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
 
         Log::Comment(L"Verify that there's not yet a selection");
@@ -731,6 +736,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
         Log::Comment(L"Verify that there's not yet a selection");
 
@@ -782,6 +788,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
 
         Log::Comment(L"Verify that there's not yet a selection");
@@ -936,6 +943,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
     }
 
@@ -985,6 +993,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
 
@@ -1001,6 +1010,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition1.to_core_point());
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
 
@@ -1016,6 +1026,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition0.to_core_point());
         // Flush it out.
         conn->WriteInput(L"sentinel");
@@ -1033,6 +1044,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition1.to_core_point());
 
         Log::Comment(L" --- Resize the terminal to be 10 columns wider ---");
@@ -1047,6 +1059,7 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
+                                      false,
                                       cursorPosition1.to_core_point());
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
     }
