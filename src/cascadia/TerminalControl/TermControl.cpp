@@ -5,6 +5,7 @@
 #include "TermControl.h"
 
 #include <LibraryResources.h>
+#include <utils.hpp>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -1068,7 +1069,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 return false;
             }
+
             _interactivity.Initialize();
+
+            if (!_restorePath.empty())
+            {
+                winrt::get_self<ControlCore>(_core)->RestoreFromPath(_restorePath.c_str());
+                _restorePath = {};
+            }
+
+            _core.Connection().Start();
         }
         else
         {
@@ -2259,6 +2269,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ExpandSelectionToWord();
     }
 
+    void TermControl::RestoreFromPath(winrt::hstring path)
+    {
+        _restorePath = std::move(path);
+    }
+
+    void TermControl::PersistToPath(const winrt::hstring& path) const
+    {
+        winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())
@@ -2293,6 +2313,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
+
     void TermControl::Detach()
     {
         _revokers = {};

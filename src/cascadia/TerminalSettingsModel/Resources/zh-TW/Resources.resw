@@ -700,6 +700,9 @@
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>重新啟動連線</value>
   </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>開啟聽寫面板</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>選取下一個命令輸出</value>
   </data>

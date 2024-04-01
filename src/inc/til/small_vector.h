@@ -577,16 +577,24 @@ namespace til
 
         void resize(size_type new_size)
         {
-            _generic_resize(new_size, [](auto&& beg, auto&& end) {
+            _generic_resize(new_size, [](iterator&& beg, iterator&& end) {
                 std::uninitialized_value_construct(beg, end);
             });
         }
 
         void resize(size_type new_size, const_reference value)
         {
-            _generic_resize(new_size, [&](auto&& beg, auto&& end) {
+            _generic_resize(new_size, [&](iterator&& beg, iterator&& end) {
                 std::uninitialized_fill(beg, end, value);
             });
+        }
+
+        void resize_and_overwrite(size_type new_size, auto op)
+            requires std::is_trivial_v<T>
+        {
+            _size = 0;
+            reserve(new_size);
+            _size = std::move(op)(_data, new_size);
         }
 
         void shrink_to_fit()
@@ -644,7 +652,7 @@ namespace til
         reference emplace_back(Args&&... args)
         {
             const auto new_size = _ensure_fits(1);
-            const auto it = new (_data + _size) T(std::forward<Args>(args)...);
+            const auto it = std::construct_at(_data + _size, std::forward<Args>(args)...);
             _size = new_size;
             return *it;
         }
@@ -863,7 +871,7 @@ namespace til
 
             // An optimization for the most common vector type which is trivially constructible, destructible and copyable.
             // This allows us to drop exception handlers (= no need to push onto the stack) and replace two moves with just one.
-            if constexpr (noexcept(func(begin())) && std::is_trivially_destructible_v<T> && std::is_trivially_copyable_v<T>)
+            if constexpr (noexcept(func(begin())) && std::is_trivial_v<T>)
             {
                 _size = new_size;
 
@@ -922,7 +930,10 @@ namespace til
         T* _data;
         size_t _capacity;
         size_t _size;
-        T _buffer[N];
+        union
+        {
+            T _buffer[N];
+        };
     };
 }
 
