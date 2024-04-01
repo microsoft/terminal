@@ -6,7 +6,7 @@
 
 namespace
 {
-    std::string accumulateEscaped16(std::wstring_view s)
+    std::string u16json8(std::wstring_view s)
     {
         std::string o{};
         o.reserve(s.size() * 3);
@@ -86,8 +86,10 @@ struct Blackbox
     {
         Record() :
             time{}, typecode{ 0 }, string{ nullptr } {}
+        Record(char type, HSTRING f) :
+            time{ std::chrono::high_resolution_clock::now() }, typecode{ type } { WindowsDuplicateString(f, &string); }
         Record(HSTRING f) :
-            time{ std::chrono::high_resolution_clock::now() }, typecode{ 'o' } { WindowsDuplicateString(f, &string); }
+            Record('o', f) {}
         Record(Record&& r) :
             time{ r.time },
             typecode{ r.typecode },
@@ -115,14 +117,9 @@ struct Blackbox
         HSTRING string{ nullptr };
     };
 
-    Blackbox() :
-        _start{ std::chrono::high_resolution_clock::now() },
-        _chan{ til::spsc::channel<Record>(1024) }
+    Blackbox(std::wstring_view filePath) :
+        _filePath{ filePath }
     {
-        _file = L"C:\\users\\dustin\\desktop\\foo.cast";
-        _t = std::thread([this]() {
-            Thread();
-        });
     }
 
     ~Blackbox()
@@ -130,55 +127,70 @@ struct Blackbox
         Close();
     }
 
+    void Start()
+    {
+        _file.reset(CreateFileW(_filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+        THROW_LAST_ERROR_IF(!_file);
+
+        auto s{ fmt::format(R"-({{"version": 2, "width": 120, "height": 30}})-"
+                            "\n") };
+        WriteFile(_file.get(), s.data(), (DWORD)s.size(), nullptr, nullptr);
+
+        _start = std::chrono::high_resolution_clock::now();
+        auto [tx, rx] = til::spsc::channel<Record>(1024);
+        _chan = std::move(tx);
+
+        _thread = std::thread([this, rx = std::move(rx)]() mutable {
+            Thread(std::move(rx));
+        });
+    }
+
     void Log(HSTRING h)
     {
         if (!_closed)
         {
-            _chan.first.emplace(h);
+            _chan.emplace(h);
         }
     }
 
     void Log(const winrt::hstring& h) { Log((HSTRING)winrt::get_abi(h)); }
+
+    void LogResize(til::CoordType columns, til::CoordType rows)
+    {
+        if (!_closed)
+        {
+            //? TODO(DH) determine whether we should pass the size along as a string or just make Record a tagged union w/ typecode
+            winrt::hstring newSizeRecord{ fmt::format(FMT_COMPILE(L"{0}x{1}"), columns, rows) };
+            _chan.emplace('r', (HSTRING)winrt::get_abi(newSizeRecord));
+        }
+    }
 
     void Close()
     {
         if (!std::exchange(_closed, true))
         {
             {
-                auto _ = std::move(_chan.first);
-                // destruct
+                auto _ = std::move(_chan);
+                // the tx side of the channel closes at the end of this scope
             }
 
-            if (_t.get_id() != std::this_thread::get_id())
+            // we may be getting destructed on the Thread thread.
+            if (_thread.get_id() != std::this_thread::get_id())
             {
-                _t.join(); // flush
+                _thread.join(); // flush
             }
         }
     }
 
-    void Thread()
+    void Thread(til::spsc::consumer<Record> rx)
     {
         Record queue[16];
-        auto& rx = _chan.second;
 
         wil::unique_hfile file;
         do
         {
             int i = 0;
             auto [sz, ok] = rx.pop_n(til::spsc::block_initially, queue, std::extent_v<decltype(queue)>);
-
-            if (!file)
-            {
-                file.reset(CreateFileW(_file.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
-                auto s{ fmt::format(R"-({{"version": 2, "width": 120, "height": 30}})-"
-                                    "\n") };
-                WriteFile(file.get(), s.data(), (DWORD)s.size(), nullptr, nullptr);
-            }
-            if (!file)
-            {
-                // TODO(DH)
-                std::terminate();
-            }
 
             while (sz--)
             {
@@ -190,22 +202,24 @@ struct Blackbox
                                                        "\n"),
                                            timeDelta,
                                            (char)rec.typecode,
-                                           accumulateEscaped16(std::wstring_view{ buf, length })) };
-                WriteFile(file.get(), jsonLine.data(), (DWORD)jsonLine.size(), nullptr, nullptr);
+                                           u16json8(std::wstring_view{ buf, length })) };
+                WriteFile(_file.get(), jsonLine.data(), (DWORD)jsonLine.size(), nullptr, nullptr);
             }
             if (!ok)
             {
                 break; // FINISH IT OFF DAVE
             }
         } while (true);
+        _file.reset();
     }
 
 private:
-    std::wstring _file;
-    std::thread _t;
+    std::thread _thread;
     std::chrono::high_resolution_clock::time_point _start;
-    std::pair<til::spsc::producer<Record>, til::spsc::consumer<Record>> _chan;
+    til::spsc::producer<Record> _chan{ nullptr };
     bool _closed{ false };
+    std::wstring _filePath;
+    wil::unique_hfile _file;
 };
 
 #pragma warning(pop)

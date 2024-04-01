@@ -1284,7 +1284,8 @@ namespace winrt::TerminalApp::implementation
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
         }
 
-        auto _b{ std::make_shared<Blackbox>() };
+        auto _b{ std::make_shared<Blackbox>(L"c:\\users\\dustin\\desktop\\foo.cast") };
+        _b->Start();
         connection.TerminalOutput([bbox = _b](const winrt::hstring& h) {
             bbox->Log(h);
         });
