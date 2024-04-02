@@ -94,7 +94,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         String Name { get; };
         String LocalizedName { get; };
-        Boolean HasPowerlineCharacters { get; };
         Windows.Foundation.Collections.IMap<String, String> FontAxesTagsAndNames { get; };
         Windows.Foundation.Collections.IMap<String, String> FontFeaturesTagsAndNames { get; };
     }
@@ -131,6 +130,10 @@ namespace Microsoft.Terminal.Settings.Editor
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
+
+        String MissingFontFaces { get; };
+        String ProportionalFontFaces { get; };
+        Boolean HasPowerlineCharacters { get; };
 
         void AddNewAxisKeyValuePair();
         void DeleteAxisKeyValuePair(String key);
@@ -176,9 +179,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IHostedInWindow WindowRoot;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
-        Boolean UsingMonospaceFont { get; };
+        Windows.Foundation.Collections.IObservableVector<Font> FilteredFontList { get; };
         Boolean ShowAllFonts;
-        Boolean ShowProportionalFontWarning;
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };
@@ -193,8 +195,6 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentFontWeight;
         Boolean IsCustomFontWeight { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
-
-        IInspectable CurrentFontFace { get; };
 
         IInspectable CurrentIntenseTextStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
@@ -510,7 +510,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
 
-        Boolean VtPassthroughAvailable { get; };
         Boolean ShowMarksAvailable { get; };
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
@@ -546,7 +545,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, VtPassthrough);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RightClickContextMenu);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ShowMarks);
@@ -564,7 +562,9 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         RenderingViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
+        IInspectable CurrentGraphicsAPI;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> GraphicsAPIList { get; };
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DisablePartialInvalidation);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
     }
 

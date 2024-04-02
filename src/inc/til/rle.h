@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "small_vector.h"
-
 #ifdef UNIT_TESTING
 class RunLengthEncodingTests;
 #endif

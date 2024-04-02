@@ -41,8 +41,7 @@ AtlasEngine::AtlasEngine()
     THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_p.dwriteFactory), reinterpret_cast<::IUnknown**>(_p.dwriteFactory.addressof())));
     _p.dwriteFactory4 = _p.dwriteFactory.try_query<IDWriteFactory4>();
 
-    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_p.systemFontFallback.addressof()));
-    _p.systemFontFallback1 = _p.systemFontFallback.try_query<IDWriteFontFallback1>();
+    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_api.systemFontFallback.addressof()));
 
     wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
     THROW_IF_FAILED(_p.dwriteFactory->CreateTextAnalyzer(textAnalyzer.addressof()));
@@ -550,7 +549,7 @@ void AtlasEngine::_handleSettingsUpdate()
 
     if (targetChanged)
     {
-        // target->useSoftwareRendering affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
+        // target->useWARP affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
         // This will indirectly also recreate the backend, when AtlasEngine::_recreateAdapter() detects this change.
         _p.dxgi = {};
     }
@@ -575,7 +574,7 @@ void AtlasEngine::_recreateFontDependentResources()
     {
         wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
 
-        if (FAILED(GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH)))
+        if (!GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH))
         {
             memcpy(&localeName[0], L"en-US", 12);
         }
@@ -841,7 +840,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
 
     if (textFormatAxis)
     {
-        THROW_IF_FAILED(_p.systemFontFallback1->MapCharacters(
+        THROW_IF_FAILED(_p.s->font->fontFallback1->MapCharacters(
             /* analysisSource     */ &analysisSource,
             /* textPosition       */ 0,
             /* textLength         */ textLength,
@@ -859,7 +858,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
         const auto baseStyle = WI_IsFlagSet(_api.attributes, FontRelevantAttributes::Italic) ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
         wil::com_ptr<IDWriteFont> font;
 
-        THROW_IF_FAILED(_p.systemFontFallback->MapCharacters(
+        THROW_IF_FAILED(_p.s->font->fontFallback->MapCharacters(
             /* analysisSource     */ &analysisSource,
             /* textPosition       */ 0,
             /* textLength         */ textLength,

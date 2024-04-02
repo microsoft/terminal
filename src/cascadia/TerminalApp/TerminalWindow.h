@@ -95,8 +95,6 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
         bool AutoHideWindow();
 
-        hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
-
         void IdentifyWindow();
         void RenameFailed();
 
@@ -104,9 +102,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout();
 
         void SetPersistedLayoutIdx(const uint32_t idx);
-        void SetNumberOfOpenWindows(const uint64_t num);
-        bool ShouldUsePersistedLayout() const;
-        void ClearPersistedWindowState();
 
         void RequestExitFullscreen();
 
@@ -125,7 +120,7 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position, const bool isLastWindow);
+        void CloseWindow();
         void WindowVisibilityChanged(const bool showOrHide);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
@@ -218,7 +213,7 @@ namespace winrt::TerminalApp::implementation
 
         FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement, _root, SetTitleBarContent);
         FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
-        FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
+        FORWARDED_TYPED_EVENT(CloseWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, CloseWindowRequested);
         FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
         FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
         FORWARDED_TYPED_EVENT(ChangeMaximizeRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, ChangeMaximizeRequested);

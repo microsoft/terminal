@@ -186,6 +186,7 @@ namespace Microsoft.Terminal.Settings.Model
         String TabTitle;
         Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        Guid SessionId;
         Boolean AppendCommandLine;
 
         // We use IReference<> to treat some args as nullable where null means
@@ -546,6 +547,8 @@ namespace Microsoft.Terminal.Settings.Model
         void Flush();
         void Reset();
 
+        void AppendPersistedWindowLayout(WindowLayout layout);
+
         String SettingsHash;
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;
         Windows.Foundation.Collections.IVector<String> RecentCommands;
@@ -557,6 +560,7 @@ namespace Microsoft.Terminal.Settings.Model
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
 
+        static String SettingsDirectory { get; };
         static String SettingsPath { get; };
         static String DefaultSettingsPath { get; };
         static Boolean IsPortableMode { get; };
@@ -682,6 +686,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.CopyFormat> CopyFormat { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.WindowingMode> WindowingMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.GraphicsAPI> GraphicsAPI { get; };
 
         // Profile Settings
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
@@ -735,7 +740,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
-        INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.GraphicsAPI, GraphicsAPI);
+        INHERITABLE_SETTING(Boolean, DisablePartialInvalidation);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
@@ -958,7 +964,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
-        INHERITABLE_PROFILE_SETTING(Boolean, VtPassthrough);
 
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
@@ -1024,6 +1029,7 @@ namespace Microsoft.Terminal.Settings.Model
         // The getters for these are already defined in IControlSettings. So
         // we're just adding the setters here, because TerminalApp likes to be
         // able to change these at runtime (e.g. when duplicating a pane).
+        Guid SessionId { set; };
         String Commandline { set; };
         String StartingDirectory { set; };
 

@@ -184,9 +184,6 @@
   <data name="Quit" xml:space="preserve">
     <value>終了</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>すべてのタブを閉じますか?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>複数ウィンドウ</value>
   </data>
@@ -332,6 +329,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>指定されたプロファイルで開きます。プロファイルの名前または GUID を指定できます</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>WT_SESSION 変数を設定します; GUID である必要があります</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>新しい分割ウィンドウの作成</value>

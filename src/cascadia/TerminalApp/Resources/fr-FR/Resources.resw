@@ -183,9 +183,6 @@
   <data name="Quit" xml:space="preserve">
     <value>Quitter</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Voulez-vous fermer tous les onglets ?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Volets multiples</value>
   </data>
@@ -331,6 +328,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Ouvrez avec le profil donné. Accepte le nom ou le GUID d’un profil</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Définit la variable WT_SESSION ; doit être un GUID</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Créer un volet de fractionnement</value>

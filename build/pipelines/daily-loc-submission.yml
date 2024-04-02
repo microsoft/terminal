@@ -75,6 +75,7 @@ steps:
     rm LocOutputMunged.tar
     rm -r -fo LocOutput
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
+    & ./build/scripts/Generate-PseudoLocalizations.ps1
   displayName: Move Loc files to the right places
 
 - pwsh: |-
