@@ -159,6 +159,8 @@ public:
     StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/) override { return nullptr; } // DECRSPS
 
     bool PlaySounds(const VTParameters /*parameters*/) override { return false; }; // DECPS
+
+    void UseExtendedUnderlineStyle(bool /*enable*/) noexcept override{};
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning

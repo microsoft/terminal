@@ -71,6 +71,8 @@ public:
         _expectSendCtrlC{ false },
         _expectCursorPosition{ false },
         _expectedCursor{ -1, -1 },
+        _expectCallToReportSetting{ false },
+        _dcsDataString{},
         _expectedWindowManipulation{ DispatchTypes::WindowManipulationType::Invalid }
     {
     }
@@ -198,6 +200,8 @@ public:
     til::point _expectedCursor;
     DispatchTypes::WindowManipulationType _expectedWindowManipulation;
     std::array<unsigned short, 16> _expectedParams{};
+    bool _expectCallToReportSetting;
+    std::wstring _dcsDataString;
 };
 
 class Microsoft::Console::VirtualTerminal::InputEngineTest
@@ -271,6 +275,8 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(TestSs3Entry);
     TEST_METHOD(TestSs3Immediate);
     TEST_METHOD(TestSs3Param);
+    TEST_METHOD(TestDcsDECRPSSHandler);
+    TEST_METHOD(TestDcsIgnoreNoHandler);
 
     TEST_METHOD(TestWin32InputParsing);
     TEST_METHOD(TestWin32InputOptionals);
@@ -330,6 +336,8 @@ public:
     virtual bool IsVtInputEnabled() const override;
 
     virtual bool FocusChanged(const bool focused) const override;
+
+    virtual StringHandler ReportSetting() override;
 
 private:
     std::function<void(const std::span<const INPUT_RECORD>&)> _pfnWriteInputCallback;
@@ -396,6 +404,19 @@ bool TestInteractDispatch::IsVtInputEnabled() const
 bool TestInteractDispatch::FocusChanged(const bool /*focused*/) const
 {
     return false;
+}
+
+IInteractDispatch::StringHandler TestInteractDispatch::ReportSetting()
+{
+    VERIFY_IS_TRUE(_testState->_expectCallToReportSetting);
+    return [&](const auto ch) {
+        const auto endOfString = ch == AsciiChars::ESC;
+        if (!endOfString)
+        {
+            _testState->_dcsDataString += ch;
+        }
+        return !endOfString;
+    };
 }
 
 void InputEngineTest::C0Test()
@@ -1606,4 +1627,55 @@ void InputEngineTest::TestWin32InputOptionals()
                              key.wRepeatCount);
         }
     }
+}
+
+void InputEngineTest::TestDcsDECRPSSHandler()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine.get());
+    testState._stateMachine = _stateMachine.get();
+
+    Log::Comment(NoThrowString().Format(
+        L"Test DCS DECRPSS string handler is successfully set, "
+        L"and the data string is received by the handler"));
+
+    testState._expectCallToReportSetting = true;
+
+    _stateMachine->ProcessString(L"\x1bP1$r");
+    VERIFY_ARE_EQUAL(_stateMachine->_state, StateMachine::VTStates::DcsPassThrough);
+    VERIFY_IS_NOT_NULL(_stateMachine->_dcsStringHandler);
+
+    _stateMachine->ProcessString(L"abcd");
+    VERIFY_ARE_EQUAL(testState._dcsDataString, L"abcd");
+
+    _stateMachine->ProcessCharacter(AsciiChars::ESC);
+    _stateMachine->ProcessCharacter(L'\\');
+    VERIFY_ARE_EQUAL(_stateMachine->_state, StateMachine::VTStates::Ground);
+}
+
+void InputEngineTest::TestDcsIgnoreNoHandler()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine.get());
+    testState._stateMachine = _stateMachine.get();
+
+    Log::Comment(NoThrowString().Format(
+        L"Test No string handler is set when the state machine "
+        L"engine receives an invalid DCS sequence"));
+
+    testState._expectCallToReportSetting = true;
+
+    _stateMachine->ProcessString(L"\x1bP:");
+    VERIFY_ARE_EQUAL(_stateMachine->_state, StateMachine::VTStates::DcsIgnore);
+    VERIFY_IS_NULL(_stateMachine->_dcsStringHandler);
+
+    _stateMachine->ProcessCharacter(AsciiChars::ESC);
+    _stateMachine->ProcessCharacter(L'\\');
+    VERIFY_ARE_EQUAL(_stateMachine->_state, StateMachine::VTStates::Ground);
 }

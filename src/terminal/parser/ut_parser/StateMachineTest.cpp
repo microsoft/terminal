@@ -45,6 +45,10 @@ public:
         return false;
     }
 
+    void UseExtendedUnderlineStyle(bool /*enable*/) noexcept override
+    {
+    }
+
     bool ActionExecute(const wchar_t wch) override
     {
         executed += wch;
