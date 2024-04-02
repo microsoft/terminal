@@ -183,9 +183,6 @@
   <data name="Quit" xml:space="preserve">
     <value>結束</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>您要關閉所有索引標籤嗎?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>多個窗格</value>
   </data>
@@ -331,6 +328,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>使用指定的設定檔開啟。接受設定檔的名稱或 GUID</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>設定 WT_SESSION 變數; 必須為 GUID</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>建立新的分割窗格</value>
