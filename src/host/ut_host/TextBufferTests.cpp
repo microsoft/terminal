@@ -147,7 +147,8 @@ class TextBufferTests
 
     TEST_METHOD(TestBurrito);
     TEST_METHOD(TestOverwriteChars);
-    TEST_METHOD(TestRowReplaceText);
+    TEST_METHOD(TestReplace);
+    TEST_METHOD(TestInsert);
 
     TEST_METHOD(TestAppendRTFText);
 
@@ -2003,13 +2004,12 @@ void TextBufferTests::TestOverwriteChars()
 #undef complex1
 }
 
-void TextBufferTests::TestRowReplaceText()
+void TextBufferTests::TestReplace()
 {
     static constexpr til::size bufferSize{ 10, 3 };
     static constexpr UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
-    auto& row = buffer.GetMutableRowByOffset(0);
 
 #define complex L"\U0001F41B"
 
@@ -2073,15 +2073,96 @@ void TextBufferTests::TestRowReplaceText()
             .columnBegin = t.input.columnBegin,
             .columnLimit = t.input.columnLimit,
         };
-        row.ReplaceText(actual);
+        buffer.Replace(0, attr, actual);
         VERIFY_ARE_EQUAL(t.expected.text, actual.text);
         VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
         VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
         VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
-        VERIFY_ARE_EQUAL(t.expectedRow, row.GetText());
+        VERIFY_ARE_EQUAL(t.expectedRow, buffer.GetRowByOffset(0).GetText());
     }
 
 #undef complex
+}
+
+void TextBufferTests::TestInsert()
+{
+    static constexpr til::size bufferSize{ 10, 3 };
+    static constexpr UINT cursorSize = 12;
+    static constexpr TextAttribute attr1{ 0x11111111, 0x00000000 };
+    static constexpr TextAttribute attr2{ 0x22222222, 0x00000000 };
+    static constexpr TextAttribute attr3{ 0x33333333, 0x00000000 };
+    TextBuffer buffer{ bufferSize, attr1, cursorSize, false, _renderer };
+
+    struct Test
+    {
+        const wchar_t* description;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnBegin = 0;
+            til::CoordType columnLimit = 0;
+            TextAttribute attr;
+        } input;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnEnd = 0;
+            til::CoordType columnBeginDirty = 0;
+            til::CoordType columnEndDirty = 0;
+        } expected;
+        std::wstring_view expectedRow;
+    };
+
+    static constexpr std::array tests{
+        Test{
+            L"Not enough space -> early exit",
+            { L"aaa", 5, 5, attr1 },
+            { L"aaa", 5, 5, 5 },
+            L"          ",
+        },
+        Test{
+            L"Too much to fit",
+            { L"aaaaabbb", 0, 5, attr1 },
+            { L"bbb", 5, 0, 5 },
+            L"aaaaa     ",
+        },
+        Test{
+            L"Wide char intersects limit",
+            { L"bbbb😄", 0, 5, attr2 },
+            { L"😄", 5, 0, 5 },
+            L"bbbb      ",
+        },
+        Test{
+            L"Insert middle",
+            { L"cc", 2, 5, attr3 },
+            { L"", 4, 2, 4 },
+            L"bbccb     ",
+        },
+    };
+
+    for (const auto& t : tests)
+    {
+        Log::Comment(t.description);
+        RowWriteState actual{
+            .text = t.input.text,
+            .columnBegin = t.input.columnBegin,
+            .columnLimit = t.input.columnLimit,
+        };
+        buffer.Insert(0, t.input.attr, actual);
+        VERIFY_ARE_EQUAL(t.expected.text, actual.text);
+        VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
+        VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
+        VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
+        VERIFY_ARE_EQUAL(t.expectedRow, buffer.GetRowByOffset(0).GetText());
+    }
+
+    auto& scratch = buffer.GetScratchpadRow();
+    scratch.ReplaceAttributes(0, 5, attr2);
+    scratch.ReplaceAttributes(2, 4, attr3);
+
+    const auto& expectedAttr = scratch.Attributes();
+    const auto& actualAttr = buffer.GetRowByOffset(0).Attributes();
+    VERIFY_ARE_EQUAL(expectedAttr, actualAttr);
 }
 
 void TextBufferTests::TestAppendRTFText()

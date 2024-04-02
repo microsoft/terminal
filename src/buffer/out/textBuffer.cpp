@@ -589,10 +589,13 @@ void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, Row
     r.ReplaceText(restoreState);
 
     // Restore trailing attributes as well.
-    auto& rowAttr = r.Attributes();
-    const auto& scratchAttr = scratch.Attributes();
-    const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), gsl::narrow<uint16_t>(state.columnLimit));
-    rowAttr.replace(gsl::narrow<uint16_t>(state.columnEnd), gsl::narrow<uint16_t>(state.columnEnd + restoreAttr.size()), restoreAttr);
+    if (const auto copyAmount = restoreState.columnEnd - restoreState.columnBegin; copyAmount > 0)
+    {
+        auto& rowAttr = r.Attributes();
+        const auto& scratchAttr = scratch.Attributes();
+        const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), gsl::narrow<uint16_t>(state.columnBegin + copyAmount));
+        rowAttr.replace(gsl::narrow<uint16_t>(restoreState.columnBegin), gsl::narrow<uint16_t>(restoreState.columnEnd), restoreAttr);
+    }
 
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, restoreState.columnEndDirty, row + 1 }));
 }
