@@ -167,7 +167,7 @@ terminal package.
 Doing the equivalent command in powershell can give us more info:
 
 ```pwsh
-add-appxpackage -register "Z:\dev\public\OpenConsole\src\cascadia\CascadiaPackage\bin\x64\Debug\AppX\AppxManifest.xml"
+Add-AppxPackage -register "Z:\dev\public\OpenConsole\src\cascadia\CascadiaPackage\bin\x64\Debug\AppX\AppxManifest.xml"
 ```
 
 That'll suggest `NOTE: For additional information, look for [ActivityId]
