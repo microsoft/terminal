@@ -989,6 +989,10 @@
     <value>Dieses Profil als Administrator ausführen</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
+  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+    <value>Wenn diese Option aktiviert ist, wird das Profil automatisch in einem Admin Terminalfenster geöffnet. Wenn das aktuelle Fenster bereits als Administrator ausgeführt wird, wird es in diesem Fenster geöffnet.</value>
+    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Größe des Verlaufs</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
