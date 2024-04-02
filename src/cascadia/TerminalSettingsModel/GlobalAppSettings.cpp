@@ -144,7 +144,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     {
         this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
     }
-    if (this->InitialRows() != std::clamp(this->InitialRows(), 1, 999))
+    if (this->HasInitialRows())
     {
         this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
     }
