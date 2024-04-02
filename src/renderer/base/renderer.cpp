@@ -1109,9 +1109,9 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    if (_currentCursorOptions.has_value())
+    if (_currentCursorOptions)
     {
-        LOG_IF_FAILED(pEngine->PaintCursor(_currentCursorOptions.value()));
+        LOG_IF_FAILED(pEngine->PaintCursor(*_currentCursorOptions));
     }
 }
 
