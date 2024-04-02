@@ -81,3 +81,5 @@ extends:
     terminalInternalPackageVersion: ${{ parameters.terminalInternalPackageVersion }}
     publishSymbolsToPublic: ${{ parameters.publishSymbolsToPublic }}
     publishVpackToWindows: ${{ parameters.publishVpackToWindows }}
+    symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
+    symbolPublishingProject: $(SymbolPublishingProject)
