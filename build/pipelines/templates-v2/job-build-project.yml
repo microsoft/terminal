@@ -152,6 +152,7 @@ jobs:
         /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }}
         ${{ parameters.additionalBuildOptions }}
         /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        /graph
         $(BuildTargetParameter)
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
