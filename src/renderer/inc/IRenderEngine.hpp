@@ -90,33 +90,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT GetFontSize(_Out_ til::size* pFontSize) noexcept = 0;
         [[nodiscard]] virtual HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateTitle(std::wstring_view newTitle) noexcept = 0;
-
-        // The following functions used to be specific to the DxRenderer and they should
-        // be abstracted away and integrated into the above or simply get removed.
-
-        // DxRenderer - getter
-        virtual HRESULT Enable() noexcept { return S_OK; }
-        [[nodiscard]] virtual std::wstring_view GetPixelShaderPath() noexcept { return {}; }
-        [[nodiscard]] virtual std::wstring_view GetPixelShaderImagePath() noexcept { return {}; }
-        [[nodiscard]] virtual bool GetRetroTerminalEffect() const noexcept { return false; }
-        [[nodiscard]] virtual float GetScaling() const noexcept { return 1; }
-        [[nodiscard]] virtual Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept { return Types::Viewport::Empty(); }
-        [[nodiscard]] virtual Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept { return Types::Viewport::Empty(); }
-        // DxRenderer - setter
-        virtual void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept {}
-        virtual void SetCallback(std::function<void(HANDLE)> pfn) noexcept {}
-        virtual void EnableTransparentBackground(const bool isTransparent) noexcept {}
-        virtual void SetForceFullRepaintRendering(bool enable) noexcept {}
-        [[nodiscard]] virtual HRESULT SetHwnd(const HWND hwnd) noexcept { return E_NOTIMPL; }
-        virtual void SetPixelShaderPath(std::wstring_view value) noexcept {}
-        virtual void SetPixelShaderImagePath(std::wstring_view value) noexcept {}
-        virtual void SetRetroTerminalEffect(bool enable) noexcept {}
-        virtual void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept {}
-        virtual void SetSoftwareRendering(bool enable) noexcept {}
-        virtual void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept {}
-        [[nodiscard]] virtual HRESULT SetWindowSize(const til::size pixels) noexcept { return E_NOTIMPL; }
-        [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept { return E_NOTIMPL; }
-        virtual void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept {}
+        virtual void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept = 0;
     };
 }
 #pragma warning(pop)

@@ -202,6 +202,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return to_ulong<>(str, base);
     }
 
+    // Implement to_int in terms of to_ulong by negating its result. to_ulong does not expect
+    // to be passed signed numbers and will return an error accordingly. That error when
+    // compared against -1 evaluates to true. We account for that by returning to_int_error if to_ulong
+    // returns an error.
+    constexpr int to_int(const std::wstring_view& str, unsigned long base = 0) noexcept
+    {
+        auto result = to_ulong_error;
+        const auto signPosition = str.find(L"-");
+        const bool hasSign = signPosition != std::wstring_view::npos;
+        result = hasSign ? to_ulong(str.substr(signPosition + 1), base) : to_ulong(str, base);
+
+        // Check that result is valid and will fit in an int.
+        if (result == to_ulong_error || (result > INT_MAX))
+        {
+            return to_int_error;
+        }
+
+        return hasSign ? result * -1 : result;
+    }
+
     // Just like std::tolower, but without annoying locales.
     template<typename T>
     constexpr T tolower_ascii(T c)
@@ -376,6 +396,81 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { beg, end };
     }
 
+    // Splits a font-family list into individual font-families. It loosely follows the CSS spec for font-family.
+    // It splits by comma, handles quotes and simple escape characters, and it cleans whitespace.
+    //
+    // This is not the right place to put this, because it's highly specialized towards font-family names.
+    // But this code is needed both, in our renderer and in our settings UI. At the time I couldn't find a better place for it.
+    void iterate_font_families(const std::wstring_view& families, auto&& callback)
+    {
+        std::wstring family;
+        bool escape = false;
+        bool delayedSpace = false;
+        wchar_t stringType = 0;
+
+        for (const auto ch : families)
+        {
+            if (!escape)
+            {
+                switch (ch)
+                {
+                case ' ':
+                    if (stringType)
+                    {
+                        // Spaces are treated literally inside strings.
+                        break;
+                    }
+                    delayedSpace = !family.empty();
+                    continue;
+                case '"':
+                case '\'':
+                    if (stringType && stringType != ch)
+                    {
+                        // Single quotes inside double quotes are treated literally and vice versa.
+                        break;
+                    }
+                    stringType = stringType == ch ? 0 : ch;
+                    continue;
+                case ',':
+                    if (stringType)
+                    {
+                        // Commas are treated literally inside strings.
+                        break;
+                    }
+                    if (!family.empty())
+                    {
+                        callback(std::move(family));
+                        family.clear();
+                        delayedSpace = false;
+                    }
+                    continue;
+                case '\\':
+                    escape = true;
+                    continue;
+                default:
+                    break;
+                }
+            }
+
+            // The `delayedSpace` logic automatically takes care for us to
+            // strip leading and trailing spaces and deduplicate them too.
+            if (delayedSpace)
+            {
+                delayedSpace = false;
+                family.push_back(L' ');
+            }
+
+            family.push_back(ch);
+            escape = false;
+        }
+
+        // Just like the comma handler above.
+        if (!stringType && !family.empty())
+        {
+            callback(std::move(family));
+        }
+    }
+
     // This function is appropriate for case-insensitive equivalence testing of file paths and other "system" strings.
     // Similar to memcmp, this returns <0, 0 or >0.
     inline int compare_ordinal_insensitive(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
@@ -425,25 +520,5 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // -> We can just check for -1.
 #pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
         return FindNLSStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE, str.data(), strLen, needle.data(), needleLen, nullptr, nullptr, nullptr, 0) != -1;
-    }
-
-    // Implement to_int in terms of to_ulong by negating its result. to_ulong does not expect
-    // to be passed signed numbers and will return an error accordingly. That error when
-    // compared against -1 evaluates to true. We account for that by returning to_int_error if to_ulong
-    // returns an error.
-    constexpr int to_int(const std::wstring_view& str, unsigned long base = 0) noexcept
-    {
-        auto result = to_ulong_error;
-        const auto signPosition = str.find(L"-");
-        const bool hasSign = signPosition != std::wstring_view::npos;
-        result = hasSign ? to_ulong(str.substr(signPosition + 1), base) : to_ulong(str, base);
-
-        // Check that result is valid and will fit in an int.
-        if (result == to_ulong_error || (result > INT_MAX))
-        {
-            return to_int_error;
-        }
-
-        return hasSign ? result * -1 : result;
     }
 }

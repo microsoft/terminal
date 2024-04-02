@@ -74,7 +74,6 @@ namespace TerminalApp
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);
-        void ClearPersistedWindowState();
 
         void RenameFailed();
         void RequestExitFullscreen();
@@ -89,15 +88,13 @@ namespace TerminalApp
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
-        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position, Boolean isLastWindow);
+        void CloseWindow();
         void WindowVisibilityChanged(Boolean showOrHide);
 
         TaskbarState TaskbarState{ get; };
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         Windows.UI.Xaml.Media.Brush FrameBrush { get; };
         void WindowActivated(Boolean activated);
-
-        String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
 
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();
@@ -118,7 +115,7 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Theme> RequestedThemeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;

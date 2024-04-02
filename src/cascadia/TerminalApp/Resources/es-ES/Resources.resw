@@ -763,18 +763,11 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>El comportamiento de finalización se puede configurar en la configuración avanzada del perfil.</value>
   </data>
-  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
-    <value>Terminal Windows se puede establecer como la aplicación de terminal predeterminada en la configuración.</value>
-  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>No volver a mostrar</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Esta ventana de terminal se está ejecutando como administrador</value>
-  </data>
-  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
-    <value>Abrir Configuración</value>
-    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Sugerencias encontradas: {0}</value>

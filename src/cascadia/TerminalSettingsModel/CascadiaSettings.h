@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
 
+        static winrt::hstring SettingsDirectory();
         static winrt::hstring SettingsPath();
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();

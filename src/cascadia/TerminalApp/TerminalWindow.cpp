@@ -226,7 +226,7 @@ namespace winrt::TerminalApp::implementation
         auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"),
                                                            SystemMenuChangeAction::Add,
                                                            SystemMenuItemHandler(this, &TerminalWindow::_OpenSettingsUI));
-        _SystemMenuChangeRequestedHandlers(*this, *args);
+        SystemMenuChangeRequested.raise(*this, *args);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -267,7 +267,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_root)
         {
-            _root->CloseWindow(true);
+            _root->PersistState();
         }
     }
 
@@ -748,7 +748,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::_RefreshThemeRoutine()
     {
         // Propagate the event to the host layer, so it can update its own UI
-        _RequestedThemeChangedHandlers(*this, Theme());
+        RequestedThemeChanged.raise(*this, Theme());
     }
 
     // This may be called on a background thread, or the main thread, but almost
@@ -767,7 +767,7 @@ namespace winrt::TerminalApp::implementation
             _root->SetSettings(_settings, true);
 
             // Bubble the notification up to the AppHost, now that we've updated our _settings.
-            _SettingsChangedHandlers(*this, args);
+            SettingsChanged.raise(*this, args);
 
             if (FAILED(args.Result()))
             {
@@ -916,32 +916,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalWindow::CloseWindow(LaunchPosition pos, const bool isLastWindow)
+    void TerminalWindow::CloseWindow()
     {
         if (_root)
         {
-            // If persisted layout is enabled and we are the last window closing
-            // we should save our state.
-            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && isLastWindow)
-            {
-                if (const auto layout = _root->GetWindowLayout())
-                {
-                    layout.InitialPosition(pos);
-                    const auto state = ApplicationState::SharedInstance();
-                    state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
-                }
-            }
-
-            _root->CloseWindow(false);
-        }
-    }
-
-    void TerminalWindow::ClearPersistedWindowState()
-    {
-        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
-        {
-            auto state = ApplicationState::SharedInstance();
-            state.PersistedWindowLayouts(nullptr);
+            _root->CloseWindow();
         }
     }
 
@@ -1134,19 +1113,6 @@ namespace winrt::TerminalApp::implementation
         return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
-    hstring TerminalWindow::GetWindowLayoutJson(LaunchPosition position)
-    {
-        if (_root != nullptr)
-        {
-            if (const auto layout = _root->GetWindowLayout())
-            {
-                layout.InitialPosition(position);
-                return WindowLayout::ToJson(layout);
-            }
-        }
-        return L"";
-    }
-
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)
     {
         _loadFromPersistedLayoutIdx = idx;
@@ -1239,7 +1205,7 @@ namespace winrt::TerminalApp::implementation
             // If we're entering Quake Mode from Focus Mode, then this will do nothing
             // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
             _root->SetFocusMode(true);
-            _IsQuakeWindowChangedHandlers(*this, nullptr);
+            IsQuakeWindowChanged.raise(*this, nullptr);
         }
     }
     void TerminalWindow::WindowId(const uint64_t& id)
@@ -1359,8 +1325,8 @@ namespace winrt::TerminalApp::implementation
             // PropertyChangedEventArgs will throw.
             try
             {
-                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
-                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
+                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
             }
             CATCH_LOG();
         }

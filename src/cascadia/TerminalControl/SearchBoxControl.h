@@ -49,10 +49,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-        WINRT_CALLBACK(PropertyChanged, winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_CALLBACK(Search, SearchHandler);
-        WINRT_CALLBACK(SearchChanged, SearchHandler);
-        TYPED_EVENT(Closed, Control::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+        til::event<SearchHandler> Search;
+        til::event<SearchHandler> SearchChanged;
+        til::typed_event<Control::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs> Closed;
+        til::property_changed_event PropertyChanged;
 
     private:
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
