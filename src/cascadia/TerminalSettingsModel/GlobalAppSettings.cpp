@@ -140,7 +140,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values
     // We only want to assign if the value did change through clamping,
     // otherwise we could end up setting defaults that get persisted
-    if (this->InitialCols() != std::clamp(this->InitialCols(), 1, 999))
+    if (this->HasInitialCols())
     {
         this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
     }
