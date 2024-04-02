@@ -191,7 +191,10 @@ sudo start C:\ProgramData\Microsoft\Windows\AppRepository\Packages\WindowsTermin
 ```
 
 (use `sudo`, since the path is otherwise locked down). From there, go into the
-`PackagedCom` folder, and open File Locksmith on `OpenConsoleProxy.dll`. Just go
-ahead and immediately re-launch it as admin, too. That should list off a couple
-terminal processes that are just hanging around. Go ahead and end them all. You
-should be good to deploy again after that.
+`PackagedCom` folder, and open [File
+Locksmith](https://learn.microsoft.com/en-us/windows/powertoys/file-locksmith)
+(or Process Explorer, if you're more familiar with that) on
+`OpenConsoleProxy.dll`. Just go ahead and immediately re-launch it as admin,
+too. That should list off a couple terminal processes that are just hanging
+around. Go ahead and end them all. You should be good to deploy again after
+that.
