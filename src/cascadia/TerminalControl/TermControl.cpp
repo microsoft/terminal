@@ -2276,7 +2276,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::PersistToPath(const winrt::hstring& path) const
     {
-        winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+        // Don't persist us if we weren't ever initialized. In that case, we
+        // never got an initial size, never instantiated a buffer, and didn't
+        // start the connection yet, so there's nothing for us to add here.
+        //
+        // If we were supposed to be restored from a path, then we don't need to
+        // do anything special here. We'll leave the original file untouched,
+        // and the next time we actually are initialized, we'll just use that
+        // file then.
+        if (_initializedTerminal)
+        {
+            winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+        }
     }
 
     void TermControl::Close()
