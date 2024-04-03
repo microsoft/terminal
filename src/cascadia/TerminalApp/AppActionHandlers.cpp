@@ -245,7 +245,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // * True if the args are NewTerminalArgs, and the profile index was out of bounds.
     // * False otherwise.
-    bool _shouldBailForInvalidProfileIndex(const CascadiaSettings& settings, const INewContentArgs& args)
+    static bool _shouldBailForInvalidProfileIndex(const CascadiaSettings& settings, const INewContentArgs& args)
     {
         if (!args)
         {

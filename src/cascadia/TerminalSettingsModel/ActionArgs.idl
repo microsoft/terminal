@@ -123,7 +123,7 @@ namespace Microsoft.Terminal.Settings.Model
     };
 
     interface INewContentArgs {
-        String Type;
+        String Type { get; };
         Boolean Equals(INewContentArgs other);
         UInt64 Hash();
         INewContentArgs Copy();
