@@ -137,11 +137,9 @@
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>この配色は、組み込みの設定またはインストールされている拡張機能の一部です</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
     <value>この配色パターンを変更するには、コピーを作成する必要があります。</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
     <value>コピーを作成</value>
@@ -311,13 +309,38 @@
     <value>[スタート] メニューや [ファイル名を指定して実行] ダイアログなど、既存のセッションなしでコマンドライン アプリケーションを実行したときに起動するターミナル アプリケーション。</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
-    <value>ディスプレイの更新時に画面全体を再描画する</value>
-    <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
+  <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
+    <value>グラフィックス API</value>
+    <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
-    <value>無効にすると、ターミナルはフレームとフレームの間において情報更新分のみレンダリングします。</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11 はよりパフォーマンスが高く、機能が豊富なエクスペリエンスを提供しますが、Direct2D はより安定しています。既定のオプション [自動] では、グラフィックス ハードウェアに最適な API が選択されます。重大な問題が発生した場合は、Direct2D の使用を検討してください。</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>自動</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct2d.Text" xml:space="preserve">
+    <value>Direct2D</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
+    <value>Direct3D 11</value>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>部分的なスワップ チェーンの無効化を無効にする</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>既定では、テキスト レンダラーは FLIP_SEQUENTIAL Swap Chain を使用し、Present1 API を介してダーティ四角形を宣言します。この設定を有効にすると、代わりに FLIP_DISCARD スワップ チェーンが使用され、ダーティ四角形は宣言されません。どちらか一方が望ましいかどうかは、お使いのハードウェアとその他のさまざまな要因によって異なります。</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
+    <value>ソフトウェア レンダリングを使用する (WARP)</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>有効にすると、ターミナルはソフトウェア ラスターライザー (WARP) を使用します。この設定は、ほとんどの状況で無効のままにする必要があります。</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>列</value>
@@ -446,10 +469,6 @@
     <value>このデスクトップで最近使用したウィンドウに接続する</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>これらの設定は問題のトラブルシューティングに役立つ場合がありますが、パフォーマンスに影響を与えます。</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>タイトル バーを非表示にする (再起動が必要)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
@@ -477,14 +496,6 @@
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>無効にすると、ウィンドウがスムーズにサイズ変更されます。</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>ソフトウェア レンダリングを使用する</value>
-    <comment>Header for a control to toggle whether the terminal should use software to render content instead of the hardware.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
-    <value>有効にすると、ターミナルはハードウェアの代わりにソフトウェア レンダラー (別名 WARP) を使用します。</value>
-    <comment>A description for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>コンピューターのスタートアップ時に起動</value>
@@ -979,7 +990,7 @@
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
   <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>有効にすると、プロファイルは管理者ターミナル ウィンドウで自動的に開きます。現在のウィンドウが既に管理者として実行されている場合は、このウィンドウで開きます。</value>
+    <value>有効にすると、プロファイルは自動的にターミナル ウィンドウ管理開きます。現在のウィンドウが既に管理者として実行されている場合は、このウィンドウで開きます。</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -1214,9 +1225,37 @@
     <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはウィンドウを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
   </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>試験的な仮想ターミナル パススルーを有効にする</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
+    <value>右クリックでメニューを表示する</value>
+    <comment>This controls how a right-click behaves in the terminal</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+    <value>有効にすると、ターミナルは右クリックでメニューを表示します。無効にすると、右クリックすると選択したテキストがコピーされます (選択されていない場合は貼り付けます)。</value>
+    <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
+  </data>
+  <data name="Profile_ShowMarks.Header" xml:space="preserve">
+    <value>スクロール バーにマークを表示する</value>
+    <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
+  </data>
+  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+    <value>有効にすると、ターミナルでテキストを検索するとき、またはシェル統合が有効になっているときに、スクロール バーにマークが表示されます。</value>
+    <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
+    <value>Enter キーを押したときにプロンプトを自動的にマークする</value>
+    <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+    <value>有効にすると、ターミナルは Enter キーを押したときにコマンドの終了位置を示すマークを自動的に追加します。</value>
+    <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
+    <value>試験段階: マウスのクリックでカーソルの位置を変更する</value>
+    <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+    <value>有効にすると、プロンプト内をクリック時にカーソルがその位置に移動します。これを行うには、シェルでシェル統合を有効にし、期待どおりに動作させる必要があります。</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>音によるチャイム</value>
@@ -1761,12 +1800,12 @@
     <value>詳細をご覧ください。</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
   </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
-    <value>警告:</value>
-    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  <data name="Profile_MissingFontFaces.Header" xml:space="preserve">
+    <value>見つからないフォント:</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
   </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
-    <value>非等幅フォントを選択すると、視覚的なアーティファクトが発生する可能性があります。 ご自身の判断でご利用ください。</value>
-    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
+    <value>非等幅フォント:</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
 </root>

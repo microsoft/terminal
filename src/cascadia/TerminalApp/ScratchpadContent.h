@@ -2,12 +2,13 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "ScratchpadContent.g.h"
+#include "winrt/TerminalApp.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct ScratchpadContent : ScratchpadContentT<ScratchpadContent>
+    class ScratchpadContent : public winrt::implements<ScratchpadContent, IPaneContent>
     {
+    public:
         ScratchpadContent();
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
@@ -18,7 +19,7 @@ namespace winrt::TerminalApp::implementation
 
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
-        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
+        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
         winrt::hstring Title() { return L"Scratchpad"; }
         uint64_t TaskbarState() { return 0; }
