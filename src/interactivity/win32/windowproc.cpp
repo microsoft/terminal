@@ -721,7 +721,7 @@ using namespace Microsoft::Console::Types;
     {
         try
         {
-            const auto wstr = fmt::format(FMT_COMPILE(L"{:08X}"), wParam);
+            const auto wstr = fmt::format(FMT_COMPILE(L"{:08d}"), wParam);
             LoadKeyboardLayout(wstr.c_str(), KLF_ACTIVATE);
         }
         catch (...)
