@@ -3394,7 +3394,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - content - The content to copy to clipboard. Must be null terminated.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetClipboard(const std::wstring_view content)
+bool AdaptDispatch::SetClipboard(const wil::zwstring_view content)
 {
     // Return false to forward the operation to the hosting terminal,
     // since ConPTY can't handle this itself.
