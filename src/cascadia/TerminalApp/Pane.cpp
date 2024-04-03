@@ -367,16 +367,11 @@ void Pane::_ManipulationStartedHandler(const winrt::Windows::Foundation::IInspec
 
     const auto transform_contentFromOurRoot = _root.TransformToVisual(_content.GetRoot());
     const auto transformInControlSpace = transform_contentFromOurRoot.TransformPoint(transformOrigin);
-    if ((transformInControlSpace.X > 0 && transformInControlSpace.X < contentSize.x) &&
-        (transformInControlSpace.Y > 0 && transformInControlSpace.Y < contentSize.y))
-    {
-        // clicked on control. bail, and don't allow any manipulations for this one.
-        _shouldManipulate = false;
-    }
-    else
-    {
-        _shouldManipulate = true;
-    }
+
+    // If we clicked on the control. bail, and don't allow any manipulations
+    // for this series of events.
+    _shouldManipulate = !((transformInControlSpace.X >= 0 && transformInControlSpace.X < contentSize.x) &&
+                          (transformInControlSpace.Y >= 0 && transformInControlSpace.Y < contentSize.y))
 }
 
 // Handler for the _root's ManipulationDelta event. This is the event raised
@@ -420,8 +415,8 @@ void Pane::_ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspecta
     const auto transformInControlSpace = transform_contentFromOurRoot.TransformPoint(transformOrigin);
 
     // Did we click somewhere in the bounds of our content?
-    if ((transformInControlSpace.X > 0 && transformInControlSpace.X < contentSize.x) &&
-        (transformInControlSpace.Y > 0 && transformInControlSpace.Y < contentSize.y))
+    if ((transformInControlSpace.X >= 0 && transformInControlSpace.X < contentSize.x) &&
+        (transformInControlSpace.Y >= 0 && transformInControlSpace.Y < contentSize.y))
     {
         // We did! Bail.
         return;
