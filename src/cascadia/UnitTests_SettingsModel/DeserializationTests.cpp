@@ -47,6 +47,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ValidateKeybindingsWarnings);
         TEST_METHOD(ValidateColorSchemeInCommands);
         TEST_METHOD(ValidateExecuteCommandlineWarning);
+        TEST_METHOD(TestClampingOfStartupColumnAndViewProperties);
         TEST_METHOD(TestTrailingCommas);
         TEST_METHOD(TestCommandsAndKeybindings);
         TEST_METHOD(TestNestedCommandWithoutName);
@@ -1299,6 +1300,20 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->Warnings().GetAt(1));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->Warnings().GetAt(2));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->Warnings().GetAt(3));
+    }
+
+    void DeserializationTests::TestClampingOfStartupColumnAndViewProperties()
+    {
+        static constexpr std::string_view inputSettings{ R"({
+            "initialCols" : 1000000,
+            "initialRows" : -1000000,
+            "profiles": [{ "name": "profile0" }]
+        })" };
+
+        const auto settings = createSettings(inputSettings);
+
+        VERIFY_ARE_EQUAL(999, settings->GlobalSettings().InitialCols());
+        VERIFY_ARE_EQUAL(1, settings->GlobalSettings().InitialRows());
     }
 
     void DeserializationTests::TestTrailingCommas()

@@ -149,6 +149,11 @@ namespace winrt::TerminalApp::implementation
         _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
             _reloadSettings->Run();
         });
+
+        // Do this here, rather than at the top of main. This will prevent us from
+        // including this variable in the vars we serialize in the
+        // Remoting::CommandlineArgs up in HandleCommandlineArgs.
+        _setupFolderPathEnvVar();
     }
 
     // Method Description:
@@ -697,22 +702,6 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShouldUsePersistedLayout();
     }
 
-    void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
-    {
-        std::vector<WindowLayout> converted;
-        converted.reserve(layouts.Size());
-
-        for (const auto& json : layouts)
-        {
-            if (json != L"")
-            {
-                converted.emplace_back(WindowLayout::FromJson(json));
-            }
-        }
-
-        ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
-    }
-
     TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)
     {
         ::TerminalApp::AppCommandlineArgs _appArgs;
@@ -720,4 +709,14 @@ namespace winrt::TerminalApp::implementation
         return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r };
     }
 
+    // Function Description
+    // * Adds a `WT_SETTINGS_DIR` env var to our own environment block, that
+    //   points at our settings directory. This allows portable installs to
+    //   refer to files in the portable install using %WT_SETTINGS_DIR%
+    void AppLogic::_setupFolderPathEnvVar()
+    {
+        std::wstring path{ CascadiaSettings::SettingsPath() };
+        auto folderPath = path.substr(0, path.find_last_of(L"\\"));
+        SetEnvironmentVariableW(L"WT_SETTINGS_DIR", folderPath.c_str());
+    }
 }

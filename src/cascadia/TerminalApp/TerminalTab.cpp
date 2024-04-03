@@ -5,6 +5,7 @@
 #include <LibraryResources.h>
 #include "ColorPickupFlyout.h"
 #include "TerminalTab.h"
+#include "SettingsPaneContent.h"
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
@@ -438,13 +439,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A vector of commands
-    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(const bool asContent) const
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(BuildStartupKind kind) const
     {
         ASSERT_UI_THREAD();
 
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
-        Pane::BuildStartupState state;
+        auto state = _rootPane->BuildStartupActions(0, 1, kind);
 
         // HORRIBLE
         //
@@ -468,11 +469,11 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            state = _rootPane->BuildStartupActions(0, 1, asContent);
+            state = _rootPane->BuildStartupActions(0, 1, kind);
 
             ActionAndArgs newTabAction{};
             newTabAction.Action(ShortcutAction::NewTab);
-            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(asContent) };
+            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(kind) };
             newTabAction.Args(newTabArgs);
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));

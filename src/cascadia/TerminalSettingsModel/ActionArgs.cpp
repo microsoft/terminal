@@ -130,6 +130,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             ss << fmt::format(L"--profile \"{}\" ", Profile());
         }
+
+        if (const auto id = SessionId(); id != winrt::guid{})
+        {
+            const auto str = ::Microsoft::Console::Utils::GuidToString(id);
+            ss << fmt::format(L"--sessionId \"{}\" ", str);
+        }
+
         // The caller is always expected to provide the evaluated profile in the
         // NewTerminalArgs, not the index
         //

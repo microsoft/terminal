@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ScratchpadContent.h"
-#include "ScratchpadContent.g.cpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
@@ -49,7 +48,7 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    INewContentArgs ScratchpadContent::GetNewTerminalArgs(const bool /* asContent */) const
+    INewContentArgs ScratchpadContent::GetNewTerminalArgs(const BuildStartupKind /* kind */) const
     {
         return GenericContentArgs(L"scratchpad");
     }

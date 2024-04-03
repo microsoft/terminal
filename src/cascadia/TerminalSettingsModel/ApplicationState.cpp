@@ -240,8 +240,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        auto root{ GetBaseSettingsPath() };
-        static auto state = winrt::make_self<ApplicationState>(root);
+        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath());
         return *state;
     }
 
@@ -292,6 +291,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef MTSM_APPLICATION_STATE_GEN
         }
         return root;
+    }
+
+    void ApplicationState::AppendPersistedWindowLayout(Model::WindowLayout layout)
+    {
+        {
+            const auto state = _state.lock();
+            if (!state->PersistedWindowLayouts || !*state->PersistedWindowLayouts)
+            {
+                state->PersistedWindowLayouts = winrt::single_threaded_vector<Model::WindowLayout>();
+            }
+            state->PersistedWindowLayouts->Append(std::move(layout));
+        }
+
+        _throttler();
     }
 
     // Generate all getter/setters

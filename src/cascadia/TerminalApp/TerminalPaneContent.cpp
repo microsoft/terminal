@@ -3,11 +3,14 @@
 
 #include "pch.h"
 #include "TerminalPaneContent.h"
-#include "TerminalPaneContent.g.cpp"
+
+#include <mmsystem.h>
+
+#include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
+#include "TerminalPaneContent.g.cpp"
 
-#include <Mmsystem.h>
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -87,7 +90,7 @@ namespace winrt::TerminalApp::implementation
         return _control.TabColor();
     }
 
-    INewContentArgs TerminalPaneContent::GetNewTerminalArgs(const bool asContent) const
+    INewContentArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
@@ -129,12 +132,32 @@ namespace winrt::TerminalApp::implementation
         // object. That would work for schemes set by the Terminal, but not ones set
         // by VT, but that seems good enough.
 
-        // Only fill in the ContentId if absolutely needed. If you fill in a number
-        // here (even 0), we'll serialize that number, AND treat that action as an
-        // "attach existing" rather than a "create"
-        if (asContent)
+        switch (kind)
         {
+        case BuildStartupKind::Content:
+        case BuildStartupKind::MovePane:
+            // Only fill in the ContentId if absolutely needed. If you fill in a number
+            // here (even 0), we'll serialize that number, AND treat that action as an
+            // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
+            break;
+        case BuildStartupKind::Persist:
+        {
+            const auto connection = _control.Connection();
+            const auto id = connection ? connection.SessionId() : winrt::guid{};
+
+            if (id != winrt::guid{})
+            {
+                const auto settingsDir = CascadiaSettings::SettingsDirectory();
+                const auto idStr = ::Microsoft::Console::Utils::GuidToPlainString(id);
+                const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
+                _control.PersistToPath(path);
+                args.SessionId(id);
+            }
+            break;
+        }
+        default:
+            break;
         }
 
         return args;
