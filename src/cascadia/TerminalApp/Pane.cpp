@@ -4,12 +4,6 @@
 #include "pch.h"
 #include "Pane.h"
 
-#include "AppLogic.h"
-
-#include "Utils.h"
-
-#include <Mmsystem.h>
-
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI;
@@ -20,7 +14,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
-using namespace TerminalApp;
 
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
@@ -105,21 +98,13 @@ Pane::Pane(std::shared_ptr<Pane> first,
     });
 }
 
-// Method Description:
-// - Extract the terminal settings from the current (leaf) pane's control
-//   to be used to create an equivalent control
-// Arguments:
-// - asContent: when true, we're trying to serialize this pane for moving across
-//   windows. In that case, we'll need to fill in the content guid for our new
-//   terminal args.
-// Return Value:
-// - Arguments appropriate for a SplitPane or NewTab action
-NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
+// Extract the terminal settings from the current (leaf) pane's control
+// to be used to create an equivalent control
+NewTerminalArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
-
-    return _content.GetNewTerminalArgs(asContent);
+    return _content.GetNewTerminalArgs(kind);
 }
 
 // Method Description:
@@ -142,16 +127,13 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
 //   created.
-Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
-                                                  uint32_t nextId,
-                                                  const bool asContent,
-                                                  const bool asMovePane)
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, BuildStartupKind kind)
 {
     // Normally, if we're a leaf, return an empt set of actions, because the
     // parent pane will build the SplitPane action for us. If we're building
     // actions for a movePane action though, we'll still need to include
     // ourselves.
-    if (!asMovePane && _IsLeaf())
+    if (kind != BuildStartupKind::MovePane && _IsLeaf())
     {
         if (_lastActive)
         {
@@ -165,18 +147,18 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
     auto buildSplitPane = [&](auto newPane) {
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
-        const auto terminalArgs{ newPane->GetTerminalArgsForPane(asContent) };
+        const auto terminalArgs{ newPane->GetTerminalArgsForPane(kind) };
         // When creating a pane the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
-        const auto splitSize = (asContent && _IsLeaf() ? .5 : 1. - _desiredSplitPosition);
+        const auto splitSize = (kind != BuildStartupKind::None && _IsLeaf() ? .5 : 1. - _desiredSplitPosition);
         SplitPaneArgs args{ SplitType::Manual, splitDirection, splitSize, terminalArgs };
         actionAndArgs.Args(args);
 
         return actionAndArgs;
     };
 
-    if (asContent && _IsLeaf())
+    if (kind != BuildStartupKind::None && _IsLeaf())
     {
         return {
             .args = { buildSplitPane(shared_from_this()) },
@@ -223,10 +205,10 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
     // We now need to execute the commands for each side of the tree
     // We've done one split, so the first-most child will have currentId, and the
     // one after it will be incremented.
-    auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1);
+    auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1, kind);
     // the next id for the second branch depends on how many splits were in the
     // first child.
-    auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1);
+    auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1, kind);
 
     std::vector<ActionAndArgs> actions{};
     actions.reserve(firstState.args.size() + secondState.args.size() + 3);
@@ -1093,6 +1075,29 @@ TermControl Pane::GetLastFocusedTerminalControl()
     return GetTerminalControl();
 }
 
+IPaneContent Pane::GetLastFocusedContent()
+{
+    if (!_IsLeaf())
+    {
+        if (_lastActive)
+        {
+            auto pane = shared_from_this();
+            while (const auto p = pane->_parentChildPath.lock())
+            {
+                if (p->_IsLeaf())
+                {
+                    return p->_content;
+                }
+                pane = p;
+            }
+            // We didn't find our child somehow, they might have closed under us.
+        }
+        return _firstChild->GetLastFocusedContent();
+    }
+
+    return _content;
+}
+
 // Method Description:
 // - Gets the TermControl of this pane. If this Pane is not a leaf this will
 //   return the nullptr;
@@ -1233,7 +1238,10 @@ void Pane::UpdateVisuals()
 void Pane::_Focus()
 {
     GotFocus.raise(shared_from_this(), FocusState::Programmatic);
-    _content.Focus(FocusState::Programmatic);
+    if (const auto& lastContent{ GetLastFocusedContent() })
+    {
+        lastContent.Focus(FocusState::Programmatic);
+    }
 }
 
 // Method Description:
@@ -1272,20 +1280,21 @@ void Pane::_FocusFirstChild()
     }
 }
 
-// Method Description:
-// - Updates the settings of this pane, presuming that it is a leaf.
-// Arguments:
-// - settings: The new TerminalSettings to apply to any matching controls
-// - profile: The profile from which these settings originated.
-// Return Value:
-// - <none>
-void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
+void Pane::UpdateSettings(const CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache)
 {
-    assert(_IsLeaf());
-
-    if (const auto& terminalPane{ _getTerminalContent() })
+    if (_content)
     {
-        return terminalPane.UpdateSettings(settings, profile);
+        // We need to do a bit more work here for terminal
+        // panes. They need to know about the profile that was used for
+        // them, and about the focused/unfocused settings.
+        if (const auto& terminalPaneContent{ _content.try_as<TerminalPaneContent>() })
+        {
+            terminalPaneContent.UpdateTerminalSettings(cache);
+        }
+        else
+        {
+            _content.UpdateSettings(settings);
+        }
     }
 }
 
@@ -1911,7 +1920,7 @@ void Pane::_SetupEntranceAnimation()
         auto child = isFirstChild ? _firstChild : _secondChild;
         auto childGrid = child->_root;
         // If we are splitting a parent pane this may be null
-        auto control = child->_content.GetRoot();
+        auto control = child->_content ? child->_content.GetRoot() : nullptr;
         // Build up our animation:
         // * it'll take as long as our duration (200ms)
         // * it'll change the value of our property from 0 to secondSize

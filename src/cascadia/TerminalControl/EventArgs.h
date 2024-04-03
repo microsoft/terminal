@@ -148,12 +148,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct RendererWarningArgs : public RendererWarningArgsT<RendererWarningArgs>
     {
     public:
-        RendererWarningArgs(const uint64_t hr) :
-            _Result(hr)
+        RendererWarningArgs(const HRESULT hr, winrt::hstring parameter) :
+            _Result{ hr },
+            _Parameter{ std::move(parameter) }
         {
         }
 
-        WINRT_PROPERTY(uint64_t, Result);
+        WINRT_PROPERTY(HRESULT, Result);
+        WINRT_PROPERTY(winrt::hstring, Parameter);
     };
 
     struct TransparencyChangedEventArgs : public TransparencyChangedEventArgsT<TransparencyChangedEventArgs>

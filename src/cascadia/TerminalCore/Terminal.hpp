@@ -125,6 +125,8 @@ public:
 
     std::wstring CurrentCommand() const;
 
+    void SerializeMainBuffer(const wchar_t* destination) const;
+
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     void ReturnResponse(const std::wstring_view response) override;

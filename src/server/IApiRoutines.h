@@ -28,22 +28,13 @@ typedef InputBuffer IConsoleInputObject;
 class INPUT_READ_HANDLE_DATA;
 
 #include "IWaitRoutine.h"
-#include <deque>
-#include <memory>
 #include "../types/inc/IInputEvent.hpp"
 #include "../types/inc/viewport.hpp"
 
-class IApiRoutines
+class __declspec(novtable) IApiRoutines
 {
 public:
-#pragma region ObjectManagement
-    // TODO: 9115192 - We will need to make the objects via an interface eventually. This represents that idea.
-    /*virtual HRESULT CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,
-                                          _Out_ IConsoleOutputObject** const ppOutputObject);
-*/
-
-#pragma endregion
-
+#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
     virtual ~IApiRoutines() = default;
 
 #pragma region L1

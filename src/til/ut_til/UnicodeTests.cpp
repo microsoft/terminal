@@ -51,10 +51,10 @@ class UnicodeTests
         struct Test
         {
             std::wstring_view input;
-            til::some<std::wstring_view, 5> expected;
+            std::vector<std::wstring_view> expected;
         };
 
-        static constexpr std::array tests{
+        const std::array tests{
             Test{ L"", {} },
             Test{ L"a", { L"a" } },
             Test{ L"abc", { L"a", L"b", L"c" } },

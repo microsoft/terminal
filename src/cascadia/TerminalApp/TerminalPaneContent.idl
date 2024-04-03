@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IPaneContent.idl";
+import "TerminalSettingsCache.idl";
 
 namespace TerminalApp
 {
@@ -9,8 +10,7 @@ namespace TerminalApp
     {
         Microsoft.Terminal.Control.TermControl GetTermControl();
 
-        void UpdateSettings(const Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings,
-                            const Microsoft.Terminal.Settings.Model.Profile profile);
+        void UpdateTerminalSettings(TerminalSettingsCache cache);
 
         void MarkAsDefterm();
 

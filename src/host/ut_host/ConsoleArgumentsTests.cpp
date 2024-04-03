@@ -83,8 +83,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe \"this is the commandline\"";
@@ -106,8 +105,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless \"--vtmode bar this is the commandline\"";
@@ -129,8 +127,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless   --server    0x4       this      is the    commandline";
@@ -152,8 +149,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0x4, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless\t--vtmode\txterm\tthis\tis\tthe\tcommandline";
@@ -175,8 +171,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline";
@@ -198,8 +193,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless\\\tfoo\\\t--outpipe\\\tbar\\\tthis\\\tis\\\tthe\\\tcommandline";
@@ -221,8 +215,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --vtmode a\\\\\\\\\"b c\" d e";
@@ -244,8 +237,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe this is the commandline";
@@ -267,8 +259,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 }
 
@@ -295,8 +286,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe foo";
@@ -318,8 +308,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe foo -- bar";
@@ -341,8 +330,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --vtmode foo foo -- bar";
@@ -364,8 +352,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe console --vtmode foo foo -- bar";
@@ -387,8 +374,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe console --vtmode foo --outpipe foo -- bar";
@@ -410,8 +396,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --vtmode foo -- --outpipe foo bar";
@@ -433,8 +418,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --vtmode -- --headless bar";
@@ -456,8 +440,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --";
@@ -479,8 +462,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe";
@@ -502,8 +484,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 }
 
@@ -530,8 +511,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --server 0x4";
@@ -553,8 +533,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe 0x4 0x8";
@@ -576,8 +555,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --server 0x4 0x8";
@@ -599,8 +577,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe 0x4 --server 0x8";
@@ -622,8 +599,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --server 0x4 --server 0x8";
@@ -645,8 +621,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe 0x4 -ForceV1";
@@ -668,8 +643,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe -ForceV1";
@@ -691,8 +665,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe 0x4 -ForceNoHandoff";
@@ -714,8 +687,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe -ForceNoHandoff";
@@ -737,8 +709,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 }
 
@@ -789,8 +760,7 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --vtmode xterm-256color";
@@ -812,8 +782,7 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 }
 
@@ -850,8 +819,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --width 120";
@@ -873,8 +841,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --height 30";
@@ -896,8 +863,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --width 0";
@@ -919,8 +885,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --width -1";
@@ -942,8 +907,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --width foo";
@@ -965,8 +929,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --width 2foo";
@@ -988,8 +951,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --width 65535";
@@ -1011,8 +973,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 }
 
@@ -1039,8 +1000,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless 0x4";
@@ -1062,8 +1022,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     4ul, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless --headless";
@@ -1085,8 +1044,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe -- foo.exe --headless";
@@ -1108,8 +1066,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 }
 
@@ -1140,8 +1097,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     4ul, // serverHandle
                                     8ul, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --server 0x4 --signal ASDF";
@@ -1163,8 +1119,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     4ul, // serverHandle
                                     0ul, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --signal --server 0x4";
@@ -1186,8 +1141,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     0ul, // serverHandle
                                     0ul, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 }
 
@@ -1218,8 +1172,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
     commandline = L"conhost.exe --feature tty";
     ArgTestsRunner(L"#2 Error case, pass an unsupported feature",
@@ -1240,8 +1193,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --feature pty --feature pty";
@@ -1263,8 +1215,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    true); // successful parse?
 
     commandline = L"conhost.exe --feature pty --feature tty";
@@ -1286,8 +1237,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --feature pty --feature";
@@ -1309,8 +1259,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 
     commandline = L"conhost.exe --feature pty --feature --signal foo";
@@ -1332,7 +1281,6 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // serverHandle
                                     0, // signalHandle
                                     false, // inheritCursor
-                                    false, // runAsComServer
-                                    false), // passthroughMode
+                                    false), // runAsComServer
                    false); // successful parse?
 }

@@ -27,10 +27,10 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
 
-        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
+        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                            const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        void UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache);
 
         void MarkAsDefterm();
 
@@ -43,6 +43,9 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarState() { return _control.TaskbarState(); }
         uint64_t TaskbarProgress() { return _control.TaskbarProgress(); }
         bool ReadOnly() { return _control.ReadOnly(); }
+        winrt::hstring Icon() const;
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept;
+        winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         float SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap);
         Windows::Foundation::Size GridUnitSize();

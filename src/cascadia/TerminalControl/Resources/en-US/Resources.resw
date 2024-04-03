@@ -213,6 +213,14 @@ Please either install the missing font or choose another one.</value>
     <value>Renderer encountered an unexpected error: {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorFontNotFound" xml:space="preserve">
+    <value>Unable to find the following fonts: {0}. Please either install them or choose different fonts.</value>
+    <comment>{Locked="{0}"} This is a warning dialog shown when the user selects a font that isn't installed.</comment>
+  </data>
+  <data name="RendererErrorOther" xml:space="preserve">
+    <value>Renderer encountered an unexpected error: {0:#010x} {1}</value>
+    <comment>{Locked="{0:#010x}","{1}"} {0:#010x} is a placeholder for a Windows error code (e.g. 0x88985002). {1} is the corresponding message.</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Read-only mode is enabled.</value>
   </data>
