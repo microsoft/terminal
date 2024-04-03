@@ -58,7 +58,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr explicit operator bool() const noexcept
         {
-            return (x > 0) & (y > 0);
+            return x >= 0 && y >= 0;
         }
 
         constexpr bool operator<(const point other) const noexcept

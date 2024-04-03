@@ -989,6 +989,10 @@
     <value>以管理员身份运行此配置文件</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
+  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+    <value>如果启用，配置文件将在管理员终端窗口中自动打开。如果当前窗口已以管理员身份运行，它将在此窗口中打开。</value>
+    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>历史记录大小</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>

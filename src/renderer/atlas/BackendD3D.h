@@ -5,7 +5,6 @@
 
 #include <stb_rect_pack.h>
 #include <til/flat_set.h>
-#include <til/small_vector.h>
 
 #include "Backend.h"
 

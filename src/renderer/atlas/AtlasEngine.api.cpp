@@ -482,32 +482,17 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_v
     // commit 9e86c98 (PR #16196), because it showed that it's definitely not due to FindFamilyName() failing.
     //
     // The workaround is to catch the exception and retry it with our nearby fonts manually loaded in.
+    HRESULT hr = _updateFont(fontInfoDesired, fontInfo, features, axes);
+
     if constexpr (Feature_NearbyFontLoading::IsEnabled())
     {
-        try
+        if (FAILED(hr) && _updateWithNearbyFontCollection())
         {
-            _updateFont(fontInfoDesired, fontInfo, features, axes);
-            return S_OK;
+            hr = _updateFont(fontInfoDesired, fontInfo, features, axes);
         }
-        CATCH_LOG();
-
-        // _resolveFontMetrics() checks `_api.s->font->fontCollection` for a pre-existing font collection,
-        // before falling back to using the system font collection. This way we can inject our custom one.
-        // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
-        // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
-        try
-        {
-            _api.s.write()->font.write()->fontCollection = FontCache::GetCached();
-        }
-        CATCH_LOG();
     }
 
-    try
-    {
-        _updateFont(fontInfoDesired, fontInfo, features, axes);
-        return S_OK;
-    }
-    CATCH_RETURN();
+    return hr;
 }
 
 void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
@@ -536,7 +521,8 @@ void AtlasEngine::_resolveTransparencySettings() noexcept
     }
 }
 
-void AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes)
+[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+try
 {
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
     if (!features.empty())
@@ -616,9 +602,12 @@ void AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& 
     _resolveFontMetrics(fontInfoDesired, fontInfo, font);
     font->fontFeatures = std::move(fontFeatures);
     font->fontAxisValues = std::move(fontAxisValues);
-}
 
-void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics) const
+    return S_OK;
+}
+CATCH_RETURN()
+
+void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics)
 {
     const auto& faceName = fontInfoDesired.GetFaceName();
     const auto requestedFamily = fontInfoDesired.GetFamily();
@@ -658,6 +647,16 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
         u32 index = 0;
         BOOL exists = false;
         THROW_IF_FAILED(fontCollection->FindFamilyName(fontName.c_str(), &index, &exists));
+
+        // In case of a portable build, the given font may not be installed and instead be bundled next to our executable.
+        if constexpr (Feature_NearbyFontLoading::IsEnabled())
+        {
+            if (!exists && _updateWithNearbyFontCollection())
+            {
+                fontCollection = _api.s->font->fontCollection;
+                THROW_IF_FAILED(fontCollection->FindFamilyName(fontName.c_str(), &index, &exists));
+            }
+        }
 
         if (!exists)
         {
@@ -868,4 +867,30 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
         fontMetrics->builtinGlyphs = fontInfoDesired.GetEnableBuiltinGlyphs();
         fontMetrics->colorGlyphs = fontInfoDesired.GetEnableColorGlyphs();
     }
+}
+
+// Nearby fonts are described a couple of times throughout the file.
+// This abstraction in particular helps us avoid retrying when it's pointless:
+// After all, if the font collection didn't change (no nearby fonts, loading failed, it's already loaded),
+// we don't need to try it again. It returns true if retrying is necessary.
+[[nodiscard]] bool AtlasEngine::_updateWithNearbyFontCollection() noexcept
+{
+    // _resolveFontMetrics() checks `_api.s->font->fontCollection` for a pre-existing font collection,
+    // before falling back to using the system font collection. This way we can inject our custom one.
+    // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
+    // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
+    wil::com_ptr<IDWriteFontCollection> collection;
+    try
+    {
+        collection = FontCache::GetCached();
+    }
+    CATCH_LOG();
+
+    if (!collection || _api.s->font->fontCollection == collection)
+    {
+        return false;
+    }
+
+    _api.s.write()->font.write()->fontCollection = std::move(collection);
+    return true;
 }
