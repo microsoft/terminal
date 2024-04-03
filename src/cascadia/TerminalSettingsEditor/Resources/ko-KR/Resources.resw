@@ -989,6 +989,10 @@
     <value>이 프로필을 관리자 권한으로 실행</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
+  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+    <value>사용하도록 설정하면 프로필이 관리 터미널 창에서 자동으로 열립니다. 현재 창이 관리자 권한으로 이미 실행되고 있는 경우 이 창에서 열립니다.</value>
+    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>기록 크기</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
