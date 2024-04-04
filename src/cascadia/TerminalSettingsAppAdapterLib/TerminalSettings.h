@@ -218,8 +218,8 @@ namespace winrt::Microsoft::Terminal::Settings
             _defaultSettings.copy_from(defaultSettings);
         }
 
-        winrt::com_ptr<TerminalSettings> DefaultSettings() { return _defaultSettings; };
-        winrt::com_ptr<TerminalSettings> UnfocusedSettings() { return _unfocusedSettings; };
+        winrt::com_ptr<TerminalSettings> DefaultSettings() const { return _defaultSettings; };
+        winrt::com_ptr<TerminalSettings> UnfocusedSettings() const { return _unfocusedSettings; };
 
     private:
         winrt::com_ptr<TerminalSettings> _defaultSettings;

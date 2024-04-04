@@ -4,9 +4,15 @@ import "AppKeyBindings.idl";
 // Licensed under the MIT license.
 namespace TerminalApp
 {
+    runtimeclass TerminalSettingsPair
+    {
+        Microsoft.Terminal.Control.IControlSettings DefaultSettings { get; };
+        Microsoft.Terminal.Control.IControlSettings UnfocusedSettings { get; };
+	}
+
     [default_interface] runtimeclass TerminalSettingsCache
     {
         TerminalSettingsCache(Microsoft.Terminal.Settings.Model.CascadiaSettings settings, AppKeyBindings bindings);
-        Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult TryLookup(Microsoft.Terminal.Settings.Model.Profile profile);
+        TerminalSettingsPair TryLookup(Microsoft.Terminal.Settings.Model.Profile profile);
     }
 }

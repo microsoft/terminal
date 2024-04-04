@@ -14,20 +14,38 @@ Abstract:
 #pragma once
 
 #include "TerminalSettingsCache.g.h"
+#include "TerminalSettingsPair.g.h"
+#include "../TerminalSettingsAppAdapterLib//TerminalSettings.h"
 #include <inc/cppwinrt_utils.h>
 
 namespace winrt::TerminalApp::implementation
 {
+    class TerminalSettingsPair : public TerminalSettingsPairT<TerminalSettingsPair>
+    {
+    public:
+        TerminalSettingsPair(const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& result)
+        {
+            result.DefaultSettings().try_as(_defaultSettings);
+            result.UnfocusedSettings().try_as(_unfocusedSettings);
+        }
+
+        winrt::Microsoft::Terminal::Control::IControlSettings DefaultSettings() { return _defaultSettings; };
+        winrt::Microsoft::Terminal::Control::IControlSettings UnfocusedSettings() { return _unfocusedSettings; };
+
+    private:
+        winrt::Microsoft::Terminal::Control::IControlSettings _defaultSettings{ nullptr };
+        winrt::Microsoft::Terminal::Control::IControlSettings _unfocusedSettings{ nullptr };
+    };
     class TerminalSettingsCache : public TerminalSettingsCacheT<TerminalSettingsCache>
     {
     public:
         TerminalSettingsCache(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings);
-        Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult TryLookup(const Microsoft::Terminal::Settings::Model::Profile& profile);
+        TerminalApp::TerminalSettingsPair TryLookup(const Microsoft::Terminal::Settings::Model::Profile& profile);
 
     private:
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
         TerminalApp::AppKeyBindings _bindings{ nullptr };
-        std::unordered_map<winrt::guid, std::pair<Microsoft::Terminal::Settings::Model::Profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult>> profileGuidSettingsMap;
+        std::unordered_map<winrt::guid, std::pair<Microsoft::Terminal::Settings::Model::Profile, std::optional<winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult>>> profileGuidSettingsMap;
     };
 }
 
