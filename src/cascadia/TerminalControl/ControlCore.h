@@ -19,7 +19,6 @@
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
 
-#include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
@@ -101,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
         uint64_t SwapChainHandle() const;
-        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void AttachToNewControl();
 
         void SizeChanged(const float width, const float height);
         void ScaleChanged(const float scale);
@@ -258,9 +257,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
 
-        RUNTIME_SETTING(double, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(double, Opacity, _settings.Opacity());
         RUNTIME_SETTING(double, FocusedOpacity, FocusedAppearance().Opacity());
-        RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
+        RUNTIME_SETTING(bool, UseAcrylic, _settings.UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -309,7 +308,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputEventRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
-        winrt::com_ptr<ControlSettings> _settings{ nullptr };
+        IControlSettings _settings{ nullptr };
+        bool _hasUnfocusedAppearance{ false };
+        IControlAppearance _unfocusedAppearance{ nullptr };
 
         std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 

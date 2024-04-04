@@ -64,6 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _core = _interactivity.Core();
+        _keyBindings = _core.Settings().KeyBindings(); // TODO (DH)
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _revokers.RendererEnteredErrorState = _core.RendererEnteredErrorState(winrt::auto_revoke, { get_weak(), &TermControl::_RendererEnteredErrorState });
@@ -238,7 +239,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
-        _interactivity.AttachToNewControl(keyBindings);
+        _keyBindings = keyBindings;
+        _interactivity.AttachToNewControl();
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -526,6 +528,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await wil::resume_foreground(Dispatcher());
 
+        _keyBindings = settings.KeyBindings();
         _core.UpdateSettings(settings, unfocusedAppearance);
 
         _UpdateSettingsFromUIThread();
@@ -1250,7 +1253,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //   This is required as part of GH#638.
             // Or do so for alt+space; only send to terminal when explicitly unbound
             //  That is part of #GH7125
-            auto bindings{ _core.Settings().KeyBindings() };
             auto isUnbound = false;
             const KeyChord kc = {
                 modifiers.IsCtrlPressed(),
@@ -1261,13 +1263,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 0
             };
 
-            if (bindings)
+            if (_keyBindings)
             {
-                handled = bindings.TryKeyChord(kc);
+                handled = _keyBindings.TryKeyChord(kc);
 
                 if (!handled)
                 {
-                    isUnbound = bindings.IsKeyChordExplicitlyUnbound(kc);
+                    isUnbound = _keyBindings.IsKeyChordExplicitlyUnbound(kc);
                 }
             }
 
@@ -1405,13 +1407,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        auto bindings = _core.Settings().KeyBindings();
-        if (!bindings)
+        if (!_keyBindings)
         {
             return false;
         }
 
-        auto success = bindings.TryKeyChord({
+        auto success = _keyBindings.TryKeyChord({
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),

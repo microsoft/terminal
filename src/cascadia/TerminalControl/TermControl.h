@@ -13,7 +13,6 @@
 #include "SearchBoxControl.h"
 
 #include "ControlInteractivity.h"
-#include "ControlSettings.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -214,6 +213,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::TermControlAutomationPeer _automationPeer{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
         Control::ControlCore _core{ nullptr };
+
+        Control::IKeyBindings _keyBindings{ nullptr };
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 

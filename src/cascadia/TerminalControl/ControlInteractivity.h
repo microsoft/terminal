@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ManglePathsForWsl();
 
         uint64_t Id();
-        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void AttachToNewControl();
 
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
         til::typed_event<IInspectable, Control::PasteFromClipboardEventArgs> PasteFromClipboard;
