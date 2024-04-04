@@ -2,7 +2,7 @@
 author: Carlos Zamora @carlos-zamora
 created on: 2024-04-01
 last updated: 2024-04-03
-issue id: "#16599"
+issue id: #16599
 ---
 # Quick Fix
 ## Solution Design
@@ -15,15 +15,15 @@ The actual suggestions will be populated from various sources such as the follow
 	- `OSC 9001; CmdNotFound; <missingCmd>` will be used by the attached CLI app to notify the terminal that a command `missingCmd` wasn't found. The TerminalControl layer will use WinGet's API to search for any packages that would remediate this error and construct a list of suggested packages to be installed.
 `OSC 9001` can be expanded on to add more suggestions via VT sequences from the underlying CLI app; for more on this, read the [Future considerations section](#future-considerations).
 
-Upon receiving an `OSC 9001; CmdNotFound`, the `missingCmd` parameter will be stored in the text buffer's `ROW`. Specifically, as of PR \#16937, `ROW` will contain an optional `ScrollbarData` struct to hold any metadata (i.e. scrollbar marks). We can stuff a `std::wstring missingCmd` into that metadata and populate it if `OSC 9001; CmdNotFound` was received.
+Upon receiving an `OSC 9001; CmdNotFound`, the `missingCmd` parameter will be stored in the text buffer's `ROW`. Specifically, as of PR #16937, `ROW` will contain an optional `ScrollbarData` struct to hold any metadata (i.e. scrollbar marks). We can stuff a `std::wstring missingCmd` into that metadata and populate it if `OSC 9001; CmdNotFound` was received.
 
 `ControlCore` will be notified upon receiving an `OSC 9001; CmdNotFound`. At this point, we'll know that a Quick Fix menu must be shown at the next prompt, and we can use the WinGet API to convert the given `missingCmd` into a list of suggestions (in this case, of the form `winget install...`). Since we're in the TerminalControl layer, the suggestions will not need to be converted into SendInput actions, as we already have access to the `RawWriteString()` api. The menu will simply use `RawWriteString()` to inject the string into the prompt.
 
-A corner case that VS Code handles is that if there is already text in the prompt area, it sends a `^C`, then injects the suggestion, then executes it. Terminal will have to operate the same way and, thus, must also be able to detect if there is already text in the prompt area.
+A corner case that VS Code handles is that if there is already text in the prompt area, it sends a `^C`, then injects the suggestion, then executes it. In Windows Terminal, if shell integration is enabled and we're currently ina command, then we'll send a ^C.
 
 An additional corner case is handling a buffer resize and reflow. Since the `missingCmd` will be stuffed as metadata in the text buffer's `ROW`, we should be able to generate the WinGet suggestions again fairly easily, if needed. Ideally, the generated suggestions can be cached and the quick fix menu is simply redrawn in the new reflowed position.
 
-The WinGet API to convert the given `missingCmd` into a list of suggestions may be relatively slow as we have to query the WinGet database. Performing the search when the quick fix menu is open would not be ideal as the user may have to wait for WinGet to finish searching. Instead, the conversion should happen around the time that the prompt is introduced (whether from output or a reflow scenario).
+The WinGet API to convert the given `missingCmd` into a list of suggestions may be relatively slow as we have to query the WinGet database. Performing the search when the quick fix menu is open would not be ideal as the user may have to wait for WinGet to finish searching. Instead, the conversion should happen around the time that the prompt is introduced (whether from output or a reflow scenario) asynchronously, off the output thread.
 
 ## UI/UX Design
 A Quick Fix icon will be displayed immediately left of the prompt. If the icon fits in the left-padding region (a `padding` value where the left side is 16 or greater), it will be drawn there. Otherwise, a thin accent-colored vertical bar will be displayed overlapping the text region; when the icon is hovered over, the icon will appear more clear by becoming more opaque and enlarging to overlap with the text region.
