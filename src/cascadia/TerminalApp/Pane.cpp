@@ -371,7 +371,7 @@ void Pane::_ManipulationStartedHandler(const winrt::Windows::Foundation::IInspec
     // If we clicked on the control. bail, and don't allow any manipulations
     // for this series of events.
     _shouldManipulate = !((transformInControlSpace.X >= 0 && transformInControlSpace.X < contentSize.x) &&
-                          (transformInControlSpace.Y >= 0 && transformInControlSpace.Y < contentSize.y))
+                          (transformInControlSpace.Y >= 0 && transformInControlSpace.Y < contentSize.y));
 }
 
 // Handler for the _root's ManipulationDelta event. This is the event raised
