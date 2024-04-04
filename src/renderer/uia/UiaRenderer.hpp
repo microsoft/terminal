@@ -30,7 +30,7 @@ namespace Microsoft::Console::Render
         // Only one UiaEngine may present information at a time.
         // This ensures that an automation client isn't overwhelmed
         // by events when there are multiple TermControls
-        [[nodiscard]] HRESULT Enable() noexcept override;
+        [[nodiscard]] HRESULT Enable() noexcept;
         [[nodiscard]] HRESULT Disable() noexcept;
 
         // IRenderEngine Members

@@ -137,11 +137,9 @@
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>Questa combinazione di colori fa parte delle impostazioni predefinite o di un'estensione installata</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
     <value>Per apportare modifiche a questa combinazione di colori, è necessario crearne una copia.</value>
-    <comment></comment>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
     <value>Crea una copia</value>
@@ -311,13 +309,38 @@
     <value>L'applicazione terminale che viene avviata quando viene eseguita un'applicazione della riga di comando senza una sessione esistente, ad esempio dalla finestra di dialogo menu Start o Esegui.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
-    <value>Ridisegna l'intero schermo durante la visualizzazione degli aggiornamenti</value>
-    <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
+  <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
+    <value>API grafica</value>
+    <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
-    <value>Se disabilitato, il terminale eseguirà il rendering solo degli aggiornamenti sullo schermo tra i fotogrammi.</value>
-    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11 offre un'esperienza più performante e con funzionalità più elevate, mentre Direct2D è più stabile. L'opzione predefinita "Automatico" sceglierà l'API più adatta all'hardware grafico. Se si verificano problemi significativi, provare a usare Direct2D.</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>Automatico</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct2d.Text" xml:space="preserve">
+    <value>Direct2D</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
+    <value>Direct3D 11</value>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>Disabilitare invalidazione catena di scambio parziale</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>Per impostazione predefinita, il renderer di testo usa una catena di scambio FLIP_SEQUENTIAL e dichiara rettangoli modificati ma non modificati tramite l'API Present1. Quando questa impostazione è abilitata, verrà utilizzata una catena di scambio FLIP_DISCARD e non verranno dichiarati rettangoli modificati ma non modificati. Il miglioramento dell'uno o dell'altro dipende dall'hardware e da vari altri fattori.</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
+    <value>Usare il rendering software (WARP)</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>Se questa opzione è abilitata, il terminale userà un rasterizzatore software (WARP). Questa impostazione deve essere lasciata disabilitata in quasi tutte le circostanze.</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colonne</value>
@@ -446,10 +469,6 @@
     <value>Allega alla finestra usata più di recente su questo desktop</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
-    <value>Queste impostazioni potrebbero essere utili per la risoluzione di un problema, ma influiranno sulle prestazioni.</value>
-    <comment>A disclaimer presented at the top of a page.</comment>
-  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Nascondi la barra del titolo (sarà necessario riavviare)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
@@ -477,14 +496,6 @@
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>Se disabilitata, la finestra verrà ridimensionata in modo corretto.</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>Usa il rendering software</value>
-    <comment>Header for a control to toggle whether the terminal should use software to render content instead of the hardware.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
-    <value>Quando questa opzione è abilitata, il terminale userà il renderer software (detto anche WARP) anziché quello hardware.</value>
-    <comment>A description for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>Avvia all'avvio del computer</value>
@@ -979,7 +990,7 @@
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
   <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>Se questa opzione è abilitata, il profilo verrà aperto automaticamente in una finestra del terminale di amministrazione. Se la finestra corrente è già in esecuzione come amministratore, verrà aperta in questa finestra.</value>
+    <value>Se questa opzione è abilitata, il profilo verrà aperto automaticamente in una finestra del terminale Amministrazione. Se la finestra corrente è già in esecuzione come amministratore, verrà aperta in questa finestra.</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -1214,9 +1225,37 @@
     <value>Se abilitato, il Terminale genera un nuovo blocco ambiente quando crea nuove schede o riquadri con questo profilo. Se disattivato, la scheda/riquadro erediterà le variabili con cui è stato avviato il Terminale.</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
   </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>Abilitare il pass-through sperimentale del terminale virtuale</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
+    <value>Visualizzare un menu al clic con il pulsante destro del mouse</value>
+    <comment>This controls how a right-click behaves in the terminal</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+    <value>Se questa opzione è abilitata, il terminale visualizzerà un menu al clic con il pulsante destro del mouse. Se questa opzione è disabilitata, facendo clic con il pulsante destro del mouse verrà copiato il testo selezionato o incollato se non è presente alcuna selezione.</value>
+    <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
+  </data>
+  <data name="Profile_ShowMarks.Header" xml:space="preserve">
+    <value>Visualizzare indicatori sulla barra di scorrimento</value>
+    <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
+  </data>
+  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+    <value>Se questa opzione è abilitata, il terminale visualizzerà i segni nella barra di scorrimento durante la ricerca di testo o quando è abilitata l'integrazione della shell.</value>
+    <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
+    <value>Contrassegnare automaticamente i prompt premendo INVIO</value>
+    <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+    <value>Se questa opzione è abilitata, il terminale aggiunge automaticamente un indicatore che indica la posizione della fine del comando quando si preme INVIO.</value>
+    <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
+    <value>Sperimentale: riposizionare il cursore con i clic del mouse</value>
+    <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+    <value>Se questa opzione è abilitata, facendo clic all'interno del prompt il cursore verrà spostato in tale posizione. Ciò richiede che l'integrazione della shell sia abilitata nella shell dell’utente per funzionare come previsto.</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Udibili</value>
@@ -1761,12 +1800,12 @@
     <value>Scopri di più.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
   </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
-    <value>Avvertenza:</value>
-    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  <data name="Profile_MissingFontFaces.Header" xml:space="preserve">
+    <value>Tipi di carattere mancanti:</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
   </data>
-  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
-    <value>Se scegli un tipo di carattere non monospaziato, è probabile che si verifichino artefatti visivi. Utilizzalo a vostra discrezione.</value>
-    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
+    <value>Caratteri senza spaziatura fissa:</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
 </root>

@@ -52,6 +52,10 @@ parameters:
   - name: publishVpackToWindows
     type: boolean
     default: false
+  - name: symbolPublishingSubscription
+    type: string
+  - name: symbolPublishingProject
+    type: string
 
   - name: extraPublishJobs
     type: object
@@ -248,12 +252,13 @@ extends:
         displayName: Publish
         dependsOn: [Build]
         jobs:
-          - template: ./build/pipelines/templates-v2/job-publish-symbols.yml@self
+          - template: ./build/pipelines/templates-v2/job-publish-symbols-using-symbolrequestprod-api.yml@self
             parameters:
               pool: { type: windows }
               includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
-              symbolPatGoesInTaskInputs: true # onebranch tries to muck with the PAT variable, so we need to change how it get the PAT
               symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
+              subscription: ${{ parameters.symbolPublishingSubscription }}
+              symbolProject: ${{ parameters.symbolPublishingProject }}
               variables:
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true

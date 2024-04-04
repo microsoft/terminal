@@ -1,0 +1,21 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IPaneContent.idl";
+import "TerminalSettingsCache.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TerminalPaneContent : IPaneContent, ISnappable
+    {
+        Microsoft.Terminal.Control.TermControl GetTermControl();
+
+        void UpdateTerminalSettings(TerminalSettingsCache cache);
+
+        void MarkAsDefterm();
+
+        Microsoft.Terminal.Settings.Model.Profile GetProfile();
+
+        event Windows.Foundation.TypedEventHandler<TerminalPaneContent, Object> RestartTerminalRequested;
+    }
+}

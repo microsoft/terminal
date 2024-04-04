@@ -166,7 +166,7 @@
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppDescription" xml:space="preserve">
-    <value>Тĥё Ńēẁ Шіπđοωš Тěřмιňαŀ !!! !!! !</value>
+    <value>Τĥз Йéщ Ẃįńđôẃѕ Тéѓmĩиâļ !!! !!! !</value>
   </data>
   <data name="AppDescriptionDev" xml:space="preserve">
     <value>The Windows Terminal, but Unofficial</value>
@@ -177,22 +177,22 @@
     <comment>{Locked}</comment>
   </data>
   <data name="AppDescriptionPre" xml:space="preserve">
-    <value>Шίήďŏшś Ŧêямĩňāľ ŵíτн ă ρѓëνιêω øƒ ũρčŏмįηğ ƒєáţũŗêš !!! !!! !!! !!! !!! </value>
+    <value>Щΐňδόŵѕ Ŧęřмĭŉäℓ ẅîťħ à φřеνίëẃ θƒ џрсøмΐŉğ ƒĕāŧųřэś !!! !!! !!! !!! !!! </value>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
     <value>Open in Terminal (&amp;Dev)</value>
     <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Canary" xml:space="preserve">
-    <value>Фφěй ĩń Тêřmιπâł (&amp;Cãⁿǻřу) !!! !!! !</value>
+    <value>Θρēņ ïη Ţéгmĭηäŀ (&amp;Çäņдѓγ) !!! !!! !</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Canary version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Preview" xml:space="preserve">
-    <value>Óφ℮ŉ ΐŋ Τėřmīйäĺ &amp;Pяєνϊëẃ !!! !!! !</value>
+    <value>Όрèп ìņ Ţêŕmїŉåļ &amp;Рѓзνι℮ω !!! !!! !</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem" xml:space="preserve">
-    <value>Ορέл ϊŋ &amp;Téŕmįñāℓ !!! !!</value>
+    <value>Óрêп ìл &amp;Ťěѓmιиåĺ !!! !!</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
 </root>

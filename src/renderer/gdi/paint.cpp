@@ -4,8 +4,6 @@
 #include "precomp.h"
 #include "gdirenderer.hpp"
 
-#include <til/small_vector.h>
-
 #include "../inc/unicode.hpp"
 
 #pragma hdrstop
