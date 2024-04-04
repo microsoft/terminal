@@ -100,10 +100,10 @@ namespace winrt::TerminalApp::implementation
 
             _ApplyToActiveControls([&](const auto& control) {
                 // Stash a copy of the current scheme.
-                auto originalScheme{ control.ColorScheme() };
+                // TODO(DH) auto originalScheme{ control.ColorScheme() };
 
                 // Apply the new scheme.
-                control.ColorScheme(scheme.ToCoreScheme());
+                // TODO(DH) control.ColorScheme(scheme.ToCoreScheme());
 
                 if (backup)
                 {
@@ -111,7 +111,7 @@ namespace winrt::TerminalApp::implementation
                     // _restorePreviewFuncs for itself.
                     _restorePreviewFuncs.emplace_back([=]() {
                         // On dismiss, restore the original scheme.
-                        control.ColorScheme(originalScheme);
+                        // TODO(DH) control.ColorScheme(originalScheme);
                     });
                 }
             });

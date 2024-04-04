@@ -145,9 +145,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
 
-        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
-        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
-
         void AdjustOpacity(const double opacity, const bool relative);
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);

@@ -653,7 +653,8 @@ namespace winrt::TerminalApp::implementation
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    control.ColorScheme(scheme.ToCoreScheme());
+                    // TODO(DH)
+                    //control.ColorScheme(scheme.ToCoreScheme());
                 });
                 args.Handled(res);
             }

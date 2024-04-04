@@ -246,9 +246,6 @@ public:
 
     const std::optional<til::color> GetTabColor() const;
 
-    winrt::Microsoft::Terminal::Core::Scheme GetColorScheme() const;
-    void ApplyScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
-
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 

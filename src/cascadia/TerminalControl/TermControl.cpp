@@ -3487,16 +3487,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.CommandHistory();
     }
 
-    Core::Scheme TermControl::ColorScheme() const noexcept
-    {
-        return _core.ColorScheme();
-    }
-
-    void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
-    {
-        _core.ColorScheme(scheme);
-    }
-
     void TermControl::AdjustOpacity(const double opacity, const bool relative)
     {
         _core.AdjustOpacity(opacity, relative);

@@ -96,9 +96,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlAppearance UnfocusedAppearance() const;
         bool HasUnfocusedAppearance() const;
 
-        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
-        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
-
         uint64_t SwapChainHandle() const;
         void AttachToNewControl();
 
