@@ -132,7 +132,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         // to set up the pipes for conpty, but we want the console to behave
         // like it would in conpty mode.
         //
-        // Also, make sure to backdoor neable the resize quirk here too.
+        // Also, make sure to backdoor enable the resize quirk here too.
         g.EnableConptyModeForTests(std::move(vtRenderEngine), true);
 
         expectedOutput.clear();
