@@ -130,9 +130,9 @@ namespace Microsoft.Terminal.Settings.Model
         String GenerateName();
     };
 
-    [default_interface] runtimeclass GenericContentArgs : INewContentArgs{
-        GenericContentArgs();
-        GenericContentArgs(String type);
+    [default_interface] runtimeclass BaseContentArgs : INewContentArgs{
+        BaseContentArgs();
+        BaseContentArgs(String type);
     };
 
     [default_interface] runtimeclass NewTerminalArgs : INewContentArgs{
