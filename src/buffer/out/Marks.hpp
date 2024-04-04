@@ -78,7 +78,7 @@ struct MarkExtents
     std::pair<til::point, til::point> GetExtent() const
     {
         til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
-        return std::make_pair(til::point{ start }, realEnd);
+        return std::make_pair(start, realEnd);
     }
 };
 

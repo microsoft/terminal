@@ -8422,7 +8422,6 @@ void ScreenBufferTests::SimpleMarkCommand()
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
 
-    // Process the opening osc 8 sequence with no custom id
     stateMachine.ProcessString(L"Zero\n");
 
     {
@@ -8462,7 +8461,6 @@ void ScreenBufferTests::SimpleWrappedCommand()
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
 
-    // Process the opening osc 8 sequence with no custom id
     stateMachine.ProcessString(L"Zero\n");
 
     const auto oneHundredZeros = std::wstring(100, L'0');
@@ -8507,17 +8505,17 @@ void ScreenBufferTests::SimpleWrappedCommand()
     VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
 }
 
-void _writePrompt(StateMachine& stateMachine, const auto& path)
+static void _writePrompt(StateMachine& stateMachine, const auto& path)
 {
-    stateMachine.ProcessString(L"\x1b]133;D\x7");
-    stateMachine.ProcessString(L"\x1b]133;A\x7");
+    stateMachine.ProcessString(FTCS_D);
+    stateMachine.ProcessString(FTCS_A);
     stateMachine.ProcessString(L"\x1b]9;9;");
     stateMachine.ProcessString(path);
     stateMachine.ProcessString(L"\x7");
     stateMachine.ProcessString(L"PWSH ");
     stateMachine.ProcessString(path);
     stateMachine.ProcessString(L"> ");
-    stateMachine.ProcessString(L"\x1b]133;B\x7");
+    stateMachine.ProcessString(FTCS_B);
 }
 
 void ScreenBufferTests::SimplePromptRegions()
@@ -8535,7 +8533,7 @@ void ScreenBufferTests::SimplePromptRegions()
 
     _writePrompt(stateMachine, L"C:\\Windows");
     stateMachine.ProcessString(L"Foo-bar");
-    stateMachine.ProcessString(L"\x1b]133;C\x7");
+    stateMachine.ProcessString(FTCS_C);
     stateMachine.ProcessString(L"\r\n");
     stateMachine.ProcessString(L"This is some text     \r\n"); // y=1
     stateMachine.ProcessString(L"with varying amounts  \r\n"); // y=2

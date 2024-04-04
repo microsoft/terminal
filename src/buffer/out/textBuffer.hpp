@@ -307,7 +307,7 @@ public:
     void StartPrompt();
     bool StartCommand();
     bool StartOutput();
-    void EndOutput(std::optional<unsigned int> error);
+    void EndCurrentCommand(std::optional<unsigned int> error);
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);

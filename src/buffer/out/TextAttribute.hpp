@@ -38,8 +38,7 @@ enum class UnderlineStyle
     Max = DashedUnderlined
 };
 
-// We only need a few bits, but uint8_t is two bytes anyways, and apparently
-// doesn't satisfy std::has_unique_object_representations_v
+// We only need a few bits, but uint8_t apparently doesn't satisfy std::has_unique_object_representations_v
 enum class MarkKind : uint16_t
 {
     None = 0,
@@ -225,7 +224,7 @@ private:
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
     TextColor _underlineColor; // sizeof: 4, alignof: 1
-    MarkKind _markKind; // sizeof: 2, cause I guess a uint8_t is 2B?
+    MarkKind _markKind; // sizeof: 2, alignof: 1
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

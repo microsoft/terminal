@@ -3794,7 +3794,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                                                                         UINT_MAX;
             }
 
-            _api.GetTextBuffer().EndOutput(error);
+            _api.GetTextBuffer().EndCurrentCommand(error);
 
             handled = true;
             break;

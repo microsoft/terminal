@@ -1178,7 +1178,6 @@ void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordTyp
         GetMutableRowByOffset(y).Reset(_initialAttributes);
     }
 
-    // ScrollMarks(-start);
     ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
 }
 
@@ -3003,9 +3002,6 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     assert(newCursorPos.y >= 0 && newCursorPos.y < newHeight);
     newCursor.SetSize(oldCursor.GetSize());
     newCursor.SetPosition(newCursorPos);
-
-    // newBuffer._marks = oldBuffer._marks;
-    // newBuffer._trimMarksOutsideBuffer();
 }
 
 // Method Description:
@@ -3183,8 +3179,7 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const
 // limit=1 will just give you the "most recent mark").
 std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit) const
 {
-    if (limit.has_value() &&
-        *limit == 0)
+    if (limit == 0)
     {
         return {};
     }
@@ -3220,6 +3215,8 @@ std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit)
         // row with text as the bottom
         marks.push_back(_scrollMarkExtentForRow(promptY, lastPromptY));
 
+        // operator>=(T, optional<U>) will return true if the optional is
+        // nullopt, unfortunately.
         if (limit.has_value() &&
             marks.size() >= *limit)
         {
@@ -3239,7 +3236,7 @@ void TextBuffer::ClearMarksInRange(
     const til::point end)
 {
     auto top = std::clamp(std::min(start.y, end.y), 0, _height - 1);
-    auto bottom = std::clamp(std::max(start.y, end.y), 0, _height - 1);
+    auto bottom = std::clamp(std::max(start.y, end.y), 0, _estimateOffsetOfLastCommittedRow());
 
     for (auto y = top; y <= bottom; y++)
     {
@@ -3480,46 +3477,38 @@ bool TextBuffer::_createPromptMarkIfNeeded()
     if (!mostRecentMarks.empty())
     {
         const auto& mostRecentMark = til::at(mostRecentMarks, 0);
-        if (mostRecentMark.HasOutput())
-        {
-            // The most recent command mark had output. That suggests that either:
-            // * shell integration wasn't enabled (but the user would still
-            //   like lines with enters to be marked as prompts)
-            // * or we're in the middle of a command that's ongoing.
-
-            // If the mark doesn't have any command - then we know we're
-            // playing silly games with just marking whole lines as prompts,
-            // then immediately going to output.
-            //   --> add a new mark to this row, set all the attrs in this
-            //   row to be Prompt, and set the current attrs to Output.
-            //
-            // If it does have a command, then we're still in the output of
-            // that command.
-            //   --> the current attrs should already be set to Output.
-            if (!mostRecentMark.HasCommand())
-            {
-                auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
-                row.StartPrompt();
-                return true;
-            }
-        }
-        else
+        if (!mostRecentMark.HasOutput())
         {
             // The most recent command mark _didn't_ have output yet. Great!
             // we'll leave it alone, and just start treating text as Command or Output.
+            return false;
         }
-    }
-    else
-    {
-        // There were no marks at all!
-        //   --> add a new mark to this row, set all the attrs in this row
-        //   to be Prompt, and set the current attrs to Output.
 
-        auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
-        row.StartPrompt();
-        return true;
+        // The most recent command mark had output. That suggests that either:
+        // * shell integration wasn't enabled (but the user would still
+        //   like lines with enters to be marked as prompts)
+        // * or we're in the middle of a command that's ongoing.
+
+        // If it does have a command, then we're still in the output of
+        // that command.
+        //   --> the current attrs should already be set to Output.
+        if (mostRecentMark.HasCommand())
+        {
+            return false;
+        }
+        // If the mark doesn't have any command - then we know we're
+        // playing silly games with just marking whole lines as prompts,
+        // then immediately going to output.
+        //   --> Below, we'll add a new mark to this row.
     }
-    return false;
+
+    // There were no marks at all!
+    //   --> add a new mark to this row, set all the attrs in this row
+    //   to be Prompt, and set the current attrs to Output.
+
+    auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
+    row.StartPrompt();
+    return true;
 }
 
 bool TextBuffer::StartCommand()
@@ -3539,8 +3528,14 @@ bool TextBuffer::StartOutput()
     return createdMark;
 }
 
-void TextBuffer::EndOutput(std::optional<unsigned int> error)
+// Find the row above the cursor where this most recent prompt started, and set
+// the exit code on that row's scroll mark.
+void TextBuffer::EndCurrentCommand(std::optional<unsigned int> error)
 {
+    // auto attr = GetCurrentAttributes();
+    // attr.SetMarkAttributes(MarkKind::None);
+    // SetCurrentAttributes(attr);
+
     for (auto y = GetCursor().GetPosition().y; y >= 0; y--)
     {
         auto& currRow = GetMutableRowByOffset(y);
