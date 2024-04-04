@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Editor::Font FindFontWithLocalizedName(winrt::hstring const& name) noexcept;
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
-        Model::TerminalSettings TermSettings() const;
+        Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);

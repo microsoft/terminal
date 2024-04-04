@@ -38,8 +38,6 @@ namespace Microsoft.Terminal.Settings.Editor
         static Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
         static Font FindFontWithLocalizedName(String name);
 
-        Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
-
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);

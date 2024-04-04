@@ -10,6 +10,7 @@
 #include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -98,9 +99,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _defaultAppearanceViewModel.IsDefault(true);
     }
 
-    Model::TerminalSettings ProfileViewModel::TermSettings() const
+    Control::IControlSettings ProfileViewModel::TermSettings() const
     {
-        return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
+        auto settings = Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
+        return *settings;
     }
 
     // Method Description:
