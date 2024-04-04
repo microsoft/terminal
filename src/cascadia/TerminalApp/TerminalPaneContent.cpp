@@ -80,6 +80,16 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
+    winrt::hstring TerminalPaneContent::Icon() const
+    {
+        return _profile.EvaluatedIcon();
+    }
+
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
+    {
+        return _control.TabColor();
+    }
+
     NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
@@ -328,11 +338,20 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const TerminalSettingsCreateResult& settings,
-                                             const Profile& profile)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
     {
-        _profile = profile;
-        _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        // Do nothing. We'll later be updated manually by
+        // UpdateTerminalSettings, which we need for profile and
+        // focused/unfocused settings.
+        assert(false); // If you hit this, you done goofed.
+    }
+
+    void TerminalPaneContent::UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache)
+    {
+        if (const auto& settings{ cache.TryLookup(_profile) })
+        {
+            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        }
     }
 
     // Method Description:
@@ -342,6 +361,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::MarkAsDefterm()
     {
         _isDefTermSession = true;
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush TerminalPaneContent::BackgroundBrush()
+    {
+        return _control.BackgroundBrush();
     }
 
     float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)

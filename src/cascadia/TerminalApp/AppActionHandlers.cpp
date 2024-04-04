@@ -1435,7 +1435,7 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleOpenScratchpad(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleOpenScratchpad(const IInspectable& sender,
                                              const ActionEventArgs& args)
     {
         if (Feature_ScratchpadPane::IsEnabled())
@@ -1448,7 +1448,7 @@ namespace winrt::TerminalApp::implementation
             scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
             const auto resultPane = std::make_shared<Pane>(*scratchPane);
-            _SplitPane(_GetFocusedTabImpl(), SplitDirection::Automatic, 0.5f, resultPane);
+            _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
             args.Handled(true);
         }
     }
