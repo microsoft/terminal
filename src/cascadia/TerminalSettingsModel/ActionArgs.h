@@ -6,7 +6,6 @@
 // HEY YOU: When adding ActionArgs types, make sure to add the corresponding
 //          *.g.cpp to ActionArgs.cpp!
 #include "ActionEventArgs.g.h"
-#include "GenericContentArgs.g.h"
 #include "NewTerminalArgs.g.h"
 #include "CopyTextArgs.g.h"
 #include "NewTabArgs.g.h"
@@ -296,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Handled, false);
     };
 
-    struct GenericContentArgs : public GenericContentArgsT<GenericContentArgs>
+    struct GenericContentArgs : public winrt::implements<GenericContentArgs, INewContentArgs>
     {
         GenericContentArgs(winrt::hstring type) :
             _Type{ type } {}
@@ -333,17 +332,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return winrt::hstring{ L"type: " } + Type();
         }
-        static Json::Value ToJson(const Model::GenericContentArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            auto args{ get_self<GenericContentArgs>(val) };
-            Json::Value json{ Json::ValueType::objectValue };
-            JsonUtils::SetValueForKey(json, TypeKey, args->_Type);
-            return json;
-        }
+        // static Json::Value ToJson(const Model::GenericContentArgs& val)
+        // {
+        //     if (!val)
+        //     {
+        //         return {};
+        //     }
+        //     auto args{ get_self<GenericContentArgs>(val) };
+        //     Json::Value json{ Json::ValueType::objectValue };
+        //     JsonUtils::SetValueForKey(json, TypeKey, args->_Type);
+        //     return json;
+        // }
     };
 
     // Although it may _seem_ like NewTerminalArgs can use ACTION_ARG_BODY, it
@@ -522,8 +521,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // For now, we don't support any other concrete types of content
         // with args. Just return a placeholder.
-        auto base{ winrt::make_self<GenericContentArgs>(contentArgs.Type()) };
-        return GenericContentArgs::ToJson(*base);
+        // auto base{ winrt::make_self<GenericContentArgs>(contentArgs.Type()) };
+        // return GenericContentArgs::ToJson(*base);
+        Json::Value json{ Json::ValueType::objectValue };
+        JsonUtils::SetValueForKey(json, "type", contentArgs.Type());
+        return json;
     }
 
 }
@@ -918,7 +920,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
-    BASIC_FACTORY(GenericContentArgs);
     BASIC_FACTORY(CopyTextArgs);
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);

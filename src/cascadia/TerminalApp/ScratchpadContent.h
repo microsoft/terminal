@@ -3,6 +3,7 @@
 
 #pragma once
 #include "winrt/TerminalApp.h"
+#include "../TerminalSettingsModel/HashUtils.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -42,4 +43,53 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
         winrt::Windows::UI::Xaml::Controls::TextBox _box{ nullptr };
     };
+
+    struct BaseContentArgs : public winrt::implements<BaseContentArgs, winrt::Microsoft::Terminal::Settings::Model::INewContentArgs>
+    {
+        BaseContentArgs(winrt::hstring type) :
+            Type{ type } {}
+        BaseContentArgs() :
+            BaseContentArgs(L"") {}
+        til::property<winrt::hstring> Type;
+
+        static constexpr std::string_view TypeKey{ "type" };
+
+    public:
+        bool Equals(winrt::Microsoft::Terminal::Settings::Model::INewContentArgs other) const
+        {
+            return other.Type() == Type();
+        }
+        size_t Hash() const
+        {
+            til::hasher h;
+            Hash(h);
+            return h.finalize();
+        }
+        void Hash(til::hasher& h) const
+        {
+            h.write(Type());
+        }
+        winrt::Microsoft::Terminal::Settings::Model::INewContentArgs Copy() const
+        {
+            auto copy{ winrt::make_self<BaseContentArgs>() };
+            copy->Type(Type());
+            return *copy;
+        }
+        winrt::hstring GenerateName() const
+        {
+            return winrt::hstring{ L"type: " } + Type();
+        }
+        // static Json::Value ToJson(const winrt::com_ptr<BaseContentArgs> args)
+        // {
+        //     if (!val)
+        //     {
+        //         return {};
+        //     }
+        //     // auto args{ get_self<BaseContentArgs>(val) };
+        //     Json::Value json{ Json::ValueType::objectValue };
+        //     JsonUtils::SetValueForKey(json, TypeKey, args.Type());
+        //     return json;
+        // }
+    };
+
 }

@@ -166,8 +166,8 @@ namespace SettingsModelUnitTests
     {
         Log::Comment(L"These are two actions with different content args. They should have different hashes for their terminal args.");
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"));
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"));
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"), OriginTag::None);
         VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
 
         KeyChord ctrlC{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
