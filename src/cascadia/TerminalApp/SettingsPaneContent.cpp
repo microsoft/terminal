@@ -52,10 +52,7 @@ namespace winrt::TerminalApp::implementation
 
     INewContentArgs SettingsPaneContent::GetNewTerminalArgs(const BuildStartupKind /*kind*/) const
     {
-        // For now, we're doing a terrible thing in TerminalTab itself to
-        // generate an OpenSettings action manually, without asking for the pane
-        // structure.
-        return nullptr;
+        return BaseContentArgs(L"settings");
     }
 
     winrt::hstring SettingsPaneContent::Icon() const

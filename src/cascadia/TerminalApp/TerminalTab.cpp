@@ -447,30 +447,9 @@ namespace winrt::TerminalApp::implementation
         // 1 for the child after the first split.
         auto state = _rootPane->BuildStartupActions(0, 1, kind);
 
-        // HORRIBLE
-        //
-        // Workaround till we know how we actually want to handle state
-        // restoring other kinda of panes. If this is a settings tab, just
-        // restore it as a settings tab. Don't bother recreating terminal args
-        // for every pane.
-        //
-        // In the future, we'll want to definitely get rid of
-        // Pane::GetTerminalArgsForPane, and somehow instead find a better way
-        // of re-creating the pane state. Probably through a combo of ResizePane
-        // actions and SetPaneOrientation actions.
-        if (const auto& settings{ _rootPane->GetContent().try_as<SettingsPaneContent>() })
-        {
-            ActionAndArgs action;
-            action.Action(ShortcutAction::OpenSettings);
-            OpenSettingsArgs args{ SettingsTarget::SettingsUI };
-            action.Args(args);
+        state = _rootPane->BuildStartupActions(0, 1, kind);
 
-            state.args = std::vector{ std::move(action) };
-        }
-        else
         {
-            state = _rootPane->BuildStartupActions(0, 1, kind);
-
             ActionAndArgs newTabAction{};
             newTabAction.Action(ShortcutAction::NewTab);
             NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(kind) };
