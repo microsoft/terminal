@@ -50,7 +50,7 @@ namespace winrt::TerminalApp::implementation
 
     INewContentArgs ScratchpadContent::GetNewTerminalArgs(const BuildStartupKind /* kind */) const
     {
-        return *winrt::make_self<BaseContentArgs>(L"scratchpad");
+        return GenericContentArgs(L"scratchpad");
     }
 
     winrt::hstring ScratchpadContent::Icon() const
