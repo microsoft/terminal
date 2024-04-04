@@ -5,6 +5,7 @@
 #include "TerminalPage.h"
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 #include <LibraryResources.h>
 
@@ -96,26 +97,23 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
+#if 0
             // Clear the saved preview funcs because we don't need to add a restore each time
             // the preview color changes, we only need to be able to restore the last one.
             _restorePreviewFuncs.clear();
 
             _ApplyToActiveControls([&](const auto& control) {
                 // Get the settings of the focused control and stash them
-                const auto& controlSettings = control.Settings().as<TerminalSettings>();
+                const auto controlSettings = winrt::get_self<Settings::TerminalSettings>(control.Settings());
                 // Make sure to recurse up to the root - if you're doing
                 // this while you're currently previewing a SetColorScheme
                 // action, then the parent of the control's settings is _the
                 // last preview TerminalSettings we inserted! We don't want
                 // to save that one!
-                auto originalSettings = controlSettings.GetParent();
-                while (originalSettings.GetParent() != nullptr)
-                {
-                    originalSettings = originalSettings.GetParent();
-                }
+
                 // Create a new child for those settings
                 TerminalSettingsCreateResult fake{ originalSettings };
-                const auto& childStruct = TerminalSettings::CreateWithParent(fake);
+                const auto& childStruct = Settings::TerminalSettings::CreateWithParent(fake);
                 // Modify the child to have the applied color scheme
                 childStruct.DefaultSettings().ApplyColorScheme(scheme);
 
@@ -151,6 +149,7 @@ namespace winrt::TerminalApp::implementation
                     control.UpdateSettings();
                 });
             });
+#endif
         }
     }
 

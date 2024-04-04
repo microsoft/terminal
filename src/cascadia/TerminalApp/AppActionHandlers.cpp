@@ -652,6 +652,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
+#if 0
                 const auto res = _ApplyToActiveControls([&](auto& control) {
                     // Start by getting the current settings of the control
                     auto controlSettings = control.Settings().as<TerminalSettings>();
@@ -677,6 +678,7 @@ namespace winrt::TerminalApp::implementation
                     control.UpdateSettings();
                 });
                 args.Handled(res);
+#endif
             }
         }
     }

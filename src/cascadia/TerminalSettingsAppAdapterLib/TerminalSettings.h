@@ -151,7 +151,6 @@ namespace winrt::Microsoft::Terminal::Settings
         XXXSETTING(TerminalSettings, hstring, CellWidth);
         XXXSETTING(TerminalSettings, hstring, CellHeight);
 
-        XXXSETTING(TerminalSettings, Model::ColorScheme, AppliedColorScheme);
         XXXSETTING(TerminalSettings, hstring, BackgroundImage);
         XXXSETTING(TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
