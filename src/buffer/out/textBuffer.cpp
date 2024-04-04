@@ -3177,9 +3177,9 @@ std::vector<ScrollMark> TextBuffer::GetMarkRows() const
 //
 // Use `limit` to control how many you get, _starting from the bottom_. (e.g.
 // limit=1 will just give you the "most recent mark").
-std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit) const
+std::vector<MarkExtents> TextBuffer::GetMarkExtents(size_t limit) const
 {
-    if (limit == 0)
+    if (limit == 0u)
     {
         return {};
     }
@@ -3217,8 +3217,7 @@ std::vector<MarkExtents> TextBuffer::GetMarkExtents(std::optional<size_t> limit)
 
         // operator>=(T, optional<U>) will return true if the optional is
         // nullopt, unfortunately.
-        if (limit.has_value() &&
-            marks.size() >= *limit)
+        if (marks.size() >= limit)
         {
             break;
         }
@@ -3532,9 +3531,9 @@ bool TextBuffer::StartOutput()
 // the exit code on that row's scroll mark.
 void TextBuffer::EndCurrentCommand(std::optional<unsigned int> error)
 {
-    // auto attr = GetCurrentAttributes();
-    // attr.SetMarkAttributes(MarkKind::None);
-    // SetCurrentAttributes(attr);
+    auto attr = GetCurrentAttributes();
+    attr.SetMarkAttributes(MarkKind::None);
+    SetCurrentAttributes(attr);
 
     for (auto y = GetCursor().GetPosition().y; y >= 0; y--)
     {
@@ -3545,5 +3544,19 @@ void TextBuffer::EndCurrentCommand(std::optional<unsigned int> error)
             currRow.EndOutput(error);
             return;
         }
+    }
+}
+
+void TextBuffer::SetScrollbarData(ScrollbarData mark, til::CoordType y)
+{
+    auto& row = GetMutableRowByOffset(y);
+    row.SetScrollbarData(mark);
+}
+void TextBuffer::ManuallyMarkRowAsPrompt(til::CoordType y)
+{
+    auto& row = GetMutableRowByOffset(y);
+    for (auto& [attr, len] : row.Attributes().runs())
+    {
+        attr.SetMarkAttributes(MarkKind::Prompt);
     }
 }

@@ -299,7 +299,7 @@ public:
 
     // Mark handling
     std::vector<ScrollMark> GetMarkRows() const;
-    std::vector<MarkExtents> GetMarkExtents(std::optional<size_t> limit = std::nullopt) const;
+    std::vector<MarkExtents> GetMarkExtents(size_t limit = SIZE_T_MAX) const;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks();
     std::wstring CurrentCommand() const;
@@ -308,6 +308,8 @@ public:
     bool StartCommand();
     bool StartOutput();
     void EndCurrentCommand(std::optional<unsigned int> error);
+    void SetScrollbarData(ScrollbarData mark, til::CoordType y);
+    void ManuallyMarkRowAsPrompt(til::CoordType y);
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);

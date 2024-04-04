@@ -735,11 +735,8 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         const bool createdMark = _activeBuffer().StartOutput();
         if (createdMark)
         {
-            auto& row = _activeBuffer().GetMutableRowByOffset(_activeBuffer().GetCursor().GetPosition().y);
-            for (auto& [attr, len] : row.Attributes().runs())
-            {
-                attr.SetMarkAttributes(MarkKind::Prompt);
-            }
+            _activeBuffer().ManuallyMarkRowAsPrompt(_activeBuffer().GetCursor().GetPosition().y);
+
             // This changed the scrollbar marks - raise a notification to update them
             _NotifyScrollEvent();
         }
@@ -1445,15 +1442,14 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
 void Terminal::AddMarkFromUI(ScrollbarData mark,
-                             const til::CoordType& y)
+                             til::CoordType y)
 {
     if (_inAltBuffer())
     {
         return;
     }
 
-    auto& row = _activeBuffer().GetMutableRowByOffset(y);
-    row.SetScrollbarData(mark);
+    _activeBuffer().SetScrollbarData(mark, y);
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
@@ -1492,13 +1488,13 @@ std::vector<ScrollMark> Terminal::GetMarkRows() const
 {
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them.
-    return _inAltBuffer() ? std::vector<ScrollMark>{} : std::move(_activeBuffer().GetMarkRows());
+    return _inAltBuffer() ? std::vector<ScrollMark>{} : _activeBuffer().GetMarkRows();
 }
 std::vector<MarkExtents> Terminal::GetMarkExtents() const
 {
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them.
-    return _inAltBuffer() ? std::vector<MarkExtents>{} : std::move(_activeBuffer().GetMarkExtents());
+    return _inAltBuffer() ? std::vector<MarkExtents>{} : _activeBuffer().GetMarkExtents();
 }
 
 til::color Terminal::GetColorForMark(const ScrollbarData& markData) const

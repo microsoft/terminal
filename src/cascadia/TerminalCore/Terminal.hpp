@@ -119,7 +119,7 @@ public:
 
     std::vector<ScrollMark> GetMarkRows() const;
     std::vector<MarkExtents> GetMarkExtents() const;
-    void AddMarkFromUI(ScrollbarData mark, const til::CoordType& y);
+    void AddMarkFromUI(ScrollbarData mark, til::CoordType y);
 
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
