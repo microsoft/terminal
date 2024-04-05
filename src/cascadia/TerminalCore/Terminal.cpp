@@ -411,6 +411,13 @@ try
     // before, and shouldn't be now either.
     _scrollOffset = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
 
+    // Make sure that the new cursor position is still in the mutable viewport
+    const auto currentNewPos = _mainBuffer->GetCursor().GetPosition();
+    if (currentNewPos.y < proposedTop)
+    {
+        _mainBuffer->GetCursor().SetPosition(til::point{ currentNewPos.x, proposedTop });
+    }
+
     _mainBuffer->TriggerRedrawAll();
     _NotifyScrollEvent();
     return S_OK;
