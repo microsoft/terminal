@@ -20,7 +20,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
-        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const BuildStartupKind kind) const;
+        winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(const BuildStartupKind kind) const;
 
         winrt::hstring Title() { return RS_(L"SettingsTab"); }
         uint64_t TaskbarState() { return 0; }

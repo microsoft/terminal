@@ -21,6 +21,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsPaneContent.h"
+#include "ScratchpadContent.h"
 #include "TabRowControl.h"
 #include "Utils.h"
 
@@ -315,6 +316,7 @@ namespace winrt::TerminalApp::implementation
         // Check that there's at least one action that's not just an elevated newTab action.
         for (const auto& action : _startupActions)
         {
+            // Only new terminal panes will be requesting elevation.
             NewTerminalArgs newTerminalArgs{ nullptr };
 
             if (action.Action() == ShortcutAction::NewTab)
@@ -322,7 +324,7 @@ namespace winrt::TerminalApp::implementation
                 const auto& args{ action.Args().try_as<NewTabArgs>() };
                 if (args)
                 {
-                    newTerminalArgs = args.TerminalArgs();
+                    newTerminalArgs = args.ContentArgs().try_as<NewTerminalArgs>();
                 }
                 else
                 {
@@ -335,7 +337,7 @@ namespace winrt::TerminalApp::implementation
                 const auto& args{ action.Args().try_as<SplitPaneArgs>() };
                 if (args)
                 {
-                    newTerminalArgs = args.TerminalArgs();
+                    newTerminalArgs = args.ContentArgs().try_as<NewTerminalArgs>();
                 }
                 else
                 {
@@ -3095,9 +3097,9 @@ namespace winrt::TerminalApp::implementation
     // - If the newTerminalArgs required us to open the pane as a new elevated
     //   connection, then we'll return nullptr. Otherwise, we'll return a new
     //   Pane for this connection.
-    std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs,
-                                                  const winrt::TerminalApp::TabBase& sourceTab,
-                                                  TerminalConnection::ITerminalConnection existingConnection)
+    std::shared_ptr<Pane> TerminalPage::_MakeTerminalPane(const NewTerminalArgs& newTerminalArgs,
+                                                          const winrt::TerminalApp::TabBase& sourceTab,
+                                                          TerminalConnection::ITerminalConnection existingConnection)
     {
         // First things first - Check for making a pane from content ID.
         if (newTerminalArgs &&
@@ -3165,6 +3167,7 @@ namespace winrt::TerminalApp::implementation
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
         auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
+
         auto resultPane = std::make_shared<Pane>(paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
@@ -3187,6 +3190,41 @@ namespace winrt::TerminalApp::implementation
         }
 
         return resultPane;
+    }
+
+    std::shared_ptr<Pane> TerminalPage::_MakePane(const INewContentArgs& contentArgs,
+                                                  const winrt::TerminalApp::TabBase& sourceTab,
+                                                  TerminalConnection::ITerminalConnection existingConnection)
+
+    {
+        if (const auto& newTerminalArgs{ contentArgs.try_as<NewTerminalArgs>() })
+        {
+            // Terminals are of course special, and have to deal with debug taps, duplicating the tab, etc.
+            return _MakeTerminalPane(newTerminalArgs, sourceTab, existingConnection);
+        }
+
+        IPaneContent content{ nullptr };
+
+        const auto& paneType{ contentArgs.Type() };
+        if (paneType == L"scratchpad")
+        {
+            const auto& scratchPane{ winrt::make_self<ScratchpadContent>() };
+
+            // This is maybe a little wacky - add our key event handler to the pane
+            // we made. So that we can get actions for keys that the content didn't
+            // handle.
+            scratchPane->GetRoot().KeyDown({ get_weak(), &TerminalPage::_KeyDownHandler });
+
+            content = *scratchPane;
+        }
+        else if (paneType == L"settings")
+        {
+            content = _makeSettingsContent();
+        }
+
+        assert(content);
+
+        return std::make_shared<Pane>(content);
     }
 
     void TerminalPage::_restartPaneConnection(
@@ -3841,6 +3879,39 @@ namespace winrt::TerminalApp::implementation
         CATCH_RETURN()
     }
 
+    TerminalApp::IPaneContent TerminalPage::_makeSettingsContent()
+    {
+        if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+            {
+                // Lazily load the Settings UI components so that we don't do it on startup.
+                appPrivate->PrepareForSettingsUI();
+            }
+        }
+
+        // Create the SUI pane content
+        auto settingsContent{ winrt::make_self<SettingsPaneContent>(_settings) };
+        auto sui = settingsContent->SettingsUI();
+
+        if (_hostingHwnd)
+        {
+            sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
+        }
+
+        // GH#8767 - let unhandled keys in the SUI try to run commands too.
+        sui.KeyDown({ get_weak(), &TerminalPage::_KeyDownHandler });
+
+        sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_LaunchSettings(e);
+            }
+        });
+
+        return *settingsContent;
+    }
+
     // Method Description:
     // - Creates a settings UI tab and focuses it. If there's already a settings UI tab open,
     //   just focus the existing one.
@@ -3853,36 +3924,8 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
         {
-            if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
-            {
-                if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
-                {
-                    // Lazily load the Settings UI components so that we don't do it on startup.
-                    appPrivate->PrepareForSettingsUI();
-                }
-            }
-
-            // Create the SUI pane content
-            auto settingsContent{ winrt::make_self<SettingsPaneContent>(_settings) };
-            auto sui = settingsContent->SettingsUI();
-
-            if (_hostingHwnd)
-            {
-                sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
-            }
-
-            // GH#8767 - let unhandled keys in the SUI try to run commands too.
-            sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
-
-            sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
-                if (auto page{ weakThis.get() })
-                {
-                    page->_LaunchSettings(e);
-                }
-            });
-
             // Create the tab
-            auto resultPane = std::make_shared<Pane>(*settingsContent);
+            auto resultPane = std::make_shared<Pane>(_makeSettingsContent());
             _settingsTab = _CreateNewTabFromPane(resultPane);
         }
         else

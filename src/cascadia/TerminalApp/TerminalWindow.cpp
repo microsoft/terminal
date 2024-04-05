@@ -1238,7 +1238,7 @@ namespace winrt::TerminalApp::implementation
                 // Create the equivalent NewTab action.
                 const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
                                                                        Settings::Model::NewTabArgs(firstAction.Args() ?
-                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().ContentArgs() :
                                                                                                        nullptr) };
                 args.SetAt(0, newAction);
             }

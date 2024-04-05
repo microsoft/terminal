@@ -100,7 +100,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
 // Extract the terminal settings from the current (leaf) pane's control
 // to be used to create an equivalent control
-NewTerminalArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
+INewContentArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());

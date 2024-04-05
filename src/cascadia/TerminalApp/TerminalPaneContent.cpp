@@ -92,7 +92,7 @@ namespace winrt::TerminalApp::implementation
         return _control.TabColor();
     }
 
-    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
+    INewContentArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
