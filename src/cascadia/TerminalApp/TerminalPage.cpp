@@ -65,7 +65,6 @@ namespace winrt::TerminalApp::implementation
         _WindowProperties{ std::move(properties) }
     {
         InitializeComponent();
-
         _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
     }
 
@@ -110,7 +109,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         assert(Dispatcher().HasThreadAccess());
-
+        if (_settings == nullptr)
+        {
+            // Create this only on the first time we load the settings.
+            _terminalSettingsCache = TerminalApp::TerminalSettingsCache{ settings, *_bindings };
+        }
         _settings = settings;
 
         // Make sure to call SetCommands before _RefreshUIForSettingsReload.
@@ -3104,7 +3107,7 @@ namespace winrt::TerminalApp::implementation
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-            auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+            auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
             return std::make_shared<Pane>(paneContent);
         }
 
@@ -3161,14 +3164,14 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
-        auto paneContent{ winrt::make<TerminalPaneContent>(profile, control) };
+        auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
         auto resultPane = std::make_shared<Pane>(paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugContent{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            auto debugContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, newControl) };
             auto debugPane = std::make_shared<Pane>(debugContent);
 
             // Since we're doing this split directly on the pane (instead of going through TerminalTab,
@@ -3281,14 +3284,14 @@ namespace winrt::TerminalApp::implementation
         // updating terminal panes, so that we don't have to build a _new_
         // TerminalSettings for every profile we update - we can just look them
         // up the previous ones we built.
-        _terminalSettingsCache = TerminalApp::TerminalSettingsCache{ _settings, *_bindings };
+        _terminalSettingsCache.Reset(_settings, *_bindings);
 
         for (const auto& tab : _tabs)
         {
             if (auto terminalTab{ _GetTerminalTabImpl(tab) })
             {
                 // Let the tab know that there are new settings. It's up to each content to decide what to do with them.
-                terminalTab->UpdateSettings(_settings, _terminalSettingsCache);
+                terminalTab->UpdateSettings(_settings);
 
                 // Update the icon of the tab for the currently focused profile in that tab.
                 // Only do this for TerminalTabs. Other types of tabs won't have multiple panes

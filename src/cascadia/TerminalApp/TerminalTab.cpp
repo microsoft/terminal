@@ -267,7 +267,7 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const CascadiaSettings& settings, const TerminalApp::TerminalSettingsCache& cache)
+    void TerminalTab::UpdateSettings(const CascadiaSettings& settings)
     {
         ASSERT_UI_THREAD();
 
@@ -276,7 +276,7 @@ namespace winrt::TerminalApp::implementation
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](auto pane) {
-            pane->UpdateSettings(settings, cache);
+            pane->UpdateSettings(settings);
             return false;
         });
     }
@@ -390,7 +390,7 @@ namespace winrt::TerminalApp::implementation
             return RS_(L"MultiplePanes");
         }
         const auto activeContent = GetActiveContent();
-        return activeContent ? activeContent.Title() : winrt::hstring{ L"" };
+        return activeContent ? activeContent.Title() : winrt::hstring{};
     }
 
     // Method Description:
@@ -450,7 +450,7 @@ namespace winrt::TerminalApp::implementation
         // HORRIBLE
         //
         // Workaround till we know how we actually want to handle state
-        // restoring other kinda of panes. If this is a settings tab, just
+        // restoring other kinds of panes. If this is a settings tab, just
         // restore it as a settings tab. Don't bother recreating terminal args
         // for every pane.
         //
