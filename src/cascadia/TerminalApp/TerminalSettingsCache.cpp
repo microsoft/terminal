@@ -48,7 +48,7 @@ namespace winrt::TerminalApp::implementation
         // when we stabilize its guid this will become fully safe.
         const auto profileDefaults{ _settings.ProfileDefaults() };
         const auto allProfiles{ _settings.AllProfiles() };
-
+        profileGuidSettingsMap.clear();
         profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
 
         // Include the Defaults profile for consideration
