@@ -3340,10 +3340,7 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
                     endThisMark(lastMarkedText.x, lastMarkedText.y);
                 }
                 // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
-                if (markKind != MarkKind::None)
-                {
-                    lastMarkKind = markKind;
-                }
+                lastMarkKind = markKind;
             }
             // advance to next run of text
             x = nextX;
