@@ -3214,8 +3214,10 @@ namespace winrt::TerminalApp::implementation
         }
         else if (paneType == L"settings")
         {
-            content = _makeSettingsPane();
+            content = _makeSettingsContent();
         }
+
+        assert(content);
 
         return std::make_shared<Pane>(content);
     }
@@ -3872,7 +3874,7 @@ namespace winrt::TerminalApp::implementation
         CATCH_RETURN()
     }
 
-    TerminalApp::IPaneContent TerminalPage::_makeSettingsPane()
+    TerminalApp::IPaneContent TerminalPage::_makeSettingsContent()
     {
         if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
         {
@@ -3918,7 +3920,7 @@ namespace winrt::TerminalApp::implementation
         if (!_settingsTab)
         {
             // Create the tab
-            auto resultPane = std::make_shared<Pane>(_makeSettingsPane());
+            auto resultPane = std::make_shared<Pane>(_makeSettingsContent());
             _settingsTab = _CreateNewTabFromPane(resultPane);
         }
         else

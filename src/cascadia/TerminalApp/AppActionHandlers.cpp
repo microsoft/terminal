@@ -912,8 +912,7 @@ namespace winrt::TerminalApp::implementation
         // `-w -1` will ensure a new window is created.
         winrt::hstring cmdline{
             fmt::format(L"-w -1 new-tab {}",
-                        newContentArgs ? terminalArgs.ToCommandline().c_str() :
-                                         L"")
+                        terminalArgs.ToCommandline().c_str())
         };
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
@@ -953,7 +952,7 @@ namespace winrt::TerminalApp::implementation
         // profile).
         if (!newContentArgs)
         {
-            newContentArgs = NewTerminalArgs();
+            newContentArgs = NewTerminalArgs{};
         }
 
         if (const auto& terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })

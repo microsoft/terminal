@@ -130,12 +130,12 @@ namespace Microsoft.Terminal.Settings.Model
         String GenerateName();
     };
 
-    [default_interface] runtimeclass BaseContentArgs : INewContentArgs{
+    runtimeclass BaseContentArgs : [default] INewContentArgs {
         BaseContentArgs();
         BaseContentArgs(String type);
     };
 
-    [default_interface] runtimeclass NewTerminalArgs : INewContentArgs{
+    runtimeclass NewTerminalArgs : INewContentArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
 
