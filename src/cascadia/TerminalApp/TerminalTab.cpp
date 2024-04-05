@@ -267,7 +267,7 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const CascadiaSettings& settings, const TerminalApp::TerminalSettingsCache& cache)
+    void TerminalTab::UpdateSettings(const CascadiaSettings& settings)
     {
         ASSERT_UI_THREAD();
 
@@ -276,7 +276,7 @@ namespace winrt::TerminalApp::implementation
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](auto pane) {
-            pane->UpdateSettings(settings, cache);
+            pane->UpdateSettings(settings);
             return false;
         });
     }
@@ -390,7 +390,7 @@ namespace winrt::TerminalApp::implementation
             return RS_(L"MultiplePanes");
         }
         const auto activeContent = GetActiveContent();
-        return activeContent ? activeContent.Title() : winrt::hstring{ L"" };
+        return activeContent ? activeContent.Title() : winrt::hstring{};
     }
 
     // Method Description:
@@ -446,8 +446,6 @@ namespace winrt::TerminalApp::implementation
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
         auto state = _rootPane->BuildStartupActions(0, 1, kind);
-
-        state = _rootPane->BuildStartupActions(0, 1, kind);
 
         {
             ActionAndArgs newTabAction{};
