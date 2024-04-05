@@ -3208,7 +3208,7 @@ namespace winrt::TerminalApp::implementation
             // This is maybe a little wacky - add our key event handler to the pane
             // we made. So that we can get actions for keys that the content didn't
             // handle.
-            scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+            scratchPane->GetRoot().KeyDown({ get_weak(), &TerminalPage::_KeyDownHandler });
 
             content = *scratchPane;
         }
@@ -3895,7 +3895,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // GH#8767 - let unhandled keys in the SUI try to run commands too.
-        sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
+        sui.KeyDown({ get_weak(), &TerminalPage::_KeyDownHandler });
 
         sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
             if (auto page{ weakThis.get() })
