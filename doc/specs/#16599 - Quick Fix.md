@@ -1,27 +1,25 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2024-04-01
-last updated: 2024-04-03
+last updated: 2024-04-05
 issue id: #16599
 ---
 # Quick Fix
 ## Solution Design
 Quick Fix will be a new UI surface that allows the user to interact with the terminal and leverage the context of a specific command being executed. The UI is discussed in the [UI/UX Design section](#ui/ux-design).
 
-The UI and any logic populating the UI will entirely live in the TerminalControl project (similar to the context menu). The suggestions will be appended as top-level items, but a nested design can be revisited as more sources are added to populate the Quick Fix menu. Only one Quick Fix menu will be available at a time as it only appears on the latest prompt if an error occurred; this is in alignment with VS Code's design.
+The UI itself will live in the TerminalControl layer, but it can be populated by both the TerminalControl and the TerminalApp layer (similar to the context menu). The suggestions will be appended as top-level items, but a nested design can be revisited as more sources are added to populate the Quick Fix menu. Only one Quick Fix menu will be available at a time as it only appears on the latest prompt if an error occurred; this is in alignment with VS Code's design.
 
 The actual suggestions will be populated from various sources such as the following:
 - WinGet Command Not Found OSC Sequence:
-	- `OSC 9001; CmdNotFound; <missingCmd>` will be used by the attached CLI app to notify the terminal that a command `missingCmd` wasn't found. The TerminalControl layer will use WinGet's API to search for any packages that would remediate this error and construct a list of suggested packages to be installed.
+	- `OSC 9001; CmdNotFound; <missingCmd>` will be used by the attached CLI app to notify the terminal that a command `missingCmd` wasn't found. The TerminalControl layer will notify the TerminalApp layer that this VT sequence as received and the TerminalApp layer will use WinGet's API to search for any packages that would remediate this error and construct a list of suggested packages to be installed.
 `OSC 9001` can be expanded on to add more suggestions via VT sequences from the underlying CLI app; for more on this, read the [Future considerations section](#future-considerations).
 
-Upon receiving an `OSC 9001; CmdNotFound`, the `missingCmd` parameter will be stored in the text buffer's `ROW`. Specifically, as of PR #16937, `ROW` will contain an optional `ScrollbarData` struct to hold any metadata (i.e. scrollbar marks). We can stuff a `std::wstring missingCmd` into that metadata and populate it if `OSC 9001; CmdNotFound` was received.
+TerminalApp will be notified upon receiving an `OSC 9001; CmdNotFound`. At this point, we'll know that a Quick Fix menu must be shown at the next prompt, and we can use the WinGet API to convert the given `missingCmd` into a list of suggestions (in this case, of the form `winget install...`). These suggestions will be handed back down to the TerminalControl layer to be added to the Quick Fix menu as entries. Since we're in the TerminalControl layer, the suggestions may not need to be converted into SendInput actions, as we already have access to the `RawWriteString()` api. The menu will simply use `RawWriteString()` to inject the string into the prompt.
 
-`ControlCore` will be notified upon receiving an `OSC 9001; CmdNotFound`. At this point, we'll know that a Quick Fix menu must be shown at the next prompt, and we can use the WinGet API to convert the given `missingCmd` into a list of suggestions (in this case, of the form `winget install...`). Since we're in the TerminalControl layer, the suggestions will not need to be converted into SendInput actions, as we already have access to the `RawWriteString()` api. The menu will simply use `RawWriteString()` to inject the string into the prompt.
+A corner case that VS Code handles is that if there is already text in the prompt area, it sends a `^C`, then injects the suggestion, then executes it. In Windows Terminal, for simplicity, we'll always send a ^C, inject the suggestion, and execute it.
 
-A corner case that VS Code handles is that if there is already text in the prompt area, it sends a `^C`, then injects the suggestion, then executes it. In Windows Terminal, if shell integration is enabled and we're currently ina command, then we'll send a ^C.
-
-An additional corner case is handling a buffer resize and reflow. Since the `missingCmd` will be stuffed as metadata in the text buffer's `ROW`, we should be able to generate the WinGet suggestions again fairly easily, if needed. Ideally, the generated suggestions can be cached and the quick fix menu is simply redrawn in the new reflowed position.
+An additional corner case is handling a buffer resize and reflow. Since there will only ever be one Quick Fix menu and it will be displayed at the prompt, we'll simply use the cursor position to figure out where the prompt is.
 
 The WinGet API to convert the given `missingCmd` into a list of suggestions may be relatively slow as we have to query the WinGet database. Performing the search when the quick fix menu is open would not be ideal as the user may have to wait for WinGet to finish searching. Instead, the conversion should happen around the time that the prompt is introduced (whether from output or a reflow scenario) asynchronously, off the output thread.
 
