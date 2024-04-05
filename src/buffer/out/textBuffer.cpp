@@ -2375,7 +2375,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
 
         // \fsN: specifies font size in half-points. E.g. \fs20 results in a font
         // size of 10 pts. That's why, font size is multiplied by 2 here.
-        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\fs{}"), std::to_string(2 * fontHeightPoints));
+        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\fs{}"), 2 * fontHeightPoints);
 
         // Set the background color for the page. But the standard way (\cbN) to do
         // this isn't supported in Word. However, the following control words sequence
@@ -2502,8 +2502,7 @@ void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_
         {
             // Windows uses unsigned wchar_t - RTF uses signed ones.
             // '?' is the fallback ascii character.
-            const auto codeUnitRTFStr = std::to_string(std::bit_cast<int16_t>(codeUnit));
-            fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\u{}?"), codeUnitRTFStr);
+            fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\u{}?"), std::bit_cast<int16_t>(codeUnit));
         }
     }
 }
@@ -2750,10 +2749,8 @@ void TextBuffer::Serialize(const wchar_t* destination) const
             const auto fileSize = gsl::narrow<DWORD>(buffer.size() * sizeof(wchar_t));
             DWORD bytesWritten = 0;
             THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), buffer.data(), fileSize, &bytesWritten, nullptr));
-            if (bytesWritten != fileSize)
-            {
-                THROW_WIN32_MSG(ERROR_WRITE_FAULT, "failed to write");
-            }
+            THROW_WIN32_IF_MSG(ERROR_WRITE_FAULT, bytesWritten != fileSize, "failed to write");
+            buffer.clear();
         }
 
         if (!moreRowsRemaining)
