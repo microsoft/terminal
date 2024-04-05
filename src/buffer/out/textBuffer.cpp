@@ -3460,9 +3460,7 @@ void TextBuffer::StartPrompt()
     auto& currentRow = GetMutableRowByOffset(currentRowOffset);
     currentRow.StartPrompt();
 
-    auto attr = GetCurrentAttributes();
-    attr.SetMarkAttributes(MarkKind::Prompt);
-    SetCurrentAttributes(attr);
+    _currentAttributes.SetMarkAttributes(MarkKind::Prompt);
 }
 
 bool TextBuffer::_createPromptMarkIfNeeded()
@@ -3513,17 +3511,13 @@ bool TextBuffer::_createPromptMarkIfNeeded()
 bool TextBuffer::StartCommand()
 {
     const auto createdMark = _createPromptMarkIfNeeded();
-    auto attr = GetCurrentAttributes();
-    attr.SetMarkAttributes(MarkKind::Command);
-    SetCurrentAttributes(attr);
+    _currentAttributes.SetMarkAttributes(MarkKind::Command);
     return createdMark;
 }
 bool TextBuffer::StartOutput()
 {
     const auto createdMark = _createPromptMarkIfNeeded();
-    auto attr = GetCurrentAttributes();
-    attr.SetMarkAttributes(MarkKind::Output);
-    SetCurrentAttributes(attr);
+    _currentAttributes.SetMarkAttributes(MarkKind::Output);
     return createdMark;
 }
 
@@ -3531,9 +3525,7 @@ bool TextBuffer::StartOutput()
 // the exit code on that row's scroll mark.
 void TextBuffer::EndCurrentCommand(std::optional<unsigned int> error)
 {
-    auto attr = GetCurrentAttributes();
-    attr.SetMarkAttributes(MarkKind::None);
-    SetCurrentAttributes(attr);
+    _currentAttributes.SetMarkAttributes(MarkKind::None);
 
     for (auto y = GetCursor().GetPosition().y; y >= 0; y--)
     {

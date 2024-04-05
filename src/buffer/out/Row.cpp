@@ -230,6 +230,7 @@ void ROW::Reset(const TextAttribute& attr) noexcept
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
+    _promptData = std::nullopt;
     _init();
 }
 
@@ -1195,11 +1196,20 @@ void ROW::StartPrompt() noexcept
 {
     if (!_promptData.has_value())
     {
-        _promptData = ScrollbarData{
-            .category = MarkCategory::Prompt,
-            .color = std::nullopt,
-            .exitCode = std::nullopt,
-        };
+        // You'd be tempted to write:
+        //
+        // _promptData = ScrollbarData{
+        //     .category = MarkCategory::Prompt,
+        //     .color = std::nullopt,
+        //     .exitCode = std::nullopt,
+        // };
+        //
+        // But that's not very optimal! Read this thread for a breakdown of how
+        // weird std::optional can be some times:
+        //
+        // https://github.com/microsoft/terminal/pull/16937#discussion_r1553660833
+
+        _promptData.emplace(MarkCategory::Prompt);
     }
 }
 
