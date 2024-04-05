@@ -8,5 +8,6 @@ namespace TerminalApp
     {
         TerminalSettingsCache(Microsoft.Terminal.Settings.Model.CascadiaSettings settings, AppKeyBindings bindings);
         Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult TryLookup(Microsoft.Terminal.Settings.Model.Profile profile);
+        void Reset(Microsoft.Terminal.Settings.Model.CascadiaSettings settings, AppKeyBindings bindings);
     }
 }

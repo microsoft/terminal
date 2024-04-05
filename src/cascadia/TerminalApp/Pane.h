@@ -108,7 +108,7 @@ public:
     BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, winrt::TerminalApp::BuildStartupKind kind);
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(winrt::TerminalApp::BuildStartupKind kind) const;
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache);
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
