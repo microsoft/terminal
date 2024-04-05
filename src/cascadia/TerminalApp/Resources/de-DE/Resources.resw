@@ -186,9 +186,6 @@
   <data name="Quit" xml:space="preserve">
     <value>Beenden</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Möchten Sie alle Registerkarten schließen?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Mehrere Bereiche</value>
   </data>
@@ -334,6 +331,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Mit dem angegebenen Profil öffnen. Akzeptiert entweder den Namen oder die GUID eines Profils</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Legt die WT_SESSION-Variable fest; muss eine GUID sein.</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Erstellen eines neuen geteilten Bereichs</value>

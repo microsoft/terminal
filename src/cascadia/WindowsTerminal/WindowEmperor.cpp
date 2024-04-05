@@ -348,116 +348,17 @@ void WindowEmperor::_becomeMonarch()
 
     _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
     _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
-
-    // If the monarch receives a QuitAll event it will signal this event to be
-    // ran before each peasant is closed.
-    _revokers.QuitAllRequested = _manager.QuitAllRequested(winrt::auto_revoke, { this, &WindowEmperor::_quitAllRequested });
-
-    // The monarch should be monitoring if it should save the window layout.
-    // We want at least some delay to prevent the first save from overwriting
-    _getWindowLayoutThrottler.emplace(std::chrono::seconds(10), [this]() { _saveWindowLayoutsRepeat(); });
-    _getWindowLayoutThrottler.value()();
 }
 
 // sender and args are always nullptr
 void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&,
                                             const winrt::Windows::Foundation::IInspectable&)
 {
-    if (_getWindowLayoutThrottler)
-    {
-        _getWindowLayoutThrottler.value()();
-    }
-
     // If we closed out the quake window, and don't otherwise need the tray
     // icon, let's get rid of it.
     _checkWindowsForNotificationIcon();
 }
 
-// Raised from our windowManager (on behalf of the monarch). We respond by
-// giving the monarch an async function that the manager should wait on before
-// completing the quit.
-void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
-                                      const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
-{
-    _quitting = true;
-
-    // Make sure that the current timer is destroyed so that it doesn't attempt
-    // to run while we are in the middle of quitting.
-    if (_getWindowLayoutThrottler.has_value())
-    {
-        _getWindowLayoutThrottler.reset();
-    }
-
-    // Tell the monarch to wait for the window layouts to save before
-    // everyone quits.
-    args.BeforeQuitAllAction(_saveWindowLayouts());
-}
-
-#pragma region LayoutPersistence
-
-winrt::Windows::Foundation::IAsyncAction WindowEmperor::_saveWindowLayouts()
-{
-    // Make sure we run on a background thread to not block anything.
-    co_await winrt::resume_background();
-
-    if (_app.Logic().ShouldUsePersistedLayout())
-    {
-        try
-        {
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_SaveWindowLayouts_Collect",
-                              TraceLoggingDescription("Logged when collecting window state"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-            const auto layoutJsons = _manager.GetAllWindowLayouts();
-
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_SaveWindowLayouts_Save",
-                              TraceLoggingDescription("Logged when writing window state"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-            _app.Logic().SaveWindowLayoutJsons(layoutJsons);
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_SaveWindowLayouts_Failed",
-                              TraceLoggingDescription("An error occurred when collecting or writing window state"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        }
-    }
-
-    co_return;
-}
-
-winrt::fire_and_forget WindowEmperor::_saveWindowLayoutsRepeat()
-{
-    // Make sure we run on a background thread to not block anything.
-    co_await winrt::resume_background();
-
-    co_await _saveWindowLayouts();
-
-    // Don't need to save too frequently.
-    co_await winrt::resume_after(30s);
-
-    // As long as we are supposed to keep saving, request another save.
-    // This will be delayed by the throttler so that at most one save happens
-    // per 10 seconds, if a save is requested by another source simultaneously.
-    if (_getWindowLayoutThrottler.has_value())
-    {
-        TraceLoggingWrite(g_hWindowsTerminalProvider,
-                          "AppHost_requestGetLayout",
-                          TraceLoggingDescription("Logged when triggering a throttled write of the window state"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-        _getWindowLayoutThrottler.value()();
-    }
-}
 #pragma endregion
 
 #pragma region WindowProc
@@ -584,6 +485,80 @@ void WindowEmperor::_finalizeSessionPersistence() const
 
     // Ensure to write the state.json before we TerminateProcess()
     state.Flush();
+
+    if (!_app.Logic().ShouldUsePersistedLayout())
+    {
+        return;
+    }
+
+    // Get the "buffer_{guid}.txt" files that we expect to be there
+    std::unordered_set<winrt::guid> sessionIds;
+    if (const auto layouts = state.PersistedWindowLayouts())
+    {
+        for (const auto& windowLayout : layouts)
+        {
+            for (const auto& actionAndArgs : windowLayout.TabLayout())
+            {
+                const auto args = actionAndArgs.Args();
+                NewTerminalArgs terminalArgs{ nullptr };
+
+                if (const auto tabArgs = args.try_as<NewTabArgs>())
+                {
+                    terminalArgs = tabArgs.TerminalArgs();
+                }
+                else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
+                {
+                    terminalArgs = paneArgs.TerminalArgs();
+                }
+
+                if (terminalArgs)
+                {
+                    sessionIds.emplace(terminalArgs.SessionId());
+                }
+            }
+        }
+    }
+
+    // Remove the "buffer_{guid}.txt" files that shouldn't be there
+    // e.g. "buffer_FD40D746-163E-444C-B9B2-6A3EA2B26722.txt"
+    {
+        const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
+        const auto filter = settingsDirectory / L"buffer_*";
+        WIN32_FIND_DATAW ffd;
+
+        // This could also use std::filesystem::directory_iterator.
+        // I was just slightly bothered by how it doesn't have a O(1) .filename()
+        // function, even though the underlying Win32 APIs provide it for free.
+        // Both work fine.
+        const wil::unique_hfind handle{ FindFirstFileExW(filter.c_str(), FindExInfoBasic, &ffd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
+        if (!handle)
+        {
+            return;
+        }
+
+        do
+        {
+            const auto nameLen = wcsnlen_s(&ffd.cFileName[0], ARRAYSIZE(ffd.cFileName));
+            const std::wstring_view name{ &ffd.cFileName[0], nameLen };
+
+            if (nameLen != 47)
+            {
+                continue;
+            }
+
+            wchar_t guidStr[39];
+            guidStr[0] = L'{';
+            memcpy(&guidStr[1], name.data() + 7, 36 * sizeof(wchar_t));
+            guidStr[37] = L'}';
+            guidStr[38] = L'\0';
+
+            const auto id = Utils::GuidFromString(&guidStr[0]);
+            if (!sessionIds.contains(id))
+            {
+                std::filesystem::remove(settingsDirectory / name);
+            }
+        } while (FindNextFileW(handle.get(), &ffd));
+    }
 }
 
 #pragma endregion

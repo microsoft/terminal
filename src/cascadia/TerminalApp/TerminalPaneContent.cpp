@@ -3,11 +3,14 @@
 
 #include "pch.h"
 #include "TerminalPaneContent.h"
-#include "TerminalPaneContent.g.cpp"
+
+#include <mmsystem.h>
+
+#include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
+#include "TerminalPaneContent.g.cpp"
 
-#include <Mmsystem.h>
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -17,8 +20,10 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
+                                             const TerminalApp::TerminalSettingsCache& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
         _control{ control },
+        _cache{ cache },
         _profile{ profile }
     {
         _setupControlEvents();
@@ -77,7 +82,17 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const bool asContent) const
+    winrt::hstring TerminalPaneContent::Icon() const
+    {
+        return _profile.EvaluatedIcon();
+    }
+
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
+    {
+        return _control.TabColor();
+    }
+
+    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
@@ -119,12 +134,32 @@ namespace winrt::TerminalApp::implementation
         // object. That would work for schemes set by the Terminal, but not ones set
         // by VT, but that seems good enough.
 
-        // Only fill in the ContentId if absolutely needed. If you fill in a number
-        // here (even 0), we'll serialize that number, AND treat that action as an
-        // "attach existing" rather than a "create"
-        if (asContent)
+        switch (kind)
         {
+        case BuildStartupKind::Content:
+        case BuildStartupKind::MovePane:
+            // Only fill in the ContentId if absolutely needed. If you fill in a number
+            // here (even 0), we'll serialize that number, AND treat that action as an
+            // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
+            break;
+        case BuildStartupKind::Persist:
+        {
+            const auto connection = _control.Connection();
+            const auto id = connection ? connection.SessionId() : winrt::guid{};
+
+            if (id != winrt::guid{})
+            {
+                const auto settingsDir = CascadiaSettings::SettingsDirectory();
+                const auto idStr = ::Microsoft::Console::Utils::GuidToPlainString(id);
+                const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
+                _control.PersistToPath(path);
+                args.SessionId(id);
+            }
+            break;
+        }
+        default:
+            break;
         }
 
         return args;
@@ -305,11 +340,12 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const TerminalSettingsCreateResult& settings,
-                                             const Profile& profile)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
     {
-        _profile = profile;
-        _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        if (const auto& settings{ _cache.TryLookup(_profile) })
+        {
+            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        }
     }
 
     // Method Description:
@@ -319,6 +355,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::MarkAsDefterm()
     {
         _isDefTermSession = true;
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush TerminalPaneContent::BackgroundBrush()
+    {
+        return _control.BackgroundBrush();
     }
 
     float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)

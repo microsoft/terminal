@@ -11,7 +11,6 @@
 #include "UTextAdapter.h"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../renderer/base/renderer.hpp"
-#include "../types/inc/convert.hpp"
 #include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
@@ -1298,7 +1297,8 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 // - the delimiter class for the given char
 DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const
 {
-    return GetRowByOffset(pos.y).DelimiterClassAt(pos.x, wordDelimiters);
+    const auto realPos = ScreenToBufferPosition(pos);
+    return GetRowByOffset(realPos.y).DelimiterClassAt(realPos.x, wordDelimiters);
 }
 
 // Method Description:
@@ -2502,8 +2502,263 @@ void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_
         {
             // Windows uses unsigned wchar_t - RTF uses signed ones.
             // '?' is the fallback ascii character.
-            const auto codeUnitRTFStr = std::to_string(til::bit_cast<int16_t>(codeUnit));
+            const auto codeUnitRTFStr = std::to_string(std::bit_cast<int16_t>(codeUnit));
             fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\u{}?"), codeUnitRTFStr);
+        }
+    }
+}
+
+void TextBuffer::Serialize(const wchar_t* destination) const
+{
+    const wil::unique_handle file{ CreateFileW(destination, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+    THROW_LAST_ERROR_IF(!file);
+
+    static constexpr size_t writeThreshold = 32 * 1024;
+    std::wstring buffer;
+    buffer.reserve(writeThreshold + writeThreshold / 2);
+    buffer.push_back(L'\uFEFF');
+
+    const til::CoordType lastRowWithText = GetLastNonSpaceCharacter(nullptr).y;
+    CharacterAttributes previousAttr = CharacterAttributes::Unused1;
+    TextColor previousFg;
+    TextColor previousBg;
+    TextColor previousUl;
+    uint16_t previousHyperlinkId = 0;
+
+    // This iterates through each row. The exit condition is at the end
+    // of the for() loop so that we can properly handle file flushing.
+    for (til::CoordType currentRow = 0;; currentRow++)
+    {
+        const auto& row = GetRowByOffset(currentRow);
+
+        if (const auto lr = row.GetLineRendition(); lr != LineRendition::SingleWidth)
+        {
+            static constexpr std::wstring_view mappings[] = {
+                L"\x1b#6", // LineRendition::DoubleWidth
+                L"\x1b#3", // LineRendition::DoubleHeightTop
+                L"\x1b#4", // LineRendition::DoubleHeightBottom
+            };
+            const auto idx = std::clamp(static_cast<int>(lr) - 1, 0, 2);
+            buffer.append(til::at(mappings, idx));
+        }
+
+        const auto& runs = row.Attributes().runs();
+        auto it = runs.begin();
+        const auto end = runs.end();
+        const auto last = end - 1;
+        til::CoordType oldX = 0;
+
+        for (; it != end; ++it)
+        {
+            const auto attr = it->value.GetCharacterAttributes();
+            const auto hyperlinkId = it->value.GetHyperlinkId();
+            const auto fg = it->value.GetForeground();
+            const auto bg = it->value.GetBackground();
+            const auto ul = it->value.GetUnderlineColor();
+
+            if (previousAttr != attr)
+            {
+                auto attrDelta = attr ^ previousAttr;
+
+                // There's no escape sequence that only turns off either bold/intense or dim/faint. SGR 22 turns off both.
+                // This results in two issues in our generic "Mapping" code below. Assuming, both Intense and Faint were on...
+                // * ...and either turned off, it would emit SGR 22 which turns both attributes off = Wrong.
+                // * ...and both are now off, it would emit SGR 22 twice.
+                //
+                // This extra branch takes care of both issues. If both attributes turned off it'll emit a single \x1b[22m,
+                // if faint turned off \x1b[22;1m (intense is still on), and \x1b[22;2m if intense turned off (vice versa).
+                if (WI_AreAllFlagsSet(previousAttr, CharacterAttributes::Intense | CharacterAttributes::Faint) &&
+                    WI_IsAnyFlagSet(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint))
+                {
+                    wchar_t buf[8] = L"\x1b[22m";
+                    size_t len = 5;
+
+                    if (WI_IsAnyFlagSet(attr, CharacterAttributes::Intense | CharacterAttributes::Faint))
+                    {
+                        buf[4] = L';';
+                        buf[5] = WI_IsAnyFlagSet(attr, CharacterAttributes::Intense) ? L'1' : L'2';
+                        buf[6] = L'm';
+                        len = 7;
+                    }
+
+                    buffer.append(&buf[0], len);
+                    WI_ClearAllFlags(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint);
+                }
+
+                {
+                    struct Mapping
+                    {
+                        CharacterAttributes attr;
+                        uint8_t change[2]; // [0] = off, [1] = on
+                    };
+                    static constexpr Mapping mappings[] = {
+                        { CharacterAttributes::Intense, { 22, 1 } },
+                        { CharacterAttributes::Italics, { 23, 3 } },
+                        { CharacterAttributes::Blinking, { 25, 5 } },
+                        { CharacterAttributes::Invisible, { 28, 8 } },
+                        { CharacterAttributes::CrossedOut, { 29, 9 } },
+                        { CharacterAttributes::Faint, { 22, 2 } },
+                        { CharacterAttributes::TopGridline, { 55, 53 } },
+                        { CharacterAttributes::ReverseVideo, { 27, 7 } },
+                    };
+                    for (const auto& mapping : mappings)
+                    {
+                        if (WI_IsAnyFlagSet(attrDelta, mapping.attr))
+                        {
+                            const auto n = til::at(mapping.change, WI_IsAnyFlagSet(attr, mapping.attr));
+                            fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), n);
+                        }
+                    }
+                }
+
+                if (WI_IsAnyFlagSet(attrDelta, CharacterAttributes::UnderlineStyle))
+                {
+                    static constexpr std::wstring_view mappings[] = {
+                        L"\x1b[24m", // UnderlineStyle::NoUnderline
+                        L"\x1b[4m", // UnderlineStyle::SinglyUnderlined
+                        L"\x1b[21m", // UnderlineStyle::DoublyUnderlined
+                        L"\x1b[4:3m", // UnderlineStyle::CurlyUnderlined
+                        L"\x1b[4:4m", // UnderlineStyle::DottedUnderlined
+                        L"\x1b[4:5m", // UnderlineStyle::DashedUnderlined
+                    };
+
+                    auto idx = WI_EnumValue(it->value.GetUnderlineStyle());
+                    if (idx >= std::size(mappings))
+                    {
+                        idx = 1; // UnderlineStyle::SinglyUnderlined
+                    }
+
+                    buffer.append(til::at(mappings, idx));
+                }
+
+                previousAttr = attr;
+            }
+
+            if (previousFg != fg)
+            {
+                switch (fg.GetType())
+                {
+                case ColorType::IsDefault:
+                    buffer.append(L"\x1b[39m");
+                    break;
+                case ColorType::IsIndex16:
+                {
+                    uint8_t index = WI_IsFlagSet(fg.GetIndex(), 8) ? 90 : 30;
+                    index += fg.GetIndex() & 7;
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
+                    break;
+                }
+                case ColorType::IsIndex256:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;5;{}m"), fg.GetIndex());
+                    break;
+                case ColorType::IsRgb:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;2;{};{};{}m"), fg.GetR(), fg.GetG(), fg.GetB());
+                    break;
+                default:
+                    break;
+                }
+                previousFg = fg;
+            }
+
+            if (previousBg != bg)
+            {
+                switch (bg.GetType())
+                {
+                case ColorType::IsDefault:
+                    buffer.append(L"\x1b[49m");
+                    break;
+                case ColorType::IsIndex16:
+                {
+                    uint8_t index = WI_IsFlagSet(bg.GetIndex(), 8) ? 100 : 40;
+                    index += bg.GetIndex() & 7;
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
+                    break;
+                }
+                case ColorType::IsIndex256:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;5;{}m"), bg.GetIndex());
+                    break;
+                case ColorType::IsRgb:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;2;{};{};{}m"), bg.GetR(), bg.GetG(), bg.GetB());
+                    break;
+                default:
+                    break;
+                }
+                previousBg = bg;
+            }
+
+            if (previousUl != ul)
+            {
+                switch (fg.GetType())
+                {
+                case ColorType::IsDefault:
+                    buffer.append(L"\x1b[59m");
+                    break;
+                case ColorType::IsIndex256:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:5:{}m"), ul.GetIndex());
+                    break;
+                case ColorType::IsRgb:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:2::{}:{}:{}m"), ul.GetR(), ul.GetG(), ul.GetB());
+                    break;
+                default:
+                    break;
+                }
+                previousUl = ul;
+            }
+
+            if (previousHyperlinkId != hyperlinkId)
+            {
+                if (hyperlinkId)
+                {
+                    const auto uri = GetHyperlinkUriFromId(hyperlinkId);
+                    if (!uri.empty())
+                    {
+                        buffer.append(L"\x1b]8;;");
+                        buffer.append(uri);
+                        buffer.append(L"\x1b\\");
+                        previousHyperlinkId = hyperlinkId;
+                    }
+                }
+                else
+                {
+                    buffer.append(L"\x1b]8;;\x1b\\");
+                    previousHyperlinkId = 0;
+                }
+            }
+
+            auto newX = oldX + it->length;
+            // Trim whitespace with default attributes from the end of each line.
+            if (it == last && it->value == TextAttribute{})
+            {
+                // This can result in oldX > newX, but that's okay because GetText()
+                // is robust against that and returns an empty string.
+                newX = row.MeasureRight();
+            }
+
+            buffer.append(row.GetText(oldX, newX));
+            oldX = newX;
+        }
+
+        const auto moreRowsRemaining = currentRow < lastRowWithText;
+
+        if (!row.WasWrapForced() || !moreRowsRemaining)
+        {
+            buffer.append(L"\r\n");
+        }
+
+        if (buffer.size() >= writeThreshold || !moreRowsRemaining)
+        {
+            const auto fileSize = gsl::narrow<DWORD>(buffer.size() * sizeof(wchar_t));
+            DWORD bytesWritten = 0;
+            THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), buffer.data(), fileSize, &bytesWritten, nullptr));
+            if (bytesWritten != fileSize)
+            {
+                THROW_WIN32_MSG(ERROR_WRITE_FAULT, "failed to write");
+            }
+        }
+
+        if (!moreRowsRemaining)
+        {
+            break;
         }
     }
 }

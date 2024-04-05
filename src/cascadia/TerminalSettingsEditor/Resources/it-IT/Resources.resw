@@ -309,6 +309,39 @@
     <value>L'applicazione terminale che viene avviata quando viene eseguita un'applicazione della riga di comando senza una sessione esistente, ad esempio dalla finestra di dialogo menu Start o Esegui.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
+  <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
+    <value>API grafica</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11 offre un'esperienza più performante e con funzionalità più elevate, mentre Direct2D è più stabile. L'opzione predefinita "Automatico" sceglierà l'API più adatta all'hardware grafico. Se si verificano problemi significativi, provare a usare Direct2D.</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>Automatico</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct2d.Text" xml:space="preserve">
+    <value>Direct2D</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
+    <value>Direct3D 11</value>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>Disabilitare invalidazione catena di scambio parziale</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>Per impostazione predefinita, il renderer di testo usa una catena di scambio FLIP_SEQUENTIAL e dichiara rettangoli modificati ma non modificati tramite l'API Present1. Quando questa impostazione è abilitata, verrà utilizzata una catena di scambio FLIP_DISCARD e non verranno dichiarati rettangoli modificati ma non modificati. Il miglioramento dell'uno o dell'altro dipende dall'hardware e da vari altri fattori.</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
+    <value>Usare il rendering software (WARP)</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>Se questa opzione è abilitata, il terminale userà un rasterizzatore software (WARP). Questa impostazione deve essere lasciata disabilitata in quasi tutte le circostanze.</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colonne</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -957,7 +990,7 @@
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
   <data name="Profile_Elevate.HelpText" xml:space="preserve">
-    <value>Se questa opzione è abilitata, il profilo verrà aperto automaticamente in una finestra del terminale di amministrazione. Se la finestra corrente è già in esecuzione come amministratore, verrà aperta in questa finestra.</value>
+    <value>Se questa opzione è abilitata, il profilo verrà aperto automaticamente in una finestra del terminale Amministrazione. Se la finestra corrente è già in esecuzione come amministratore, verrà aperta in questa finestra.</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -1191,10 +1224,6 @@
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
     <value>Se abilitato, il Terminale genera un nuovo blocco ambiente quando crea nuove schede o riquadri con questo profilo. Se disattivato, la scheda/riquadro erediterà le variabili con cui è stato avviato il Terminale.</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
-  </data>
-  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
-    <value>Abilitare il pass-through sperimentale del terminale virtuale</value>
-    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
     <value>Visualizzare un menu al clic con il pulsante destro del mouse</value>
@@ -1770,5 +1799,13 @@
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>Scopri di più.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
+  </data>
+  <data name="Profile_MissingFontFaces.Header" xml:space="preserve">
+    <value>Tipi di carattere mancanti:</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
+  </data>
+  <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
+    <value>Caratteri senza spaziatura fissa:</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
   </data>
 </root>

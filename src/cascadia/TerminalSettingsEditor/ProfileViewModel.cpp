@@ -187,6 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 UpdateFontList();
             }
             const auto& currentFontList{ CompleteFontList() };
+            fallbackFont = currentFontList.First().Current();
             for (const auto& font : currentFontList)
             {
                 if (font.LocalizedName() == name)
@@ -298,10 +299,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _unfocusedAppearanceViewModel;
     }
 
-    bool ProfileViewModel::VtPassthroughAvailable() const noexcept
-    {
-        return Feature_VtPassthroughMode::IsEnabled() && Feature_VtPassthroughModeSettingInUI::IsEnabled();
-    }
     bool ProfileViewModel::ShowMarksAvailable() const noexcept
     {
         return Feature_ScrollbarMarks::IsEnabled();
