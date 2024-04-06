@@ -411,10 +411,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuSelectMark(
             const til::point& pos,
-            bool (*filter)(const ::ScrollMark&),
-            til::point_span (*getSpan)(const ::ScrollMark&));
+            bool (*filter)(const ::MarkExtents&),
+            til::point_span (*getSpan)(const ::MarkExtents&));
 
-        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::MarkExtents&));
 
         inline bool _IsClosing() const noexcept
         {

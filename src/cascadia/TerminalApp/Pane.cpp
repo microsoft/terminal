@@ -100,7 +100,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
 // Extract the terminal settings from the current (leaf) pane's control
 // to be used to create an equivalent control
-NewTerminalArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
+INewContentArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
@@ -1280,21 +1280,11 @@ void Pane::_FocusFirstChild()
     }
 }
 
-void Pane::UpdateSettings(const CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache)
+void Pane::UpdateSettings(const CascadiaSettings& settings)
 {
     if (_content)
     {
-        // We need to do a bit more work here for terminal
-        // panes. They need to know about the profile that was used for
-        // them, and about the focused/unfocused settings.
-        if (const auto& terminalPaneContent{ _content.try_as<TerminalPaneContent>() })
-        {
-            terminalPaneContent.UpdateTerminalSettings(cache);
-        }
-        else
-        {
-            _content.UpdateSettings(settings);
-        }
+        _content.UpdateSettings(settings);
     }
 }
 

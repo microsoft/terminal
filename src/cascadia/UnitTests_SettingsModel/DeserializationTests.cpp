@@ -1390,11 +1390,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
 
         Log::Comment(L"Note that we're skipping ctrl+B, since that doesn't have `keys` set.");
@@ -1407,11 +1409,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
@@ -1421,11 +1425,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
@@ -1435,11 +1441,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
@@ -1449,11 +1457,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
 
         Log::Comment(L"Now verify the commands");
@@ -1478,11 +1488,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             // This was renamed to null (aka removed from the name map) in F. So this does not exist.

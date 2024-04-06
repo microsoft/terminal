@@ -446,9 +446,10 @@ void VtIo::CorkRenderer(bool corked) const noexcept
 // - vtRenderEngine: a VT renderer that our VtIo should use as the vt engine during these tests
 // Return Value:
 // - <none>
-void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
+void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine, const bool resizeQuirk)
 {
     _initialized = true;
+    _resizeQuirk = resizeQuirk;
     _pVtRenderEngine = std::move(vtRenderEngine);
 }
 #endif

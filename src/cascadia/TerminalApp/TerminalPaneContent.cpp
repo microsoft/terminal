@@ -20,8 +20,10 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
+                                             const TerminalApp::TerminalSettingsCache& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
         _control{ control },
+        _cache{ cache },
         _profile{ profile }
     {
         _setupControlEvents();
@@ -90,7 +92,7 @@ namespace winrt::TerminalApp::implementation
         return _control.TabColor();
     }
 
-    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
+    INewContentArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
@@ -340,15 +342,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
     {
-        // Do nothing. We'll later be updated manually by
-        // UpdateTerminalSettings, which we need for profile and
-        // focused/unfocused settings.
-        assert(false); // If you hit this, you done goofed.
-    }
-
-    void TerminalPaneContent::UpdateTerminalSettings(const TerminalApp::TerminalSettingsCache& cache)
-    {
-        if (const auto& settings{ cache.TryLookup(_profile) })
+        if (const auto& settings{ _cache.TryLookup(_profile) })
         {
             _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
         }

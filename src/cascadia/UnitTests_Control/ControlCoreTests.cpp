@@ -502,7 +502,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 24, 0 }; // The character after the prompt
-            const til::point expectedEnd{ 29, 3 }; // x = buffer.right
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }

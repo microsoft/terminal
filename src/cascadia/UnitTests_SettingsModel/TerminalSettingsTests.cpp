@@ -320,14 +320,16 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
@@ -341,15 +343,17 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
@@ -363,15 +367,17 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
@@ -385,15 +391,17 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
@@ -407,15 +415,17 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"foo.exe", terminalArgs.Commandline());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             // This action specified a command but no profile; it gets reassigned to the base profile
             VERIFY_ARE_EQUAL(settings->ProfileDefaults(), profile);
@@ -430,16 +440,18 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
-            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
+            VERIFY_ARE_EQUAL(L"foo.exe", terminalArgs.Commandline());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
@@ -452,14 +464,16 @@ namespace SettingsModelUnitTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
@@ -472,15 +486,17 @@ namespace SettingsModelUnitTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_FALSE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"c:\\foo", terminalArgs.StartingDirectory());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
@@ -494,16 +510,18 @@ namespace SettingsModelUnitTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_FALSE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"c:\\foo", terminalArgs.StartingDirectory());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
@@ -517,15 +535,17 @@ namespace SettingsModelUnitTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_FALSE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"bar", terminalArgs.TabTitle());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
@@ -539,16 +559,18 @@ namespace SettingsModelUnitTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_FALSE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"bar", terminalArgs.TabTitle());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
@@ -562,18 +584,20 @@ namespace SettingsModelUnitTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
-            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
-            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_FALSE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_FALSE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"foo.exe", terminalArgs.Commandline());
+            VERIFY_ARE_EQUAL(L"c:\\foo", terminalArgs.StartingDirectory());
+            VERIFY_ARE_EQUAL(L"bar", terminalArgs.TabTitle());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, terminalArgs, nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
