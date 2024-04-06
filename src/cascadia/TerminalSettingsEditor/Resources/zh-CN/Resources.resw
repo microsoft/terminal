@@ -1737,7 +1737,7 @@
     <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
   </data>
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
-    <value>文本格式化</value>
+    <value>文本格式</value>
     <comment>Header for a control to how text is formatted</comment>
   </data>
   <data name="Appearance_IntenseTextStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
