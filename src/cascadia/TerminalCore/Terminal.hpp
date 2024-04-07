@@ -117,15 +117,15 @@ public:
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
 
-    const std::vector<ScrollMark>& GetScrollMarks() const noexcept;
-    void AddMark(const ScrollMark& mark,
-                 const til::point& start,
-                 const til::point& end,
-                 const bool fromUi);
+    std::vector<ScrollMark> GetMarkRows() const;
+    std::vector<MarkExtents> GetMarkExtents() const;
+    void AddMarkFromUI(ScrollbarData mark, til::CoordType y);
 
     til::property<bool> AlwaysNotifyOnBufferRotation;
 
-    std::wstring_view CurrentCommand() const;
+    std::wstring CurrentCommand() const;
+
+    void SerializeMainBuffer(const wchar_t* destination) const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -151,11 +151,6 @@ public:
     void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
 
-    void MarkPrompt(const ScrollMark& mark) override;
-    void MarkCommandStart() override;
-    void MarkOutputStart() override;
-    void MarkCommandFinish(std::optional<unsigned int> error) override;
-
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
@@ -167,7 +162,7 @@ public:
 
     void ClearMark();
     void ClearAllMarks();
-    til::color GetColorForMark(const ScrollMark& mark) const;
+    til::color GetColorForMark(const ScrollbarData& markData) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
@@ -433,15 +428,6 @@ private:
         WORD ScanCode;
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
-
-    enum class PromptState : uint32_t
-    {
-        None = 0,
-        Prompt,
-        Command,
-        Output,
-    };
-    PromptState _currentPromptState{ PromptState::None };
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

@@ -122,16 +122,29 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff,
     };
 
-    [default_interface] runtimeclass NewTerminalArgs {
+    interface INewContentArgs {
+        String Type { get; };
+        Boolean Equals(INewContentArgs other);
+        UInt64 Hash();
+        INewContentArgs Copy();
+        String GenerateName();
+    };
+
+    runtimeclass BaseContentArgs : [default] INewContentArgs {
+        BaseContentArgs();
+        BaseContentArgs(String type);
+    };
+
+    runtimeclass NewTerminalArgs : INewContentArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
-        NewTerminalArgs Copy();
 
         String Commandline;
         String StartingDirectory;
         String TabTitle;
         Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        Guid SessionId;
         Boolean AppendCommandLine;
 
         // We use IReference<> to treat some args as nullable where null means
@@ -152,10 +165,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         UInt64 ContentId{ get; set; };
 
-        Boolean Equals(NewTerminalArgs other);
-        String GenerateName();
         String ToCommandline();
-        UInt64 Hash();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -174,8 +184,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
-        NewTabArgs(NewTerminalArgs terminalArgs);
-        NewTerminalArgs TerminalArgs { get; };
+        NewTabArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
     };
 
     [default_interface] runtimeclass MovePaneArgs : IActionArgs
@@ -220,13 +230,13 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, Double size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, INewContentArgs contentArgs);
         SplitPaneArgs(SplitType splitMode);
 
         SplitDirection SplitDirection { get; };
-        NewTerminalArgs TerminalArgs { get; };
+        INewContentArgs ContentArgs { get; };
         SplitType SplitMode { get; };
         Double SplitSize { get; };
     };
@@ -346,8 +356,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass NewWindowArgs : IActionArgs
     {
-        NewWindowArgs(NewTerminalArgs terminalArgs);
-        NewTerminalArgs TerminalArgs { get; };
+        NewWindowArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
     };
 
     [default_interface] runtimeclass PrevTabArgs : IActionArgs

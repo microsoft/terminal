@@ -9,7 +9,6 @@
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
   <PropertyGroup Label="Globals">
-    <CppWinRTHeapEnforcement>AnyValueHereWillDisableTheOptOut</CppWinRTHeapEnforcement>
     <CppWinRTEnabled>true</CppWinRTEnabled>
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <DefaultLanguage>en-US</DefaultLanguage>

@@ -5,6 +5,7 @@
 #include "TermControl.h"
 
 #include <LibraryResources.h>
+#include <utils.hpp>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -368,7 +369,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 for (const auto& m : marks)
                 {
-                    const auto row = m.Start.Y;
+                    const auto row = m.Row;
                     const til::color color{ m.Color.Color };
                     const auto base = dataAt(row);
                     drawPip(base, color);
@@ -991,36 +992,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - hr: an  HRESULT describing the warning
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/,
-                                                         Control::RendererWarningArgs args)
+    winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/, Control::RendererWarningArgs args)
     {
-        const auto hr = static_cast<HRESULT>(args.Result());
-
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
 
-        if (auto control{ weakThis.get() })
+        const auto control = weakThis.get();
+        if (!control)
         {
-            winrt::hstring message;
-            if (HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) == hr ||
-                HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
-            {
-                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
-                                                      (_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance()).PixelShaderPath()) };
-            }
-            else if (D2DERR_SHADER_COMPILE_FAILED == hr)
-            {
-                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
-            }
-            else
-            {
-                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
-                                                      hr) };
-            }
-
-            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
-            control->RaiseNotice.raise(*control, std::move(noticeArgs));
+            co_return;
         }
+
+        const auto hr = args.Result();
+        const auto parameter = args.Parameter();
+        winrt::hstring message;
+
+        switch (hr)
+        {
+        case HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND):
+        case HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND):
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, parameter) };
+            break;
+        case D2DERR_SHADER_COMPILE_FAILED:
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            break;
+        case DWRITE_E_NOFONT:
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };
+            break;
+        default:
+        {
+            wchar_t buf[512];
+            const auto len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &buf[0], ARRAYSIZE(buf), nullptr);
+            const std::wstring_view msg{ &buf[0], len };
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorOther") }, hr, msg) };
+            break;
+        }
+        }
+
+        auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
+        control->RaiseNotice.raise(*control, std::move(noticeArgs));
     }
 
     void TermControl::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
@@ -1059,7 +1069,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 return false;
             }
+
             _interactivity.Initialize();
+
+            if (!_restorePath.empty())
+            {
+                winrt::get_self<ControlCore>(_core)->RestoreFromPath(_restorePath.c_str());
+                _restorePath = {};
+            }
+
+            _core.Connection().Start();
         }
         else
         {
@@ -2250,6 +2269,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ExpandSelectionToWord();
     }
 
+    void TermControl::RestoreFromPath(winrt::hstring path)
+    {
+        _restorePath = std::move(path);
+    }
+
+    void TermControl::PersistToPath(const winrt::hstring& path) const
+    {
+        // Don't persist us if we weren't ever initialized. In that case, we
+        // never got an initial size, never instantiated a buffer, and didn't
+        // start the connection yet, so there's nothing for us to add here.
+        //
+        // If we were supposed to be restored from a path, then we don't need to
+        // do anything special here. We'll leave the original file untouched,
+        // and the next time we actually are initialized, we'll just use that
+        // file then.
+        if (_initializedTerminal)
+        {
+            winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+        }
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())
@@ -2284,6 +2324,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
+
     void TermControl::Detach()
     {
         _revokers = {};
@@ -2409,7 +2450,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         LOG_IF_FAILED(engine->UpdateDpi(dpi));
         LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
 
-        const auto scale = engine->GetScaling();
+        const auto scale = dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the

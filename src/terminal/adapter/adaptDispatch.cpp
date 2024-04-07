@@ -3671,7 +3671,7 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
     else if (subParam == 12)
     {
-        _api.MarkCommandStart();
+        _api.GetTextBuffer().StartCommand();
         return true;
     }
 
@@ -3690,12 +3690,12 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty())
+    const auto isConPty = _api.IsConsolePty();
+    if (isConPty)
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        // Flush the frame manually, to make sure marks end up on the right
+        // line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3712,14 +3712,14 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
     const auto action = til::at(parts, 0);
 
+    bool handled = false;
     if (action == L"SetMark")
     {
-        ScrollMark mark;
-        mark.category = MarkCategory::Prompt;
-        _api.MarkPrompt(mark);
-        return true;
+        _api.GetTextBuffer().StartPrompt();
+        handled = true;
     }
-    return false;
+
+    return handled && !isConPty;
 }
 
 // Method Description:
@@ -3734,12 +3734,12 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty())
+    const auto isConPty = _api.IsConsolePty();
+    if (isConPty)
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        // Flush the frame manually, to make sure marks end up on the right
+        // line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3753,7 +3753,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     {
         return false;
     }
-
+    bool handled = false;
     const auto action = til::at(parts, 0);
     if (action.size() == 1)
     {
@@ -3761,21 +3761,21 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         {
         case L'A': // FTCS_PROMPT
         {
-            // Simply just mark this line as a prompt line.
-            ScrollMark mark;
-            mark.category = MarkCategory::Prompt;
-            _api.MarkPrompt(mark);
-            return true;
+            _api.GetTextBuffer().StartPrompt();
+            handled = true;
+            break;
         }
         case L'B': // FTCS_COMMAND_START
         {
-            _api.MarkCommandStart();
-            return true;
+            _api.GetTextBuffer().StartCommand();
+            handled = true;
+            break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
-            _api.MarkOutputStart();
-            return true;
+            _api.GetTextBuffer().StartOutput();
+            handled = true;
+            break;
         }
         case L'D': // FTCS_COMMAND_FINISHED
         {
@@ -3793,12 +3793,15 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                 error = Utils::StringToUint(errorString, parsedError) ? parsedError :
                                                                         UINT_MAX;
             }
-            _api.MarkCommandFinish(error);
-            return true;
+
+            _api.GetTextBuffer().EndCurrentCommand(error);
+
+            handled = true;
+            break;
         }
         default:
         {
-            return false;
+            handled = false;
         }
         }
     }
@@ -3807,7 +3810,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
-    return false;
+    return handled && !isConPty;
 }
 // Method Description:
 // - Performs a VsCode action

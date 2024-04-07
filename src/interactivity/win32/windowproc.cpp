@@ -721,9 +721,7 @@ using namespace Microsoft::Console::Types;
     {
         try
         {
-            std::wstringstream wss;
-            wss << std::setfill(L'0') << std::setw(8) << wParam;
-            auto wstr = wss.str();
+            const auto wstr = fmt::format(FMT_COMPILE(L"{:08d}"), wParam);
             LoadKeyboardLayout(wstr.c_str(), KLF_ACTIVATE);
         }
         catch (...)

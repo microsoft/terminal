@@ -257,10 +257,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
             _sessionId = unbox_prop_or<winrt::guid>(settings, L"sessionId", _sessionId);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
-            if constexpr (Feature_VtPassthroughMode::IsEnabled())
-            {
-                _passthroughMode = unbox_prop_or<bool>(settings, L"passthroughMode", _passthroughMode);
-            }
             _inheritCursor = unbox_prop_or<bool>(settings, L"inheritCursor", _inheritCursor);
             _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
 
@@ -330,14 +326,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_inheritCursor)
             {
                 flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
-            }
-
-            if constexpr (Feature_VtPassthroughMode::IsEnabled())
-            {
-                if (_passthroughMode)
-                {
-                    WI_SetFlag(flags, PSEUDOCONSOLE_PASSTHROUGH_MODE);
-                }
             }
 
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), flags, &_inPipe, &_outPipe, &_hPC));

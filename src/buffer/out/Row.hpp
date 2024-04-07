@@ -8,6 +8,7 @@
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
+#include "Marks.hpp"
 
 class ROW;
 class TextBuffer;
@@ -167,6 +168,11 @@ public:
     auto AttrBegin() const noexcept { return _attr.begin(); }
     auto AttrEnd() const noexcept { return _attr.end(); }
 
+    const std::optional<ScrollbarData>& GetScrollbarData() const noexcept;
+    void SetScrollbarData(std::optional<ScrollbarData> data) noexcept;
+    void StartPrompt() noexcept;
+    void EndOutput(std::optional<unsigned int> error) noexcept;
+
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
     friend class RowTests;
@@ -299,6 +305,8 @@ private:
     bool _wrapForced = false;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded = false;
+
+    std::optional<ScrollbarData> _promptData = std::nullopt;
 };
 
 #ifdef UNIT_TESTING

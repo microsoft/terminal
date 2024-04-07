@@ -432,7 +432,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             }
             if (p.warningCallback)
             {
-                p.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
+                p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, p.s->misc->customPixelShaderPath);
             }
         }
 
@@ -448,7 +448,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
                 _customPixelShader.reset();
                 if (p.warningCallback)
                 {
-                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
+                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, p.s->misc->customPixelShaderImagePath);
                 }
             }
         }
@@ -1439,7 +1439,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
 
     if (BuiltinGlyphs::IsSoftFontChar(glyphIndex))
     {
-        _drawSoftFontGlyph(p, r, glyphIndex);
+        shadingType = _drawSoftFontGlyph(p, r, glyphIndex);
     }
     else
     {
@@ -1465,22 +1465,17 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     return glyphEntry;
 }
 
-void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex)
+BackendD3D::ShadingType BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex)
 {
-    _d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
-    const auto restoreD2D = wil::scope_exit([&]() {
-        _d2dRenderTarget->PopAxisAlignedClip();
-    });
-
     const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
     const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
     const auto softFontIndex = glyphIndex - 0xEF20u;
     const auto data = til::clamp_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
 
+    // This happens if someone wrote a U+EF2x character (by accident), but we don't even have soft fonts enabled yet.
     if (data.empty() || data.size() != height)
     {
-        _d2dRenderTarget->Clear();
-        return;
+        return ShadingType::Default;
     }
 
     if (!_softFontBitmap)
@@ -1517,8 +1512,14 @@ void BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F
         THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
     }
 
+    _d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
+    const auto restoreD2D = wil::scope_exit([&]() {
+        _d2dRenderTarget->PopAxisAlignedClip();
+    });
+
     const auto interpolation = p.s->font->antialiasingMode == AntialiasingMode::Aliased ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &rect, 1, interpolation, nullptr, nullptr);
+    return ShadingType::TextGrayscale;
 }
 
 void BackendD3D::_drawGlyphAtlasAllocate(const RenderingPayload& p, stbrp_rect& rect)

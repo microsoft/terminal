@@ -311,11 +311,20 @@ namespace Microsoft::Console::Render::Atlas
         DWRITE_SCRIPT_ANALYSIS analysis;
     };
 
+    enum class GraphicsAPI
+    {
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
+
     struct TargetSettings
     {
         HWND hwnd = nullptr;
         bool useAlpha = false;
-        bool useSoftwareRendering = false;
+        bool useWARP = false;
+        bool disablePresent1 = false;
+        GraphicsAPI graphicsAPI = GraphicsAPI::Automatic;
     };
 
     enum class AntialiasingMode : u8
@@ -336,7 +345,8 @@ namespace Microsoft::Console::Render::Atlas
     struct FontSettings
     {
         wil::com_ptr<IDWriteFontCollection> fontCollection;
-        wil::com_ptr<IDWriteFontFamily> fontFamily;
+        wil::com_ptr<IDWriteFontFallback> fontFallback;
+        wil::com_ptr<IDWriteFontFallback1> fontFallback1; // optional, might be nullptr
         std::wstring fontName;
         std::vector<DWRITE_FONT_FEATURE> fontFeatures;
         std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
@@ -479,10 +489,8 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1Factory> d2dFactory;
         wil::com_ptr<IDWriteFactory2> dwriteFactory;
         wil::com_ptr<IDWriteFactory4> dwriteFactory4; // optional, might be nullptr
-        wil::com_ptr<IDWriteFontFallback> systemFontFallback;
-        wil::com_ptr<IDWriteFontFallback1> systemFontFallback1; // optional, might be nullptr
         wil::com_ptr<IDWriteTextAnalyzer1> textAnalyzer;
-        std::function<void(HRESULT)> warningCallback;
+        std::function<void(HRESULT, wil::zwstring_view)> warningCallback;
         std::function<void(HANDLE)> swapChainChangedCallback;
 
         //// Parameters which are constant for the existence of the backend.

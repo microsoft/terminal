@@ -32,6 +32,8 @@ namespace Microsoft.Terminal.Settings.Model
         void Flush();
         void Reset();
 
+        void AppendPersistedWindowLayout(WindowLayout layout);
+
         String SettingsHash;
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;
         Windows.Foundation.Collections.IVector<String> RecentCommands;

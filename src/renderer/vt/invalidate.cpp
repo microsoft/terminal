@@ -112,6 +112,10 @@ CATCH_RETURN();
     //      end paint to specifically handle this.
     _circled = circled;
 
+    // If we flushed for any reason other than circling (i.e, a sequence that we
+    // didn't understand), we don't need to push the buffer out on EndPaint.
+    _noFlushOnEnd = !circled;
+
     _trace.TraceTriggerCircling(*pForcePaint);
     return S_OK;
 }

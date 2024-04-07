@@ -466,17 +466,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             std::wstring to_string() const
             {
-                std::wstringstream wss;
-                wss << std::endl
-                    << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
-                wss << L"Runs:" << std::endl;
-
+                auto str = fmt::format(FMT_COMPILE(L"Bitmap of size {} contains the following dirty regions:\nRuns:"), _sz.to_string());
                 for (auto& item : *this)
                 {
-                    wss << L"\t- " << item.to_string() << std::endl;
+                    fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"\n\t- {}"), item.to_string());
                 }
-
-                return wss.str();
+                return str;
             }
 
         private:
