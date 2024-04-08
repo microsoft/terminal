@@ -68,7 +68,7 @@ namespace SettingsModelUnitTests
                                               "name" : "profile4",
                                               "guid" : "{6239A42C1DE449A380BDE8FDD045185C}"
                                               })" };
-        const std::string profileWithGuidInQoutes{ R"({
+        const std::string profileWithRawGuid{ R"({
                                               "name" : "profile4",
                                               "guid" : "6239a42c-1de4-49a3-80bd-e8fdd045185c"
                                               })" };
@@ -94,7 +94,7 @@ namespace SettingsModelUnitTests
         parseAndVerifyProfile(secondProfileWithoutGuid, false);
 
         // The following crash JSON parsing
-        //parseAndVerifyProfile(profileWithGuidInQoutes, false);
+        //parseAndVerifyProfile(profileWithRawGuid, false);
         //parseAndVerifyProfile(profileWithHyphenlessGuid, false);
         //parseAndVerifyProfile(profileWithGuidFormatP, false);
 
