@@ -94,9 +94,9 @@ namespace SettingsModelUnitTests
         parseAndVerifyProfile(secondProfileWithoutGuid, false);
 
         // The following crash JSON parsing
-        //parseAndVerifyProfile(profileWithRawGuid, false);
-        //parseAndVerifyProfile(profileWithHyphenlessGuid, false);
-        //parseAndVerifyProfile(profileWithGuidFormatP, false);
+        VERIFY_THROWS(parseAndVerifyProfile(profileWithHyphenlessGuid, false), std::exception);
+        VERIFY_THROWS(parseAndVerifyProfile(profileWithRawGuid, false), std::exception);
+        VERIFY_THROWS(parseAndVerifyProfile(profileWithGuidFormatP, false), std::exception);
 
         const auto parsedNullGuidProfile = parseAndVerifyProfile(profileWithNullGuid, true);
         const auto parsedGuidProfileFormatB = parseAndVerifyProfile(profileWithGuidFormatB, true);
