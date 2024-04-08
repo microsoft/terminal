@@ -85,7 +85,7 @@ namespace SettingsModelUnitTests
                                               "name" : "profile4",
                                               "guid" : "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
                                               })" };
-        const std::string profileWithGuidFormatBUpperCase{ R"({
+        const std::string profileWithGuidUpperCaseFormatB{ R"({
                                               "name" : "profile4",
                                               "guid" : "{6239A42C-1DE4-49A3-80BD-E8FDD045185C}"
                                               })" };
@@ -99,15 +99,15 @@ namespace SettingsModelUnitTests
         //parseAndVerifyProfile(profileWithGuidFormatP, false);
 
         const auto parsedNullGuidProfile = parseAndVerifyProfile(profileWithNullGuid, true);
-        const auto parsedFormatBGuidProfile = parseAndVerifyProfile(profileWithGuidFormatB, true);
-        const auto parsedFormatBUpperCaseGuidProfile = parseAndVerifyProfile(profileWithGuidFormatBUpperCase, true);
+        const auto parsedGuidProfileFormatB = parseAndVerifyProfile(profileWithGuidFormatB, true);
+        const auto parsedGuidProfileUpperCaseFormatB = parseAndVerifyProfile(profileWithGuidUpperCaseFormatB, true);
 
         const winrt::guid nullGuid{};
         const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
 
         VERIFY_ARE_EQUAL(parsedNullGuidProfile->Guid(), nullGuid);
-        VERIFY_ARE_EQUAL(parsedFormatBGuidProfile->Guid(), cmdGuid);
-        VERIFY_ARE_EQUAL(parsedFormatBUpperCaseGuidProfile->Guid(), cmdGuid);
+        VERIFY_ARE_EQUAL(parsedGuidProfileFormatB->Guid(), cmdGuid);
+        VERIFY_ARE_EQUAL(parsedGuidProfileUpperCaseFormatB->Guid(), cmdGuid);
     }
 
     void ProfileTests::LayerProfileProperties()
