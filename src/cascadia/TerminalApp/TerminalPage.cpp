@@ -707,7 +707,6 @@ namespace winrt::TerminalApp::implementation
         _ShowDialogHelper(L"AboutDialog");
     }
 
-
     winrt::hstring TerminalPage::ApplicationDisplayName()
     {
         return CascadiaSettings::ApplicationDisplayName();

@@ -1475,13 +1475,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-     void TerminalPage::_HandleOpenFileDialog(const IInspectable& /*sender*/,
-                                           const ActionEventArgs& args)
+    void TerminalPage::_HandleOpenFileDialog(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
     {
         if (const auto& control{ _GetActiveControl() })
         {
             _OpenFileDialog(control);
-        }   
+        }
         args.Handled(true);
     }
 }
