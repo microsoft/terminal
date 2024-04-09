@@ -12,7 +12,6 @@
 #include "../host/directio.h"
 #include "../host/handle.h"
 #include "../host/srvinit.h"
-#include "../host/telemetry.hpp"
 
 #include "../interactivity/base/HostSignalInputThread.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -413,7 +412,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 {
     auto& Globals = ServiceLocator::LocateGlobals();
     auto& gci = Globals.getConsoleInformation();
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
     NTSTATUS Status;
@@ -562,8 +560,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 // - A pointer to the reply message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API_MSG pMessage)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
-
     const auto pProcessData = pMessage->GetProcessHandle();
 
     auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();

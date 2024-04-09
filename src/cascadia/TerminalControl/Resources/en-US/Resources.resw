@@ -178,6 +178,18 @@
   <data name="HowToOpenRun.Text" xml:space="preserve">
     <value>Ctrl+Click to follow link</value>
   </data>
+  <data name="TermControl_NoMatch" xml:space="preserve">
+    <value>No results</value>
+    <comment>Will be presented near the search box when Find operation returned no results.</comment>
+  </data>
+  <data name="TermControl_Searching" xml:space="preserve">
+    <value>Searching...</value>
+    <comment>Will be presented near the search box when Find operation is running.</comment>
+  </data>
+  <data name="TermControl_NumResults" xml:space="preserve">
+    <value>{0}/{1}</value>
+    <comment>Will be displayed to indicate what result the user has selected, of how many total results. {0} will be replaced with the index of the current result. {1} will be replaced with the total number of results.</comment>
+  </data>
   <data name="InvalidUri" xml:space="preserve">
     <value>Invalid URI</value>
     <comment>Whenever we encounter an invalid URI or URL we show this string as a warning.</comment>
@@ -200,6 +212,14 @@ Please either install the missing font or choose another one.</value>
   <data name="UnexpectedRendererError" xml:space="preserve">
     <value>Renderer encountered an unexpected error: {0}</value>
     <comment>{0} is an error code.</comment>
+  </data>
+  <data name="RendererErrorFontNotFound" xml:space="preserve">
+    <value>Unable to find the following fonts: {0}. Please either install them or choose different fonts.</value>
+    <comment>{Locked="{0}"} This is a warning dialog shown when the user selects a font that isn't installed.</comment>
+  </data>
+  <data name="RendererErrorOther" xml:space="preserve">
+    <value>Renderer encountered an unexpected error: {0:#010x} {1}</value>
+    <comment>{Locked="{0:#010x}","{1}"} {0:#010x} is a placeholder for a Windows error code (e.g. 0x88985002). {1} is the corresponding message.</comment>
   </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Read-only mode is enabled.</value>

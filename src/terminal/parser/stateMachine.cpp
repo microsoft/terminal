@@ -685,17 +685,17 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 }
 
 // Routine Description:
-// - Triggers the CsiDispatch action to indicate that the listener should handle a control sequence.
+// - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
-void StateMachine::_ActionOscDispatch(const wchar_t wch)
+void StateMachine::_ActionOscDispatch()
 {
     _trace.TraceOnAction(L"OscDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
-        return _engine->ActionOscDispatch(wch, _oscParameter, _oscString);
+        return _engine->ActionOscDispatch(_oscParameter, _oscString);
     }));
 }
 
@@ -1434,19 +1434,27 @@ void StateMachine::_EventCsiSubParam(const wchar_t wch)
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the OscParam state.
 //   Events in this state will:
-//   1. Collect numeric values into an Osc Param
-//   2. Move to the OscString state on a delimiter
-//   3. Ignore everything else.
+//   1. Trigger the OSC action associated with the param on an OscTerminator
+//   2. If we see a ESC, enter the OscTermination state. We'll wait for one
+//      more character before we dispatch the (empty) string.
+//   3. Collect numeric values into an Osc Param
+//   4. Move to the OscString state on a delimiter
+//   5. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventOscParam(const wchar_t wch) noexcept
+void StateMachine::_EventOscParam(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"OscParam");
     if (_isOscTerminator(wch))
     {
+        _ActionOscDispatch();
         _EnterGround();
+    }
+    else if (_isEscape(wch))
+    {
+        _EnterOscTermination();
     }
     else if (_isNumericParamValue(wch))
     {
@@ -1479,7 +1487,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
     _trace.TraceOnEvent(L"OscString");
     if (_isOscTerminator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else if (_isEscape(wch))
@@ -1511,7 +1519,7 @@ void StateMachine::_EventOscTermination(const wchar_t wch)
     _trace.TraceOnEvent(L"OscTermination");
     if (_isStringTerminatorIndicator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else
@@ -1856,8 +1864,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             ProcessCharacter(_c1To7Bit(wch));
         }
     }
-    // Don't go to escape from the OSC string state - ESC can be used to terminate OSC strings.
-    else if (_isEscape(wch) && _state != VTStates::OscString)
+    // Don't go to escape from the OSC string/param states - ESC can be used to terminate OSC strings.
+    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::OscParam)
     {
         _ActionInterrupt();
         _EnterEscape();
@@ -2127,6 +2135,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
     // If we're at the end of the string and have remaining un-printed characters,
     if (_state != VTStates::Ground)
     {
+        const auto run = _CurrentRun();
+
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
         // also the start of a CSI, and could be the start of a longer sequence,
@@ -2136,60 +2146,34 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
         // which is _wrong_).
         //
-        // Fortunately, for VT input, each keystroke comes in as an individual
-        // write operation. So, if at the end of processing a string for the
-        // InputEngine, we find that we're not in the Ground state, that implies
-        // that we've processed some input, but not dispatched it yet. This
-        // block at the end of `ProcessString` will then re-process the
-        // undispatched string, but it will ensure that it dispatches on the
-        // last character of the string. For our previous `\x1b[` scenario, that
-        // means we'll make sure to call `_ActionEscDispatch('[')`., which will
-        // properly decode the string as <kbd>alt+[</kbd>.
-        const auto run = _CurrentRun();
-
+        // At the same time, input may be broken up arbitrarily, depending on the pipe's
+        // buffer size, our read-buffer size, the sender's write-buffer size, and more.
+        // In fact, with the current WSL, input is broken up in 16 byte chunks (Why? :(),
+        // which breaks up many of our longer sequences, like our Win32InputMode ones.
+        //
+        // As a heuristic, this code specifically checks for a trailing Esc or Alt+key.
+        // If we encountered a win32-input-mode sequence before, we know that our \x1b[?9001h
+        // request to enable them was successful. While a client may still send \x1b{some char}
+        // intentionally, it's far more likely now that we're looking at a broken up sequence.
+        // The most common win32-input-mode is ConPTY itself after all, and we never emit
+        // \x1b{some char} once it's enabled.
         if (_isEngineForInput)
         {
-            // Reset our state, and put all but the last char in again.
-            ResetState();
-            _processingLastCharacter = false;
-            // Chars to flush are [pwchSequenceStart, pwchCurr)
-            auto wchIter = run.cbegin();
-            while (wchIter < run.cend() - 1)
+            const auto win32 = _engine->EncounteredWin32InputModeSequence();
+            if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
             {
-                ProcessCharacter(*wchIter);
-                wchIter++;
+                _EnterGround();
+                if (run.size() == 1)
+                {
+                    _ActionExecute(L'\x1b');
+                }
+                else
+                {
+                    _EnterEscape();
+                    _ActionEscDispatch(run.back());
+                }
+                _EnterGround();
             }
-            // Manually execute the last char [pwchCurr]
-            _processingLastCharacter = true;
-            switch (_state)
-            {
-            case VTStates::Ground:
-                _ActionExecute(*wchIter);
-                break;
-            case VTStates::Escape:
-            case VTStates::EscapeIntermediate:
-                _ActionEscDispatch(*wchIter);
-                break;
-            case VTStates::CsiEntry:
-            case VTStates::CsiIntermediate:
-            case VTStates::CsiIgnore:
-            case VTStates::CsiParam:
-            case VTStates::CsiSubParam:
-                _ActionCsiDispatch(*wchIter);
-                break;
-            case VTStates::OscParam:
-            case VTStates::OscString:
-            case VTStates::OscTermination:
-                _ActionOscDispatch(*wchIter);
-                break;
-            case VTStates::Ss3Entry:
-            case VTStates::Ss3Param:
-                _ActionSs3Dispatch(*wchIter);
-                break;
-            }
-            // microsoft/terminal#2746: Make sure to return to the ground state
-            // after dispatching the characters
-            _EnterGround();
         }
         else if (_state != VTStates::SosPmApcString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIgnore)
         {

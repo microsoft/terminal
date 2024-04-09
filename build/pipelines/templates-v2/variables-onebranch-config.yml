@@ -1,0 +1,2 @@
+variables:
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:1.0.02566.28'

@@ -18,8 +18,8 @@ namespace Microsoft::Console::VirtualTerminal
             bool isRightButtonDown;
         };
 
-        static [[nodiscard]] OutputType MakeUnhandled() noexcept;
-        static [[nodiscard]] OutputType MakeOutput(const std::wstring_view& str);
+        [[nodiscard]] static OutputType MakeUnhandled() noexcept;
+        [[nodiscard]] static OutputType MakeOutput(const std::wstring_view& str);
         [[nodiscard]] OutputType HandleKey(const INPUT_RECORD& pInEvent);
         [[nodiscard]] OutputType HandleFocus(bool focused) const;
         [[nodiscard]] OutputType HandleMouse(til::point position, unsigned int button, short modifierKeyState, short delta, MouseButtonState state);
@@ -46,6 +46,7 @@ namespace Microsoft::Console::VirtualTerminal
             AlternateScroll
         };
 
+        TerminalInput() noexcept;
         void SetInputMode(const Mode mode, const bool enabled) noexcept;
         bool GetInputMode(const Mode mode) const noexcept;
         void ResetInputModes() noexcept;
@@ -66,17 +67,32 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         // storage location for the leading surrogate of a utf-16 surrogate pair
-        std::optional<wchar_t> _leadingSurrogate;
+        wchar_t _leadingSurrogate = 0;
 
         std::optional<WORD> _lastVirtualKeyCode;
+        DWORD _lastControlKeyState = 0;
+        uint64_t _lastLeftCtrlTime = 0;
+        uint64_t _lastRightAltTime = 0;
+        std::unordered_map<int, std::wstring> _keyMap;
+        std::wstring _focusInSequence;
+        std::wstring _focusOutSequence;
 
-        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat };
+        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
         bool _forceDisableWin32InputMode{ false };
 
-        [[nodiscard]] OutputType _makeCharOutput(wchar_t ch);
-        static [[nodiscard]] OutputType _makeEscapedOutput(wchar_t wch);
-        static [[nodiscard]] OutputType _makeWin32Output(const KEY_EVENT_RECORD& key);
-        static [[nodiscard]] OutputType _searchWithModifier(const KEY_EVENT_RECORD& keyEvent);
+        // In the future, if we add support for "8-bit" input mode, these prefixes
+        // will sometimes be replaced with equivalent C1 control characters.
+        static constexpr auto _csi = L"\x1B[";
+        static constexpr auto _ss3 = L"\x1BO";
+
+        void _initKeyboardMap() noexcept;
+        DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key);
+        std::array<byte, 256> _getKeyboardState(const WORD virtualKeyCode, const DWORD controlKeyState) const;
+        [[nodiscard]] static wchar_t _makeCtrlChar(const wchar_t ch);
+        [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
+        [[nodiscard]] static StringType _makeNoOutput() noexcept;
+        [[nodiscard]] void _escapeOutput(StringType& charSequence, const bool altIsPressed) const;
+        [[nodiscard]] OutputType _makeWin32Output(const KEY_EVENT_RECORD& key) const;
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
@@ -92,9 +108,9 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma endregion
 
 #pragma region MouseInput
-        static [[nodiscard]] OutputType _GenerateDefaultSequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
-        static [[nodiscard]] OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
-        static [[nodiscard]] OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] static OutputType _GenerateDefaultSequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] static OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] static OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
 
         [[nodiscard]] OutputType _makeAlternateScrollOutput(short delta) const;
 

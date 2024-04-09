@@ -8,7 +8,6 @@
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
-#include "Appearances.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -50,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetAcrylicOpacityPercentageValue(double value)
         {
-            Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+            Opacity(winrt::Microsoft::Terminal::UI::Converters::PercentageValueToPercentage(value));
         };
 
         void SetPadding(double value)
@@ -58,10 +57,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Padding(to_hstring(value));
         }
 
+        winrt::hstring EvaluatedIcon() const
+        {
+            return _profile.EvaluatedIcon();
+        }
+
         // starting directory
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
+
+        // icon
+        bool HideIcon();
+        void HideIcon(const bool hide);
 
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
@@ -73,7 +81,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool ShowUnfocusedAppearance();
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
-        bool VtPassthroughAvailable() const noexcept;
+
+        bool ShowMarksAvailable() const noexcept;
+        bool AutoMarkPromptsAvailable() const noexcept;
+        bool RepositionCursorWithMouseAvailable() const noexcept;
+
+        til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
 
@@ -87,7 +100,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
         OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
         OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
@@ -98,13 +110,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
         OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
-        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough)
+        OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
+        OBSERVABLE_PROJECTED_SETTING(_profile, RightClickContextMenu);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ShowMarks);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AutoMarkPrompts);
+        OBSERVABLE_PROJECTED_SETTING(_profile, RepositionCursorWithMouse);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
@@ -112,13 +128,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
 
-        TYPED_EVENT(DeleteProfile, Editor::ProfileViewModel, Editor::DeleteProfileEventArgs);
-
     private:
         Model::Profile _profile;
-        winrt::guid _originalProfileGuid;
+        winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        winrt::hstring _lastIcon;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;

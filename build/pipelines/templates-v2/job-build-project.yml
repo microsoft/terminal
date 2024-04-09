@@ -2,7 +2,6 @@ parameters:
   - name: branding
     type: string
     default: Dev
-    values: [Release, Preview, Dev]
   - name: additionalBuildOptions
     type: string
     default: ''
@@ -63,6 +62,9 @@ parameters:
   - name: publishArtifacts
     type: boolean
     default: true
+  - name: removeAllNonSignedFiles
+    type: boolean
+    default: false
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -90,6 +92,11 @@ jobs:
     # Yup.
     BuildTargetParameter: ' '
     SelectedSigningFragments: ' '
+    # When building the unpackaged distribution, build it in portable mode if it's Canary-branded
+    ${{ if eq(parameters.branding, 'Canary') }}:
+      UnpackagedBuildArguments: -PortableMode
+    ${{ else }}:
+      UnpackagedBuildArguments: ' '
     JobOutputDirectory: $(Terminal.BinDir)
     JobOutputArtifactName: build-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     ${{ insert }}: ${{ parameters.variables }}
@@ -115,7 +122,7 @@ jobs:
           $SignFragments += "wpfdotnet"
         }
         If ([bool]::Parse("${{ parameters.buildWPF }}")) {
-          $BuildTargets += "Terminal\wpf\PublicTerminalCore"
+          $BuildTargets += "Terminal\Control\Microsoft_Terminal_Control"
           $SignFragments += "wpf"
         }
         If ([bool]::Parse("${{ parameters.buildConPTY }}")) {
@@ -169,6 +176,7 @@ jobs:
   # - Directories ending in Lib (static lib projects that we fully linked into DLLs which may also contain unnecessary resources)
   # - All LocalTests_ project outputs, as they were subsumed into TestHostApp
   # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
+  # - console.dll, which apparently breaks XFGCheck? lol.
   - pwsh: |-
       $binDir = '$(Terminal.BinDir)'
       $ImportLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.exp' | ForEach-Object { $_.FullName -Replace "exp$","lib" }
@@ -184,6 +192,8 @@ jobs:
       If (-Not [bool]::Parse('${{ parameters.keepAllExpensiveBuildOutputs }}')) {
         $Items += Get-ChildItem '$(Terminal.BinDir)' -Filter '*.pdb' -Recurse
       }
+
+      $Items += Get-ChildItem $binDir -Filter 'console.dll'
 
       $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
     displayName: Clean up static libs and extra symbols
@@ -225,7 +235,7 @@ jobs:
 
     # Code-sign everything we just put together.
     # We run the signing in Terminal.BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
-    - task: EsrpCodeSigning@1
+    - task: EsrpCodeSigning@3
       displayName: Submit Signing Request
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
@@ -242,6 +252,14 @@ jobs:
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
         displayName: Re-pack the new Terminal package after signing
 
+    # Some of our governed pipelines explicitly fail builds that have *any* non-codesigned filed (!)
+    - ${{ if eq(parameters.removeAllNonSignedFiles, true) }}:
+      - pwsh: |-
+          Get-ChildItem "$(Terminal.BinDir)" -Recurse -Include "*.dll","*.exe" |
+            Where-Object { (Get-AuthenticodeSignature $_).Status -Ne "Valid" } |
+            Remove-Item -Verbose -Force
+        displayName: Remove all non-signed output files
+
   - ${{ else }}: # No Signing
     - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
       - pwsh: |-
@@ -256,7 +274,7 @@ jobs:
     - pwsh: |-
         $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
         $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_unpackaged" -ErrorAction:Ignore
-        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination $outDir.FullName
+        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 $(UnpackagedBuildArguments) -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination $outDir.FullName
       displayName: Build Unpackaged Distribution (from MSIX)
       condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
 

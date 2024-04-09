@@ -50,7 +50,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
             _CurrentDirectory{ command.CurrentDirectory() },
-            _ShowWindowCommand{ command.ShowWindowCommand() } {};
+            _ShowWindowCommand{ command.ShowWindowCommand() },
+            _CurrentEnvironment{ command.CurrentEnvironment() } {};
 
         WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
             _Id{ 0u },
@@ -68,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
         WINRT_PROPERTY(winrt::hstring, Content);
         WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL);
+        WINRT_PROPERTY(winrt::hstring, CurrentEnvironment);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:
@@ -94,19 +96,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         bool DoesQuakeWindowExist();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
-        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
         void RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, const Windows::Foundation::IReference<Windows::Foundation::Rect>& windowBounds);
         void RequestSendContent(const Remoting::RequestReceiveContentArgs& args);
 
-        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs> FindTargetWindowRequested;
+        til::typed_event<> ShowNotificationIconRequested;
+        til::typed_event<> HideNotificationIconRequested;
+        til::typed_event<> WindowCreated;
+        til::typed_event<> WindowClosed;
 
-        TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs);
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs> RequestNewWindow;
 
     private:
         uint64_t _ourPID;
@@ -144,8 +144,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
                               const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
-        winrt::fire_and_forget _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
-                                              const winrt::Windows::Foundation::IInspectable& args);
+        void _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Windows::Foundation::IInspectable& args);
 
         // Method Description:
         // - Helper for doing something on each and every peasant.
@@ -221,7 +221,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 // A peasant died, let the app host know that the number of
                 // windows has changed.
-                _WindowClosedHandlers(nullptr, nullptr);
+                WindowClosed.raise(nullptr, nullptr);
             }
         }
 

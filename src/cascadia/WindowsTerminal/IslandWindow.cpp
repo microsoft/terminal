@@ -73,6 +73,8 @@ void IslandWindow::Refrigerate() noexcept
     // This pointer will get re-set in _warmInitialize
     SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
 
+    _resetSystemMenu();
+
     _pfnCreateCallback = nullptr;
     _pfnSnapDimensionCallback = nullptr;
 
@@ -199,6 +201,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     UpdateWindow(_window.get());
 
     UpdateWindowIconForActiveMetrics(_window.get());
+
+    _currentSystemThemeIsDark = Theme::IsSystemInDarkTheme();
 }
 
 // Method Description:
@@ -520,7 +524,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         // wparam = 0 indicates the window was deactivated
         const bool activated = LOWORD(wparam) != 0;
-        _WindowActivatedHandlers(activated);
+        WindowActivated.raise(activated);
 
         if (_autoHideWindow && !activated)
         {
@@ -548,7 +552,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         // If we clicked in the titlebar, raise an event so the app host can
         // dispatch an appropriate event.
-        _DragRegionClickedHandlers();
+        DragRegionClicked.raise();
         break;
     }
     case WM_MENUCHAR:
@@ -566,13 +570,13 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED)
         {
-            _WindowVisibilityChangedHandlers(true);
-            _MaximizeChangedHandlers(wparam == SIZE_MAXIMIZED);
+            WindowVisibilityChanged.raise(true);
+            MaximizeChanged.raise(wparam == SIZE_MAXIMIZED);
         }
 
         if (wparam == SIZE_MINIMIZED)
         {
-            _WindowVisibilityChangedHandlers(false);
+            WindowVisibilityChanged.raise(false);
             if (_isQuakeWindow)
             {
                 ShowWindow(GetHandle(), SW_HIDE);
@@ -605,7 +609,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_MOVE:
     {
-        _WindowMovedHandlers();
+        WindowMoved.raise();
         break;
     }
     case WM_CLOSE:
@@ -613,7 +617,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // If the user wants to close the app by clicking 'X' button,
         // we hand off the close experience to the app layer. If all the tabs
         // are closed, the window will be closed as well.
-        _WindowCloseButtonClickedHandlers();
+        WindowCloseButtonClicked.raise();
         return 0;
     }
     case WM_MOUSEWHEEL:
@@ -647,7 +651,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             const auto wheelDelta = static_cast<short>(HIWORD(wparam));
 
             // Raise an event, so any listeners can handle the mouse wheel event manually.
-            _MouseScrolledHandlers(real, wheelDelta);
+            MouseScrolled.raise(real, wheelDelta);
             return 0;
         }
         CATCH_LOG();
@@ -717,12 +721,12 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         auto highBits = wparam & 0xFFF0;
         if (highBits == SC_RESTORE || highBits == SC_MAXIMIZE)
         {
-            _MaximizeChangedHandlers(highBits == SC_MAXIMIZE);
+            MaximizeChanged.raise(highBits == SC_MAXIMIZE);
         }
 
         if (wparam == SC_RESTORE && _fullscreen)
         {
-            _ShouldExitFullscreenHandlers();
+            ShouldExitFullscreen.raise();
             return 0;
         }
         auto search = _systemMenuItems.find(LOWORD(wparam));
@@ -745,7 +749,16 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             // themes, color schemes that might depend on the OS theme
             if (param == L"ImmersiveColorSet")
             {
-                _UpdateSettingsRequestedHandlers();
+                // GH#15732: Don't update the settings, unless the theme
+                // _actually_ changed. ImmersiveColorSet gets sent more often
+                // than just on a theme change. It notably gets sent when the PC
+                // is locked, or the UAC prompt opens.
+                auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
+                if (isCurrentlyDark != _currentSystemThemeIsDark)
+                {
+                    _currentSystemThemeIsDark = isCurrentlyDark;
+                    UpdateSettingsRequested.raise();
+                }
             }
         }
         break;
@@ -784,7 +797,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-        _AutomaticShutdownRequestedHandlers();
+        AutomaticShutdownRequested.raise();
         return true;
     }
     }
@@ -1904,6 +1917,12 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
         return;
     }
     _systemMenuItems.erase(it->first);
+}
+
+void IslandWindow::_resetSystemMenu()
+{
+    // GetSystemMenu(..., true) will revert the menu to the default state.
+    GetSystemMenu(_window.get(), TRUE);
 }
 
 void IslandWindow::UseDarkTheme(const bool v)

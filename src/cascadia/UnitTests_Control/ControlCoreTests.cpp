@@ -80,9 +80,12 @@ namespace ControlUnitTests
 
         void _standardInit(winrt::com_ptr<Control::implementation::ControlCore> core)
         {
-            // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
-            // let's just arbitrarily start with a 270x420px (30x20 chars) window
-            core->Initialize(270, 420, 1.0);
+            // "Consolas" ends up with an actual size of 9x19 at 96DPI. So
+            // let's just arbitrarily start with a 270x380px (30x20 chars) window
+            core->Initialize(270, 380, 1.0);
+#ifndef NDEBUG
+            core->_terminal->_suppressLockChecks = true;
+#endif
             VERIFY_IS_TRUE(core->_initializedTerminal);
             VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         }
@@ -113,9 +116,12 @@ namespace ControlUnitTests
         VERIFY_IS_NOT_NULL(core);
 
         VERIFY_IS_FALSE(core->_initializedTerminal);
-        // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
-        // let's just arbitrarily start with a 270x420px (30x20 chars) window
-        core->Initialize(270, 420, 1.0);
+        // "Consolas" ends up with an actual size of 9x19 at 96DPI. So
+        // let's just arbitrarily start with a 270x380px (30x20 chars) window
+        core->Initialize(270, 380, 1.0);
+#ifndef NDEBUG
+        core->_terminal->_suppressLockChecks = true;
+#endif
         VERIFY_IS_TRUE(core->_initializedTerminal);
         VERIFY_ARE_EQUAL(30, core->_terminal->GetViewport().Width());
     }
@@ -496,7 +502,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 24, 0 }; // The character after the prompt
-            const til::point expectedEnd{ 29, 3 }; // x = buffer.right
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }

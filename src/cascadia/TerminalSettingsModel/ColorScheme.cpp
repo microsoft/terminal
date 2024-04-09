@@ -52,7 +52,8 @@ ColorScheme::ColorScheme() noexcept :
 }
 
 ColorScheme::ColorScheme(const winrt::hstring& name) noexcept :
-    _Name{ name }
+    _Name{ name },
+    _Origin{ OriginTag::User }
 {
     const auto table = Utils::CampbellColorTable();
     std::copy_n(table.data(), table.size(), _table.data());
@@ -67,6 +68,7 @@ winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
     scheme->_SelectionBackground = _SelectionBackground;
     scheme->_CursorColor = _CursorColor;
     scheme->_table = _table;
+    scheme->_Origin = _Origin;
     return scheme;
 }
 
@@ -187,4 +189,12 @@ winrt::Microsoft::Terminal::Core::Scheme ColorScheme::ToCoreScheme() const noexc
     coreScheme.BrightCyan = Table()[14];
     coreScheme.BrightWhite = Table()[15];
     return coreScheme;
+}
+
+bool ColorScheme::IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept
+{
+    // The caller likely only got here if the names were the same, so skip checking that one.
+    // We do not care about the cursor color or the selection background, as the main reason we are
+    // doing equivalence merging is to replace old, poorly-specified versions of those two properties.
+    return _table == other->_table && _Background == other->_Background && _Foreground == other->_Foreground;
 }

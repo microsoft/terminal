@@ -43,6 +43,12 @@
                   FontSize="12"
                   Glyph="&#xE72E;"
                   Visibility="{x:Bind TabStatus.IsReadOnlyActive, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderClosedIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xEA39;"
+                  Visibility="{x:Bind TabStatus.IsConnectionClosed, Mode=OneWay}" />
         <FontIcon x:Name="HeaderBroadcastIcon"
                   Margin="0,0,8,0"
                   FontFamily="{ThemeResource SymbolThemeFontFamily}"

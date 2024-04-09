@@ -549,6 +549,9 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.profileNameOption = subcommand.subcommand->add_option("-p,--profile",
                                                                      _profileName,
                                                                      RS_A(L"CmdProfileArgDesc"));
+    subcommand.sessionIdOption = subcommand.subcommand->add_option("--sessionId",
+                                                                   _sessionId,
+                                                                   RS_A(L"CmdSessionIdArgDesc"));
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
                                                                            RS_A(L"CmdStartingDirArgDesc"));
@@ -568,6 +571,14 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.colorSchemeOption = subcommand.subcommand->add_option("--colorScheme",
                                                                      _startingColorScheme,
                                                                      RS_A(L"CmdColorSchemeArgDesc"));
+
+    subcommand.appendCommandLineOption = subcommand.subcommand->add_flag("--appendCommandLine", _appendCommandLineOption, RS_A(L"CmdAppendCommandLineDesc"));
+
+    subcommand.inheritEnvOption = subcommand.subcommand->add_flag(
+        "--inheritEnvironment,!--reloadEnvironment",
+        _inheritEnvironment,
+        RS_A(L"CmdInheritEnvDesc"));
+
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -589,7 +600,8 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 {
     NewTerminalArgs args{};
 
-    if (!_commandline.empty())
+    const auto hasCommandline{ !_commandline.empty() };
+    if (hasCommandline)
     {
         std::ostringstream cmdlineBuffer;
 
@@ -617,6 +629,13 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     if (*subcommand.profileNameOption)
     {
         args.Profile(winrt::to_hstring(_profileName));
+    }
+
+    if (*subcommand.sessionIdOption)
+    {
+        const auto str = winrt::to_hstring(_sessionId);
+        const auto id = ::Microsoft::Console::Utils::GuidFromString(str.c_str());
+        args.SessionId(id);
     }
 
     if (*subcommand.startingDirectoryOption)
@@ -654,6 +673,17 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     {
         args.ColorScheme(winrt::to_hstring(_startingColorScheme));
     }
+    if (*subcommand.appendCommandLineOption)
+    {
+        args.AppendCommandLine(_appendCommandLineOption);
+    }
+
+    bool inheritEnv = hasCommandline;
+    if (*subcommand.inheritEnvOption)
+    {
+        inheritEnv = _inheritEnvironment;
+    }
+    args.ReloadEnvironmentVariables(!inheritEnv);
 
     return args;
 }
@@ -694,11 +724,13 @@ bool AppCommandlineArgs::_noCommandsProvided()
 void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName.clear();
+    _sessionId.clear();
     _startingDirectory.clear();
     _startingTitle.clear();
     _startingTabColor.clear();
     _commandline.clear();
     _suppressApplicationTitle = false;
+    _appendCommandLineOption = false;
 
     _splitVertical = false;
     _splitHorizontal = false;

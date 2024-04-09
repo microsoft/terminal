@@ -3,8 +3,7 @@
 
 #include "precomp.h"
 #include "UiaTextRangeBase.hpp"
-#include "ScreenInfoUiaProviderBase.h"
-#include "../buffer/out/search.h"
+
 #include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
@@ -406,16 +405,22 @@ std::optional<bool> UiaTextRangeBase::_verifyAttr(TEXTATTRIBUTEID attributeId, V
         THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
 
         // The underline style is stored as a TextDecorationLineStyle.
-        // However, The text buffer doesn't have that many different styles for being underlined.
-        // Instead, we only have single and double underlined.
+        // However, The text buffer doesn't have all the different styles for being underlined.
+        // Instead, we only use a subset of them.
         switch (val.lVal)
         {
         case TextDecorationLineStyle_None:
-            return !attr.IsUnderlined() && !attr.IsDoublyUnderlined();
-        case TextDecorationLineStyle_Double:
-            return attr.IsDoublyUnderlined();
+            return !attr.IsUnderlined();
         case TextDecorationLineStyle_Single:
-            return attr.IsUnderlined();
+            return attr.GetUnderlineStyle() == UnderlineStyle::SinglyUnderlined;
+        case TextDecorationLineStyle_Double:
+            return attr.GetUnderlineStyle() == UnderlineStyle::DoublyUnderlined;
+        case TextDecorationLineStyle_Wavy:
+            return attr.GetUnderlineStyle() == UnderlineStyle::CurlyUnderlined;
+        case TextDecorationLineStyle_Dot:
+            return attr.GetUnderlineStyle() == UnderlineStyle::DottedUnderlined;
+        case TextDecorationLineStyle_Dash:
+            return attr.GetUnderlineStyle() == UnderlineStyle::DashedUnderlined;
         default:
             return std::nullopt;
         }
@@ -450,7 +455,7 @@ try
         // Technically, we'll truncate early if there's an embedded null in the BSTR.
         // But we're probably fine in this circumstance.
 
-        const std::wstring queryFontName{ val.bstrVal };
+        const std::wstring_view queryFontName{ val.bstrVal, SysStringLen(val.bstrVal) };
         if (queryFontName == _pData->GetFontInfo().GetFaceName())
         {
             Clone(ppRetVal);
@@ -608,45 +613,36 @@ try
     });
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
-    const std::wstring queryText{ text, SysStringLen(text) };
-    const auto bufferSize = _getOptimizedBufferSize();
-    const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+    const std::wstring_view queryText{ text, SysStringLen(text) };
+    auto exclusiveBegin = _start;
 
-    auto searchDirection = Search::Direction::Forward;
-    auto searchAnchor = _start;
-    if (searchBackward)
+    // MovePastPoint() moves *past* the given point.
+    // -> We need to turn [_beg,_end) into (_beg,_end).
+    exclusiveBegin.x--;
+
+    _searcher.ResetIfStale(*_pData, queryText, searchBackward, ignoreCase);
+    _searcher.MovePastPoint(searchBackward ? _end : exclusiveBegin);
+
+    til::point hitBeg{ til::CoordTypeMax, til::CoordTypeMax };
+    til::point hitEnd{ til::CoordTypeMin, til::CoordTypeMin };
+
+    if (const auto hit = _searcher.GetCurrent())
     {
-        searchDirection = Search::Direction::Backward;
-
-        // we need to convert the end to inclusive
-        // because Search operates with an inclusive til::point
-        searchAnchor = _end;
-        bufferSize.DecrementInBounds(searchAnchor, true);
-    }
-
-    Search searcher{ *_pData, queryText, searchDirection, sensitivity, searchAnchor };
-
-    if (searcher.FindNext())
-    {
-        const auto foundLocation = searcher.GetFoundLocation();
-        const auto start = foundLocation.first;
-
+        hitBeg = hit->start;
+        hitEnd = hit->end;
         // we need to increment the position of end because it's exclusive
-        auto end = foundLocation.second;
-        bufferSize.IncrementInBounds(end, true);
-
-        // make sure what was found is within the bounds of the current range
-        if ((searchDirection == Search::Direction::Forward && end < _end) ||
-            (searchDirection == Search::Direction::Backward && start > _start))
-        {
-            RETURN_IF_FAILED(Clone(ppRetVal));
-            auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
-            range._start = start;
-            range._end = end;
-
-            UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
-        }
+        _pData->GetTextBuffer().GetSize().IncrementInBounds(hitEnd, true);
     }
+
+    if (hitBeg >= _start && hitEnd <= _end)
+    {
+        RETURN_IF_FAILED(Clone(ppRetVal));
+        auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+        range._start = hitBeg;
+        range._end = hitEnd;
+        UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
+    }
+
     return S_OK;
 }
 CATCH_RETURN();
@@ -704,19 +700,32 @@ bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT
     case UIA_UnderlineStyleAttributeId:
     {
         pRetVal->vt = VT_I4;
-        if (attr.IsDoublyUnderlined())
+        const auto style = attr.GetUnderlineStyle();
+        switch (style)
         {
-            pRetVal->lVal = TextDecorationLineStyle_Double;
-        }
-        else if (attr.IsUnderlined())
-        {
-            pRetVal->lVal = TextDecorationLineStyle_Single;
-        }
-        else
-        {
+        case UnderlineStyle::NoUnderline:
             pRetVal->lVal = TextDecorationLineStyle_None;
+            return true;
+        case UnderlineStyle::SinglyUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Single;
+            return true;
+        case UnderlineStyle::DoublyUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Double;
+            return true;
+        case UnderlineStyle::CurlyUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Wavy;
+            return true;
+        case UnderlineStyle::DottedUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Dot;
+            return true;
+        case UnderlineStyle::DashedUnderlined:
+            pRetVal->lVal = TextDecorationLineStyle_Dash;
+            return true;
+        // Out of range styles are treated as singly underlined.
+        default:
+            pRetVal->lVal = TextDecorationLineStyle_Single;
+            return true;
         }
-        return true;
     }
     default:
         // This attribute is not supported.
@@ -976,29 +985,15 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
-        // reserve size in accordance to extracted text
-        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
-        const auto bufferData = buffer.GetText(true,
-                                               false,
-                                               textRects);
-        const size_t textDataSize = bufferData.text.size() * bufferSize.Width();
-        textData.reserve(textDataSize);
-        for (const auto& text : bufferData.text)
+        const auto req = TextBuffer::CopyRequest{ buffer, _start, inclusiveEnd, _blockRange, true, false, false, true };
+        auto plainText = buffer.GetPlainText(req);
+
+        if (plainText.size() > maxLengthAsSize)
         {
-            if (textData.size() >= maxLengthAsSize)
-            {
-                // early exit; we're already at/past max length
-                break;
-            }
-            textData += text;
+            plainText.resize(maxLengthAsSize);
         }
 
-        // only use maxLength to resize down.
-        // if maxLength > size, we don't want to resize and append unnecessary L'\0'.
-        if (textData.size() > maxLengthAsSize)
-        {
-            textData.resize(maxLengthAsSize);
-        }
+        textData = std::move(plainText);
     }
 
     return textData;
@@ -1340,7 +1335,7 @@ til::point UiaTextRangeBase::_getDocumentEnd() const
 {
     const auto optimizedBufferSize{ _getOptimizedBufferSize() };
     const auto& buffer{ _pData->GetTextBuffer() };
-    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(optimizedBufferSize) };
+    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(&optimizedBufferSize) };
     const auto cursorPos{ buffer.GetCursor().GetPosition() };
     return { optimizedBufferSize.Left(), std::max(lastCharPos.y, cursorPos.y) + 1 };
 }

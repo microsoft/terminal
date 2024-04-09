@@ -222,7 +222,12 @@ std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
             // Otherwise, add anything that isn't a trailing cell. (Trailings are duplicate copies of the leading.)
             if (it->DbcsAttr() != DbcsAttribute::Trailing)
             {
-                retVal += it->Chars();
+                auto chars = it->Chars();
+                if (chars.size() > 1)
+                {
+                    chars = { &UNICODE_REPLACEMENT, 1 };
+                }
+                retVal += chars;
             }
         }
 
@@ -291,38 +296,6 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
     textBuffer.TriggerRedraw(target);
     // Also redraw anything that was filled.
     textBuffer.TriggerRedraw(fill);
-}
-
-// Routine Description:
-// - This routine is a special-purpose scroll for use by AdjustCursorPosition.
-// Arguments:
-// - screenInfo - reference to screen buffer info.
-// Return Value:
-// - true if we succeeded in scrolling the buffer, otherwise false (if we're out of memory)
-void StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
-{
-    // Rotate the circular buffer around and wipe out the previous final line.
-    auto& buffer = screenInfo.GetTextBuffer();
-    buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
-
-    // Trigger a graphical update if we're active.
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        til::point coordDelta;
-        coordDelta.y = -1;
-
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier)
-        {
-            // Notify accessibility that a scroll has occurred.
-            pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.x, coordDelta.y);
-        }
-
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
-        }
-    }
 }
 
 // Routine Description:

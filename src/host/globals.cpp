@@ -35,9 +35,9 @@ bool Globals::IsHeadless() const
 // - vtRenderEngine: a VT renderer that our VtIo should use as the vt engine during these tests
 // Return Value:
 // - <none>
-void Globals::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
+void Globals::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine, const bool resizeQuirk)
 {
     launchArgs.EnableConptyModeForTests();
-    getConsoleInformation().GetVtIo()->EnableConptyModeForTests(std::move(vtRenderEngine));
+    getConsoleInformation().GetVtIo()->EnableConptyModeForTests(std::move(vtRenderEngine), resizeQuirk);
 }
 #endif

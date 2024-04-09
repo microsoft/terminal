@@ -142,4 +142,4 @@ Feature Notes:
 [#4472]: https://github.com/microsoft/terminal/issues/4472
 [#8048]: https://github.com/microsoft/terminal/pull/8048
 
-[Terminal 2022 Roadmap]: https://github.com/microsoft/terminal/tree/main/doc/roadmap-2022.md
+[Terminal 2022 Roadmap]: ./roadmap-2022.md

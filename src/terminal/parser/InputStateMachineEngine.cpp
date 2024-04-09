@@ -102,6 +102,11 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
+bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
+{
+    return _encounteredWin32InputModeSequence;
+}
+
 void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
 {
     _lookingForDSR = looking;
@@ -448,6 +453,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // Ctrl+C, Ctrl+Break are handled correctly.
         const auto key = _GenerateWin32Key(parameters);
         success = _pDispatch->WriteCtrlKey(key);
+        _encounteredWin32InputModeSequence = true;
         break;
     }
     default:
@@ -532,14 +538,11 @@ bool InputStateMachineEngine::ActionIgnore() noexcept
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch. This will be a BEL or ST char.
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
-                                                const size_t /*parameter*/,
-                                                const std::wstring_view /*string*/) noexcept
+bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, const std::wstring_view /*string*/) noexcept
 {
     return false;
 }
@@ -794,7 +797,6 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
     // VT Modifiers are 1+(modifier flags)
     const auto vtParam = modifierParam - 1;
     DWORD modifierState = 0;
-    WI_SetFlagIf(modifierState, ENHANCED_KEY, modifierParam > 0);
     WI_SetFlagIf(modifierState, SHIFT_PRESSED, WI_IsFlagSet(vtParam, VT_SHIFT));
     WI_SetFlagIf(modifierState, LEFT_ALT_PRESSED, WI_IsFlagSet(vtParam, VT_ALT));
     WI_SetFlagIf(modifierState, LEFT_CTRL_PRESSED, WI_IsFlagSet(vtParam, VT_CTRL));

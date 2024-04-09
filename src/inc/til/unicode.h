@@ -10,19 +10,26 @@ namespace til
         inline constexpr wchar_t UNICODE_REPLACEMENT = 0xFFFD;
     }
 
-    static constexpr bool is_surrogate(const wchar_t wch) noexcept
+    constexpr bool is_surrogate(const auto wch) noexcept
     {
         return (wch & 0xF800) == 0xD800;
     }
 
-    static constexpr bool is_leading_surrogate(const wchar_t wch) noexcept
+    constexpr bool is_leading_surrogate(const auto wch) noexcept
     {
         return (wch & 0xFC00) == 0xD800;
     }
 
-    static constexpr bool is_trailing_surrogate(const wchar_t wch) noexcept
+    constexpr bool is_trailing_surrogate(const auto wch) noexcept
     {
         return (wch & 0xFC00) == 0xDC00;
+    }
+
+    constexpr char32_t combine_surrogates(const auto lead, const auto trail)
+    {
+        // Ah, I love these bracketed C-style casts. I use them in C all the time. Yep.
+#pragma warning(suppress : 26493) // Don't use C-style casts (type.4).
+        return (char32_t{ lead } << 10) - 0x35FDC00 + char32_t{ trail };
     }
 
     // Verifies the beginning of the given UTF16 string and returns the first UTF16 sequence

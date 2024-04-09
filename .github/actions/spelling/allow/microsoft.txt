@@ -4,6 +4,7 @@ advapi
 altform
 altforms
 appendwttlogging
+appinstaller
 appx
 appxbundle
 appxerror
@@ -19,6 +20,7 @@ cpptools
 cppvsdbg
 CPRs
 cryptbase
+cscript
 DACL
 DACLs
 defaultlib
@@ -30,6 +32,7 @@ DWINRT
 enablewttlogging
 HOMESHARE
 Intelli
+issecret
 IVisual
 libucrt
 libucrtd
@@ -44,6 +47,7 @@ MSAA
 msixbundle
 MSVC
 MSVCP
+mtu
 muxc
 netcore
 Onefuzz
@@ -59,17 +63,19 @@ PRIINFO
 propkey
 pscustomobject
 QWORD
+rdpclip
 regedit
 resfiles
 robocopy
 SACLs
-segoe
 sdkddkver
+segoe
 Shobjidl
 sid
 Skype
 SRW
 sxs
+symbolrequestprod
 Sysinternals
 sysnative
 systemroot
@@ -86,8 +92,10 @@ Virtualization
 visualstudio
 vscode
 VSTHRD
+WINBASEAPI
 winsdkver
 wlk
+wscript
 wslpath
 wtl
 wtt

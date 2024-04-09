@@ -69,18 +69,18 @@ namespace winrt::TerminalApp::implementation
     void MinMaxCloseControl::_MinimizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                             const RoutedEventArgs& e)
     {
-        _MinimizeClickHandlers(*this, e);
+        MinimizeClick.raise(*this, e);
     }
 
     void MinMaxCloseControl::_MaximizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                             const RoutedEventArgs& e)
     {
-        _MaximizeClickHandlers(*this, e);
+        MaximizeClick.raise(*this, e);
     }
     void MinMaxCloseControl::_CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                          const RoutedEventArgs& e)
     {
-        _CloseClickHandlers(*this, e);
+        CloseClick.raise(*this, e);
     }
 
     void MinMaxCloseControl::SetWindowVisualState(WindowVisualState visualState)

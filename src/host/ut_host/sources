@@ -27,7 +27,6 @@ SOURCES = \
     TextBufferTests.cpp \
     ClipboardTests.cpp \
     SelectionTests.cpp \
-    Utf8ToWideCharParserTests.cpp \
     OutputCellIteratorTests.cpp \
     InitTests.cpp \
     TitleTests.cpp \
@@ -37,11 +36,6 @@ SOURCES = \
     ConptyOutputTests.cpp \
     ViewportTests.cpp \
     ConsoleArgumentsTests.cpp \
-    CommandLineTests.cpp \
-    CommandListPopupTests.cpp \
-    CommandNumberPopupTests.cpp \
-    CopyFromCharPopupTests.cpp \
-    CopyToCharPopupTests.cpp \
     ObjectTests.cpp \
     DefaultResource.rc \
 

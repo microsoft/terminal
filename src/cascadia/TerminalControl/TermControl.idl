@@ -4,13 +4,25 @@
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "ControlInteractivity.idl";
-import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
 import "ControlCore.idl";
 
 namespace Microsoft.Terminal.Control
 {
+    // This matches the definition in M.T.UI.
+    // Having it here prevents us from having to refer to M.T.UI in **all consuming projects**.
+    // WinRT is a trip.
+    [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")]
+    interface IDirectKeyListener {
+        Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
+    }
+
+    enum CursorDisplayState
+    {
+        Default,
+        Shown
+    };
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
                                                    IDirectKeyListener,
@@ -40,7 +52,6 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
-        event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
@@ -82,6 +93,8 @@ namespace Microsoft.Terminal.Control
         Boolean SwitchSelectionEndpoint();
         Boolean ExpandSelectionToWord();
         void ClearBuffer(ClearBufferType clearType);
+        void RestoreFromPath(String path);
+        void PersistToPath(String path);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
@@ -122,7 +135,7 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
-        Boolean DisplayCursorWhileBlurred;
+        CursorDisplayState CursorVisibility;
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 

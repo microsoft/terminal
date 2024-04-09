@@ -20,8 +20,6 @@ Revision History:
 #include "../server/IWaitRoutine.h"
 #include "readData.hpp"
 
-#define IS_CONTROL_CHAR(wch) ((wch) < L' ')
-
 [[nodiscard]] NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                                _Out_ wchar_t* const pwchOut,
                                const bool Wait,
@@ -34,17 +32,5 @@ Revision History:
                                           size_t& bytesRead,
                                           INPUT_READ_HANDLE_DATA& readHandleState,
                                           const bool unicode);
-
-// Routine Description:
-// - This routine returns the total number of screen spaces the characters up to the specified character take up.
-til::CoordType RetrieveTotalNumberOfSpaces(const til::CoordType sOriginalCursorPositionX,
-                                           _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
-                                           const size_t ulCurrentPosition);
-
-// Routine Description:
-// - This routine returns the number of screen spaces the specified character takes up.
-til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositionX,
-                                      _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
-                                      _In_ size_t ulCurrentPosition);
 
 VOID UnblockWriteConsole(const DWORD dwReason);

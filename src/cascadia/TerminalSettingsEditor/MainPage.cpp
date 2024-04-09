@@ -278,6 +278,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Don't navigate to the same page again.
                 return;
             }
+            else
+            {
+                // If we are navigating to a new page, scroll to the top
+                SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+            }
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
@@ -332,12 +337,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance);
                     _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced);
                     _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
             }
         });
@@ -367,7 +374,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -460,7 +467,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-        _OpenJsonHandlers(nullptr, target);
+        OpenJson.raise(nullptr, target);
     }
 
     void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
@@ -468,7 +475,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
         {
             const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-            _OpenJsonHandlers(nullptr, target);
+            OpenJson.raise(nullptr, target);
         }
     }
 
@@ -595,7 +602,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
-        profileNavItem.Icon(IconPathConverter::IconWUX(profile.Icon()));
+        profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
 
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
@@ -605,7 +612,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
                 if (args.PropertyName() == L"Icon")
                 {
-                    menuItem.Icon(IconPathConverter::IconWUX(tag.Icon()));
+                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.Icon()));
                 }
                 else if (args.PropertyName() == L"Name")
                 {
@@ -615,7 +622,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
 
         // Add an event handler for when the user wants to delete a profile.
-        profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
+        profile.DeleteProfileRequested({ this, &MainPage::_DeleteProfile });
 
         return profileNavItem;
     }
@@ -655,6 +662,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _Navigate(newTag.as<hstring>(), BreadcrumbSubPage::None);
             }
+            // Since we are navigating to a new profile after deletion, scroll up to the top
+            SettingsMainPage_ScrollViewer().ChangeView(nullptr, 0.0, nullptr);
         }
     }
 

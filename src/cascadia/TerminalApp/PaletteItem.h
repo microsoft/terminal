@@ -11,10 +11,10 @@ namespace winrt::TerminalApp::implementation
     public:
         Windows::UI::Xaml::Controls::IconElement ResolvedIcon();
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        til::property_changed_event PropertyChanged;
 
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Icon, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText, PropertyChanged.raise);
     };
 }

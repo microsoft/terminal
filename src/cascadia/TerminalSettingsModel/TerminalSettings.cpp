@@ -126,10 +126,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (newTerminalArgs)
         {
+            if (const auto id = newTerminalArgs.SessionId(); id != winrt::guid{})
+            {
+                defaultSettings.SessionId(id);
+            }
+
             // Override commandline, starting directory if they exist in newTerminalArgs
             if (!newTerminalArgs.Commandline().empty())
             {
-                defaultSettings.Commandline(newTerminalArgs.Commandline());
+                if (!newTerminalArgs.AppendCommandLine())
+                {
+                    defaultSettings.Commandline(newTerminalArgs.Commandline());
+                }
+                else
+                {
+                    defaultSettings.Commandline(defaultSettings.Commandline() + L" " + newTerminalArgs.Commandline());
+                }
             }
             if (!newTerminalArgs.StartingDirectory().empty())
             {
@@ -177,6 +189,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (newTerminalArgs.Elevate())
             {
                 defaultSettings.Elevate(newTerminalArgs.Elevate().Value());
+            }
+
+            if (newTerminalArgs.ReloadEnvironmentVariables())
+            {
+                defaultSettings.ReloadEnvironmentVariables(newTerminalArgs.ReloadEnvironmentVariables().Value());
             }
         }
 
@@ -244,12 +261,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
         _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
+        _PixelShaderImagePath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderImagePath().c_str()) };
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
         _Opacity = appearance.Opacity();
+        _UseAcrylic = appearance.UseAcrylic();
     }
 
     // Method Description:
@@ -269,7 +288,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
         _ProfileSource = profile.Source();
-        _UseAcrylic = profile.UseAcrylic();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
@@ -277,12 +295,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _FontWeight = fontInfo.FontWeight();
         _FontFeatures = fontInfo.FontFeatures();
         _FontAxes = fontInfo.FontAxes();
+        _EnableBuiltinGlyphs = fontInfo.EnableBuiltinGlyphs();
+        _EnableColorGlyphs = fontInfo.EnableColorGlyphs();
         _CellWidth = fontInfo.CellWidth();
         _CellHeight = fontInfo.CellHeight();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();
-        _VtPassthrough = profile.VtPassthrough();
 
         _StartingDirectory = profile.EvaluatedStartingDirectory();
 
@@ -295,7 +314,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
-        _UseAtlasEngine = profile.UseAtlasEngine();
         _ScrollState = profile.ScrollState();
 
         _AntialiasingMode = profile.AntialiasingMode();
@@ -327,6 +345,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RightClickContextMenu = profile.RightClickContextMenu();
 
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
+
+        _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
     }
 
     // Method Description:
@@ -342,13 +362,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _WordDelimiters = globalSettings.WordDelimiters();
         _CopyOnSelect = globalSettings.CopyOnSelect();
+        _CopyFormatting = globalSettings.CopyFormatting();
         _FocusFollowMouse = globalSettings.FocusFollowMouse();
-        _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
+        _GraphicsAPI = globalSettings.GraphicsAPI();
+        _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
+        _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
     }
 
     // Method Description:

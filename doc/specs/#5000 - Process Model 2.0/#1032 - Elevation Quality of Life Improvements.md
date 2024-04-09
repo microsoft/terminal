@@ -612,8 +612,8 @@ You could have a profile that layers on an existing profile, with elevated-speci
 [#8514]: https://github.com/microsoft/terminal/issues/8514
 [#10276]: https://github.com/microsoft/terminal/issues/10276
 
-[Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
-[Configuration object for profiles]: https://github.com/microsoft/terminal/blob/main/doc/specs/Configuration%20object%20for%20profiles.md
-[Session Management Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234472%20-%20Windows%20Terminal%20Session%20Management.md
+[Process Model 2.0 Spec]: ../%235000%20-%20Process%20Model%202.0.md
+[Configuration object for profiles]: ../%233062%20-%20Appearance configuration object for profiles.md
+[Session Management Spec]: ./%234472%20-%20Windows%20Terminal%20Session%20Management.md
 [The Old New Thing: How can I launch an unelevated process from my elevated process, redux]: https://devblogs.microsoft.com/oldnewthing/20190425-00/?p=102443
 [Workspace Trust]: https://code.visualstudio.com/docs/editor/workspace-trust

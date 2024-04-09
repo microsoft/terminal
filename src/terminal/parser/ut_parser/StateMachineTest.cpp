@@ -40,6 +40,11 @@ public:
         dcsDataString.clear();
     }
 
+    bool EncounteredWin32InputModeSequence() const noexcept override
+    {
+        return false;
+    }
+
     bool ActionExecute(const wchar_t wch) override
     {
         executed += wch;
@@ -68,9 +73,7 @@ public:
 
     bool ActionIgnore() override { return true; };
 
-    bool ActionOscDispatch(const wchar_t /* wch */,
-                           const size_t /* parameter */,
-                           const std::wstring_view /* string */) override
+    bool ActionOscDispatch(const size_t /* parameter */, const std::wstring_view /* string */) override
     {
         if (pfnFlushToTerminal)
         {

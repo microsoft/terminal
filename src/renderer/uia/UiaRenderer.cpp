@@ -47,6 +47,12 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 [[nodiscard]] HRESULT UiaEngine::Disable() noexcept
 {
     _isEnabled = false;
+
+    // If we had buffered any text from NotifyNewText, dump it. When we do come
+    // back around to actually paint, we will just no-op. No sense in keeping
+    // the data buffered.
+    _newOutput = std::wstring{};
+
     return S_OK;
 }
 
@@ -171,6 +177,10 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
 try
 {
+    // GH#16217 - don't even buffer this text if we're disabled. We may never
+    // come around to write it out.
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
+
     if (!newText.empty())
     {
         _newOutput.append(newText);
@@ -347,14 +357,16 @@ void UiaEngine::WaitUntilCanRender() noexcept
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - lines - <unused>
-// - color - <unused>
+// - gridlineColor - <unused>
+// - underlineColor - <unused>
 // - cchLine - <unused>
 // - coordTarget - <unused>
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                      COLORREF const /*color*/,
-                                                      size_t const /*cchLine*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                      const COLORREF /*gridlineColor*/,
+                                                      const COLORREF /*underlineColor*/,
+                                                      const size_t /*cchLine*/,
                                                       const til::point /*coordTarget*/) noexcept
 {
     return S_FALSE;
@@ -370,6 +382,11 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // Return Value:
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintSelection(const til::rect& /*rect*/) noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]] HRESULT UiaEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
 {
     return S_FALSE;
 }
