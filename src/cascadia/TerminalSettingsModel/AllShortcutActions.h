@@ -109,7 +109,7 @@
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)         \
     ON_ALL_ACTIONS(RestartConnection)       \
-    ON_ALL_ACTIONS(ToggleBroadcastInput)    \               \
+    ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenFileDialog)          \
     ON_ALL_ACTIONS(OpenScratchpad)          \
     ON_ALL_ACTIONS(OpenAbout)                
