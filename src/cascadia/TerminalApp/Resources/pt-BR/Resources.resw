@@ -183,9 +183,6 @@
   <data name="Quit" xml:space="preserve">
     <value>Encerrar</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Deseja fechar todas as guias?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Vários painéis</value>
   </data>
@@ -331,6 +328,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Abrir com o perfil determinado. Aceite o nome ou o GUID de um perfil</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Define a variável WT_SESSION; deve ser um GUID</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>Criar um novo painel dividido</value>

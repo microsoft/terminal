@@ -26,6 +26,11 @@ namespace winrt::TerminalApp::implementation
         _root.Children().Append(_box);
     }
 
+    void ScratchpadContent::UpdateSettings(const CascadiaSettings& /*settings*/)
+    {
+        // Nothing to do.
+    }
+
     winrt::Windows::UI::Xaml::FrameworkElement ScratchpadContent::GetRoot()
     {
         return _root;
@@ -43,8 +48,19 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs ScratchpadContent::GetNewTerminalArgs(const bool /* asContent */) const
+    INewContentArgs ScratchpadContent::GetNewTerminalArgs(const BuildStartupKind /* kind */) const
     {
-        return nullptr;
+        return BaseContentArgs(L"scratchpad");
+    }
+
+    winrt::hstring ScratchpadContent::Icon() const
+    {
+        static constexpr std::wstring_view glyph{ L"\xe70b" }; // QuickNote
+        return winrt::hstring{ glyph };
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush ScratchpadContent::BackgroundBrush()
+    {
+        return _root.Background();
     }
 }

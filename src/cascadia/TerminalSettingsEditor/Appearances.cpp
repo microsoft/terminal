@@ -419,6 +419,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         BOOL hasPowerlineCharacters = FALSE;
 
         til::iterate_font_families(fontFace, [&](wil::zwstring_view name) {
+            if (primaryFontName.empty())
+            {
+                primaryFontName = name;
+            }
+
             std::wstring* accumulator = nullptr;
 
             UINT32 index = 0;
@@ -432,11 +437,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     accumulator = &missingFonts;
                     break;
-                }
-
-                if (primaryFontName.empty())
-                {
-                    primaryFontName = name;
                 }
 
                 wil::com_ptr<IDWriteFontFamily> fontFamily;

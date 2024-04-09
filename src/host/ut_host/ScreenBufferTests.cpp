@@ -264,6 +264,10 @@ class ScreenBufferTests
     TEST_METHOD(DelayedWrapReset);
 
     TEST_METHOD(EraseColorMode);
+
+    TEST_METHOD(SimpleMarkCommand);
+    TEST_METHOD(SimpleWrappedCommand);
+    TEST_METHOD(SimplePromptRegions);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -8403,4 +8407,176 @@ void ScreenBufferTests::EraseColorMode()
     const auto cellData = si.GetCellDataAt(op.erasePos);
     VERIFY_ARE_EQUAL(expectedEraseAttr, cellData->TextAttr());
     VERIFY_ARE_EQUAL(L" ", cellData->Chars());
+}
+
+#define FTCS_A L"\x1b]133;A\x1b\\"
+#define FTCS_B L"\x1b]133;B\x1b\\"
+#define FTCS_C L"\x1b]133;C\x1b\\"
+#define FTCS_D L"\x1b]133;D\x1b\\"
+
+void ScreenBufferTests::SimpleMarkCommand()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    stateMachine.ProcessString(L"Zero\n");
+
+    {
+        const auto currentRowOffset = tbi.GetCursor().GetPosition().y;
+        auto& currentRow = tbi.GetRowByOffset(currentRowOffset);
+
+        stateMachine.ProcessString(FTCS_A L"A Prompt" FTCS_B L"my_command" FTCS_C L"\n");
+
+        VERIFY_IS_TRUE(currentRow.GetScrollbarData().has_value());
+    }
+
+    stateMachine.ProcessString(L"Two\n");
+    VERIFY_ARE_EQUAL(L"my_command", tbi.CurrentCommand());
+
+    stateMachine.ProcessString(FTCS_D FTCS_A L"B Prompt" FTCS_B);
+
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"");
+
+    stateMachine.ProcessString(L"some of a command");
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command");
+    // Now add some color in the middle of the command:
+    stateMachine.ProcessString(L"\x1b[31m");
+    stateMachine.ProcessString(L" & more of a command");
+
+    VERIFY_ARE_EQUAL(L"some of a command & more of a command", tbi.CurrentCommand());
+
+    std::vector<std::wstring> expectedCommands{ L"my_command",
+                                                L"some of a command & more of a command" };
+    VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
+}
+
+void ScreenBufferTests::SimpleWrappedCommand()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    stateMachine.ProcessString(L"Zero\n");
+
+    const auto oneHundredZeros = std::wstring(100, L'0');
+    {
+        const auto originalRowOffset = tbi.GetCursor().GetPosition().y;
+        auto& originalRow = tbi.GetRowByOffset(originalRowOffset);
+        stateMachine.ProcessString(FTCS_A L"A Prompt" FTCS_B);
+
+        // This command is literally 100 '0' characters, so that we _know_ we wrapped.
+        stateMachine.ProcessString(oneHundredZeros);
+
+        const auto secondRowOffset = tbi.GetCursor().GetPosition().y;
+        VERIFY_ARE_NOT_EQUAL(originalRowOffset, secondRowOffset);
+        auto& secondRow = tbi.GetRowByOffset(secondRowOffset);
+
+        VERIFY_IS_TRUE(originalRow.GetScrollbarData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetScrollbarData().has_value());
+
+        stateMachine.ProcessString(FTCS_C L"\n");
+
+        VERIFY_IS_TRUE(originalRow.GetScrollbarData().has_value());
+        VERIFY_IS_FALSE(secondRow.GetScrollbarData().has_value());
+    }
+
+    stateMachine.ProcessString(L"Two\n");
+    VERIFY_ARE_EQUAL(oneHundredZeros, tbi.CurrentCommand());
+
+    stateMachine.ProcessString(FTCS_D FTCS_A L"B Prompt" FTCS_B);
+
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"");
+
+    stateMachine.ProcessString(L"some of a command");
+    VERIFY_ARE_EQUAL(tbi.CurrentCommand(), L"some of a command");
+    // Now add some color in the middle of the command:
+    stateMachine.ProcessString(L"\x1b[31m");
+    stateMachine.ProcessString(L" & more of a command");
+
+    VERIFY_ARE_EQUAL(L"some of a command & more of a command", tbi.CurrentCommand());
+
+    std::vector<std::wstring> expectedCommands{ oneHundredZeros,
+                                                L"some of a command & more of a command" };
+    VERIFY_ARE_EQUAL(expectedCommands, tbi.Commands());
+}
+
+static void _writePrompt(StateMachine& stateMachine, const auto& path)
+{
+    stateMachine.ProcessString(FTCS_D);
+    stateMachine.ProcessString(FTCS_A);
+    stateMachine.ProcessString(L"\x1b]9;9;");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"\x7");
+    stateMachine.ProcessString(L"PWSH ");
+    stateMachine.ProcessString(path);
+    stateMachine.ProcessString(L"> ");
+    stateMachine.ProcessString(FTCS_B);
+}
+
+void ScreenBufferTests::SimplePromptRegions()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // A prompt looks like:
+    // `PWSH C:\Windows> `
+    //
+    // which is 17 characters for C:\Windows
+
+    _writePrompt(stateMachine, L"C:\\Windows");
+    stateMachine.ProcessString(L"Foo-bar");
+    stateMachine.ProcessString(FTCS_C);
+    stateMachine.ProcessString(L"\r\n");
+    stateMachine.ProcessString(L"This is some text     \r\n"); // y=1
+    stateMachine.ProcessString(L"with varying amounts  \r\n"); // y=2
+    stateMachine.ProcessString(L"of whitespace         \r\n"); // y=3
+
+    _writePrompt(stateMachine, L"C:\\Windows"); // y=4
+
+    Log::Comment(L"Check the buffer contents");
+    const auto& cursor = tbi.GetCursor();
+
+    {
+        const til::point expectedCursor{ 17, 4 };
+        VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+    }
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    const auto& row0 = tbi.GetRowByOffset(0);
+    const auto& row4 = tbi.GetRowByOffset(4);
+    VERIFY_IS_TRUE(row0.GetScrollbarData().has_value());
+    VERIFY_IS_TRUE(row4.GetScrollbarData().has_value());
+
+    const auto marks = tbi.GetMarkExtents();
+    VERIFY_ARE_EQUAL(2u, marks.size());
+
+    {
+        auto& mark = marks[0];
+        const til::point expectedStart{ 0, 0 };
+        const til::point expectedEnd{ 17, 0 };
+        const til::point expectedOutputStart{ 24, 0 }; // `Foo-Bar` is 7 characters
+        const til::point expectedOutputEnd{ 22, 3 };
+        VERIFY_ARE_EQUAL(expectedStart, mark.start);
+        VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+        VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+        VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+    }
+    {
+        auto& mark = marks[1];
+        const til::point expectedStart{ 0, 4 };
+        const til::point expectedEnd{ 17, 4 };
+        VERIFY_ARE_EQUAL(expectedStart, mark.start);
+        VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+        VERIFY_IS_FALSE(mark.commandEnd.has_value());
+        VERIFY_IS_FALSE(mark.outputEnd.has_value());
+    }
 }

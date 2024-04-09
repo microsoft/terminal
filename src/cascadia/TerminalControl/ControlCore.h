@@ -150,6 +150,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
+        void PersistToPath(const wchar_t* path) const;
+        void RestoreFromPath(const wchar_t* path) const;
 
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;
@@ -409,10 +411,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuSelectMark(
             const til::point& pos,
-            bool (*filter)(const ::ScrollMark&),
-            til::point_span (*getSpan)(const ::ScrollMark&));
+            bool (*filter)(const ::MarkExtents&),
+            til::point_span (*getSpan)(const ::MarkExtents&));
 
-        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::MarkExtents&));
 
         inline bool _IsClosing() const noexcept
         {
