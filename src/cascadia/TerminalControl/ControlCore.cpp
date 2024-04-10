@@ -218,10 +218,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         Close();
 
-        if (_renderer)
-        {
-            _renderer->TriggerTeardown();
-        }
+        _renderer.reset();
+        _renderEngine.reset();
     }
 
     void ControlCore::Detach()

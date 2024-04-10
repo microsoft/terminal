@@ -23,21 +23,24 @@ enum class LineRendition : uint8_t
 
 constexpr til::inclusive_rect ScreenToBufferLine(const til::inclusive_rect& line, const LineRendition lineRendition)
 {
-    // Use shift right to quickly divide the Left and Right by 2 for double width lines.
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
     return { line.left >> scale, line.top, line.right >> scale, line.bottom };
 }
 
-constexpr til::point ScreenToBufferLine(const til::point& line, const LineRendition lineRendition)
+constexpr til::point ScreenToBufferLineInclusive(const til::point& line, const LineRendition lineRendition)
 {
-    // Use shift right to quickly divide the Left and Right by 2 for double width lines.
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
     return { line.x >> scale, line.y };
 }
 
+constexpr til::rect BufferToScreenLine(const til::rect& line, const LineRendition lineRendition)
+{
+    const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
+    return { line.left << scale, line.top, line.right << scale, line.bottom };
+}
+
 constexpr til::inclusive_rect BufferToScreenLine(const til::inclusive_rect& line, const LineRendition lineRendition)
 {
-    // Use shift left to quickly multiply the Left and Right by 2 for double width lines.
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
     return { line.left << scale, line.top, (line.right << scale) + scale, line.bottom };
 }
