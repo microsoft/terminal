@@ -1225,11 +1225,87 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updateSelectionUI();
     }
 
+    static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
+    {
+        bool success = false;
+
+        // OpenClipboard may fail to acquire the internal lock --> retry.
+        for (DWORD sleep = 10;; sleep *= 2)
+        {
+            if (OpenClipboard(hwnd))
+            {
+                success = true;
+                break;
+            }
+            // 10 iterations
+            if (sleep > 10000)
+            {
+                break;
+            }
+            Sleep(sleep);
+        }
+
+        return wil::unique_close_clipboard_call{ success };
+    }
+
+    static void _copyToClipboard(const UINT format, const void* src, const size_t bytes)
+    {
+        wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
+
+        const auto locked = GlobalLock(handle.get());
+        memcpy(locked, src, bytes);
+        GlobalUnlock(handle.get());
+
+        THROW_LAST_ERROR_IF_NULL(SetClipboardData(format, handle.get()));
+        handle.release();
+    }
+
+    static void _copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes)
+    {
+        const auto id = RegisterClipboardFormatW(format);
+        if (!id)
+        {
+            LOG_LAST_ERROR();
+            return;
+        }
+        _copyToClipboard(id, src, bytes);
+    }
+
+    static void copyToClipboard(wil::zwstring_view text, std::string_view html, std::string_view rtf)
+    {
+        const auto clipboard = _openClipboard(nullptr);
+        if (!clipboard)
+        {
+            LOG_LAST_ERROR();
+            return;
+        }
+
+        EmptyClipboard();
+
+        if (!text.empty())
+        {
+            // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+            //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+            // --> We add +1 to the length. This works because .c_str() is null-terminated.
+            _copyToClipboard(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
+        }
+
+        if (!html.empty())
+        {
+            _copyToClipboardRegisteredFormat(L"HTML Format", html.data(), html.size());
+        }
+
+        if (!rtf.empty())
+        {
+            _copyToClipboardRegisteredFormat(L"Rich Text Format", rtf.data(), rtf.size());
+        }
+    }
+
     // Called when the Terminal wants to set something to the clipboard, i.e.
     // when an OSC 52 is emitted.
-    void ControlCore::_terminalCopyToClipboard(std::wstring_view wstr)
+    void ControlCore::_terminalCopyToClipboard(wil::zwstring_view wstr)
     {
-        _CopyToClipboardHandlers(*this, winrt::make<implementation::CopyToClipboardEventArgs>(winrt::hstring{ wstr }));
+        copyToClipboard(wstr, {}, {});
     }
 
     // Method Description:
@@ -1242,31 +1318,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::CopySelectionToClipboard(bool singleLine,
                                                const Windows::Foundation::IReference<CopyFormat>& formats)
     {
-        const auto lock = _terminal->LockForWriting();
-
-        // no selection --> nothing to copy
-        if (!_terminal->IsSelectionActive())
+        ::Microsoft::Terminal::Core::Terminal::TextCopyData payload;
         {
-            return false;
+            const auto lock = _terminal->LockForWriting();
+
+            // no selection --> nothing to copy
+            if (!_terminal->IsSelectionActive())
+            {
+                return false;
+            }
+
+            // use action's copyFormatting if it's present, else fallback to globally
+            // set copyFormatting.
+            const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
+
+            const auto copyHtml = WI_IsFlagSet(copyFormats, CopyFormat::HTML);
+            const auto copyRtf = WI_IsFlagSet(copyFormats, CopyFormat::RTF);
+
+            // extract text from buffer
+            // RetrieveSelectedTextFromBuffer will lock while it's reading
+            payload = _terminal->RetrieveSelectedTextFromBuffer(singleLine, copyHtml, copyRtf);
         }
 
-        // use action's copyFormatting if it's present, else fallback to globally
-        // set copyFormatting.
-        const auto copyFormats = formats != nullptr ? formats.Value() : _settings->CopyFormatting();
-
-        const auto copyHtml = WI_IsFlagSet(copyFormats, CopyFormat::HTML);
-        const auto copyRtf = WI_IsFlagSet(copyFormats, CopyFormat::RTF);
-
-        // extract text from buffer
-        // RetrieveSelectedTextFromBuffer will lock while it's reading
-        const auto& [textData, htmlData, rtfData] = _terminal->RetrieveSelectedTextFromBuffer(singleLine, copyHtml, copyRtf);
-
-        // send data up for clipboard
-        _CopyToClipboardHandlers(*this,
-                                 winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
-                                                                       winrt::to_hstring(htmlData),
-                                                                       winrt::to_hstring(rtfData),
-                                                                       copyFormats));
+        copyToClipboard(payload.plainText, payload.html, payload.rtf);
         return true;
     }
 
