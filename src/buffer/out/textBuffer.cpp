@@ -562,12 +562,42 @@ til::point TextBuffer::NavigateCursor(til::point position, til::CoordType distan
 
 // This function is intended for writing regular "lines" of text as it'll set the wrap flag on the given row.
 // You can continue calling the function on the same row as long as state.columnEnd < state.columnLimit.
-void TextBuffer::Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
+void TextBuffer::Replace(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
 {
     auto& r = GetMutableRowByOffset(row);
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
+}
+
+void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
+{
+    auto& r = GetMutableRowByOffset(row);
+    auto& scratch = GetScratchpadRow();
+
+    scratch.CopyFrom(r);
+
+    r.ReplaceText(state);
+    r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
+
+    // Restore trailing text from our backup in scratch.
+    RowWriteState restoreState{
+        .text = scratch.GetText(state.columnBegin, state.columnLimit),
+        .columnBegin = state.columnEnd,
+        .columnLimit = state.columnLimit,
+    };
+    r.ReplaceText(restoreState);
+
+    // Restore trailing attributes as well.
+    if (const auto copyAmount = restoreState.columnEnd - restoreState.columnBegin; copyAmount > 0)
+    {
+        auto& rowAttr = r.Attributes();
+        const auto& scratchAttr = scratch.Attributes();
+        const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), gsl::narrow<uint16_t>(state.columnBegin + copyAmount));
+        rowAttr.replace(gsl::narrow<uint16_t>(restoreState.columnBegin), gsl::narrow<uint16_t>(restoreState.columnEnd), restoreAttr);
+    }
+
+    TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, restoreState.columnEndDirty, row + 1 }));
 }
 
 // Fills an area of the buffer with a given fill character(s) and attributes.
@@ -1083,11 +1113,8 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {
-            const auto fillChar = L' ';
             const auto fillOffset = GetLineWidth(rowIndex);
-            const auto fillLength = gsl::narrow<size_t>(GetSize().Width() - fillOffset);
-            const OutputCellIterator fillData{ fillChar, fillAttributes, fillLength };
-            row.WriteCells(fillData, fillOffset, false);
+            FillRect({ fillOffset, rowIndex, til::CoordTypeMax, rowIndex + 1 }, L" ", fillAttributes);
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
