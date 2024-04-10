@@ -251,7 +251,7 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 // - content - the text to be copied.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::CopyToClipboard(const std::wstring_view /*content*/)
+void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view /*content*/)
 {
     // TODO
 }

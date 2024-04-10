@@ -266,7 +266,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format off
         til::typed_event<IInspectable, Control::FontSizeChangedArgs> FontSizeChanged;
 
-        til::typed_event<IInspectable, Control::CopyToClipboardEventArgs> CopyToClipboard;
         til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
         til::typed_event<> WarningBell;
         til::typed_event<> TabColorChanged;
@@ -371,7 +370,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
-        void _terminalCopyToClipboard(std::wstring_view wstr);
+        void _terminalCopyToClipboard(wil::zwstring_view wstr);
         void _terminalWarningBell();
         void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalScrollPositionChanged(const int viewTop,

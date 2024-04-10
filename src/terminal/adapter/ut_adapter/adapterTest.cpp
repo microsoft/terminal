@@ -179,7 +179,7 @@ public:
         return _expectedOutputCP;
     }
 
-    void CopyToClipboard(const std::wstring_view /*content*/)
+    void CopyToClipboard(const wil::zwstring_view /*content*/)
     {
         Log::Comment(L"CopyToClipboard MOCK called...");
     }
