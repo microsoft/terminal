@@ -700,6 +700,9 @@
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>Verbindung neu starten</value>
   </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>Notizblock öffnen</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>Nächste Befehlsausgabe auswählen</value>
   </data>

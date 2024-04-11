@@ -1,3 +1,4 @@
+aaaaabbb
 aabbcc
 ABANDONFONT
 abbcc
@@ -92,6 +93,8 @@ backported
 backstory
 barbaz
 Bazz
+bbb
+bbccb
 BBDM
 bbwe
 bcount
@@ -597,6 +600,7 @@ FECF
 FEEF
 fesb
 FFAF
+ffd
 FFDE
 FFFDb
 fgbg
@@ -757,6 +761,7 @@ hdr
 HDROP
 hdrstop
 HEIGHTSCROLL
+hfind
 hfont
 hfontresource
 hglobal
@@ -1155,6 +1160,7 @@ NOCONTEXTHELP
 NOCOPYBITS
 NODUP
 noexcepts
+NOFONT
 NOINTEGRALHEIGHT
 NOINTERFACE
 NOLINKINFO

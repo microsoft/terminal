@@ -45,6 +45,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleMarkMode();
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
+        void RestoreFromPath(winrt::hstring path);
+        void PersistToPath(const winrt::hstring& path) const;
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
@@ -182,7 +184,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
         // the core ever gets detached & reattached to another window.
-        BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable);
@@ -249,6 +250,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SafeDispatcherTimer _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        winrt::hstring _restorePath;
         bool _showMarksInScrollbar{ false };
 
         bool _isBackgroundLight{ false };
@@ -395,7 +397,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::FoundMatch_revoker FoundMatch;
             Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
             Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
-            Control::ControlCore::CopyToClipboard_revoker CopyToClipboard;
             Control::ControlCore::TitleChanged_revoker TitleChanged;
             Control::ControlCore::TabColorChanged_revoker TabColorChanged;
             Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;

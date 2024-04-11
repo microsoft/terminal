@@ -19,6 +19,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>
     {
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
+                            const TerminalApp::TerminalSettingsCache& cache,
                             const winrt::Microsoft::Terminal::Control::TermControl& control);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
@@ -27,10 +28,9 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
 
-        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
+        winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                            const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
 
         void MarkAsDefterm();
 
@@ -43,6 +43,9 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarState() { return _control.TaskbarState(); }
         uint64_t TaskbarProgress() { return _control.TaskbarProgress(); }
         bool ReadOnly() { return _control.ReadOnly(); }
+        winrt::hstring Icon() const;
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept;
+        winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         float SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap);
         Windows::Foundation::Size GridUnitSize();
@@ -61,6 +64,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
+        TerminalApp::TerminalSettingsCache _cache{ nullptr };
         bool _isDefTermSession{ false };
 
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };

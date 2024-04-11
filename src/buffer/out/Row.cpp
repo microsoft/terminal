@@ -230,6 +230,7 @@ void ROW::Reset(const TextAttribute& attr) noexcept
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
+    _promptData = std::nullopt;
     _init();
 }
 
@@ -348,12 +349,6 @@ void ROW::_init() noexcept
 #pragma warning(push)
 }
 
-void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)
-{
-    _attr = attr;
-    _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
-}
-
 void ROW::CopyFrom(const ROW& source)
 {
     _lineRendition = source._lineRendition;
@@ -365,7 +360,8 @@ void ROW::CopyFrom(const ROW& source)
     };
     CopyTextFrom(state);
 
-    TransferAttributes(source.Attributes(), _columnCount);
+    _attr = source.Attributes();
+    _attr.resize_trailing_extent(_columnCount);
 }
 
 // Returns the previous possible cursor position, preceding the given column.
@@ -1180,4 +1176,46 @@ CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexce
     // UTF-16 stores them in 1 char. In other words, usually a ROW will have N chars for N columns.
     const auto guessedColumn = gsl::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
     return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
+}
+
+const std::optional<ScrollbarData>& ROW::GetScrollbarData() const noexcept
+{
+    return _promptData;
+}
+void ROW::SetScrollbarData(std::optional<ScrollbarData> data) noexcept
+{
+    _promptData = data;
+}
+
+void ROW::StartPrompt() noexcept
+{
+    if (!_promptData.has_value())
+    {
+        // You'd be tempted to write:
+        //
+        // _promptData = ScrollbarData{
+        //     .category = MarkCategory::Prompt,
+        //     .color = std::nullopt,
+        //     .exitCode = std::nullopt,
+        // };
+        //
+        // But that's not very optimal! Read this thread for a breakdown of how
+        // weird std::optional can be some times:
+        //
+        // https://github.com/microsoft/terminal/pull/16937#discussion_r1553660833
+
+        _promptData.emplace(MarkCategory::Prompt);
+    }
+}
+
+void ROW::EndOutput(std::optional<unsigned int> error) noexcept
+{
+    if (_promptData.has_value())
+    {
+        _promptData->exitCode = error;
+        if (error.has_value())
+        {
+            _promptData->category = *error == 0 ? MarkCategory::Success : MarkCategory::Error;
+        }
+    }
 }

@@ -5,7 +5,6 @@
 #include "EventArgs.h"
 #include "FontSizeChangedArgs.g.cpp"
 #include "TitleChangedEventArgs.g.cpp"
-#include "CopyToClipboardEventArgs.g.cpp"
 #include "ContextMenuRequestedEventArgs.g.cpp"
 #include "PasteFromClipboardEventArgs.g.cpp"
 #include "OpenHyperlinkEventArgs.g.cpp"

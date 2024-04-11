@@ -133,23 +133,20 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
-    auto pwszFormat = L"\"%s\" --headless %s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
-    const BOOL bPassthroughMode = (dwFlags & PSEUDOCONSOLE_PASSTHROUGH_MODE) == PSEUDOCONSOLE_PASSTHROUGH_MODE;
     swprintf_s(cmd,
                MAX_PATH,
-               pwszFormat,
+               L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
                bResizeQuirk ? L"--resizeQuirk " : L"",
-               bPassthroughMode ? L"--passthrough " : L"",
                size.X,
                size.Y,
-               signalPipeConhostSide.get(),
-               serverHandle.get());
+               std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
+               std::bit_cast<uintptr_t>(serverHandle.get()));
 
     STARTUPINFOEXW siEx{ 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
