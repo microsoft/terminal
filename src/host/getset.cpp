@@ -730,7 +730,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             // When evaluating the X offset, we must convert the buffer position to
             // equivalent screen coordinates, taking line rendition into account.
             const auto lineRendition = buffer.GetTextBuffer().GetLineRendition(position.y);
-            const auto screenPosition = BufferToScreenLine({ position.x, position.y, position.x, position.y }, lineRendition);
+            const auto screenPosition = BufferToScreenLine(til::inclusive_rect{ position.x, position.y, position.x, position.y }, lineRendition);
 
             if (currentViewport.left > screenPosition.left)
             {
@@ -859,7 +859,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             // GH#3490 - If we're in conpty mode, don't invalidate the entire
             // viewport. In conpty mode, the VtEngine will later decide what
             // part of the buffer actually needs to be re-sent to the terminal.
-            if (!(g.getConsoleInformation().IsInVtIoMode() && g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
+            if (!(g.getConsoleInformation().IsInVtIoMode() &&
+                  g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
             {
                 WriteToScreen(context, context.GetViewport());
             }

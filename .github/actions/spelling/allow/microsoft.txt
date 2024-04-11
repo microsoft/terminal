@@ -32,6 +32,7 @@ DWINRT
 enablewttlogging
 HOMESHARE
 Intelli
+issecret
 IVisual
 libucrt
 libucrtd
@@ -74,6 +75,7 @@ sid
 Skype
 SRW
 sxs
+symbolrequestprod
 Sysinternals
 sysnative
 systemroot

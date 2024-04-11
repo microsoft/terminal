@@ -19,7 +19,6 @@
 #include "TabRowControl.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
-#include "SettingsTab.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 
 #include <shlobj.h>
@@ -63,30 +62,33 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
+    HRESULT TerminalPage::_OpenNewTab(const INewContentArgs& newContentArgs)
     try
     {
-        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-        // GH#11114: GetProfileForArgs can return null if the index is higher
-        // than the number of available profiles.
-        if (!profile)
+        if (const auto& newTerminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            return S_FALSE;
-        }
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            // GH#11114: GetProfileForArgs can return null if the index is higher
+            // than the number of available profiles.
+            if (!profile)
+            {
+                return S_FALSE;
+            }
+            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        // Try to handle auto-elevation
-        if (_maybeElevate(newTerminalArgs, settings, profile))
-        {
-            return S_OK;
+            // Try to handle auto-elevation
+            if (_maybeElevate(newTerminalArgs, settings, profile))
+            {
+                return S_OK;
+            }
+            // We can't go in the other direction (elevated->unelevated)
+            // unfortunately. This seems to be due to Centennial quirks. It works
+            // unpackaged, but not packaged.
         }
-        // We can't go in the other direction (elevated->unelevated)
-        // unfortunately. This seems to be due to Centennial quirks. It works
-        // unpackaged, but not packaged.
-        //
+
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr));
+        _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
         return S_OK;
     }
     CATCH_RETURN();
@@ -171,17 +173,8 @@ namespace winrt::TerminalApp::implementation
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().InsertAt(insertPosition, tabViewItem);
 
-        // Set this tab's icon to the icon from the user's profile
-        if (const auto profile{ newTabImpl->GetFocusedProfile() })
-        {
-            const auto& icon = profile.EvaluatedIcon();
-            if (!icon.empty())
-            {
-                const auto theme = _settings.GlobalSettings().CurrentTheme();
-                const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
-                newTabImpl->UpdateIcon(icon, iconStyle);
-            }
-        }
+        // Set this tab's icon to the icon from the content
+        _UpdateTabIcon(*newTabImpl);
 
         tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
 
@@ -226,13 +219,15 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - pane: The pane to use as the root.
     // - insertPosition: Optional parameter to indicate the position of tab.
-    void TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition)
+    TerminalApp::TerminalTab TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition)
     {
         if (pane)
         {
             auto newTabImpl = winrt::make_self<TerminalTab>(pane);
             _InitializeTab(newTabImpl, insertPosition);
+            return *newTabImpl;
         }
+        return nullptr;
     }
 
     // Method Description:
@@ -242,11 +237,13 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTabIcon(TerminalTab& tab)
     {
-        if (const auto profile = tab.GetFocusedProfile())
+        if (const auto content{ tab.GetActiveContent() })
         {
+            const auto& icon{ content.Icon() };
             const auto theme = _settings.GlobalSettings().CurrentTheme();
             const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
-            tab.UpdateIcon(profile.EvaluatedIcon(), iconStyle);
+
+            tab.UpdateIcon(icon, iconStyle);
         }
     }
 
@@ -798,14 +795,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     _HandleClosePaneRequested(pane);
                 }
-            }
-        }
-        else if (auto index{ _GetFocusedTabIndex() })
-        {
-            const auto tab{ _tabs.GetAt(*index) };
-            if (tab.try_as<TerminalApp::SettingsTab>())
-            {
-                _HandleCloseTabRequested(tab);
             }
         }
     }

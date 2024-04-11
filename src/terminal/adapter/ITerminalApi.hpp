@@ -70,7 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;
         virtual unsigned int GetConsoleOutputCP() const = 0;
 
-        virtual void CopyToClipboard(const std::wstring_view content) = 0;
+        virtual void CopyToClipboard(const wil::zwstring_view content) = 0;
         virtual void SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress) = 0;
         virtual void SetWorkingDirectory(const std::wstring_view uri) = 0;
         virtual void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) = 0;
@@ -80,11 +80,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;
-
-        virtual void MarkPrompt(const ScrollMark& mark) = 0;
-        virtual void MarkCommandStart() = 0;
-        virtual void MarkOutputStart() = 0;
-        virtual void MarkCommandFinish(std::optional<unsigned int> error) = 0;
 
         virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
     };

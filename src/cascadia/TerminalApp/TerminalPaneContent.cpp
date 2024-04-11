@@ -20,8 +20,10 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
+                                             const TerminalApp::TerminalSettingsCache& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
         _control{ control },
+        _cache{ cache },
         _profile{ profile }
     {
         _setupControlEvents();
@@ -80,7 +82,17 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
+    winrt::hstring TerminalPaneContent::Icon() const
+    {
+        return _profile.EvaluatedIcon();
+    }
+
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
+    {
+        return _control.TabColor();
+    }
+
+    INewContentArgs TerminalPaneContent::GetNewTerminalArgs(const BuildStartupKind kind) const
     {
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
@@ -328,11 +340,12 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const TerminalSettingsCreateResult& settings,
-                                             const Profile& profile)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
     {
-        _profile = profile;
-        _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        if (const auto& settings{ _cache.TryLookup(_profile) })
+        {
+            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+        }
     }
 
     // Method Description:
@@ -342,6 +355,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::MarkAsDefterm()
     {
         _isDefTermSession = true;
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush TerminalPaneContent::BackgroundBrush()
+    {
+        return _control.BackgroundBrush();
     }
 
     float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)

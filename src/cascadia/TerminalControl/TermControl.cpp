@@ -93,7 +93,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.ContextMenuRequested = _interactivity.ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
-        _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
         _revokers.TitleChanged = _core.TitleChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTitleChanged });
         _revokers.TabColorChanged = _core.TabColorChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTabColorChanged });
         _revokers.TaskbarProgressChanged = _core.TaskbarProgressChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSetTaskbarProgress });
@@ -369,7 +368,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 for (const auto& m : marks)
                 {
-                    const auto row = m.Start.Y;
+                    const auto row = m.Row;
                     const til::color color{ m.Color.Color };
                     const auto base = dataAt(row);
                     drawPip(base, color);
@@ -2276,7 +2275,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::PersistToPath(const winrt::hstring& path) const
     {
-        winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+        // Don't persist us if we weren't ever initialized. In that case, we
+        // never got an initial size, never instantiated a buffer, and didn't
+        // start the connection yet, so there's nothing for us to add here.
+        //
+        // If we were supposed to be restored from a path, then we don't need to
+        // do anything special here. We'll leave the original file untouched,
+        // and the next time we actually are initialized, we'll just use that
+        // file then.
+        if (_initializedTerminal)
+        {
+            winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+        }
     }
 
     void TermControl::Close()

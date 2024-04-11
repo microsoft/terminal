@@ -184,6 +184,8 @@
                                     Grid.Row="0"
                                     Grid.Column="1"
                                     VerticalAlignment="Center"
+                                    Maximum="999"
+                                    Minimum="1"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
                     <TextBlock x:Uid="Globals_InitialRows"
@@ -195,6 +197,8 @@
                                     Grid.Row="1"
                                     Grid.Column="1"
                                     VerticalAlignment="Center"
+                                    Maximum="999"
+                                    Minimum="1"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
                 </Grid>
