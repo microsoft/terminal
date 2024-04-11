@@ -1727,10 +1727,6 @@ namespace winrt::TerminalApp::implementation
     {
         term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
 
-        // Add an event handler when the terminal's selection wants to be copied.
-        // When the text buffer data is retrieved, we'll copy the data into the Clipboard
-        term.CopyToClipboard({ this, &TerminalPage::_CopyToClipboardHandler });
-
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
@@ -2636,54 +2632,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
         return dimension;
-    }
-
-    // Method Description:
-    // - Place `copiedData` into the clipboard as text. Triggered when a
-    //   terminal control raises its CopyToClipboard event.
-    // Arguments:
-    // - copiedData: the new string content to place on the clipboard.
-    winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
-                                                                 const CopyToClipboardEventArgs copiedData)
-    {
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-
-        auto dataPack = DataPackage();
-        dataPack.RequestedOperation(DataPackageOperation::Copy);
-
-        const auto copyFormats = copiedData.Formats() != nullptr ?
-                                     copiedData.Formats().Value() :
-                                     static_cast<CopyFormat>(0);
-
-        // copy text to dataPack
-        dataPack.SetText(copiedData.Text());
-
-        if (WI_IsFlagSet(copyFormats, CopyFormat::HTML))
-        {
-            // copy html to dataPack
-            const auto htmlData = copiedData.Html();
-            if (!htmlData.empty())
-            {
-                dataPack.SetHtmlFormat(htmlData);
-            }
-        }
-
-        if (WI_IsFlagSet(copyFormats, CopyFormat::RTF))
-        {
-            // copy rtf data to dataPack
-            const auto rtfData = copiedData.Rtf();
-            if (!rtfData.empty())
-            {
-                dataPack.SetRtf(rtfData);
-            }
-        }
-
-        try
-        {
-            Clipboard::SetContent(dataPack);
-            Clipboard::Flush();
-        }
-        CATCH_LOG();
     }
 
     static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)

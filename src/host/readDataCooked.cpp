@@ -1192,13 +1192,13 @@ try
         buffer.front() = L'┌';
         buffer.back() = L'┐';
         state.text = buffer;
-        textBuffer.Write(contentRect.top - 1, attributes, state);
+        textBuffer.Replace(contentRect.top - 1, attributes, state);
 
         // bottom line └───┘
         buffer.front() = L'└';
         buffer.back() = L'┘';
         state.text = buffer;
-        textBuffer.Write(contentRect.bottom, attributes, state);
+        textBuffer.Replace(contentRect.bottom, attributes, state);
 
         // middle lines │   │
         buffer.assign(widthSizeT, L' ');
@@ -1207,7 +1207,7 @@ try
         for (til::CoordType y = contentRect.top; y < contentRect.bottom; ++y)
         {
             state.text = buffer;
-            textBuffer.Write(y, attributes, state);
+            textBuffer.Replace(y, attributes, state);
         }
     }
 
@@ -1391,7 +1391,7 @@ void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_
             .columnBegin = popup.contentRect.right - CommandNumberMaxInputLength,
             .columnLimit = popup.contentRect.right,
         };
-        _screenInfo.GetTextBuffer().Write(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
+        _screenInfo.GetTextBuffer().Replace(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
     }
 }
 
@@ -1474,7 +1474,7 @@ void COOKED_READ_DATA::_popupDrawPrompt(const Popup& popup, const UINT id) const
         .columnBegin = popup.contentRect.left,
         .columnLimit = popup.contentRect.right,
     };
-    _screenInfo.GetTextBuffer().Write(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
+    _screenInfo.GetTextBuffer().Replace(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
 }
 
 void COOKED_READ_DATA::_popupDrawCommandList(Popup& popup) const
@@ -1533,7 +1533,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(Popup& popup) const
         buffer.append(width, L' ');
 
         state.text = buffer;
-        _screenInfo.GetTextBuffer().Write(y, attr, state);
+        _screenInfo.GetTextBuffer().Replace(y, attr, state);
     }
 
     cl.dirtyHeight = height;

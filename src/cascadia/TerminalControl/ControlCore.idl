@@ -160,7 +160,6 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectOutput();
 
         // These events are called from some background thread
-        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
