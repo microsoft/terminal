@@ -40,6 +40,11 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return expected != actual;
     }
 
+    bool Converters::StringNotEmpty(const winrt::hstring& value)
+    {
+        return !value.empty();
+    }
+
     winrt::Windows::UI::Xaml::Visibility Converters::StringNotEmptyToVisibility(const winrt::hstring& value)
     {
         return value.empty() ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;

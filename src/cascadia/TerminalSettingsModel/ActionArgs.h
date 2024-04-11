@@ -6,6 +6,7 @@
 // HEY YOU: When adding ActionArgs types, make sure to add the corresponding
 //          *.g.cpp to ActionArgs.cpp!
 #include "ActionEventArgs.g.h"
+#include "BaseContentArgs.g.h"
 #include "NewTerminalArgs.g.h"
 #include "CopyTextArgs.g.h"
 #include "NewTabArgs.g.h"
@@ -71,7 +72,7 @@ public:                                                                     \
         _##name = value;                                                    \
     }                                                                       \
                                                                             \
-private:                                                                    \
+protected:                                                                  \
     std::optional<type> _##name{ std::nullopt };
 
 // Notes on defining ActionArgs and ActionEventArgs:
@@ -295,6 +296,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Handled, false);
     };
 
+    struct BaseContentArgs : public BaseContentArgsT<BaseContentArgs>
+    {
+        BaseContentArgs(winrt::hstring type) :
+            _Type{ type } {}
+
+        BaseContentArgs() :
+            BaseContentArgs(L"") {}
+
+        ACTION_ARG(winrt::hstring, Type, L"");
+
+        static constexpr std::string_view TypeKey{ "type" };
+
+    public:
+        bool Equals(INewContentArgs other) const
+        {
+            return other.Type() == _Type;
+        }
+        size_t Hash() const
+        {
+            til::hasher h;
+            Hash(h);
+            return h.finalize();
+        }
+        void Hash(til::hasher& h) const
+        {
+            h.write(Type());
+        }
+        INewContentArgs Copy() const
+        {
+            auto copy{ winrt::make_self<BaseContentArgs>() };
+            copy->_Type = _Type;
+            return *copy;
+        }
+        winrt::hstring GenerateName() const
+        {
+            return winrt::hstring{ L"type: " } + Type();
+        }
+        static Json::Value ToJson(const Model::BaseContentArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            auto args{ get_self<BaseContentArgs>(val) };
+            Json::Value json{ Json::ValueType::objectValue };
+            JsonUtils::SetValueForKey(json, TypeKey, args->_Type);
+            return json;
+        }
+    };
+
     // Although it may _seem_ like NewTerminalArgs can use ACTION_ARG_BODY, it
     // actually can't, because it isn't an `IActionArgs`, which breaks some
     // assumptions made in the macro.
@@ -303,12 +354,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTerminalArgs() = default;
         NewTerminalArgs(int32_t& profileIndex) :
             _ProfileIndex{ profileIndex } {};
+
+        ACTION_ARG(winrt::hstring, Type, L"");
+
         ACTION_ARG(winrt::hstring, Commandline, L"");
         ACTION_ARG(winrt::hstring, StartingDirectory, L"");
         ACTION_ARG(winrt::hstring, TabTitle, L"");
         ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
         ACTION_ARG(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         ACTION_ARG(winrt::hstring, Profile, L"");
+        ACTION_ARG(winrt::guid, SessionId, winrt::guid{});
         ACTION_ARG(bool, AppendCommandLine, false);
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
@@ -322,6 +377,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view TabColorKey{ "tabColor" };
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
+        static constexpr std::string_view SessionIdKey{ "sessionId" };
         static constexpr std::string_view AppendCommandLineKey{ "appendCommandLine" };
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
@@ -333,7 +389,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring GenerateName() const;
         hstring ToCommandline() const;
 
-        bool Equals(const Model::NewTerminalArgs& other)
+        bool Equals(const Model::INewContentArgs& other)
         {
             auto otherAsUs = other.try_as<NewTerminalArgs>();
             if (otherAsUs)
@@ -362,6 +418,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, TabTitleKey, args->_TabTitle);
             JsonUtils::GetValueForKey(json, ProfileIndexKey, args->_ProfileIndex);
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
+            JsonUtils::GetValueForKey(json, SessionIdKey, args->_SessionId);
             JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
@@ -383,6 +440,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, TabTitleKey, args->_TabTitle);
             JsonUtils::SetValueForKey(json, ProfileIndexKey, args->_ProfileIndex);
             JsonUtils::SetValueForKey(json, ProfileKey, args->_Profile);
+            JsonUtils::SetValueForKey(json, SessionIdKey, args->_SessionId);
             JsonUtils::SetValueForKey(json, TabColorKey, args->_TabColor);
             JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
@@ -400,6 +458,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TabColor = _TabColor;
             copy->_ProfileIndex = _ProfileIndex;
             copy->_Profile = _Profile;
+            copy->_SessionId = _SessionId;
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
             copy->_ColorScheme = _ColorScheme;
             copy->_Elevate = _Elevate;
@@ -428,6 +487,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(ContentId());
         }
     };
+
+    static std::tuple<Model::INewContentArgs, std::vector<SettingsLoadWarnings>> ContentArgsFromJson(const Json::Value& json)
+    {
+        winrt::hstring type;
+        JsonUtils::GetValueForKey(json, "type", type);
+        if (type.empty())
+        {
+            auto terminalArgs = winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs::FromJson(json);
+            // Don't let the user specify the __content property in their
+            // settings. That's an internal-use-only property.
+            if (terminalArgs.ContentId())
+            {
+                return { terminalArgs, { SettingsLoadWarnings::InvalidUseOfContent } };
+            }
+            return { terminalArgs, {} };
+        }
+
+        // For now, we don't support any other concrete types of content
+        // with args. Just return a placeholder type that only includes the type
+        return { *winrt::make_self<BaseContentArgs>(type), {} };
+    }
+    static Json::Value ContentArgsToJson(const Model::INewContentArgs& contentArgs)
+    {
+        if (contentArgs == nullptr)
+        {
+            return {};
+        }
+        // TerminalArgs don't have a type.
+        if (contentArgs.Type().empty())
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs::ToJson(contentArgs.try_as<Model::NewTerminalArgs>());
+        }
+
+        // For now, we don't support any other concrete types of content
+        // with args. Just return a placeholder.
+        auto base{ winrt::make_self<BaseContentArgs>(contentArgs.Type()) };
+        return BaseContentArgs::ToJson(*base);
+    }
+
 }
 
 template<>
@@ -458,6 +556,20 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Control::SelectionColor>
         }
     }
 };
+template<>
+struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::INewContentArgs>
+{
+    using M = winrt::Microsoft::Terminal::Settings::Model::INewContentArgs;
+
+    void operator()(hasher& h, const M& value) const noexcept
+    {
+        if (value)
+        {
+            h.write(value.Type());
+            h.write(value.Hash());
+        }
+    }
+};
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -468,9 +580,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
         NewTabArgs() = default;
-        NewTabArgs(const Model::NewTerminalArgs& terminalArgs) :
-            _TerminalArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        NewTabArgs(const Model::INewContentArgs& terminalArgs) :
+            _ContentArgs{ terminalArgs } {};
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -480,7 +592,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<NewTabArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_TerminalArgs.Equals(_TerminalArgs);
+                return otherAsUs->_ContentArgs.Equals(_ContentArgs);
             }
             return false;
         };
@@ -488,15 +600,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
-            args->_TerminalArgs = NewTerminalArgs::FromJson(json);
-
-            // Don't let the user specify the __content property in their
-            // settings. That's an internal-use-only property.
-            if (args->_TerminalArgs.ContentId())
-            {
-                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
-            }
-            return { *args, {} };
+            auto [content, warnings] = ContentArgsFromJson(json);
+            args->_ContentArgs = content;
+            return { *args, warnings };
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
@@ -505,18 +611,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             const auto args{ get_self<NewTabArgs>(val) };
-            return NewTerminalArgs::ToJson(args->_TerminalArgs);
+            return ContentArgsToJson(args->_ContentArgs);
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<NewTabArgs>() };
-            copy->_TerminalArgs = _TerminalArgs.Copy();
+            copy->_ContentArgs = _ContentArgs.Copy();
             return *copy;
         }
         size_t Hash() const
         {
             til::hasher h;
-            h.write(TerminalArgs());
+            h.write(ContentArgs());
             return h.finalize();
         }
     };
@@ -524,22 +630,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        SplitPaneArgs(SplitType splitMode, SplitDirection direction, double size, const Model::NewTerminalArgs& terminalArgs) :
+        SplitPaneArgs(SplitType splitMode, SplitDirection direction, double size, const Model::INewContentArgs& terminalArgs) :
             _SplitMode{ splitMode },
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _TerminalArgs{ terminalArgs } {};
-        SplitPaneArgs(SplitDirection direction, double size, const Model::NewTerminalArgs& terminalArgs) :
+            _ContentArgs{ terminalArgs } {};
+        SplitPaneArgs(SplitDirection direction, double size, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
             _SplitSize{ size },
-            _TerminalArgs{ terminalArgs } {};
-        SplitPaneArgs(SplitDirection direction, const Model::NewTerminalArgs& terminalArgs) :
+            _ContentArgs{ terminalArgs } {};
+        SplitPaneArgs(SplitDirection direction, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
-            _TerminalArgs{ terminalArgs } {};
+            _ContentArgs{ terminalArgs } {};
         SplitPaneArgs(SplitType splitMode) :
             _SplitMode{ splitMode } {};
+
         ACTION_ARG(Model::SplitDirection, SplitDirection, SplitDirection::Automatic);
-        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
         ACTION_ARG(SplitType, SplitMode, SplitType::Manual);
         ACTION_ARG(double, SplitSize, .5);
 
@@ -556,8 +663,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (otherAsUs)
             {
                 return otherAsUs->_SplitDirection == _SplitDirection &&
-                       (otherAsUs->_TerminalArgs ? otherAsUs->_TerminalArgs.Equals(_TerminalArgs) :
-                                                   otherAsUs->_TerminalArgs == _TerminalArgs) &&
+                       (otherAsUs->_ContentArgs ? otherAsUs->_ContentArgs.Equals(_ContentArgs) :
+                                                  otherAsUs->_ContentArgs == _ContentArgs) &&
                        otherAsUs->_SplitSize == _SplitSize &&
                        otherAsUs->_SplitMode == _SplitMode;
             }
@@ -567,7 +674,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SplitPaneArgs>();
-            args->_TerminalArgs = NewTerminalArgs::FromJson(json);
             JsonUtils::GetValueForKey(json, SplitKey, args->_SplitDirection);
             JsonUtils::GetValueForKey(json, SplitModeKey, args->_SplitMode);
             JsonUtils::GetValueForKey(json, SplitSizeKey, args->_SplitSize);
@@ -576,14 +682,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return { nullptr, { SettingsLoadWarnings::InvalidSplitSize } };
             }
 
-            // Don't let the user specify the __content property in their
-            // settings. That's an internal-use-only property.
-            if (args->_TerminalArgs.ContentId())
-            {
-                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
-            }
-
-            return { *args, {} };
+            auto [content, warnings] = ContentArgsFromJson(json);
+            args->_ContentArgs = content;
+            return { *args, warnings };
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
@@ -592,7 +693,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             const auto args{ get_self<SplitPaneArgs>(val) };
-            auto json{ NewTerminalArgs::ToJson(args->_TerminalArgs) };
+            auto json{ ContentArgsToJson(args->_ContentArgs) };
             JsonUtils::SetValueForKey(json, SplitKey, args->_SplitDirection);
             JsonUtils::SetValueForKey(json, SplitModeKey, args->_SplitMode);
             JsonUtils::SetValueForKey(json, SplitSizeKey, args->_SplitSize);
@@ -602,7 +703,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<SplitPaneArgs>() };
             copy->_SplitDirection = _SplitDirection;
-            copy->_TerminalArgs = _TerminalArgs.Copy();
+            copy->_ContentArgs = _ContentArgs.Copy();
             copy->_SplitMode = _SplitMode;
             copy->_SplitSize = _SplitSize;
             return *copy;
@@ -611,7 +712,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             til::hasher h;
             h.write(SplitDirection());
-            h.write(TerminalArgs());
+            h.write(ContentArgs());
             h.write(SplitMode());
             h.write(SplitSize());
             return h.finalize();
@@ -621,9 +722,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
     {
         NewWindowArgs() = default;
-        NewWindowArgs(const Model::NewTerminalArgs& terminalArgs) :
-            _TerminalArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        NewWindowArgs(const Model::INewContentArgs& terminalArgs) :
+            _ContentArgs{ terminalArgs } {};
+        WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -633,7 +734,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<NewWindowArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_TerminalArgs.Equals(_TerminalArgs);
+                return otherAsUs->_ContentArgs.Equals(_ContentArgs);
             }
             return false;
         };
@@ -641,16 +742,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewWindowArgs>();
-            args->_TerminalArgs = NewTerminalArgs::FromJson(json);
-
-            // Don't let the user specify the __content property in their
-            // settings. That's an internal-use-only property.
-            if (args->_TerminalArgs.ContentId())
-            {
-                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
-            }
-
-            return { *args, {} };
+            auto [content, warnings] = ContentArgsFromJson(json);
+            args->_ContentArgs = content;
+            return { *args, warnings };
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
@@ -659,18 +753,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             const auto args{ get_self<NewWindowArgs>(val) };
-            return NewTerminalArgs::ToJson(args->_TerminalArgs);
+            return ContentArgsToJson(args->_ContentArgs);
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<NewWindowArgs>() };
-            copy->_TerminalArgs = _TerminalArgs.Copy();
+            copy->_ContentArgs = _ContentArgs.Copy();
             return *copy;
         }
         size_t Hash() const
         {
             til::hasher h;
-            h.write(TerminalArgs());
+            h.write(ContentArgs());
             return h.finalize();
         }
     };
@@ -824,6 +918,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
+    BASIC_FACTORY(BaseContentArgs);
     BASIC_FACTORY(CopyTextArgs);
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);

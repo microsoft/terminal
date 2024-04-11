@@ -93,14 +93,7 @@ GUID Utils::CreateGuid()
 // - a string representation of the color
 std::string Utils::ColorToHexString(const til::color color)
 {
-    std::stringstream ss;
-    ss << "#" << std::uppercase << std::setfill('0') << std::hex;
-    // Force the compiler to promote from byte to int. Without it, the
-    // stringstream will try to write the components as chars
-    ss << std::setw(2) << static_cast<int>(color.r);
-    ss << std::setw(2) << static_cast<int>(color.g);
-    ss << std::setw(2) << static_cast<int>(color.b);
-    return ss.str();
+    return fmt::format(FMT_COMPILE("#{:02X}{:02X}{:02X}"), color.r, color.g, color.b);
 }
 
 // Function Description:
@@ -809,7 +802,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                 }
 
                 return {
-                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.native(), mangledDirectory, arguments),
+                    fmt::format(FMT_COMPILE(LR"("{}" --cd "{}" {})"), executablePath.native(), mangledDirectory, arguments),
                     std::wstring{}
                 };
             }

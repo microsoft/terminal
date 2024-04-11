@@ -5,6 +5,7 @@
 #include <LibraryResources.h>
 #include "ColorPickupFlyout.h"
 #include "TerminalTab.h"
+#include "SettingsPaneContent.h"
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
@@ -266,12 +267,18 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings()
+    void TerminalTab::UpdateSettings(const CascadiaSettings& settings)
     {
         ASSERT_UI_THREAD();
 
         // The tabWidthMode may have changed, update the header control accordingly
         _UpdateHeaderControlMaxWidth();
+
+        // Update the settings on all our panes.
+        _rootPane->WalkTree([&](auto pane) {
+            pane->UpdateSettings(settings);
+            return false;
+        });
     }
 
     // Method Description:
@@ -280,7 +287,7 @@ namespace winrt::TerminalApp::implementation
     // - iconPath: The new path string to use as the IconPath for our TabViewItem
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle)
+    void TerminalTab::UpdateIcon(const winrt::hstring& iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle)
     {
         ASSERT_UI_THREAD();
 
@@ -383,7 +390,7 @@ namespace winrt::TerminalApp::implementation
             return RS_(L"MultiplePanes");
         }
         const auto activeContent = GetActiveContent();
-        return activeContent ? activeContent.Title() : L"";
+        return activeContent ? activeContent.Title() : winrt::hstring{};
     }
 
     // Method Description:
@@ -432,18 +439,18 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A vector of commands
-    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(const bool asContent) const
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(BuildStartupKind kind) const
     {
         ASSERT_UI_THREAD();
 
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
-        auto state = _rootPane->BuildStartupActions(0, 1, asContent);
+        auto state = _rootPane->BuildStartupActions(0, 1, kind);
 
         {
             ActionAndArgs newTabAction{};
             newTabAction.Action(ShortcutAction::NewTab);
-            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(asContent) };
+            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(kind) };
             newTabAction.Args(newTabArgs);
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));
@@ -1365,7 +1372,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        // "Color..."
+        // "Change tab color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         {
             Controls::FontIcon colorPickSymbol;
@@ -1384,7 +1391,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem renameTabMenuItem;
         {
-            // "Rename Tab"
+            // "Rename tab"
             Controls::FontIcon renameTabSymbol;
             renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             renameTabSymbol.Glyph(L"\xE8AC"); // Rename
@@ -1401,7 +1408,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem duplicateTabMenuItem;
         {
-            // "Duplicate Tab"
+            // "Duplicate tab"
             Controls::FontIcon duplicateTabSymbol;
             duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             duplicateTabSymbol.Glyph(L"\xF5ED");
@@ -1418,7 +1425,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem splitTabMenuItem;
         {
-            // "Split Tab"
+            // "Split tab"
             Controls::FontIcon splitTabSymbol;
             splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
@@ -1435,7 +1442,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem moveTabToNewWindowMenuItem;
         {
-            // "Move Tab to New Window"
+            // "Move tab to new window"
             Controls::FontIcon moveTabToNewWindowTabSymbol;
             moveTabToNewWindowTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             moveTabToNewWindowTabSymbol.Glyph(L"\xE8A7");
@@ -1452,7 +1459,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
-            // "Close Pane"
+            // "Close pane"
             closePaneMenuItem.Click({ get_weak(), &TerminalTab::_closePaneClicked });
             closePaneMenuItem.Text(RS_(L"ClosePaneText"));
 
@@ -1464,7 +1471,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem exportTabMenuItem;
         {
-            // "Export Tab"
+            // "Export tab"
             Controls::FontIcon exportTabSymbol;
             exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
@@ -1498,7 +1505,7 @@ namespace winrt::TerminalApp::implementation
 
         Controls::MenuFlyoutItem restartConnectionMenuItem = _restartConnectionMenuItem;
         {
-            // "Restart Connection"
+            // "Restart connection"
             Controls::FontIcon restartConnectionSymbol;
             restartConnectionSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             restartConnectionSymbol.Glyph(L"\xE72C");
@@ -1566,12 +1573,12 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
-        std::optional<winrt::Windows::UI::Color> controlTabColor;
-        if (const auto& control = GetActiveTerminalControl())
+        std::optional<winrt::Windows::UI::Color> contentTabColor;
+        if (const auto& content{ GetActiveContent() })
         {
-            if (const auto color = control.TabColor())
+            if (const auto color = content.TabColor())
             {
-                controlTabColor = color.Value();
+                contentTabColor = color.Value();
             }
         }
 
@@ -1581,7 +1588,7 @@ namespace winrt::TerminalApp::implementation
         // Color                |             | Set by
         // -------------------- | --          | --
         // Runtime Color        | _optional_  | Color Picker / `setTabColor` action
-        // Control Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT
+        // Content Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT (whatever the tab's content wants)
         // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme (handled in _RecalculateAndApplyTabColor)
         // Tab Default Color    | **default** | TabView in XAML
         //
@@ -1590,7 +1597,7 @@ namespace winrt::TerminalApp::implementation
         // tabview color" (and clear out any colors we've set).
 
         return til::coalesce(_runtimeTabColor,
-                             controlTabColor,
+                             contentTabColor,
                              std::optional<Windows::UI::Color>(std::nullopt));
     }
 
@@ -1629,7 +1636,7 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::UI::Xaml::Media::Brush TerminalTab::_BackgroundBrush()
     {
         Media::Brush terminalBrush{ nullptr };
-        if (const auto& c{ GetActiveTerminalControl() })
+        if (const auto& c{ GetActiveContent() })
         {
             terminalBrush = c.BackgroundBrush();
         }

@@ -27,6 +27,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ManyKeysSameAction);
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(HashDeduplication);
+        TEST_METHOD(HashContentArgs);
         TEST_METHOD(UnbindKeybindings);
         TEST_METHOD(LayerScancodeKeybindings);
         TEST_METHOD(TestExplicitUnbind);
@@ -159,6 +160,32 @@ namespace SettingsModelUnitTests
         actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
         actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
+    }
+
+    void KeyBindingsTests::HashContentArgs()
+    {
+        Log::Comment(L"These are two actions with different content args. They should have different hashes for their terminal args.");
+        const auto actionMap = winrt::make_self<implementation::ActionMap>();
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"), OriginTag::None);
+        VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
+
+        KeyChord ctrlC{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
+        KeyChord ctrlShiftC{ VirtualKeyModifiers::Control | VirtualKeyModifiers::Shift, static_cast<int32_t>('C'), 0 };
+
+        auto hashFromKey = [&](auto& kc) {
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            return terminalArgs.Hash();
+        };
+
+        const auto hashOne = hashFromKey(ctrlC);
+        const auto hashTwo = hashFromKey(ctrlShiftC);
+
+        VERIFY_ARE_NOT_EQUAL(hashOne, hashTwo);
     }
 
     void KeyBindingsTests::UnbindKeybindings()
@@ -318,8 +345,10 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -329,9 +358,11 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
-            VERIFY_ARE_EQUAL(0, realArgs.TerminalArgs().ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_NOT_NULL(terminalArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(0, terminalArgs.ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -342,9 +373,11 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
-            VERIFY_ARE_EQUAL(11, realArgs.TerminalArgs().ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_NOT_NULL(terminalArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(11, terminalArgs.ProfileIndex().Value());
         }
 
         {
