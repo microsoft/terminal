@@ -410,7 +410,7 @@ bool SettingsLoader::FixupUserSettings()
 {
     struct CommandlinePatch
     {
-        winrt::guid guid;
+        winrt::guid guid{};
         std::wstring_view before;
         std::wstring_view after;
     };

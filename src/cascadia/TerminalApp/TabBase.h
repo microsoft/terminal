@@ -12,6 +12,14 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
+    enum class BuildStartupKind
+    {
+        None,
+        Content,
+        MovePane,
+        Persist,
+    };
+
     struct TabBase : TabBaseT<TabBase>
     {
     public:
@@ -22,7 +30,7 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
-        virtual std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(const bool asContent = false) const = 0;
+        virtual std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(BuildStartupKind kind) const = 0;
 
         virtual std::optional<winrt::Windows::UI::Color> GetTabColor();
         void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,

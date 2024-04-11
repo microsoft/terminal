@@ -53,9 +53,7 @@ namespace winrt::TerminalApp::implementation
         void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
-
         bool ShouldUsePersistedLayout() const;
-        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
 
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
@@ -91,7 +89,6 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
         std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
-        til::throttled_func_trailing<> _reloadState;
 
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{};
 
