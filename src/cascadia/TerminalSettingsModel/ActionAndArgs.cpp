@@ -462,13 +462,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (_Action != ShortcutAction::Invalid)
         {
             auto actionKeyString = ActionToStringMap.find(_Action)->second;
-            auto result = RS_(L"OriginTagUser") + L"." + std::wstring{ actionKeyString.begin(), actionKeyString.end() };
+            auto result = fmt::format(L"User.{}", std::wstring{ actionKeyString.begin(), actionKeyString.end() });
             if (_Args)
             {
                 // If there are args, append the hash of the args
-                result = result + L"." + std::to_wstring(_Args.Hash());
+                fmt::format_to(std::back_inserter(result), L".{}", _Args.Hash());
             }
-            return result;
+            return winrt::hstring{ result };
         }
         return L"";
     }

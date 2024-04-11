@@ -192,9 +192,6 @@
   <data name="OpenSystemMenuCommandKey" xml:space="preserve">
     <value>Open system menu</value>
   </data>
-  <data name="OriginTagUser" xml:space="preserve">
-    <value>User</value>
-  </data>
   <data name="CommandPromptDisplayName" xml:space="preserve">
     <value>Command Prompt</value>
     <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>

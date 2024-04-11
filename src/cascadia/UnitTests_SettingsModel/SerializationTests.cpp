@@ -37,8 +37,8 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RoundtripUserDeletedColorSchemeCollision);
 
         TEST_METHOD(RoundtripGenerateActionID);
-        TEST_METHOD(DoNotGenerateActionID);
-        TEST_METHOD(RoundtripActionIDsAreSame);
+        TEST_METHOD(NoGeneratedIDsForIterableAndNestedCommands);
+        TEST_METHOD(GeneratedActionIDsEqualForIdenticalCommands);
 
     private:
         // Method Description:
@@ -996,7 +996,7 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
     }
 
-    void SerializationTests::DoNotGenerateActionID()
+    void SerializationTests::NoGeneratedIDsForIterableAndNestedCommands()
     {
         // for iterable commands, nested commands, and user-defined actions that already have
         // an ID, we do not need to generate an ID
@@ -1032,7 +1032,7 @@ namespace SettingsModelUnitTests
         VERIFY_IS_FALSE(oldLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
     }
 
-    void SerializationTests::RoundtripActionIDsAreSame()
+    void SerializationTests::GeneratedActionIDsEqualForIdenticalCommands()
     {
         static constexpr std::string_view settingsJson1{ R"(
         {
