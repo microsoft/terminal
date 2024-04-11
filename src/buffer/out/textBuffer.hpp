@@ -107,7 +107,8 @@ public:
     til::point NavigateCursor(til::point position, til::CoordType distance) const;
 
     // Text insertion functions
-    void Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state);
+    void Replace(til::CoordType row, const TextAttribute& attributes, RowWriteState& state);
+    void Insert(til::CoordType row, const TextAttribute& attributes, RowWriteState& state);
     void FillRect(const til::rect& rect, const std::wstring_view& fill, const TextAttribute& attributes);
 
     OutputCellIterator Write(const OutputCellIterator givenIt);
@@ -168,8 +169,8 @@ public:
 
     Microsoft::Console::Render::Renderer& GetRenderer() noexcept;
 
+    void NotifyPaintFrame() noexcept;
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
-    void TriggerRedrawCursor(const til::point position);
     void TriggerRedrawAll();
     void TriggerScroll();
     void TriggerScroll(const til::point delta);
