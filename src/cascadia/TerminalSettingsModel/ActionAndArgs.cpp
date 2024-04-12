@@ -472,10 +472,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // there is a _tiny_ chance of collision because of the truncate but unlikely for
                 // the number of commands a user is expected to have
                 const auto argsHash32 = static_cast<uint32_t>(_Args.Hash() & 0xFFFFFFFF);
-                std::wstringstream stream;
-                stream << std::hex << std::uppercase << argsHash32;
-                const auto argsHash32InHex = stream.str();
-                fmt::format_to(std::back_inserter(result), L".{}", argsHash32InHex);
+                // {0:X} formats the truncated hash to an uppercase hex string
+                fmt::format_to(std::back_inserter(result), L".{0:X}", argsHash32);
             }
             return winrt::hstring{ result };
         }
