@@ -33,7 +33,7 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
-        [[nodiscard]] HRESULT InvalidateHighlight(const std::vector<til::rect>& rects) noexcept override;
+        [[nodiscard]] HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const std::vector<LineRendition>& renditions) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
@@ -91,7 +91,8 @@ namespace Microsoft::Console::Render::Atlas
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
         ATLAS_ATTR_COLD void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
-        [[nodiscard]] HRESULT _drawHighlighted(std::span<const til::rect>& highlights, const u16 row, const u16 end, const u32 fgColor, const u32 bgColor) noexcept;
+        void _fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept;
+        [[nodiscard]] HRESULT _drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept;
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
@@ -179,12 +180,9 @@ namespace Microsoft::Console::Render::Atlas
             // UpdateHyperlinkHoveredId()
             u16 hyperlinkHoveredId = 0;
 
-            // These stores all highlighted regions of the screen
-            std::vector<til::rect> searchHighlightsAll;
-            std::vector<til::rect> searchHighlightFocusedAll;
-            // These track highlighted regions yet to be painted on the screen
-            std::span<const til::rect> searchHighlights;
-            std::span<const til::rect> searchHighlightFocused;
+            // These tracks the highlighted regions on the screen that are yet to be painted.
+            std::span<const til::point_span> searchHighlights;
+            std::span<const til::point_span> searchHighlightFocused;
 
             // dirtyRect is a computed value based on invalidatedRows.
             til::rect dirtyRect;

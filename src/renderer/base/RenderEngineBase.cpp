@@ -7,13 +7,8 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
-[[nodiscard]] HRESULT RenderEngineBase::InvalidateHighlight(const std::vector<til::rect>& rects) noexcept
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateHighlight(std::span<const til::point_span> /*highlights*/, const std::vector<LineRendition>& /*renditions*/) noexcept
 {
-    for (const auto& rect : rects)
-    {
-        RETURN_IF_FAILED(Invalidate(&rect));
-    }
-
     return S_OK;
 }
 

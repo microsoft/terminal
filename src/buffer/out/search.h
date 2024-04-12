@@ -25,7 +25,11 @@ class Search final
 public:
     Search() = default;
 
-    bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
+    bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData,
+                      const std::wstring_view& needle,
+                      bool reverse,
+                      bool caseInsensitive,
+                      std::vector<til::point_span>* prevResults = nullptr);
 
     void MoveToCurrentSelection();
     void MoveToPoint(til::point anchor) noexcept;

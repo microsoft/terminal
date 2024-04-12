@@ -217,10 +217,8 @@ public:
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    std::vector<til::inclusive_rect> GetSearchHighlights() const noexcept override;
-    void SetSearchHighlights(std::vector<til::inclusive_rect> highlights) noexcept override;
-    void SetSearchHighlightFocused(std::vector<til::inclusive_rect> highlight) override;
-    std::vector<til::inclusive_rect> GetSearchHighlightFocused() const noexcept override;
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override;
+    const til::point_span* GetSearchHighlightFocused() const noexcept override;
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
@@ -242,6 +240,8 @@ public:
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetTextLayoutUpdatedCallback(std::function<void()> pfn) noexcept;
+    void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
+    void SetSearchHighlightFocused(const size_t focusedIdx) noexcept;
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
@@ -360,8 +360,8 @@ private:
     std::wstring _startingTitle;
     std::optional<til::color> _startingTabColor;
 
-    std::vector<til::inclusive_rect> _searchHighlights;
-    std::vector<til::inclusive_rect> _searchHighlightFocused;
+    std::vector<til::point_span> _searchHighlights;
+    size_t _searchHighlightFocused;
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 

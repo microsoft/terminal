@@ -29,9 +29,8 @@ namespace Microsoft::Console::Render
 {
     struct RenderFrameInfo
     {
-        std::optional<CursorOptions> cursorInfo;
-        std::vector<til::rect> searchHighlights;
-        std::vector<til::rect> searchHighlightFocused;
+        std::span<const til::point_span> searchHighlights;
+        const til::point_span* searchHighlightFocused;
     };
 
     enum class GridLines
@@ -68,7 +67,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSystem(const til::rect* prcDirtyClient) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateHighlight(const std::vector<til::rect>& rects) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const std::vector<LineRendition>& renditions) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept = 0;

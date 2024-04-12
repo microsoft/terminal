@@ -1255,6 +1255,30 @@ void Terminal::SetTextLayoutUpdatedCallback(std::function<void()> pfn) noexcept
     _pfnTextLayoutUpdated.swap(pfn);
 }
 
+// Method Description:
+// - Stores the the search highlighted regions in the terminal
+void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept
+{
+    _assertLocked();
+    _searchHighlights = highlights;
+}
+
+// Method Description:
+// - Stores the focused search highlighted region in the terminal
+// - If the region isn't empty, it will be brought into view
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx) noexcept
+{
+    _assertLocked();
+    _searchHighlightFocused = focusedIdx;
+
+    // bring the focused region into the view if the index is in valid range
+    if (focusedIdx < _searchHighlights.size())
+    {
+        const auto focused = til::at(_searchHighlights, focusedIdx);
+        _ScrollToPoints(focused.start, focused.end);
+    }
+}
+
 Scheme Terminal::GetColorScheme() const
 {
     const auto& renderSettings = GetRenderSettings();

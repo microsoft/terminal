@@ -84,7 +84,7 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 //   that should be highlighted
 // Return Value:
 // - Vector of rects describing the highlighted area
-std::vector<til::inclusive_rect> RenderData::GetSearchHighlights() const noexcept
+std::span<const til::point_span> RenderData::GetSearchHighlights() const noexcept
 {
     return {};
 }
@@ -381,17 +381,9 @@ void RenderData::SelectNewRegion(const til::point coordStart, const til::point c
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
 }
 
-void RenderData::SetSearchHighlights(std::vector<til::inclusive_rect> /*highlights*/) noexcept
+const til::point_span* RenderData::GetSearchHighlightFocused() const noexcept
 {
-}
-
-void RenderData::SetSearchHighlightFocused(std::vector<til::inclusive_rect> /*highlight*/)
-{
-}
-
-std::vector<til::inclusive_rect> RenderData::GetSearchHighlightFocused() const noexcept
-{
-    return {};
+    return nullptr;
 }
 
 // Routine Description:

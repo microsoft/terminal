@@ -33,12 +33,6 @@ namespace TerminalCoreUnitTests
 
 namespace Microsoft::Console::Render
 {
-    struct SearchHighlights
-    {
-        std::vector<til::rect> all;
-        std::vector<til::rect> focused;
-    };
-
     class Renderer
     {
     public:
@@ -61,7 +55,7 @@ namespace Microsoft::Console::Render
         void TriggerTeardown() noexcept;
 
         void TriggerSelection();
-        void TriggerSearchHighlight();
+        void TriggerSearchHighlight(const std::vector<til::point_span>& oldHighlights);
         void TriggerScroll();
         void TriggerScroll(const til::point* const pcoordDelta);
 
@@ -117,10 +111,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
         std::vector<til::rect> _GetSelectionRects() const;
-        SearchHighlights _GetSearchHighlights() const;
-        SearchHighlights _GetDirtySearchHighlights(IRenderEngine* const pEngine) const;
         void _ScrollPreviousSelection(const til::point delta);
-        void _ScrollSearchHighlights(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         bool _isInHoveredInterval(til::point coordTarget) const noexcept;
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
@@ -137,7 +128,6 @@ namespace Microsoft::Console::Render
         Microsoft::Console::Types::Viewport _viewport;
         std::vector<Cluster> _clusterBuffer;
         std::vector<til::rect> _previousSelection;
-        SearchHighlights _currentSearchHighlights;
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;

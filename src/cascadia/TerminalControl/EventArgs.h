@@ -174,7 +174,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         UpdateSearchResultsEventArgs() = default;
 
-        WINRT_PROPERTY(SearchState, State);
+        WINRT_PROPERTY(SearchState, State, SearchState::Inactive);
         WINRT_PROPERTY(bool, FoundMatch);
         WINRT_PROPERTY(int32_t, TotalMatches);
         WINRT_PROPERTY(int32_t, CurrentMatch);

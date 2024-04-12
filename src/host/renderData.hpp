@@ -54,10 +54,8 @@ public:
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    std::vector<til::inclusive_rect> GetSearchHighlights() const noexcept override;
-    void SetSearchHighlights(std::vector<til::inclusive_rect> /*highlights*/) noexcept override;
-    std::vector<til::inclusive_rect> GetSearchHighlightFocused() const noexcept override;
-    void SetSearchHighlightFocused(std::vector<til::inclusive_rect> /*highlight*/) override;
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override;
+    const til::point_span* GetSearchHighlightFocused() const noexcept override;
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override { return true; }

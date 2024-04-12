@@ -386,34 +386,32 @@ void Renderer::TriggerSelection()
 
 // Routine Description:
 // - Called when the search highlight areas in the console have changed.
-void Renderer::TriggerSearchHighlight()
+void Renderer::TriggerSearchHighlight(const std::vector<til::point_span>& oldHighlights)
+try
 {
-    try
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto rows = buffer.TotalRowCount();
+
+    std::vector<LineRendition> renditions;
+    renditions.reserve(rows);
+    for (til::CoordType row = 0; row < rows; ++row)
     {
-        // get a rect representing the viewport.
-        // GetViewport() is in buffer coordinate, but we need `viewport` rect
-        // to start at {0, 0} and end at {vp-width, vp-height}. We will then use
-        // this rect to clamp search rects within the viewport.
-        const auto viewport = til::rect{ _pData->GetViewport().Dimensions() };
-        for (auto& sr : _currentSearchHighlights.all)
-        {
-            sr &= viewport;
-        }
-
-        auto newSearchHighlights = _GetSearchHighlights();
-        FOREACH_ENGINE(pEngine)
-        {
-            // no need to invalidate focused search rects separately as they are
-            // already part of "all" search highlights.
-            LOG_IF_FAILED(pEngine->InvalidateHighlight(_currentSearchHighlights.all));
-            LOG_IF_FAILED(pEngine->InvalidateHighlight(newSearchHighlights.all));
-        }
-
-        _currentSearchHighlights = std::move(newSearchHighlights);
-        NotifyPaintFrame();
+        renditions.emplace_back(buffer.GetLineRendition(row));
     }
-    CATCH_LOG();
+
+    // no need to invalidate focused search highlight separately as they are
+    // included in (all) search highlights.
+    const auto newHighlights = _pData->GetSearchHighlights();
+
+    FOREACH_ENGINE(pEngine)
+    {
+        LOG_IF_FAILED(pEngine->InvalidateHighlight(oldHighlights, renditions));
+        LOG_IF_FAILED(pEngine->InvalidateHighlight(newHighlights, renditions));
+    }
+
+    NotifyPaintFrame();
 }
+CATCH_LOG()
 
 // Routine Description:
 // - Called when we want to check if the viewport has moved and scroll accordingly if so.
@@ -445,7 +443,6 @@ bool Renderer::_CheckViewportAndScroll()
     }
 
     _ScrollPreviousSelection(coordDelta);
-    _ScrollSearchHighlights(coordDelta);
     return true;
 }
 
@@ -1154,12 +1151,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 [[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
 {
     RenderFrameInfo info;
-    info.cursorInfo = _GetCursorInfo();
-
-    auto [searchRects, searchFocusedRects] = _GetDirtySearchHighlights(pEngine);
-    info.searchHighlights = std::move(searchRects);
-    info.searchHighlightFocused = std::move(searchFocusedRects);
-
+    info.searchHighlights = _pData->GetSearchHighlights();
+    info.searchHighlightFocused = _pData->GetSearchHighlightFocused();
     return pEngine->PrepareRenderInfo(std::move(info));
 }
 
@@ -1259,36 +1252,6 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 }
 
 // Routine Description:
-// - returns search highlighted areas within the dirty regions of the window
-SearchHighlights Renderer::_GetDirtySearchHighlights(IRenderEngine* const pEngine) const
-{
-    std::span<const til::rect> dirtyAreas;
-    LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
-
-    SearchHighlights dirtySearchRects;
-    for (const auto& dirtyRect : dirtyAreas)
-    {
-        for (const auto& sr : _currentSearchHighlights.all)
-        {
-            if (const auto rectCopy = sr & dirtyRect)
-            {
-                dirtySearchRects.all.emplace_back(rectCopy);
-            }
-        }
-
-        for (const auto& sr : _currentSearchHighlights.focused)
-        {
-            if (const auto rectCopy = sr & dirtyRect)
-            {
-                dirtySearchRects.focused.emplace_back(rectCopy);
-            }
-        }
-    }
-
-    return dirtySearchRects;
-}
-
-// Routine Description:
 // - Helper to convert the text attributes to actual RGB colors and update the rendering pen/brush within the rendering engine before the next draw operation.
 // Arguments:
 // - pEngine - Which engine is being updated
@@ -1350,34 +1313,6 @@ std::vector<til::rect> Renderer::_GetSelectionRects() const
 }
 
 // Method Description:
-// - Returns search highlighted rects in the buffer relative to the viewport.
-SearchHighlights Renderer::_GetSearchHighlights() const
-{
-    SearchHighlights result;
-    const auto rects = _pData->GetSearchHighlights();
-    const auto rectsFocused = _pData->GetSearchHighlightFocused();
-    result.all.reserve(rects.size());
-    result.focused.reserve(rectsFocused.size());
-
-    const auto adjustRectToViewport = [&buffer = _pData->GetTextBuffer(), view = _pData->GetViewport()](const auto& rect) {
-        const auto lineRendition = buffer.GetLineRendition(rect.top);
-        const auto rectVp = Viewport::FromInclusive(BufferToScreenLine(rect, lineRendition));
-        return view.ConvertToOrigin(rectVp).ToExclusive();
-    };
-
-    for (const auto& rect : rects)
-    {
-        result.all.emplace_back(adjustRectToViewport(rect));
-    }
-    for (const auto& rect : rectsFocused)
-    {
-        result.focused.emplace_back(adjustRectToViewport(rect));
-    }
-
-    return result;
-}
-
-// Method Description:
 // - Offsets all of the selection rectangles we might be holding onto
 //   as the previously selected area. If the whole viewport scrolls,
 //   we need to scroll these areas also to ensure they're invalidated
@@ -1391,27 +1326,6 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
     if (delta != til::point{ 0, 0 })
     {
         for (auto& rc : _previousSelection)
-        {
-            rc += delta;
-        }
-    }
-}
-
-// Method Description:
-// - Similar to _ScrollPreviousSelection, but for search highlights.
-// - Updates the offsets for each search highlight rects after the viewport
-//   is scrolled.
-// Arguments:
-// - delta - The scroll delta
-void Renderer::_ScrollSearchHighlights(const til::point delta)
-{
-    if (delta != til::point{ 0, 0 })
-    {
-        for (auto& rc : _currentSearchHighlights.all)
-        {
-            rc += delta;
-        }
-        for (auto& rc : _currentSearchHighlights.focused)
         {
             rc += delta;
         }

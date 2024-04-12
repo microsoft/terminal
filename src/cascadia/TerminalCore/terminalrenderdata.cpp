@@ -154,10 +154,20 @@ catch (...)
 // - Helper to determine the search highlights in the buffer. Used for rendering.
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
-std::vector<til::inclusive_rect> Terminal::GetSearchHighlights() const noexcept
+std::span<const til::point_span> Terminal::GetSearchHighlights() const noexcept
 {
     _assertLocked();
     return _searchHighlights;
+}
+
+const til::point_span* Terminal::GetSearchHighlightFocused() const noexcept
+{
+    _assertLocked();
+    if (_searchHighlightFocused < _searchHighlights.size())
+    {
+        return &til::at(_searchHighlights, _searchHighlightFocused);
+    }
+    return nullptr;
 }
 
 // Method Description:
@@ -206,36 +216,6 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
     const auto newCoordEnd = til::point{ coordEnd.x, coordEnd.y - newScrollOffset };
     SetSelectionAnchor(newCoordStart);
     SetSelectionEnd(newCoordEnd, SelectionExpansion::Char);
-}
-
-void Terminal::SetSearchHighlights(std::vector<til::inclusive_rect> highlights) noexcept
-{
-    _assertLocked();
-    _searchHighlights = std::move(highlights);
-}
-
-// Method Description:
-// - Stores the focused search highlighted region of the terminal
-// - If the region isn't empty, it will be brought into view
-void Terminal::SetSearchHighlightFocused(std::vector<til::inclusive_rect> highlight)
-{
-    _assertLocked();
-
-    if (!highlight.empty())
-    {
-        // bring focused region into the view. We expect rects order to be top to bottom
-        const auto highlightStart = til::point{ highlight.front().left, highlight.front().top };
-        const auto highlightEnd = til::point{ highlight.back().right, highlight.back().bottom };
-        _ScrollToPoints(highlightStart, highlightEnd);
-    }
-
-    _searchHighlightFocused = std::move(highlight);
-}
-
-std::vector<til::inclusive_rect> Terminal::GetSearchHighlightFocused() const noexcept
-{
-    _assertLocked();
-    return _searchHighlightFocused;
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept

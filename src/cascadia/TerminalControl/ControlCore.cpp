@@ -1645,7 +1645,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
 
-        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
+        std::vector<til::point_span> oldResults;
+        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive, &oldResults))
         {
             _cachedSearchResultRows = {};
             if (SnapSearchResultToSelection())
@@ -1653,14 +1654,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _searcher.MoveToCurrentSelection();
                 SnapSearchResultToSelection(false);
             }
+
+            _terminal->SetSearchHighlights(_searcher.Results());
+            _terminal->SetSearchHighlightFocused(_searcher.CurrentMatch());
         }
         else
         {
             _searcher.FindNext();
+            _terminal->SetSearchHighlightFocused(_searcher.CurrentMatch());
         }
+        _renderer->TriggerSearchHighlight(oldResults);
 
         auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
-        evArgs->State(SearchState::Inactive);
         if (!text.empty())
         {
             evArgs->State(SearchState::Active);
@@ -1671,7 +1676,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 evArgs->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
             }
         }
-        _renderer->TriggerSearchHighlight();
 
         // Raise an UpdateSearchResults event, which the control will use to update the
         // UI and notify the narrator about the updated search results in the buffer
@@ -1706,12 +1710,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // nothing to clear if there's no results
         if (_searcher.GetCurrent())
         {
-            _searcher = {};
-            _cachedSearchResultRows = {};
             const auto lock = _terminal->LockForWriting();
             _terminal->SetSearchHighlights({});
             _terminal->SetSearchHighlightFocused({});
-            _renderer->TriggerSearchHighlight();
+            _renderer->TriggerSearchHighlight(_searcher.Results());
+            _searcher = {};
+            _cachedSearchResultRows = {};
         }
     }
 

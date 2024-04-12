@@ -355,22 +355,14 @@ public:
     {
     }
 
-    void SetSearchHighlights(std::vector<til::inclusive_rect> /*highlights*/) noexcept override
-    {
-    }
-
-    std::vector<til::inclusive_rect> GetSearchHighlights() const noexcept override
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override
     {
         return {};
     }
 
-    void SetSearchHighlightFocused(std::vector<til::inclusive_rect> /*highlight*/) override
+    const til::point_span* GetSearchHighlightFocused() const noexcept override
     {
-    }
-
-    std::vector<til::inclusive_rect> GetSearchHighlightFocused() const noexcept override
-    {
-        return {};
+        return nullptr;
     }
 
     const til::point GetSelectionAnchor() const noexcept

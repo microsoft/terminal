@@ -287,10 +287,32 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(RenderFrameInfo info) noexcept
 {
-    _api.searchHighlightsAll = std::move(info.searchHighlights);
-    _api.searchHighlightFocusedAll = std::move(info.searchHighlightFocused);
-    _api.searchHighlights = { _api.searchHighlightsAll };
-    _api.searchHighlightFocused = { _api.searchHighlightFocusedAll };
+    // remove the highlighted regions that falls outside of the dirty region
+    {
+        const auto& highlights = info.searchHighlights;
+
+        // get the buffer origin relative to the viewport, and use it to calculate
+        // the dirty region relative to the buffer origin
+        const til::point bufferOrigin{ static_cast<til::CoordType>(-_p.s->viewportOffset.x), static_cast<til::CoordType>(-_p.s->viewportOffset.y) };
+        const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
+
+        const auto hiBeg = std::lower_bound(highlights.begin(), highlights.end(), dr.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
+        const auto hiEnd = std::upper_bound(hiBeg, highlights.end(), dr.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
+        _api.searchHighlights = { hiBeg, hiEnd };
+
+        // do the same for the focused search highlight
+        if (info.searchHighlightFocused)
+        {
+            const auto focusedStartY = info.searchHighlightFocused->start.y;
+            const auto focusedEndY = info.searchHighlightFocused->end.y;
+            const auto isFocusedInside = (focusedStartY >= dr.top && focusedStartY < dr.bottom) || (focusedEndY >= dr.top && focusedEndY < dr.bottom) || (focusedStartY < dr.top && focusedEndY >= dr.bottom);
+            if (isFocusedInside)
+            {
+                _api.searchHighlightFocused = { info.searchHighlightFocused, 1 };
+            }
+        }
+    }
+
     return S_OK;
 }
 
@@ -312,61 +334,121 @@ CATCH_RETURN()
     return S_OK;
 }
 
+void AtlasEngine::_fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept
+{
+    const auto bitmap = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
+    const auto shift = gsl::narrow_cast<u8>(_p.rows[y]->lineRendition != LineRendition::SingleWidth);
+    auto beg = bitmap + (x1 << shift);
+    auto end = bitmap + (x2 << shift);
+
+    const u32 colors[] = {
+        u32ColorPremultiply(bgColor),
+        fgColor,
+    };
+
+    // This fills the color in the background bitmap, and then in the foreground bitmap.
+    for (size_t i = 0; i < 2; ++i)
+    {
+        const auto color = colors[i];
+
+        for (auto it = beg; it != end; ++it)
+        {
+            if (*it != color)
+            {
+                _p.colorBitmapGenerations[i].bump();
+                std::fill(it, end, color);
+                break;
+            }
+        }
+
+        // go to the same range in the same row, but in the foreground bitmap
+        beg += _p.colorBitmapDepthStride;
+        end += _p.colorBitmapDepthStride;
+    }
+}
+
 // Method Description:
-//  - Applies highlighting colors to the columns of highlighted regions in a given range
+// - Applies the given highlighting colors to the columns in the highlighted regions within a given range.
+// - Resumes from the last partially painted region if any.
 // Arguments:
-//  - highlights: the list of highlighted regions
-//  - row: the row for which highlighted regions are to be painted
-//  - end: the last (exclusive) column of the row to paint up to (in Buffer coord)
-//  - fgColor: the foreground color to use for highlighting
-//  - bgColor: the background color to use for highlighting
+// - highlights: the list of highlighted regions (yet to be painted)
+// - row: the row for which highlighted regions are to be painted
+// - begX: the starting (inclusive) column to paint from (in Buffer coord)
+// - endX: the ending (exclusive) column to paint up to (in Buffer coord)
+// - fgColor: the foreground highlight color
+// - bgColor: the background highlight color
 // Returns:
-//  - S_OK if we painted successfully, else an appropriate HRESULT error code
-[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::rect>& highlights, const u16 row, const u16 end, const u32 fgColor, const u32 bgColor) noexcept
+// - S_OK if we painted successfully, else an appropriate HRESULT error code
+[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept
 try
 {
-    const auto y = static_cast<til::CoordType>(row);
-
-    // highlighted regions are in viewport coordinate so convert `end` to viewport coordinate as well
-    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto colEnd = static_cast<til::CoordType>(end) << shift;
-
-    auto hi = highlights.begin();
-    const auto hiEnd = highlights.end();
-
-    // nothing to paint if it's empty or we haven't reached the point where the
-    // first highlighted region starts
-    if (hi == hiEnd || hi->top > y || hi->left >= colEnd)
+    if (highlights.empty())
     {
         return S_OK;
     }
 
-    const auto bg = _p.backgroundBitmap.data() + _p.colorBitmapRowStride * y;
-    const auto fg = _p.foregroundBitmap.data() + _p.colorBitmapRowStride * y;
+    const auto y = static_cast<til::CoordType>(row);
+    const auto x1 = static_cast<til::CoordType>(begX);
+    const auto x2 = static_cast<til::CoordType>(endX);
+    const auto offset = til::point{ _p.s->viewportOffset.x, _p.s->viewportOffset.y };
+    auto it = highlights.begin();
+    const auto itEnd = highlights.end();
+    auto hiStart = it->start - offset;
+    auto hiEnd = it->end - offset;
 
-    // paint the highlighted regions that lie before colEnd in the row
-    while (hi != hiEnd && y == hi->top && hi->right <= colEnd)
+    // Nothing to paint if we haven't reached the row where the highlight region begins
+    if (y < hiStart.y)
     {
-        std::fill(bg + hi->left, bg + hi->right, bgColor);
-        std::fill(fg + hi->left, fg + hi->right, fgColor);
-        ++hi;
+        return S_OK;
     }
 
-    // draw the next region if some part of it still lies before colEnd
-    if (hi != hiEnd && hi->top == y && hi->left < colEnd)
+    // We might have painted a multi-line highlight region in the last call,
+    // so we need to make sure we paint the whole region before moving on to
+    // the next region.
+    if (y > hiStart.y)
     {
-        std::fill(bg + hi->left, bg + colEnd, bgColor);
-        std::fill(fg + hi->left, fg + colEnd, fgColor);
-        // don't move the iterator, we still need to paint the rest of this region later
+        const auto isFinalRow = y == hiEnd.y;
+        const auto end = isFinalRow ? std::min(hiEnd.x + 1, x2) : x2;
+        _fillColorBitmap(row, x1, end, fgColor, bgColor);
+
+        // Return early if we couldn't paint the whole region. We will resume
+        // from here in the next call.
+        if (!isFinalRow || end == x2)
+        {
+            return S_OK;
+        }
+
+        ++it;
     }
 
-    // shorten the list by removing processed regions
-    highlights = { hi, hiEnd };
-
-    for (int i = 0; i < 2; ++i)
+    // Pick a highlighted region and (try) to paint it
+    while (it != itEnd)
     {
-        _p.colorBitmapGenerations[i].bump();
+        hiStart = it->start - offset;
+        hiEnd = it->end - offset;
+
+        const auto isStartInside = y == hiStart.y && hiStart.x < x2;
+        const auto isEndInside = y == hiEnd.y && hiEnd.x < x2;
+        if (isStartInside && isEndInside)
+        {
+            _fillColorBitmap(row, hiStart.x, hiEnd.x + 1, fgColor, bgColor);
+            ++it;
+        }
+        else
+        {
+            // Paint the region partially if start is within the range.
+            if (isStartInside)
+            {
+                const auto start = std::max(x1, hiStart.x);
+                _fillColorBitmap(y, start, x2, fgColor, bgColor);
+            }
+
+            break;
+        }
     }
+
+    // Shorten the list by removing processed regions
+    highlights = { it, itEnd };
 
     return S_OK;
 }
@@ -409,38 +491,12 @@ try
         _api.bufferLineColumn.emplace_back(columnEnd);
     }
 
-    {
-        const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
-        auto beg = row + (static_cast<size_t>(x) << shift);
-        auto end = row + (static_cast<size_t>(columnEnd) << shift);
+    // Apply the current foreground and background colors to the cells
+    _fillColorBitmap(y, x, columnEnd, _api.currentForeground, _api.currentBackground);
 
-        const u32 colors[] = {
-            u32ColorPremultiply(_api.currentBackground),
-            _api.currentForeground,
-        };
-
-        for (size_t i = 0; i < 2; ++i)
-        {
-            const auto color = colors[i];
-
-            for (auto it = beg; it != end; ++it)
-            {
-                if (*it != color)
-                {
-                    _p.colorBitmapGenerations[i].bump();
-                    std::fill(it, end, color);
-                    break;
-                }
-            }
-
-            beg += _p.colorBitmapDepthStride;
-            end += _p.colorBitmapDepthStride;
-        }
-    }
-
-    // apply highlighting colors to columns in the (search) highlighted areas.
-    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, columnEnd, u32ColorPremultiply(highlightFg), highlightBg));
-    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, columnEnd, u32ColorPremultiply(highlightFocusFg), highlightFocusBg));
+    // Apply the highlighting colors to the highlighted cells
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
