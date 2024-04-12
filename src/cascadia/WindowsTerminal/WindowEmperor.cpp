@@ -504,11 +504,11 @@ void WindowEmperor::_finalizeSessionPersistence() const
 
                 if (const auto tabArgs = args.try_as<NewTabArgs>())
                 {
-                    terminalArgs = tabArgs.TerminalArgs();
+                    terminalArgs = tabArgs.ContentArgs().try_as<NewTerminalArgs>();
                 }
                 else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
                 {
-                    terminalArgs = paneArgs.TerminalArgs();
+                    terminalArgs = paneArgs.ContentArgs().try_as<NewTerminalArgs>();
                 }
 
                 if (terminalArgs)

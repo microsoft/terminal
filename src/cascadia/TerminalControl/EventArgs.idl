@@ -24,14 +24,6 @@ namespace Microsoft.Terminal.Control
         Int32 Height { get; };
     }
 
-    runtimeclass CopyToClipboardEventArgs
-    {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-        Windows.Foundation.IReference<CopyFormat> Formats { get; };
-    }
-
     runtimeclass ContextMenuRequestedEventArgs
     {
         Windows.Foundation.Point Position { get; };

@@ -268,7 +268,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format off
         til::typed_event<IInspectable, Control::FontSizeChangedArgs> FontSizeChanged;
 
-        til::typed_event<IInspectable, Control::CopyToClipboardEventArgs> CopyToClipboard;
         til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
         til::typed_event<> WarningBell;
         til::typed_event<> TabColorChanged;
@@ -374,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
-        void _terminalCopyToClipboard(std::wstring_view wstr);
+        void _terminalCopyToClipboard(wil::zwstring_view wstr);
         void _terminalWarningBell();
         void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalScrollPositionChanged(const int viewTop,
@@ -415,10 +414,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuSelectMark(
             const til::point& pos,
-            bool (*filter)(const ::ScrollMark&),
-            til::point_span (*getSpan)(const ::ScrollMark&));
+            bool (*filter)(const ::MarkExtents&),
+            til::point_span (*getSpan)(const ::MarkExtents&));
 
-        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::MarkExtents&));
 
         inline bool _IsClosing() const noexcept
         {

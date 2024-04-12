@@ -292,7 +292,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _CreateNewTabFlyoutProfile(const Microsoft::Terminal::Settings::Model::Profile profile, int profileIndex);
 
         void _OpenNewTabDropdown();
-        HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
+        HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::INewContentArgs& newContentArgs);
         TerminalApp::TerminalTab _CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition = -1);
 
         std::wstring _evaluatePathForCwd(std::wstring_view path);
@@ -301,7 +301,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
-        winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+        winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs newContentArgs);
 
         void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -394,7 +394,6 @@ namespace winrt::TerminalApp::implementation
         void _ScrollToBufferEdge(ScrollDirection scrollDirection);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Control::KeyChord& keyChord);
 
-        winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::CopyToClipboardEventArgs copiedData);
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
                                                           const Microsoft::Terminal::Control::PasteFromClipboardEventArgs eventArgs);
 
@@ -435,7 +434,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
         winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
 
-        std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
+        TerminalApp::IPaneContent _makeSettingsContent();
+        std::shared_ptr<Pane> _MakeTerminalPane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
+                                                const winrt::TerminalApp::TabBase& sourceTab = nullptr,
+                                                winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::INewContentArgs& newContentArgs = nullptr,
                                         const winrt::TerminalApp::TabBase& sourceTab = nullptr,
                                         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
 

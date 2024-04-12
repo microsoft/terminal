@@ -147,7 +147,8 @@ class TextBufferTests
 
     TEST_METHOD(TestBurrito);
     TEST_METHOD(TestOverwriteChars);
-    TEST_METHOD(TestRowReplaceText);
+    TEST_METHOD(TestReplace);
+    TEST_METHOD(TestInsert);
 
     TEST_METHOD(TestAppendRTFText);
 
@@ -161,6 +162,8 @@ class TextBufferTests
 
     TEST_METHOD(HyperlinkTrim);
     TEST_METHOD(NoHyperlinkTrim);
+
+    TEST_METHOD(ReflowPromptRegions);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2003,13 +2006,12 @@ void TextBufferTests::TestOverwriteChars()
 #undef complex1
 }
 
-void TextBufferTests::TestRowReplaceText()
+void TextBufferTests::TestReplace()
 {
     static constexpr til::size bufferSize{ 10, 3 };
     static constexpr UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
-    auto& row = buffer.GetMutableRowByOffset(0);
 
 #define complex L"\U0001F41B"
 
@@ -2073,15 +2075,96 @@ void TextBufferTests::TestRowReplaceText()
             .columnBegin = t.input.columnBegin,
             .columnLimit = t.input.columnLimit,
         };
-        row.ReplaceText(actual);
+        buffer.Replace(0, attr, actual);
         VERIFY_ARE_EQUAL(t.expected.text, actual.text);
         VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
         VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
         VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
-        VERIFY_ARE_EQUAL(t.expectedRow, row.GetText());
+        VERIFY_ARE_EQUAL(t.expectedRow, buffer.GetRowByOffset(0).GetText());
     }
 
 #undef complex
+}
+
+void TextBufferTests::TestInsert()
+{
+    static constexpr til::size bufferSize{ 10, 3 };
+    static constexpr UINT cursorSize = 12;
+    static constexpr TextAttribute attr1{ 0x11111111, 0x00000000 };
+    static constexpr TextAttribute attr2{ 0x22222222, 0x00000000 };
+    static constexpr TextAttribute attr3{ 0x33333333, 0x00000000 };
+    TextBuffer buffer{ bufferSize, attr1, cursorSize, false, _renderer };
+
+    struct Test
+    {
+        const wchar_t* description;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnBegin = 0;
+            til::CoordType columnLimit = 0;
+            TextAttribute attr;
+        } input;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnEnd = 0;
+            til::CoordType columnBeginDirty = 0;
+            til::CoordType columnEndDirty = 0;
+        } expected;
+        std::wstring_view expectedRow;
+    };
+
+    static constexpr std::array tests{
+        Test{
+            L"Not enough space -> early exit",
+            { L"aaa", 5, 5, attr1 },
+            { L"aaa", 5, 5, 5 },
+            L"          ",
+        },
+        Test{
+            L"Too much to fit",
+            { L"aaaaabbb", 0, 5, attr1 },
+            { L"bbb", 5, 0, 5 },
+            L"aaaaa     ",
+        },
+        Test{
+            L"Wide char intersects limit",
+            { L"bbbb😄", 0, 5, attr2 },
+            { L"😄", 5, 0, 5 },
+            L"bbbb      ",
+        },
+        Test{
+            L"Insert middle",
+            { L"cc", 2, 5, attr3 },
+            { L"", 4, 2, 4 },
+            L"bbccb     ",
+        },
+    };
+
+    for (const auto& t : tests)
+    {
+        Log::Comment(t.description);
+        RowWriteState actual{
+            .text = t.input.text,
+            .columnBegin = t.input.columnBegin,
+            .columnLimit = t.input.columnLimit,
+        };
+        buffer.Insert(0, t.input.attr, actual);
+        VERIFY_ARE_EQUAL(t.expected.text, actual.text);
+        VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
+        VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
+        VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
+        VERIFY_ARE_EQUAL(t.expectedRow, buffer.GetRowByOffset(0).GetText());
+    }
+
+    auto& scratch = buffer.GetScratchpadRow();
+    scratch.ReplaceAttributes(0, 5, attr2);
+    scratch.ReplaceAttributes(2, 4, attr3);
+
+    const auto& expectedAttr = scratch.Attributes();
+    const auto& actualAttr = buffer.GetRowByOffset(0).Attributes();
+    VERIFY_ARE_EQUAL(expectedAttr, actualAttr);
 }
 
 void TextBufferTests::TestAppendRTFText()
@@ -2851,4 +2934,136 @@ void TextBufferTests::NoHyperlinkTrim()
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
+}
+
+#define FTCS_A L"\x1b]133;A\x1b\\"
+#define FTCS_B L"\x1b]133;B\x1b\\"
+#define FTCS_C L"\x1b]133;C\x1b\\"
+#define FTCS_D L"\x1b]133;D\x1b\\"
+void TextBufferTests::ReflowPromptRegions()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method") // always isolate things that resize the buffer
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-15, -1, 0, 1, 15}")
+    END_TEST_METHOD_PROPERTIES()
+
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto* tbi = &si.GetTextBuffer();
+    auto& sm = si.GetStateMachine();
+    const auto oldSize{ tbi->GetSize() };
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool /*isTerminal*/, const bool afterResize) {
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+        // Just the dx=+1 case doesn't unwrap the line onto one line, but the dx=+15 case does.
+        const bool unwrapped = afterResize && dx > 1;
+        const int unwrapAdjust = unwrapped ? -1 : 0;
+        const auto marks = tb.GetMarkExtents();
+        VERIFY_ARE_EQUAL(3u, marks.size());
+        {
+            Log::Comment(L"Mark 0");
+
+            auto& mark = marks[0];
+            const til::point expectedStart{ 0, 0 };
+            const til::point expectedEnd{ 10, 0 };
+            const til::point expectedOutputStart{ 17, 0 }; // `Foo-Bar` is 7 characters
+            const til::point expectedOutputEnd{ 13, 3 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            Log::Comment(L"Mark 1");
+
+            auto& mark = marks[1];
+            const til::point expectedStart{ 0, 4 };
+            const til::point expectedEnd{ 10, 4 };
+            // {originalWidth} characters of 'F', maybe wrapped.
+            const til::point originalPos = til::point{ 10, 5 };
+            til::point afterPos = originalPos;
+            // walk that original pos dx times into the actual real place in the buffer.
+            auto bufferViewport = tb.GetSize();
+            const auto walkDir = Viewport::WalkDir{ dx < 0 ? Viewport::XWalk::LeftToRight : Viewport::XWalk::RightToLeft,
+                                                    dx < 0 ? Viewport::YWalk::TopToBottom : Viewport::YWalk::BottomToTop };
+            for (auto i = 0; i < std::abs(dx); i++)
+            {
+                bufferViewport.WalkInBounds(afterPos,
+                                            walkDir);
+            }
+            const auto expectedOutputStart = !afterResize ?
+                                                 originalPos : // printed exactly a row, so we're exactly below the prompt
+                                                 afterPos;
+            const til::point expectedOutputEnd{ 22, 6 + unwrapAdjust };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            Log::Comment(L"Mark 2");
+
+            auto& mark = marks[2];
+            const til::point expectedStart{ 0, 7 + unwrapAdjust };
+            const til::point expectedEnd{ 10, 7 + unwrapAdjust };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+            VERIFY_IS_TRUE(mark.commandEnd.has_value());
+            VERIFY_IS_FALSE(mark.outputEnd.has_value());
+        }
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    auto writePrompt = [](StateMachine& stateMachine, const auto& path) {
+        // A prompt looks like:
+        // `PWSH C:\> `
+        //
+        // which is 10 characters for "C:\"
+        stateMachine.ProcessString(FTCS_D);
+        stateMachine.ProcessString(FTCS_A);
+        stateMachine.ProcessString(L"\x1b]9;9;");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"\x7");
+        stateMachine.ProcessString(L"PWSH ");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"> ");
+        stateMachine.ProcessString(FTCS_B);
+    };
+    auto writeCommand = [](StateMachine& stateMachine, const auto& cmd) {
+        stateMachine.ProcessString(cmd);
+        stateMachine.ProcessString(FTCS_C);
+        stateMachine.ProcessString(L"\r\n");
+    };
+
+    // This first prompt didn't reflow at all
+    writePrompt(sm, L"C:\\"); // y=0
+    writeCommand(sm, L"Foo-bar"); // y=0
+    sm.ProcessString(L"This is some text     \r\n"); // y=1
+    sm.ProcessString(L"with varying amounts  \r\n"); // y=2
+    sm.ProcessString(L"of whitespace\r\n"); // y=3
+
+    // This second one, the command does. It stretches across lines
+    writePrompt(sm, L"C:\\"); // y=4
+    writeCommand(sm, std::wstring(oldSize.Width(), L'F')); // y=4,5
+    sm.ProcessString(L"This is more text     \r\n"); // y=6
+
+    writePrompt(sm, L"C:\\"); // y=7
+    writeCommand(sm, L"yikes?"); // y=7
+
+    Log::Comment(L"========== Checking the buffer state (before) ==========");
+    verifyBuffer(*tbi, si.GetViewport().ToExclusive(), false, false);
+
+    // After we resize, make sure to get the new textBuffers
+    til::size newSize{ oldSize.Width() + dx, oldSize.Height() };
+    auto newBuffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, _renderer);
+    TextBuffer::Reflow(*tbi, *newBuffer);
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*newBuffer, si.GetViewport().ToExclusive(), false, true);
 }
