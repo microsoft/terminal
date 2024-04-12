@@ -1256,7 +1256,7 @@ void Terminal::SetTextLayoutUpdatedCallback(std::function<void()> pfn) noexcept
 }
 
 // Method Description:
-// - Stores the the search highlighted regions in the terminal
+// - Stores the search highlighted regions in the terminal
 void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept
 {
     _assertLocked();
