@@ -797,11 +797,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     bool ActionMap::GenerateIDsForActions()
     {
-        // Note: this should ONLY be called for the action map in the user's settings file
         bool fixedUp{ false };
         for (auto actionPair : _ActionMap)
         {
             auto cmdImpl{ winrt::get_self<Command>(actionPair.second) };
+
+            // Note: this function should ONLY be called for the action map in the user's settings file
+            //       this debug assert should verify that for debug builds
+            assert(cmdImpl->Origin() == OriginTag::User);
+
             if (cmdImpl->ID().empty())
             {
                 fixedUp = cmdImpl->GenerateID() || fixedUp;

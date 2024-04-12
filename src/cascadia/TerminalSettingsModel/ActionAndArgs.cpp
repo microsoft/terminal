@@ -465,8 +465,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto result = fmt::format(L"User.{}", std::wstring{ actionKeyString.begin(), actionKeyString.end() });
             if (_Args)
             {
-                // If there are args, append the hash of the args
-                fmt::format_to(std::back_inserter(result), L".{}", _Args.Hash());
+                // If there are args, we need to append the hash of the args
+                // However, to make it a little more presentable we
+                // 1. truncate the hash to 32 bits
+                // 2. convert it to a hex string
+                // there is a _tiny_ chance of collision because of the truncate but unlikely for
+                // the number of commands a user is expected to have
+                const auto argsHash32 = static_cast<uint32_t>(_Args.Hash() & 0xFFFFFFFF);
+                std::wstringstream stream;
+                stream << std::hex << std::uppercase << argsHash32;
+                const auto argsHash32InHex = stream.str();
+                fmt::format_to(std::back_inserter(result), L".{}", argsHash32InHex);
             }
             return winrt::hstring{ result };
         }

@@ -495,7 +495,7 @@ namespace SettingsModelUnitTests
                 }
             ],
             "actions": [
-                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "id" : "User.sendInput.15093368865568800249", "keys": "ctrl+k" }
+                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "id": "User.sendInput.E02B3DF9", "keys": "ctrl+k" }
             ],
             "theme": "system",
             "themes": []
@@ -974,7 +974,7 @@ namespace SettingsModelUnitTests
                     "name": "foo",
                     "command": { "action": "sendInput", "input": "just some input" },
                     "keys": "ctrl+shift+w",
-                    "id" : "User.sendInput.3448838294654165202"
+                    "id" : "User.sendInput.A020D2"
                 }
             ]
         })" };
