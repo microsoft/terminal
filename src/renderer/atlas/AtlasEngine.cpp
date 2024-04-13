@@ -292,8 +292,10 @@ CATCH_RETURN()
         const auto& highlights = info.searchHighlights;
 
         // get the buffer origin relative to the viewport, and use it to calculate
-        // the dirty region relative to the buffer origin
-        const til::point bufferOrigin{ static_cast<til::CoordType>(-_p.s->viewportOffset.x), static_cast<til::CoordType>(-_p.s->viewportOffset.y) };
+        // the dirty region to be relative to the buffer origin
+        const til::CoordType offsetX = _p.s->viewportOffset.x;
+        const til::CoordType offsetY = _p.s->viewportOffset.y;
+        const til::point bufferOrigin{ -offsetX, -offsetY };
         const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
 
         const auto hiBeg = std::lower_bound(highlights.begin(), highlights.end(), dr.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
@@ -387,9 +389,9 @@ try
         return S_OK;
     }
 
-    const auto y = static_cast<til::CoordType>(row);
-    const auto x1 = static_cast<til::CoordType>(begX);
-    const auto x2 = static_cast<til::CoordType>(endX);
+    const til::CoordType y = row;
+    const til::CoordType x1 = begX;
+    const til::CoordType x2 = endX;
     const auto offset = til::point{ _p.s->viewportOffset.x, _p.s->viewportOffset.y };
     auto it = highlights.begin();
     const auto itEnd = highlights.end();
@@ -431,7 +433,7 @@ try
         const auto isEndInside = y == hiEnd.y && hiEnd.x < x2;
         if (isStartInside && isEndInside)
         {
-            _fillColorBitmap(row, hiStart.x, hiEnd.x + 1, fgColor, bgColor);
+            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x) + 1, fgColor, bgColor);
             ++it;
         }
         else

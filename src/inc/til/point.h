@@ -309,7 +309,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             // Copy the members so that the compiler knows it doesn't
             // need to re-read them on every loop iteration.
-            const auto w = static_cast<til::CoordType>(width - 1);
+            const auto w = width - 1;
             const auto ax = std::clamp(start.x, 0, w);
             const auto ay = start.y;
             const auto bx = std::clamp(end.x, 0, w);

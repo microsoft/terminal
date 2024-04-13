@@ -1275,7 +1275,7 @@ void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlight
 // Method Description:
 // - Stores the focused search highlighted region in the terminal
 // - If the region isn't empty, it will be brought into view
-void Terminal::SetSearchHighlightFocused(const size_t focusedIdx) noexcept
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx)
 {
     _assertLocked();
     _searchHighlightFocused = focusedIdx;

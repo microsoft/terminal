@@ -235,7 +235,7 @@ public:
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetTextLayoutUpdatedCallback(std::function<void()> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
-    void SetSearchHighlightFocused(const size_t focusedIdx) noexcept;
+    void SetSearchHighlightFocused(const size_t focusedIdx);
 
     void BlinkCursor() noexcept;
     void SetCursorOn(const bool isOn) noexcept;
@@ -355,7 +355,7 @@ private:
     std::optional<til::color> _startingTabColor;
 
     std::vector<til::point_span> _searchHighlights;
-    size_t _searchHighlightFocused;
+    size_t _searchHighlightFocused = 0;
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 
