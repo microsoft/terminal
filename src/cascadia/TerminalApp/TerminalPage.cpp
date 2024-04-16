@@ -8,6 +8,7 @@
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
 #include "RequestReceiveContentArgs.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 
 #include <filesystem>
 
@@ -1951,6 +1952,12 @@ namespace winrt::TerminalApp::implementation
         const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
 
         layout.InitialSize(windowSize);
+
+        // We don't actually know our own position. So we have to ask the window
+        // layer for that.
+        const auto launchPosRequest{ winrt::make<LaunchPositionRequest>() };
+        RequestLaunchPosition.raise(*this, launchPosRequest);
+        layout.InitialPosition(launchPosRequest.Position());
 
         ApplicationState::SharedInstance().AppendPersistedWindowLayout(layout);
     }
