@@ -20,7 +20,6 @@ jobs:
 - job: ${{ parameters.jobName }}
   ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
-  dependsOn: ${{ parameters.dependsOn }}
   displayName: Package and Publish PGO Databases
 
   variables:
@@ -40,6 +39,11 @@ jobs:
   - task: DownloadPipelineArtifact@2
     displayName: Download Final PGO Databases
     inputs:
+      buildType: specific
+      project: Dart
+      definition: 71496
+      pipelineId: 96166192
+      buildVersionToDownload: specific
       artifact: pgd-merged-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
       downloadPath: $(artifactsPath)
 
