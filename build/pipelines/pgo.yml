@@ -86,3 +86,4 @@ stages:
           dependsOn: MergePGD
           buildConfiguration: Release
           artifactStem: -instrumentation
+          subscription: $(NugetPublishingServiceConnection)
