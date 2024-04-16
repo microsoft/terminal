@@ -82,7 +82,6 @@ namespace RemotingUnitTests
         void Summon(const Remoting::SummonWindowBehavior& /*args*/) DIE;
         void RequestShowNotificationIcon() DIE;
         void RequestHideNotificationIcon() DIE;
-        winrt::hstring GetWindowLayout() DIE;
         void RequestQuitAll() DIE;
         void Quit() DIE;
         void AttachContentToWindow(Remoting::AttachRequest) DIE;
@@ -97,7 +96,6 @@ namespace RemotingUnitTests
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs);
         TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
         TYPED_EVENT(SendContentRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs);
     };
@@ -117,7 +115,6 @@ namespace RemotingUnitTests
         void SummonAllWindows() DIE;
         bool DoesQuakeWindowExist() DIE;
         winrt::Windows::Foundation::Collections::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
-        winrt::Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
         void RequestMoveContent(winrt::hstring, winrt::hstring, uint32_t, winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect>) DIE;
         void RequestSendContent(Remoting::RequestReceiveContentArgs) DIE;
 
@@ -126,7 +123,6 @@ namespace RemotingUnitTests
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, Remoting::QuitAllRequestedArgs);
         TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, Remoting::WindowRequestedArgs);
     };
 

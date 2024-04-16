@@ -124,8 +124,7 @@ namespace winrt::TerminalApp::implementation
         return appLogic->GetSettings();
     }
 
-    AppLogic::AppLogic() :
-        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); } }
+    AppLogic::AppLogic()
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -326,10 +325,6 @@ namespace winrt::TerminalApp::implementation
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
-                }
-                else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename))
-                {
-                    _reloadState();
                 }
             });
     }
@@ -700,22 +695,6 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::ShouldUsePersistedLayout() const
     {
         return _settings.GlobalSettings().ShouldUsePersistedLayout();
-    }
-
-    void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
-    {
-        std::vector<WindowLayout> converted;
-        converted.reserve(layouts.Size());
-
-        for (const auto& json : layouts)
-        {
-            if (json != L"")
-            {
-                converted.emplace_back(WindowLayout::FromJson(json));
-            }
-        }
-
-        ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
     }
 
     TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)

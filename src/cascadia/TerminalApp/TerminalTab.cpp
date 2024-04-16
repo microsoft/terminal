@@ -427,18 +427,18 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A vector of commands
-    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(const bool asContent) const
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(BuildStartupKind kind) const
     {
         ASSERT_UI_THREAD();
 
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
-        auto state = _rootPane->BuildStartupActions(0, 1, asContent);
+        auto state = _rootPane->BuildStartupActions(0, 1, kind);
 
         {
             ActionAndArgs newTabAction{};
             newTabAction.Action(ShortcutAction::NewTab);
-            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(asContent) };
+            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(kind) };
             newTabAction.Args(newTabArgs);
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));

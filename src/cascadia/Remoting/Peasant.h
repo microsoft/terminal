@@ -65,7 +65,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
 
-        winrt::hstring GetWindowLayout();
         void SendContent(const winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs& args);
 
         WINRT_PROPERTY(winrt::hstring, WindowName);
@@ -82,7 +81,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
         TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
         TYPED_EVENT(SendContentRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs);
