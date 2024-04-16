@@ -187,13 +187,13 @@
     <value>Volets multiples</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Fermez...</value>
+    <value>Fermer</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>Fermer les Onglets à Droite</value>
+    <value>Fermer les onglets à droite</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Fermez les Autres onglets</value>
+    <value>Fermer les autres onglets</value>
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Fermer l’onglet</value>
@@ -205,16 +205,16 @@
     <value>Fractionner l’onglet</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Fractionner le volet...</value>
+    <value>Fractionner le volet</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Recherche web</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Couleur...</value>
+    <value>Modifier la couleur de l’onglet</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Personnalisée...</value>
+    <value>Personnalisé</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Réinitialiser</value>
@@ -464,7 +464,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Prise en main</value>
+    <value>Bien démarrer</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -480,11 +480,11 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>Politique de confidentialité</value>
+    <value>Charte de confidentialité</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Avis de tiers</value>
+    <value>Mentions tierces</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -723,7 +723,7 @@
     <value>Agrandir</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Niveau inférieur</value>
+    <value>Restaurer</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Palette de commandes</value>
@@ -767,7 +767,7 @@
     <value>Ne plus afficher</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Cette fenêtre de terminal s’exécute en tant qu’Administrateur</value>
+    <value>Cette fenêtre de terminal s’exécute en tant qu’administrateur</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>{0} suggestions trouvées</value>
@@ -827,7 +827,7 @@
     <value>Fermer cet onglet</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Vide...</value>
+    <value>Vide</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Fermer le volet</value>
@@ -846,7 +846,7 @@
     <value>Déplacer l'onglet vers une nouvelle fenêtre </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>Exécuter en tant qu'administrateur</value>
+    <value>Exécuter en temps qu'administrateur (restreint)</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
