@@ -35,6 +35,8 @@ namespace Microsoft::Console::Render
     class UiaEngine;
 }
 
+class QuickSelectHandler;
+
 namespace ControlUnitTests
 {
     class ControlCoreTests;
@@ -220,6 +222,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetEndSelectionPoint(const til::point position);
 
         void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void EnterQuickSelectMode(const winrt::hstring& text, bool copy);
         void ClearSearch();
 
         Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
@@ -311,6 +314,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
         std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
+        std::unique_ptr<QuickSelectHandler> _quickSelectHandler;
 
         // NOTE: _renderEngine must be ordered before _renderer.
         //

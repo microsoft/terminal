@@ -17,6 +17,7 @@
 #include "SwapPaneArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 #include "SendInputArgs.g.h"
+#include "QuickSelectArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
 #include "SetFocusModeArgs.g.h"
@@ -135,6 +136,11 @@ protected:                                                                  \
 ////////////////////////////////////////////////////////////////////////////////
 #define SEND_INPUT_ARGS(X) \
     X(winrt::hstring, Input, "input", args->Input().empty(), L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define QUICK_SELECT_ARGS(X)                                      \
+    X(winrt::hstring, Input, "input", args->Input().empty(), L"") \
+    X(bool, ShouldCopy, "shouldCopy", false, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define OPEN_SETTINGS_ARGS(X) \
@@ -785,6 +791,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS);
 
+    ACTION_ARGS_STRUCT(QuickSelectArgs, QUICK_SELECT_ARGS);
+
     ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS);
 
     ACTION_ARGS_STRUCT(SetFocusModeArgs, SET_FOCUS_MODE_ARGS);
@@ -952,4 +960,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SuggestionsArgs);
     BASIC_FACTORY(SelectCommandArgs);
     BASIC_FACTORY(SelectOutputArgs);
+    BASIC_FACTORY(QuickSelectArgs);
 }

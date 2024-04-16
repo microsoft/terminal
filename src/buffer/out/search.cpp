@@ -5,6 +5,7 @@
 #include "search.h"
 
 #include "textBuffer.hpp"
+#include "UTextAdapter.h"
 
 using namespace Microsoft::Console::Types;
 
@@ -31,6 +32,17 @@ bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, c
     _step = reverse ? -1 : 1;
 
     return true;
+}
+
+void Search::QuickSelectRegex(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive)
+{
+    _renderData = &renderData;
+    _needle = needle;
+    _caseInsensitive = caseInsensitive;
+
+    _results = _regexSearch(renderData, needle, caseInsensitive);
+    _index = 0;
+    _step = 1;
 }
 
 void Search::MoveToCurrentSelection()
@@ -161,4 +173,72 @@ const std::vector<til::point_span>& Search::Results() const noexcept
 ptrdiff_t Search::CurrentMatch() const noexcept
 {
     return _index;
+}
+
+std::vector<til::point_span> Search::_regexSearch(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive)
+{
+    std::vector<til::point_span> results;
+    UErrorCode status = U_ZERO_ERROR;
+    uint32_t flags = 0;
+    WI_SetFlagIf(flags, UREGEX_CASE_INSENSITIVE, caseInsensitive);
+    const auto& textBuffer = renderData.GetTextBuffer();
+
+    const auto rowCount = textBuffer.GetLastNonSpaceCharacter().y + 1;
+
+    const auto regex = Microsoft::Console::ICU::CreateRegex(needle, flags, &status);
+    if (U_FAILURE(status))
+    {
+        return results;
+    }
+
+    const auto viewPortWidth = textBuffer.GetSize().Width();
+
+    for (int32_t i = 0; i < rowCount; i++)
+    {
+        const auto startRow = i;
+        auto uText = Microsoft::Console::ICU::UTextForWrappableRow(textBuffer, i);
+
+        uregex_setUText(regex.get(), &uText, &status);
+        if (U_FAILURE(status))
+        {
+            return results;
+        }
+
+        if (uregex_find(regex.get(), -1, &status))
+        {
+            do
+            {
+                const int32_t icuStart = uregex_start(regex.get(), 0, &status);
+                int32_t icuEnd = uregex_end(regex.get(), 0, &status);
+                icuEnd--;
+
+                //Start of line is 0,0 and should be skipped (^)
+                if (icuEnd >= 0)
+                {
+                    const auto matchLength = utext_nativeLength(&uText);
+                    auto adjustedMatchStart = icuStart - 1 == matchLength ? icuStart - 1 : icuStart;
+                    auto adjustedMatchEnd = std::min(static_cast<int32_t>(matchLength), icuEnd);
+
+                    const size_t matchStartLine = (adjustedMatchStart / viewPortWidth) + startRow;
+                    const size_t matchEndLine = (adjustedMatchEnd / viewPortWidth) + startRow;
+
+                    if (matchStartLine > startRow)
+                    {
+                        adjustedMatchStart %= (matchStartLine - startRow) * viewPortWidth;
+                    }
+
+                    if (matchEndLine > startRow)
+                    {
+                        adjustedMatchEnd %= (matchEndLine - startRow) * viewPortWidth;
+                    }
+
+                    auto ps = til::point_span{};
+                    ps.start = til::point{ adjustedMatchStart, static_cast<int32_t>(matchStartLine) };
+                    ps.end = til::point{ adjustedMatchEnd, static_cast<int32_t>(matchEndLine) };
+                    results.emplace_back(ps);
+                }
+            } while (uregex_findNext(regex.get(), &status));
+        }
+    }
+    return results;
 }

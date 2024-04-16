@@ -59,4 +59,6 @@ public:
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override { return true; }
+    bool InQuickSelectMode() override;
+    Microsoft::Console::Render::QuickSelectState GetQuickSelectState() noexcept override;
 };

@@ -434,3 +434,13 @@ const til::point RenderData::GetSelectionEnd() const noexcept
 
     return { x_pos, y_pos };
 }
+
+bool RenderData::InQuickSelectMode()
+{
+    return false;
+}
+
+Microsoft::Console::Render::QuickSelectState RenderData::GetQuickSelectState() noexcept
+{
+    return {};
+}
