@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>配色パターンの選択...</value>
+    <value>配色パターンの選択</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>新しいタブ...</value>
+    <value>新しいタブ</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>ウィンドウを分割します...</value>
+    <value>ウィンドウを分割する</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>ターミナル (ポータブル)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>タブの色を設定する...</value>
+    <value>タブの色の設定</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>貼り付け</value>
@@ -347,7 +347,7 @@
     <value>タブのタイトルをリセット</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>タブ名を変更する</value>
+    <value>タブ タイトル名の変更</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>ウィンドウのサイズの変更する</value>
@@ -441,7 +441,7 @@
     <value>最後のタブに切り替える</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>タブを検索します...</value>
+    <value>タブの検索</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>常に手前に表示するモードに切り替える</value>
@@ -450,10 +450,10 @@
     <value>コマンド パレットに切り替える</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>最近使ったコマンド...</value>
+    <value>最近使ったコマンド</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>おすすめを開く...</value>
+    <value>候補を開く</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>コマンド ライン モードでコマンド パレットを切り替えます</value>
@@ -505,7 +505,7 @@
     <value>デバッガーに挿入します</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>設定を開く...</value>
+    <value>設定を開く</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>ウィンドウの名前を "{0}" に変更する</value>
@@ -566,7 +566,7 @@
     <value>ターミナルの終了</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>背景の不透明度を設定...</value>
+    <value>背景の不透明度の設定</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>背景の不透明度を {0}% 上げる</value>

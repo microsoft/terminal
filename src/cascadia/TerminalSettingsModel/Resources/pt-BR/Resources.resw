@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Selecionar esquema de cores...</value>
+    <value>Selecionar esquema de cores</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Nova Guia...</value>
+    <value>Nova guia</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Dividir painel...</value>
+    <value>Dividir painel</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portátil)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Definir a cor da guia...</value>
+    <value>Definir a cor da guia</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Colar</value>
@@ -347,7 +347,7 @@
     <value>Redefinir título da guia</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Renomear o título da guia...</value>
+    <value>Renomear título da guia</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Redimensionar painel</value>
@@ -441,7 +441,7 @@
     <value>Alternar para a última guia</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Buscar guia</value>
+    <value>Pesquisar guia</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Alternar sempre no modo superior</value>
@@ -450,7 +450,7 @@
     <value>Ativar/desativar paleta de comandos</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Comandos recentes...</value>
+    <value>Comandos recentes</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
     <value>Abrir sugestões</value>
@@ -505,7 +505,7 @@
     <value>Invadir o depurador</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Abrir as configurações...</value>
+    <value>Abrir configurações</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Renomear a janela para "{0}"</value>
@@ -566,7 +566,7 @@
     <value>Saia do Terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Definir a opacidade da tela de fundo</value>
+    <value>Definir opacidade da tela de fundo</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Aumentar a opacidade da tela de fundo em {0}%</value>
