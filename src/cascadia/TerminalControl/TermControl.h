@@ -27,9 +27,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         explicit TsfDataProvider(TermControl* termControl) noexcept;
         virtual ~TsfDataProvider() = default;
 
-        HRESULT QueryInterface(const IID&, void**) override;
-        ULONG AddRef() override;
-        ULONG Release() override;
+        STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj) noexcept override;
+        ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+        ULONG STDMETHODCALLTYPE Release() noexcept override;
 
         HWND GetHwnd() override;
         RECT GetViewport() override;

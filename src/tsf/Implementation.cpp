@@ -77,22 +77,37 @@ void Implementation::Uninitialize() noexcept
     }
 }
 
-HWND Implementation::FindWindowOfActiveTSF() const
+HWND Implementation::FindWindowOfActiveTSF() const noexcept
 {
     wil::com_ptr<IEnumTfDocumentMgrs> enumDocumentMgrs;
-    THROW_IF_FAILED(_threadMgrEx->EnumDocumentMgrs(enumDocumentMgrs.addressof()));
+    if (FAILED_LOG(_threadMgrEx->EnumDocumentMgrs(enumDocumentMgrs.addressof())))
+    {
+        return nullptr;
+    }
 
     wil::com_ptr<ITfDocumentMgr> document;
-    THROW_IF_FAILED(enumDocumentMgrs->Next(1, document.addressof(), nullptr));
+    if (FAILED_LOG(enumDocumentMgrs->Next(1, document.addressof(), nullptr)))
+    {
+        return nullptr;
+    }
 
     wil::com_ptr<ITfContext> context;
-    THROW_IF_FAILED(document->GetTop(context.addressof()));
+    if (FAILED_LOG(document->GetTop(context.addressof())))
+    {
+        return nullptr;
+    }
 
     wil::com_ptr<ITfContextView> view;
-    THROW_IF_FAILED(context->GetActiveView(view.addressof()));
+    if (FAILED_LOG(context->GetActiveView(view.addressof())))
+    {
+        return nullptr;
+    }
 
     HWND hwnd;
-    THROW_IF_FAILED(view->GetWnd(&hwnd));
+    if (FAILED_LOG(view->GetWnd(&hwnd)))
+    {
+        return nullptr;
+    }
 
     return hwnd;
 }

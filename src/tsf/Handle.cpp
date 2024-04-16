@@ -47,7 +47,7 @@ Handle::operator bool() const noexcept
     return _impl != nullptr;
 }
 
-HWND Handle::FindWindowOfActiveTSF() const
+HWND Handle::FindWindowOfActiveTSF() const noexcept
 {
     return _impl ? _impl->FindWindowOfActiveTSF() : nullptr;
 }

@@ -5,7 +5,6 @@
 #include "TermControl.h"
 
 #include <LibraryResources.h>
-#include <windows.ui.composition.interop.h>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -61,17 +60,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     }
 
-    HRESULT TsfDataProvider::QueryInterface(const IID&, void**)
+    STDMETHODIMP QueryInterface(REFIID, void**) noexcept
     {
         return E_NOTIMPL;
     }
 
-    ULONG TsfDataProvider::AddRef()
+    ULONG STDMETHODCALLTYPE AddRef() noexcept
     {
         return 1;
     }
 
-    ULONG TsfDataProvider::Release()
+    ULONG STDMETHODCALLTYPE Release() noexcept
     {
         return 1;
     }
@@ -80,7 +79,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_hwnd)
         {
+            // WinUI's WinRT based TSF runs in its own window "Windows.UI.Input.InputSite.WindowClass" (..."great")
+            // and in order for us to snatch the focus away from that one we need to find its HWND.
+            // The way we do it here is by finding the existing, active TSF context and getting the HWND from it.
             _hwnd = GetTSFHandle().FindWindowOfActiveTSF();
+            if (!_hwnd)
+            {
+                _hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
+            }
         }
         return _hwnd;
     }
@@ -2365,6 +2371,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _cursorTimer.Stop();
             _blinkTimer.Stop();
 
+            // This is absolutely crucial, as the TSF code tries to hold a strong reference to _tsfDataProvider,
+            // but right now _tsfDataProvider implements IUnknown as a no-op. This ensures that TSF stops referencing us.
+            // ~TermControl() calls Close() so this should be safe.
             GetTSFHandle().Unfocus(&_tsfDataProvider);
 
             if (!_detached)

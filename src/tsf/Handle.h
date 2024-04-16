@@ -42,7 +42,7 @@ namespace Microsoft::Console::TSF
         Handle& operator=(Handle&& other) noexcept;
 
         explicit operator bool() const noexcept;
-        HWND FindWindowOfActiveTSF() const;
+        HWND FindWindowOfActiveTSF() const noexcept;
         void AssociateFocus(IDataProvider* provider) const;
         void Focus(IDataProvider* provider) const;
         void Unfocus(IDataProvider* provider) const;
