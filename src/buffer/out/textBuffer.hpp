@@ -49,8 +49,6 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
-#include <vector>
-
 #include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"

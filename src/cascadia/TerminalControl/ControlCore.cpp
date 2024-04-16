@@ -111,9 +111,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        auto pfnTerminalCursorPositionChanged = std::bind(&ControlCore::_terminalCursorPositionChanged, this);
-        _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
-
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
@@ -168,10 +165,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // A few different events should be throttled, so they don't fire absolutely all the time:
-        // * _tsfTryRedrawCanvas: When the cursor position moves, we need to
-        //   inform TSF, so it can move the canvas for the composition. We
-        //   throttle this so that we're not hopping across the process boundary
-        //   every time that the cursor moves.
         // * _updatePatternLocations: When there's new output, or we scroll the
         //   viewport, we should re-check if there are any visible hyperlinks.
         //   But we don't really need to do this every single time text is
@@ -181,16 +174,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //   We can throttle this to once every 8ms, which will get us out of
         //   the way of the main output & rendering threads.
         const auto shared = _shared.lock();
-        shared->tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
-            _dispatcher,
-            TsfRedrawInterval,
-            [weakThis = get_weak()]() {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
-                {
-                    core->CursorPositionChanged.raise(*core, nullptr);
-                }
-            });
-
         // NOTE: Calling UpdatePatternLocations from a background
         // thread is a workaround for us to hit GH#12607 less often.
         shared->updatePatternLocations = std::make_unique<til::throttled_func_trailing<>>(
@@ -232,7 +215,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // thread. These will be recreated in _setupDispatcherAndCallbacks, when
         // we're re-attached to a new control (on a possibly new UI thread).
         const auto shared = _shared.lock();
-        shared->tsfTryRedrawCanvas.reset();
         shared->updatePatternLocations.reset();
         shared->updateScrollBar.reset();
     }
@@ -453,7 +435,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void ControlCore::SendInput(const winrt::hstring& wstr)
+    void ControlCore::SendInput(const std::wstring_view wstr)
     {
         _sendInputToConnection(wstr);
     }
@@ -1037,7 +1019,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontWeight = _settings->FontWeight();
         _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
         _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
-        _actualFontFaceName = { fontFace };
 
         _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
         _desiredFont.SetEnableColorGlyphs(_colorGlyphs);
@@ -1439,13 +1420,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ::base::saturated_cast<float>(fontSize.height)
         };
     }
-    winrt::hstring ControlCore::FontFaceName() const noexcept
-    {
-        // This getter used to return _actualFont.GetFaceName(), however GetFaceName() returns a STL
-        // string and we need to return a WinRT string. This would require an additional allocation.
-        // This method is called 10/s by TSFInputControl at the time of writing.
-        return _actualFontFaceName;
-    }
 
     uint16_t ControlCore::FontWeight() const noexcept
     {
@@ -1613,17 +1587,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 shared->updateScrollBar->Run(update);
             }
-        }
-    }
-
-    void ControlCore::_terminalCursorPositionChanged()
-    {
-        // When the buffer's cursor moves, start the throttled func to
-        // eventually dispatch a CursorPositionChanged event.
-        const auto shared = _shared.lock_shared();
-        if (shared->tsfTryRedrawCanvas)
-        {
-            shared->tsfTryRedrawCanvas->Run();
         }
     }
 
@@ -2139,6 +2102,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // We're expecting to receive an exception here if the terminal
             // is closed while we're blocked playing a MIDI note.
         }
+    }
+
+    ::Microsoft::Console::Render::Renderer* ControlCore::GetRenderer() const noexcept
+    {
+        return _renderer.get();
     }
 
     uint64_t ControlCore::SwapChainHandle() const

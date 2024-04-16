@@ -1332,11 +1332,6 @@
 
         </Grid>
 
-        <local:TSFInputControl x:Name="TSFInputControl"
-                               CompositionCompleted="_CompositionCompleted"
-                               CurrentCursorPosition="_CurrentCursorPositionHandler"
-                               CurrentFontInfo="_FontInfoHandler" />
-
         <Grid x:Name="RendererFailedNotice"
               HorizontalAlignment="Center"
               VerticalAlignment="Center"

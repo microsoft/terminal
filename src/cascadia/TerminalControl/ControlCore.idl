@@ -87,7 +87,6 @@ namespace Microsoft.Terminal.Control
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
-        String FontFaceName { get; };
         UInt16 FontWeight { get; };
         Double Opacity { get; };
         Boolean UseAcrylic { get; };
@@ -171,7 +170,6 @@ namespace Microsoft.Terminal.Control
         // These events are always called from the UI thread (bugs aside)
         event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> CursorPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> HoveredHyperlinkChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SwapChainChanged;

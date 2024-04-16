@@ -44,6 +44,8 @@ namespace Microsoft::Console::Render
 
         ~Renderer();
 
+        IRenderData* GetRenderData() const noexcept;
+
         [[nodiscard]] HRESULT PaintFrame();
 
         void NotifyPaintFrame() noexcept;
@@ -92,6 +94,13 @@ namespace Microsoft::Console::Render
         void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
 
     private:
+        // Caches some essential information about the active composition.
+        // This allows us to properly invalidate it between frames, etc.
+        struct CompositionCache
+        {
+            til::point absoluteOrigin;
+        };
+
         static GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
@@ -105,8 +114,6 @@ namespace Microsoft::Console::Render
         bool _isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept;
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
-        void _PaintOverlays(_In_ IRenderEngine* const pEngine);
-        void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
         std::vector<til::rect> _GetSelectionRects() const;
@@ -127,6 +134,7 @@ namespace Microsoft::Console::Render
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
         std::optional<CursorOptions> _currentCursorOptions;
+        std::optional<CompositionCache> _compositionCache;
         std::vector<Cluster> _clusterBuffer;
         std::vector<til::rect> _previousSelection;
         std::vector<til::rect> _previousSearchSelection;

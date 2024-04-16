@@ -18,6 +18,7 @@
 // and thus may access both _r and _api.
 
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
+#pragma warning(disable : 4127) // conditional expression is constant
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).

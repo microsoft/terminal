@@ -67,7 +67,6 @@ SOURCES = \
     ..\outputStream.cpp \
     ..\stream.cpp    \
     ..\dbcs.cpp      \
-    ..\convarea.cpp  \
     ..\screenInfo.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
@@ -83,8 +82,6 @@ SOURCES = \
     ..\writeData.cpp \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
-    ..\conareainfo.cpp \
-    ..\conimeinfo.cpp \
     ..\ConsoleArguments.cpp \
 
 

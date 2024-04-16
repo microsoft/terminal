@@ -334,8 +334,6 @@ void Window::_UpdateSystemMetrics() const
 
                 if (SUCCEEDED_NTSTATUS(status))
                 {
-                    gci.ConsoleIme.RefreshAreaAttributes();
-
                     // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
                     LOG_IF_FAILED(Icon::Instance().ApplyWindowMessageWorkaround(hWnd));
 
@@ -454,8 +452,6 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
         Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
     }
-
-    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     ScreenInfo.UpdateScrollBars();
 }
@@ -685,8 +681,6 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
 
         _resizingWindow--;
     }
-
-    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     return STATUS_SUCCESS;
 }

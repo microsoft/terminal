@@ -100,6 +100,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
+        ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
         uint64_t SwapChainHandle() const;
         void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
@@ -113,13 +114,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::Foundation::Size FontSizeInDips() const;
 
         winrt::Windows::Foundation::Size FontSize() const noexcept;
-        winrt::hstring FontFaceName() const noexcept;
         uint16_t FontWeight() const noexcept;
 
         til::color ForegroundColor() const;
         til::color BackgroundColor() const;
 
-        void SendInput(const winrt::hstring& wstr);
+        void SendInput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
@@ -241,8 +241,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
 
-        static bool IsVintageOpacityAvailable() noexcept;
-
         void AdjustOpacity(const double opacity, const bool relative);
 
         void WindowVisibilityChanged(const bool showOrHide);
@@ -271,7 +269,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<> TabColorChanged;
         til::typed_event<> BackgroundColorChanged;
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
-        til::typed_event<> CursorPositionChanged;
         til::typed_event<> TaskbarProgressChanged;
         til::typed_event<> ConnectionStateChanged;
         til::typed_event<> HoveredHyperlinkChanged;
@@ -296,7 +293,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         struct SharedState
         {
-            std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
             std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
@@ -326,7 +322,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
-        winrt::hstring _actualFontFaceName;
         bool _builtinGlyphs = true;
         bool _colorGlyphs = true;
         CSSLengthPercentage _cellWidth;
@@ -376,7 +371,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalScrollPositionChanged(const int viewTop,
                                             const int viewHeight,
                                             const int bufferSize);
-        void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
         void _terminalPlayMidiNote(const int noteNumber,

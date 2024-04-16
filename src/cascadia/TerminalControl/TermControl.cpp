@@ -5,10 +5,11 @@
 #include "TermControl.h"
 
 #include <LibraryResources.h>
-#include <utils.hpp>
+#include <windows.ui.composition.interop.h>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
+#include "../../tsf/Handle.h"
 
 #include "TermControl.g.cpp"
 
@@ -41,11 +42,117 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(1000);
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
-
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
+
+static Microsoft::Console::TSF::Handle& GetTSFHandle()
+{
+    // https://en.cppreference.com/w/cpp/language/storage_duration
+    // > Variables declared at block scope with the specifier static or thread_local
+    // > [...] are initialized the first time control passes through their declaration
+    // --> Lazy, per-(window-)thread initialization of the TSF handle
+    thread_local auto s_tsf = ::Microsoft::Console::TSF::Handle::Create();
+    return s_tsf;
+}
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    TsfDataProvider::TsfDataProvider(TermControl* termControl) noexcept :
+        _termControl{ termControl }
+    {
+    }
+
+    HRESULT TsfDataProvider::QueryInterface(const IID&, void**)
+    {
+        return E_NOTIMPL;
+    }
+
+    ULONG TsfDataProvider::AddRef()
+    {
+        return 1;
+    }
+
+    ULONG TsfDataProvider::Release()
+    {
+        return 1;
+    }
+
+    HWND TsfDataProvider::GetHwnd()
+    {
+        if (!_hwnd)
+        {
+            _hwnd = GetTSFHandle().FindWindowOfActiveTSF();
+        }
+        return _hwnd;
+    }
+
+    RECT TsfDataProvider::GetViewport()
+    {
+        const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        const auto globalOrigin = CoreWindow::GetForCurrentThread().Bounds();
+        const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
+        const auto size = _termControl->ActualSize();
+
+        const auto left = globalOrigin.X + localOrigin.X;
+        const auto top = globalOrigin.Y + localOrigin.Y;
+        const auto right = left + size.x;
+        const auto bottom = top + size.y;
+
+        return {
+            lroundf(left * scaleFactor),
+            lroundf(top * scaleFactor),
+            lroundf(right * scaleFactor),
+            lroundf(bottom * scaleFactor),
+        };
+    }
+
+    RECT TsfDataProvider::GetCursorPosition()
+    {
+        const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        const auto globalOrigin = CoreWindow::GetForCurrentThread().Bounds();
+        const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
+        const auto cursorPosition = _termControl->_core.CursorPosition();
+        const auto fontSize = _termControl->_core.FontSize();
+        const auto padding = _termControl->GetPadding();
+
+        // fontSize is not in DIPs, so we need to first multiply by scaleFactor and then do the rest.
+        const auto left = (globalOrigin.X + localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
+        const auto top = (globalOrigin.Y + localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
+        const auto right = left + fontSize.Width;
+        const auto bottom = top + fontSize.Height;
+
+        return {
+            lroundf(left),
+            lroundf(top),
+            lroundf(right),
+            lroundf(bottom),
+        };
+    }
+
+    void TsfDataProvider::HandleOutput(std::wstring_view text)
+    {
+        const auto core = _getCore();
+        if (!core)
+        {
+            return;
+        }
+        core->SendInput(text);
+    }
+
+    ::Microsoft::Console::Render::Renderer* TsfDataProvider::GetRenderer()
+    {
+        const auto core = _getCore();
+        if (!core)
+        {
+            return nullptr;
+        }
+        return core->GetRenderer();
+    }
+
+    ControlCore* TsfDataProvider::_getCore() const noexcept
+    {
+        return _termControl ? get_self<ControlCore>(_termControl->_core) : nullptr;
+    }
+
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
@@ -154,7 +261,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // attached content before we set up the throttled func, and that'll A/V
         _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
-        _revokers.CursorPositionChanged = _core.CursorPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_CursorPositionChanged });
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -590,18 +696,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SelectionStartMarker().Fill(cursorColorBrush);
         SelectionEndMarker().Fill(cursorColorBrush);
 
-        // Set TSF Foreground
-        Media::SolidColorBrush foregroundBrush{};
-        if (_core.Settings().UseBackgroundImageForWindow())
-        {
-            foregroundBrush.Color(Windows::UI::Colors::Transparent());
-        }
-        else
-        {
-            foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
-        }
-        TSFInputControl().Foreground(foregroundBrush);
-
         _core.ApplyAppearance(_focused);
     }
 
@@ -653,8 +747,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Apply padding as swapChainPanel's margin
         const auto newMargin = ParseThicknessFromPadding(settings.Padding());
         SwapChainPanel().Margin(newMargin);
-
-        TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
         if (settings.ScrollState() == ScrollbarState::Hidden)
@@ -1169,19 +1261,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-
-        // GH#11479: TSF wants to be notified of any character input via ICoreTextEditContext::NotifyTextChanged().
-        // TSF is built and tested around the idea that you inform it of any text changes that happen
-        // when it doesn't currently compose characters. For instance writing "xin chaof" with the
-        // Vietnamese IME should produce "xin chào". After writing "xin" it'll emit a composition
-        // completion event and we'll write "xin" to the shell. It now has no input focus and won't know
-        // about the whitespace. If you then write "chaof", it'll emit another composition completion
-        // event for "xinchaof" and the resulting output in the shell will finally read "xinxinchaof".
-        // A composition completion event technically doesn't mean that the completed text is now
-        // immutable after all. We could (and probably should) inform TSF of any input changes,
-        // but we technically aren't a text input field. The immediate solution was
-        // to simply force TSF to clear its text whenever we have input focus.
-        TSFInputControl().ClearBuffer();
 
         HidePointerCursor.raise(*this, nullptr);
 
@@ -1970,12 +2049,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-
-        if (TSFInputControl() != nullptr)
-        {
-            TSFInputControl().NotifyFocusEnter();
-        }
-
         if (_cursorTimer)
         {
             // When the terminal focuses, show the cursor immediately
@@ -1996,6 +2069,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             UpdateAppearance(_core.FocusedAppearance());
         }
+
+        GetTSFHandle().Focus(&_tsfDataProvider);
     }
 
     // Method Description:
@@ -2021,11 +2096,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _interactivity.LostFocus();
         }
 
-        if (TSFInputControl() != nullptr)
-        {
-            TSFInputControl().NotifyFocusLeave();
-        }
-
         if (_cursorTimer && !_displayCursorWhileBlurred())
         {
             _cursorTimer.Stop();
@@ -2043,6 +2113,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             UpdateAppearance(_core.UnfocusedAppearance());
         }
+
+        GetTSFHandle().Unfocus(&_tsfDataProvider);
     }
 
     // Method Description:
@@ -2169,27 +2241,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // Method Description:
-    // - Tells TSFInputControl to redraw the Canvas/TextBlock so it'll update
-    //   to be where the current cursor position is.
-    // Arguments:
-    // - N/A
-    winrt::fire_and_forget TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
-                                                               const IInspectable& /*args*/)
-    {
-        // Prior to GH#10187, this fired a trailing throttled func to update the
-        // TSF canvas only every 100ms. Now, the throttling occurs on the
-        // ControlCore side. If we're told to update the cursor position, we can
-        // just go ahead and do it.
-        // This can come in off the COM thread - hop back to the UI thread.
-        auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(Dispatcher());
-        if (auto control{ weakThis.get() }; !control->_IsClosing())
-        {
-            control->TSFInputControl().TryRedrawCanvas();
-        }
-    }
-
     hstring TermControl::Title()
     {
         return _core.Title();
@@ -2304,9 +2355,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _revokers = {};
 
-            // Disconnect the TSF input control so it doesn't receive EditContext events.
-            TSFInputControl().Close();
-
             // At the time of writing, closing the last tab of a window inexplicably
             // does not lead to the destruction of the remaining TermControl instance(s).
             // On Win10 we don't destroy window threads due to bugs in DesktopWindowXamlSource.
@@ -2316,6 +2364,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _bellLightTimer.Stop();
             _cursorTimer.Stop();
             _blinkTimer.Stop();
+
+            GetTSFHandle().Unfocus(&_tsfDataProvider);
 
             if (!_detached)
             {
@@ -2740,62 +2790,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
 
         return relativeToMarginInPixels;
-    }
-
-    // Method Description:
-    // - Composition Completion handler for the TSFInputControl that
-    //   handles writing text out to TerminalConnection
-    // Arguments:
-    // - text: the text to write to TerminalConnection
-    // Return Value:
-    // - <none>
-    void TermControl::_CompositionCompleted(winrt::hstring text)
-    {
-        if (_IsClosing())
-        {
-            return;
-        }
-
-        // SendInput will take care of broadcasting for us.
-        SendInput(text);
-    }
-
-    // Method Description:
-    // - CurrentCursorPosition handler for the TSFInputControl that
-    //   handles returning current cursor position.
-    // Arguments:
-    // - eventArgs: event for storing the current cursor position
-    // Return Value:
-    // - <none>
-    void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/,
-                                                    const CursorPositionEventArgs& eventArgs)
-    {
-        if (!_initializedTerminal)
-        {
-            // fake it
-            eventArgs.CurrentPosition({ 0, 0 });
-            return;
-        }
-
-        const auto cursorPos = _core.CursorPosition();
-        eventArgs.CurrentPosition({ static_cast<float>(cursorPos.X), static_cast<float>(cursorPos.Y) });
-    }
-
-    // Method Description:
-    // - FontInfo handler for the TSFInputControl that
-    //   handles returning current font information
-    // Arguments:
-    // - eventArgs: event for storing the current font information
-    // Return Value:
-    // - <none>
-    void TermControl::_FontInfoHandler(const IInspectable& /*sender*/,
-                                       const FontInfoEventArgs& eventArgs)
-    {
-        eventArgs.FontSize(CharacterDimensions());
-        eventArgs.FontFace(_core.FontFaceName());
-        ::winrt::Windows::UI::Text::FontWeight weight;
-        weight.Weight = _core.FontWeight();
-        eventArgs.FontWeight(weight);
     }
 
     // Method Description:

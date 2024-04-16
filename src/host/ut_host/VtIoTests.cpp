@@ -259,7 +259,7 @@ public:
         return {};
     }
 
-    const TextBuffer& GetTextBuffer() const noexcept override
+    TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
