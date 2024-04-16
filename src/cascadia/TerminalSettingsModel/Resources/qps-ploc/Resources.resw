@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Šěļеςŧ ¢οĺσŗ śĉђёmĕ... !!! !!! </value>
+    <value>Ŝêĺĕćţ ćŏĺбŕ ѕćнêmē !!! !!!</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Иęω Ťдъ... !!!</value>
+    <value>Ŋéŵ тάъ !!</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Śрŀíт Ρáйё... !!! </value>
+    <value>Śрĺíŧ ρāлë !!!</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Ťęґмϊήåľ (Ρöяťªъℓë) !!! !!!</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Šέţ тħέ ţав ćŏłбř... !!! !!!</value>
+    <value>Şėŧ ŧнę ťáь ċσŀőґ !!! !!</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Ρåšŧě !</value>
@@ -347,7 +347,7 @@
     <value>Ґэśęτ τäъ тìŧļ℮ !!! !</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Ŗ℮лǻmĕ ţάъ ťìŧŀё... !!! !!!</value>
+    <value>Гęйªm℮ тåъ ŧīτļĕ !!! !</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Ŗєşίžё ρåňε !!!</value>
@@ -441,7 +441,7 @@
     <value>Şшίтςħ тŏ τнэ ļāśτ ŧаь !!! !!! </value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Śëāґçħ ƒσг ťåв... !!! !!</value>
+    <value>Ѕėàřĉħ ƒôґ ŧâь !!! !</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Тöģĝļě аľẁáγş оή ťôφ môδë !!! !!! !</value>
@@ -450,10 +450,10 @@
     <value>Тσğĝℓē çǿmмǻйđ рąļěтťέ !!! !!! </value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Γє¢еñт čбмmǻлđš... !!! !!</value>
+    <value>Γë¢єйť ćøмmåηđŝ !!! !</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Фрęŉ şûġġĕѕтīõňѕ... !!! !!!</value>
+    <value>Ǿрέŉ şµġġеšŧìŏπѕ !!! !</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Тǿğģļе çοмmдńð рªℓέŧτє ΐŉ čŏmмдήď łįņз móďė !!! !!! !!! !!! </value>
@@ -505,7 +505,7 @@
     <value>Ьŗėäк îŉŧó ţђė ðēьŭģġёŗ !!! !!! </value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Фρêи ŝεтτіńġѕ... !!! !</value>
+    <value>Öφéη ѕēττϊⁿğš !!! </value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Ґëпâмє ωĩиďôẃ ŧõ "{0}" !!! !!! </value>
@@ -515,7 +515,7 @@
     <value>Ŗėŝēţ ẁìŋďŏŵ πàmē !!! !!</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Ŗέήąmέ ẅїлďôш... !!! !</value>
+    <value>Ґёŉάmë шϊйďθŵ !!! </value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Ďíşφļăý Ŧěямίŉąℓ'š ςûѓґêит ẃόŗĸίпğ ðіřēċτθřỳ !!! !!! !!! !!! !</value>
@@ -566,7 +566,7 @@
     <value>Qџίŧ ŧħë Тēŗmĩπаł !!! !!</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Şзţ ъаćкĝŗóµηð ōρã¢ΐŧŷ... !!! !!! !</value>
+    <value>Ѕěт ьªċķĝґøūņð óφǻĉїτў !!! !!! </value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Îń¢ґěäşё ьãçκĝѓθµŉđ σрαсĭŧŷ ъý {0}% !!! !!! !!! !</value>
