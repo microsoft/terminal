@@ -433,25 +433,6 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
     THROW_IF_FAILED(_context->GetStart(ec, fullRange.addressof()));
     THROW_IF_FAILED(fullRange->ShiftEnd(ec, LONG_MAX, &fullRangeLength, nullptr));
 
-    LONG cursorPos = LONG_MAX;
-    {
-        // According to the docs this may result in TF_E_NOSELECTION. While I haven't actually seen that happen myself yet,
-        // I don't want this to result in log-spam, which is why this doesn't use SUCCEEDED_LOG().
-        unique_tf_selection sel;
-        ULONG selCount;
-        if (SUCCEEDED(_context->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &sel, &selCount)))
-        {
-            wil::com_ptr<ITfRange> start;
-            THROW_IF_FAILED(_context->GetStart(ec, start.addressof()));
-
-            TF_HALTCOND hc{
-                .pHaltRange = sel.range,
-                .aHaltPos = sel.style.ase == TF_AE_START ? TF_ANCHOR_START : TF_ANCHOR_END,
-            };
-            THROW_IF_FAILED(start->ShiftEnd(ec, LONG_MAX, &cursorPos, &hc));
-        }
-    }
-
     std::wstring finalizedString;
     std::wstring activeComposition;
     til::small_vector<Render::CompositionRange, 2> activeCompositionRanges;
@@ -540,9 +521,28 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
         }
     }
 
-    // Compensate for the fact that we'll be erasing the start of the string below.
-    cursorPos -= static_cast<LONG>(finalizedString.size());
-    cursorPos = std::clamp(cursorPos, 0l, static_cast<LONG>(activeComposition.size()));
+    LONG cursorPos = LONG_MAX;
+    {
+        // According to the docs this may result in TF_E_NOSELECTION. While I haven't actually seen that happen myself yet,
+        // I don't want this to result in log-spam, which is why this doesn't use SUCCEEDED_LOG().
+        unique_tf_selection sel;
+        ULONG selCount;
+        if (SUCCEEDED(_context->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &sel, &selCount)) && selCount == 1)
+        {
+            wil::com_ptr<ITfRange> start;
+            THROW_IF_FAILED(_context->GetStart(ec, start.addressof()));
+
+            TF_HALTCOND hc{
+                .pHaltRange = sel.range,
+                .aHaltPos = sel.style.ase == TF_AE_START ? TF_ANCHOR_START : TF_ANCHOR_END,
+            };
+            THROW_IF_FAILED(start->ShiftEnd(ec, LONG_MAX, &cursorPos, &hc));
+        }
+
+        // Compensate for the fact that we'll be erasing the start of the string below.
+        cursorPos -= static_cast<LONG>(finalizedString.size());
+        cursorPos = std::clamp(cursorPos, 0l, static_cast<LONG>(activeComposition.size()));
+    }
 
     if (!finalizedString.empty())
     {
@@ -556,25 +556,27 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
 
     if (_provider)
     {
+        {
+            const auto renderer = _provider->GetRenderer();
+            const auto renderData = renderer->GetRenderData();
+
+            renderData->LockConsole();
+            const auto unlock = wil::scope_exit([&]() {
+                renderData->UnlockConsole();
+            });
+
+            auto& comp = renderData->activeComposition;
+            comp.text = std::move(activeComposition);
+            comp.attributes = std::move(activeCompositionRanges);
+            // The code block above that calculates the `cursorPos` will clamp it to a positive number.
+            comp.cursorPos = static_cast<size_t>(cursorPos);
+            renderer->NotifyPaintFrame();
+        }
+
         if (!finalizedString.empty())
         {
             _provider->HandleOutput(finalizedString);
         }
-
-        const auto renderer = _provider->GetRenderer();
-        const auto renderData = renderer->GetRenderData();
-
-        renderData->LockConsole();
-        const auto unlock = wil::scope_exit([&]() {
-            renderData->UnlockConsole();
-        });
-
-        auto& comp = renderData->activeComposition;
-        comp.text = std::move(activeComposition);
-        comp.attributes = std::move(activeCompositionRanges);
-        // The code block above that calculates the `cursorPos` will clamp it to a positive number.
-        comp.cursorPos = static_cast<size_t>(cursorPos);
-        renderer->NotifyPaintFrame();
     }
 }
 

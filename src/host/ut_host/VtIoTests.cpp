@@ -327,11 +327,6 @@ public:
         return false;
     }
 
-    const std::vector<RenderOverlay> GetOverlays() const noexcept override
-    {
-        return std::vector<RenderOverlay>{};
-    }
-
     const bool IsGridLineDrawingAllowed() noexcept override
     {
         return false;
