@@ -881,7 +881,10 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        CommandPalette().Visibility(Visibility::Collapsed);
+        if (const auto p = CommandPaletteElement())
+        {
+            p.Visibility(Visibility::Collapsed);
+        }
         _UpdateTabView();
     }
 
