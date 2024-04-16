@@ -65,7 +65,6 @@ jobs:
       Inline: |-
         $AzToken = (Get-AzAccessToken -ResourceUrl 499b84ac-1321-427f-aa17-267ca6975798).Token
         Write-Host "##vso[task.setvariable variable=AzureToken;issecret=true]$AzToken"
-        & nuget setapikey -source TerminalDependencies $AzToken
 
   # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
   # This should be `task: NuGetCommand@2`
@@ -89,5 +88,5 @@ jobs:
     displayName: "Publish Pipeline Artifact"
 
   - pwsh: |-
-      & nuget push -source TerminalDependencies (Get-Item "$(Build.ArtifactStagingDirectory)/*.nupkg")
+      & nuget push -source TerminalDependencies -apikey $(AzureToken) (Get-Item "$(Build.ArtifactStagingDirectory)/*.nupkg")
     displayName: NuGet push
