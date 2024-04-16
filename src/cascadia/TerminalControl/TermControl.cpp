@@ -60,17 +60,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     }
 
-    STDMETHODIMP QueryInterface(REFIID, void**) noexcept
+    STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept
     {
         return E_NOTIMPL;
     }
 
-    ULONG STDMETHODCALLTYPE AddRef() noexcept
+    ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept
     {
         return 1;
     }
 
-    ULONG STDMETHODCALLTYPE Release() noexcept
+    ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept
     {
         return 1;
     }

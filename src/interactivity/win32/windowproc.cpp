@@ -27,17 +27,17 @@ struct TsfDataProvider : Microsoft::Console::TSF::IDataProvider
 {
     virtual ~TsfDataProvider() = default;
 
-    STDMETHODIMP QueryInterface(REFIID, void**) noexcept override
+    STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept override
     {
         return E_NOTIMPL;
     }
 
-    ULONG STDMETHODCALLTYPE AddRef() noexcept override
+    ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept override
     {
         return 1;
     }
 
-    ULONG STDMETHODCALLTYPE Release() noexcept override
+    ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept override
     {
         return 1;
     }
