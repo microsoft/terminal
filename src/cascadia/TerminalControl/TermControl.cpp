@@ -113,12 +113,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     RECT TsfDataProvider::GetCursorPosition()
     {
+        const auto core = _getCore();
+        if (!core)
+        {
+            return {};
+        }
+
         const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
         const auto globalOrigin = CoreWindow::GetForCurrentThread().Bounds();
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
-        const auto cursorPosition = _termControl->_core.CursorPosition();
-        const auto fontSize = _termControl->_core.FontSize();
         const auto padding = _termControl->GetPadding();
+        const auto cursorPosition = core->CursorPosition();
+        const auto fontSize = core->FontSize();
 
         // fontSize is not in DIPs, so we need to first multiply by scaleFactor and then do the rest.
         const auto left = (globalOrigin.X + localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
@@ -156,7 +162,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlCore* TsfDataProvider::_getCore() const noexcept
     {
-        return _termControl ? get_self<ControlCore>(_termControl->_core) : nullptr;
+        return get_self<ControlCore>(_termControl->_core);
     }
 
     TermControl::TermControl(IControlSettings settings,

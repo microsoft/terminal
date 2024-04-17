@@ -14,8 +14,6 @@ Author(s):
 
 #pragma once
 
-#include <til/generational.h>
-
 #include "../../buffer/out/TextAttribute.hpp"
 #include "../../renderer/inc/FontInfo.hpp"
 #include "../../types/inc/viewport.hpp"
