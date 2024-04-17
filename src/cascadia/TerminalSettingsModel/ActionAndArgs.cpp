@@ -473,7 +473,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // the number of commands a user is expected to have
                 const auto argsHash32 = static_cast<uint32_t>(_Args.Hash() & 0xFFFFFFFF);
                 // {0:X} formats the truncated hash to an uppercase hex string
-                fmt::format_to(std::back_inserter(result), L".{0:X}", argsHash32);
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE(L".{:X}"), argsHash32);
             }
             return winrt::hstring{ result };
         }
