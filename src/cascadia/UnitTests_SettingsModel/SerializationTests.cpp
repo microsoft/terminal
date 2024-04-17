@@ -16,10 +16,12 @@ using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
+// Different architectures will hash the same SendInput command to a different ID
+// Check for the correct ID based on the architecture
 #if defined(_M_IX86)
-#define sendInputID "56911147"
+#define SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH "56911147"
 #else
-#define sendInputID "A020D2"
+#define SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH "A020D2"
 #endif
 
 namespace SettingsModelUnitTests
@@ -980,7 +982,7 @@ namespace SettingsModelUnitTests
                     "name": "foo",
                     "command": { "action": "sendInput", "input": "just some input" },
                     "keys": "ctrl+shift+w",
-                    "id" : "User.sendInput.)" sendInputID R"("
+                    "id" : "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
                 }
             ]
         })" };
