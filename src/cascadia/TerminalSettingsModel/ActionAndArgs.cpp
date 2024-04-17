@@ -462,7 +462,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (_Action != ShortcutAction::Invalid)
         {
             auto actionKeyString = ActionToStringMap.find(_Action)->second;
-            auto result = fmt::format(L"User.{}", std::wstring{ actionKeyString.begin(), actionKeyString.end() });
+            auto result = fmt::format(FMT_COMPILE(L"User.{}"), actionKeyString);
             if (_Args)
             {
                 // If there are args, we need to append the hash of the args

@@ -16,6 +16,12 @@ using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
+#if defined(_M_IX86)
+#define sendInputID "56911147"
+#else
+#define sendInputID "A020D2"
+#endif
+
 namespace SettingsModelUnitTests
 {
     class SerializationTests : public JsonTestClass
@@ -974,7 +980,7 @@ namespace SettingsModelUnitTests
                     "name": "foo",
                     "command": { "action": "sendInput", "input": "just some input" },
                     "keys": "ctrl+shift+w",
-                    "id" : "User.sendInput.A020D2"
+                    "id" : "User.sendInput.)" sendInputID R"("
                 }
             ]
         })" };
