@@ -201,12 +201,13 @@ IRenderData* Renderer::GetRenderData() const noexcept
                 const auto remaining = state.columnLimit - state.columnEnd;
                 const auto beg = std::clamp(coordCursor.x, 0, remaining);
 
-                _compositionCache.emplace(til::point{ beg, coordCursor.y });
+                const auto baseAttribute = buffer.GetRowByOffset(coordCursor.y).GetAttrByColumn(coordCursor.x);
+                _compositionCache.emplace(til::point{ beg, coordCursor.y }, baseAttribute);
 
                 // Fake-move the cursor to where it needs to be in the active composition.
                 if (_currentCursorOptions)
                 {
-                    _currentCursorOptions->coordCursor.x = beg + cursorOffset;
+                    _currentCursorOptions->coordCursor.x = std::min(beg + cursorOffset, line.right - 1);
                 }
             }
         }
@@ -823,11 +824,24 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 size_t off = 0;
                 for (const auto& range : _pData->activeComposition.attributes)
                 {
-                    state.text = text.substr(off, range.len);
+                    const auto len = range.len;
+                    auto attr = range.attr;
+
+                    // Use the color at the cursor if TSF didn't specify any explicit color.
+                    if (attr.GetBackground().IsDefault())
+                    {
+                        attr.SetBackground(_compositionCache->baseAttribute.GetBackground());
+                    }
+                    if (attr.GetForeground().IsDefault())
+                    {
+                        attr.SetForeground(_compositionCache->baseAttribute.GetForeground());
+                    }
+
+                    state.text = text.substr(off, len);
                     state.columnBegin = state.columnEnd;
                     const_cast<ROW&>(r).ReplaceText(state);
-                    const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, range.attr);
-                    off += range.len;
+                    const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
+                    off += len;
                 }
             }
             const auto restore = wil::scope_exit([&] {

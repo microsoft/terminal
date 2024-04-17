@@ -99,6 +99,7 @@ namespace Microsoft::Console::Render
         struct CompositionCache
         {
             til::point absoluteOrigin;
+            TextAttribute baseAttribute;
         };
 
         static GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
