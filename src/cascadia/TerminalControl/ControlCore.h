@@ -221,6 +221,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void ClearSearch();
+        void SnapSearchResultToSelection(bool snap) noexcept;
+        bool SnapSearchResultToSelection() const noexcept;
 
         Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
 
@@ -281,7 +283,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::NoticeEventArgs> RaiseNotice;
         til::typed_event<IInspectable, Control::TransparencyChangedEventArgs> TransparencyChanged;
         til::typed_event<> ReceivedOutput;
-        til::typed_event<IInspectable, Control::FoundResultsArgs> FoundMatch;
+        til::typed_event<IInspectable, Control::UpdateSearchResultsEventArgs> UpdateSearchResults;
         til::typed_event<IInspectable, Control::ShowWindowArgs> ShowWindowChanged;
         til::typed_event<IInspectable, Control::UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
@@ -321,6 +323,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Search _searcher;
+        bool _snapSearchResultToSelection;
 
         winrt::handle _lastSwapChainHandle{ nullptr };
 
@@ -379,6 +382,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
+        void _terminalTextLayoutUpdated();
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);

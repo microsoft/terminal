@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.TransparencyChanged = _core.TransparencyChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreTransparencyChanged });
         _revokers.RaiseNotice = _core.RaiseNotice(winrt::auto_revoke, { get_weak(), &TermControl::_coreRaisedNotice });
         _revokers.HoveredHyperlinkChanged = _core.HoveredHyperlinkChanged(winrt::auto_revoke, { get_weak(), &TermControl::_hoveredHyperlinkChanged });
-        _revokers.FoundMatch = _core.FoundMatch(winrt::auto_revoke, { get_weak(), &TermControl::_coreFoundMatch });
+        _revokers.UpdateSearchResults = _core.UpdateSearchResults(winrt::auto_revoke, { get_weak(), &TermControl::_coreUpdateSearchResults });
         _revokers.UpdateSelectionMarkers = _core.UpdateSelectionMarkers(winrt::auto_revoke, { get_weak(), &TermControl::_updateSelectionMarkers });
         _revokers.coreOpenHyperlink = _core.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
@@ -416,6 +416,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
+                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
@@ -501,7 +502,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*args*/)
     {
-        _core.ClearSearch();
         _searchBox->Close();
 
         // Set focus back to terminal control
@@ -3523,17 +3523,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Called when the core raises a FoundMatch event. That's done in response
-    //   to us starting a search query with ControlCore::Search.
+    // - Triggers an update on scrollbar to redraw search scroll marks.
+    // - Called when the search results have changed, and the scroll marks'
+    //   positions need to be updated.
+    void TermControl::_UpdateSearchScrollMarks()
+    {
+        // Manually send a scrollbar update, on the UI thread. We're already
+        // UI-driven, so that's okay. We're not really changing the scrollbar,
+        // but we do want to update the position of any search marks. The Core
+        // might send a scrollbar update event too, but if the first search hit
+        // is in the visible viewport, then the pips won't display until the
+        // user first scrolls.
+        auto scrollBar = ScrollBar();
+        ScrollBarUpdate update{
+            .newValue = scrollBar.Value(),
+            .newMaximum = scrollBar.Maximum(),
+            .newMinimum = scrollBar.Minimum(),
+            .newViewportSize = scrollBar.ViewportSize(),
+        };
+        _throttledUpdateScrollbar(update);
+    }
+
+    // Method Description:
+    // - Called when the core raises a UpdateSearchResults event. That's done in response to:
+    //   - starting a search query with ControlCore::Search.
+    //   - clearing search results due to change in buffer content.
     // - The args will tell us if there were or were not any results for that
     //   particular search. We'll use that to control what to announce to
     //   Narrator. When we have more elaborate search information to report, we
     //   may want to report that here. (see GH #3920)
     // Arguments:
-    // - args: contains information about the results that were or were not found.
+    // - args: contains information about the search state and results that were
+    //         or were not found.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_coreFoundMatch(const IInspectable& /*sender*/, Control::FoundResultsArgs args)
+    winrt::fire_and_forget TermControl::_coreUpdateSearchResults(const IInspectable& /*sender*/, Control::UpdateSearchResultsEventArgs args)
     {
         co_await wil::resume_foreground(Dispatcher());
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
@@ -3545,25 +3569,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
         }
 
-        // Manually send a scrollbar update, now, on the UI thread. We're
-        // already UI-driven, so that's okay. We're not really changing the
-        // scrollbar, but we do want to update the position of any marks. The
-        // Core might send a scrollbar updated event too, but if the first
-        // search hit is in the visible viewport, then the pips won't display
-        // until the user first scrolls.
-        auto scrollBar = ScrollBar();
-        ScrollBarUpdate update{
-            .newValue = scrollBar.Value(),
-            .newMaximum = scrollBar.Maximum(),
-            .newMinimum = scrollBar.Minimum(),
-            .newViewportSize = scrollBar.ViewportSize(),
-        };
-        _throttledUpdateScrollbar(update);
+        _UpdateSearchScrollMarks();
 
         if (_searchBox)
         {
-            _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
             _searchBox->NavigationEnabled(true);
+            if (args.State() == Control::SearchState::Inactive)
+            {
+                _searchBox->ClearStatus();
+            }
+            else
+            {
+                _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
+            }
         }
     }
 

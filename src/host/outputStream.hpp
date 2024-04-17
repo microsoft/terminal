@@ -68,6 +68,7 @@ public:
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
     void NotifyBufferRotation(const int delta) override;
+    void NotifyTextLayoutUpdated() override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 

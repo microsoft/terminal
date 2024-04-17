@@ -215,6 +215,11 @@ public:
         Log::Comment(L"NotifyBufferRotation MOCK called...");
     }
 
+    void NotifyTextLayoutUpdated() override
+    {
+        Log::Comment(L"NotifyTextLayoutUpdated MOCK called...");
+    }
+
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override
     {
         Log::Comment(L"InvokeCompletions MOCK called...");
