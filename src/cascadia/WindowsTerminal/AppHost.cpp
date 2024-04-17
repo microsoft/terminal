@@ -341,6 +341,7 @@ void AppHost::Initialize()
     _revokers.RaiseVisualBell = _windowLogic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
     _revokers.SystemMenuChangeRequested = _windowLogic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
     _revokers.ChangeMaximizeRequested = _windowLogic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
+    _revokers.RequestLaunchPosition = _windowLogic.RequestLaunchPosition(winrt::auto_revoke, { this, &AppHost::_HandleRequestLaunchPosition });
 
     _windowCallbacks.MaximizeChanged = _window->MaximizeChanged([this](bool newMaximize) {
         if (_windowLogic)
@@ -508,6 +509,14 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
         _window->UpdateTitle(newTitle);
     }
     _windowManager.UpdateActiveTabTitle(newTitle, _peasant);
+}
+
+// The terminal page is responsible for persisting it's own state, but it does
+// need to ask us where exactly on the screen the window is.
+void AppHost::_HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                           winrt::TerminalApp::LaunchPositionRequest args)
+{
+    args.Position(_GetWindowLaunchPosition());
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()

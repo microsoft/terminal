@@ -10,6 +10,7 @@
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
+#include "LaunchPositionRequest.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -77,6 +78,13 @@ namespace winrt::TerminalApp::implementation
             _SourceWindow{ src },
             _TargetWindow{ tgt },
             _TabIndex{ tabIndex } {};
+    };
+
+    struct LaunchPositionRequest : LaunchPositionRequestT<LaunchPositionRequest>
+    {
+        LaunchPositionRequest() = default;
+
+        til::property<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> Position;
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -185,6 +193,8 @@ namespace winrt::TerminalApp::implementation
 
         TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs);
         TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs);
+
+        TYPED_EVENT(RequestLaunchPosition, IInspectable, winrt::TerminalApp::LaunchPositionRequest);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, _PropertyChangedHandlers, nullptr);
