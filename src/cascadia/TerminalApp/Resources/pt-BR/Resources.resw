@@ -187,34 +187,34 @@
     <value>Vários painéis</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Fechar...</value>
+    <value>Fechar</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>Fechar Guias à Direita</value>
+    <value>Fechar guias à direita</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Fechar Outras Guias</value>
+    <value>Fechar outras guias</value>
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Fechar guia</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
-    <value>Fechar Painel</value>
+    <value>Fechar o painel</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>Dividir Guia</value>
+    <value>Guia Dividir</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Painel dividido</value>
+    <value>Dividir painel</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
-    <value>Pesquisa na web</value>
+    <value>Pesquisa na Web</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Cor...</value>
+    <value>Alterar cor da guia</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Personalizados...</value>
+    <value>Personalizado</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Restaurar</value>
@@ -223,7 +223,7 @@
     <value>Renomear guia</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>Duplicar Guia</value>
+    <value>Duplicar guia</value>
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Foi encontrado um perfil com um "backgroundImage" inválido. O perfil deve ser o padrão para que não haja nenhuma imagem de tela de fundo. Certifique-se de que, ao definir um "backgroundImage", o valor é um caminho de arquivo válido para uma imagem.</value>
@@ -454,7 +454,7 @@
     <value>Sobre</value>
   </data>
   <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Enviar Comentários</value>
+    <value>Enviar comentários</value>
   </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
@@ -464,7 +464,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Ponto de Partida</value>
+    <value>Introdução</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -484,7 +484,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Avisos de terceiros</value>
+    <value>Avisos de Terceiros</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -571,10 +571,10 @@
     <value>Falha ao analisar a linha de comando:</value>
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
-    <value>Paleta de Comandos</value>
+    <value>Paleta de comandos</value>
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
-    <value>Seletor de guias</value>
+    <value>Alternador de guias</value>
   </data>
   <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
     <value>Digite o nome da guia...</value>
@@ -726,7 +726,7 @@
     <value>Restaurar Tamanho Original</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
-    <value>Paleta de Comandos</value>
+    <value>Paleta de comandos</value>
   </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Terminal de foco</value>
@@ -746,7 +746,7 @@
     <value>Dividir a janela e iniciar em determinado diretório</value>
   </data>
   <data name="ExportTabText" xml:space="preserve">
-    <value>Exportar Texto</value>
+    <value>Exportar texto</value>
   </data>
   <data name="ExportFailure" xml:space="preserve">
     <value>Falha ao exportar o conteúdo do terminal</value>
@@ -758,7 +758,7 @@
     <value>Localizar</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>Texto Simples</value>
+    <value>Texto sem formatação</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>O comportamento de término pode ser configurado nas configurações avançadas do perfil.</value>
@@ -767,7 +767,7 @@
     <value>Não mostra de novo</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Esta janela do Terminal está funcionando como Administrador</value>
+    <value>Esta janela do Terminal está sendo executada como administrador</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Sugestões encontradas: {0}</value>
@@ -827,10 +827,10 @@
     <value>Fechar esta guia</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Vazio...</value>
+    <value>Vazio</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
-    <value>Fechar Painel</value>
+    <value>Fechar o painel</value>
   </data>
   <data name="ClosePaneToolTip" xml:space="preserve">
     <value>Feche o painel ativo se vários painéis estiverem presentes</value>
@@ -840,13 +840,13 @@
     <comment>Text used to identify the reset button</comment>
   </data>
   <data name="MoveTabToNewWindowText" xml:space="preserve">
-    <value>Mover Guia para Nova Janela</value>
+    <value>Mover guia para nova janela</value>
   </data>
   <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
     <value>Move a guia para uma nova janela</value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>Executar como Administrador</value>
+    <value>Executar como administrador</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
@@ -885,7 +885,7 @@
     <value>Se definido, o comando será acrescentado ao comando padrão do perfil em vez de substituí-lo.</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>Reiniciar Conexão</value>
+    <value>Reiniciar conexão</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Reiniciar a conexão do painel ativo</value>

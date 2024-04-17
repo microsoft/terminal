@@ -187,7 +187,7 @@
     <value>Più riquadri</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Chiudi...</value>
+    <value>Chiudi</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Chiudi schede a destra</value>
@@ -199,7 +199,7 @@
     <value>Chiudi scheda</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
-    <value>Chiudi riquadro</value>
+    <value>Chiudi il riquadro</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
     <value>Dividi scheda</value>
@@ -211,10 +211,10 @@
     <value>Ricerca nel Web</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Colore...</value>
+    <value>Cambia colore scheda</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Personalizzato...</value>
+    <value>Personalizzato</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Reimposta</value>
@@ -464,7 +464,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Attività iniziali</value>
+    <value>Introduzione</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -484,7 +484,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Informative di terze parti</value>
+    <value>Comunicazioni di terze parti</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -723,7 +723,7 @@
     <value>Ingrandisci</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Ripristina visualizzazione normale</value>
+    <value>Ripristina in basso</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Riquadro comandi</value>
@@ -830,7 +830,7 @@
     <value>Vuoto</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
-    <value>Chiudi riquadro</value>
+    <value>Chiudi il riquadro</value>
   </data>
   <data name="ClosePaneToolTip" xml:space="preserve">
     <value>Chiude il riquadro attivo se sono presenti più riquadri</value>

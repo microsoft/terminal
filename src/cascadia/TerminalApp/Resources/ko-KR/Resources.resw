@@ -187,10 +187,10 @@
     <value>여러 창</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>닫기...</value>
+    <value>닫기</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>오른쪽으로 탭 닫기</value>
+    <value>오른쪽에 있는 탭 닫기</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
     <value>다른 탭 닫기</value>
@@ -211,10 +211,10 @@
     <value>웹 검색</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>색...</value>
+    <value>탭 색 변경</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>사용자 정의...</value>
+    <value>사용자 지정</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>다시 설정</value>
@@ -454,7 +454,7 @@
     <value>정보</value>
   </data>
   <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
-    <value>피드백 보내기</value>
+    <value>의견 보내기</value>
   </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>확인</value>
@@ -468,7 +468,7 @@
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
-    <value>소스 코드</value>
+    <value>원본 코드</value>
     <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
@@ -480,11 +480,11 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>개인정보 취급방침</value>
+    <value>개인정보 보호정책</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>타사 통지 사항</value>
+    <value>타사 통지</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -571,7 +571,7 @@
     <value>명령줄 구문 분석 오류:</value>
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
-    <value>명령 도구 모음</value>
+    <value>명령 팔레트</value>
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
     <value>탭 전환기</value>
@@ -723,10 +723,10 @@
     <value>최대화</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>아래로 복원</value>
+    <value>이전 크기로 복원</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
-    <value>명령 도구 모음</value>
+    <value>명령 팔레트</value>
   </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>포커스 터미널</value>
@@ -827,7 +827,7 @@
     <value>이 탭 닫기</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>비어 있음...</value>
+    <value>비어 있음</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>창 닫기</value>
@@ -840,13 +840,13 @@
     <comment>Text used to identify the reset button</comment>
   </data>
   <data name="MoveTabToNewWindowText" xml:space="preserve">
-    <value>새 창으로 탭 이동</value>
+    <value>탭을 새 창으로 이동</value>
   </data>
   <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
     <value>탭을 새 창으로 이동 </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>관리자로 실행</value>
+    <value>관리자 권한으로 실행</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
