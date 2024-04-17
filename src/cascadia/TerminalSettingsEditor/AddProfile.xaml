@@ -51,13 +51,13 @@
 
                                 <Grid.ColumnDefinitions>
                                     <!--  icon  -->
-                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="Auto" />
                                     <!--  profile name  -->
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
                                 <IconSourceElement Grid.Column="0"
-                                                   Width="16"
+                                                   Width="24"
                                                    Height="16"
                                                    IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
 

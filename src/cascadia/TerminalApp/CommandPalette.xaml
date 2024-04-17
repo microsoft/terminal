@@ -35,7 +35,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="24" />
                         <!--  icon  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
@@ -85,7 +85,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="24" />
                         <!--  icon  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
@@ -142,7 +142,7 @@
                       AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="24" />
                         <!--  icon / progress  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
