@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<ActionAndArgs> Copy() const;
 
         hstring GenerateName() const;
+        hstring GenerateID() const;
 
         WINRT_PROPERTY(ShortcutAction, Action, ShortcutAction::Invalid);
         WINRT_PROPERTY(IActionArgs, Args, nullptr);
