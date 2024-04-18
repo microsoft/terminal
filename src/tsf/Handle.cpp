@@ -76,7 +76,7 @@ void Handle::Unfocus(IDataProvider* provider) const
     }
 }
 
-bool Handle::HasActivateComposition() const noexcept
+bool Handle::HasActiveComposition() const noexcept
 {
-    return _impl ? _impl->HasActivateComposition() : false;
+    return _impl ? _impl->HasActiveComposition() : false;
 }

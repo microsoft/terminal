@@ -148,7 +148,7 @@ void HandleKeyEvent(const HWND hWnd,
         RetrieveKeyInfo(hWnd,
                         &VirtualKeyCode,
                         &VirtualScanCode,
-                        !g.tsf.HasActivateComposition());
+                        !g.tsf.HasActiveComposition());
 
         // --- END LOAD BEARING CODE ---
     }
@@ -358,7 +358,7 @@ void HandleKeyEvent(const HWND hWnd,
         return;
     }
 
-    if (g.tsf.HasActivateComposition())
+    if (g.tsf.HasActiveComposition())
     {
         return;
     }

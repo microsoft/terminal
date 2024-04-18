@@ -164,7 +164,7 @@ void Implementation::Unfocus(IDataProvider* provider)
     }
 }
 
-bool Implementation::HasActivateComposition() const noexcept
+bool Implementation::HasActiveComposition() const noexcept
 {
     return _compositions > 0;
 }
@@ -492,6 +492,9 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
             size_t totalLen = 0;
             for (;;)
             {
+                // GetText() won't throw if the range is empty. It'll simply return len == 0.
+                // However, you'll likely never see this happen with a bufCap this large (try 16 instead or something).
+                // It seems TSF doesn't support such large compositions in any language.
                 static constexpr ULONG bufCap = 128;
                 WCHAR buf[bufCap];
                 ULONG len = bufCap;

@@ -46,7 +46,7 @@ namespace Microsoft::Console::TSF
         void AssociateFocus(IDataProvider* provider) const;
         void Focus(IDataProvider* provider) const;
         void Unfocus(IDataProvider* provider) const;
-        bool HasActivateComposition() const noexcept;
+        bool HasActiveComposition() const noexcept;
 
     private:
         Implementation* _impl = nullptr;
