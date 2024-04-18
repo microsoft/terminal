@@ -259,7 +259,7 @@ public:
         return {};
     }
 
-    const TextBuffer& GetTextBuffer() const noexcept override
+    TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -320,11 +320,6 @@ public:
     bool IsCursorDoubleWidth() const override
     {
         return false;
-    }
-
-    const std::vector<RenderOverlay> GetOverlays() const noexcept override
-    {
-        return std::vector<RenderOverlay>{};
     }
 
     const bool IsGridLineDrawingAllowed() noexcept override

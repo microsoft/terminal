@@ -102,8 +102,6 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 
     gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
-    gci.ConsoleIme.RefreshAreaAttributes();
-
     if (SUCCEEDED_NTSTATUS(Status))
     {
         return STATUS_SUCCESS;

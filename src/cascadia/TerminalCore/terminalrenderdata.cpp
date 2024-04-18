@@ -22,7 +22,7 @@ til::point Terminal::GetTextBufferEndPosition() const noexcept
     return { _GetMutableViewport().Width() - 1, ViewEndIndex() };
 }
 
-const TextBuffer& Terminal::GetTextBuffer() const noexcept
+TextBuffer& Terminal::GetTextBuffer() const noexcept
 {
     return _activeBuffer();
 }
@@ -77,11 +77,6 @@ bool Terminal::IsCursorDoubleWidth() const
     const auto& buffer = _activeBuffer();
     const auto position = buffer.GetCursor().GetPosition();
     return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
-}
-
-const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
-{
-    return {};
 }
 
 const bool Terminal::IsGridLineDrawingAllowed() noexcept

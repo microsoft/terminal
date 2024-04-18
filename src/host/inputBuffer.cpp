@@ -27,8 +27,6 @@ using namespace Microsoft::Console;
 InputBuffer::InputBuffer() :
     InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE }
 {
-    // initialize buffer header
-    fInComposition = false;
 }
 
 // Transfer as many `wchar_t`s from source over to the `char`/`wchar_t` buffer `target`. After it returns,

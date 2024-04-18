@@ -10,6 +10,7 @@ ACCESSTOKEN
 acidev
 ACIOSS
 ACover
+acp
 actctx
 ACTCTXW
 ADDALIAS
@@ -67,10 +68,10 @@ ASBSET
 asdfghjkl
 ASetting
 ASingle
+ASYNCDONTCARE
 ASYNCWINDOWPOS
 atch
 ATest
-ATTRCOLOR
 aumid
 Authenticode
 AUTOBUDDY
@@ -124,8 +125,6 @@ Blt
 BLUESCROLL
 BODGY
 BOLDFONT
-BOOLIFY
-bools
 Borland
 boutput
 boxheader
@@ -156,7 +155,6 @@ cazamor
 CBash
 cbiex
 CBN
-CBoolean
 cbt
 CCCBB
 cch
@@ -164,12 +162,9 @@ CCHAR
 CCmd
 ccolor
 CCom
-CComp
 CConsole
-CConversion
 CCRT
 cdd
-CEdit
 CELLSIZE
 cfae
 cfie
@@ -179,18 +174,17 @@ CFuzz
 cgscrn
 chafa
 changelists
-chaof
 charinfo
 CHARSETINFO
 chh
 chshdng
 CHT
-Cic
 CLASSSTRING
 CLE
 cleartype
 CLICKACTIVE
 clickdown
+CLIENTID
 clipbrd
 CLIPCHILDREN
 CLIPSIBLINGS
@@ -229,7 +223,6 @@ commdlg
 COMMITID
 componentization
 conapi
-conareainfo
 conattrs
 conbufferout
 concfg
@@ -240,8 +233,7 @@ condrv
 conechokey
 conemu
 conhost
-conime
-conimeinfo
+CONIME
 conintegrity
 conintegrityuwp
 coninteractivitybase
@@ -279,7 +271,6 @@ contentfiles
 conterm
 contsf
 contypes
-convarea
 conwinuserrefs
 coordnew
 COPYCOLOR
@@ -314,7 +305,6 @@ csrutil
 CSTYLE
 CSwitch
 CTerminal
-CText
 ctl
 ctlseqs
 CTRLEVENT
@@ -322,7 +312,7 @@ CTRLFREQUENCY
 CTRLKEYSHORTCUTS
 Ctrls
 CTRLVOLUME
-Ctxt
+CUAS
 CUF
 cupxy
 CURRENTFONT
@@ -486,7 +476,6 @@ DISABLEDELAYEDEXPANSION
 DISABLENOSCROLL
 DISPATCHNOTIFY
 DISPLAYATTRIBUTE
-DISPLAYATTRIBUTEPROPERTY
 DISPLAYCHANGE
 distros
 dlg
@@ -562,7 +551,6 @@ entrypoints
 ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
-enumranges
 EOK
 EPres
 EQU
@@ -621,7 +609,6 @@ FINDDOWN
 FINDSTRINGEXACT
 FINDUP
 FIter
-FIXEDCONVERTED
 FIXEDFILEINFO
 Flg
 flyouts
@@ -736,9 +723,8 @@ Greyscale
 gridline
 gset
 gsl
-GTP
 guc
-guidatom
+GUIDATOM
 GValue
 GWL
 GWLP
@@ -837,7 +823,6 @@ IEnd
 IEnum
 IFACEMETHODIMP
 ification
-IGNOREEND
 IGNORELANGUAGE
 IHosted
 iid
@@ -861,7 +846,6 @@ inkscape
 INLINEPREFIX
 inproc
 Inputkeyinfo
-INPUTPROCESSORPROFILE
 Inputreadhandledata
 INSERTMODE
 INTERACTIVITYBASE
@@ -873,9 +857,7 @@ INVALIDARG
 INVALIDATERECT
 Ioctl
 ipch
-ipp
 IProperty
-IPSINK
 ipsp
 IShell
 ISwap
@@ -895,7 +877,6 @@ JOBOBJECT
 JOBOBJECTINFOCLASS
 JPN
 jsoncpp
-Jsons
 jsprovider
 jumplist
 KAttrs
@@ -925,6 +906,7 @@ KLMNOPQRSTY
 KOK
 KPRIORITY
 KVM
+kyouhaishaheiku
 langid
 LANGUAGELIST
 lasterror
@@ -987,7 +969,6 @@ lpdw
 lpelfe
 lpfn
 LPFNADDPROPSHEETPAGE
-lpl
 LPMEASUREITEMSTRUCT
 LPMINMAXINFO
 lpmsg
@@ -1063,6 +1044,7 @@ MENUITEMINFO
 MENUSELECT
 messageext
 metaproj
+Mgrs
 microsoftpublicsymbols
 midl
 mii
@@ -1117,7 +1099,6 @@ muxes
 myapplet
 mybranch
 mydir
-MYMAX
 Mypair
 Myval
 NAMELENGTH
@@ -1161,6 +1142,7 @@ NOCOPYBITS
 NODUP
 noexcepts
 NOFONT
+NOHIDDENTEXT
 NOINTEGRALHEIGHT
 NOINTERFACE
 NOLINKINFO
@@ -1184,6 +1166,7 @@ NORMALDISPLAY
 NOSCRATCH
 NOSEARCH
 noselect
+NOSELECTION
 NOSENDCHANGING
 NOSIZE
 NOSNAPSHOT
@@ -1274,6 +1257,7 @@ packageuwp
 PACKAGEVERSIONNUMBER
 PACKCOORD
 PACKVERSION
+pacp
 pagedown
 pageup
 PAINTPARAMS
@@ -1285,7 +1269,6 @@ parms
 PATCOPY
 pathcch
 PATTERNID
-pcat
 pcb
 pcch
 PCCHAR
@@ -1309,9 +1292,9 @@ PCSTR
 PCWCH
 PCWCHAR
 PCWSTR
-pda
 pdbs
 pdbstr
+pdcs
 PDPs
 pdtobj
 pdw
@@ -1341,6 +1324,7 @@ PIDLIST
 pids
 pii
 piml
+pimpl
 pinvoke
 pipename
 pipestr
@@ -1372,7 +1356,6 @@ POSXSCROLL
 POSYSCROLL
 PPEB
 ppf
-ppguid
 ppidl
 PPROC
 ppropvar
@@ -1402,7 +1385,7 @@ PROCESSINFOCLASS
 PRODEXT
 PROPERTYID
 PROPERTYKEY
-PROPERTYVAL
+propertyval
 propsheet
 PROPSHEETHEADER
 PROPSHEETPAGE
@@ -1434,6 +1417,7 @@ ptch
 ptsz
 PTYIn
 PUCHAR
+pvar
 pwch
 PWDDMCONSOLECONTEXT
 pws
@@ -1519,6 +1503,7 @@ rgn
 rgp
 rgpwsz
 rgrc
+rguid
 rgw
 RIGHTALIGN
 RIGHTBUTTON
@@ -1526,6 +1511,7 @@ riid
 RIS
 roadmap
 robomac
+rodata
 rosetta
 RRF
 rrr
@@ -1648,7 +1634,6 @@ sidebyside
 SIF
 SIGDN
 Signtool
-SINGLEFLAG
 SINGLETHREADED
 siup
 sixel
@@ -1721,6 +1706,7 @@ SYMED
 SYNCPAINT
 syscalls
 SYSCHAR
+SYSCOLOR
 SYSCOMMAND
 SYSDEADCHAR
 SYSKEYDOWN
@@ -1786,7 +1772,6 @@ TEXTMETRIC
 TEXTMETRICW
 textmode
 texttests
-TFCAT
 TFunction
 THUMBPOSITION
 THUMBTRACK
@@ -1817,7 +1802,6 @@ Tpqrst
 tracelogging
 traceviewpp
 trackbar
-TRACKCOMPOSITION
 trackpad
 transitioning
 Trd
@@ -1841,8 +1825,6 @@ TTM
 TTo
 tvpp
 tvtseq
-Txtev
-typechecked
 TYUI
 UAC
 uap
@@ -1860,10 +1842,8 @@ UIACCESS
 uiacore
 uiautomationcore
 uielem
-UIELEMENTENABLEDONLY
 UINTs
 ul
-ulcch
 uld
 uldash
 uldb
@@ -1957,7 +1937,6 @@ vstest
 VSTS
 VSTT
 vswhere
-vtapi
 vtapp
 VTE
 VTID
@@ -2020,7 +1999,6 @@ WINDOWALPHA
 windowdpiapi
 WINDOWEDGE
 windowext
-windowime
 WINDOWINFO
 windowio
 windowmetrics
@@ -2071,7 +2049,6 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
-wnwb
 workarea
 WOutside
 WOWARM
@@ -2110,7 +2087,6 @@ WTs
 WTSOFTFONT
 wtw
 wtypes
-Wubi
 WUX
 WVerify
 WWith
@@ -2137,9 +2113,7 @@ xes
 XFG
 XFile
 XFORM
-xin
-xinchaof
-xinxinchaof
+XIn
 XManifest
 XMath
 xorg
