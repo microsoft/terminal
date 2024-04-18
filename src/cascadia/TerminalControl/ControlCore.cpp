@@ -694,7 +694,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - focused (default == true): Whether the window is focused or unfocused.
     // Return Value:
     // - <none>
-    void ControlCore::_setOpacity(const double opacity, bool focused)
+    void ControlCore::_setOpacity(const double opacity, const bool focused)
     {
         const auto newOpacity = std::clamp(opacity,
                                            0.0,
@@ -712,8 +712,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //to transition smoothly between the two.
         _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
-        // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
+        //Forces focused acrylic when Command Palette is open upon changing opacity
+        _runtimeUseAcrylic = FocusedAcrylic();
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -726,6 +726,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         TransparencyChanged.raise(*this, *eventArgs);
+    }
+
+    void ControlCore::ToggleAcrylic(const bool focused)
+    {
+        UseAcrylic(!UseAcrylic());
+
+        //Stores the focused runtime acrylic separately from unfocused acrylic
+        //to transition smoothly between the two.
+        _runtimeFocusedAcrylic = focused ? UseAcrylic() : _runtimeFocusedAcrylic;
+
+        // Update the renderer as well. It might need to fall back from
+        // cleartype -> grayscale if the BG is transparent / acrylic.
+        if (_renderEngine)
+        {
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _renderer->NotifyPaintFrame();
+        }
+
+        auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(0.0);
+        _TransparencyChangedHandlers(*this, *eventArgs);
     }
 
     void ControlCore::ToggleShaderEffects()
@@ -847,7 +867,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeFocusedOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
+        _runtimeUseAcrylic = _settings->UseAcrylic();
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
@@ -909,8 +929,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
-                // Manually turn off acrylic if they turn off transparency.
-                _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
+                // Focused Acrylic from settings should be ignored if overridden at runtime
+                bool newAcrylic = focused ? FocusedAcrylic() : newAppearance->UseAcrylic();
+                UseAcrylic(newAcrylic);
             }
 
             // Update the renderer as well. It might need to fall back from

@@ -872,7 +872,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#11743: Make sure to use the Core's current UseAcrylic value, not
         // the one from the settings. The Core's runtime UseAcrylic may have
         // changed from what was in the original settings.
-        if (_core.UseAcrylic() && !transparentBg)
+        if (_core.UseAcrylic() && !transparentBg && _core.Opacity() < 1.0)
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
@@ -1001,7 +1001,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // acrylic is enabled at runtime (GH#2531)
         if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
         {
-            if (!useAcrylic)
+            if (!useAcrylic || _core.Opacity() == 1.0)
             {
                 _InitializeBackgroundBrush();
                 return;
@@ -1011,7 +1011,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
         {
-            if (useAcrylic)
+            if (useAcrylic && _core.Opacity() < 1.0)
             {
                 _InitializeBackgroundBrush();
                 return;
@@ -3507,6 +3507,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::AdjustOpacity(const double opacity, const bool relative)
     {
         _core.AdjustOpacity(opacity, relative);
+    }
+
+    void TermControl::ToggleAcrylic()
+    {
+        _core.ToggleAcrylic(_focused);
     }
 
     // - You'd think this should just be "Opacity", but UIElement already

@@ -563,6 +563,21 @@
         { "command": "resetFontSize", "keys": "ctrl+0", "id": "Terminal.ResetFontSize" },
         { "command": "resetFontSize", "keys": "ctrl+numpad_0", "id": "Terminal.ResetFontSize" },
 
+        // Transparency Effects
+        {          
+            "name": { "key": "SetOpacityParentCommandName" },
+            "commands": [
+                { "command": { "action": "adjustOpacity", "opacity": 0, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 25, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 50, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
+            ]
+
+            
+        },   
+        { "command": "toggleAcrylic"},
+
         // Other commands
         {
             // Select color scheme...
@@ -615,16 +630,5 @@
                 }
             ]
         },
-        {
-            // Set opacity...
-            "name": { "key": "SetOpacityParentCommandName" },
-            "commands": [
-                { "command": { "action": "adjustOpacity", "opacity": 0, "relative": false } },
-                { "command": { "action": "adjustOpacity", "opacity": 25, "relative": false } },
-                { "command": { "action": "adjustOpacity", "opacity": 50, "relative": false } },
-                { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
-                { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
-            ]
-        }
     ]
 }
