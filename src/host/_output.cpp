@@ -52,8 +52,6 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
             ServiceLocator::LocateGlobals().pRender->TriggerRedraw(region);
         }
     }
-
-    WriteConvRegionToScreen(screenInfo, region);
 }
 
 // Routine Description:

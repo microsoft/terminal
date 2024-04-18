@@ -422,19 +422,7 @@ CATCH_RETURN()
 
 void Terminal::Write(std::wstring_view stringView)
 {
-    const auto& cursor = _activeBuffer().GetCursor();
-    const til::point cursorPosBefore{ cursor.GetPosition() };
-
     _stateMachine->ProcessString(stringView);
-
-    const til::point cursorPosAfter{ cursor.GetPosition() };
-
-    // Firing the CursorPositionChanged event is very expensive so we try not to
-    // do that when the cursor does not need to be redrawn.
-    if (cursorPosBefore != cursorPosAfter)
-    {
-        _NotifyTerminalCursorPositionChanged();
-    }
 }
 
 // Method Description:
@@ -1099,18 +1087,6 @@ void Terminal::_NotifyScrollEvent()
     }
 }
 
-void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
-{
-    if (_pfnCursorPositionChanged)
-    {
-        try
-        {
-            _pfnCursorPositionChanged();
-        }
-        CATCH_LOG();
-    }
-}
-
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
@@ -1134,11 +1110,6 @@ void Terminal::SetCopyToClipboardCallback(std::function<void(wil::zwstring_view)
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
     _pfnScrollPositionChanged.swap(pfn);
-}
-
-void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept
-{
-    _pfnCursorPositionChanged.swap(pfn);
 }
 
 // Method Description:

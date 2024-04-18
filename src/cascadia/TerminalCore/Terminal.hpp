@@ -189,7 +189,7 @@ public:
 #pragma region IRenderData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     til::point GetTextBufferEndPosition() const noexcept override;
-    const TextBuffer& GetTextBuffer() const noexcept override;
+    TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
 
     void LockConsole() noexcept override;
@@ -203,7 +203,6 @@ public:
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     bool IsCursorDoubleWidth() const override;
-    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
@@ -228,7 +227,6 @@ public:
     void SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetCopyToClipboardCallback(std::function<void(wil::zwstring_view)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
-    void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
@@ -339,7 +337,6 @@ private:
     til::recursive_ticket_lock _readWriteLock;
 
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
-    std::function<void()> _pfnCursorPositionChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
@@ -457,9 +454,6 @@ private:
     til::CoordType _ScrollToPoints(const til::point coordStart, const til::point coordEnd);
 
     void _NotifyScrollEvent();
-
-    void _NotifyTerminalCursorPositionChanged() noexcept;
-
     bool _inAltBuffer() const noexcept;
     TextBuffer& _activeBuffer() const noexcept;
     void _updateUrlDetection();

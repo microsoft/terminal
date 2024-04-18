@@ -32,7 +32,6 @@
     <ClCompile Include="..\uiaTextRange.cpp" />
     <ClCompile Include="..\Window.cpp" />
     <ClCompile Include="..\WindowDpiApi.cpp" />
-    <ClCompile Include="..\WindowIme.cpp" />
     <ClCompile Include="..\WindowIo.cpp" />
     <ClCompile Include="..\WindowMetrics.cpp" />
     <ClCompile Include="..\WindowProc.cpp" />
@@ -54,7 +53,6 @@
     <ClInclude Include="..\uiaTextRange.hpp" />
     <ClInclude Include="..\Window.hpp" />
     <ClInclude Include="..\WindowDpiApi.hpp" />
-    <ClInclude Include="..\WindowIme.hpp" />
     <ClInclude Include="..\WindowMetrics.hpp" />
     <ClInclude Include="..\WindowIo.hpp" />
     <ClInclude Include="..\windowUiaProvider.hpp" />
