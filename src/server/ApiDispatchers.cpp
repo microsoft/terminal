@@ -917,7 +917,7 @@ constexpr T saturate(auto val)
         "WriteConsoleInput",
         TraceLoggingBoolean(a->Unicode, "Unicode"),
         TraceLoggingBoolean(a->Append, "Append"),
-        TraceLoggingUIntPtr(buffer.size(), "Buffer"));
+        TraceLoggingUIntPtr(buffer.size(), "Records"));
 
     if (!a->Unicode)
     {
@@ -967,7 +967,7 @@ constexpr T saturate(auto val)
         "WriteConsoleOutput",
         TraceLoggingBoolean(a->Unicode, "Unicode"),
         TraceLoggingConsoleSmallRect(a->CharRegion, "CharRegion"),
-        TraceLoggingUIntPtr(buffer.size(), "Buffer"));
+        TraceLoggingUIntPtr(buffer.size(), "Records"));
 
     if (!a->Unicode)
     {
@@ -1098,7 +1098,7 @@ constexpr T saturate(auto val)
         "ReadConsoleOutput",
         TraceLoggingBoolean(a->Unicode, "Unicode"),
         TraceLoggingConsoleSmallRect(a->CharRegion, "CharRegion"),
-        TraceLoggingUIntPtr(buffer.size(), "Buffer"));
+        TraceLoggingUIntPtr(buffer.size(), "Records"));
 
     auto finalRegion = Microsoft::Console::Types::Viewport::Empty(); // the actual region read out of the buffer
     if (!a->Unicode)
