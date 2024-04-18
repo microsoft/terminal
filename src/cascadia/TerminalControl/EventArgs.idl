@@ -78,8 +78,15 @@ namespace Microsoft.Terminal.Control
         Double Opacity { get; };
     }
 
-    runtimeclass FoundResultsArgs
+    enum SearchState
     {
+        Inactive = 0,
+        Active = 1,
+    };
+
+    runtimeclass UpdateSearchResultsEventArgs
+    {
+        SearchState State { get; };
         Boolean FoundMatch { get; };
         Int32 TotalMatches { get; };
         Int32 CurrentMatch { get; };

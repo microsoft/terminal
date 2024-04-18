@@ -120,6 +120,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
+        auto pfnTextLayoutUpdated = std::bind(&ControlCore::_terminalTextLayoutUpdated, this);
+        _terminal->SetTextLayoutUpdatedCallback(pfnTextLayoutUpdated);
+
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
@@ -1123,6 +1126,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
             _connection.Resize(vp.Height(), vp.Width());
+
+            // let the UI know that the text layout has been updated
+            _terminal->NotifyTextLayoutUpdated();
         }
     }
 
@@ -1638,6 +1644,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ShowWindowChanged.raise(*this, *showWindow);
     }
 
+    void ControlCore::_terminalTextLayoutUpdated()
+    {
+        ClearSearch();
+
+        // send an UpdateSearchResults event to the UI to put the Search UI into inactive state.
+        auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
+        evArgs->State(SearchState::Inactive);
+        UpdateSearchResults.raise(*this, *evArgs);
+    }
+
     // Method Description:
     // - Plays a single MIDI note, blocking for the duration.
     // Arguments:
@@ -1701,43 +1717,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
 
-        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
+        std::vector<til::point_span> oldResults;
+        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive, &oldResults))
         {
-            _searcher.HighlightResults();
-            _searcher.MoveToCurrentSelection();
             _cachedSearchResultRows = {};
+            if (SnapSearchResultToSelection())
+            {
+                _searcher.MoveToCurrentSelection();
+                SnapSearchResultToSelection(false);
+            }
+
+            _terminal->SetSearchHighlights(_searcher.Results());
+            _terminal->SetSearchHighlightFocused(_searcher.CurrentMatch());
         }
         else
         {
             _searcher.FindNext();
+            _terminal->SetSearchHighlightFocused(_searcher.CurrentMatch());
         }
+        _renderer->TriggerSearchHighlight(oldResults);
 
-        const auto foundMatch = _searcher.SelectCurrent();
-        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
-        if (foundMatch)
+        auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
+        if (!text.empty())
         {
-            // this is used for search,
-            // DO NOT call _updateSelectionUI() here.
-            // We don't want to show the markers so manually tell it to clear it.
-            _terminal->SetBlockSelection(false);
-            UpdateSelectionMarkers.raise(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
-
-            foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
-            foundResults->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
-
-            _terminal->AlwaysNotifyOnBufferRotation(true);
+            evArgs->State(SearchState::Active);
+            if (_searcher.GetCurrent())
+            {
+                evArgs->FoundMatch(true);
+                evArgs->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
+                evArgs->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
+            }
         }
-        _renderer->TriggerSelection();
 
-        // Raise a FoundMatch event, which the control will use to notify
-        // narrator if there was any results in the buffer
-        FoundMatch.raise(*this, *foundResults);
+        // Raise an UpdateSearchResults event, which the control will use to update the
+        // UI and notify the narrator about the updated search results in the buffer
+        UpdateSearchResults.raise(*this, *evArgs);
     }
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
-        const auto lock = _terminal->LockForReading();
-
         if (!_cachedSearchResultRows)
         {
             auto results = std::vector<int32_t>();
@@ -1761,8 +1779,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ClearSearch()
     {
-        _terminal->AlwaysNotifyOnBufferRotation(false);
-        _searcher = {};
+        // nothing to clear if there's no results
+        if (_searcher.GetCurrent())
+        {
+            const auto lock = _terminal->LockForWriting();
+            _terminal->SetSearchHighlights({});
+            _terminal->SetSearchHighlightFocused({});
+            _renderer->TriggerSearchHighlight(_searcher.Results());
+            _searcher = {};
+            _cachedSearchResultRows = {};
+        }
+    }
+
+    // Method Description:
+    // - Tells ControlCore to snap the current search result index to currently
+    //   selected text if the search was started using it.
+    void ControlCore::SnapSearchResultToSelection(bool shouldSnap) noexcept
+    {
+        _snapSearchResultToSelection = shouldSnap;
+    }
+
+    // Method Description:
+    // - Returns true, if we should snap the current search result index to
+    //   the currently selected text after a new search is started, else false.
+    bool ControlCore::SnapSearchResultToSelection() const noexcept
+    {
+        return _snapSearchResultToSelection;
     }
 
     void ControlCore::Close()
