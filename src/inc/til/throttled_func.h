@@ -129,14 +129,24 @@ namespace til
         {
             const auto hadValue = _storage.emplace(std::forward<MakeArgs>(args)...);
 
-            if (Debounce || !hadValue)
+            if constexpr (Debounce)
             {
                 SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
             }
-
-            if (Leading && !hadValue)
+            else
             {
-                _func();
+                if (!hadValue)
+                {
+                    SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+                }
+            }
+
+            if constexpr (Leading)
+            {
+                if (!hadValue)
+                {
+                    _func();
+                }
             }
         }
 
