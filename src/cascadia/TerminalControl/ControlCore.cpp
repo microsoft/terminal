@@ -29,19 +29,6 @@ using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
-// The minimum delay between updates to the scroll bar's values.
-// The updates are throttled to limit power usage.
-constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
-
-// The minimum delay between updating the TSF input control.
-constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
-
-// The minimum delay between updating the locations of regex patterns
-constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
-
-// The delay before performing the search after change of search criteria
-constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
-
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c) noexcept
@@ -117,9 +104,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
-        auto pfnTextLayoutUpdated = std::bind(&ControlCore::_terminalTextLayoutUpdated, this);
-        _terminal->SetTextLayoutUpdatedCallback(pfnTextLayoutUpdated);
-
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
@@ -167,21 +151,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher = controller.DispatcherQueue();
         }
 
-        // A few different events should be throttled, so they don't fire absolutely all the time:
-        // * _updatePatternLocations: When there's new output, or we scroll the
-        //   viewport, we should re-check if there are any visible hyperlinks.
-        //   But we don't really need to do this every single time text is
-        //   output, we can limit this update to once every 500ms.
-        // * _updateScrollBar: Same idea as the TSF update - we don't _really_
-        //   need to hop across the process boundary every time text is output.
-        //   We can throttle this to once every 8ms, which will get us out of
-        //   the way of the main output & rendering threads.
         const auto shared = _shared.lock();
+        // Raises an OutputIdle event once there hasn't been any output for at least 100ms.
+        // It also updates all regex patterns in the viewport.
+        //
         // NOTE: Calling UpdatePatternLocations from a background
         // thread is a workaround for us to hit GH#12607 less often.
-        shared->updatePatternLocations = std::make_unique<til::throttled_func_trailing<>>(
-            UpdatePatternLocationsInterval,
-            [weakTerminal = std::weak_ptr{ _terminal }]() {
+        shared->outputIdle = std::make_unique<til::debounced_func_trailing<>>(
+            std::chrono::milliseconds{ 100 },
+            [weakTerminal = std::weak_ptr{ _terminal }, weakThis = get_weak(), dispatcher = _dispatcher]() {
+                dispatcher.TryEnqueue(DispatcherQueuePriority::Normal, [weakThis]() {
+                    if (const auto self = weakThis.get(); !self->_IsClosing())
+                    {
+                        self->OutputIdle.raise(*self, nullptr);
+                    }
+                });
+
                 if (const auto t = weakTerminal.lock())
                 {
                     const auto lock = t->LockForWriting();
@@ -189,9 +174,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
+        // Scrollbar updates are also expensive (XAML), so we'll throttle them as well.
         shared->updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
             _dispatcher,
-            ScrollBarUpdateInterval,
+            std::chrono::milliseconds{ 8 },
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
@@ -218,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // thread. These will be recreated in _setupDispatcherAndCallbacks, when
         // we're re-attached to a new control (on a possibly new UI thread).
         const auto shared = _shared.lock();
-        shared->updatePatternLocations.reset();
+        shared->outputIdle.reset();
         shared->updateScrollBar.reset();
     }
 
@@ -671,9 +657,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto shared = _shared.lock_shared();
-        if (shared->updatePatternLocations)
+        if (shared->outputIdle)
         {
-            (*shared->updatePatternLocations)();
+            (*shared->outputIdle)();
         }
     }
 
@@ -1104,12 +1090,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
         const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
-        if (SUCCEEDED(hr) && hr != S_FALSE)
+        if (FAILED(hr) || hr == S_FALSE)
         {
-            _connection.Resize(vp.Height(), vp.Width());
+            return;
+        }
 
-            // let the UI know that the text layout has been updated
-            _terminal->NotifyTextLayoutUpdated();
+        _connection.Resize(vp.Height(), vp.Width());
+
+        // TermControl will call Search() once the OutputIdle even fires after 100ms.
+        // Until then we need to hide the now-stale search results from the renderer.
+        ClearSearch();
+        const auto shared = _shared.lock_shared();
+        if (shared->outputIdle)
+        {
+            (*shared->outputIdle)();
         }
     }
 
@@ -1607,16 +1601,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ShowWindowChanged.raise(*this, *showWindow);
     }
 
-    void ControlCore::_terminalTextLayoutUpdated()
-    {
-        ClearSearch();
-
-        // send an UpdateSearchResults event to the UI to put the Search UI into inactive state.
-        auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
-        evArgs->State(SearchState::Inactive);
-        UpdateSearchResults.raise(*this, *evArgs);
-    }
-
     // Method Description:
     // - Plays a single MIDI note, blocking for the duration.
     // Arguments:
@@ -1676,13 +1660,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void ControlCore::Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool reset)
     {
         const auto lock = _terminal->LockForWriting();
 
+        bool searchInvalidated = false;
         std::vector<til::point_span> oldResults;
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive, &oldResults))
         {
+            searchInvalidated = true;
+
             _cachedSearchResultRows = {};
             if (SnapSearchResultToSelection())
             {
@@ -1691,30 +1678,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             _terminal->SetSearchHighlights(_searcher.Results());
-            _terminal->SetSearchHighlightFocused(_searcher.CurrentMatch());
+            _renderer->TriggerSearchHighlight(oldResults);
         }
-        else
+        else if (!reset)
         {
             _searcher.FindNext();
-            _terminal->SetSearchHighlightFocused(_searcher.CurrentMatch());
         }
-        _renderer->TriggerSearchHighlight(oldResults);
 
-        auto evArgs = winrt::make_self<implementation::UpdateSearchResultsEventArgs>();
-        if (!text.empty())
+        int32_t totalMatches = 0;
+        int32_t currentMatch = 0;
+        if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
         {
-            evArgs->State(SearchState::Active);
-            if (_searcher.GetCurrent())
-            {
-                evArgs->FoundMatch(true);
-                evArgs->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
-                evArgs->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
-            }
+            totalMatches = gsl::narrow<int32_t>(_searcher.Results().size());
+            currentMatch = gsl::narrow<int32_t>(idx);
+            _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
         }
 
-        // Raise an UpdateSearchResults event, which the control will use to update the
-        // UI and notify the narrator about the updated search results in the buffer
-        UpdateSearchResults.raise(*this, *evArgs);
+        return {
+            .TotalMatches = totalMatches,
+            .CurrentMatch = currentMatch,
+            .SearchInvalidated = searchInvalidated,
+        };
     }
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
@@ -1742,16 +1726,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ClearSearch()
     {
-        // nothing to clear if there's no results
-        if (_searcher.GetCurrent())
-        {
-            const auto lock = _terminal->LockForWriting();
-            _terminal->SetSearchHighlights({});
-            _terminal->SetSearchHighlightFocused({});
-            _renderer->TriggerSearchHighlight(_searcher.Results());
-            _searcher = {};
-            _cachedSearchResultRows = {};
-        }
+        const auto lock = _terminal->LockForWriting();
+        _terminal->SetSearchHighlights({});
+        _terminal->SetSearchHighlightFocused({});
+        _renderer->TriggerSearchHighlight(_searcher.Results());
+        _searcher = {};
+        _cachedSearchResultRows = {};
     }
 
     // Method Description:
@@ -2134,9 +2114,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Start the throttled update of where our hyperlinks are.
             const auto shared = _shared.lock_shared();
-            if (shared->updatePatternLocations)
+            if (shared->outputIdle)
             {
-                (*shared->updatePatternLocations)();
+                (*shared->outputIdle)();
             }
         }
         catch (...)

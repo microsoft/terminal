@@ -5,6 +5,7 @@
 #include "AtlasEngine.h"
 
 #include "Backend.h"
+#include "../../buffer/out/textBuffer.hpp"
 #include "../base/FontCache.h"
 
 // #### NOTE ####
@@ -95,7 +96,7 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const std::vector<LineRendition>& renditions) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
 {
     const auto viewportOrigin = til::point{ _api.s->viewportOffset.x, _api.s->viewportOffset.y };
     const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
@@ -103,7 +104,7 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     for (const auto& hi : highlights)
     {
         hi.iterate_rows(cellCountX, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
-            const auto shift = til::at(renditions, row) != LineRendition::SingleWidth ? 1 : 0;
+            const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
             beg <<= shift;
             end <<= shift;
             til::rect rect{ beg, row, end + 1, row + 1 };

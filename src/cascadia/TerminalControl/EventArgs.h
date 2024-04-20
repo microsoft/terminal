@@ -12,7 +12,6 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
-#include "UpdateSearchResultsEventArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
 #include "CompletionsChangedEventArgs.g.h"
@@ -139,17 +138,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(double, Opacity);
-    };
-
-    struct UpdateSearchResultsEventArgs : public UpdateSearchResultsEventArgsT<UpdateSearchResultsEventArgs>
-    {
-    public:
-        UpdateSearchResultsEventArgs() = default;
-
-        WINRT_PROPERTY(SearchState, State, SearchState::Inactive);
-        WINRT_PROPERTY(bool, FoundMatch);
-        WINRT_PROPERTY(int32_t, TotalMatches);
-        WINRT_PROPERTY(int32_t, CurrentMatch);
     };
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>

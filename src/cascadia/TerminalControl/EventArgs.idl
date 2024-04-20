@@ -84,14 +84,6 @@ namespace Microsoft.Terminal.Control
         Active = 1,
     };
 
-    runtimeclass UpdateSearchResultsEventArgs
-    {
-        SearchState State { get; };
-        Boolean FoundMatch { get; };
-        Int32 TotalMatches { get; };
-        Int32 CurrentMatch { get; };
-    }
-
     runtimeclass ShowWindowArgs
     {
         Boolean ShowOrHide { get; };

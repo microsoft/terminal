@@ -219,7 +219,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool reset);
         void ClearSearch();
         void SnapSearchResultToSelection(bool snap) noexcept;
         bool SnapSearchResultToSelection() const noexcept;
@@ -279,8 +279,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::RendererWarningArgs> RendererWarning;
         til::typed_event<IInspectable, Control::NoticeEventArgs> RaiseNotice;
         til::typed_event<IInspectable, Control::TransparencyChangedEventArgs> TransparencyChanged;
-        til::typed_event<> ReceivedOutput;
-        til::typed_event<IInspectable, Control::UpdateSearchResultsEventArgs> UpdateSearchResults;
+        til::typed_event<> OutputIdle;
         til::typed_event<IInspectable, Control::ShowWindowArgs> ShowWindowChanged;
         til::typed_event<IInspectable, Control::UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
@@ -295,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         struct SharedState
         {
-            std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
+            std::unique_ptr<til::debounced_func_trailing<>> outputIdle;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 
@@ -376,7 +375,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const int bufferSize);
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
-        void _terminalTextLayoutUpdated();
+        winrt::fire_and_forget _terminalTextLayoutUpdated();
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);

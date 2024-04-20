@@ -239,8 +239,6 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
     // Update scrollbars
     _NotifyScrollEvent();
 
-    NotifyTextLayoutUpdated();
-
     // redraw the screen
     try
     {
@@ -297,8 +295,6 @@ void Terminal::UseMainScreenBuffer()
 
     // Update scrollbars
     _NotifyScrollEvent();
-
-    NotifyTextLayoutUpdated();
 
     // redraw the screen
     _activeBuffer().TriggerRedrawAll();
@@ -372,17 +368,5 @@ void Terminal::NotifyBufferRotation(const int delta)
     if (_scrollOffset != oldScrollOffset || AlwaysNotifyOnBufferRotation())
     {
         _NotifyScrollEvent();
-    }
-}
-
-// Method Description:
-// - Notifies the terminal UI layer that the text layout has changed.
-// - This will be called when new text is added, or when the text is
-//   rearranged in the buffer due to window resize.
-void Terminal::NotifyTextLayoutUpdated()
-{
-    if (_pfnTextLayoutUpdated)
-    {
-        _pfnTextLayoutUpdated();
     }
 }
