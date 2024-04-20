@@ -375,7 +375,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const int bufferSize);
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
-        winrt::fire_and_forget _terminalTextLayoutUpdated();
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
