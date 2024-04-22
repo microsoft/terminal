@@ -836,13 +836,6 @@ CATCH_RETURN();
     return S_OK;
 }
 
-[[nodiscard]] HRESULT GdiEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
-{
-    UNREFERENCED_PARAMETER(rects);
-
-    return S_OK;
-}
-
 #ifdef DBG
 
 void GdiEngine::_CreateDebugWindow()
