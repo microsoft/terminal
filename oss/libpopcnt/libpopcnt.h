@@ -3,7 +3,7 @@
  * population count) in an array as quickly as possible using
  * specialized CPU instructions i.e. POPCNT, AVX2, AVX512, NEON.
  *
- * Copyright (c) 2016 - 2020, Kim Walisch
+ * Copyright (c) 2016 - 2024, Kim Walisch
  * Copyright (c) 2016 - 2018, Wojciech Muła
  *
  * All rights reserved.
@@ -95,7 +95,7 @@
   #define HAVE_AVX512
 #endif
 
-#if defined(X86_OR_X64) && !defined(_M_ARM64EC)
+#if defined(X86_OR_X64)
   /* MSVC compatible compilers (Windows) */
   #if defined(_MSC_VER)
     /* clang-cl (LLVM 10 from 2020) requires /arch:AVX2 or
@@ -149,7 +149,7 @@ extern "C" {
  * It uses 12 arithmetic operations, one of which is a multiply.
  * http://en.wikipedia.org/wiki/Hamming_weight#Efficient_implementation
  */
-static inline uint64_t popcount64(uint64_t x)
+static inline uint64_t popcnt64_bitwise(uint64_t x)
 {
   uint64_t m1 = 0x5555555555555555ll;
   uint64_t m2 = 0x3333333333333333ll;
@@ -222,7 +222,7 @@ static inline uint64_t popcnt64(uint64_t x)
 
 static inline uint64_t popcnt64(uint64_t x)
 {
-  return popcount64(x);
+  return popcnt64_bitwise(x);
 }
 
 #endif
@@ -645,14 +645,14 @@ static inline uint64_t popcnt(const void* data, uint64_t size)
    * We use unaligned memory accesses here to improve performance.
    */
   for (; i < size - size % 8; i += 8)
-    cnt += popcount64(*(const uint64_t*)(ptr + i));
+    cnt += popcnt64_bitwise(*(const uint64_t*)(ptr + i));
 
   if (i < size)
   {
     uint64_t val = 0;
     size_t bytes = (size_t)(size - i);
     memcpy(&val, &ptr[i], bytes);
-    cnt += popcount64(val);
+    cnt += popcnt64_bitwise(val);
   }
 
   return cnt;
@@ -750,7 +750,7 @@ static inline uint64_t popcnt(const void* data, uint64_t size)
     uint64_t val = 0;
     size_t bytes = (size_t)(size - i);
     memcpy(&val, &ptr[i], bytes);
-    cnt += popcount64(val);
+    cnt += popcnt64_bitwise(val);
   }
 
   return cnt;
