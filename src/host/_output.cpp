@@ -30,7 +30,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - <none>
 void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 {
-    DBGOUTPUT(("WriteToScreen\n"));
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // update to screen, if we're not iconic.
     if (!screenInfo.IsActiveScreenBuffer() || WI_IsFlagSet(gci.Flags, CONSOLE_IS_ICONIC))
