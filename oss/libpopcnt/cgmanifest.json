@@ -6,7 +6,7 @@
         "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/kimwalisch/libpopcnt",
-          "commitHash": "c49987e90e56191c399cab881ab87b5daecc9b8e"
+          "commitHash": "2ca88fd36c550326b3ae2471ff05bc43a95379a1"
         }
       }
     }
