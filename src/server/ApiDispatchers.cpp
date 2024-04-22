@@ -35,6 +35,15 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     return p ? p->dwThreadId : 0;
 }
 
+template<typename T>
+constexpr T saturate(auto val)
+{
+    constexpr auto min = std::numeric_limits<T>::min();
+    constexpr auto max = std::numeric_limits<T>::max();
+#pragma warning(suppress : 4267) // '...': conversion from '...' to 'T', possible loss of data
+    return val < min ? min : (val > max ? max : val);
+}
+
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG* const m,
                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
@@ -93,7 +102,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     TraceConsoleAPICallWithOrigin(
         "SetConsoleMode",
         TraceLoggingBool(pObjectHandle->IsInputHandle(), "InputHandle"),
-        TraceLoggingHexULong(a->Mode, "Mode"));
+        TraceLoggingHexUInt32(a->Mode, "Mode"));
 
     if (pObjectHandle->IsInputHandle())
     {
@@ -121,7 +130,13 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(*pObj, a->ReadyEvents);
+    RETURN_IF_FAILED_EXPECTED(m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(*pObj, a->ReadyEvents));
+
+    TraceConsoleAPICallWithOrigin(
+        "GetNumberOfConsoleInputEvents",
+        TraceLoggingHexUInt32(a->ReadyEvents, "ReadyEvents"));
+
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG* const m,
@@ -150,6 +165,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     // Make sure we have a valid input buffer.
     const auto pHandleData = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pHandleData);
+
     InputBuffer* pInputBuffer;
     RETURN_IF_FAILED(pHandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer));
 
@@ -160,6 +176,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     const auto rgRecords = reinterpret_cast<INPUT_RECORD*>(pvBuffer);
     const auto cRecords = cbBufferSize / sizeof(INPUT_RECORD);
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleInput",
+        TraceLoggingHexUInt16(a->Flags, "Flags"),
+        TraceLoggingBoolean(a->Unicode, "Unicode"),
+        TraceLoggingUIntPtr(cRecords, "Records"));
 
     const auto fIsPeek = WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
     const auto fIsWaitAllowed = WI_IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
@@ -284,6 +306,14 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         }
     }
     CATCH_RETURN();
+
+    TraceConsoleAPICallWithOrigin(
+        "ReadConsole",
+        TraceLoggingBoolean(a->Unicode, "Unicode"),
+        TraceLoggingBoolean(a->ProcessControlZ, "ProcessControlZ"),
+        TraceLoggingCountedWideString(exeView.data(), saturate<ULONG>(exeView.size()), "ExeName"),
+        TraceLoggingCountedWideString(initialData.data(), saturate<ULONG>(initialData.size()), "InitialChars"),
+        TraceLoggingHexUInt32(a->CtrlWakeupMask, "CtrlWakeupMask"));
 
     // ReadConsole needs this to get details associated with an attached process (such as the command history list, telemetry metadata).
     const auto hConsoleClient = (HANDLE)m->GetProcessHandle();
@@ -440,7 +470,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     }
 
     // Capture length of initial fill.
-    size_t fill = a->Length;
+    const auto fill = a->Length;
 
     // Set written length to 0 in case we early return.
     a->Length = 0;
@@ -457,6 +487,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     {
     case CONSOLE_ATTRIBUTE:
     {
+        TraceConsoleAPICallWithOrigin(
+            "FillConsoleOutputAttribute",
+            TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
+            TraceLoggingUInt32(fill, "Length"),
+            TraceLoggingHexUInt16(a->Element, "Attribute"));
+
         hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo,
                                                               a->Element,
                                                               fill,
@@ -467,6 +503,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
+        TraceConsoleAPICallWithOrigin(
+            "FillConsoleOutputCharacterW",
+            TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
+            TraceLoggingUInt32(fill, "Length"),
+            TraceLoggingWChar(a->Element, "Character"));
+
         // GH#3126 if the client application is powershell.exe, then we might
         // need to enable a compatibility shim.
         hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo,
@@ -479,6 +521,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     }
     case CONSOLE_ASCII:
     {
+        TraceConsoleAPICallWithOrigin(
+            "FillConsoleOutputCharacterA",
+            TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
+            TraceLoggingUInt32(fill, "Length"),
+            TraceLoggingChar(static_cast<char>(a->Element), "Character"));
+
         hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                static_cast<char>(a->Element),
                                                                fill,
@@ -498,7 +546,8 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MSG* const m,
                                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleActiveScreenBuffer);
+    TraceConsoleAPICallWithOrigin("SetConsoleActiveScreenBuffer");
+
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
@@ -512,7 +561,8 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG* const m,
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FlushConsoleInputBuffer);
+    TraceConsoleAPICallWithOrigin("ServerFlushConsoleInputBuffer");
+
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
@@ -527,6 +577,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.SetConsoleCP;
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleCP",
+        TraceLoggingBool(!a->Output, "InputHandle"),
+        TraceLoggingHexUInt32(a->CodePage, "CodePage"));
 
     if (a->Output)
     {
@@ -555,6 +610,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     auto visible = false;
     m->_pApiRoutines->GetConsoleCursorInfoImpl(*pObj, a->CursorSize, visible);
     a->Visible = !!visible;
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleCursorInfo",
+        TraceLoggingUInt32(a->CursorSize, "CursorSize"),
+        TraceLoggingBoolean(a->Visible, "Visible"));
+
     return S_OK;
 }
 
@@ -563,6 +624,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorInfo);
     const auto a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleCursorInfo",
+        TraceLoggingUInt32(a->CursorSize, "CursorSize"),
+        TraceLoggingBoolean(a->Visible, "Visible"));
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
@@ -603,6 +669,18 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     a->Attributes = ex.wAttributes;
     a->PopupAttributes = ex.wPopupAttributes;
 
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleScreenBufferInfo",
+        TraceLoggingConsoleCoord(a->Size, "Size"),
+        TraceLoggingConsoleCoord(a->CursorPosition, "CursorPosition"),
+        TraceLoggingConsoleCoord(a->ScrollPosition, "ScrollPosition"),
+        TraceLoggingHexUInt16(a->Attributes, "Attributes"),
+        TraceLoggingConsoleCoord(a->CurrentWindowSize, "CurrentWindowSize"),
+        TraceLoggingConsoleCoord(a->MaximumWindowSize, "MaximumWindowSize"),
+        TraceLoggingHexUInt16(a->PopupAttributes, "PopupAttributes"),
+        TraceLoggingBoolean(a->FullscreenSupported, "FullscreenSupported"),
+        TraceLoggingHexULongFixedArray(&a->ColorTable[0], 16, "ColorTable"));
+
     return S_OK;
 }
 
@@ -611,6 +689,18 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferInfoEx);
     const auto a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleScreenBufferInfo",
+        TraceLoggingConsoleCoord(a->Size, "Size"),
+        TraceLoggingConsoleCoord(a->CursorPosition, "CursorPosition"),
+        TraceLoggingConsoleCoord(a->ScrollPosition, "ScrollPosition"),
+        TraceLoggingHexUInt16(a->Attributes, "Attributes"),
+        TraceLoggingConsoleCoord(a->CurrentWindowSize, "CurrentWindowSize"),
+        TraceLoggingConsoleCoord(a->MaximumWindowSize, "MaximumWindowSize"),
+        TraceLoggingHexUInt16(a->PopupAttributes, "PopupAttributes"),
+        TraceLoggingBoolean(a->FullscreenSupported, "FullscreenSupported"),
+        TraceLoggingHexULongFixedArray(&a->ColorTable[0], 16, "ColorTable"));
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
@@ -634,12 +724,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     ex.wAttributes = a->Attributes;
     ex.wPopupAttributes = a->PopupAttributes;
 
-    TraceConsoleAPICallWithOrigin(
-        "SetConsoleScreenBufferInfoEx",
-        TraceLoggingConsoleCoord(a->Size, "BufferSize"),
-        TraceLoggingConsoleCoord(a->CurrentWindowSize, "WindowSize"),
-        TraceLoggingConsoleCoord(a->MaximumWindowSize, "MaxWindowSize"));
-
     return m->_pApiRoutines->SetConsoleScreenBufferInfoExImpl(*pObj, ex);
 }
 
@@ -649,15 +733,15 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferSize);
     const auto a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
 
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleScreenBufferSize",
+        TraceLoggingConsoleCoord(a->Size, "BufferSize"));
+
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
-
-    TraceConsoleAPICallWithOrigin(
-        "SetConsoleScreenBufferSize",
-        TraceLoggingConsoleCoord(a->Size, "BufferSize"));
 
     return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, til::wrap_coord_size(a->Size));
 }
@@ -667,6 +751,10 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorPosition);
     const auto a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleCursorPosition",
+        TraceLoggingConsoleCoord(a->CursorPosition, "CursorPosition"));
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
@@ -691,7 +779,13 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     auto size = til::wrap_coord_size(a->Size);
     m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, size);
-    return til::unwrap_coord_size_hr(size, a->Size);
+    RETURN_IF_FAILED_EXPECTED(til::unwrap_coord_size_hr(size, a->Size));
+
+    TraceConsoleAPICallWithOrigin(
+        "GetLargestConsoleWindowSize",
+        TraceLoggingConsoleCoord(a->Size, "Size"));
+
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG* const m,
@@ -699,6 +793,15 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 {
     const auto a = &m->u.consoleMsgL2.ScrollConsoleScreenBuffer;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, a->Unicode);
+
+    TraceConsoleAPICallWithOrigin(
+        "ScrollConsoleScreenBuffer",
+        TraceLoggingConsoleSmallRect(a->ScrollRectangle, "ScrollRectangle"),
+        TraceLoggingConsoleSmallRect(a->ClipRectangle, "ClipRectangle"),
+        TraceLoggingBoolean(a->Clip, "Clip"),
+        TraceLoggingBoolean(a->Unicode, "Unicode"),
+        TraceLoggingConsoleCoord(a->DestinationOrigin, "DestinationOrigin"),
+        TraceLoggingConsoleCharInfo(a->Fill, "Fill"));
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
@@ -735,15 +838,15 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     const auto a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleTextAttribute",
+        TraceLoggingHexUInt16(a->Attributes, "Attributes"));
+
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
-
-    TraceConsoleAPICallWithOrigin(
-        "SetConsoleTextAttribute",
-        TraceLoggingHexUInt16(a->Attributes, "Attributes"));
 
     RETURN_HR(m->_pApiRoutines->SetConsoleTextAttributeImpl(*pObj, a->Attributes));
 }
@@ -754,19 +857,16 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleWindowInfo);
     const auto a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
 
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleWindowInfo",
+        TraceLoggingBool(a->Absolute, "IsWindowRectAbsolute"),
+        TraceLoggingConsoleSmallRect(a->Window, "Window"));
+
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
-
-    TraceConsoleAPICallWithOrigin(
-        "SetConsoleWindowInfo",
-        TraceLoggingBool(a->Absolute, "IsWindowRectAbsolute"),
-        TraceLoggingInt32(a->Window.Left, "WindowRectLeft"),
-        TraceLoggingInt32(a->Window.Right, "WindowRectRight"),
-        TraceLoggingInt32(a->Window.Top, "WindowRectTop"),
-        TraceLoggingInt32(a->Window.Bottom, "WindowRectBottom"));
 
     return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, til::wrap_small_rect(a->Window));
 }
@@ -810,6 +910,10 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     case CONSOLE_ATTRIBUTE:
     {
         const std::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
+        TraceConsoleAPICallWithOrigin(
+            "ReadConsoleOutputAttribute",
+            TraceLoggingConsoleCoord(a->ReadCoord, "ReadCoord"),
+            TraceLoggingUIntPtr(buffer.size(), "Records"));
         RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
@@ -817,12 +921,20 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     case CONSOLE_FALSE_UNICODE:
     {
         const std::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        TraceConsoleAPICallWithOrigin(
+            "ReadConsoleOutputCharacterW",
+            TraceLoggingConsoleCoord(a->ReadCoord, "ReadCoord"),
+            TraceLoggingUIntPtr(buffer.size(), "Records"));
         RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_ASCII:
     {
         const std::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        TraceConsoleAPICallWithOrigin(
+            "ReadConsoleOutputCharacterA",
+            TraceLoggingConsoleCoord(a->ReadCoord, "ReadCoord"),
+            TraceLoggingUIntPtr(buffer.size(), "Records"));
         RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
@@ -861,6 +973,13 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     size_t written;
     std::span<const INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
+
+    TraceConsoleAPICallWithOrigin(
+        "WriteConsoleInput",
+        TraceLoggingBoolean(a->Unicode, "Unicode"),
+        TraceLoggingBoolean(a->Append, "Append"),
+        TraceLoggingUIntPtr(buffer.size(), "Records"));
+
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputAImpl(*pInputBuffer, buffer, written, !!a->Append));
@@ -906,6 +1025,13 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     RETURN_HR_IF(E_INVALIDARG, cbSize < regionBytes); // If given fewer bytes on input than we need to do this write, it's invalid.
 
     const std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
+
+    TraceConsoleAPICallWithOrigin(
+        "WriteConsoleOutput",
+        TraceLoggingBoolean(a->Unicode, "Unicode"),
+        TraceLoggingConsoleSmallRect(a->CharRegion, "CharRegion"),
+        TraceLoggingUIntPtr(buffer.size(), "Records"));
+
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputAImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
@@ -963,7 +1089,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         TraceConsoleAPICallWithOrigin(
             "WriteConsoleOutputCharacterA",
             TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
-            TraceLoggingUInt32(a->NumRecords, "NumRecords"));
+            TraceLoggingCountedString(text.data(), saturate<ULONG>(text.size()), "Buffer"));
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                 text,
@@ -980,7 +1106,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         TraceConsoleAPICallWithOrigin(
             "WriteConsoleOutputCharacterW",
             TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
-            TraceLoggingUInt32(a->NumRecords, "NumRecords"));
+            TraceLoggingCountedWideString(text.data(), saturate<ULONG>(text.size()), "Buffer"));
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                 text,
@@ -996,7 +1122,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         TraceConsoleAPICallWithOrigin(
             "WriteConsoleOutputAttribute",
             TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
-            TraceLoggingUInt32(a->NumRecords, "NumRecords"));
+            TraceLoggingHexUInt16Array(text.data(), saturate<UINT16>(text.size()), "Buffer"));
 
         hr = m->_pApiRoutines->WriteConsoleOutputAttributeImpl(*pScreenInfo,
                                                                text,
@@ -1047,6 +1173,13 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     RETURN_HR_IF(E_INVALIDARG, regionArea > 0 && ((regionArea > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < regionBytes)));
 
     std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
+
+    TraceConsoleAPICallWithOrigin(
+        "ReadConsoleOutput",
+        TraceLoggingBoolean(a->Unicode, "Unicode"),
+        TraceLoggingConsoleSmallRect(a->CharRegion, "CharRegion"),
+        TraceLoggingUIntPtr(buffer.size(), "Records"));
+
     auto finalRegion = Microsoft::Console::Types::Viewport::Empty(); // the actual region read out of the buffer
     if (!a->Unicode)
     {
@@ -1099,6 +1232,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
             LOG_IF_FAILED(m->_pApiRoutines->GetConsoleTitleWImpl(buffer, written, needed));
         }
 
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleTitleW",
+            TraceLoggingBoolean(a->Original, "Original"),
+            TraceLoggingCountedWideString(buffer.data(), saturate<ULONG>(written), "Buffer"));
+
         // We must return the needed length of the title string in the TitleLength.
         LOG_IF_FAILED(SizeTToULong(needed, &a->TitleLength));
 
@@ -1118,6 +1256,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         {
             hr = m->_pApiRoutines->GetConsoleTitleAImpl(buffer, written, needed);
         }
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleTitleA",
+            TraceLoggingBoolean(a->Original, "Original"),
+            TraceLoggingCountedString(buffer.data(), saturate<ULONG>(written), "Buffer"));
 
         // We must return the needed length of the title string in the TitleLength.
         LOG_IF_FAILED(SizeTToULong(needed, &a->TitleLength));
@@ -1143,11 +1286,21 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     if (a->Unicode)
     {
         const std::wstring_view title(reinterpret_cast<wchar_t*>(pvBuffer), cbOriginalLength / sizeof(wchar_t));
+
+        TraceConsoleAPICallWithOrigin(
+            "SetConsoleTitleW",
+            TraceLoggingCountedWideString(title.data(), saturate<ULONG>(title.size()), "Buffer"));
+
         return m->_pApiRoutines->SetConsoleTitleWImpl(title);
     }
     else
     {
         const std::string_view title(reinterpret_cast<char*>(pvBuffer), cbOriginalLength);
+
+        TraceConsoleAPICallWithOrigin(
+            "SetConsoleTitleA",
+            TraceLoggingCountedString(title.data(), saturate<ULONG>(title.size()), "Buffer"));
+
         return m->_pApiRoutines->SetConsoleTitleAImpl(title);
     }
 }
@@ -1159,6 +1312,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     const auto a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
 
     m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(a->NumButtons);
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleMouseInfo",
+        TraceLoggingUInt32(a->NumButtons, "NumButtons"));
+
     return S_OK;
 }
 
@@ -1176,7 +1334,14 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     auto size = til::wrap_coord_size(a->FontSize);
     RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, size));
-    return til::unwrap_coord_size_hr(size, a->FontSize);
+    RETURN_IF_FAILED_EXPECTED(til::unwrap_coord_size_hr(size, a->FontSize));
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleFontSize",
+        TraceLoggingUInt32(a->FontIndex, "FontIndex"),
+        TraceLoggingConsoleCoord(a->FontSize, "FontSize"));
+
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m,
@@ -1202,6 +1367,15 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     a->FontSize = FontInfo.dwFontSize;
     a->FontWeight = FontInfo.FontWeight;
 
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleFontSize",
+        TraceLoggingBoolean(a->MaximumWindow, "MaximumWindow"),
+        TraceLoggingUInt32(a->FontIndex, "FontIndex"),
+        TraceLoggingConsoleCoord(a->FontSize, "FontSize"),
+        TraceLoggingUInt32(a->FontFamily, "FontFamily"),
+        TraceLoggingUInt32(a->FontWeight, "FontWeight"),
+        TraceLoggingWideString(&a->FaceName[0], "FaceName"));
+
     return S_OK;
 }
 
@@ -1211,6 +1385,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleDisplayMode);
     const auto a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
 
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleDisplayMode",
+        TraceLoggingHexUInt32(a->dwFlags, "dwFlags"),
+        TraceLoggingConsoleCoord(a->ScreenBufferDimensions, "ScreenBufferDimensions"));
+
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
@@ -1219,7 +1398,9 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     auto size = til::wrap_coord_size(a->ScreenBufferDimensions);
     RETURN_IF_FAILED(m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, size));
-    return til::unwrap_coord_size_hr(size, a->ScreenBufferDimensions);
+    RETURN_IF_FAILED_EXPECTED(til::unwrap_coord_size_hr(size, a->ScreenBufferDimensions));
+
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m,
@@ -1231,6 +1412,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     // Historically this has never checked the handles. It just returns global state.
 
     m->_pApiRoutines->GetConsoleDisplayModeImpl(a->ModeFlags);
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleDisplayMode",
+        TraceLoggingHexUInt32(a->ModeFlags, "ModeFlags"));
+
     return S_OK;
 }
 
@@ -1270,6 +1456,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
         const std::wstring_view inputTarget(reinterpret_cast<wchar_t*>(pvInputTarget), cbInputTarget / sizeof(wchar_t));
 
+        TraceConsoleAPICallWithOrigin(
+            "AddConsoleAliasW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedWideString(inputSource.data(), saturate<ULONG>(inputSource.size()), "Source"),
+            TraceLoggingCountedWideString(inputTarget.data(), saturate<ULONG>(inputTarget.size()), "Target"));
+
         return m->_pApiRoutines->AddConsoleAliasWImpl(inputSource, inputTarget, inputExeName);
     }
     else
@@ -1277,6 +1469,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         const std::string_view inputExeName(pvInputExeName, cbInputExeName);
         const std::string_view inputSource(pvInputSource, cbInputSource);
         const std::string_view inputTarget(pvInputTarget, cbInputTarget);
+
+        TraceConsoleAPICallWithOrigin(
+            "AddConsoleAliasA",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedString(inputSource.data(), saturate<ULONG>(inputSource.size()), "Source"),
+            TraceLoggingCountedString(inputTarget.data(), saturate<ULONG>(inputTarget.size()), "Target"));
 
         return m->_pApiRoutines->AddConsoleAliasAImpl(inputSource, inputTarget, inputExeName);
     }
@@ -1324,6 +1522,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
         hr = m->_pApiRoutines->GetConsoleAliasWImpl(inputSource, outputBuffer, cchWritten, inputExeName);
 
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedWideString(inputSource.data(), saturate<ULONG>(inputSource.size()), "Source"),
+            TraceLoggingCountedWideString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
+
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
@@ -1335,6 +1539,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasAImpl(inputSource, outputBuffer, cchWritten, inputExeName);
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasW",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedString(inputSource.data(), saturate<ULONG>(inputSource.size()), "Source"),
+            TraceLoggingCountedString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
 
         cbWritten = cchWritten;
     }
@@ -1373,6 +1583,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         size_t cchAliasesLength;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesLengthWImpl(inputExeName, cchAliasesLength));
 
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasesLengthW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingUIntPtr(cchAliasesLength, "Length"));
+
         RETURN_IF_FAILED(SizeTMult(cchAliasesLength, sizeof(wchar_t), &cbAliasesLength));
     }
     else
@@ -1380,6 +1595,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
         size_t cchAliasesLength;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesLengthAImpl(inputExeName, cchAliasesLength));
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasesLengthA",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingUIntPtr(cchAliasesLength, "Length"));
 
         cbAliasesLength = cchAliasesLength;
     }
@@ -1400,12 +1620,22 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     {
         size_t cchAliasExesLength;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthWImpl(cchAliasExesLength));
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasExesLengthW",
+            TraceLoggingUIntPtr(cchAliasExesLength, "Length"));
+
         cbAliasExesLength = cchAliasExesLength * sizeof(wchar_t);
     }
     else
     {
         size_t cchAliasExesLength;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthAImpl(cchAliasExesLength));
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasExesLengthA",
+            TraceLoggingUIntPtr(cchAliasExesLength, "Length"));
+
         cbAliasExesLength = cchAliasExesLength;
     }
 
@@ -1437,6 +1667,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl(inputExeName, outputBuffer, cchWritten));
 
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasesW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedWideString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
+
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
@@ -1447,6 +1682,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl(inputExeName, outputBuffer, cchWritten));
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasesA",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
 
         cbWritten = cchWritten;
     }
@@ -1475,6 +1715,10 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl(outputBuffer, cchWritten));
 
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasExesW",
+            TraceLoggingCountedWideString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
+
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
@@ -1482,6 +1726,10 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(outputBuffer, cchWritten));
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleAliasExesA",
+            TraceLoggingCountedString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
 
         cbWritten = cchWritten;
     }
@@ -1507,11 +1755,19 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
 
+        TraceConsoleAPICallWithOrigin(
+            "ExpungeConsoleCommandHistoryW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"));
+
         return m->_pApiRoutines->ExpungeConsoleCommandHistoryWImpl(inputExeName);
     }
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
+
+        TraceConsoleAPICallWithOrigin(
+            "ExpungeConsoleCommandHistoryA",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"));
 
         return m->_pApiRoutines->ExpungeConsoleCommandHistoryAImpl(inputExeName);
     }
@@ -1521,6 +1777,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.SetConsoleNumberOfCommandsW;
+
     PVOID pvExeName;
     ULONG cbExeNameLength;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvExeName, &cbExeNameLength));
@@ -1530,11 +1787,21 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
 
+        TraceConsoleAPICallWithOrigin(
+            "SetConsoleNumberOfCommandsW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingUInt32(a->NumCommands, "NumCommands"));
+
         return m->_pApiRoutines->SetConsoleNumberOfCommandsWImpl(inputExeName, NumberOfCommands);
     }
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
+
+        TraceConsoleAPICallWithOrigin(
+            "SetConsoleNumberOfCommandsA",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingUInt32(a->NumCommands, "NumCommands"));
 
         return m->_pApiRoutines->SetConsoleNumberOfCommandsAImpl(inputExeName, NumberOfCommands);
     }
@@ -1557,6 +1824,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryLengthWImpl(inputExeName, cchCommandHistoryLength));
 
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleCommandHistoryLengthW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingUIntPtr(cchCommandHistoryLength, "CommandHistoryLength"));
+
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchCommandHistoryLength, sizeof(wchar_t), &cbCommandHistoryLength));
     }
@@ -1566,6 +1838,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryLengthAImpl(inputExeName, cchCommandHistoryLength));
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleCommandHistoryLengthA",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingUIntPtr(cchCommandHistoryLength, "CommandHistoryLength"));
 
         cbCommandHistoryLength = cchCommandHistoryLength;
     }
@@ -1597,6 +1874,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryWImpl(inputExeName, outputBuffer, cchWritten));
 
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleCommandHistoryW",
+            TraceLoggingCountedWideString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedWideString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
+
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
@@ -1606,6 +1888,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
         std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryAImpl(inputExeName, outputBuffer, cchWritten));
+
+        TraceConsoleAPICallWithOrigin(
+            "GetConsoleCommandHistory",
+            TraceLoggingCountedString(inputExeName.data(), saturate<ULONG>(inputExeName.size()), "ExeName"),
+            TraceLoggingCountedString(outputBuffer.data(), saturate<ULONG>(cchWritten), "Output"));
 
         cbWritten = cchWritten;
     }
@@ -1625,6 +1912,11 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     const auto a = &m->u.consoleMsgL3.GetConsoleWindow;
 
     m->_pApiRoutines->GetConsoleWindowImpl(a->hwnd);
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleWindow",
+        TraceLoggingPointer(a->hwnd, "hwnd"));
+
     return S_OK;
 }
 
@@ -1635,6 +1927,14 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     const auto a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
 
     m->_pApiRoutines->GetConsoleSelectionInfoImpl(a->SelectionInfo);
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleSelectionInfo",
+        TraceLoggingStruct(3, "SelectionInfo"),
+        TraceLoggingUInt32(a->SelectionInfo.dwFlags, "dwFlags"),
+        TraceLoggingConsoleCoord(a->SelectionInfo.dwSelectionAnchor, "dwSelectionAnchor"),
+        TraceLoggingConsoleSmallRect(a->SelectionInfo.srSelection, "srSelection"));
+
     return S_OK;
 }
 
@@ -1653,6 +1953,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     a->HistoryBufferSize = info.HistoryBufferSize;
     a->NumberOfHistoryBuffers = info.NumberOfHistoryBuffers;
 
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleHistory",
+        TraceLoggingUInt32(a->HistoryBufferSize, "HistoryBufferSize"),
+        TraceLoggingUInt32(a->NumberOfHistoryBuffers, "NumberOfHistoryBuffers"),
+        TraceLoggingUInt32(a->dwFlags, "dwFlags"));
+
     return S_OK;
 }
 
@@ -1661,6 +1967,12 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 {
     const auto a = &m->u.consoleMsgL3.SetConsoleHistory;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleHistoryInfo);
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleHistory",
+        TraceLoggingUInt32(a->HistoryBufferSize, "HistoryBufferSize"),
+        TraceLoggingUInt32(a->NumberOfHistoryBuffers, "NumberOfHistoryBuffers"),
+        TraceLoggingUInt32(a->dwFlags, "dwFlags"));
 
     CONSOLE_HISTORY_INFO info;
     info.cbSize = sizeof(info);
@@ -1676,6 +1988,15 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetCurrentConsoleFontEx);
     const auto a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
+
+    TraceConsoleAPICallWithOrigin(
+        "SetCurrentConsoleFont",
+        TraceLoggingBoolean(a->MaximumWindow, "MaximumWindow"),
+        TraceLoggingUInt32(a->FontIndex, "FontIndex"),
+        TraceLoggingConsoleCoord(a->FontSize, "FontSize"),
+        TraceLoggingUInt32(a->FontFamily, "FontFamily"),
+        TraceLoggingUInt32(a->FontWeight, "FontWeight"),
+        TraceLoggingWideString(&a->FaceName[0], "FaceName"));
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
