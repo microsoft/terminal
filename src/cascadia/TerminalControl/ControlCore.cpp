@@ -677,7 +677,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::AdjustOpacity(const double adjustment)
+    void ControlCore::AdjustOpacity(const float adjustment)
     {
         if (adjustment == 0)
         {
@@ -694,11 +694,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - focused (default == true): Whether the window is focused or unfocused.
     // Return Value:
     // - <none>
-    void ControlCore::_setOpacity(const double opacity, bool focused)
+    void ControlCore::_setOpacity(const float opacity, bool focused)
     {
-        const auto newOpacity = std::clamp(opacity,
-                                           0.0,
-                                           1.0);
+        const auto newOpacity = std::clamp(opacity, 0.0f, 1.0f);
 
         if (newOpacity == Opacity())
         {
@@ -713,7 +711,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
+        _runtimeUseAcrylic = newOpacity < 1.0f && _settings->UseAcrylic();
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -881,7 +879,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Updates the appearance of the current terminal.
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
-    void ControlCore::ApplyAppearance(const bool& focused)
+    void ControlCore::ApplyAppearance(const bool focused)
     {
         const auto lock = _terminal->LockForWriting();
         const auto& newAppearance{ focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance() };
@@ -900,10 +898,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
             // the terminal should ignore the unfocused opacity from settings.
             // The Focused Opacity from settings should be ignored if overridden at runtime.
-            bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
-            double newOpacity = useFocusedRuntimeOpacity ?
-                                    FocusedOpacity() :
-                                    newAppearance->Opacity();
+            const auto useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
+            const auto newOpacity = useFocusedRuntimeOpacity ? FocusedOpacity() : newAppearance->Opacity();
             _setOpacity(newOpacity, focused);
 
             // No need to update Acrylic if UnfocusedAcrylic is disabled
@@ -1422,8 +1418,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto fontSize = _actualFont.GetSize();
         return {
-            ::base::saturated_cast<float>(fontSize.width),
-            ::base::saturated_cast<float>(fontSize.height)
+            static_cast<float>(fontSize.width),
+            static_cast<float>(fontSize.height)
         };
     }
 
@@ -2350,7 +2346,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings->HasUnfocusedAppearance();
     }
 
-    void ControlCore::AdjustOpacity(const double opacityAdjust, const bool relative)
+    void ControlCore::AdjustOpacity(const float opacityAdjust, const bool relative)
     {
         if (relative)
         {

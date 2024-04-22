@@ -630,12 +630,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        SplitPaneArgs(SplitType splitMode, SplitDirection direction, double size, const Model::INewContentArgs& terminalArgs) :
+        SplitPaneArgs(SplitType splitMode, SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitMode{ splitMode },
             _SplitDirection{ direction },
             _SplitSize{ size },
             _ContentArgs{ terminalArgs } {};
-        SplitPaneArgs(SplitDirection direction, double size, const Model::INewContentArgs& terminalArgs) :
+        SplitPaneArgs(SplitDirection direction, float size, const Model::INewContentArgs& terminalArgs) :
             _SplitDirection{ direction },
             _SplitSize{ size },
             _ContentArgs{ terminalArgs } {};
@@ -648,7 +648,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Model::SplitDirection, SplitDirection, SplitDirection::Automatic);
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
         ACTION_ARG(SplitType, SplitMode, SplitType::Manual);
-        ACTION_ARG(double, SplitSize, .5);
+        ACTION_ARG(float, SplitSize, .5);
 
         static constexpr std::string_view SplitKey{ "split" };
         static constexpr std::string_view SplitModeKey{ "splitMode" };
