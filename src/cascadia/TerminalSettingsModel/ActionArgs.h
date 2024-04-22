@@ -648,7 +648,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Model::SplitDirection, SplitDirection, SplitDirection::Automatic);
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
         ACTION_ARG(SplitType, SplitMode, SplitType::Manual);
-        ACTION_ARG(float, SplitSize, .5);
+        ACTION_ARG(float, SplitSize, 0.5f);
 
         static constexpr std::string_view SplitKey{ "split" };
         static constexpr std::string_view SplitModeKey{ "splitMode" };
