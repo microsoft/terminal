@@ -35,13 +35,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Open(std::function<void()> callback);
         void Close();
 
+        winrt::hstring Text();
+        bool GoForward();
+        bool CaseSensitive();
         void SetFocusOnTextbox();
         void PopulateTextbox(const winrt::hstring& text);
         bool ContainsFocus();
         void SetStatus(int32_t totalMatches, int32_t currentMatch);
         void ClearStatus();
-        bool NavigationEnabled();
-        void NavigationEnabled(bool enabled);
 
         void GoBackwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
         void GoForwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
@@ -77,8 +78,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static double _TextWidth(winrt::hstring text, double fontSize);
         double _GetStatusMaxWidth();
 
-        bool _GoForward();
-        bool _CaseSensitive();
         void _KeyDownHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void _CharacterHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs& e);
     };

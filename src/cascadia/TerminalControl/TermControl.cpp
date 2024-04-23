@@ -204,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.TransparencyChanged = _core.TransparencyChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreTransparencyChanged });
         _revokers.RaiseNotice = _core.RaiseNotice(winrt::auto_revoke, { get_weak(), &TermControl::_coreRaisedNotice });
         _revokers.HoveredHyperlinkChanged = _core.HoveredHyperlinkChanged(winrt::auto_revoke, { get_weak(), &TermControl::_hoveredHyperlinkChanged });
-        _revokers.UpdateSearchResults = _core.UpdateSearchResults(winrt::auto_revoke, { get_weak(), &TermControl::_coreUpdateSearchResults });
+        _revokers.OutputIdle = _core.OutputIdle(winrt::auto_revoke, { get_weak(), &TermControl::_coreOutputIdle });
         _revokers.UpdateSelectionMarkers = _core.UpdateSelectionMarkers(winrt::auto_revoke, { get_weak(), &TermControl::_updateSelectionMarkers });
         _revokers.coreOpenHyperlink = _core.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
@@ -534,13 +534,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
-                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
                 }
 
-                _searchBox->Open([searchBox]() { searchBox.SetFocusOnTextbox(); });
+                _searchBox->Open([weakThis = get_weak()]() {
+                    if (const auto self = weakThis.get(); !self->_IsClosing())
+                    {
+                        self->_searchBox->SetFocusOnTextbox();
+                        self->_refreshSearch();
+                    }
+                });
             }
         }
     }
@@ -551,13 +556,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        if (!_searchBox)
+        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
         {
             CreateSearchBoxControl();
         }
         else
         {
-            _core.Search(_searchBox->TextBox().Text(), goForward, false);
+            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), false));
         }
     }
 
@@ -588,7 +593,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                               const bool goForward,
                               const bool caseSensitive)
     {
-        _core.Search(text, goForward, caseSensitive);
+        _handleSearchResults(_core.Search(text, goForward, caseSensitive, false));
     }
 
     // Method Description:
@@ -605,7 +610,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
         {
-            _core.Search(text, goForward, caseSensitive);
+            _handleSearchResults(_core.Search(text, goForward, caseSensitive, false));
         }
     }
 
@@ -621,6 +626,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              const RoutedEventArgs& /*args*/)
     {
         _searchBox->Close();
+        _core.ClearSearch();
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
@@ -3537,67 +3543,61 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.SelectedText(trimTrailingWhitespace);
     }
 
-    // Method Description:
-    // - Triggers an update on scrollbar to redraw search scroll marks.
-    // - Called when the search results have changed, and the scroll marks'
-    //   positions need to be updated.
-    void TermControl::_UpdateSearchScrollMarks()
+    void TermControl::_refreshSearch()
     {
-        // Manually send a scrollbar update, on the UI thread. We're already
-        // UI-driven, so that's okay. We're not really changing the scrollbar,
-        // but we do want to update the position of any search marks. The Core
-        // might send a scrollbar update event too, but if the first search hit
-        // is in the visible viewport, then the pips won't display until the
-        // user first scrolls.
-        auto scrollBar = ScrollBar();
-        ScrollBarUpdate update{
-            .newValue = scrollBar.Value(),
-            .newMaximum = scrollBar.Maximum(),
-            .newMinimum = scrollBar.Minimum(),
-            .newViewportSize = scrollBar.ViewportSize(),
-        };
-        _throttledUpdateScrollbar(update);
+        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
+        {
+            return;
+        }
+
+        const auto text = _searchBox->Text();
+        if (text.empty())
+        {
+            return;
+        }
+
+        const auto goForward = _searchBox->GoForward();
+        const auto caseSensitive = _searchBox->CaseSensitive();
+        _handleSearchResults(_core.Search(text, goForward, caseSensitive, true));
     }
 
-    // Method Description:
-    // - Called when the core raises a UpdateSearchResults event. That's done in response to:
-    //   - starting a search query with ControlCore::Search.
-    //   - clearing search results due to change in buffer content.
-    // - The args will tell us if there were or were not any results for that
-    //   particular search. We'll use that to control what to announce to
-    //   Narrator. When we have more elaborate search information to report, we
-    //   may want to report that here. (see GH #3920)
-    // Arguments:
-    // - args: contains information about the search state and results that were
-    //         or were not found.
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget TermControl::_coreUpdateSearchResults(const IInspectable& /*sender*/, Control::UpdateSearchResultsEventArgs args)
+    void TermControl::_handleSearchResults(SearchResults results)
     {
-        co_await wil::resume_foreground(Dispatcher());
-        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
+        if (!_searchBox)
         {
-            automationPeer.RaiseNotificationEvent(
-                Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                args.FoundMatch() ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
-                L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
+            return;
         }
 
-        _UpdateSearchScrollMarks();
+        _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch);
 
-        if (_searchBox)
+        if (results.SearchInvalidated)
         {
-            _searchBox->NavigationEnabled(true);
-            if (args.State() == Control::SearchState::Inactive)
+            if (_showMarksInScrollbar)
             {
-                _searchBox->ClearStatus();
+                const auto scrollBar = ScrollBar();
+                ScrollBarUpdate update{
+                    .newValue = scrollBar.Value(),
+                    .newMaximum = scrollBar.Maximum(),
+                    .newMinimum = scrollBar.Minimum(),
+                    .newViewportSize = scrollBar.ViewportSize(),
+                };
+                _updateScrollBar->Run(update);
             }
-            else
+
+            if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
             {
-                _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
+                automationPeer.RaiseNotificationEvent(
+                    AutomationNotificationKind::ActionCompleted,
+                    AutomationNotificationProcessing::ImportantMostRecent,
+                    results.TotalMatches > 0 ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
+                    L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
             }
         }
+    }
+
+    void TermControl::_coreOutputIdle(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        _refreshSearch();
     }
 
     void TermControl::OwningHwnd(uint64_t owner)

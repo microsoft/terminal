@@ -16,8 +16,6 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.Rect ContentClipRect{ get; };
         Double OpenAnimationStartPoint{ get; };
 
-        Boolean NavigationEnabled;
-
         event SearchHandler Search;
         event SearchHandler SearchChanged;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> Closed;

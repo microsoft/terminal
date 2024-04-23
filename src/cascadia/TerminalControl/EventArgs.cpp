@@ -12,7 +12,6 @@
 #include "ScrollPositionChangedArgs.g.cpp"
 #include "RendererWarningArgs.g.cpp"
 #include "TransparencyChangedEventArgs.g.cpp"
-#include "UpdateSearchResultsEventArgs.g.cpp"
 #include "ShowWindowArgs.g.cpp"
 #include "UpdateSelectionMarkersEventArgs.g.cpp"
 #include "CompletionsChangedEventArgs.g.cpp"

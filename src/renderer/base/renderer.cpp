@@ -459,24 +459,21 @@ void Renderer::TriggerSelection()
 void Renderer::TriggerSearchHighlight(const std::vector<til::point_span>& oldHighlights)
 try
 {
-    const auto& buffer = _pData->GetTextBuffer();
-    const auto rows = buffer.TotalRowCount();
-
-    std::vector<LineRendition> renditions;
-    renditions.reserve(rows);
-    for (til::CoordType row = 0; row < rows; ++row)
-    {
-        renditions.emplace_back(buffer.GetLineRendition(row));
-    }
-
     // no need to invalidate focused search highlight separately as they are
     // included in (all) search highlights.
     const auto newHighlights = _pData->GetSearchHighlights();
 
+    if (oldHighlights.empty() && newHighlights.empty())
+    {
+        return;
+    }
+
+    const auto& buffer = _pData->GetTextBuffer();
+
     FOREACH_ENGINE(pEngine)
     {
-        LOG_IF_FAILED(pEngine->InvalidateHighlight(oldHighlights, renditions));
-        LOG_IF_FAILED(pEngine->InvalidateHighlight(newHighlights, renditions));
+        LOG_IF_FAILED(pEngine->InvalidateHighlight(oldHighlights, buffer));
+        LOG_IF_FAILED(pEngine->InvalidateHighlight(newHighlights, buffer));
     }
 
     NotifyPaintFrame();
