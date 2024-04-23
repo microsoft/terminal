@@ -556,7 +556,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        if (!_searchBox)
+        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
         {
             CreateSearchBoxControl();
         }

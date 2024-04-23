@@ -1674,7 +1674,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             _terminal->SetSearchHighlights(_searcher.Results());
-            _renderer->TriggerSearchHighlight(oldResults);
         }
         else if (!reset)
         {
@@ -1689,6 +1688,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             currentMatch = gsl::narrow<int32_t>(idx);
             _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
         }
+
+        _renderer->TriggerSearchHighlight(oldResults);
 
         return {
             .TotalMatches = totalMatches,
