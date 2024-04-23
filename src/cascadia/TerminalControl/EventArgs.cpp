@@ -19,3 +19,4 @@
 #include "KeySentEventArgs.g.cpp"
 #include "CharSentEventArgs.g.cpp"
 #include "StringSentEventArgs.g.cpp"
+#include "SearchMissingCommandEventArgs.g.cpp"

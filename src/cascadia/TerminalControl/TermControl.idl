@@ -69,10 +69,12 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
         event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
         event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
+        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
 
         Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
         Microsoft.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
+        Windows.UI.Xaml.Controls.MenuFlyout QuickFixMenu { get; };
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -125,6 +127,7 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
         CommandHistoryContext CommandHistory();
+        void UpdateWinGetSuggestions(Windows.Foundation.Collections.IVector<String> suggestions);
 
         void AdjustOpacity(Double Opacity, Boolean relative);
 
@@ -143,6 +146,7 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.Point CursorPositionInDips { get; };
 
         void ShowContextMenu();
+        void ShowQuickFixMenu();
 
         void Detach();
     }

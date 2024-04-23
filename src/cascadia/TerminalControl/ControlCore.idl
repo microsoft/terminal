@@ -168,6 +168,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TaskbarProgressChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RendererEnteredErrorState;
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
         // These events are always called from the UI thread (bugs aside)
         event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;

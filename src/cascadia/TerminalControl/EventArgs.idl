@@ -120,4 +120,9 @@ namespace Microsoft.Terminal.Control
     {
         String Text { get; };
     }
+
+    runtimeclass SearchMissingCommandEventArgs
+    {
+        String MissingCommand { get; };
+    }
 }

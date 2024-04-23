@@ -40,6 +40,9 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 // The minimum delay between emitting warning bells
 constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(1000);
 
+constexpr std::wstring_view StateNormal{ L"Normal" };
+constexpr std::wstring_view StateCollapsed{ L"Collapsed" };
+
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
@@ -101,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
+        _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
@@ -214,6 +218,57 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         });
+
+        auto quickFixBtn{ QuickFixButton() };
+        quickFixBtn.PointerEntered({ get_weak(), &TermControl::QuickFixButton_PointerEntered });
+        quickFixBtn.PointerExited({ get_weak(), &TermControl::QuickFixButton_PointerExited });
+        //quickFixBtn.PointerEntered([/*this*/ weakThis = get_weak()](auto&&, auto&&) {
+        //
+        //    // TODO CARLOS: Tried this but *control isn't the right type
+        //    // Error: Microsoft.Terminal.Control.dll!00007FFAA70B2AFF: ReturnHr(1) tid(a514) 80070057 The parameter is incorrect.
+        //    // Debugger opens WindowThread.cpp; does that mean this is the wrong thread?
+        //    if (auto control = weakThis.get())
+        //    {
+        //        if (control->_quickFixButtonCollapsible)
+        //        {
+        //            VisualStateManager::GoToState(*control, StateNormal, true);
+        //        }
+        //    }
+        //    //if (_quickFixButtonCollapsible)
+        //    //{
+        //    //    // TODO CARLOS: this crashes due to "invalid param" (probably the same for pointer exited)
+        //    //    VisualStateManager::GoToState(*this, StateNormal, true);
+        //    //}
+        //});
+        //quickFixBtn.PointerExited([/*this*/ weakThis = get_weak()](auto&&, auto&&) {
+        //    if (auto control = weakThis.get())
+        //    {
+        //        if (control->_quickFixButtonCollapsible)
+        //        {
+        //            VisualStateManager::GoToState(*control, StateCollapsed, true);
+        //        }
+        //    }
+        //    //if (_quickFixButtonCollapsible)
+        //    //{
+        //    //    VisualStateManager::GoToState(*this, StateCollapsed, true);
+        //    //}
+        //});
+    }
+
+    void TermControl::QuickFixButton_PointerEntered(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
+    {
+        if (!_IsClosing() && _quickFixButtonCollapsible)
+        {
+            VisualStateManager::GoToState(*this, StateNormal, true);
+        }
+    }
+
+    void TermControl::QuickFixButton_PointerExited(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
+    {
+        if (!_IsClosing() && _quickFixButtonCollapsible)
+        {
+            VisualStateManager::GoToState(*this, StateCollapsed, true);
+        }
     }
 
     // Function Description:
@@ -690,6 +745,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // When we hot reload the settings, the core will send us a scrollbar
         // update. If we enabled scrollbar marks, then great, when we handle
         // that message, we'll redraw them.
+
+        // update the position of the quick fix menu (in case we changed the padding)
+        if (QuickFixButton().Visibility() == Visibility::Visible)
+        {
+            ShowQuickFixMenu();
+        }
     }
 
     // Method Description:
@@ -3401,7 +3462,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            const Control::FontSizeChangedArgs& args)
     {
         // scale the selection markers to be the size of a cell
-        auto scaleMarker = [args, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
+        const auto dpiScale = SwapChainPanel().CompositionScaleX();
+        auto scaleMarker = [args, &dpiScale](const Windows::UI::Xaml::Shapes::Path& shape) {
             // The selection markers were designed to be 5x14 in size,
             // so use those dimensions below for the scaling
             const auto scaleX = args.Width() / 5.0 / dpiScale;
@@ -3417,6 +3479,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
+
+        OutputDebugString(L"Font Size:");
+        OutputDebugString(std::to_wstring(QuickFixIcon().FontSize()).c_str());
+        OutputDebugString(L"Args Width:");
+        OutputDebugString(std::to_wstring(args.Width()).c_str());
+        OutputDebugString(L"Composition Scale X:");
+        OutputDebugString(std::to_wstring(dpiScale).c_str());
+
+        //QuickFixButton().Width(args.Width() / dpiScale);
+        QuickFixIcon().FontSize(args.Width() / dpiScale);
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3483,6 +3555,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::CommandHistoryContext TermControl::CommandHistory() const
     {
         return _core.CommandHistory();
+    }
+
+    void TermControl::UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions)
+    {
+        get_self<ControlCore>(_core)->UpdateQuickFixes(suggestions);
     }
 
     Core::Scheme TermControl::ColorScheme() const noexcept
@@ -3684,6 +3761,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //   the cursor position
         cursorPos += til::point{ hasSelection ? 0 : 1, 1 };
         _showContextMenuAt(_toControlOrigin(cursorPos));
+    }
+
+    void TermControl::ShowQuickFixMenu()
+    {
+        auto quickFixBtn{ QuickFixButton() };
+
+        // If the gutter is narrow, display the collapsed version
+        const auto& termPadding = SwapChainPanel().Margin();
+
+        _quickFixButtonCollapsible = termPadding.Left < 16;
+        VisualStateManager::GoToState(*this, !_quickFixButtonCollapsible ? StateNormal : StateCollapsed, false);
+
+        // draw the button in the gutter
+        Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
+
+        // TODO CARLOS: update for dpi?
+        const auto& cursorPosInDips = CursorPositionInDips();
+        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y - termPadding.Top);
+        quickFixBtn.Visibility(Visibility::Visible);
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,
