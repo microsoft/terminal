@@ -1181,11 +1181,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (!_restorePath.empty())
             {
-                winrt::get_self<ControlCore>(_core)->RestoreFromPath(_restorePath.c_str());
-                _restorePath = {};
+                _restoreInBackground();
             }
-
-            _core.Connection().Start();
+            else
+            {
+                _core.Connection().Start();
+            }
         }
         else
         {
@@ -1270,6 +1271,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // be reentrant)
         Initialized.raise(*this, nullptr);
         return true;
+    }
+
+    winrt::fire_and_forget TermControl::_restoreInBackground()
+    {
+        const auto path = std::exchange(_restorePath, {});
+
+        const auto weakSelf = get_weak();
+        co_await winrt::resume_background();
+        const auto self = weakSelf.get();
+
+        if (!self)
+        {
+            co_return;
+        }
+
+        const auto core = winrt::get_self<ControlCore>(_core);
+        if (!core)
+        {
+            co_return;
+        }
+
+        try
+        {
+            core->RestoreFromPath(path.c_str());
+        }
+        CATCH_LOG();
+
+        try
+        {
+            if (const auto connection = core->Connection())
+            {
+                connection.Start();
+            }
+        }
+        CATCH_LOG();
     }
 
     void TermControl::_CharacterHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
