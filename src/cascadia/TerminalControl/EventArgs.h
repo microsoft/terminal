@@ -133,12 +133,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct TransparencyChangedEventArgs : public TransparencyChangedEventArgsT<TransparencyChangedEventArgs>
     {
     public:
-        TransparencyChangedEventArgs(const double opacity) :
+        TransparencyChangedEventArgs(const float opacity) :
             _Opacity(opacity)
         {
         }
 
-        WINRT_PROPERTY(double, Opacity);
+        WINRT_PROPERTY(float, Opacity);
     };
 
     struct UpdateSearchResultsEventArgs : public UpdateSearchResultsEventArgsT<UpdateSearchResultsEventArgs>

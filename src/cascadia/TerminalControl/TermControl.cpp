@@ -779,10 +779,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.UpdateSettings();
         if (_automationPeer)
         {
-            _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
-                                                             newMargin.Top,
-                                                             newMargin.Right,
-                                                             newMargin.Bottom });
+            _automationPeer.SetControlPadding(Core::Padding{
+                static_cast<float>(newMargin.Left),
+                static_cast<float>(newMargin.Top),
+                static_cast<float>(newMargin.Right),
+                static_cast<float>(newMargin.Bottom),
+            });
         }
 
         _showMarksInScrollbar = settings.ShowMarks();
@@ -1050,10 +1052,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
                 const auto margins{ SwapChainPanel().Margin() };
-                const Core::Padding padding{ margins.Left,
-                                             margins.Top,
-                                             margins.Right,
-                                             margins.Bottom };
+                const Core::Padding padding{
+                    static_cast<float>(margins.Left),
+                    static_cast<float>(margins.Top),
+                    static_cast<float>(margins.Right),
+                    static_cast<float>(margins.Bottom),
+                };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(get_strong(), padding, interactivityAutoPeer);
                 return _automationPeer;
             }
@@ -1254,10 +1258,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _automationPeer.UpdateControlBounds();
             const auto margins{ GetPadding() };
-            _automationPeer.SetControlPadding(Core::Padding{ margins.Left,
-                                                             margins.Top,
-                                                             margins.Right,
-                                                             margins.Bottom });
+            _automationPeer.SetControlPadding(Core::Padding{
+                static_cast<float>(margins.Left),
+                static_cast<float>(margins.Top),
+                static_cast<float>(margins.Right),
+                static_cast<float>(margins.Bottom),
+            });
         }
 
         // Likewise, run the event handlers outside of lock (they could
@@ -1903,7 +1909,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newValue = args.NewValue();
-        _interactivity.UpdateScrollbar(newValue);
+        _interactivity.UpdateScrollbar(static_cast<float>(newValue));
 
         // User input takes priority over terminal events so cancel
         // any pending scroll bar update if the user scrolls.
@@ -2451,14 +2457,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If the settings have negative or zero row or column counts, ignore those counts.
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
-        const auto cols = ::base::saturated_cast<float>(std::max(commandlineCols > 0 ?
-                                                                     commandlineCols :
-                                                                     settings.InitialCols(),
-                                                                 1));
-        const auto rows = ::base::saturated_cast<float>(std::max(commandlineRows > 0 ?
-                                                                     commandlineRows :
-                                                                     settings.InitialRows(),
-                                                                 1));
+        const auto cols = static_cast<float>(std::max(commandlineCols > 0 ?
+                                                          commandlineCols :
+                                                          settings.InitialCols(),
+                                                      1));
+        const auto rows = static_cast<float>(std::max(commandlineRows > 0 ?
+                                                          commandlineRows :
+                                                          settings.InitialRows(),
+                                                      1));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2763,14 +2769,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Convert text buffer cursor position to client coordinate position
         // within the window. This point is in _pixels_
-        const double clientCursorPosX = terminalPos.x * fontSize.Width;
-        const double clientCursorPosY = terminalPos.y * fontSize.Height;
+        const auto clientCursorPosX = terminalPos.x * fontSize.Width;
+        const auto clientCursorPosY = terminalPos.y * fontSize.Height;
 
         // Get scale factor for view
-        const double scaleFactor = SwapChainPanel().CompositionScaleX();
+        const auto scaleFactor = SwapChainPanel().CompositionScaleX();
 
-        const double clientCursorInDipsX = clientCursorPosX / scaleFactor;
-        const double clientCursorInDipsY = clientCursorPosY / scaleFactor;
+        const auto clientCursorInDipsX = clientCursorPosX / scaleFactor;
+        const auto clientCursorInDipsY = clientCursorPosY / scaleFactor;
 
         auto padding{ GetPadding() };
         til::point relativeToOrigin{ til::math::rounding,
@@ -3504,7 +3510,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ColorScheme(scheme);
     }
 
-    void TermControl::AdjustOpacity(const double opacity, const bool relative)
+    void TermControl::AdjustOpacity(const float opacity, const bool relative)
     {
         _core.AdjustOpacity(opacity, relative);
     }
@@ -3513,7 +3519,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   defines an "Opacity", which we're actually not setting at all. We're
     //   not overriding or changing _that_ value. Callers that want the opacity
     //   set by the settings should call this instead.
-    double TermControl::BackgroundOpacity() const
+    float TermControl::BackgroundOpacity() const
     {
         return _core.Opacity();
     }
@@ -3646,7 +3652,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                           cursorPos.y * fontSize.Height };
 
         // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
         // Adjust to DIPs
         const til::point clientCursorInDips{ til::math::rounding, clientCursorPos.X / scaleFactor, clientCursorPos.Y / scaleFactor };

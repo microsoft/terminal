@@ -286,7 +286,7 @@ namespace winrt::TerminalApp::implementation
             _SplitPane(terminalTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
-                       ::base::saturated_cast<float>(realArgs.SplitSize()),
+                       realArgs.SplitSize(),
                        _MakePane(realArgs.ContentArgs(), duplicateFromTab));
             args.Handled(true);
         }
@@ -1264,7 +1264,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
             {
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
+                    control.AdjustOpacity(realArgs.Opacity() / 100.0f, realArgs.Relative());
                 });
                 args.Handled(res);
             }

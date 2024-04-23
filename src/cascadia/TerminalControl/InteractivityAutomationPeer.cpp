@@ -169,14 +169,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _controlPadding;
     }
 
-    double InteractivityAutomationPeer::GetScaleFactor() const noexcept
+    float InteractivityAutomationPeer::GetScaleFactor() const noexcept
     {
-        return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        return static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
     }
 
     void InteractivityAutomationPeer::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
-        _interactivity->UpdateScrollbar(NewWindow.top);
+        _interactivity->UpdateScrollbar(static_cast<float>(NewWindow.top));
     }
 #pragma endregion
 

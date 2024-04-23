@@ -151,7 +151,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
         // When creating a pane the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
-        const auto splitSize = (kind != BuildStartupKind::None && _IsLeaf() ? .5 : 1. - _desiredSplitPosition);
+        const auto splitSize = (kind != BuildStartupKind::None && _IsLeaf() ? 0.5f : 1.0f - _desiredSplitPosition);
         SplitPaneArgs args{ SplitType::Manual, splitDirection, splitSize, terminalArgs };
         actionAndArgs.Args(args);
 
@@ -1595,12 +1595,12 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
     const auto splitWidth = _splitState == SplitState::Vertical;
 
     Size removedOriginalSize{
-        ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
-        ::base::saturated_cast<float>(removedChild->_root.ActualHeight())
+        static_cast<float>(removedChild->_root.ActualWidth()),
+        static_cast<float>(removedChild->_root.ActualHeight())
     };
     Size remainingOriginalSize{
-        ::base::saturated_cast<float>(remainingChild->_root.ActualWidth()),
-        ::base::saturated_cast<float>(remainingChild->_root.ActualHeight())
+        static_cast<float>(remainingChild->_root.ActualWidth()),
+        static_cast<float>(remainingChild->_root.ActualHeight())
     };
 
     // Remove both children from the grid
@@ -1902,7 +1902,7 @@ void Pane::_SetupEntranceAnimation()
     //   looks bad.
     _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
 
-    const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
+    const auto [firstSize, secondSize] = _CalcChildrenSizes(static_cast<float>(totalSize));
 
     // This is safe to capture this, because it's only being called in the
     // context of this method (not on another thread)

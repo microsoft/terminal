@@ -75,7 +75,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass TransparencyChangedEventArgs
     {
-        Double Opacity { get; };
+        Single Opacity { get; };
     }
 
     enum SearchState

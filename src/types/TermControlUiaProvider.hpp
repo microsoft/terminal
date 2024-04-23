@@ -45,7 +45,7 @@ namespace Microsoft::Terminal
 
         til::size GetFontSize() const noexcept;
         til::rect GetPadding() const noexcept;
-        double GetScaleFactor() const noexcept;
+        float GetScaleFactor() const noexcept;
         void ChangeViewport(const til::inclusive_rect& NewWindow) override;
 
     protected:
