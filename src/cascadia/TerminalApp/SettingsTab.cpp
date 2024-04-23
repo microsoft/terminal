@@ -57,7 +57,7 @@ namespace winrt::TerminalApp::implementation
     //   re-evaluate including that arg in this action then.
     //  Return Value:
     // - The list of actions.
-    std::vector<ActionAndArgs> SettingsTab::BuildStartupActions(const bool /*asContent*/) const
+    std::vector<ActionAndArgs> SettingsTab::BuildStartupActions(BuildStartupKind) const
     {
         ASSERT_UI_THREAD();
 

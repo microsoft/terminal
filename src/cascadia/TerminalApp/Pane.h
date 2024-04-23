@@ -31,6 +31,7 @@ namespace TerminalAppLocalTests
 namespace winrt::TerminalApp::implementation
 {
     struct TerminalTab;
+    enum class BuildStartupKind;
 }
 
 enum class Borders : int
@@ -99,8 +100,8 @@ public:
         std::optional<uint32_t> focusedPaneId;
         uint32_t panesCreated;
     };
-    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent = false, const bool asMovePane = false);
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(const bool asContent = false) const;
+    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, winrt::TerminalApp::implementation::BuildStartupKind kind);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(winrt::TerminalApp::implementation::BuildStartupKind kind) const;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);

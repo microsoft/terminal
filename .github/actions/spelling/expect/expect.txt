@@ -19,6 +19,7 @@ AFew
 AFill
 AFX
 AHelper
+ahicon
 ahz
 AImpl
 AInplace
@@ -227,6 +228,7 @@ commandline
 commctrl
 commdlg
 COMMITID
+commoncontrols
 componentization
 conapi
 conareainfo
@@ -283,6 +285,7 @@ convarea
 conwinuserrefs
 coordnew
 COPYCOLOR
+COPYFROMRESOURCE
 CORESYSTEM
 cotaskmem
 countof
@@ -578,6 +581,7 @@ EVENTID
 eventing
 evflags
 evt
+EXACTSIZEONLY
 execd
 executionengine
 exemain
@@ -603,6 +607,7 @@ FEEF
 fesb
 FFAF
 FFDE
+FFFDb
 FFrom
 fgbg
 FGCOLOR
@@ -772,6 +777,7 @@ hhx
 HIBYTE
 hicon
 HIDEWINDOW
+HIGHQUALITYSCALE
 hinst
 HISTORYBUFS
 HISTORYNODUP
@@ -821,6 +827,7 @@ hwnd
 HWNDPARENT
 iccex
 ICONERROR
+ICONINFO
 ICONINFORMATION
 IConsole
 ICONSTOP
@@ -842,7 +849,11 @@ IGNOREEND
 IGNORELANGUAGE
 IHosted
 iid
+IImage
 IIo
+ILC
+ILCo
+ILD
 ime
 IMPEXP
 inbox
@@ -1116,8 +1127,8 @@ msix
 msrc
 MSVCRTD
 MTSM
-munges
 Munged
+munges
 murmurhash
 muxes
 myapplet
@@ -1340,11 +1351,14 @@ pgomgr
 PGONu
 pguid
 phhook
+phico
+phicon
 phwnd
 pidl
 PIDLIST
 pids
 pii
+piml
 pinvoke
 pipename
 pipestr
@@ -1676,6 +1690,8 @@ slpit
 SManifest
 SMARTQUOTE
 SMTO
+snapcx
+snapcy
 SOLIDBOX
 Solutiondir
 somefile
@@ -1876,8 +1892,8 @@ UINTs
 ul
 ulcch
 uld
-uldb
 uldash
+uldb
 ulwave
 Unadvise
 unattend
