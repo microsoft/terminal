@@ -35,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - json: an array of Json::Value's to deserialize into our ActionMap.
     // Return value:
     // - a list of warnings encountered while deserializing the json
+    // todo: update this description
     std::vector<SettingsLoadWarnings> ActionMap::LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
     {
         // It's possible that the user provided keybindings have some warnings in
@@ -43,14 +44,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // settings phase, so we'll collect them now.
         std::vector<SettingsLoadWarnings> warnings;
 
-        for (const auto& cmdJson : json)
+        for (const auto& jsonBlock : json)
         {
-            if (!cmdJson.isObject())
+            if (!jsonBlock.isObject())
             {
                 continue;
             }
 
-            AddAction(*Command::FromJson(cmdJson, warnings, origin, withKeybindings));
+            // the json block may be 1 of 3 things:
+            // - the legacy style command block, that has the action, args and keys in it
+            // - the modern style command block, that has the action, args and an ID
+            // - the modern style keys block, that has the keys and an ID
+
+            // if the block contains a "command" field, it is either a legacy or modern style command block
+            // and we can call Command::FromJson on it (Command::FromJson can handle parsing both legacy or modern)
+
+            // if there is no "command" field, then it is a modern style keys block
+            // todo: use the CommandsKey / ActionKey static string view in Command.cpp somehow
+            if (jsonBlock.isMember(JsonKey("commands")) || jsonBlock.isMember(JsonKey("command")))
+            {
+                AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings));
+            }
+            else
+            {
+                _AddKeyBindingHelper(jsonBlock, warnings);
+            }
+            // todo: need to have a flag for fixups applied during load
         }
 
         return warnings;
@@ -77,6 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
 
         // Serialize all standard Command objects in the current layer
+        // todo: change to _NewActionMap
         for (const auto& [_, cmd] : _ActionMap)
         {
             toJson(cmd);
@@ -95,5 +115,55 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return actionList;
+    }
+
+    void ActionMap::_AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings)
+    {
+        // There should always be a "keys" field
+        // - If there is also an "id" field - we add the pair to our _KeyMap
+        // - If there is no "id" field - this is an explicit unbinding, still add it to the _KeyMap,
+        //   when this key chord is queried for we will know it is an explicit unbinding
+        // todo: use the KeysKey and IDKey static strings from Command.cpp
+        const auto keysJson{ json[JsonKey("keys")] };
+        if (keysJson.isArray() && keysJson.size() > 1)
+        {
+            warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
+        }
+        else
+        {
+            Control::KeyChord keys{ nullptr };
+            winrt::hstring idJson;
+            if (JsonUtils::GetValueForKey(json, "keys", keys))
+            {
+                // even if the "id" field doesn't exist in the json, idJson will be an empty string which is fine
+                JsonUtils::GetValueForKey(json, "id", idJson);
+
+                // any existing keybinding with the same keychord in this layer will get overwritten
+                _KeyMap2.insert_or_assign(keys, idJson);
+
+                // if there is an id, make sure the command registers these keys
+                if (!idJson.empty())
+                {
+                    const auto& cmd{ _GetActionByID2(idJson) };
+                    if (cmd && *cmd)
+                    {
+                        cmd->RegisterKey(keys);
+                    }
+                    else
+                    {
+                        // check for the same ID among our parents
+                        for (const auto& parent : _parents)
+                        {
+                            const auto& inheritedCmd{ parent->_GetActionByID2(idJson) };
+                            if (inheritedCmd && *inheritedCmd)
+                            {
+                                inheritedCmd->RegisterKey(keys);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
     }
 }

@@ -20,6 +20,7 @@ Author(s):
 #include "MTSMSettings.h"
 
 #include "ActionMap.h"
+#include "KeysMap.h"
 #include "Command.h"
 #include "ColorScheme.h"
 #include "Theme.h"
@@ -47,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::ColorScheme DuplicateColorScheme(const Model::ColorScheme& scheme);
 
         Model::ActionMap ActionMap() const noexcept;
+        Model::KeysMap KeysMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
         void LayerJson(const Json::Value& json, const OriginTag origin);
@@ -88,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::guid _defaultProfile{};
         bool _legacyReloadEnvironmentVariables{ true };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
+        winrt::com_ptr<implementation::KeysMap> _keysMap{ winrt::make_self<implementation::KeysMap>() };
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };

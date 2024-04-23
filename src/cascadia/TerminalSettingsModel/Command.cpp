@@ -318,6 +318,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // create an "invalid" ActionAndArgs
             result->_ActionAndArgs = make<implementation::ActionAndArgs>();
             result->_nestedCommand = true;
+            // todo: new implementation ignores nested commands, we need to not ignore this though
         }
 
         JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
@@ -328,6 +329,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
                 result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
+
+                // if this is a user-defined command and they did not provide an id, generate one for them
+                if (result->_ID.empty() && result->_ActionAndArgs.Action() != ShortcutAction::Invalid && origin == OriginTag::User)
+                {
+                    // There is currently a minor bug here that doesn't affect anything -
+                    // we will reach this point for each command in an 'unpacked' nested/iterable command
+                    // which means we will generate IDs for them. These don't get written in the json
+                    // or stored anywhere though, but since they're also not used for anything we should
+                    // probably just not generate them at all
+                    result->GenerateID();
+                }
             }
             else
             {

@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    // This interface ensures that no changes are made to KeysMap
+    interface IKeysMapView
+    {
+        void Thing();
+    };
+
+    [default_interface] runtimeclass KeysMap : IKeysMapView
+    {
+        void Blah();
+    }
+}

@@ -103,6 +103,7 @@
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
     <Midl Include="ActionMap.idl" />
+    <Midl Include="KeysMap.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
