@@ -962,7 +962,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the user's cloud shell settings
     WDJ::JsonObject AzureConnection::_GetCloudShellUserSettings()
     {
-        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2020-04-01-preview", _resourceUri) };
+        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2023-02-01-preview", _resourceUri) };
         return _SendRequestReturningJson(uri, nullptr);
     }
 
@@ -972,7 +972,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the uri for the cloud shell
     winrt::hstring AzureConnection::_GetCloudShell()
     {
-        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/consoles/default?api-version=2020-04-01-preview", _resourceUri) };
+        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/consoles/default?api-version=2023-02-01-preview", _resourceUri) };
 
         WWH::HttpStringContent content{
             LR"-({"properties": {"osType": "linux"}})-",
