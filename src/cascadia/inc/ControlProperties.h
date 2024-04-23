@@ -19,10 +19,10 @@
 //  All of these settings are defined in IControlAppearance.
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
-    X(double, Opacity, 1.0)                                                                                                                     \
+    X(float, Opacity, 1.0f)                                                                                                                     \
     X(bool, UseAcrylic, false)                                                                                                                  \
     X(winrt::hstring, BackgroundImage)                                                                                                          \
-    X(double, BackgroundImageOpacity, 1.0)                                                                                                      \
+    X(float, BackgroundImageOpacity, 1.0f)                                                                                                      \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill)            \
     X(winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center) \
     X(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center)       \

@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool BracketedPasteEnabled() const noexcept;
 
-        double BackgroundOpacity() const;
+        float BackgroundOpacity() const;
 
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
@@ -171,7 +171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
 
-        void AdjustOpacity(const double opacity, const bool relative);
+        void AdjustOpacity(const float opacity, const bool relative);
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);

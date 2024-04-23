@@ -230,15 +230,15 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, INewContentArgs contentArgs);
-        SplitPaneArgs(SplitDirection split, Double size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, Single size, INewContentArgs contentArgs);
         SplitPaneArgs(SplitDirection split, INewContentArgs contentArgs);
         SplitPaneArgs(SplitType splitMode);
 
         SplitDirection SplitDirection { get; };
         INewContentArgs ContentArgs { get; };
         SplitType SplitMode { get; };
-        Double SplitSize { get; };
+        Single SplitSize { get; };
     };
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs

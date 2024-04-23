@@ -146,7 +146,7 @@ private:
     // Inherited via IControlAccessibilityInfo
     til::size GetFontSize() const noexcept override;
     til::rect GetBounds() const noexcept override;
-    double GetScaleFactor() const noexcept override;
+    float GetScaleFactor() const noexcept override;
     void ChangeViewport(const til::inclusive_rect& NewWindow) override;
     HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept override;
     til::rect GetPadding() const noexcept override;

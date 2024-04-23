@@ -1423,7 +1423,7 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
     {
         const auto end = std::chrono::system_clock::now();
         const auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        const auto dt = ::base::saturated_cast<double>(millis.count());
+        const auto dt = static_cast<double>(millis.count());
 
         if (dt > animationDuration)
         {
