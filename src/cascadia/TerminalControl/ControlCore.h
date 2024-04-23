@@ -91,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Detach();
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
-        void ApplyAppearance(const bool& focused);
+        void ApplyAppearance(const bool focused);
         Control::IControlSettings Settings();
         Control::IControlAppearance FocusedAppearance() const;
         Control::IControlAppearance UnfocusedAppearance() const;
@@ -136,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void LostFocus();
 
         void ToggleShaderEffects();
-        void AdjustOpacity(const double adjustment);
+        void AdjustOpacity(const float adjustment);
         void ResumeRendering();
 
         void SetHoveredCell(Core::Point terminalPosition);
@@ -243,7 +243,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
 
-        void AdjustOpacity(const double opacity, const bool relative);
+        void AdjustOpacity(const float opacity, const bool relative);
 
         void WindowVisibilityChanged(const bool showOrHide);
 
@@ -258,8 +258,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
 
-        RUNTIME_SETTING(double, Opacity, _settings->Opacity());
-        RUNTIME_SETTING(double, FocusedOpacity, FocusedAppearance().Opacity());
+        RUNTIME_SETTING(float, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -397,7 +397,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
-        void _setOpacity(const double opacity, const bool focused = true);
+        void _setOpacity(const float opacity, const bool focused = true);
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);

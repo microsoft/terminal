@@ -95,7 +95,7 @@ namespace Microsoft.Terminal.Control
 
         Windows.Foundation.Size FontSize { get; };
         UInt16 FontWeight { get; };
-        Double Opacity { get; };
+        Single Opacity { get; };
         Boolean UseAcrylic { get; };
 
         Boolean TryMarkModeKeybinding(Int16 vkey,
@@ -156,7 +156,7 @@ namespace Microsoft.Terminal.Control
         String ReadEntireBuffer();
         CommandHistoryContext CommandHistory();
 
-        void AdjustOpacity(Double Opacity, Boolean relative);
+        void AdjustOpacity(Single Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);

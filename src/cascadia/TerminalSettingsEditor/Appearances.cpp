@@ -537,7 +537,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
     {
-        BackgroundImageOpacity(winrt::Microsoft::Terminal::UI::Converters::PercentageValueToPercentage(percentageValue));
+        BackgroundImageOpacity(static_cast<float>(percentageValue) / 100.0f);
     }
 
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
