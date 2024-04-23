@@ -82,6 +82,20 @@ struct std::hash<BackendD3D::AtlasFontFaceEntry>
     }
 };
 
+static u64 queryPerfFreq() noexcept
+{
+    LARGE_INTEGER li;
+    QueryPerformanceFrequency(&li);
+    return std::bit_cast<u64>(li.QuadPart);
+}
+
+static u64 queryPerfCount() noexcept
+{
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return std::bit_cast<u64>(li.QuadPart);
+}
+
 BackendD3D::BackendD3D(const RenderingPayload& p)
 {
     THROW_IF_FAILED(p.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _vertexShader.addressof()));
@@ -501,7 +515,14 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             THROW_IF_FAILED(p.device->CreateSamplerState(&desc, _customShaderSamplerState.put()));
         }
 
-        _customShaderStartTime = std::chrono::steady_clock::now();
+        // Since floats are imprecise we need to constrain the time value into a range that can be accurately represented.
+        // Assuming a monitor refresh rate of 1000 Hz, we can still easily represent 1000 seconds accurately (roughly 16 minutes).
+        // 10000 seconds would already result in a 50% error. So to avoid this, we use queryPerfCount() modulo _customShaderPerfTickMod.
+        // The use of a power of 10 is intentional, because shaders are often periodic and this makes any decimal multiplier up to 3 fractional
+        // digits not break the periodicity. For instance, with a wraparound of 1000 seconds sin(1.234*x) is still perfectly periodic.
+        const auto freq = queryPerfFreq();
+        _customShaderPerfTickMod = freq * 1000;
+        _customShaderSecsPerPerfTick = 1.0f / freq;
     }
 }
 
@@ -2188,8 +2209,12 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {
     {
+        // See the comment in _recreateCustomShader() which initializes the two members below and explains what they do.
+        const auto now = queryPerfCount();
+        const auto time = static_cast<int>(now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
+
         const CustomConstBuffer data{
-            .time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count(),
+            .time = time,
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
             .resolution = {
                 static_cast<f32>(_viewportCellCount.x * p.s->font->cellSize.x),

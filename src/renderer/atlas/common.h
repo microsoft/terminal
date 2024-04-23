@@ -146,6 +146,8 @@ namespace Microsoft::Console::Render::Atlas
     using i32x4 = vec4<i32>;
     using i32r = rect<i32>;
 
+    using u64 = uint64_t;
+
     using f32 = float;
     using f32x2 = vec2<f32>;
     using f32x4 = vec4<f32>;
