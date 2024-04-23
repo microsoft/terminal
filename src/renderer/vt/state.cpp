@@ -136,10 +136,19 @@ CATCH_RETURN();
 
 void VtEngine::_Flush() noexcept
 {
-    if (!_corked && !_buffer.empty())
+    if (_buffer.empty())
+    {
+        return;
+    }
+
+    if (!_corked)
     {
         _flushImpl();
+        return;
     }
+
+    // Defer the flush until someone calls Cork(false).
+    _flushRequested = true;
 }
 
 // _corked is often true and separating _flushImpl() out allows _flush() to be inlined.
@@ -167,7 +176,13 @@ void VtEngine::_flushImpl() noexcept
 void VtEngine::Cork(bool corked) noexcept
 {
     _corked = corked;
-    _Flush();
+
+    // Now do the deferred flush from a previous call to _Flush().
+    if (!corked && _flushRequested)
+    {
+        _flushRequested = false;
+        _flushImpl();
+    }
 }
 
 // Method Description:

@@ -33,6 +33,8 @@ extends:
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15
+    symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
+    symbolPublishingProject: $(SymbolPublishingProject)
     ${{ if eq(true, parameters.publishToAzure) }}:
       extraPublishJobs:
         - template: build/pipelines/templates-v2/job-deploy-to-azure-storage.yml@self

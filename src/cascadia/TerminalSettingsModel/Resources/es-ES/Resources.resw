@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Seleccionar combinación de colores...</value>
+    <value>Seleccionar combinación de colores</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Nueva pestaña...</value>
+    <value>Nueva pestaña</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Panel dividido...</value>
+    <value>Panel dividido</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (portátil)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Establecer el color de la pestaña...</value>
+    <value>Establecer el color de la pestaña</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Pegar</value>
@@ -347,7 +347,7 @@
     <value>Restablecer título de la pestaña</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Cambiar nombre de título de la pestaña...</value>
+    <value>Cambiar título de la pestaña</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Cambiar el tamaño del panel</value>
@@ -441,7 +441,7 @@
     <value>Cambiar a la última pestaña</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Buscar pestañas...</value>
+    <value>Buscar pestaña</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Alternar siempre en el modo superior</value>
@@ -450,10 +450,10 @@
     <value>Alternar paleta de comandos</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Comandos recientes...</value>
+    <value>Comandos recientes</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Abrir sugerencias...</value>
+    <value>Abrir sugerencias</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Alternar paleta de comandos en modo de línea de comandos</value>
@@ -505,7 +505,7 @@
     <value>Interrumpir en el depurador</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Abrir configuración...</value>
+    <value>Abrir configuración</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Cambiar el nombre de la ventana por "{0}"</value>
@@ -566,7 +566,7 @@
     <value>Salir del terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Establecer la opacidad del fondo...</value>
+    <value>Establecer la opacidad del fondo</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Aumentar la opacidad del fondo en un {0} %</value>

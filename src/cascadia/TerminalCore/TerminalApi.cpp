@@ -113,7 +113,7 @@ unsigned int Terminal::GetConsoleOutputCP() const noexcept
     return CP_UTF8;
 }
 
-void Terminal::CopyToClipboard(std::wstring_view content)
+void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
     _pfnCopyToClipboard(content);
 }

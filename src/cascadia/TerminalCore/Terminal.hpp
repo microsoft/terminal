@@ -143,7 +143,7 @@ public:
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
-    void CopyToClipboard(std::wstring_view content) override;
+    void CopyToClipboard(wil::zwstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
     void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) override;
@@ -215,12 +215,10 @@ public:
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override;
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    void SelectSearchRegions(std::vector<til::inclusive_rect> source) override;
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
@@ -230,7 +228,7 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
-    void SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept;
+    void SetCopyToClipboardCallback(std::function<void(wil::zwstring_view)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
@@ -329,7 +327,7 @@ private:
     std::function<void(std::wstring_view)> _pfnWriteInput;
     std::function<void()> _pfnWarningBell;
     std::function<void(std::wstring_view)> _pfnTitleChanged;
-    std::function<void(std::wstring_view)> _pfnCopyToClipboard;
+    std::function<void(wil::zwstring_view)> _pfnCopyToClipboard;
 
     // I've specifically put this instance here as it requires
     //   alignas(std::hardware_destructive_interference_size)
@@ -386,7 +384,6 @@ private:
         til::point pivot;
     };
     std::optional<SelectionAnchors> _selection;
-    std::vector<til::inclusive_rect> _searchSelections;
     bool _blockSelection = false;
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
@@ -474,7 +471,6 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
-    std::vector<til::inclusive_rect> _GetSearchSelectionRects(Microsoft::Console::Types::Viewport viewport) const noexcept;
     std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const noexcept;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;

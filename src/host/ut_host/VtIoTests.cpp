@@ -282,11 +282,6 @@ public:
         return std::vector<Microsoft::Console::Types::Viewport>{};
     }
 
-    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override
-    {
-        return std::vector<Microsoft::Console::Types::Viewport>{};
-    }
-
     void LockConsole() noexcept override
     {
     }
@@ -365,10 +360,6 @@ public:
     }
 
     void SelectNewRegion(const til::point /*coordStart*/, const til::point /*coordEnd*/) override
-    {
-    }
-
-    void SelectSearchRegions(std::vector<til::inclusive_rect> /*source*/) override
     {
     }
 

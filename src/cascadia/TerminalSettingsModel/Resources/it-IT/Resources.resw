@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Seleziona combinazione colori...</value>
+    <value>Seleziona combinazione colori</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Nuova scheda...</value>
+    <value>Nuova scheda</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Suddividi riquadro...</value>
+    <value>Suddividi riquadro</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminale (portatile)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Imposta il colore della scheda...</value>
+    <value>Imposta il colore della scheda</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Incolla</value>
@@ -347,7 +347,7 @@
     <value>Reimposta il titolo della scheda</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Rinomina il titolo della scheda ...</value>
+    <value>Rinomina il titolo della scheda</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Ridimensiona riquadro</value>
@@ -441,7 +441,7 @@
     <value>Passa all'ultima scheda</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Cerca scheda...</value>
+    <value>Cerca scheda</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Modalità attiva/disattiva sempre in alto</value>
@@ -450,10 +450,10 @@
     <value>Attiva/disattiva riquadro dei comandi</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Comandi recenti...</value>
+    <value>Comandi recenti</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Apri suggerimenti...</value>
+    <value>Apri i suggerimenti</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Attiva/disattiva il pannello dei comandi in modalità riga di comando</value>
@@ -505,7 +505,7 @@
     <value>Interrompi il debugger</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Apri impostazioni...</value>
+    <value>Apri impostazioni</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Rinomina finestra in "{0}"</value>
@@ -515,7 +515,7 @@
     <value>Reimposta nome finestra</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Rinomina finestra...</value>
+    <value>Rinomina finestra</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Visualizza la directory di lavoro corrente del terminale</value>
@@ -566,7 +566,7 @@
     <value>Esci da Terminale</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Imposta l'opacità di sfondo...</value>
+    <value>Imposta l'opacità di sfondo</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Aumenta l'opacità di sfondo del {0}%</value>
