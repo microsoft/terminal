@@ -1276,31 +1276,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::_restoreInBackground()
     {
         const auto path = std::exchange(_restorePath, {});
-
+        const auto dispatcher = Dispatcher();
         const auto weakSelf = get_weak();
-        co_await winrt::resume_background();
-        const auto self = weakSelf.get();
-
-        if (!self)
-        {
-            co_return;
-        }
-
-        const auto core = winrt::get_self<ControlCore>(_core);
-        if (!core)
-        {
-            co_return;
-        }
 
         try
         {
-            core->RestoreFromPath(path.c_str());
+            co_await winrt::resume_background();
+
+            const auto self = weakSelf.get();
+            if (!self)
+            {
+                co_return;
+            }
+
+            winrt::get_self<ControlCore>(_core)->RestoreFromPath(path.c_str());
         }
         CATCH_LOG();
 
         try
         {
-            if (const auto connection = core->Connection())
+            co_await wil::resume_foreground(dispatcher);
+
+            const auto self = weakSelf.get();
+            if (!self)
+            {
+                co_return;
+            }
+
+            if (const auto connection = _core.Connection())
             {
                 connection.Start();
             }
