@@ -109,6 +109,7 @@ extends:
               pool: { type: windows }
               variables:
                 ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(JobOutputDirectory)
@@ -144,6 +145,7 @@ extends:
                 pool: { type: windows }
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -176,6 +178,7 @@ extends:
                 pool: { type: windows }
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -228,6 +231,7 @@ extends:
                 pool: { type: windows }
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -244,6 +248,7 @@ extends:
                 pool: { type: windows }
                 variables:
                   ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -267,6 +272,7 @@ extends:
               symbolProject: ${{ parameters.symbolPublishingProject }}
               variables:
                 ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(Build.ArtifactStagingDirectory)
