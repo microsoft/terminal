@@ -35,6 +35,7 @@ extends:
     symbolExpiryTime: 15
     symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
     symbolPublishingProject: $(SymbolPublishingProject)
+    buildPlatforms: [x64]
     ${{ if eq(true, parameters.publishToAzure) }}:
       extraPublishJobs:
         - template: build/pipelines/templates-v2/job-deploy-to-azure-storage.yml@self
@@ -50,6 +51,6 @@ extends:
             storageAccount: $(AzureStorageAccount)
             storageContainer: $(AzureStorageContainer)
             buildConfiguration: Release
-            buildPlatforms: [x64, x86, arm64]
+            buildPlatforms: [x64]
             environment: production-canary
 
