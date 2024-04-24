@@ -155,7 +155,9 @@ try
 
         for (til::CoordType y = range.begin; y < range.end; ++y)
         {
-            length += textBuffer.GetRowByOffset(y).GetText().size();
+            const auto& row = textBuffer.GetRowByOffset(y);
+            // Later down below we'll add a newline to the text if !wasWrapForced, so we need to account for that here.
+            length += row.GetText().size() + !row.WasWrapForced();
         }
 
         accessLength(ut) = length;
@@ -213,6 +215,7 @@ try
                 --y;
                 if (y < range.begin)
                 {
+                    assert(false);
                     return false;
                 }
 
@@ -221,7 +224,8 @@ try
                 wasWrapForced = row.WasWrapForced();
 
                 limit = start;
-                start -= text.size();
+                // Later down below we'll add a newline to the text if !wasWrapForced, so we need to account for that here.
+                start -= text.size() + !wasWrapForced;
             } while (neededIndex < start);
         }
         else
@@ -231,6 +235,7 @@ try
                 ++y;
                 if (y >= range.end)
                 {
+                    assert(false);
                     return false;
                 }
 
@@ -239,7 +244,8 @@ try
                 wasWrapForced = row.WasWrapForced();
 
                 start = limit;
-                limit += text.size();
+                // Later down below we'll add a newline to the text if !wasWrapForced, so we need to account for that here.
+                limit += text.size() + !wasWrapForced;
             } while (neededIndex >= limit);
         }
 
