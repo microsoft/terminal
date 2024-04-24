@@ -82,6 +82,7 @@ extends:
     cloudvault: # https://aka.ms/obpipelines/cloudvault
       enabled: false
     globalSdl: # https://aka.ms/obpipelines/sdl
+      enableCheckCFlags: false # CheckCFlags is broken and exploding our builds; to remove, :g/BAD-FLAGS/d
       asyncSdl:
         enabled: true
         tsaOptionsFile: 'build/config/tsa.json'
@@ -107,6 +108,8 @@ extends:
             parameters:
               pool: { type: windows }
               variables:
+                ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(JobOutputDirectory)
@@ -141,6 +144,8 @@ extends:
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -172,6 +177,8 @@ extends:
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -223,6 +230,8 @@ extends:
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -238,6 +247,8 @@ extends:
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -260,6 +271,8 @@ extends:
               subscription: ${{ parameters.symbolPublishingSubscription }}
               symbolProject: ${{ parameters.symbolPublishingProject }}
               variables:
+                ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(Build.ArtifactStagingDirectory)
