@@ -584,11 +584,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // If the actionID is empty, this keybinding is explicitly unbound
             if (!actionID.empty())
             {
-                const auto cmd{ _GetActionByID2(actionID).value() };
-                if (cmd)
+                const auto cmd{ _GetActionByID2(actionID) };
+                if (cmd.has_value())
                 {
                     // iterate over all of the action's bound keys
-                    const auto cmdImpl{ get_self<Command>(cmd) };
+                    const auto cmdImpl{ get_self<Command>(cmd.value()) };
                     for (const auto& keys : cmdImpl->KeyMappings())
                     {
                         // Only populate KeyBindingsMap with actions that...
@@ -596,7 +596,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         // (2) aren't explicitly unbound
                         if (keyBindingsMap.find(keys) == keyBindingsMap.end() && unboundKeys.find(keys) == unboundKeys.end())
                         {
-                            keyBindingsMap.emplace(keys, cmd);
+                            keyBindingsMap.emplace(keys, cmd.value());
                         }
                     }
                 }
@@ -1081,23 +1081,52 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullopt if it was not bound in this layer
     std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal2(const Control::KeyChord& keys) const
     {
+        // todo: stage 3 - why does this function search through parents but _GetActionByID2 doesn't? even the original implementation was similar with some recursive and some non-recursive functions
         if (const auto keyIDPair = _KeyMap2.find(keys); keyIDPair != _KeyMap2.end())
         {
             if (const auto cmdID = keyIDPair->second; !cmdID.empty())
             {
-                return _GetActionByID2(cmdID);
+                if (const auto cmd = _GetActionByID2(cmdID); cmd.has_value())
+                {
+                    // standard case: both the keys and the ID are defined in this layer
+                    return cmd;
+                }
+                else
+                {
+                    for (const auto parent : _parents)
+                    {
+                        if (const auto inheritedCmd = parent->_GetActionByID2(cmdID); inheritedCmd.has_value())
+                        {
+                            // edge case 1: the keys are bound to an ID in this layer, but the ID is defined in one of our parents
+                            return inheritedCmd;
+                        }
+                    }
+                }
             }
             else
             {
-                // the keychord is in our map, but points to an empty string - explicitly unbound
+                // the keychord is defined in this layer, but points to an empty string - explicitly unbound
                 return nullptr;
             }
         }
 
-        // the command was not bound in this layer,
-        // ask my parents
+        // search through our parents
         for (const auto& parent : _parents)
         {
+            if (const auto parentKeyIDPair = parent->_KeyMap2.find(keys); parentKeyIDPair != parent->_KeyMap2.end())
+            {
+                if (const auto cmdID = parentKeyIDPair->second; !cmdID.empty())
+                {
+                    if (const auto cmd = _GetActionByID2(cmdID); cmd.has_value())
+                    {
+                        // edge case 2: the keychord maps to an ID in one of our parents, but a command with that ID exists in this layer
+                        //              use the command from this layer
+                        return cmd;
+                    }
+                }
+            }
+
+            // we've checked for the standard case and the 2 edge cases, now we can recurse
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal2(keys) };
             if (inheritedCmd)
             {
@@ -1105,7 +1134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        // we did not find the keychord in our map, its not bound and not explicity unbound either
+        // we did not find the keychord anywhere, its not bound and not explicity unbound either
         return std::nullopt;
     }
 
