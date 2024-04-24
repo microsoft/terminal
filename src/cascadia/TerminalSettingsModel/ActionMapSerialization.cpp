@@ -65,8 +65,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings));
 
-                // if we're in a 'command' block and there are keys, this is the legacy style
-                // let the parse know that fixups are needed
+                // this is a 'command' block and there are keys - meaning this is the legacy style
+                // let the loader know that fixups are needed
                 if (jsonBlock.isMember(JsonKey("keys")))
                 {
                     _fixUpsAppliedDuringLoad = true;
