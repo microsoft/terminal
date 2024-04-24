@@ -55,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings = true);
 
         Json::Value ToJson();
+        bool FixUpsAppliedDuringLoad();
 
         const std::vector<SettingsLoadWarnings>& KeybindingsWarnings() const;
 

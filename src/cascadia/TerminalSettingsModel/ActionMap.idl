@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);
         [method_name("GetKeyBindingForActionWithArgs")] Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
+        Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction2(String cmdID);
 
         Windows.Foundation.Collections.IMapView<String, ActionAndArgs> AvailableActions { get; };
 

@@ -501,6 +501,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Function Description:
+    // - Serialize the Command into an array of json actions
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - an array of serialized actions
+    Json::Value Command::ToJson2() const
+    {
+        Json::Value cmdList{ Json::ValueType::arrayValue };
+
+        if (_nestedCommand || _IterateOn != ExpandCommandType::None)
+        {
+            // handle special commands
+            // For these, we can trust _originalJson to be correct.
+            // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
+            //   until we expand the command.
+            cmdList.append(_originalJson);
+        }
+        else
+        {
+            Json::Value cmdJson{ Json::ValueType::objectValue };
+            JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
+            JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+            if (!_ID.empty())
+            {
+                JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
+            }
+
+            if (_ActionAndArgs)
+            {
+                cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
+            }
+
+            cmdList.append(cmdJson);
+        }
+
+        return cmdList;
+    }
+
+    // Function Description:
     // - Helper to escape a string as a json string. This function will also
     //   trim off the leading and trailing double-quotes, so the output string
     //   can be inserted directly into another json blob.

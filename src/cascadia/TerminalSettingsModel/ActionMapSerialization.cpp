@@ -64,12 +64,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (jsonBlock.isMember(JsonKey("commands")) || jsonBlock.isMember(JsonKey("command")))
             {
                 AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings));
+
+                // if we're in a 'command' block and there are keys, this is the legacy style
+                // let the parse know that fixups are needed
+                if (jsonBlock.isMember(JsonKey("keys")))
+                {
+                    _fixUpsAppliedDuringLoad = true;
+                }
             }
             else
             {
                 _AddKeyBindingHelper(jsonBlock, warnings);
             }
-            // todo: need to have a flag for fixups applied during load
         }
 
         return warnings;
@@ -77,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     Json::Value ActionMap::ToJson() const
     {
+        // todo: stage 1 (done, need to uncomment)
         Json::Value actionList{ Json::ValueType::arrayValue };
 
         // Command serializes to an array of JSON objects.
@@ -95,12 +102,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         };
 
+        //auto toJson2 = [&actionList](const Model::Command& cmd) {
+        //    const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
+        //    const auto& cmdJsonArray{ cmdImpl->ToJson2() };
+        //    for (const auto& cmdJson : cmdJsonArray)
+        //    {
+        //        actionList.append(cmdJson);
+        //    }
+        //};
+
         // Serialize all standard Command objects in the current layer
-        // todo: change to _NewActionMap
         for (const auto& [_, cmd] : _ActionMap)
         {
             toJson(cmd);
         }
+
+        //for (const auto& [_, cmd] : _ActionMap2)
+        //{
+        //    toJson2(cmd);
+        //}
 
         // Serialize all nested Command objects added in the current layer
         for (const auto& [_, cmd] : _NestedCommands)
@@ -115,6 +135,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return actionList;
+    }
+
+    Json::Value ActionMap::KeyBindingsToJson() const
+    {
+        Json::Value keybindingsList{ Json::ValueType::arrayValue };
+
+        auto toJson = [&keybindingsList](const KeyChord kc, const winrt::hstring cmdID) {
+            Json::Value keyIDPair{ Json::ValueType::objectValue };
+            JsonUtils::SetValueForKey(keyIDPair, "keys", kc);
+            JsonUtils::SetValueForKey(keyIDPair, "id", cmdID);
+            keybindingsList.append(keyIDPair);
+        };
+
+        // Serialize all standard Command objects in the current layer
+        for (const auto& [keys, cmdID] : _KeyMap2)
+        {
+            toJson(keys, cmdID);
+        }
+
+        return keybindingsList;
     }
 
     void ActionMap::_AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings)

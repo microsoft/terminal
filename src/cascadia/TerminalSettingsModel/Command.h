@@ -51,6 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                            const Json::Value& json,
                                                            const OriginTag origin);
         Json::Value ToJson() const;
+        Json::Value ToJson2() const;
 
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;

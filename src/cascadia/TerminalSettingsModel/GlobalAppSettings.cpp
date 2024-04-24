@@ -276,9 +276,15 @@ Json::Value GlobalAppSettings::ToJson()
 #undef GLOBAL_SETTINGS_TO_JSON
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
-    // todo: complete this
-    //json[JsonKey(KeysMapKey)] = _keysMap->ToJson();
+    json[JsonKey(LegacyKeybindingsKey)] = _actionMap->KeyBindingsToJson();
+    // todo: stage 3 - fix tests, they're surely broke with this
+
     return json;
+}
+
+bool GlobalAppSettings::FixUpsAppliedDuringLoad()
+{
+    return _actionMap->FixUpsAppliedDuringLoad();
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept

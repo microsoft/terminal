@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
         Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action) const;
         Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action, const IActionArgs& actionArgs) const;
+        Control::KeyChord GetKeyBindingForAction2(winrt::hstring cmdID) const;
 
         // population
         void AddAction(const Model::Command& cmd);
@@ -54,6 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<ActionMap> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
         std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings = true);
         Json::Value ToJson() const;
+        Json::Value KeyBindingsToJson() const;
+        bool FixUpsAppliedDuringLoad() const;
 
         // modification
         bool GenerateIDsForActions();
@@ -74,19 +77,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<Model::Command> _GetActionByKeyChordInternal2(const Control::KeyChord& keys) const;
 
         void _RefreshKeyBindingCaches();
+        void _RefreshKeyBindingCaches2();
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateAvailableActionsWithStandardCommands2(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<winrt::hstring>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
+        void _PopulateKeyBindingMapWithStandardCommands2(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
+
         std::vector<Model::Command> _GetCumulativeActions() const noexcept;
         std::vector<Model::Command> _GetCumulativeActions2() const noexcept;
 
         void _TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
-
-        void _recursiveUpdateCommandKeybindingLabels();
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
@@ -113,11 +117,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //   than is necessary to be serialized.
         std::unordered_map<InternalActionID, Model::Command> _MaskingActions;
 
+        bool _fixUpsAppliedDuringLoad;
+
         void _AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings);
         void _TryUpdateActionMap2(const Model::Command& cmd);
         void _TryUpdateKeyChord2(const Model::Command& cmd);
         std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> _KeyMap2;
         std::unordered_map<winrt::hstring, Model::Command> _ActionMap2;
+
+        void _PopulateNameMapWithSpecialCommands2(std::unordered_map<hstring, Model::Command>& nameMap) const;
+        void _PopulateNameMapWithStandardCommands2(std::unordered_map<hstring, Model::Command>& nameMap) const;
+
+        Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache2{ nullptr };
+        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache2{ nullptr };
+        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache2{ nullptr };
 
         friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class SettingsModelUnitTests::DeserializationTests;

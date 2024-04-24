@@ -58,6 +58,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hasher.finalize();
     }
 
+    bool ActionMap::FixUpsAppliedDuringLoad() const
+    {
+        return _fixUpsAppliedDuringLoad;
+    }
+
     // Method Description:
     // - Retrieves the Command in the current layer, if it's valid
     // - We internally store invalid commands as full commands.
@@ -104,7 +109,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     std::optional<Model::Command> ActionMap::_GetActionByID2(const winrt::hstring actionID) const
     {
-        // todo: check this
         // Check current layer
         const auto actionMapPair{ _ActionMap2.find(actionID) };
         if (actionMapPair != _ActionMap2.end())
@@ -114,12 +118,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // ActionMap should never point to nullptr
             FAIL_FAST_IF_NULL(cmd);
 
+            // todo: stage 1 - not sure if we need this? _ActionMap2 doesn't contain invalid commands I'm p sure
             return !cmd.HasNestedCommands() && cmd.ActionAndArgs().Action() == ShortcutAction::Invalid ?
                        nullptr : // explicitly unbound
                        cmd;
         }
-
-        // todo: we should check parents here right
 
         // We don't have an answer
         return std::nullopt;
@@ -145,6 +148,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Retrieves a map of actions that can be bound to a key
     IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
     {
+        // todo: stage 2
         if (!_AvailableActionsCache)
         {
             // populate _AvailableActionsCache
@@ -195,7 +199,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ActionMap::_PopulateAvailableActionsWithStandardCommands2(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<winrt::hstring>& visitedActionIDs) const
     {
-        // todo: check this
+        // todo: stage 2
         // Update AvailableActions and visitedActionIDs with our current layer
         for (const auto& [actionID, cmd] : _ActionMap2)
         {
@@ -231,6 +235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //    an invalid state for the `ActionMap`
     IMapView<hstring, Model::Command> ActionMap::NameMap()
     {
+        // todo: stage 1 (done, edit return)
         if (!_NameMapCache)
         {
             // populate _NameMapCache
@@ -239,6 +244,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _PopulateNameMapWithStandardCommands(nameMap);
 
             _NameMapCache = single_threaded_map(std::move(nameMap));
+        }
+        if (!_NameMapCache2)
+        {
+            // populate _NameMapCache
+            std::unordered_map<hstring, Model::Command> nameMap2{};
+            _PopulateNameMapWithSpecialCommands2(nameMap2);
+            _PopulateNameMapWithStandardCommands2(nameMap2);
+
+            _NameMapCache2 = single_threaded_map(std::move(nameMap2));
         }
         return _NameMapCache.GetView();
     }
@@ -314,6 +328,76 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
+    // - Populates the provided nameMap with all of our special commands and our parent's special commands.
+    // - Special commands include nested and iterable commands.
+    // - Performs a top-down approach by going to the root first, then recursively adding the nested commands layer-by-layer.
+    // Arguments:
+    // - nameMap: the nameMap we're populating. This maps the name (hstring) of a command to the command itself.
+    void ActionMap::_PopulateNameMapWithSpecialCommands2(std::unordered_map<hstring, Model::Command>& nameMap) const
+    {
+        // Update NameMap with our parents.
+        // Starting with this means we're doing a top-down approach.
+        for (const auto& parent : _parents)
+        {
+            parent->_PopulateNameMapWithSpecialCommands2(nameMap);
+        }
+
+        // Add NestedCommands to NameMap _after_ we handle our parents.
+        // This allows us to override whatever our parents tell us.
+        for (const auto& [name, cmd] : _NestedCommands)
+        {
+            if (cmd.HasNestedCommands())
+            {
+                // add a valid cmd
+                nameMap.insert_or_assign(name, cmd);
+            }
+            else
+            {
+                // remove the invalid cmd
+                nameMap.erase(name);
+            }
+        }
+
+        // Add IterableCommands to NameMap
+        for (const auto& cmd : _IterableCommands)
+        {
+            nameMap.insert_or_assign(cmd.Name(), cmd);
+        }
+    }
+
+    // Method Description:
+    // - Populates the provided nameMap with all of our actions and our parents actions
+    //    while omitting the actions that were already added before
+    // Arguments:
+    // - nameMap: the nameMap we're populating. This maps the name (hstring) of a command to the command itself.
+    //             There should only ever by one of each command (identified by the actionID) in the nameMap.
+    void ActionMap::_PopulateNameMapWithStandardCommands2(std::unordered_map<hstring, Model::Command>& nameMap) const
+    {
+        std::unordered_set<winrt::hstring> visitedActionIDs;
+        for (const auto& cmd : _GetCumulativeActions2())
+        {
+            // only populate with valid commands
+            if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
+            {
+                // Only populate NameMap with actions that haven't been visited already.
+                const auto actionID{ cmd.ID() };
+                if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+                {
+                    const auto& name{ cmd.Name() };
+                    if (!name.empty())
+                    {
+                        // Update NameMap.
+                        nameMap.insert_or_assign(name, cmd);
+                    }
+
+                    // Record that we already handled adding this action to the NameMap.
+                    visitedActionIDs.emplace(actionID);
+                }
+            }
+        }
+    }
+
+    // Method Description:
     // - Provides an accumulated list of actions that are exposed. The accumulated list includes actions added in this layer, followed by actions added by our parents.
     std::vector<Model::Command> ActionMap::_GetCumulativeActions() const noexcept
     {
@@ -346,39 +430,48 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // check this
         // First, add actions from our current layer
-        std::vector<Model::Command> cumulativeActions2;
-        cumulativeActions2.reserve(_ActionMap2.size());
+        std::vector<Model::Command> cumulativeActions;
+        cumulativeActions.reserve(_ActionMap2.size());
 
-        // masking actions have priority. Actions here are constructed from consolidating an inherited action with changes we've found when populating this layer.
-        std::transform(_ActionMap2.begin(), _ActionMap2.end(), std::back_inserter(cumulativeActions2), [](std::pair<winrt::hstring, Model::Command> actionPair) {
+        std::transform(_ActionMap2.begin(), _ActionMap2.end(), std::back_inserter(cumulativeActions), [](std::pair<winrt::hstring, Model::Command> actionPair) {
             return actionPair.second;
         });
 
         // Now, add the accumulated actions from our parents
         for (const auto& parent : _parents)
         {
-            const auto parentActions{ parent->_GetCumulativeActions() };
-            cumulativeActions2.reserve(cumulativeActions2.size() + parentActions.size());
-            cumulativeActions2.insert(cumulativeActions2.end(), parentActions.begin(), parentActions.end());
+            const auto parentActions{ parent->_GetCumulativeActions2() };
+            cumulativeActions.reserve(cumulativeActions.size() + parentActions.size());
+            cumulativeActions.insert(cumulativeActions.end(), parentActions.begin(), parentActions.end());
         }
 
-        return cumulativeActions2;
+        return cumulativeActions;
     }
 
     IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
     {
+        // todo: stage 1 (done, edit return)
         if (!_GlobalHotkeysCache)
         {
             _RefreshKeyBindingCaches();
+        }
+        if (!_GlobalHotkeysCache2)
+        {
+            _RefreshKeyBindingCaches2();
         }
         return _GlobalHotkeysCache.GetView();
     }
 
     IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
+        // todo: stage 1 (done, edit return)
         if (!_KeyBindingMapCache)
         {
             _RefreshKeyBindingCaches();
+        }
+        if (!_KeyBindingMapCache2)
+        {
+            _RefreshKeyBindingCaches2();
         }
         return _KeyBindingMapCache.GetView();
     }
@@ -403,6 +496,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _KeyBindingMapCache = single_threaded_map(std::move(keyBindingsMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
+    }
+
+    void ActionMap::_RefreshKeyBindingCaches2()
+    {
+        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> keyBindingsMap;
+        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
+        std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality> unboundKeys;
+
+        _PopulateKeyBindingMapWithStandardCommands2(keyBindingsMap, unboundKeys);
+
+        for (const auto& [keys, cmd] : keyBindingsMap)
+        {
+            // Only populate GlobalHotkeys with actions whose
+            // ShortcutAction is GlobalSummon or QuakeMode
+            if (cmd.ActionAndArgs().Action() == ShortcutAction::GlobalSummon || cmd.ActionAndArgs().Action() == ShortcutAction::QuakeMode)
+            {
+                globalHotkeys.emplace(keys, cmd);
+            }
+        }
+
+        _KeyBindingMapCache2 = single_threaded_map(std::move(keyBindingsMap));
+        _GlobalHotkeysCache2 = single_threaded_map(std::move(globalHotkeys));
     }
 
     // Method Description:
@@ -450,6 +565,54 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         for (const auto& parent : _parents)
         {
             parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
+        }
+    }
+
+    // Method Description:
+    // - Populates the provided keyBindingsMap with all of our actions and our parents actions
+    //    while omitting the key bindings that were already added before.
+    // - This needs to be a bottom up approach to ensure that we only add each key chord once.
+    // Arguments:
+    // - keyBindingsMap: the keyBindingsMap we're populating. This maps the key chord of a command to the command itself.
+    // - unboundKeys: a set of keys that are explicitly unbound
+    void ActionMap::_PopulateKeyBindingMapWithStandardCommands2(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const
+    {
+        // Update KeyBindingsMap with our current layer
+        for (const auto& [keys, actionID] : _KeyMap2)
+        {
+            // Get the action our KeyMap maps to.
+            // If the actionID is empty, this keybinding is explicitly unbound
+            if (!actionID.empty())
+            {
+                const auto cmd{ _GetActionByID2(actionID).value() };
+                if (cmd)
+                {
+                    // iterate over all of the action's bound keys
+                    const auto cmdImpl{ get_self<Command>(cmd) };
+                    for (const auto& keys : cmdImpl->KeyMappings())
+                    {
+                        // Only populate KeyBindingsMap with actions that...
+                        // (1) haven't been visited already
+                        // (2) aren't explicitly unbound
+                        if (keyBindingsMap.find(keys) == keyBindingsMap.end() && unboundKeys.find(keys) == unboundKeys.end())
+                        {
+                            keyBindingsMap.emplace(keys, cmd);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // record any keys that are explicitly unbound,
+                // but don't add them to the list of key bindings
+                unboundKeys.emplace(keys);
+            }
+        }
+
+        // Update keyBindingsMap and unboundKeys with our parents
+        for (const auto& parent : _parents)
+        {
+            parent->_PopulateKeyBindingMapWithStandardCommands2(keyBindingsMap, unboundKeys);
         }
     }
 
@@ -626,7 +789,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ActionMap::_TryUpdateActionMap2(const Model::Command& cmd)
     {
-        // todo: check this
+        // todo: stage 1 (done)
         // Example:
         //   { "command": "copy", "id": "User.MyAction" }       --> add the action in for the first time
         //   { "command": "paste", "id": "User.MyAction" }    --> overwrite the "User.MyAction" command
@@ -826,7 +989,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Assign the new action in the _KeyMap
         // However, there's a strange edge case here - since we're parsing a legacy or modern block,
         // the user might have { "command": null, "id": "someID", "keys": "ctrl+c" }
-        // i.e. they provided an ID for a null command
+        // i.e. they provided an ID for a null command (which they really shouldn't, there's no purpose)
         // in this case, we do _not_ want to use the id they provided, we want to use an empty id
         // (empty id in the _KeyMap indicates the the keychord was explicitly unbound)
         if (cmd.ActionAndArgs().Action() == ShortcutAction::Invalid)
@@ -853,6 +1016,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // We use the fact that the ..Internal call returns nullptr for explicitly unbound
         // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
         // between unbound and lack of binding.
+        // todo: stage 1 (done, edit return)
+        //return _GetActionByKeyChordInternal2(keys) == nullptr;
         return _GetActionByKeyChordInternal(keys) == nullptr;
     }
 
@@ -865,6 +1030,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullptr if the key chord doesn't exist
     Model::Command ActionMap::GetActionByKeyChord(const Control::KeyChord& keys) const
     {
+        // todo: stage 1 (done, edit return)
+        //return _GetActionByKeyChordInternal2(keys).value_or(nullptr);
         return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
 
@@ -911,9 +1078,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the command with the given key chord
     // - nullptr if the key chord is explicitly unbound
     // - nullopt if it was not bound in this layer
-    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal2(const Control::KeyChord& /*keys*/) const
+    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal2(const Control::KeyChord& keys) const
     {
-        // todo: complete this
+        if (const auto keyIDPair = _KeyMap2.find(keys); keyIDPair != _KeyMap2.end())
+        {
+            if (const auto cmdID = keyIDPair->second; !cmdID.empty())
+            {
+                return _GetActionByID2(cmdID);
+            }
+            else
+            {
+                // the keychord is in our map, but points to an empty string - explicitly unbound
+                return nullptr;
+            }
+        }
+        // we did not find the keychord in our map, its not bound and not explicity unbound either
         return std::nullopt;
     }
 
@@ -965,6 +1144,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
+    // Method Description:
+    // - Retrieves the key chord for the provided action
+    // Arguments:
+    // - cmdID: the ID of the command we're looking for
+    // Return Value:
+    // - the key chord that executes the given action
+    // - nullptr if the action is not bound to a key chord
+    Control::KeyChord ActionMap::GetKeyBindingForAction2(winrt::hstring cmdID) const
+    {
+        // todo: stage 1 (done, need to update the callers to use this, note for review: what if the user makes an action that does the same thing and edits the keys?)
+        // Check our internal state.
+        if (const auto& cmd{ _GetActionByID2(cmdID) })
+        {
+            return cmd->Keys();
+        }
+
+        // Check our parents
+        for (const auto& parent : _parents)
+        {
+            if (const auto& keys{ parent->GetKeyBindingForAction2(cmdID) })
+            {
+                return keys;
+            }
+        }
+
+        // This key binding does not exist
+        return nullptr;
+    }
+
     bool ActionMap::GenerateIDsForActions()
     {
         bool fixedUp{ false };
@@ -981,6 +1189,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 fixedUp = cmdImpl->GenerateID() || fixedUp;
             }
         }
+        _fixUpsAppliedDuringLoad = true;
+        // todo: stage 1 - probably don't need this as a return value anymore?
         return fixedUp;
     }
 
@@ -993,6 +1203,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - true, if successful. False, otherwise.
     bool ActionMap::RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys)
     {
+        // todo: stage 2
         const auto& cmd{ GetActionByKeyChord(oldKeys) };
         if (!cmd)
         {
@@ -1024,6 +1235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // create an "unbound" command
         // { "command": "unbound", "keys": <keys> }
+        // todo: stage 2
         const auto cmd{ make_self<Command>() };
         cmd->ActionAndArgs(make<ActionAndArgs>());
         cmd->RegisterKey(keys);
@@ -1040,33 +1252,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void ActionMap::RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action)
     {
+        // todo: stage 2
         auto cmd{ make_self<Command>() };
         cmd->RegisterKey(keys);
         cmd->ActionAndArgs(action);
         AddAction(*cmd);
-    }
-
-    void ActionMap::_recursiveUpdateCommandKeybindingLabels()
-    {
-        const auto& commands{ _ExpandedCommandsCache };
-
-        for (const auto& command : commands)
-        {
-            if (command.HasNestedCommands())
-            {
-                _recursiveUpdateCommandKeybindingLabels();
-            }
-            else
-            {
-                // If there's a keybinding that's bound to exactly this command,
-                // then get the keychord and display it as a
-                // part of the command in the UI.
-                // We specifically need to do this for nested commands.
-                const auto keyChord{ GetKeyBindingForAction(command.ActionAndArgs().Action(),
-                                                            command.ActionAndArgs().Args()) };
-                command.RegisterKey(keyChord);
-            }
-        }
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

@@ -461,6 +461,7 @@ bool SettingsLoader::FixupUserSettings()
     };
 
     auto fixedUp = userSettings.fixupsAppliedDuringLoad;
+    fixedUp = userSettings.globals->FixUpsAppliedDuringLoad() || fixedUp;
 
     fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
