@@ -1777,6 +1777,38 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        FILETIME lastWriteTime;
+        SYSTEMTIME lastWriteSystemTime;
+        if (!GetFileTime(file.get(), nullptr, nullptr, &lastWriteTime) ||
+            !FileTimeToSystemTime(&lastWriteTime, &lastWriteSystemTime))
+        {
+            return;
+        }
+
+        wchar_t dateBuf[256];
+        const auto dateLen = GetDateFormatEx(nullptr, 0, &lastWriteSystemTime, nullptr, &dateBuf[0], ARRAYSIZE(dateBuf), nullptr);
+        wchar_t timeBuf[256];
+        const auto timeLen = GetTimeFormatEx(nullptr, 0, &lastWriteSystemTime, nullptr, &timeBuf[0], ARRAYSIZE(timeBuf));
+
+        std::wstring message;
+        if (dateLen > 0 && timeLen > 0)
+        {
+            const auto msg = RS_(L"SessionRestoreMessage");
+            const std::wstring_view date{ &dateBuf[0], gsl::narrow_cast<size_t>(dateLen) };
+            const std::wstring_view time{ &timeBuf[0], gsl::narrow_cast<size_t>(timeLen) };
+            // This escape sequence string
+            // * sets the color to white on a bright black background ("\x1b[100;37m")
+            // * prints "  [Restored <date> <time>]  <spaces until end of line>  "
+            // * resets the color ("\x1b[m")
+            // * newlines
+            // * clears the screen ("\x1b[2J")
+            // The last step is necessary because we launch ConPTY without PSEUDOCONSOLE_INHERIT_CURSOR by default.
+            // This will cause ConPTY to emit a \x1b[2J sequence on startup to ensure it and the terminal are in-sync.
+            // If we didn't do a \x1b[2J ourselves as well, the user would briefly see the last state of the terminal,
+            // before it's quickly scrolled away once ConPTY has finished starting up, which looks weird.
+            message = fmt::format(FMT_COMPILE(L"\x1b[100;37m  [{} {} {}]\x1b[K\x1b[m\r\n\x1b[2J"), msg, date, time);
+        }
+
         wchar_t buffer[32 * 1024];
         DWORD read = 0;
 
@@ -1802,9 +1834,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
 
-        // This pushes the restored contents up into the scrollback.
-        const auto lock = _terminal->LockForWriting();
-        _terminal->Write(L"\x1b[2J");
+        {
+            const auto lock = _terminal->LockForWriting();
+
+            // Normally the cursor should already be at the start of the line, but let's be absolutely sure it is.
+            if (_terminal->GetCursorPosition().x != 0)
+            {
+                _terminal->Write(L"\r\n");
+            }
+
+            _terminal->Write(message);
+        }
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr, wil::zwstring_view parameter)

@@ -319,6 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Reattach
         };
         bool _InitializeTerminal(const InitializeReason reason);
+        winrt::fire_and_forget _restoreInBackground();
         void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
