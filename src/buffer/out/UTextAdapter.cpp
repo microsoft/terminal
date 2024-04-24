@@ -12,13 +12,75 @@ struct RowRange
     til::CoordType end;
 };
 
+struct RefcountBuffer
+{
+    size_t references;
+    size_t capacity;
+    wchar_t data[1];
+
+    static RefcountBuffer* EnsureCapacityForOverwrite(RefcountBuffer* buffer, size_t capacity)
+    {
+        // We must not just ensure that `buffer` has at least `capacity`, but also that its reference count is <= 1, because otherwise we would resize a shared buffer.
+        if (buffer != nullptr && buffer->references <= 1 && buffer->capacity >= capacity)
+        {
+            return buffer;
+        }
+
+        const auto oldCapacity = buffer ? buffer->capacity << 1 : 0;
+        const auto newCapacity = std::max(capacity + 128, oldCapacity);
+        const auto newBuffer = static_cast<RefcountBuffer*>(malloc(sizeof(RefcountBuffer) - sizeof(data) + newCapacity * sizeof(wchar_t)));
+
+        if (newBuffer == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (buffer)
+        {
+            buffer->Release();
+        }
+
+        // Copying the old buffer's data is not necessary because utextAccess() will scribble right over it.
+        newBuffer->references = 1;
+        newBuffer->capacity = newCapacity;
+        return newBuffer;
+    }
+
+    void AddRef()
+    {
+        // With our usage patterns, either of these two would indicate
+        // an unbalanced AddRef/Release or a memory corruption.
+        assert(references > 0 && references < 1000);
+        references++;
+    }
+
+    void Release()
+    {
+        // With our usage patterns, either of these two would indicate
+        // an unbalanced AddRef/Release or a memory corruption.
+        assert(references > 0 && references < 1000);
+        if (--references == 0)
+        {
+            free(this);
+        }
+    }
+};
+
 constexpr size_t& accessLength(UText* ut) noexcept
 {
+    static_assert(sizeof(ut->p) == sizeof(size_t));
     return *std::bit_cast<size_t*>(&ut->p);
+}
+
+constexpr RefcountBuffer*& accessBuffer(UText* ut) noexcept
+{
+    static_assert(sizeof(ut->q) == sizeof(RefcountBuffer*));
+    return *std::bit_cast<RefcountBuffer**>(&ut->q);
 }
 
 constexpr RowRange& accessRowRange(UText* ut) noexcept
 {
+    static_assert(sizeof(ut->a) == sizeof(RowRange));
     return *std::bit_cast<RowRange*>(&ut->a);
 }
 
@@ -56,11 +118,16 @@ static UText* U_CALLCONV utextClone(UText* dest, const UText* src, UBool deep, U
     }
 
     dest = utext_setup(dest, 0, status);
-    if (*status <= U_ZERO_ERROR)
+    if (*status > U_ZERO_ERROR)
     {
-        memcpy(dest, src, sizeof(UText));
+        return dest;
     }
 
+    memcpy(dest, src, sizeof(UText));
+    if (const auto buf = accessBuffer(dest))
+    {
+        buf->AddRef();
+    }
     return dest;
 }
 
@@ -126,11 +193,13 @@ try
     const auto range = accessRowRange(ut);
     auto start = ut->chunkNativeStart;
     auto limit = ut->chunkNativeLimit;
-    auto y = accessCurrentRow(ut);
-    std::wstring_view text;
 
     if (neededIndex < start || neededIndex >= limit)
     {
+        auto y = accessCurrentRow(ut);
+        std::wstring_view text;
+        bool wasWrapForced = false;
+
         if (neededIndex < start)
         {
             do
@@ -141,7 +210,10 @@ try
                     return false;
                 }
 
-                text = textBuffer.GetRowByOffset(y).GetText();
+                const auto& row = textBuffer.GetRowByOffset(y);
+                text = row.GetText();
+                wasWrapForced = row.WasWrapForced();
+
                 limit = start;
                 start -= text.size();
             } while (neededIndex < start);
@@ -156,10 +228,25 @@ try
                     return false;
                 }
 
-                text = textBuffer.GetRowByOffset(y).GetText();
+                const auto& row = textBuffer.GetRowByOffset(y);
+                text = row.GetText();
+                wasWrapForced = row.WasWrapForced();
+
                 start = limit;
                 limit += text.size();
             } while (neededIndex >= limit);
+        }
+
+        if (!wasWrapForced)
+        {
+            const auto requiredSpace = text.size() + 1;
+            const auto buffer = RefcountBuffer::EnsureCapacityForOverwrite(accessBuffer(ut), requiredSpace);
+
+            memcpy(&buffer->data[0], text.data(), text.size() * sizeof(wchar_t));
+            buffer->data[text.size()] = L'\n';
+
+            text = { &buffer->data[0], requiredSpace };
+            accessBuffer(ut) = buffer;
         }
 
         accessCurrentRow(ut) = y;
@@ -256,18 +343,31 @@ catch (...)
     return 0;
 }
 
+static void U_CALLCONV utextClose(UText* ut) noexcept
+{
+    if (const auto buffer = accessBuffer(ut))
+    {
+        buffer->Release();
+    }
+}
+
 static constexpr UTextFuncs utextFuncs{
     .tableSize = sizeof(UTextFuncs),
     .clone = utextClone,
     .nativeLength = utextNativeLength,
     .access = utextAccess,
+    .close = utextClose,
 };
 
 // Creates a UText from the given TextBuffer that spans rows [rowBeg,RowEnd).
-UText Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd) noexcept
+Microsoft::Console::ICU::unique_utext Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd) noexcept
 {
-#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
-    UText ut = UTEXT_INITIALIZER;
+    unique_utext ut{ UTEXT_INITIALIZER };
+
+    UErrorCode status = U_ZERO_ERROR;
+    utext_setup(&ut, 0, &status);
+    THROW_HR_IF(E_UNEXPECTED, status > U_ZERO_ERROR);
+
     ut.providerProperties = (1 << UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE) | (1 << UTEXT_PROVIDER_STABLE_CHUNKS);
     ut.pFuncs = &utextFuncs;
     ut.context = &textBuffer;
