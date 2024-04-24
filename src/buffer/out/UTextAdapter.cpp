@@ -6,6 +6,12 @@
 
 #include "textBuffer.hpp"
 
+// All of these are somewhat annoying when trying to implement RefcountBuffer.
+// You can't stuff a unique_ptr into ut->q (= void*) after all.
+#pragma warning(disable : 26402) // Return a scoped object instead of a heap-allocated if it has a move constructor (r.3).
+#pragma warning(disable : 26403) // Reset or explicitly delete an owner<T> pointer '...' (r.3).
+#pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
+
 struct RowRange
 {
     til::CoordType begin;
@@ -28,9 +34,9 @@ struct RefcountBuffer
 
         const auto oldCapacity = buffer ? buffer->capacity << 1 : 0;
         const auto newCapacity = std::max(capacity + 128, oldCapacity);
-        const auto newBuffer = static_cast<RefcountBuffer*>(malloc(sizeof(RefcountBuffer) - sizeof(data) + newCapacity * sizeof(wchar_t)));
+        const auto newBuffer = static_cast<RefcountBuffer*>(::operator new(sizeof(RefcountBuffer) - sizeof(data) + newCapacity * sizeof(wchar_t)));
 
-        if (newBuffer == nullptr)
+        if (!newBuffer)
         {
             return nullptr;
         }
@@ -46,7 +52,7 @@ struct RefcountBuffer
         return newBuffer;
     }
 
-    void AddRef()
+    void AddRef() noexcept
     {
         // With our usage patterns, either of these two would indicate
         // an unbalanced AddRef/Release or a memory corruption.
@@ -54,14 +60,14 @@ struct RefcountBuffer
         references++;
     }
 
-    void Release()
+    void Release() noexcept
     {
         // With our usage patterns, either of these two would indicate
         // an unbalanced AddRef/Release or a memory corruption.
         assert(references > 0 && references < 1000);
         if (--references == 0)
         {
-            free(this);
+            ::operator delete(this);
         }
     }
 };
@@ -239,13 +245,13 @@ try
 
         if (!wasWrapForced)
         {
-            const auto requiredSpace = text.size() + 1;
-            const auto buffer = RefcountBuffer::EnsureCapacityForOverwrite(accessBuffer(ut), requiredSpace);
+            const auto newSize = text.size() + 1;
+            const auto buffer = RefcountBuffer::EnsureCapacityForOverwrite(accessBuffer(ut), newSize);
 
             memcpy(&buffer->data[0], text.data(), text.size() * sizeof(wchar_t));
-            buffer->data[text.size()] = L'\n';
+            til::at(buffer->data, text.size()) = L'\n';
 
-            text = { &buffer->data[0], requiredSpace };
+            text = { &buffer->data[0], newSize };
             accessBuffer(ut) = buffer;
         }
 
@@ -362,11 +368,12 @@ static constexpr UTextFuncs utextFuncs{
 // Creates a UText from the given TextBuffer that spans rows [rowBeg,RowEnd).
 Microsoft::Console::ICU::unique_utext Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd) noexcept
 {
+#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
     unique_utext ut{ UTEXT_INITIALIZER };
 
     UErrorCode status = U_ZERO_ERROR;
     utext_setup(&ut, 0, &status);
-    THROW_HR_IF(E_UNEXPECTED, status > U_ZERO_ERROR);
+    FAIL_FAST_IF(status > U_ZERO_ERROR);
 
     ut.providerProperties = (1 << UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE) | (1 << UTEXT_PROVIDER_STABLE_CHUNKS);
     ut.pFuncs = &utextFuncs;
