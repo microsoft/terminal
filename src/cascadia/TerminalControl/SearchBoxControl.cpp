@@ -195,6 +195,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    winrt::hstring SearchBoxControl::Text()
+    {
+        return TextBox().Text();
+    }
+
     // Method Description:
     // - Check if the current search direction is forward
     // Arguments:
@@ -202,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - bool: the current search direction, determined by the
     //         states of the two direction buttons
-    bool SearchBoxControl::_GoForward()
+    bool SearchBoxControl::GoForward()
     {
         return GoForwardButton().IsChecked().GetBoolean();
     }
@@ -214,7 +219,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - bool: whether the current search is case sensitive (case button is checked )
     //   or not
-    bool SearchBoxControl::_CaseSensitive()
+    bool SearchBoxControl::CaseSensitive()
     {
         return CaseSensitivityButton().IsChecked().GetBoolean();
     }
@@ -240,11 +245,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                Search.raise(TextBox().Text(), !_GoForward(), _CaseSensitive());
+                Search.raise(Text(), !GoForward(), CaseSensitive());
             }
             else
             {
-                Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+                Search.raise(Text(), GoForward(), CaseSensitive());
             }
             e.Handled(true);
         }
@@ -335,7 +340,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        Search.raise(Text(), GoForward(), CaseSensitive());
     }
 
     // Method Description:
@@ -356,7 +361,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        Search.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        Search.raise(Text(), GoForward(), CaseSensitive());
     }
 
     // Method Description:
@@ -394,7 +399,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive());
     }
 
     // Method Description:
@@ -406,7 +411,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        SearchChanged.raise(TextBox().Text(), _GoForward(), _CaseSensitive());
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive());
     }
 
     // Method Description:
@@ -527,21 +532,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void SearchBoxControl::ClearStatus()
     {
         StatusBox().Text(L"");
-    }
-
-    // Method Description:
-    // - Enables / disables results navigation buttons
-    // Arguments:
-    // - enable: if true, the buttons should be enabled
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::NavigationEnabled(bool enabled)
-    {
-        GoBackwardButton().IsEnabled(enabled);
-        GoForwardButton().IsEnabled(enabled);
-    }
-    bool SearchBoxControl::NavigationEnabled()
-    {
-        return GoBackwardButton().IsEnabled() || GoForwardButton().IsEnabled();
     }
 }

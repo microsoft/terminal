@@ -3234,7 +3234,8 @@ namespace winrt::TerminalApp::implementation
                                                   TerminalConnection::ITerminalConnection existingConnection)
 
     {
-        if (const auto& newTerminalArgs{ contentArgs.try_as<NewTerminalArgs>() })
+        const auto& newTerminalArgs{ contentArgs.try_as<NewTerminalArgs>() };
+        if (contentArgs == nullptr || newTerminalArgs != nullptr || contentArgs.Type().empty())
         {
             // Terminals are of course special, and have to deal with debug taps, duplicating the tab, etc.
             return _MakeTerminalPane(newTerminalArgs, sourceTab, existingConnection);

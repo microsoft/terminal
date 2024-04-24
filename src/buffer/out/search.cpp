@@ -13,7 +13,8 @@ bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, c
     const auto& textBuffer = renderData.GetTextBuffer();
     const auto lastMutationId = textBuffer.GetLastMutationId();
 
-    if (_needle == needle &&
+    if (_renderData == &renderData &&
+        _needle == needle &&
         _caseInsensitive == caseInsensitive &&
         _lastMutationId == lastMutationId)
     {
@@ -21,15 +22,16 @@ bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, c
         return false;
     }
 
+    if (prevResults)
+    {
+        *prevResults = std::move(_results);
+    }
+
     _renderData = &renderData;
     _needle = needle;
     _caseInsensitive = caseInsensitive;
     _lastMutationId = lastMutationId;
 
-    if (prevResults)
-    {
-        *prevResults = std::move(_results);
-    }
     _results = textBuffer.SearchText(needle, caseInsensitive);
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
