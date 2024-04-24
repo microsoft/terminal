@@ -35,7 +35,6 @@ void GlobalAppSettings::_FinalizeInheritance()
     for (const auto& parent : _parents)
     {
         _actionMap->AddLeastImportantParent(parent->_actionMap);
-        _keysMap->AddLeastImportantParent(parent->_keysMap);
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
 
         for (const auto& [k, v] : parent->_themes)
@@ -56,8 +55,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 
     globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
-    // todo: complete this
-    //globals->_keysMap = _keysMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
 #define GLOBAL_SETTINGS_COPY(type, name, jsonKey, ...) \
@@ -114,11 +111,6 @@ winrt::Microsoft::Terminal::Settings::Model::ActionMap GlobalAppSettings::Action
     return *_actionMap;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::KeysMap GlobalAppSettings::KeysMap() const noexcept
-{
-    return *_keysMap;
-}
-
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
@@ -172,11 +164,6 @@ void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTa
     {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            // what if we parse _keyMap first and then populate _actionMap->LayerJson and pass in the keymap
-            // alternative: do 'modern' actionmap->layerjson first, and then do keymap layer json, and then do actionmap->legacylayerjson, passing in the keymap
-            // just do 1 layer json call here, if there's no command field its a keys object from the new map
-            // if (command), if (keys)
-            // maybe don't even need keysmapkey?? just reuse legacykeybindingskeys
             auto warnings = _actionMap->LayerJson(bindings, origin, withKeybindings);
 
             // It's possible that the user provided keybindings have some warnings

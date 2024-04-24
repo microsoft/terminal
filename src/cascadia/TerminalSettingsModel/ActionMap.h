@@ -18,7 +18,6 @@ Author(s):
 #include "ActionMap.g.h"
 #include "IInheritable.h"
 #include "Command.h"
-#include "KeysMap.h"
 
 // fwdecl unittest classes
 namespace SettingsModelUnitTests
@@ -31,6 +30,22 @@ namespace SettingsModelUnitTests
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using InternalActionID = size_t;
+
+    struct KeyChordHash
+    {
+        inline std::size_t operator()(const Control::KeyChord& key) const
+        {
+            return static_cast<size_t>(key.Hash());
+        }
+    };
+
+    struct KeyChordEquality
+    {
+        inline bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
+        {
+            return lhs.Equals(rhs);
+        }
+    };
 
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {

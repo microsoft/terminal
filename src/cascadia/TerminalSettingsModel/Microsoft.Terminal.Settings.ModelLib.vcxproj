@@ -57,9 +57,6 @@
     <ClInclude Include="ActionMap.h">
       <DependentUpon>ActionMap.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="KeysMap.h">
-      <DependentUpon>KeysMap.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="AzureCloudShellGenerator.h" />
     <ClInclude Include="ApplicationState.h">
       <DependentUpon>ApplicationState.idl</DependentUpon>
@@ -138,12 +135,6 @@
     </ClCompile>
     <ClCompile Include="ActionMapSerialization.cpp">
       <DependentUpon>ActionMap.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeysMap.cpp">
-      <DependentUpon>KeysMap.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeysMapSerialization.cpp">
-      <DependentUpon>KeysMap.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
     <ClCompile Include="ApplicationState.cpp">
@@ -225,7 +216,6 @@
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
     <Midl Include="ActionMap.idl" />
-    <Midl Include="KeysMap.idl" />
     <Midl Include="ApplicationState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
