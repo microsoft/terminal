@@ -1718,6 +1718,7 @@ sysparams
 sysparamsext
 SYSTEMHAND
 SYSTEMMENU
+SYSTEMTIME
 tabview
 TAdd
 taef
