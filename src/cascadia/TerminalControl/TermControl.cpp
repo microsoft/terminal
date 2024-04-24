@@ -1276,8 +1276,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::_restoreInBackground()
     {
         const auto path = std::exchange(_restorePath, {});
-        const auto dispatcher = Dispatcher();
         const auto weakSelf = get_weak();
+        winrt::apartment_context uiThread;
 
         try
         {
@@ -1295,7 +1295,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         try
         {
-            co_await wil::resume_foreground(dispatcher);
+            co_await uiThread;
 
             const auto self = weakSelf.get();
             if (!self)
