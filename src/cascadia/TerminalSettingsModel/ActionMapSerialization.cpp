@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     Json::Value ActionMap::ToJson() const
     {
-        // todo: stage 1 (done, need to uncomment)
+        // todo: stage 1 (done)
         Json::Value actionList{ Json::ValueType::arrayValue };
 
         // Command serializes to an array of JSON objects.
@@ -102,25 +102,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         };
 
-        //auto toJson2 = [&actionList](const Model::Command& cmd) {
-        //    const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
-        //    const auto& cmdJsonArray{ cmdImpl->ToJson2() };
-        //    for (const auto& cmdJson : cmdJsonArray)
-        //    {
-        //        actionList.append(cmdJson);
-        //    }
-        //};
+        auto toJson2 = [&actionList](const Model::Command& cmd) {
+            const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
+            const auto& cmdJsonArray{ cmdImpl->ToJson2() };
+            for (const auto& cmdJson : cmdJsonArray)
+            {
+                actionList.append(cmdJson);
+            }
+        };
 
         // Serialize all standard Command objects in the current layer
-        for (const auto& [_, cmd] : _ActionMap)
-        {
-            toJson(cmd);
-        }
-
-        //for (const auto& [_, cmd] : _ActionMap2)
+        //for (const auto& [_, cmd] : _ActionMap)
         //{
-        //    toJson2(cmd);
+        //    toJson(cmd);
         //}
+
+        for (const auto& [_, cmd] : _ActionMap2)
+        {
+            toJson2(cmd);
+        }
 
         // Serialize all nested Command objects added in the current layer
         for (const auto& [_, cmd] : _NestedCommands)

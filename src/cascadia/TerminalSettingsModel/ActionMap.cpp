@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // ActionMap should never point to nullptr
             FAIL_FAST_IF_NULL(cmd);
 
-            // todo: stage 1 - not sure if we need this? _ActionMap2 doesn't contain invalid commands I'm p sure
+            // todo: stage 3 - not sure if we need this? _ActionMap2 doesn't contain invalid commands I'm p sure
             return !cmd.HasNestedCommands() && cmd.ActionAndArgs().Action() == ShortcutAction::Invalid ?
                        nullptr : // explicitly unbound
                        cmd;
@@ -235,7 +235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //    an invalid state for the `ActionMap`
     IMapView<hstring, Model::Command> ActionMap::NameMap()
     {
-        // todo: stage 1 (done, edit return)
+        // todo: stage 1 (done)
         if (!_NameMapCache)
         {
             // populate _NameMapCache
@@ -254,7 +254,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             _NameMapCache2 = single_threaded_map(std::move(nameMap2));
         }
-        return _NameMapCache.GetView();
+        return _NameMapCache2.GetView();
     }
 
     // Method Description:
@@ -450,7 +450,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
     {
-        // todo: stage 1 (done, edit return)
+        // todo: stage 1 (done)
         if (!_GlobalHotkeysCache)
         {
             _RefreshKeyBindingCaches();
@@ -459,12 +459,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _RefreshKeyBindingCaches2();
         }
-        return _GlobalHotkeysCache.GetView();
+        return _GlobalHotkeysCache2.GetView();
     }
 
     IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
-        // todo: stage 1 (done, edit return)
+        // todo: stage 1 (done)
         if (!_KeyBindingMapCache)
         {
             _RefreshKeyBindingCaches();
@@ -473,7 +473,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _RefreshKeyBindingCaches2();
         }
-        return _KeyBindingMapCache.GetView();
+        return _KeyBindingMapCache2.GetView();
     }
 
     void ActionMap::_RefreshKeyBindingCaches()
@@ -622,6 +622,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // KeyChord --> ID
         actionMap->_KeyMap = _KeyMap;
+        actionMap->_KeyMap2 = _KeyMap2;
 
         // ID --> Command
         actionMap->_ActionMap.reserve(_ActionMap.size());
@@ -1016,9 +1017,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // We use the fact that the ..Internal call returns nullptr for explicitly unbound
         // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
         // between unbound and lack of binding.
-        // todo: stage 1 (done, edit return)
-        //return _GetActionByKeyChordInternal2(keys) == nullptr;
-        return _GetActionByKeyChordInternal(keys) == nullptr;
+        // todo: stage 1 (done)
+        return _GetActionByKeyChordInternal2(keys) == nullptr;
+        //return _GetActionByKeyChordInternal(keys) == nullptr;
     }
 
     // Method Description:
@@ -1030,9 +1031,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullptr if the key chord doesn't exist
     Model::Command ActionMap::GetActionByKeyChord(const Control::KeyChord& keys) const
     {
-        // todo: stage 1 (done, edit return)
-        //return _GetActionByKeyChordInternal2(keys).value_or(nullptr);
-        return _GetActionByKeyChordInternal(keys).value_or(nullptr);
+        // todo: stage 1 (done)
+        return _GetActionByKeyChordInternal2(keys).value_or(nullptr);
+        //return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
 
     // Method Description:
@@ -1092,6 +1093,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return nullptr;
             }
         }
+
+        // the command was not bound in this layer,
+        // ask my parents
+        for (const auto& parent : _parents)
+        {
+            const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal2(keys) };
+            if (inheritedCmd)
+            {
+                return *inheritedCmd;
+            }
+        }
+
         // we did not find the keychord in our map, its not bound and not explicity unbound either
         return std::nullopt;
     }
@@ -1190,7 +1203,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
         _fixUpsAppliedDuringLoad = true;
-        // todo: stage 1 - probably don't need this as a return value anymore?
+        // todo: stage 3 - probably don't need this as a return value anymore?
         return fixedUp;
     }
 
