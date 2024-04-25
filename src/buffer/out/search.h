@@ -25,7 +25,7 @@ class Search final
 public:
     Search() = default;
 
-    bool IsStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept;
+    bool IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept;
     bool Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive, bool reverse);
 
     void MoveToCurrentSelection();

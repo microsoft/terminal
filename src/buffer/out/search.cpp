@@ -8,7 +8,7 @@
 
 using namespace Microsoft::Console::Types;
 
-bool Search::IsStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept
+bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept
 {
     return _renderData != &renderData ||
            _needle != needle ||
