@@ -37,7 +37,7 @@ public:
     bool SelectCurrent() const;
 
     const std::vector<til::point_span>& Results() const noexcept;
-    std::vector<til::point_span> ExtractResults() noexcept;
+    std::vector<til::point_span>&& ExtractResults() noexcept;
     ptrdiff_t CurrentMatch() const noexcept;
 
 private:

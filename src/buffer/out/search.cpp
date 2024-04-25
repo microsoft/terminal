@@ -135,7 +135,7 @@ const std::vector<til::point_span>& Search::Results() const noexcept
     return _results;
 }
 
-std::vector<til::point_span> Search::ExtractResults() noexcept
+std::vector<til::point_span>&& Search::ExtractResults() noexcept
 {
     return std::move(_results);
 }
