@@ -288,6 +288,40 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
+
+        // Calls func(row, begX, endX) for each row and begX and begY are inclusive coordinates,
+        // because point_span itself also uses inclusive coordinates.
+        // In other words, it turns a
+        // ```
+        //   +----------------+
+        //   |       #########|
+        //   |################|
+        //   |####            |
+        //   +----------------+
+        // ```
+        // into:
+        // ```
+        //   func(0, 8, 15)
+        //   func(1, 0, 15)
+        //   func(2, 0, 4)
+        // ```
+        constexpr void iterate_rows(til::CoordType width, auto&& func) const
+        {
+            // Copy the members so that the compiler knows it doesn't
+            // need to re-read them on every loop iteration.
+            const auto w = width - 1;
+            const auto ax = std::clamp(start.x, 0, w);
+            const auto ay = start.y;
+            const auto bx = std::clamp(end.x, 0, w);
+            const auto by = end.y;
+
+            for (auto y = ay; y <= by; ++y)
+            {
+                const auto x1 = y != ay ? 0 : ax;
+                const auto x2 = y != by ? w : bx;
+                func(y, x1, x2);
+            }
+        }
     };
 }
 

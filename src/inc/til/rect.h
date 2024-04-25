@@ -201,6 +201,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
+        constexpr rect to_origin(const rect& other) const
+        {
+            return to_origin(other.origin());
+        }
+
+        constexpr rect to_origin(const point& origin) const
+        {
+            const auto l = details::extract(::base::CheckSub(left, origin.x));
+            const auto t = details::extract(::base::CheckSub(top, origin.y));
+            const auto r = details::extract(::base::CheckSub(right, origin.x));
+            const auto b = details::extract(::base::CheckSub(bottom, origin.y));
+            return { l, t, r, b };
+        }
+
         explicit constexpr operator bool() const noexcept
         {
             return left >= 0 && top >= 0 && right > left && bottom > top;

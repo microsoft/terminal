@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Farbschema auswählen...</value>
+    <value>Farbschema auswählen</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Neue Registerkarte...</value>
+    <value>Neue Registerkarte</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Bereich teilen...</value>
+    <value>Bereich teilen</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (portierbar)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Die Farbe der Registerkarte festlegen...</value>
+    <value>Registerkartenfarbe festlegen</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Einfügen</value>
@@ -347,7 +347,7 @@
     <value>Den Titel der Registerkarte zurücksetzen</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Registerkartentitel umbenennen...</value>
+    <value>Registerkartentitel umbenennen</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Bereich skalieren</value>
@@ -441,7 +441,7 @@
     <value>Zur letzten Registerkarte wechseln</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Registerkarte suchen...</value>
+    <value>Registerkarte suchen</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Modus "Immer im Vordergrund" umschalten</value>
@@ -450,10 +450,10 @@
     <value>Befehlspalette ein/aus</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Zuletzt verwendete Befehle...</value>
+    <value>Zuletzt verwendete Befehle</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Vorschläge öffnen...</value>
+    <value>Vorschläge öffnen</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Befehlspalette im Befehlszeilenmodus ein/aus</value>
@@ -505,7 +505,7 @@
     <value>Debugger unterbrechen</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Einstellungen öffnen...</value>
+    <value>Einstellungen öffnen</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Fenster in „{0}“ umbenennen</value>
@@ -515,7 +515,7 @@
     <value>Fensternamen zurücksetzen</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Fenster umbenennen...</value>
+    <value>Fenster umbenennen</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Aktuelles Arbeitsverzeichnis des Terminals anzeigen</value>
@@ -566,7 +566,7 @@
     <value>Terminal beenden</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Hintergrunddeckkraft festlegen...</value>
+    <value>Hintergrunddeckkraft festlegen</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Hintergrunddeckkraft um {0} % erhöhen</value>

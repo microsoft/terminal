@@ -16,7 +16,6 @@ Revision History:
 
 #pragma once
 
-#include "conimeinfo.h"
 #include "CursorBlinker.hpp"
 #include "IIoProvider.hpp"
 #include "readDataCooked.hpp"
@@ -97,8 +96,6 @@ public:
 
     CPINFO CPInfo = {};
     CPINFO OutputCPInfo = {};
-
-    ConsoleImeInfo ConsoleIme;
 
     void LockConsole() noexcept;
     void UnlockConsole() noexcept;

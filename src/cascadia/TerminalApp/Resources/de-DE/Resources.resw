@@ -190,16 +190,16 @@
     <value>Mehrere Bereiche</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Schließen...</value>
+    <value>Schließen</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
-    <value>Registerkarten auf der rechten Seite schließen</value>
+    <value>Tabs nach rechts schließen</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
     <value>Andere Registerkarten schließen</value>
   </data>
   <data name="TabClose" xml:space="preserve">
-    <value>Registerkarte schließen</value>
+    <value>Tab schließen</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
     <value>Bereich schließen</value>
@@ -208,16 +208,16 @@
     <value>Registerkarte teilen</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Geteilter Bereich</value>
+    <value>Bereich teilen</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Websuche</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Farbe...</value>
+    <value>Registerkartenfarbe ändern</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Benutzerdefiniert...</value>
+    <value>Benutzerdefiniert</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Zurücksetzen</value>
@@ -226,7 +226,7 @@
     <value>Registerkarte umbenennen</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>Registerkarte duplizieren</value>
+    <value>Registerkarte kopieren</value>
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Profil mit einem ungültigen "backgroundImage" gefunden. Dieses Profil hat standardmäßig kein Hintergrundbild. Stellen Sie sicher, dass beim Festlegen eines "backgroundImage" der Wert ein gültiger Dateipfad zu einem Bild ist.</value>
@@ -487,7 +487,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Drittanbieter-Hinweise</value>
+    <value>Hinweise von Drittanbietern</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -761,7 +761,7 @@
     <value>Suchen</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>Nur Text</value>
+    <value>Unformatierter Text</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Das Beendigungsverhalten kann in den erweiterten Profileinstellungen konfiguriert werden.</value>
@@ -830,7 +830,7 @@
     <value>Diese Registerkarte schließen</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Leer...</value>
+    <value>Leer</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Bereich schließen</value>

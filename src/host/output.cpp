@@ -464,8 +464,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     // Set window size.
     screenInfo.PostUpdateWindowSize();
 
-    gci.ConsoleIme.RefreshAreaAttributes();
-
     // Write data to screen.
     WriteToScreen(screenInfo, screenInfo.GetViewport());
 }

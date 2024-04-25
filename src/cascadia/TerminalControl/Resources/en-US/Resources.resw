@@ -302,4 +302,8 @@ Please either install the missing font or choose another one.</value>
   <data name="QuickFixButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Quick fix</value>
   </data>
+  <data name="SessionRestoreMessage" xml:space="preserve">
+    <value>Restored</value>
+    <comment>"Restored" as in "This content was restored"</comment>
+  </data>
 </root>

@@ -187,7 +187,7 @@
     <value>Varios paneles</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>Cerrar...</value>
+    <value>Cerrar</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Cerrar las pestañas de la derecha</value>
@@ -202,19 +202,19 @@
     <value>Cerrar panel</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>Dividir tabla</value>
+    <value>Dividir pestaña</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>Panel dividido</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
-    <value>Búsqueda en la Web</value>
+    <value>Búsqueda en la web</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Color...</value>
+    <value>Cambiar color de pestaña</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Configuración personalizada...</value>
+    <value>Personalizar</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Restablecer</value>
@@ -464,7 +464,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Tareas iniciales</value>
+    <value>Introducción</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -480,7 +480,7 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>Directiva de privacidad</value>
+    <value>Política de privacidad</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
@@ -723,7 +723,7 @@
     <value>Maximizar</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Restaurar a tamaño normal</value>
+    <value>Restaurar</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Paleta de comandos</value>
@@ -827,7 +827,7 @@
     <value>Cerrar esta pestaña</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Vacío...</value>
+    <value>Vacío</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Cerrar panel</value>
@@ -840,7 +840,7 @@
     <comment>Text used to identify the reset button</comment>
   </data>
   <data name="MoveTabToNewWindowText" xml:space="preserve">
-    <value>Mover la Pestaña a una Nueva ventana</value>
+    <value>Mover pestaña a nueva ventana</value>
   </data>
   <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
     <value>Mueve la pestaña a una nueva ventana </value>

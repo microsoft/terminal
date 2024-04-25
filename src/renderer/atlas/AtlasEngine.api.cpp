@@ -5,6 +5,7 @@
 #include "AtlasEngine.h"
 
 #include "Backend.h"
+#include "../../buffer/out/textBuffer.hpp"
 #include "../base/FontCache.h"
 
 // #### NOTE ####
@@ -92,6 +93,28 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
         _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
         _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
     }
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
+{
+    const auto viewportOrigin = til::point{ _api.s->viewportOffset.x, _api.s->viewportOffset.y };
+    const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
+    const auto cellCountX = static_cast<til::CoordType>(_api.s->viewportCellCount.x);
+    for (const auto& hi : highlights)
+    {
+        hi.iterate_rows(cellCountX, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+            const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
+            beg <<= shift;
+            end <<= shift;
+            til::rect rect{ beg, row, end + 1, row + 1 };
+            rect = rect.to_origin(viewportOrigin);
+            rect &= viewport;
+            _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
+            _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
+        });
+    }
+
     return S_OK;
 }
 

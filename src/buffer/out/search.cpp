@@ -8,17 +8,23 @@
 
 using namespace Microsoft::Console::Types;
 
-bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive)
+bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive, std::vector<til::point_span>* prevResults)
 {
     const auto& textBuffer = renderData.GetTextBuffer();
     const auto lastMutationId = textBuffer.GetLastMutationId();
 
-    if (_needle == needle &&
+    if (_renderData == &renderData &&
+        _needle == needle &&
         _caseInsensitive == caseInsensitive &&
         _lastMutationId == lastMutationId)
     {
         _step = reverse ? -1 : 1;
         return false;
+    }
+
+    if (prevResults)
+    {
+        *prevResults = std::move(_results);
     }
 
     _renderData = &renderData;
@@ -29,7 +35,6 @@ bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, c
     _results = textBuffer.SearchText(needle, caseInsensitive);
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
-
     return true;
 }
 
@@ -109,28 +114,6 @@ const til::point_span* Search::GetCurrent() const noexcept
         return &til::at(_results, index);
     }
     return nullptr;
-}
-
-void Search::HighlightResults() const
-{
-    std::vector<til::inclusive_rect> toSelect;
-    const auto& textBuffer = _renderData->GetTextBuffer();
-
-    for (const auto& r : _results)
-    {
-        const auto rbStart = textBuffer.BufferToScreenPosition(r.start);
-        const auto rbEnd = textBuffer.BufferToScreenPosition(r.end);
-
-        til::inclusive_rect re;
-        re.top = rbStart.y;
-        re.bottom = rbEnd.y;
-        re.left = rbStart.x;
-        re.right = rbEnd.x;
-
-        toSelect.emplace_back(re);
-    }
-
-    _renderData->SelectSearchRegions(std::move(toSelect));
 }
 
 // Routine Description:

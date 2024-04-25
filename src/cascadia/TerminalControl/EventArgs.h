@@ -12,7 +12,6 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
-#include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
 #include "CompletionsChangedEventArgs.g.h"
@@ -134,25 +133,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct TransparencyChangedEventArgs : public TransparencyChangedEventArgsT<TransparencyChangedEventArgs>
     {
     public:
-        TransparencyChangedEventArgs(const double opacity) :
+        TransparencyChangedEventArgs(const float opacity) :
             _Opacity(opacity)
         {
         }
 
-        WINRT_PROPERTY(double, Opacity);
-    };
-
-    struct FoundResultsArgs : public FoundResultsArgsT<FoundResultsArgs>
-    {
-    public:
-        FoundResultsArgs(const bool foundMatch) :
-            _FoundMatch(foundMatch)
-        {
-        }
-
-        WINRT_PROPERTY(bool, FoundMatch);
-        WINRT_PROPERTY(int32_t, TotalMatches);
-        WINRT_PROPERTY(int32_t, CurrentMatch);
+        WINRT_PROPERTY(float, Opacity);
     };
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>

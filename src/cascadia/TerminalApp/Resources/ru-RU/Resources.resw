@@ -193,7 +193,7 @@
     <value>Закрыть вкладки справа</value>
   </data>
   <data name="TabCloseOther" xml:space="preserve">
-    <value>Закрыть другие вкладки</value>
+    <value>Закрыть остальные вкладки</value>
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Закрыть вкладку</value>
@@ -211,10 +211,10 @@
     <value>Поиск в Интернете</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Цвет...</value>
+    <value>Изменить цвет вкладки</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>Настраиваемый...</value>
+    <value>Настраиваемый</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Сбросить</value>
@@ -464,7 +464,7 @@
     <comment>This is the heading for a version number label</comment>
   </data>
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Начало работы</value>
+    <value>Приступая к работе</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
@@ -484,7 +484,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>Уведомления сторонних производителей</value>
+    <value>Уведомления третьих лиц</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -723,7 +723,7 @@
     <value>Развернуть</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>Восстановить размер</value>
+    <value>Кнопка "Свернуть в окно"</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Палитра команд</value>
@@ -827,7 +827,7 @@
     <value>Закрыть эту вкладку</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>Пусто...</value>
+    <value>Очистить</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>Закрыть панель</value>
