@@ -32,6 +32,9 @@ parameters:
   - name: afterBuildSteps
     type: stepList
     default: []
+  - name: signingIdentity
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -94,10 +97,15 @@ jobs:
     displayName: Create msixbundle
 
   - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@3
+    - task: EsrpCodeSigning@5
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        ConnectedServiceName: ${{ parameters.signingIdentity.serviceName }}
+        AppRegistrationClientId: ${{ parameters.signingIdentity.appId }}
+        AppRegistrationTenantId: ${{ parameters.signingIdentity.tenantId }}
+        AuthAKVName: ${{ parameters.signingIdentity.akvName }}
+        AuthCertName: ${{ parameters.signingIdentity.authCertName }}
+        AuthSignCertName: ${{ parameters.signingIdentity.signCertName }}
         FolderPath: $(System.ArtifactsDirectory)\bundle
         Pattern: $(BundleStemName)*.msixbundle
         UseMinimatch: true
