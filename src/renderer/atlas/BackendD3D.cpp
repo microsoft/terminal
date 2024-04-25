@@ -1491,7 +1491,7 @@ BackendD3D::ShadingType BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p
     const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
     const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
     const auto softFontIndex = glyphIndex - 0xEF20u;
-    const auto data = til::clamp_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
+    const auto data = til::safe_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
 
     // This happens if someone wrote a U+EF2x character (by accident), but we don't even have soft fonts enabled yet.
     if (data.empty() || data.size() != height)
