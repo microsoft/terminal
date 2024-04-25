@@ -3043,9 +3043,6 @@ namespace winrt::TerminalApp::implementation
             std::wstring footer = tooManySuggestions ?
                                       fmt::format(L"winget search --{} {}", searchOption, missingCmd) :
                                       L"";
-
-            // TODO CARLOS: no more info bar; replace!
-            //ShowCommandNotFoundInfoBar(suggestions, footer);
         }
 #elif defined(DEBUG) || defined(_DEBUG) || defined(DBG)
         //const bool tooManySuggestions = false;

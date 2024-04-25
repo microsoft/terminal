@@ -222,44 +222,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto quickFixBtn{ QuickFixButton() };
         quickFixBtn.PointerEntered({ get_weak(), &TermControl::QuickFixButton_PointerEntered });
         quickFixBtn.PointerExited({ get_weak(), &TermControl::QuickFixButton_PointerExited });
-        //quickFixBtn.PointerEntered([/*this*/ weakThis = get_weak()](auto&&, auto&&) {
-        //
-        //    // TODO CARLOS: Tried this but *control isn't the right type
-        //    // Error: Microsoft.Terminal.Control.dll!00007FFAA70B2AFF: ReturnHr(1) tid(a514) 80070057 The parameter is incorrect.
-        //    // Debugger opens WindowThread.cpp; does that mean this is the wrong thread?
-        //    if (auto control = weakThis.get())
-        //    {
-        //        if (control->_quickFixButtonCollapsible)
-        //        {
-        //            VisualStateManager::GoToState(*control, StateNormal, true);
-        //        }
-        //    }
-        //    //if (_quickFixButtonCollapsible)
-        //    //{
-        //    //    // TODO CARLOS: this crashes due to "invalid param" (probably the same for pointer exited)
-        //    //    VisualStateManager::GoToState(*this, StateNormal, true);
-        //    //}
-        //});
-        //quickFixBtn.PointerExited([/*this*/ weakThis = get_weak()](auto&&, auto&&) {
-        //    if (auto control = weakThis.get())
-        //    {
-        //        if (control->_quickFixButtonCollapsible)
-        //        {
-        //            VisualStateManager::GoToState(*control, StateCollapsed, true);
-        //        }
-        //    }
-        //    //if (_quickFixButtonCollapsible)
-        //    //{
-        //    //    VisualStateManager::GoToState(*this, StateCollapsed, true);
-        //    //}
-        //});
     }
 
     void TermControl::QuickFixButton_PointerEntered(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
     {
         if (!_IsClosing() && _quickFixButtonCollapsible)
         {
-            VisualStateManager::GoToState(*this, StateNormal, true);
+            VisualStateManager::GoToState(*this, StateNormal, false);
         }
     }
 
@@ -267,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_IsClosing() && _quickFixButtonCollapsible)
         {
-            VisualStateManager::GoToState(*this, StateCollapsed, true);
+            VisualStateManager::GoToState(*this, StateCollapsed, false);
         }
     }
 
@@ -2228,6 +2197,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
+
+        if (QuickFixButton().Visibility() == Visibility::Visible)
+        {
+            ShowQuickFixMenu();
+        }
     }
 
     // Method Description:
@@ -3480,15 +3454,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
 
-        OutputDebugString(L"Font Size:");
-        OutputDebugString(std::to_wstring(QuickFixIcon().FontSize()).c_str());
-        OutputDebugString(L"Args Width:");
-        OutputDebugString(std::to_wstring(args.Width()).c_str());
-        OutputDebugString(L"Composition Scale X:");
-        OutputDebugString(std::to_wstring(dpiScale).c_str());
-
-        //QuickFixButton().Width(args.Width() / dpiScale);
-        QuickFixIcon().FontSize(args.Width() / dpiScale);
+        auto quickFixBtn = QuickFixButton();
+        quickFixBtn.Height(args.Height() / dpiScale);
+        QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
+        if (quickFixBtn.Visibility() == Visibility::Visible)
+        {
+            ShowQuickFixMenu();
+        }
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3763,22 +3735,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _showContextMenuAt(_toControlOrigin(cursorPos));
     }
 
+    double TermControl::CalculateQuickFixButtonWidth()
+    {
+        return GetPadding().Left;
+    }
+
+    double TermControl::CalculateQuickFixButtonCollapsedWidth()
+    {
+        return GetPadding().Left / 3.0;
+    }
+
     void TermControl::ShowQuickFixMenu()
     {
         auto quickFixBtn{ QuickFixButton() };
 
         // If the gutter is narrow, display the collapsed version
-        const auto& termPadding = SwapChainPanel().Margin();
+        const auto& termPadding = GetPadding();
 
-        _quickFixButtonCollapsible = termPadding.Left < 16;
+        _quickFixButtonCollapsible = termPadding.Left < CharacterDimensions().Width;
         VisualStateManager::GoToState(*this, !_quickFixButtonCollapsible ? StateNormal : StateCollapsed, false);
 
         // draw the button in the gutter
         Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
 
-        // TODO CARLOS: update for dpi?
         const auto& cursorPosInDips = CursorPositionInDips();
-        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y - termPadding.Top);
+        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y);
         quickFixBtn.Visibility(Visibility::Visible);
     }
 

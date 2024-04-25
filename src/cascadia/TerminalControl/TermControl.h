@@ -53,6 +53,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
         Windows::Foundation::Point CursorPositionInDips();
+        double CalculateQuickFixButtonWidth();
+        double CalculateQuickFixButtonCollapsedWidth();
 
         void WindowVisibilityChanged(const bool showOrHide);
 

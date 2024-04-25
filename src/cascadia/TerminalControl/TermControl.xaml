@@ -1282,19 +1282,23 @@
 
                         <Button x:Name="QuickFixButton"
                                 x:Uid="QuickFixButton"
-                                Visibility="Collapsed"
+                                Width="{x:Bind CalculateQuickFixButtonWidth}"
+                                Padding="0"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
                                 AllowFocusOnInteraction="False"
-                                Padding="4"
-                                Background="Transparent">
+                                CornerRadius="0,5,5,0"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Visibility="Collapsed">
                             <Button.Content>
                                 <FontIcon x:Name="QuickFixIcon"
-                                              FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                              Glyph="&#xEA80;"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                          Glyph="&#xEA80;" />
                             </Button.Content>
                             <Button.Flyout>
-                                <MenuFlyout x:Name="QuickFixMenu"/>
+                                <MenuFlyout x:Name="QuickFixMenu" />
                             </Button.Flyout>
                         </Button>
                     </Canvas>
@@ -1377,25 +1381,25 @@
         </Grid>
 
         <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup x:Name="QuickFixButtonStates">
+            <VisualStateGroup x:Name="CommonStates">
                 <VisualStateGroup.Transitions>
-                    <VisualTransition From="Collapsed"
-                              To="Normal"
-                              GeneratedDuration="0:0:0.5"/>
-                    <VisualTransition From="Normal"
-                              To="Collapsed"
-                              GeneratedDuration="0:0:0.5"/>
+                    <VisualTransition GeneratedDuration="0:0:0.5"
+                                      From="Collapsed"
+                                      To="Normal" />
+                    <VisualTransition GeneratedDuration="0:0:0.5"
+                                      From="Normal"
+                                      To="Collapsed" />
                 </VisualStateGroup.Transitions>
-                <VisualState x:Name="Normal"/>
+                <VisualState x:Name="Normal" />
                 <VisualState x:Name="Collapsed">
                     <VisualState.Setters>
-                        <Setter Target="QuickFixButton.Width" Value="5"/>
-                        <Setter Target="QuickFixButton.Background" Value="{ThemeResource SystemAccentColor}"/>
+                        <Setter Target="QuickFixButton.Width" Value="{x:Bind CalculateQuickFixButtonCollapsedWidth}" />
+                        <Setter Target="QuickFixButton.Background" Value="{ThemeResource SystemAccentColor}" />
+                        <Setter Target="QuickFixIcon.Visibility" Value="Collapsed" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
-
     </Grid>
 
 </UserControl>
