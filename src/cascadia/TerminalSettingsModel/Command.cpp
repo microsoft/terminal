@@ -333,13 +333,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 if (result->_ID.empty() && result->_IterateOn == ExpandCommandType::None && result->_ActionAndArgs.Action() != ShortcutAction::Invalid && origin == OriginTag::User)
                 {
                     // todo: stage 3
-                    // couple of issues -
-                    // 1. we reach this point for 'unpacked' nested commands, which means we generate IDs for them
-                    //    these IDs aren't used anywhere or written to the json, which is intentional, but we should
-                    //    figure out a way to not generate them at all
-                    // 2. if we generate an ID for a command here, we need to let the loader know that fixups are needed -
-                    //    ideally via action map's _fixUpsAppliedDuringLoad, because having one of those flags for each command sounds horrendous
-                    //    however to do this without false positives, we need to fix 1 first
+                    // we reach this point for 'unpacked' nested commands, which means we generate IDs for them
+                    // these IDs aren't used anywhere or written to the json, which is intentional, but we should
+                    // figure out a way to not generate them at all
                     result->GenerateID();
                 }
             }

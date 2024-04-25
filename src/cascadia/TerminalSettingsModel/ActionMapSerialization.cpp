@@ -71,6 +71,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     _fixUpsAppliedDuringLoad = true;
                 }
+                // for non-nested non-iterable user commands, if there's no ID we generate one for them
+                // let the loader know that fixups are needed
+                // todo: stage 3 - there has to be a better way to check this?
+                if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey("id")) && jsonBlock.isMember(JsonKey("command")) && !jsonBlock.isMember(JsonKey("iterateOn")))
+                {
+                    _fixUpsAppliedDuringLoad = true;
+                }
             }
             else
             {
