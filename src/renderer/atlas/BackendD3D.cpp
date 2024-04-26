@@ -1242,7 +1242,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     DWRITE_RENDERING_MODE renderingMode{};
     DWRITE_GRID_FIT_MODE gridFitMode{};
     THROW_IF_FAILED(fontFaceEntry.fontFace->GetRecommendedRenderingMode(
-        /* fontEmSize       */ fontEmSize,
+        /* fontEmSize       */ glyphRun.fontEmSize,
         /* dpiX             */ 1, // fontEmSize is already in pixel
         /* dpiY             */ 1, // fontEmSize is already in pixel
         /* transform        */ nullptr,
@@ -1292,6 +1292,39 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     // Allocate a buffer of `width * height` bytes.
     THROW_IF_FAILED(glyphRunAnalysis->CreateAlphaTexture(DWRITE_TEXTURE_ALIASED_1x1, &textureBounds, buffer.data(), buffer.size()));
     // The buffer now contains a grayscale alpha mask.
+#endif
+
+    // This code finds the local font file path. Useful for debugging as it
+    // gets you the font.ttf <> glyphIndex pair to uniquely identify glyphs.
+#if 0
+    std::vector<std::wstring> paths;
+
+    UINT32 numberOfFiles;
+    THROW_IF_FAILED(fontFaceEntry.fontFace->GetFiles(&numberOfFiles, nullptr));
+    wil::com_ptr<IDWriteFontFile> fontFiles[8];
+    THROW_IF_FAILED(fontFaceEntry.fontFace->GetFiles(&numberOfFiles, fontFiles[0].addressof()));
+
+    for (UINT32 i = 0; i < numberOfFiles; ++i)
+    {
+        wil::com_ptr<IDWriteFontFileLoader> loader;
+        THROW_IF_FAILED(fontFiles[i]->GetLoader(loader.addressof()));
+
+        void const* fontFileReferenceKey;
+        UINT32 fontFileReferenceKeySize;
+        THROW_IF_FAILED(fontFiles[i]->GetReferenceKey(&fontFileReferenceKey, &fontFileReferenceKeySize));
+
+        if (const auto localLoader = loader.try_query<IDWriteLocalFontFileLoader>())
+        {
+            UINT32 filePathLength;
+            THROW_IF_FAILED(localLoader->GetFilePathLengthFromKey(fontFileReferenceKey, fontFileReferenceKeySize, &filePathLength));
+
+            filePathLength++;
+            std::wstring filePath(filePathLength, L'\0');
+            THROW_IF_FAILED(localLoader->GetFilePathFromKey(fontFileReferenceKey, fontFileReferenceKeySize, filePath.data(), filePathLength));
+
+            paths.emplace_back(std::move(filePath));
+        }
+    }
 #endif
 
     const int scale = row.lineRendition != LineRendition::SingleWidth;
