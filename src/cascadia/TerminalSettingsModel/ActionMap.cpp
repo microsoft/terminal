@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // todo: stage 2 (done)
         // todo: stage 3 - can we update RegisterShortcutAction to use new IDs instead of InternalActionID?
-        //                 then we'll be able to update _PopulateAvailableACtionsWithStandardCommands with new IDs too
+        //                 then we'll be able to update _PopulateAvailableActionsWithStandardCommands with new IDs too
         //                 the problem is that we need IDs for every ShortcutAction, even if it is not in defaults/user settings
         if (!_AvailableActionsCache)
         {
@@ -164,7 +164,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define ON_ALL_ACTIONS(action) RegisterShortcutAction(ShortcutAction::action, availableActions, visitedActionIDs);
             ALL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
-
             _AvailableActionsCache = single_threaded_map(std::move(availableActions));
         }
         if (!_AvailableActionsCache2)
@@ -178,7 +177,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define ON_ALL_ACTIONS(action) RegisterShortcutAction(ShortcutAction::action, availableActions2, visitedActionIDs2);
             ALL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
-
             _AvailableActionsCache2 = single_threaded_map(std::move(availableActions2));
         }
         return _AvailableActionsCache2.GetView();
@@ -1280,25 +1278,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
-    bool ActionMap::GenerateIDsForActions()
-    {
-        bool fixedUp{ false };
-        for (auto actionPair : _ActionMap)
-        {
-            auto cmdImpl{ winrt::get_self<Command>(actionPair.second) };
-
-            // Note: this function should ONLY be called for the action map in the user's settings file
-            //       this debug assert should verify that for debug builds
-            assert(cmdImpl->Origin() == OriginTag::User);
-
-            if (cmdImpl->ID().empty())
-            {
-                fixedUp = cmdImpl->GenerateID() || fixedUp;
-            }
-        }
-        return fixedUp;
-    }
-
     // Method Description:
     // - Retrieves the key chord for the provided action
     // Arguments:
@@ -1385,6 +1364,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //      REPLACE oldKeys with newKeys
         // - keybinding only exists in parent layer
         //      ADD newKeys to our map
+        //      ADD oldKeys to our map, unbound
         if (auto oldKeyPair = _KeyMap2.find(oldKeys); oldKeyPair != _KeyMap2.end())
         {
             // oldKeys is bound in our layer, replace it with newKeys
@@ -1393,8 +1373,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            // oldKeys is bound in some other layer, just set newKeys in this layer
+            // oldKeys is bound in some other layer, set newKeys to cmd in this layer, and oldKeys to unbound in this layer
             _KeyMap2.insert_or_assign(newKeys, cmd.ID());
+            _KeyMap2.insert_or_assign(oldKeys, L"");
         }
 
         // make sure to update the Command with these changes
