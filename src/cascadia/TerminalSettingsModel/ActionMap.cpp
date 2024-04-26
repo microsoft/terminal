@@ -107,6 +107,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return std::nullopt;
     }
 
+    // todo: stage 3 - does this need to return an optional?
     std::optional<Model::Command> ActionMap::_GetActionByID2(const winrt::hstring actionID) const
     {
         // Check current layer
@@ -595,39 +596,68 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - unboundKeys: a set of keys that are explicitly unbound
     void ActionMap::_PopulateKeyBindingMapWithStandardCommands2(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const
     {
+        // todo: stage 3 - can we just use _GetActionByKeyChordInternal here?
         // Update KeyBindingsMap with our current layer
         for (const auto& [keys, actionID] : _KeyMap2)
         {
-            // Get the action our KeyMap maps to.
-            // If the actionID is empty, this keybinding is explicitly unbound
+            // if the actionID is empty, this keychord is explicitly unbound
             if (!actionID.empty())
             {
-                const auto cmd{ _GetActionByID2(actionID) };
-                if (cmd.has_value())
+                // make sure we haven't visited this key chord before
+                if (keyBindingsMap.find(keys) == keyBindingsMap.end() && unboundKeys.find(keys) == unboundKeys.end())
                 {
-                    // iterate over all of the action's bound keys
-                    const auto cmdImpl{ get_self<Command>(cmd.value()) };
-                    for (const auto& kc : cmdImpl->KeyMappings())
+                    Model::Command foundCommand{ nullptr };
+                    const auto cmd{ _GetActionByID2(actionID) };
+                    if (cmd.has_value())
                     {
-                        // Only populate KeyBindingsMap with actions that...
-                        // (1) haven't been visited already
-                        // (2) aren't explicitly unbound
-                        if (keyBindingsMap.find(kc) == keyBindingsMap.end() && unboundKeys.find(kc) == unboundKeys.end())
+                        // the keychord entry and the command with that ID exist in this layer
+                        foundCommand = cmd.value();
+                    }
+                    else
+                    {
+                        // we have the keychord entry in this layer, but the command with that ID exists in a different layer
+                        for (const auto parent : _parents)
                         {
-                            keyBindingsMap.emplace(kc, cmd.value());
+                            const auto inheritedCmd{ parent->_GetActionByID2(actionID) };
+                            if (inheritedCmd.has_value())
+                            {
+                                foundCommand = inheritedCmd.value();
+                                break;
+                            }
                         }
+                    }
+
+                    if (foundCommand)
+                    {
+                        keyBindingsMap.emplace(keys, foundCommand);
                     }
                 }
             }
             else
             {
-                // record any keys that are explicitly unbound,
-                // but don't add them to the list of key bindings
+                // actionID is empty, meaning this keychord is explicitly unbound - record it
                 unboundKeys.emplace(keys);
             }
         }
 
-        // Update keyBindingsMap and unboundKeys with our parents
+        // similar to _GetActionByKeyChordInternal, we have to check the case where the keychord is in the parent layer,
+        // but the ID has been redefined in this layer
+        for (const auto& parent : _parents)
+        {
+            for (const auto& [keys, actionID] : parent->_KeyMap2)
+            {
+                if (!actionID.empty() && keyBindingsMap.find(keys) == keyBindingsMap.end() && unboundKeys.find(keys) == unboundKeys.end())
+                {
+                    const auto cmd{ _GetActionByID2(actionID) };
+                    if (cmd.has_value())
+                    {
+                        keyBindingsMap.emplace(keys, cmd.value());
+                    }
+                }
+            }
+        }
+
+        // now we can recurse
         for (const auto& parent : _parents)
         {
             parent->_PopulateKeyBindingMapWithStandardCommands2(keyBindingsMap, unboundKeys);
@@ -841,7 +871,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // is considered its 'primary' keychord) - make sure we preserve this order as we register the old command's keys
 
                 // make a copy of the new commands keymappings (we will insert them later to preserve order)
-                // todo: stage 3 - can we make this cleaner omg
+                // todo: stage 3 - can we make this cleaner omg, actually ideally we just remove this and move away from Command
+                //                 having knowledge of its own keymappings
                 std::vector<KeyChord> newCmdKeymappingsCopy;
                 for (const auto kc : newCmdImpl->KeyMappings())
                 {
