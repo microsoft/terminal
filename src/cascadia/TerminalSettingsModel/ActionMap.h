@@ -94,7 +94,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _RefreshKeyBindingCaches();
         void _RefreshKeyBindingCaches2();
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
-        void _PopulateAvailableActionsWithStandardCommands2(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<winrt::hstring>& visitedActionIDs) const;
+        void _PopulateAvailableActionsWithStandardCommands2(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
@@ -143,6 +143,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _PopulateNameMapWithSpecialCommands2(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands2(std::unordered_map<hstring, Model::Command>& nameMap) const;
 
+        Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache2{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache2{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache2{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache2{ nullptr };

@@ -155,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             keybindingsList.append(keyIDPair);
         };
 
-        // Serialize all standard Command objects in the current layer
+        // Serialize all standard keybinding objects in the current layer
         for (const auto& [keys, cmdID] : _KeyMap2)
         {
             toJson(keys, cmdID);
@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             winrt::hstring idJson;
             if (JsonUtils::GetValueForKey(json, "keys", keys))
             {
-                // if the "id" field doesn't exist in the json, idJson will be an empty string which is fine
+                // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
                 JsonUtils::GetValueForKey(json, "id", idJson);
 
                 // any existing keybinding with the same keychord in this layer will get overwritten

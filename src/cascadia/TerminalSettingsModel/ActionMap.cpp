@@ -148,7 +148,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Retrieves a map of actions that can be bound to a key
     IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
     {
-        // todo: stage 2
+        // todo: stage 2 (done)
+        // todo: stage 3 - can we update RegisterShortcutAction to use new IDs instead of InternalActionID?
+        //                 then we'll be able to update _PopulateAvailableACtionsWithStandardCommands with new IDs too
+        //                 the problem is that we need IDs for every ShortcutAction, even if it is not in defaults/user settings
         if (!_AvailableActionsCache)
         {
             // populate _AvailableActionsCache
@@ -163,7 +166,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             _AvailableActionsCache = single_threaded_map(std::move(availableActions));
         }
-        return _AvailableActionsCache.GetView();
+        if (!_AvailableActionsCache2)
+        {
+            // populate _AvailableActionsCache
+            std::unordered_map<hstring, Model::ActionAndArgs> availableActions2;
+            std::unordered_set<InternalActionID> visitedActionIDs2;
+            _PopulateAvailableActionsWithStandardCommands2(availableActions2, visitedActionIDs2);
+
+// now add any ShortcutActions that we might have missed
+#define ON_ALL_ACTIONS(action) RegisterShortcutAction(ShortcutAction::action, availableActions2, visitedActionIDs2);
+            ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
+
+            _AvailableActionsCache2 = single_threaded_map(std::move(availableActions2));
+        }
+        return _AvailableActionsCache2.GetView();
     }
 
     void ActionMap::_PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const
@@ -197,15 +214,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    void ActionMap::_PopulateAvailableActionsWithStandardCommands2(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<winrt::hstring>& visitedActionIDs) const
+    void ActionMap::_PopulateAvailableActionsWithStandardCommands2(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const
     {
-        // todo: stage 2
         // Update AvailableActions and visitedActionIDs with our current layer
-        for (const auto& [actionID, cmd] : _ActionMap2)
+        for (const auto& [_, cmd] : _ActionMap2)
         {
+            // todo: stage 3 - not sure if we need this? _ActionMap2 doesn't contain invalid commands anymore I'm p sure
             if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
             {
                 // Only populate AvailableActions with actions that haven't been visited already.
+                const auto actionID = Hash(cmd.ActionAndArgs());
                 if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
                 {
                     const auto& name{ cmd.Name() };
@@ -589,14 +607,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     // iterate over all of the action's bound keys
                     const auto cmdImpl{ get_self<Command>(cmd.value()) };
-                    for (const auto& keys : cmdImpl->KeyMappings())
+                    for (const auto& kc : cmdImpl->KeyMappings())
                     {
                         // Only populate KeyBindingsMap with actions that...
                         // (1) haven't been visited already
                         // (2) aren't explicitly unbound
-                        if (keyBindingsMap.find(keys) == keyBindingsMap.end() && unboundKeys.find(keys) == unboundKeys.end())
+                        if (keyBindingsMap.find(kc) == keyBindingsMap.end() && unboundKeys.find(kc) == unboundKeys.end())
                         {
-                            keyBindingsMap.emplace(keys, cmd.value());
+                            keyBindingsMap.emplace(kc, cmd.value());
                         }
                     }
                 }
@@ -629,6 +647,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         for (const auto& [actionID, cmd] : _ActionMap)
         {
             actionMap->_ActionMap.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
+        }
+
+        // ID --> Command
+        actionMap->_ActionMap2.reserve(_ActionMap2.size());
+        for (const auto& [actionID, cmd] : _ActionMap2)
+        {
+            actionMap->_ActionMap2.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
         }
 
         // ID --> Command
@@ -676,6 +701,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _NameMapCache = nullptr;
         _GlobalHotkeysCache = nullptr;
         _KeyBindingMapCache = nullptr;
+        _NameMapCache2 = nullptr;
+        _GlobalHotkeysCache2 = nullptr;
+        _KeyBindingMapCache2 = nullptr;
 
         // Handle nested commands
         const auto cmdImpl{ get_self<Command>(cmd) };
@@ -714,12 +742,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // _TryUpdateActionMap may update oldCmd and maskingCmd
 
-        Model::Command oldCmd{ nullptr };
-        Model::Command maskingCmd{ nullptr };
-        _TryUpdateActionMap(cmd, oldCmd, maskingCmd);
+        //Model::Command oldCmd{ nullptr };
+        //Model::Command maskingCmd{ nullptr };
+        //_TryUpdateActionMap(cmd, oldCmd, maskingCmd);
 
-        _TryUpdateName(cmd, oldCmd, maskingCmd);
-        _TryUpdateKeyChord(cmd, oldCmd, maskingCmd);
+        //_TryUpdateName(cmd, oldCmd, maskingCmd);
+        //_TryUpdateKeyChord(cmd, oldCmd, maskingCmd);
 
         _TryUpdateActionMap2(cmd);
         // I don't think we need a _TryUpdateName with the new implementation?
@@ -791,15 +819,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::_TryUpdateActionMap2(const Model::Command& cmd)
     {
         // todo: stage 1 (done)
-        // Example:
-        //   { "command": "copy", "id": "User.MyAction" }       --> add the action in for the first time
-        //   { "command": "paste", "id": "User.MyAction" }    --> overwrite the "User.MyAction" command
 
         // only add to the _ActionMap if there is an ID and the shortcut action is valid
         // (if the shortcut action is invalid, then this is for unbinding and _TryUpdateKeyChord will handle that)
         if (auto cmdID = cmd.ID(); !cmdID.empty() && cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
         {
-            // any existing command with the same id in this layer will get overwritten
+            // if a command with cmdID already exists, we need to port the keybindings over and then overwrite the previous command
+            // explanation by example:
+            // - command object with ID "X" already exists, and has "ctrl" in its keymappings
+            // - this means our _KeyMap has an entry for "ctrl" that points to "X"
+            // - we are now adding a new command object that also has ID "X", and has "shift" in its keymappings
+            // - _ActionMap needs to be updated so that "X" points to new command object
+            // - however _KeyMap will now contain "ctrl" -> "X" and also "shift" -> "X"
+            // - so we have to let this command object know that "ctrl" points to it as well
+            if (const auto idCmdPair = _ActionMap2.find(cmdID); idCmdPair != _ActionMap2.end())
+            {
+                const auto newCmdImpl{ get_self<implementation::Command>(cmd) };
+                const auto oldCmdImpl{ get_self<implementation::Command>(idCmdPair->second) };
+
+                // Command's keymapping implementation cares about order (the keychord at the back of the vector
+                // is considered its 'primary' keychord) - make sure we preserve this order as we register the old command's keys
+
+                // make a copy of the new commands keymappings (we will insert them later to preserve order)
+                // todo: stage 3 - can we make this cleaner omg
+                std::vector<KeyChord> newCmdKeymappingsCopy;
+                for (const auto kc : newCmdImpl->KeyMappings())
+                {
+                    newCmdKeymappingsCopy.emplace_back(kc);
+                }
+
+                // copy the old commands key mappings into the new command
+                for (const auto kc : oldCmdImpl->KeyMappings())
+                {
+                    newCmdImpl->RegisterKey(kc);
+                }
+
+                // transfer back the commands from the copy we made
+                // (this just makes sure that newCmd's keys are at the back of the vector,
+                // duplicates are automatically deleted by RegisterKey)
+                for (const auto kc : newCmdKeymappingsCopy)
+                {
+                    newCmdImpl->RegisterKey(kc);
+                }
+            }
+
             _ActionMap2.insert_or_assign(cmdID, cmd);
         }
     }
@@ -976,7 +1039,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             //
             // Remove the old one. (unbind "copy" in the example above)
 
-            // if oldKeyPair->second is empty, that means this keychord was unbound and is now being rebound
+            // if oldKeyPair->second is empty, that means this keychord was unbound earlier in this layer and is now being rebound
             // no collision logic needed - we will simply reassign it in the _KeyMap
             if (!oldKeyPair->second.empty())
             {
@@ -1245,25 +1308,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - true, if successful. False, otherwise.
     bool ActionMap::RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys)
     {
-        // todo: stage 2
-        const auto& cmd{ GetActionByKeyChord(oldKeys) };
+        // todo: stage 2 (done)
+        const auto cmd{ GetActionByKeyChord(oldKeys) };
         if (!cmd)
         {
             // oldKeys must be bound. Otherwise, we don't know what action to bind.
             return false;
         }
 
-        if (newKeys)
+        //if (newKeys)
+        //{
+        //    // Bind newKeys
+        //    const auto newCmd{ make_self<Command>() };
+        //    newCmd->ActionAndArgs(cmd.ActionAndArgs());
+        //    newCmd->RegisterKey(newKeys);
+        //    AddAction(*newCmd);
+        //}
+
+        //// unbind oldKeys
+        //DeleteKeyBinding(oldKeys);
+
+        // possible cases:
+        // - keybinding exists in our layer and the parent layer
+        //      REPLACE oldKeys with newKeys
+        // - keybinding only exists in our layer
+        //      REPLACE oldKeys with newKeys
+        // - keybinding only exists in parent layer
+        //      ADD newKeys to our map
+        if (auto oldKeyPair = _KeyMap2.find(oldKeys); oldKeyPair != _KeyMap2.end())
         {
-            // Bind newKeys
-            const auto newCmd{ make_self<Command>() };
-            newCmd->ActionAndArgs(cmd.ActionAndArgs());
-            newCmd->RegisterKey(newKeys);
-            AddAction(*newCmd);
+            // oldKeys is bound in our layer, replace it with newKeys
+            _KeyMap2.insert_or_assign(newKeys, cmd.ID());
+            _KeyMap2.erase(oldKeyPair);
+        }
+        else
+        {
+            // oldKeys is bound in some other layer, just set newKeys in this layer
+            _KeyMap2.insert_or_assign(newKeys, cmd.ID());
         }
 
-        // unbind oldKeys
-        DeleteKeyBinding(oldKeys);
+        // make sure to update the Command with these changes
+        const auto cmdImpl{ get_self<implementation::Command>(cmd) };
+        cmdImpl->EraseKey(oldKeys);
+        cmdImpl->RegisterKey(newKeys);
+
         return true;
     }
 
@@ -1277,11 +1365,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // create an "unbound" command
         // { "command": "unbound", "keys": <keys> }
-        // todo: stage 2
-        const auto cmd{ make_self<Command>() };
-        cmd->ActionAndArgs(make<ActionAndArgs>());
-        cmd->RegisterKey(keys);
-        AddAction(*cmd);
+        // todo: stage 2 (done)
+        //const auto cmd{ make_self<Command>() };
+        //cmd->ActionAndArgs(make<ActionAndArgs>());
+        //cmd->RegisterKey(keys);
+        //AddAction(*cmd);
+
+        // possible cases:
+        // - keys exist in our layer and parent layer
+        //      convert the mapping in our layer to unbound
+        // - keys only exist in our layer
+        //      just delete from our map
+        // - keys only exist in parent layer
+        //      make an unbound command in this layer
+        if (auto keyPair = _KeyMap2.find(keys); keyPair != _KeyMap2.end())
+        {
+            // this keychord is bound in our layer, delete it
+            _KeyMap2.erase(keyPair);
+        }
+
+        // either the keychord was never in this layer or we just deleted it above,
+        // if GetActionByKeyChord still returns a command that means the keychord is bound in another layer
+        if (GetActionByKeyChord(keys))
+        {
+            // set to unbound in this layer
+            _KeyMap2.emplace(keys, L"");
+        }
     }
 
     // Method Description:
@@ -1294,10 +1403,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void ActionMap::RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action)
     {
-        // todo: stage 2
+        // todo: stage 2 (done)
         auto cmd{ make_self<Command>() };
         cmd->RegisterKey(keys);
         cmd->ActionAndArgs(action);
+        cmd->GenerateID();
         AddAction(*cmd);
     }
 
