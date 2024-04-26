@@ -504,6 +504,10 @@ bool SettingsLoader::FixupUserSettings()
         fixedUp = true;
     }
 
+    // we need to generate an ID for a command in the user settings if it doesn't already have one
+    auto actionMap{ winrt::get_self<ActionMap>(userSettings.globals->ActionMap()) };
+    fixedUp = actionMap->GenerateIDsForActions() || fixedUp;
+
     return fixedUp;
 }
 
