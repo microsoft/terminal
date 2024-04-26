@@ -129,6 +129,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
             {
                 _ID = generatedID;
+                _IDWasGenerated = true;
                 return true;
             }
         }
