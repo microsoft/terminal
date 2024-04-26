@@ -964,7 +964,7 @@ Viewport Terminal::_GetMutableViewport() const noexcept
     // GH#3493: if we're in the alt buffer, then it's possible that the mutable
     // viewport's size hasn't been updated yet. In that case, use the
     // temporarily stashed _altBufferSize instead.
-    return _inAltBuffer() ? Viewport::FromDimensions(_altBufferSize) :
+    return _inAltBuffer() ? Viewport::FromDimensions({}, _altBufferSize) :
                             _mutableViewport;
 }
 

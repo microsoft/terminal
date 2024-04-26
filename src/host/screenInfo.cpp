@@ -163,7 +163,7 @@ Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
     auto v = _textBuffer->GetSize();
     if (gci.IsTerminalScrolling() && v.Height() > _virtualBottom)
     {
-        v = Viewport::FromDimensions({ 0, 0 }, v.Width(), _virtualBottom + 1);
+        v = Viewport::FromDimensions({}, { v.Width(), _virtualBottom + 1 });
     }
     return v;
 }

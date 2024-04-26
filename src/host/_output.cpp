@@ -223,7 +223,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         {
             // Notify accessibility
             auto endingCoordinate = startingCoordinate;
-            bufferSize.MoveInBounds(cellsModifiedCoord, endingCoordinate);
+            bufferSize.WalkInBounds(endingCoordinate, cellsModifiedCoord);
             screenBuffer.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
         }
     }
@@ -287,7 +287,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         if (screenInfo.HasAccessibilityEventing())
         {
             auto endingCoordinate = startingCoordinate;
-            bufferSize.MoveInBounds(cellsModifiedCoord, endingCoordinate);
+            bufferSize.WalkInBounds(endingCoordinate, cellsModifiedCoord);
             screenInfo.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
         }
 

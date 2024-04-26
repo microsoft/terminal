@@ -603,8 +603,8 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
             // requested buffer range one cell at a time.
             const auto srcOrigin = til::point{ scrollRect.left, top };
             const auto dstOrigin = til::point{ scrollRect.left, top + actualDelta };
-            const auto srcView = Viewport::FromDimensions(srcOrigin, width, height);
-            const auto dstView = Viewport::FromDimensions(dstOrigin, width, height);
+            const auto srcView = Viewport::FromDimensions(srcOrigin, { width, height });
+            const auto dstView = Viewport::FromDimensions(dstOrigin, { width, height });
             const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
             auto srcPos = srcView.GetWalkOrigin(walkDirection);
             auto dstPos = dstView.GetWalkOrigin(walkDirection);
@@ -647,7 +647,7 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
         const auto height = scrollRect.height();
         const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
 
-        const auto source = Viewport::FromDimensions({ left, top }, width, height);
+        const auto source = Viewport::FromDimensions({ left, top }, { width, height });
         const auto target = Viewport::Offset(source, { actualDelta, 0 });
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
         auto sourcePos = source.GetWalkOrigin(walkDirection);
@@ -881,7 +881,7 @@ void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect&
                 {
                     // The text is cleared but the attributes are left as is.
                     rowBuffer.ClearCell(col);
-                    textBuffer.TriggerRedraw(Viewport::FromCoord({ col, row }));
+                    textBuffer.TriggerRedraw(Viewport::FromDimensions({ col, row }, { 1, 1 }));
                 }
             }
         }

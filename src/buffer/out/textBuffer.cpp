@@ -992,7 +992,7 @@ const til::CoordType TextBuffer::GetFirstRowIndex() const noexcept
 
 const Viewport TextBuffer::GetSize() const noexcept
 {
-    return Viewport::FromDimensions({ _width, _height });
+    return Viewport::FromDimensions({}, { _width, _height });
 }
 
 void TextBuffer::_SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept
@@ -1567,7 +1567,7 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
         {
             break;
         }
-        bufferSize.IncrementInBoundsCircular(result);
+        bufferSize.IncrementInBounds(result);
     }
 
     if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)

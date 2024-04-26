@@ -356,7 +356,7 @@ void Renderer::TriggerRedraw(const Viewport& region)
 // - <none>
 void Renderer::TriggerRedraw(const til::point* const pcoord)
 {
-    TriggerRedraw(Viewport::FromCoord(*pcoord)); // this will notify to paint if we need it.
+    TriggerRedraw(Viewport::FromDimensions(*pcoord, { 1, 1 })); // this will notify to paint if we need it.
 }
 
 // Routine Description:
