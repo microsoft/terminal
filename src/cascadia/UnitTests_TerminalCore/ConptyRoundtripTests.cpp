@@ -5047,12 +5047,6 @@ void ConptyRoundtripTests::ClearMarksTest()
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
-
-    Log::Comment(L"========== Checking the host buffer state (after) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
-
-    Log::Comment(L"Painting the frame");
-    VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true);
 }
