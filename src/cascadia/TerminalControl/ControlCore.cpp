@@ -1986,7 +1986,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     _terminal->GetTextBuffer().GetSize().Clamp(clampedClick);
                 }
 
-                if (clampedClick >= end)
+                if (clampedClick >= last.end)
                 {
                     // Get the distance between the cursor and the click, in cells.
                     const auto bufferSize = _terminal->GetTextBuffer().GetSize();
