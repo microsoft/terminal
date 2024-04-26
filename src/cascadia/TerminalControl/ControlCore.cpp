@@ -2009,93 +2009,98 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
         {
-            // If we're handling a single left click, without shift pressed, and
-            // outside mouse mode, AND the user has RepositionCursorWithMouse turned
-            // on, let's try to move the cursor.
-            //
-            // We'll only move the cursor if the user has clicked after the last
-            // mark, if there is one. That means the user also needs to set up
-            // shell integration to enable this feature.
-            //
-            // As noted in GH #8573, there's plenty of edge cases with this
-            // approach, but it's good enough to bring value to 90% of use cases.
-            const auto cursorPos{ _terminal->GetCursorPosition() };
+            _repositionCursorWithMouse(terminalPosition);
+        }
+        _updateSelectionUI();
+    }
 
-            // Does the current buffer line have a mark on it?
-            const auto& marks{ _terminal->GetMarkExtents() };
-            if (!marks.empty())
+    void ControlCore::_repositionCursorWithMouse(const til::point terminalPosition)
+    {
+        // If we're handling a single left click, without shift pressed, and
+        // outside mouse mode, AND the user has RepositionCursorWithMouse turned
+        // on, let's try to move the cursor.
+        //
+        // We'll only move the cursor if the user has clicked after the last
+        // mark, if there is one. That means the user also needs to set up
+        // shell integration to enable this feature.
+        //
+        // As noted in GH #8573, there's plenty of edge cases with this
+        // approach, but it's good enough to bring value to 90% of use cases.
+        const auto cursorPos{ _terminal->GetCursorPosition() };
+
+        // Does the current buffer line have a mark on it?
+        const auto& marks{ _terminal->GetMarkExtents() };
+        if (!marks.empty())
+        {
+            const auto& last{ marks.back() };
+            const auto [start, end] = last.GetExtent();
+            const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+            auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+            bufferSize.IncrementInBounds(lastNonSpace, true);
+
+            // If the user clicked off to the right side of the prompt, we
+            // want to send keystrokes to the last character in the prompt +1.
+            //
+            // We don't want to send too many here. In CMD, if the user's
+            // last command is longer than what they've currently typed, and
+            // they press right arrow at the end of the prompt, COOKED_READ
+            // will fill in characters from the previous command.
+            //
+            // By only sending keypresses to the end of the command + 1, we
+            // should leave the cursor at the very end of the prompt,
+            // without adding any characters from a previous command.
+
+            // terminalPosition is viewport-relative.
+            const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
+            if (bufferPos.y > lastNonSpace.y)
             {
-                const auto& last{ marks.back() };
-                const auto [start, end] = last.GetExtent();
-                const auto bufferSize = _terminal->GetTextBuffer().GetSize();
-                auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
-                bufferSize.IncrementInBounds(lastNonSpace, true);
+                // Clicked under the prompt. Bail.
+                return;
+            }
 
-                // If the user clicked off to the right side of the prompt, we
-                // want to send keystrokes to the last character in the prompt +1.
-                //
-                // We don't want to send too many here. In CMD, if the user's
-                // last command is longer than what they've currently typed, and
-                // they press right arrow at the end of the prompt, COOKED_READ
-                // will fill in characters from the previous command.
-                //
-                // By only sending keypresses to the end of the command + 1, we
-                // should leave the cursor at the very end of the prompt,
-                // without adding any characters from a previous command.
+            // Limit the click to 1 past the last character on the last line.
+            const auto clampedClick = std::min(bufferPos, lastNonSpace);
 
-                // terminalPosition is viewport-relative.
-                const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
-                if (bufferPos.y > lastNonSpace.y)
+            if (clampedClick >= last.end)
+            {
+                // Get the distance between the cursor and the click, in cells.
+
+                // First, make sure to iterate from the first point to the
+                // second. The user may have clicked _earlier_ in the
+                // buffer!
+                auto goRight = clampedClick > cursorPos;
+                const auto startPoint = goRight ? cursorPos : clampedClick;
+                const auto endPoint = goRight ? clampedClick : cursorPos;
+
+                const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
+                const WORD key = goRight ? VK_RIGHT : VK_LEFT;
+
+                std::wstring buffer;
+                const auto append = [&](TerminalInput::OutputType&& out) {
+                    if (out)
+                    {
+                        buffer.append(std::move(*out));
+                    }
+                };
+
+                // Send an up and a down once per cell. This won't
+                // accurately handle wide characters, or continuation
+                // prompts, or cases where a single escape character in the
+                // command (e.g. ^[) takes up two cells.
+                for (size_t i = 0u; i < delta; i++)
                 {
-                    // Clicked under the prompt. Bail.
-                    return;
+                    append(_terminal->SendKeyEvent(key, 0, {}, true));
+                    append(_terminal->SendKeyEvent(key, 0, {}, false));
                 }
 
-                // Limit the click to 1 past the last character on the last line.
-                const auto clampedClick = std::min(bufferPos, lastNonSpace);
-
-                if (clampedClick >= end)
                 {
-                    // Get the distance between the cursor and the click, in cells.
-
-                    // First, make sure to iterate from the first point to the
-                    // second. The user may have clicked _earlier_ in the
-                    // buffer!
-                    auto goRight = clampedClick > cursorPos;
-                    const auto startPoint = goRight ? cursorPos : clampedClick;
-                    const auto endPoint = goRight ? clampedClick : cursorPos;
-
-                    const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
-                    const WORD key = goRight ? VK_RIGHT : VK_LEFT;
-
-                    std::wstring buffer;
-                    const auto append = [&](TerminalInput::OutputType&& out) {
-                        if (out)
-                        {
-                            buffer.append(std::move(*out));
-                        }
-                    };
-
-                    // Send an up and a down once per cell. This won't
-                    // accurately handle wide characters, or continuation
-                    // prompts, or cases where a single escape character in the
-                    // command (e.g. ^[) takes up two cells.
-                    for (size_t i = 0u; i < delta; i++)
-                    {
-                        append(_terminal->SendKeyEvent(key, 0, {}, true));
-                        append(_terminal->SendKeyEvent(key, 0, {}, false));
-                    }
-
-                    {
-                        // Sending input requires that we're unlocked, because
-                        // writing the input pipe may block indefinitely.
-                        const auto suspension = _terminal->SuspendLock();
-                        _sendInputToConnection(buffer);
-                    }
+                    // Sending input requires that we're unlocked, because
+                    // writing the input pipe may block indefinitely.
+                    const auto suspension = _terminal->SuspendLock();
+                    _sendInputToConnection(buffer);
                 }
             }
         }
-        _updateSelectionUI();
     }
 
     // Method Description:
