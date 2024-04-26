@@ -231,8 +231,6 @@ private:
     static constexpr uint16_t CharOffsetsMask = 0x7fff;
 
     template<typename T>
-    static constexpr uint16_t _clampedUint16(T v) noexcept;
-    template<typename T>
     constexpr uint16_t _clampedColumn(T v) const noexcept;
     template<typename T>
     constexpr uint16_t _clampedColumnInclusive(T v) const noexcept;

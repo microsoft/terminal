@@ -176,9 +176,6 @@ public:
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;
 
-    // non ownership pointer
-    ConversionAreaInfo* ConvScreenInfo;
-
     UINT ScrollScale;
 
     bool IsActiveScreenBuffer() const;

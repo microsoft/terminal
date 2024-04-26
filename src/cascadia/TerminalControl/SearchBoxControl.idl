@@ -12,10 +12,9 @@ namespace Microsoft.Terminal.Control
         void PopulateTextbox(String text);
         Boolean ContainsFocus();
         void SetStatus(Int32 totalMatches, Int32 currentMatch);
+        void ClearStatus();
         Windows.Foundation.Rect ContentClipRect{ get; };
         Double OpenAnimationStartPoint{ get; };
-
-        Boolean NavigationEnabled;
 
         event SearchHandler Search;
         event SearchHandler SearchChanged;

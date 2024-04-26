@@ -121,7 +121,7 @@ Author(s):
 #define MTSM_APPEARANCE_SETTINGS(X)                                                                                                                                \
     X(Core::CursorStyle, CursorShape, "cursorShape", Core::CursorStyle::Bar)                                                                                       \
     X(uint32_t, CursorHeight, "cursorHeight", DEFAULT_CURSOR_HEIGHT)                                                                                               \
-    X(double, BackgroundImageOpacity, "backgroundImageOpacity", 1.0)                                                                                               \
+    X(float, BackgroundImageOpacity, "backgroundImageOpacity", 1.0f)                                                                                               \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, "backgroundImageStretchMode", winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill) \
     X(bool, RetroTerminalEffect, "experimental.retroTerminalEffect", false)                                                                                        \
     X(hstring, PixelShaderPath, "experimental.pixelShaderPath")                                                                                                    \

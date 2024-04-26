@@ -914,7 +914,7 @@ const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexce
 
 TextAttribute ROW::GetAttrByColumn(const til::CoordType column) const
 {
-    return _attr.at(_clampedUint16(column));
+    return _attr.at(_clampedColumn(column));
 }
 
 std::vector<uint16_t> ROW::GetHyperlinks() const
@@ -1095,12 +1095,6 @@ DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_v
     {
         return DelimiterClass::RegularChar;
     }
-}
-
-template<typename T>
-constexpr uint16_t ROW::_clampedUint16(T v) noexcept
-{
-    return static_cast<uint16_t>(clamp(v, 0, 65535));
 }
 
 template<typename T>

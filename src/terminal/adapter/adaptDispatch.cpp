@@ -178,9 +178,10 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     _ApplyCursorMovementFlags(cursor);
 
-    // Notify UIA of new text.
+    // Notify terminal and UIA of new text.
     // It's important to do this here instead of in TextBuffer, because here you
-    // have access to the entire line of text.
+    // have access to the entire line of text, whereas TextBuffer writes it one
+    // character at a time via the OutputCellIterator.
     textBuffer.TriggerNewTextNotification(string);
 }
 

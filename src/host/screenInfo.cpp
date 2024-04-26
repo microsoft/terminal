@@ -40,7 +40,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     Next{ nullptr },
     WriteConsoleDbcsLeadByte{ 0, 0 },
     FillOutDbcsLeadChar{ 0 },
-    ConvScreenInfo{ nullptr },
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
     _pAccessibilityNotifier{ pNotifier },
@@ -1496,15 +1495,6 @@ NT_CATCH_RETURN()
             NotifyAccessibilityEventing(0, 0, coordNewScreenSize.width - 1, coordNewScreenSize.height - 1);
         }
 
-        if ((!ConvScreenInfo))
-        {
-            if (FAILED(ConsoleImeResizeCompStrScreenBuffer(coordNewScreenSize)))
-            {
-                // If something went wrong, just bail out.
-                return STATUS_INVALID_HANDLE;
-            }
-        }
-
         // Fire off an event to let accessibility apps know the layout has changed.
         if (_pAccessibilityNotifier && IsActiveScreenBuffer())
         {
@@ -2113,8 +2103,6 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     {
         _textBuffer->TriggerRedrawAll();
     }
-
-    gci.ConsoleIme.RefreshAreaAttributes();
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)

@@ -23,7 +23,6 @@ class InputBuffer final : public ConsoleObjectHeader
 public:
     DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
-    bool fInComposition; // specifies if there's an ongoing text composition
 
     InputBuffer();
 

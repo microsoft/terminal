@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetAcrylicOpacityPercentageValue(double value)
         {
-            Opacity(winrt::Microsoft::Terminal::UI::Converters::PercentageValueToPercentage(value));
+            Opacity(static_cast<float>(value) / 100.0f);
         };
 
         void SetPadding(double value)

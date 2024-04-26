@@ -7,6 +7,11 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateHighlight(std::span<const til::point_span> /*highlights*/, const TextBuffer& /*renditions*/) noexcept
+{
+    return S_OK;
+}
+
 HRESULT RenderEngineBase::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
     if (proposedTitle != _lastFrameTitle)
@@ -42,7 +47,7 @@ HRESULT RenderEngineBase::UpdateSoftFont(const std::span<const uint16_t> /*bitPa
     return S_FALSE;
 }
 
-HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept
+HRESULT RenderEngineBase::PrepareRenderInfo(RenderFrameInfo /*info*/) noexcept
 {
     return S_FALSE;
 }
