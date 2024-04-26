@@ -193,8 +193,7 @@ namespace winrt::TerminalApp::implementation
     void TabBase::_UpdateSwitchToTabKeyChord()
     {
         const auto id = fmt::format(FMT_COMPILE(L"Terminal.SwitchToTab{}"), _TabViewIndex);
-        const auto keyChord{ _actionMap.GetKeyBindingForAction2(id) };
-        //const auto keyChord = _actionMap ? _actionMap.GetKeyBindingForAction(ShortcutAction::SwitchToTab, SwitchToTabArgs{ _TabViewIndex }) : nullptr;
+        const auto keyChord{ _actionMap.GetKeyBindingForAction(id) };
         const auto keyChordText = keyChord ? KeyChordSerialization::ToString(keyChord) : L"";
 
         if (_keyChord == keyChordText)

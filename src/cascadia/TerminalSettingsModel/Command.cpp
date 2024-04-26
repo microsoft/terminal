@@ -145,6 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     std::vector<Control::KeyChord> Command::KeyMappings() const noexcept
     {
+        // todo: stage 3 - remove knowledge of keymappings
         return _keyMappings;
     }
 

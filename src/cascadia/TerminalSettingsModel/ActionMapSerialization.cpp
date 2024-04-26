@@ -90,7 +90,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     Json::Value ActionMap::ToJson() const
     {
-        // todo: stage 1 (done)
         Json::Value actionList{ Json::ValueType::arrayValue };
 
         // Command serializes to an array of JSON objects.
@@ -118,13 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         };
 
-        // Serialize all standard Command objects in the current layer
-        //for (const auto& [_, cmd] : _ActionMap)
-        //{
-        //    toJson(cmd);
-        //}
-
-        for (const auto& [_, cmd] : _ActionMap2)
+        for (const auto& [_, cmd] : _ActionMap)
         {
             toJson2(cmd);
         }
@@ -156,7 +149,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
 
         // Serialize all standard keybinding objects in the current layer
-        for (const auto& [keys, cmdID] : _KeyMap2)
+        for (const auto& [keys, cmdID] : _KeyMap)
         {
             toJson(keys, cmdID);
         }
@@ -186,12 +179,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 JsonUtils::GetValueForKey(json, "id", idJson);
 
                 // any existing keybinding with the same keychord in this layer will get overwritten
-                _KeyMap2.insert_or_assign(keys, idJson);
+                _KeyMap.insert_or_assign(keys, idJson);
 
                 // if there is an id, make sure the command registers these keys
                 if (!idJson.empty())
                 {
-                    // todo: stage 3
+                    // todo: stage 3 remove this!
                     // there is a problem here
                     // if the command with this id is only going to appear later during settings load
                     // then this will return null, meaning that the command created later on will not register this keybinding
@@ -199,7 +192,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // if we move away from Command needing to know its keymappings this is fine
                     // if we want to stick with commands knowing their keymappings, we will need to store these IDs of commands that we didn't
                     // register keybindings for and get back to them after parsing is complete
-                    const auto& cmd{ _GetActionByID2(idJson) };
+                    const auto& cmd{ _GetActionByID(idJson) };
                     if (cmd && *cmd)
                     {
                         cmd->RegisterKey(keys);
@@ -211,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         // the parents only get added after all jsons have been parsed
                         for (const auto& parent : _parents)
                         {
-                            const auto& inheritedCmd{ parent->_GetActionByID2(idJson) };
+                            const auto& inheritedCmd{ parent->_GetActionByID(idJson) };
                             if (inheritedCmd && *inheritedCmd)
                             {
                                 inheritedCmd->RegisterKey(keys);
