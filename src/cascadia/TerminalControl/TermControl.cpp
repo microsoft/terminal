@@ -227,6 +227,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
+        _revokers.ClearQuickFix = _core.ClearQuickFix(winrt::auto_revoke, { get_weak(), &TermControl::_clearQuickFix });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -337,9 +339,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         });
 
-        auto quickFixBtn{ QuickFixButton() };
-        quickFixBtn.PointerEntered({ get_weak(), &TermControl::QuickFixButton_PointerEntered });
-        quickFixBtn.PointerExited({ get_weak(), &TermControl::QuickFixButton_PointerExited });
+        if (Feature_QuickFix::IsEnabled())
+        {
+            auto quickFixBtn{ QuickFixButton() };
+            quickFixBtn.PointerEntered({ get_weak(), &TermControl::QuickFixButton_PointerEntered });
+            quickFixBtn.PointerExited({ get_weak(), &TermControl::QuickFixButton_PointerExited });
+        }
     }
 
     void TermControl::QuickFixButton_PointerEntered(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
@@ -827,10 +832,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // update. If we enabled scrollbar marks, then great, when we handle
         // that message, we'll redraw them.
 
-        // update the position of the quick fix menu (in case we changed the padding)
-        if (QuickFixButton().Visibility() == Visibility::Visible)
+        if (Feature_QuickFix::IsEnabled())
         {
-            ShowQuickFixMenu();
+            // update the position of the quick fix menu (in case we changed the padding)
+            if (_quickFixesAvailable)
+            {
+                ShowQuickFixMenu();
+            }
         }
     }
 
@@ -2333,7 +2341,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
 
-        if (QuickFixButton().Visibility() == Visibility::Visible)
+        if (_quickFixesAvailable)
         {
             ShowQuickFixMenu();
         }
@@ -3514,12 +3522,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
 
-        auto quickFixBtn = QuickFixButton();
-        quickFixBtn.Height(args.Height() / dpiScale);
-        QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
-        if (quickFixBtn.Visibility() == Visibility::Visible)
+        if (Feature_QuickFix::IsEnabled())
         {
-            ShowQuickFixMenu();
+            auto quickFixBtn = QuickFixButton();
+            quickFixBtn.Height(args.Height() / dpiScale);
+            QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
+            if (quickFixBtn.Visibility() == Visibility::Visible)
+            {
+                ShowQuickFixMenu();
+            }
         }
     }
 
@@ -3820,6 +3831,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ShowQuickFixMenu()
     {
         auto quickFixBtn{ QuickFixButton() };
+        _quickFixesAvailable = true;
 
         // If the gutter is narrow, display the collapsed version
         const auto& termPadding = GetPadding();
@@ -3827,12 +3839,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _quickFixButtonCollapsible = termPadding.Left < CharacterDimensions().Width;
         VisualStateManager::GoToState(*this, !_quickFixButtonCollapsible ? StateNormal : StateCollapsed, false);
 
-        // draw the button in the gutter
-        Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
+        const auto rd = get_self<ControlCore>(_core)->GetRenderData();
+        rd->LockConsole();
+        const auto viewportBufferPosition = rd->GetViewport();
+        const auto cursorBufferPosition = rd->GetCursorPosition();
+        rd->UnlockConsole();
+        if (cursorBufferPosition.y < viewportBufferPosition.Top() || cursorBufferPosition.y > viewportBufferPosition.BottomExclusive())
+        {
+            quickFixBtn.Visibility(Visibility::Collapsed);
+            return;
+        }
 
+        // draw the button in the gutter
         const auto& cursorPosInDips = CursorPositionInDips();
+        Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
         Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y);
         quickFixBtn.Visibility(Visibility::Visible);
+    }
+
+    void TermControl::_clearQuickFix(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        _quickFixesAvailable = false;
+        QuickFixButton().Visibility(Visibility::Collapsed);
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,

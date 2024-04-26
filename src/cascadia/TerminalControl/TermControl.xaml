@@ -1376,15 +1376,7 @@
         </Grid>
 
         <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup x:Name="CommonStates">
-                <VisualStateGroup.Transitions>
-                    <VisualTransition GeneratedDuration="0:0:0.5"
-                                      From="Collapsed"
-                                      To="Normal" />
-                    <VisualTransition GeneratedDuration="0:0:0.5"
-                                      From="Normal"
-                                      To="Collapsed" />
-                </VisualStateGroup.Transitions>
+            <VisualStateGroup x:Name="QuickFixButtonStates">
                 <VisualState x:Name="Normal" />
                 <VisualState x:Name="Collapsed">
                     <VisualState.Setters>

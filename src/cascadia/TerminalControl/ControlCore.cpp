@@ -115,6 +115,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnSearchMissingCommand = [this](auto&& PH1) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
 
+        auto pfnClearQuickFix = [this] { _terminalClearQuickFix(); };
+        _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -1620,6 +1623,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand)
     {
         SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }));
+    }
+
+    void ControlCore::_terminalClearQuickFix()
+    {
+        ClearQuickFix.raise(*this, nullptr);
     }
 
     bool ControlCore::HasSelection() const

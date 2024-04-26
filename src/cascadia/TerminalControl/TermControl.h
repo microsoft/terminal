@@ -248,6 +248,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _focused{ false };
         bool _initializedTerminal{ false };
         bool _quickFixButtonCollapsible{ false };
+        bool _quickFixesAvailable{ false };
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
@@ -402,6 +403,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
         void _showContextMenuAt(const til::point& controlRelativePos);
+        void _clearQuickFix(const IInspectable& sender, const IInspectable& args);
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
@@ -433,6 +435,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
+            Control::ControlCore::ClearQuickFix_revoker ClearQuickFix;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
