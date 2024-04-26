@@ -1189,6 +1189,8 @@ void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordTyp
         return;
     }
 
+    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, height });
+
     // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
     // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
     // The start parameter is relative to the _firstRow. The trick to get the content to the absolute start
@@ -1204,8 +1206,6 @@ void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordTyp
     {
         GetMutableRowByOffset(y).Reset(_initialAttributes);
     }
-
-    ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
 }
 
 // Routine Description:
