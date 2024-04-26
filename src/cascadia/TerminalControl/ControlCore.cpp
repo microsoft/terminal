@@ -2054,7 +2054,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // Limit the click to 1 past the last character on the last line.
                 const auto clampedClick = std::min(bufferPos, lastNonSpace);
 
-                if (clampedClick >= end)
+                if (clampedClick >= last.end)
                 {
                     // Get the distance between the cursor and the click, in cells.
 
