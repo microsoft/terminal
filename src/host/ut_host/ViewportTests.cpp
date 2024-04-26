@@ -561,29 +561,16 @@ class ViewportTests
 
             auto sAddAmount = RandomCoord() % (sRowWidth * sRowWidth);
 
-            til::point coordFinal;
-            coordFinal.x = (coordPos.x + sAddAmount) % sRowWidth;
-            coordFinal.y = coordPos.y + ((coordPos.x + sAddAmount) / sRowWidth);
-
-            Log::Comment(String().Format(L"Add To Position: (%d, %d)  Amount to add: %d", coordPos.y, coordPos.x, sAddAmount));
-
-            // Movement result is expected to be true, unless there's an error.
-            auto fExpectedResult = true;
-
-            // if we've calculated past the final row, then the function will reset to the original position and the output will be false.
-            if (coordFinal.y >= sRowWidth)
-            {
-                coordFinal = coordPos;
-                fExpectedResult = false;
-            }
-
+            const til::point coord{
+                (coordPos.x + sAddAmount) % sRowWidth,
+                coordPos.y + ((coordPos.x + sAddAmount) / sRowWidth),
+            };
+            const auto coordClamped = std::clamp(coord, v.Origin(), v.BottomRightInclusive());
+            const auto fExpectedResult = coord == coordClamped;
             const bool fActualResult = v.WalkInBounds(coordPos, sAddAmount);
 
             VERIFY_ARE_EQUAL(fExpectedResult, fActualResult);
-            VERIFY_ARE_EQUAL(coordPos.x, coordFinal.x);
-            VERIFY_ARE_EQUAL(coordPos.y, coordFinal.y);
-
-            Log::Comment(String().Format(L"Actual: (%d, %d) Expected: (%d, %d)", coordPos.y, coordPos.x, coordFinal.y, coordFinal.x));
+            VERIFY_ARE_EQUAL(coordPos, coordClamped);
         }
     }
 

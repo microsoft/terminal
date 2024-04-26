@@ -296,15 +296,10 @@ bool Viewport::WalkInBounds(til::point& pos, const til::CoordType delta, bool al
     const auto h = static_cast<ptrdiff_t>(std::max(0, _sr.bottom - _sr.top + 1));
     const auto max = w * h - !allowEndExclusive;
     const auto off = w * (pos.y - t) + (pos.x - l) + delta;
-
-    if (off < 0 || off >= max)
-    {
-        return false;
-    }
-
-    pos.x = gsl::narrow_cast<til::CoordType>(off % w + l);
-    pos.y = gsl::narrow_cast<til::CoordType>(off / w + t);
-    return true;
+    const auto offClamped = std::clamp(off, ptrdiff_t{ 0 }, max);
+    pos.x = gsl::narrow_cast<til::CoordType>(offClamped % w + l);
+    pos.y = gsl::narrow_cast<til::CoordType>(offClamped / w + t);
+    return off == offClamped;
 }
 
 // Routine Description:
