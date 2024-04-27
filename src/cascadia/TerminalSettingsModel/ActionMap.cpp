@@ -69,7 +69,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - actionID: the internal ID associated with a Command
     // Return Value:
     // - The command if it exists in this layer, otherwise nullptr
-    // todo: stage 3 - does this need to return an optional?
     Model::Command ActionMap::_GetActionByID(const winrt::hstring actionID) const
     {
         // Check current layer
@@ -132,24 +131,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Update AvailableActions and visitedActionIDs with our current layer
         for (const auto& [_, cmd] : _ActionMap)
         {
-            // todo: stage 3 - not sure if we need this? _ActionMap2 doesn't contain invalid commands anymore I'm p sure
-            if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
+            // Only populate AvailableActions with actions that haven't been visited already.
+            const auto actionID = Hash(cmd.ActionAndArgs());
+            if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
             {
-                // Only populate AvailableActions with actions that haven't been visited already.
-                const auto actionID = Hash(cmd.ActionAndArgs());
-                if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+                const auto& name{ cmd.Name() };
+                if (!name.empty())
                 {
-                    const auto& name{ cmd.Name() };
-                    if (!name.empty())
-                    {
-                        // Update AvailableActions.
-                        const auto actionAndArgsImpl{ get_self<ActionAndArgs>(cmd.ActionAndArgs()) };
-                        availableActions.insert_or_assign(name, *actionAndArgsImpl->Copy());
-                    }
-
-                    // Record that we already handled adding this action to the NameMap.
-                    visitedActionIDs.insert(actionID);
+                    // Update AvailableActions.
+                    const auto actionAndArgsImpl{ get_self<ActionAndArgs>(cmd.ActionAndArgs()) };
+                    availableActions.insert_or_assign(name, *actionAndArgsImpl->Copy());
                 }
+
+                // Record that we already handled adding this action to the NameMap.
+                visitedActionIDs.insert(actionID);
             }
         }
 
@@ -227,23 +222,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_set<winrt::hstring> visitedActionIDs;
         for (const auto& cmd : _GetCumulativeActions())
         {
-            // only populate with valid commands
-            if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
+            // Only populate NameMap with actions that haven't been visited already.
+            const auto actionID{ cmd.ID() };
+            if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
             {
-                // Only populate NameMap with actions that haven't been visited already.
-                const auto actionID{ cmd.ID() };
-                if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+                const auto& name{ cmd.Name() };
+                if (!name.empty())
                 {
-                    const auto& name{ cmd.Name() };
-                    if (!name.empty())
-                    {
-                        // Update NameMap.
-                        nameMap.insert_or_assign(name, cmd);
-                    }
-
-                    // Record that we already handled adding this action to the NameMap.
-                    visitedActionIDs.emplace(actionID);
+                    // Update NameMap.
+                    nameMap.insert_or_assign(name, cmd);
                 }
+
+                // Record that we already handled adding this action to the NameMap.
+                visitedActionIDs.emplace(actionID);
             }
         }
     }
