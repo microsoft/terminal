@@ -99,18 +99,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // { "name": "Custom Copy", "command": "copy", "keys": "ctrl+c" }
         // {                        "command": "copy", "keys": "ctrl+shift+c" }
         // {                        "command": "copy", "keys": "ctrl+ins" }
-        auto toJson = [&actionList](const Model::Command& cmd) {
+        auto toJsonSpecial = [&actionList](const Model::Command& cmd) {
             const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
-            const auto& cmdJsonArray{ cmdImpl->ToJson() };
+            const auto& cmdJsonArray{ cmdImpl->ToJsonSpecial() };
             for (const auto& cmdJson : cmdJsonArray)
             {
                 actionList.append(cmdJson);
             }
         };
 
-        auto toJson2 = [&actionList](const Model::Command& cmd) {
+        auto toJsonStandard = [&actionList](const Model::Command& cmd) {
             const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
-            const auto& cmdJsonArray{ cmdImpl->ToJson2() };
+            const auto& cmdJsonArray{ cmdImpl->ToJsonStandard() };
             for (const auto& cmdJson : cmdJsonArray)
             {
                 actionList.append(cmdJson);
@@ -119,19 +119,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         for (const auto& [_, cmd] : _ActionMap)
         {
-            toJson2(cmd);
+            toJsonStandard(cmd);
         }
 
         // Serialize all nested Command objects added in the current layer
         for (const auto& [_, cmd] : _NestedCommands)
         {
-            toJson(cmd);
+            toJsonSpecial(cmd);
         }
 
         // Serialize all iterable Command objects added in the current layer
         for (const auto& cmd : _IterableCommands)
         {
-            toJson(cmd);
+            toJsonSpecial(cmd);
         }
 
         return actionList;

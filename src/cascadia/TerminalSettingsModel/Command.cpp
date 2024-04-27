@@ -439,7 +439,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     // Return Value:
     // - an array of serialized actions
-    Json::Value Command::ToJson() const
+    Json::Value Command::ToJsonSpecial() const
     {
         Json::Value cmdList{ Json::ValueType::arrayValue };
 
@@ -506,7 +506,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     // Return Value:
     // - an array of serialized actions
-    Json::Value Command::ToJson2() const
+    Json::Value Command::ToJsonStandard() const
     {
         Json::Value cmdList{ Json::ValueType::arrayValue };
 
