@@ -158,6 +158,7 @@ void VtEngine::_flushImpl() noexcept
     {
         const auto fSuccess = WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
+        _startOfFrameBufferIndex = 0;
         if (!fSuccess)
         {
             LOG_LAST_ERROR();
