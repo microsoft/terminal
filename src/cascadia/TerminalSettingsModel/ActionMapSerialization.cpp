@@ -184,18 +184,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // if there is an id, make sure the command registers these keys
                 if (!idJson.empty())
                 {
-                    // todo: stage 3 remove this!
-                    // there is a problem here
+                    // there is a problem here (make a GH issue and mark the todo here)
                     // if the command with this id is only going to appear later during settings load
                     // then this will return null, meaning that the command created later on will not register this keybinding
                     // the keybinding will still work fine within the app, its just that the Command object itself won't know about this keymapping
-                    // if we move away from Command needing to know its keymappings this is fine
-                    // if we want to stick with commands knowing their keymappings, we will need to store these IDs of commands that we didn't
-                    // register keybindings for and get back to them after parsing is complete
-                    const auto& cmd{ _GetActionByID(idJson) };
-                    if (cmd && *cmd)
+                    // we are going to move away from Command needing to know its keymappings in a followup
+                    const auto cmd{ _GetActionByID(idJson) };
+                    if (cmd)
                     {
-                        cmd->RegisterKey(keys);
+                        cmd.RegisterKey(keys);
                     }
                     else
                     {
@@ -204,10 +201,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         // the parents only get added after all jsons have been parsed
                         for (const auto& parent : _parents)
                         {
-                            const auto& inheritedCmd{ parent->_GetActionByID(idJson) };
-                            if (inheritedCmd && *inheritedCmd)
+                            const auto inheritedCmd{ parent->_GetActionByID(idJson) };
+                            if (inheritedCmd)
                             {
-                                inheritedCmd->RegisterKey(keys);
+                                inheritedCmd.RegisterKey(keys);
                             }
                         }
                     }

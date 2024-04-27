@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSendInput(winrt::hstring currentCommandline);
 
     private:
-        std::optional<Model::Command> _GetActionByID(const winrt::hstring actionID) const;
+        Model::Command _GetActionByID(const winrt::hstring actionID) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
         void _RefreshKeyBindingCaches();

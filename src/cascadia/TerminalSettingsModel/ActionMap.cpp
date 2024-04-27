@@ -64,19 +64,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Retrieves the Command in the current layer, if it's valid
-    // - We internally store invalid commands as full commands.
-    //    This helper function returns nullptr when we get an invalid
-    //    command. This allows us to simply check for null when we
-    //    want a valid command.
+    // - Retrieves the Command in the current layer
     // Arguments:
     // - actionID: the internal ID associated with a Command
     // Return Value:
-    // - If the command is valid, the command itself.
-    // - If the command is explicitly unbound, nullptr.
-    // - If the command cannot be found in this layer, nullopt.
+    // - The command if it exists in this layer, otherwise nullptr
     // todo: stage 3 - does this need to return an optional?
-    std::optional<Model::Command> ActionMap::_GetActionByID(const winrt::hstring actionID) const
+    Model::Command ActionMap::_GetActionByID(const winrt::hstring actionID) const
     {
         // Check current layer
         const auto actionMapPair{ _ActionMap.find(actionID) };
@@ -87,14 +81,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // ActionMap should never point to nullptr
             FAIL_FAST_IF_NULL(cmd);
 
-            // todo: stage 3 - not sure if we need this? _ActionMap doesn't contain invalid commands I'm p sure
-            return !cmd.HasNestedCommands() && cmd.ActionAndArgs().Action() == ShortcutAction::Invalid ?
-                       nullptr : // explicitly unbound
-                       cmd;
+            return cmd;
         }
 
         // We don't have an answer
-        return std::nullopt;
+        return nullptr;
     }
 
     static void RegisterShortcutAction(ShortcutAction shortcutAction, std::unordered_map<hstring, Model::ActionAndArgs>& list, std::unordered_set<InternalActionID>& visited)
@@ -310,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // Only populate GlobalHotkeys with actions whose
             // ShortcutAction is GlobalSummon or QuakeMode
-            if (cmd.ActionAndArgs().Action() == ShortcutAction::GlobalSummon || cmd.ActionAndArgs().Action() == ShortcutAction::QuakeMode)
+            if (cmd && (cmd.ActionAndArgs().Action() == ShortcutAction::GlobalSummon || cmd.ActionAndArgs().Action() == ShortcutAction::QuakeMode))
             {
                 globalHotkeys.emplace(keys, cmd);
             }
@@ -341,10 +332,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     Model::Command foundCommand{ nullptr };
                     const auto cmd{ _GetActionByID(actionID) };
-                    if (cmd.has_value())
+                    if (cmd)
                     {
                         // the keychord entry and the command with that ID exist in this layer
-                        foundCommand = cmd.value();
+                        foundCommand = cmd;
                     }
                     else
                     {
@@ -352,9 +343,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         for (const auto parent : _parents)
                         {
                             const auto inheritedCmd{ parent->_GetActionByID(actionID) };
-                            if (inheritedCmd.has_value())
+                            if (inheritedCmd)
                             {
-                                foundCommand = inheritedCmd.value();
+                                foundCommand = inheritedCmd;
                                 break;
                             }
                         }
@@ -382,9 +373,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 if (!actionID.empty() && keyBindingsMap.find(keys) == keyBindingsMap.end() && unboundKeys.find(keys) == unboundKeys.end())
                 {
                     const auto cmd{ _GetActionByID(actionID) };
-                    if (cmd.has_value())
+                    if (cmd)
                     {
-                        keyBindingsMap.emplace(keys, cmd.value());
+                        keyBindingsMap.emplace(keys, cmd);
                     }
                 }
             }
@@ -603,7 +594,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             if (const auto cmdID = keyIDPair->second; !cmdID.empty())
             {
-                if (const auto cmd = _GetActionByID(cmdID); cmd.has_value())
+                if (const auto cmd = _GetActionByID(cmdID))
                 {
                     // standard case: both the keys and the ID are defined in this layer
                     return cmd;
@@ -612,7 +603,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     for (const auto parent : _parents)
                     {
-                        if (const auto inheritedCmd = parent->_GetActionByID(cmdID); inheritedCmd.has_value())
+                        if (const auto inheritedCmd = parent->_GetActionByID(cmdID))
                         {
                             // edge case 1: the keys are bound to an ID in this layer, but the ID is defined in one of our parents
                             return inheritedCmd;
@@ -634,7 +625,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 if (const auto cmdID = parentKeyIDPair->second; !cmdID.empty())
                 {
-                    if (const auto cmd = _GetActionByID(cmdID); cmd.has_value())
+                    if (const auto cmd = _GetActionByID(cmdID))
                     {
                         // edge case 2: the keychord maps to an ID in one of our parents, but a command with that ID exists in this layer
                         //              use the command from this layer
@@ -666,9 +657,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // todo: stage 3 what if the user makes an action that does the same thing and edits the keys?
         // Check our internal state.
-        if (const auto& cmd{ _GetActionByID(cmdID) })
+        if (const auto cmd{ _GetActionByID(cmdID) })
         {
-            return cmd->Keys();
+            return cmd.Keys();
         }
 
         // Check our parents
@@ -714,7 +705,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // make sure to update the Command with these changes
-        // todo: stage 3 - remove command's knowledge of keys
         const auto cmdImpl{ get_self<implementation::Command>(cmd) };
         cmdImpl->EraseKey(oldKeys);
         cmdImpl->RegisterKey(newKeys);
