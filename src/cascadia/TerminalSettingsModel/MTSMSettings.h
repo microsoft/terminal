@@ -24,8 +24,9 @@ Author(s):
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
     X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                      \
     X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                              \
-    X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                                                              \
-    X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                                                              \
+    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                         \
+    X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
+    X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
@@ -92,9 +93,8 @@ Author(s):
     X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
-    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
-    X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
-    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
+    X(bool, AutoMarkPrompts, "autoMarkPrompts", false)                                                                                                         \
+    X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
 
@@ -114,13 +114,14 @@ Author(s):
     X(IFontAxesMap, FontAxes, "axes")                                                  \
     X(IFontFeatureMap, FontFeatures, "features")                                       \
     X(bool, EnableBuiltinGlyphs, "builtinGlyphs", true)                                \
+    X(bool, EnableColorGlyphs, "colorGlyphs", true)                                    \
     X(winrt::hstring, CellWidth, "cellWidth")                                          \
     X(winrt::hstring, CellHeight, "cellHeight")
 
 #define MTSM_APPEARANCE_SETTINGS(X)                                                                                                                                \
     X(Core::CursorStyle, CursorShape, "cursorShape", Core::CursorStyle::Bar)                                                                                       \
     X(uint32_t, CursorHeight, "cursorHeight", DEFAULT_CURSOR_HEIGHT)                                                                                               \
-    X(double, BackgroundImageOpacity, "backgroundImageOpacity", 1.0)                                                                                               \
+    X(float, BackgroundImageOpacity, "backgroundImageOpacity", 1.0f)                                                                                               \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, "backgroundImageStretchMode", winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill) \
     X(bool, RetroTerminalEffect, "experimental.retroTerminalEffect", false)                                                                                        \
     X(hstring, PixelShaderPath, "experimental.pixelShaderPath")                                                                                                    \

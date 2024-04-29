@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    std::string_view LoadStringResource(int resourceID);
     winrt::com_ptr<Profile> CreateChild(const winrt::com_ptr<Profile>& parent);
 
     class SettingsTypedDeserializationException final : public std::runtime_error
@@ -105,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
 
+        static winrt::hstring SettingsDirectory();
         static winrt::hstring SettingsPath();
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();

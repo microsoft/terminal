@@ -127,7 +127,7 @@ namespace winrt::TerminalApp::implementation
             auto originalOpacity{ control.BackgroundOpacity() };
 
             // Apply the new opacity
-            control.AdjustOpacity(args.Opacity() / 100.0, args.Relative());
+            control.AdjustOpacity(args.Opacity() / 100.0f, args.Relative());
 
             if (backup)
             {

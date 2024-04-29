@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // When clicked, we dispatch the bound ClearSettingValue event,
                 // resulting in inheriting the setting value from the parent.
                 button.Click([=](auto&&, auto&&) {
-                    _ClearSettingValueHandlers(*this, nullptr);
+                    ClearSettingValue.raise(*this, nullptr);
 
                     // move the focus to the child control
                     if (const auto& content{ Content() })

@@ -90,14 +90,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                               newKeys, // NewKeys
                                                               _IsNewlyAdded ? hstring{} : _CurrentAction, // OldAction
                                                               unbox_value<hstring>(_ProposedAction)) }; // NewAction
-        _ModifyKeyBindingRequestedHandlers(*this, *args);
+        ModifyKeyBindingRequested.raise(*this, *args);
     }
 
     void KeyBindingViewModel::CancelChanges()
     {
         if (_IsNewlyAdded)
         {
-            _DeleteNewlyAddedKeyBindingHandlers(*this, nullptr);
+            DeleteNewlyAddedKeyBinding.raise(*this, nullptr);
         }
         else
         {
@@ -158,13 +158,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // We also have to do this manually because it hasn't been added to the list yet.
         kbdVM->IsInEditMode(true);
         // Emit an event to let the page know to update the background of this key binding VM
-        _UpdateBackgroundHandlers(*this, *kbdVM);
+        UpdateBackground.raise(*this, *kbdVM);
 
         // IMPORTANT: do this _after_ setting IsInEditMode. Otherwise, it'll get deleted immediately
         //              by the PropertyChangedHandler below (where we delete any IsNewlyAdded items)
         kbdVM->IsNewlyAdded(true);
         _KeyBindingList.InsertAt(0, *kbdVM);
-        _FocusContainerHandlers(*this, *kbdVM);
+        FocusContainer.raise(*this, *kbdVM);
     }
 
     void ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
@@ -187,7 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         // This is the view model entry that went into edit mode.
                         // Emit an event to let the page know to move focus to
                         // this VM's container.
-                        _FocusContainerHandlers(*this, senderVM);
+                        FocusContainer.raise(*this, senderVM);
                     }
                     else if (kbdVM.IsNewlyAdded())
                     {
@@ -205,11 +205,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // Emit an event to let the page know to move focus to
                 // this VM's container.
-                _FocusContainerHandlers(*this, senderVM);
+                FocusContainer.raise(*this, senderVM);
             }
 
             // Emit an event to let the page know to update the background of this key binding VM
-            _UpdateBackgroundHandlers(*this, senderVM);
+            UpdateBackground.raise(*this, senderVM);
         }
     }
 
@@ -231,7 +231,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto newFocusedIndex{ std::clamp(index, 0u, _KeyBindingList.Size() - 1) };
                 // Emit an event to let the page know to move focus to
                 // this VM's container.
-                _FocusContainerHandlers(*this, winrt::box_value(newFocusedIndex));
+                FocusContainer.raise(*this, winrt::box_value(newFocusedIndex));
             }
         }
     }

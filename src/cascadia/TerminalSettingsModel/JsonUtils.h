@@ -729,7 +729,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isNumeric();
         }
 
-        Json::Value ToJson(const float& val)
+        Json::Value ToJson(const float val)
         {
             return val;
         }
@@ -753,7 +753,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isNumeric();
         }
 
-        Json::Value ToJson(const double& val)
+        Json::Value ToJson(const double val)
         {
             return val;
         }

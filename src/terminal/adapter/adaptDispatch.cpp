@@ -5,7 +5,6 @@
 
 #include "adaptDispatch.hpp"
 #include "../../renderer/base/renderer.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
@@ -119,26 +118,17 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             }
         }
 
-        if (_modes.test(Mode::InsertReplace))
-        {
-            // If insert-replace mode is enabled, we first measure how many cells
-            // the string will occupy, and scroll the target area right by that
-            // amount to make space for the incoming text.
-            const OutputCellIterator it(state.text, attributes);
-            auto measureIt = it;
-            while (measureIt && measureIt.GetCellDistance(it) < state.columnLimit)
-            {
-                ++measureIt;
-            }
-            const auto row = cursorPosition.y;
-            const auto cellCount = measureIt.GetCellDistance(it);
-            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, state.columnLimit, row + 1 }, cellCount);
-        }
-
         state.columnBegin = cursorPosition.x;
 
         const auto textPositionBefore = state.text.data();
-        textBuffer.Write(cursorPosition.y, attributes, state);
+        if (_modes.test(Mode::InsertReplace))
+        {
+            textBuffer.Insert(cursorPosition.y, attributes, state);
+        }
+        else
+        {
+            textBuffer.Replace(cursorPosition.y, attributes, state);
+        }
         const auto textPositionAfter = state.text.data();
 
         // TODO: A row should not be marked as wrapped just because we wrote the last column.
@@ -188,7 +178,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     _ApplyCursorMovementFlags(cursor);
 
-    // Notify UIA of new text.
+    // Notify terminal and UIA of new text.
     // It's important to do this here instead of in TextBuffer, because here you
     // have access to the entire line of text, whereas TextBuffer writes it one
     // character at a time via the OutputCellIterator.
@@ -3394,7 +3384,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - content - The content to copy to clipboard. Must be null terminated.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetClipboard(const std::wstring_view content)
+bool AdaptDispatch::SetClipboard(const wil::zwstring_view content)
 {
     // Return false to forward the operation to the hosting terminal,
     // since ConPTY can't handle this itself.
@@ -3671,7 +3661,7 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
     else if (subParam == 12)
     {
-        _api.MarkCommandStart();
+        _api.GetTextBuffer().StartCommand();
         return true;
     }
 
@@ -3690,12 +3680,12 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty())
+    const auto isConPty = _api.IsConsolePty();
+    if (isConPty)
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        // Flush the frame manually, to make sure marks end up on the right
+        // line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3712,14 +3702,14 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
     const auto action = til::at(parts, 0);
 
+    bool handled = false;
     if (action == L"SetMark")
     {
-        ScrollMark mark;
-        mark.category = MarkCategory::Prompt;
-        _api.MarkPrompt(mark);
-        return true;
+        _api.GetTextBuffer().StartPrompt();
+        handled = true;
     }
-    return false;
+
+    return handled && !isConPty;
 }
 
 // Method Description:
@@ -3734,12 +3724,12 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty())
+    const auto isConPty = _api.IsConsolePty();
+    if (isConPty)
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        // Flush the frame manually, to make sure marks end up on the right
+        // line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
-        return false;
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3753,7 +3743,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     {
         return false;
     }
-
+    bool handled = false;
     const auto action = til::at(parts, 0);
     if (action.size() == 1)
     {
@@ -3761,21 +3751,21 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         {
         case L'A': // FTCS_PROMPT
         {
-            // Simply just mark this line as a prompt line.
-            ScrollMark mark;
-            mark.category = MarkCategory::Prompt;
-            _api.MarkPrompt(mark);
-            return true;
+            _api.GetTextBuffer().StartPrompt();
+            handled = true;
+            break;
         }
         case L'B': // FTCS_COMMAND_START
         {
-            _api.MarkCommandStart();
-            return true;
+            _api.GetTextBuffer().StartCommand();
+            handled = true;
+            break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
-            _api.MarkOutputStart();
-            return true;
+            _api.GetTextBuffer().StartOutput();
+            handled = true;
+            break;
         }
         case L'D': // FTCS_COMMAND_FINISHED
         {
@@ -3793,12 +3783,15 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                 error = Utils::StringToUint(errorString, parsedError) ? parsedError :
                                                                         UINT_MAX;
             }
-            _api.MarkCommandFinish(error);
-            return true;
+
+            _api.GetTextBuffer().EndCurrentCommand(error);
+
+            handled = true;
+            break;
         }
         default:
         {
-            return false;
+            handled = false;
         }
         }
     }
@@ -3807,7 +3800,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
-    return false;
+    return handled && !isConPty;
 }
 // Method Description:
 // - Performs a VsCode action

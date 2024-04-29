@@ -27,6 +27,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ManyKeysSameAction);
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(HashDeduplication);
+        TEST_METHOD(HashContentArgs);
         TEST_METHOD(UnbindKeybindings);
         TEST_METHOD(LayerScancodeKeybindings);
         TEST_METHOD(TestExplicitUnbind);
@@ -120,13 +121,13 @@ namespace SettingsModelUnitTests
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings1Json);
+        actionMap->LayerJson(bindings1Json, OriginTag::None);
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings2Json);
+        actionMap->LayerJson(bindings2Json, OriginTag::None);
         VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
     }
 
@@ -143,22 +144,48 @@ namespace SettingsModelUnitTests
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings1Json);
+        actionMap->LayerJson(bindings1Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings2Json);
+        actionMap->LayerJson(bindings2Json, OriginTag::None);
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
     }
 
     void KeyBindingsTests::HashDeduplication()
     {
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"));
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"));
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
+    }
+
+    void KeyBindingsTests::HashContentArgs()
+    {
+        Log::Comment(L"These are two actions with different content args. They should have different hashes for their terminal args.");
+        const auto actionMap = winrt::make_self<implementation::ActionMap>();
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"), OriginTag::None);
+        VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
+
+        KeyChord ctrlC{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
+        KeyChord ctrlShiftC{ VirtualKeyModifiers::Control | VirtualKeyModifiers::Shift, static_cast<int32_t>('C'), 0 };
+
+        auto hashFromKey = [&](auto& kc) {
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            return terminalArgs.Hash();
+        };
+
+        const auto hashOne = hashFromKey(ctrlC);
+        const auto hashTwo = hashFromKey(ctrlShiftC);
+
+        VERIFY_ARE_NOT_EQUAL(hashOne, hashTwo);
     }
 
     void KeyBindingsTests::UnbindKeybindings()
@@ -180,51 +207,51 @@ namespace SettingsModelUnitTests
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings1Json);
+        actionMap->LayerJson(bindings1Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `\"unbound\"` to unbind the key"));
-        actionMap->LayerJson(bindings2Json);
+        actionMap->LayerJson(bindings2Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `null` to unbind the key"));
         // First add back a good binding
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
-        actionMap->LayerJson(bindings3Json);
+        actionMap->LayerJson(bindings3Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using an unrecognized command to unbind the key"));
         // First add back a good binding
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
-        actionMap->LayerJson(bindings4Json);
+        actionMap->LayerJson(bindings4Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using a straight up invalid value to unbind the key"));
         // First add back a good binding
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
-        actionMap->LayerJson(bindings5Json);
+        actionMap->LayerJson(bindings5Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key that wasn't bound at all"));
-        actionMap->LayerJson(bindings2Json);
+        actionMap->LayerJson(bindings2Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
     }
@@ -244,13 +271,13 @@ namespace SettingsModelUnitTests
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings1Json);
+        actionMap->LayerJson(bindings1Json, OriginTag::None);
         VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings2Json);
+        actionMap->LayerJson(bindings2Json, OriginTag::None);
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
     }
 
@@ -277,7 +304,7 @@ namespace SettingsModelUnitTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(10u, actionMap->_KeyMap.size());
 
         {
@@ -318,8 +345,10 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -329,9 +358,11 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
-            VERIFY_ARE_EQUAL(0, realArgs.TerminalArgs().ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_NOT_NULL(terminalArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(0, terminalArgs.ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -342,9 +373,11 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
-            VERIFY_ARE_EQUAL(11, realArgs.TerminalArgs().ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_NOT_NULL(terminalArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(11, terminalArgs.ProfileIndex().Value());
         }
 
         {
@@ -405,7 +438,7 @@ namespace SettingsModelUnitTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
 
         {
@@ -454,7 +487,7 @@ namespace SettingsModelUnitTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
 
         {
@@ -495,7 +528,7 @@ namespace SettingsModelUnitTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         {
@@ -522,7 +555,7 @@ namespace SettingsModelUnitTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(6u, actionMap->_KeyMap.size());
 
         {
@@ -580,7 +613,7 @@ namespace SettingsModelUnitTests
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
             VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
-            VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
+            VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson, OriginTag::None);, std::exception);
         }
     }
 
@@ -595,7 +628,7 @@ namespace SettingsModelUnitTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
 
         {
@@ -617,7 +650,7 @@ namespace SettingsModelUnitTests
         {
             const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": "moveTab" }])" };
             auto actionMapNoArgs = winrt::make_self<implementation::ActionMap>();
-            actionMapNoArgs->LayerJson(bindingsInvalidString);
+            actionMapNoArgs->LayerJson(bindingsInvalidString, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, actionMapNoArgs->_KeyMap.size());
         }
         {
@@ -625,7 +658,7 @@ namespace SettingsModelUnitTests
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
             VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
-            VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
+            VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson, OriginTag::None);, std::exception);
         }
     }
 
@@ -641,7 +674,7 @@ namespace SettingsModelUnitTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
 
         {
@@ -673,7 +706,7 @@ namespace SettingsModelUnitTests
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
             VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
-            VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
+            VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson, OriginTag::None);, std::exception);
         }
     }
 
@@ -707,14 +740,14 @@ namespace SettingsModelUnitTests
 
         {
             Log::Comment(L"simple command: no args");
-            actionMap->LayerJson(bindings0Json);
+            actionMap->LayerJson(bindings0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CloseWindow) };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control, static_cast<int32_t>('A'), 0 }, kbd);
         }
         {
             Log::Comment(L"command with args");
-            actionMap->LayerJson(bindings1Json);
+            actionMap->LayerJson(bindings1Json, OriginTag::None);
             VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
 
             auto args{ winrt::make_self<implementation::CopyTextArgs>() };
@@ -725,7 +758,7 @@ namespace SettingsModelUnitTests
         }
         {
             Log::Comment(L"command with new terminal args");
-            actionMap->LayerJson(bindings2Json);
+            actionMap->LayerJson(bindings2Json, OriginTag::None);
             VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
 
             auto newTerminalArgs{ winrt::make_self<implementation::NewTerminalArgs>() };
@@ -737,7 +770,7 @@ namespace SettingsModelUnitTests
         }
         {
             Log::Comment(L"command with hidden args");
-            actionMap->LayerJson(bindings3Json);
+            actionMap->LayerJson(bindings3Json, OriginTag::None);
             VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
 
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
@@ -762,13 +795,13 @@ namespace SettingsModelUnitTests
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings0Json);
+        actionMap->LayerJson(bindings0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
-        actionMap->LayerJson(bindings1Json);
+        actionMap->LayerJson(bindings1Json, OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size(), L"Layering the second action should replace the first one.");
 
-        actionMap->LayerJson(bindings2Json);
+        actionMap->LayerJson(bindings2Json, OriginTag::None);
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
     }
 
@@ -777,7 +810,7 @@ namespace SettingsModelUnitTests
         const auto json = VerifyParseSucceeded(R"!([{"command": "quakeMode", "keys":"shift+sc(255)"}])!");
 
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(json);
+        actionMap->LayerJson(json, OriginTag::None);
 
         const auto action = actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Shift, 0, 255 });
         VERIFY_IS_NOT_NULL(action);

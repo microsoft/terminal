@@ -64,7 +64,7 @@ namespace Microsoft.Terminal.Control
                            Microsoft.Terminal.Core.Point pixelPosition,
                            MouseButtonState state);
 
-        void UpdateScrollbar(Double newValue);
+        void UpdateScrollbar(Single newValue);
 
         Boolean ManglePathsForWsl { get; };
 

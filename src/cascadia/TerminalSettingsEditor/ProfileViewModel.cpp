@@ -187,6 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 UpdateFontList();
             }
             const auto& currentFontList{ CompleteFontList() };
+            fallbackFont = currentFontList.First().Current();
             for (const auto& font : currentFontList)
             {
                 if (font.LocalizedName() == name)
@@ -298,9 +299,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _unfocusedAppearanceViewModel;
     }
 
-    bool ProfileViewModel::VtPassthroughAvailable() const noexcept
+    bool ProfileViewModel::ShowMarksAvailable() const noexcept
     {
-        return Feature_VtPassthroughMode::IsEnabled() && Feature_VtPassthroughModeSettingInUI::IsEnabled();
+        return Feature_ScrollbarMarks::IsEnabled();
+    }
+    bool ProfileViewModel::AutoMarkPromptsAvailable() const noexcept
+    {
+        return Feature_ScrollbarMarks::IsEnabled();
+    }
+    bool ProfileViewModel::RepositionCursorWithMouseAvailable() const noexcept
+    {
+        return Feature_ScrollbarMarks::IsEnabled();
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()
@@ -398,7 +407,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ProfileViewModel::DeleteProfile()
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
-        _DeleteProfileHandlers(*this, *deleteProfileArgs);
+        DeleteProfileRequested.raise(*this, *deleteProfileArgs);
     }
 
     void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList)

@@ -137,14 +137,14 @@ namespace ControlUnitTests
         VERIFY_IS_NOT_NULL(core);
 
         // A callback to make sure that we're raising TransparencyChanged events
-        auto expectedOpacity = 0.5;
+        auto expectedOpacity = 0.5f;
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
             // The Settings object's opacity shouldn't be changed
-            VERIFY_ARE_EQUAL(0.5, settings->Opacity());
+            VERIFY_ARE_EQUAL(0.5f, settings->Opacity());
 
-            if (expectedOpacity < 1.0)
+            if (expectedOpacity < 1.0f)
             {
                 VERIFY_IS_TRUE(settings->UseAcrylic());
                 VERIFY_IS_TRUE(core->_settings->UseAcrylic());
@@ -153,7 +153,7 @@ namespace ControlUnitTests
             // GH#603: Adjusting opacity shouldn't change whether or not we
             // requested acrylic.
 
-            auto expectedUseAcrylic = expectedOpacity < 1.0;
+            auto expectedUseAcrylic = expectedOpacity < 1.0f;
             VERIFY_IS_TRUE(core->_settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
         };
@@ -166,39 +166,39 @@ namespace ControlUnitTests
         VERIFY_IS_TRUE(core->_initializedTerminal);
 
         Log::Comment(L"Increasing opacity till fully opaque");
-        expectedOpacity += 0.1; // = 0.6;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 0.7;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 0.8;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 0.9;
-        core->AdjustOpacity(0.1);
-        expectedOpacity += 0.1; // = 1.0;
+        expectedOpacity += 0.1f; // = 0.6;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 0.7;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 0.8;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 0.9;
+        core->AdjustOpacity(0.1f);
+        expectedOpacity += 0.1f; // = 1.0;
         // cast to float because floating point numbers are mean
-        VERIFY_ARE_EQUAL(1.0f, base::saturated_cast<float>(expectedOpacity));
-        core->AdjustOpacity(0.1);
+        VERIFY_ARE_EQUAL(1.0f, expectedOpacity);
+        core->AdjustOpacity(0.1f);
 
         Log::Comment(L"Increasing opacity more doesn't actually change it to be >1.0");
 
-        expectedOpacity = 1.0;
-        core->AdjustOpacity(0.1);
+        expectedOpacity = 1.0f;
+        core->AdjustOpacity(0.1f);
 
         Log::Comment(L"Decrease opacity");
-        expectedOpacity -= 0.25; // = 0.75;
-        core->AdjustOpacity(-0.25);
-        expectedOpacity -= 0.25; // = 0.5;
-        core->AdjustOpacity(-0.25);
-        expectedOpacity -= 0.25; // = 0.25;
-        core->AdjustOpacity(-0.25);
-        expectedOpacity -= 0.25; // = 0.05;
+        expectedOpacity -= 0.25f; // = 0.75;
+        core->AdjustOpacity(-0.25f);
+        expectedOpacity -= 0.25f; // = 0.5;
+        core->AdjustOpacity(-0.25f);
+        expectedOpacity -= 0.25f; // = 0.25;
+        core->AdjustOpacity(-0.25f);
+        expectedOpacity -= 0.25f; // = 0.05;
         // cast to float because floating point numbers are mean
-        VERIFY_ARE_EQUAL(0.0f, base::saturated_cast<float>(expectedOpacity));
-        core->AdjustOpacity(-0.25);
+        VERIFY_ARE_EQUAL(0.0f, expectedOpacity);
+        core->AdjustOpacity(-0.25f);
 
         Log::Comment(L"Decreasing opacity more doesn't actually change it to be < 0");
-        expectedOpacity = 0.0;
-        core->AdjustOpacity(-0.25);
+        expectedOpacity = 0.0f;
+        core->AdjustOpacity(-0.25f);
     }
 
     void ControlCoreTests::TestFreeAfterClose()
@@ -502,7 +502,7 @@ namespace ControlUnitTests
             const auto& start = core->_terminal->GetSelectionAnchor();
             const auto& end = core->_terminal->GetSelectionEnd();
             const til::point expectedStart{ 24, 0 }; // The character after the prompt
-            const til::point expectedEnd{ 29, 3 }; // x = buffer.right
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }

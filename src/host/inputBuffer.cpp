@@ -27,8 +27,6 @@ using namespace Microsoft::Console;
 InputBuffer::InputBuffer() :
     InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE }
 {
-    // initialize buffer header
-    fInComposition = false;
 }
 
 // Transfer as many `wchar_t`s from source over to the `char`/`wchar_t` buffer `target`. After it returns,
@@ -434,7 +432,7 @@ try
                     {
                         // char is signed and assigning it to UnicodeChar would cause sign-extension.
                         // unsigned char doesn't have this problem.
-                        event.Event.KeyEvent.uChar.UnicodeChar = til::bit_cast<uint8_t>(ch);
+                        event.Event.KeyEvent.uChar.UnicodeChar = std::bit_cast<uint8_t>(ch);
                         OutEvents.push_back(event);
                     }
                     repeat--;

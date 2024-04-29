@@ -50,5 +50,9 @@
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
 
+// {fmt}, a C++20-compatible formatting library
+#include <fmt/format.h>
+#include <fmt/compile.h>
+
 #include <til.h>
 #include <til/bit.h>

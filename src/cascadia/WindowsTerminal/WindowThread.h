@@ -25,7 +25,7 @@ public:
 
     uint64_t PeasantID();
 
-    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
+    til::event<winrt::delegate<void()>> UpdateSettingsRequested;
 
 private:
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };

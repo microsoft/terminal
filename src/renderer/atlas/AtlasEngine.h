@@ -33,19 +33,19 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept override;
         [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
-        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
+        [[nodiscard]] HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept override;
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, til::CoordType targetRow, til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
-        [[nodiscard]] HRESULT PaintSelections(const std::vector<til::rect>& rects) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
@@ -57,30 +57,28 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT GetFontSize(_Out_ til::size* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
         [[nodiscard]] HRESULT UpdateTitle(std::wstring_view newTitle) noexcept override;
-
-        // DxRenderer - getter
-        HRESULT Enable() noexcept override;
-        [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept override;
-        [[nodiscard]] std::wstring_view GetPixelShaderImagePath() noexcept override;
-        [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
-        [[nodiscard]] float GetScaling() const noexcept override;
-        [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
-        [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept override;
-        // DxRenderer - setter
-        void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
-        void SetCallback(std::function<void(HANDLE)> pfn) noexcept override;
-        void EnableTransparentBackground(const bool isTransparent) noexcept override;
-        void SetForceFullRepaintRendering(bool enable) noexcept override;
-        [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
-        void SetPixelShaderPath(std::wstring_view value) noexcept override;
-        void SetPixelShaderImagePath(std::wstring_view value) noexcept override;
-        void SetRetroTerminalEffect(bool enable) noexcept override;
-        void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
-        void SetSoftwareRendering(bool enable) noexcept override;
-        void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
-        [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept override;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
+
+        // getter
+        [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept;
+        [[nodiscard]] bool GetRetroTerminalEffect() const noexcept;
+        [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept;
+        [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept;
+        // setter
+        void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
+        void SetCallback(std::function<void(HANDLE)> pfn) noexcept;
+        void EnableTransparentBackground(const bool isTransparent) noexcept;
+        [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept;
+        void SetPixelShaderPath(std::wstring_view value) noexcept;
+        void SetPixelShaderImagePath(std::wstring_view value) noexcept;
+        void SetRetroTerminalEffect(bool enable) noexcept;
+        void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept;
+        void SetSoftwareRendering(bool enable) noexcept;
+        void SetDisablePartialInvalidation(bool enable) noexcept;
+        void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
+        void SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept;
+        [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
 
     private:
         // AtlasEngine.cpp
@@ -93,11 +91,14 @@ namespace Microsoft::Console::Render::Atlas
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
         ATLAS_ATTR_COLD void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
+        void _fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept;
+        [[nodiscard]] HRESULT _drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept;
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
-        void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
-        void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
+        [[nodiscard]] HRESULT _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
+        void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr);
+        [[nodiscard]] bool _updateWithNearbyFontCollection() noexcept;
 
         // AtlasEngine.r.cpp
         ATLAS_ATTR_COLD void _recreateAdapter();
@@ -117,6 +118,11 @@ namespace Microsoft::Console::Render::Atlas
         static constexpr u16r invalidatedAreaNone = { u16max, u16max, u16min, u16min };
         static constexpr range<u16> invalidatedRowsNone{ u16max, u16min };
         static constexpr range<u16> invalidatedRowsAll{ u16min, u16max };
+
+        static constexpr u32 highlightBg = 0xff00ffff;
+        static constexpr u32 highlightFg = 0xff000000;
+        static constexpr u32 highlightFocusBg = 0xff3296ff;
+        static constexpr u32 highlightFocusFg = 0xff000000;
 
         std::unique_ptr<IBackend> _b;
         RenderingPayload _p;
@@ -158,6 +164,7 @@ namespace Microsoft::Console::Render::Atlas
             Buffer<f32> glyphAdvances;
             Buffer<DWRITE_GLYPH_OFFSET> glyphOffsets;
 
+            wil::com_ptr<IDWriteFontFallback> systemFontFallback;
             wil::com_ptr<IDWriteFontFace2> replacementCharacterFontFace;
             u16 replacementCharacterGlyphIndex = 0;
             bool replacementCharacterLookedUp = false;
@@ -172,6 +179,10 @@ namespace Microsoft::Console::Render::Atlas
             u16x2 lastPaintBufferLineCoord{};
             // UpdateHyperlinkHoveredId()
             u16 hyperlinkHoveredId = 0;
+
+            // These tracks the highlighted regions on the screen that are yet to be painted.
+            std::span<const til::point_span> searchHighlights;
+            std::span<const til::point_span> searchHighlightFocused;
 
             // dirtyRect is a computed value based on invalidatedRows.
             til::rect dirtyRect;
