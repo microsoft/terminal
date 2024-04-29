@@ -42,7 +42,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
 
     // we need this callback to be able to flush an unknown input sequence to the app
-    auto flushCallback = [capture0 = _pInputStateMachine.get()] { capture0->FlushToTerminal(); };
+    auto flushCallback = [capture0 = _pInputStateMachine.get()] { return capture0->FlushToTerminal(); };
     engineRef->SetFlushToInputQueueCallback(flushCallback);
 
     // we need this callback to capture the reply if someone requests a status from the terminal
