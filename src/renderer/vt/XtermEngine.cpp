@@ -45,6 +45,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // visible, then PaintCursor will be called, and we'll set this to true
     // during the frame.
     _nextCursorIsVisible = false;
+    _startOfFrameBufferIndex = _buffer.size();
 
     // Do not perform synchronization clearing in passthrough mode.
     // In passthrough, the terminal leads and we follow what it is
@@ -112,7 +113,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         // by prepending a cursor off.
         if (_lastCursorIsVisible != Tribool::False)
         {
-            _buffer.insert(0, "\x1b[?25l");
+            _buffer.insert(_startOfFrameBufferIndex, "\x1b[?25l");
             _lastCursorIsVisible = Tribool::False;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
