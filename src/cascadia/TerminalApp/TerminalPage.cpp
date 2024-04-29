@@ -4854,16 +4854,20 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        // Helper lambda for dispatching an ActionAndArgs onto the
+        // Helper lambda for dispatching a SendInput ActionAndArgs onto the
         // ShortcutActionDispatch. Used below to wire up each menu entry to the
-        // respective action.
-
+        // respective action. Then clear the quick fix menu.
         auto weak = get_weak();
-        auto makeCallback = [weak](const ActionAndArgs& actionAndArgs) {
-            return [weak, actionAndArgs](auto&&, auto&&) {
+        auto makeCallback = [weak](const hstring& suggestion) {
+            return [weak, suggestion](auto&&, auto&&) {
                 if (auto page{ weak.get() })
                 {
+                    const auto actionAndArgs = ActionAndArgs{ ShortcutAction::SendInput, SendInputArgs{ hstring{ L"\u0003" } + suggestion } };
                     page->_actionDispatch->DoAction(actionAndArgs);
+                    if (auto ctrl = page->_GetActiveControl())
+                    {
+                        ctrl.ClearQuickFix();
+                    }
                 }
             };
         };
@@ -4881,7 +4885,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             item.Text(label);
-            item.Click(makeCallback(ActionAndArgs{ ShortcutAction::SendInput, SendInputArgs{ hstring{ L"\u0003" } + suggestion } }));
+            item.Click(makeCallback(suggestion));
             menu.Items().Append(item);
         };
 

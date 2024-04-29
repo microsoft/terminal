@@ -182,6 +182,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ShowContextMenu();
         void ShowQuickFixMenu();
+        void ClearQuickFix();
 
         void Detach();
 
@@ -206,6 +207,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::KeySentEventArgs> KeySent;
         til::typed_event<IInspectable, Control::CharSentEventArgs> CharSent;
         til::typed_event<IInspectable, Control::StringSentEventArgs> StringSent;
+        til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
@@ -218,7 +220,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested,   IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,       IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(SearchMissingCommand,     IInspectable, Control::SearchMissingCommandEventArgs);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
@@ -403,6 +404,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
         void _showContextMenuAt(const til::point& controlRelativePos);
+
+        void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
         void _clearQuickFix(const IInspectable& sender, const IInspectable& args);
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);

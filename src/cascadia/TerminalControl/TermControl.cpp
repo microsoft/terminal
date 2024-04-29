@@ -835,10 +835,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (Feature_QuickFix::IsEnabled())
         {
             // update the position of the quick fix menu (in case we changed the padding)
-            if (_quickFixesAvailable)
-            {
-                ShowQuickFixMenu();
-            }
+            ShowQuickFixMenu();
         }
     }
 
@@ -2341,10 +2338,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
 
-        if (_quickFixesAvailable)
-        {
-            ShowQuickFixMenu();
-        }
+        ShowQuickFixMenu();
     }
 
     hstring TermControl::Title()
@@ -3527,10 +3521,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto quickFixBtn = QuickFixButton();
             quickFixBtn.Height(args.Height() / dpiScale);
             QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
-            if (quickFixBtn.Visibility() == Visibility::Visible)
-            {
-                ShowQuickFixMenu();
-            }
+            ShowQuickFixMenu();
         }
     }
 
@@ -3830,8 +3821,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::ShowQuickFixMenu()
     {
+        if (!_quickFixesAvailable)
+        {
+            QuickFixButton().Visibility(Visibility::Collapsed);
+            return;
+        }
+
         auto quickFixBtn{ QuickFixButton() };
-        _quickFixesAvailable = true;
 
         // If the gutter is narrow, display the collapsed version
         const auto& termPadding = GetPadding();
@@ -3857,10 +3853,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         quickFixBtn.Visibility(Visibility::Visible);
     }
 
+    void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)
+    {
+        _quickFixesAvailable = true;
+        SearchMissingCommand.raise(*this, args);
+    }
+
     void TermControl::_clearQuickFix(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _quickFixesAvailable = false;
-        QuickFixButton().Visibility(Visibility::Collapsed);
+        ShowQuickFixMenu();
+    }
+
+    void TermControl::ClearQuickFix()
+    {
+        _clearQuickFix(nullptr, nullptr);
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,
