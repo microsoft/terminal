@@ -1994,25 +1994,10 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
 // - end - where to end getting text
 // Return Value:
 // - Just the text.
-std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point& end) const
+std::wstring TextBuffer::GetPlainText(const til::point start, const til::point end) const
 {
-    std::wstring text;
-    auto spanLength = SpanLength(start, end);
-    text.reserve(spanLength);
-
-    auto it = GetCellDataAt(start);
-
-    for (; it && spanLength > 0; ++it, --spanLength)
-    {
-        const auto& cell = *it;
-        if (cell.DbcsAttr() != DbcsAttribute::Trailing)
-        {
-            const auto chars = cell.Chars();
-            text.append(chars);
-        }
-    }
-
-    return text;
+    const auto req = CopyRequest::FromConfig(*this, start, end, true, false, false, false);
+    return GetPlainText(req);
 }
 
 // Routine Description:
