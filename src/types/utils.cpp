@@ -24,7 +24,8 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
 
-[[gsl::suppress(bounds)]] static std::wstring guidToStringCommon(const GUID& guid, size_t offset, size_t length)
+GSL_SUPPRESS(bounds)
+static std::wstring guidToStringCommon(const GUID& guid, size_t offset, size_t length)
 {
     // This is just like StringFromGUID2 but with lowercase hexadecimal.
     wchar_t buffer[39];
@@ -58,7 +59,8 @@ GUID Utils::GuidFromString(_Null_terminated_ const wchar_t* str)
 //
 // Side-note: An interesting quirk of this method is that the given string doesn't need to be null-terminated.
 // This method could be combined with GuidFromString() so that it also doesn't require null-termination.
-[[gsl::suppress(bounds)]] GUID Utils::GuidFromPlainString(_Null_terminated_ const wchar_t* str)
+GSL_SUPPRESS(bounds)
+GUID Utils::GuidFromPlainString(_Null_terminated_ const wchar_t* str)
 {
     // Add "{}" brackets around our string, as required by IIDFromString().
     wchar_t buffer[39];
@@ -91,14 +93,7 @@ GUID Utils::CreateGuid()
 // - a string representation of the color
 std::string Utils::ColorToHexString(const til::color color)
 {
-    std::stringstream ss;
-    ss << "#" << std::uppercase << std::setfill('0') << std::hex;
-    // Force the compiler to promote from byte to int. Without it, the
-    // stringstream will try to write the components as chars
-    ss << std::setw(2) << static_cast<int>(color.r);
-    ss << std::setw(2) << static_cast<int>(color.g);
-    ss << std::setw(2) << static_cast<int>(color.b);
-    return ss.str();
+    return fmt::format(FMT_COMPILE("#{:02X}{:02X}{:02X}"), color.r, color.g, color.b);
 }
 
 // Function Description:
@@ -807,7 +802,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                 }
 
                 return {
-                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.native(), mangledDirectory, arguments),
+                    fmt::format(FMT_COMPILE(LR"("{}" --cd "{}" {})"), executablePath.native(), mangledDirectory, arguments),
                     std::wstring{}
                 };
             }

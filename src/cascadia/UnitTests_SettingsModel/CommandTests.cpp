@@ -48,19 +48,19 @@ namespace SettingsModelUnitTests
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands1Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands1Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
         VERIFY_ARE_EQUAL(2u, commands.Size());
 
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands2Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands2Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
         }
         VERIFY_ARE_EQUAL(4u, commands.Size());
@@ -82,7 +82,7 @@ namespace SettingsModelUnitTests
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
@@ -93,7 +93,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
         }
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands1Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands1Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
@@ -103,7 +103,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NULL(command.ActionAndArgs().Args());
         }
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands2Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands2Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
@@ -115,7 +115,7 @@ namespace SettingsModelUnitTests
         }
         {
             // This last command should "unbind" the action.
-            auto warnings = implementation::Command::LayerJson(commands, commands3Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands3Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(0u, commands.Size());
         }
@@ -143,7 +143,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
         VERIFY_ARE_EQUAL(9u, commands.Size());
 
@@ -156,7 +156,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command2");
@@ -167,7 +167,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command4");
@@ -178,7 +178,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command5");
@@ -189,7 +189,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command6");
@@ -211,7 +211,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command8");
@@ -222,7 +222,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Left, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command9");
@@ -233,7 +233,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Up, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command10");
@@ -244,7 +244,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
     }
 
@@ -261,7 +261,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(3u, warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
@@ -274,7 +274,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.25, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.25f, realArgs.SplitSize());
         }
     }
 
@@ -288,7 +288,7 @@ namespace SettingsModelUnitTests
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
-            auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+            auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(0u, warnings.size());
             VERIFY_ARE_EQUAL(1u, commands.Size());
 
@@ -329,7 +329,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
 
         // There are only 5 commands here: all of the `"none"`, `"auto"`,
@@ -399,7 +399,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
@@ -462,7 +462,7 @@ namespace SettingsModelUnitTests
 
         auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
-        auto warnings = implementation::Command::LayerJson(commands, commands0Json);
+        auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
         VERIFY_ARE_EQUAL(9u, commands.Size());
 
@@ -473,7 +473,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"", cmdline);
@@ -486,7 +487,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"--profile \"foo\"", cmdline);
@@ -499,7 +501,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"--profile \"foo\"", cmdline);
@@ -512,7 +515,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             VERIFY_ARE_EQUAL(L"-- \"bar.exe\"", cmdline);
@@ -525,7 +529,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -540,7 +545,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -555,7 +561,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -570,7 +577,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
@@ -585,7 +593,8 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
             const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
-            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(

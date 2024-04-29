@@ -7,6 +7,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         SettingContainer();
 
+        void SetExpanded(Boolean expanded);
+
         IInspectable Header;
         static Windows.UI.Xaml.DependencyProperty HeaderProperty { get; };
 

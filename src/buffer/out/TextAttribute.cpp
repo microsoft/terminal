@@ -7,7 +7,7 @@
 
 // Keeping TextColor compact helps us keeping TextAttribute compact,
 // which in turn ensures that our buffer memory usage is low.
-static_assert(sizeof(TextAttribute) == 16);
+static_assert(sizeof(TextAttribute) == 18);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
@@ -434,4 +434,5 @@ void TextAttribute::SetStandardErase() noexcept
 {
     _attrs = CharacterAttributes::Normal;
     _hyperlinkId = 0;
+    _markKind = MarkKind::None;
 }

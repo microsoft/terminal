@@ -46,9 +46,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ActionIgnore() = 0;
 
-        virtual bool ActionOscDispatch(const wchar_t wch,
-                                       const size_t parameter,
-                                       const std::wstring_view string) = 0;
+        virtual bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) = 0;
 
         virtual bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) = 0;
 

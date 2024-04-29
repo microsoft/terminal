@@ -100,7 +100,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ReverseLineFeed() override; // RI
         bool BackIndex() override; // DECBI
         bool ForwardIndex() override; // DECFI
-        bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
+        bool SetWindowTitle(const std::wstring_view title) override; // DECSWT, OSCWindowTitle
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
         bool BackwardsTab(const VTInt numTabs) override; // CBT
@@ -120,7 +120,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
-        bool SetClipboard(const std::wstring_view content) override; // OSCSetClipboard
+        bool SetClipboard(const wil::zwstring_view content) override; // OSCSetClipboard
 
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCColorTable

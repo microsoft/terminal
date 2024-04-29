@@ -188,11 +188,7 @@ void Cursor::_RedrawCursor() noexcept
 // - <none>
 void Cursor::_RedrawCursorAlways() noexcept
 {
-    try
-    {
-        _parentBuffer.TriggerRedrawCursor(_cPosition);
-    }
-    CATCH_LOG();
+    _parentBuffer.NotifyPaintFrame();
 }
 
 void Cursor::SetPosition(const til::point cPosition) noexcept

@@ -80,7 +80,7 @@ jobs:
       Install-Module -Verbose -AllowClobber -Force Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute
     displayName: Install Azure Module Dependencies
 
-  - task: AzureFileCopy@5
+  - task: AzureFileCopy@6
     displayName: Publish to Storage Account
     inputs:
       sourcePath: _out/*

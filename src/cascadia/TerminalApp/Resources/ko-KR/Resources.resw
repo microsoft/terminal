@@ -1,0 +1,893 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
+    <value>파일에서 설정을 로드 하지 못했습니다. 후행 쉼표를 포함 하 여 구문 오류가 있는지 확인 합니다.</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>첫 번째 프로필을 사용하여 프로필 목록에서 기본 프로필을 찾을 수 없습니다. "defaultProfile"이 프로필 중 하나의 GUID와 일치하는지 확인합니다.</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>설정 파일에서 동일한 GUID의 프로필이 여러 개 발견되었습니다. 중복된 항목을 무시합니다. 각 프로필의 GUID가 고유한 지 확인합니다.</value>
+  </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>잘못된 "colorScheme" 프로필을 찾았습니다. 해당 프로필을 기본 색상으로 설정합니다. "colorScheme" 을 설정할 때 값이 "schemes" 목록의 색상 구성표의 "name" 과 일치하는지 확인합니다.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>설정에 프로필이 없습니다.</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>사용자 설정에서 모든 프로필이 숨김 상태입니다. 숨김 상태가 아닌 프로필이 하나 이상이어야 합니다.</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>파일에서 설정을 다시 로드할 수 없습니다. 후행 쉼표를 포함 하 여 구문 오류가 있는지 확인 합니다.</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>Windows 터미널 기본 설정을 일시적으로 사용합니다.</value>
+  </data>
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
+    <value>설정을 로드하지 못했습니다.</value>
+  </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>사용자 설정을 로드하는 동안 오류가 발생했습니다.</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>경고</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>"{0}" 컴퓨터에서 실행되고 있지 않습니다. 단자가 키보드 입력을 수신할 수 없게 됩니다.</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>설정을 다시 로드하지 못했습니다.</value>
+  </data>
+  <data name="AboutMenuItem" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="FeedbackMenuItem" xml:space="preserve">
+    <value>피드백</value>
+  </data>
+  <data name="SettingsMenuItem" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>모두 닫기</value>
+  </data>
+  <data name="Quit" xml:space="preserve">
+    <value>끝내기</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>여러 창</value>
+  </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>오른쪽에 있는 탭 닫기</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>다른 탭 닫기</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>탭 닫기</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>창 닫기</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>분할 탭</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>분할 창</value>
+  </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>웹 검색</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>탭 색 변경</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>사용자 지정</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>다시 설정</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>탭 이름 바꾸기</value>
+  </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>탭 복제</value>
+  </data>
+  <data name="InvalidBackgroundImage" xml:space="preserve">
+    <value>잘못된 "backgroundImage" 프로필을 찾았습니다. 해당 프로필을 배경 이미지가 없는 기본값으로 설정합니다. "backgroundImage"를 설정할 때 값이 이미지에 대한 유효한 파일 경로인지 확인합니다.</value>
+    <comment>{Locked="\"backgroundImage\""}</comment>
+  </data>
+  <data name="InvalidIcon" xml:space="preserve">
+    <value>잘못된 "icon"이 있는 프로필을 발견했습니다. 해당 프로필에 아이콘이 없도록 기본값을 설정합니다. "icon" 설정 시 값이 이미지에 대한 올바른 파일 경로인지 확인합니다.</value>
+    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>키 바인딩 구문을 분석하는 동안 경고를 발견했습니다.</value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>• "keys" 배열에 대해 문자열을 너무 많이 포함하는 키 바인딩을 찾았습니다. "keys" 배열에 문자열 값이 하나만 있어야 합니다.</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>• 중첩된 명령의 모든 하위 명령을 구문 분석하지 못했습니다.</value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>• 필요한 매개 변수 값이 없는 keybinding를 찾았습니다. 이 keybinding은 무시 됩니다.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• 지정한 "테마"를 테마 목록에서 찾을 수 없습니다. 일시적으로 기본값으로 대체됩니다.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>"globals" 속성은 더 이상 사용되지 않습니다. 설정을 업데이트해야 할 수 있습니다. </value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>추가 정보는 이 웹 페이지를 참조하세요.</value>
+  </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>"iterateOn" 집합으로 명령을 확장하지 못했습니다. 이 명령은 무시됩니다.</value>
+    <comment>{Locked="\"iterateOn\""} </comment>
+  </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>잘못된 "colorScheme" 명령이 있습니다. 이 명령은 무시됩니다. "colorScheme" 설정에서 값을 설정하면 값이 "schemes" 목록의 "name" 색 구성표와 일치하는지 확인하세요.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>잘못된 "splitPane" "size" 명령을 찾았습니다. 이 명령은 무시됩니다. 크기가 0에서 1이면 단독 주소여야 합니다.</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>"startupActions"을 구문 분석하지 못했습니다.</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>서로 다른 경우(하위/상위)에서 동일한 이름을 가진 여러 환경 변수를 찾았습니다. 하나의 값만 사용됩니다.</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>새 탭 또는 창에서 생성되는 선택적 명령(인수 포함)</value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>다른 탭으로 포커스 이동</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>다음 탭으로 포커스 이동</value>
+  </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>"focus-tab" 하위 명령의 별칭입니다.</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>이전 탭으로 포커스 이동</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>지정된 인덱스에서 탭으로 포커스 이동</value>
+  </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>포커스 창을 지정된 인덱스의 탭으로 이동</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>포커스 창을 다른 탭으로 이동</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>"move-pane"의 별칭입니다. 하위 명령입니다.</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>상위 창의 백분율로 크기를 지정합니다. (0,1) 사이 값만 유효합니다.</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>새 작업 만들기</value>
+  </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>"new-tab" 하위 명령의 별칭입니다.</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>다른 탭으로 포커스 이동</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>"focus-pane" 하위 명령의 별칭입니다.</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>지정된 인덱스에 창 포커스 지정</value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>지정된 프로필로 엽니다. 프로필 이름 또는 GUID 허용</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>WT_SESSION 변수를 설정합니다. GUID여야 합니다.</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>새 분할 창 만들기</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>"split-pane" 하위 명령의 별칭입니다.</value>
+    <comment>{Locked="\"split-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>새 창을 가로 분할로 만들기 ([-] 인지)</value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>새 분할 창을 세로 분할로 작성하세요([|]를 생각).</value>
+  </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>중요 창의 프로필을 복제하여 새 창 만들기</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>프로필 집합 "startingDirectory" 대신 지정된 디렉터리에서 열기</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
+  </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>프로파일 설정 "title"이 아니라 제공된 제목으로 터미널 열기</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>지정된 색을 사용하여 #rrggbb 형식으로 탭을 엽니다.</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>기본 제목을 재정의하고 응용 프로그램에서 제목 변경 메시지를 표시하지 않는 tabTitle이 있는 탭을 엽니다</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>새 환경 블록을 만드는 대신 새 탭이나 창을 만들 때 터미널의 자체 환경 변수를 상속합니다. 이 기본값은 "command"이 전달될 때 설정됩니다. </value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>프로필의 설정 "colorScheme" 대신 지정된 색 구성표로 탭 열기</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>응용 프로그램 버전 표시</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>최대화 된 창 실행</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>전체 화면 모드로 창 시작</value>
+  </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>지정된 방향의 인접된 창으로 포커스 이동</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>"move-focus" 하위 명령의 별칭입니다.</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>포커스 이동 방향</value>
+  </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>포커스가 있는 창을 지정된 방향으로 인접한 창으로 바꾸기</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>포커스가 있는 창을 이동할 방향</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>포커스 모드로 창 시작</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>이 매개 변수는 내부 구현 세부 정보이므로 사용할 수 없습니다.</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>주어진 명령줄을 실행하기 위해 터미널 창을 지정합니다. "0"은 항상 현재 창을 참조합니다. </value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>터미널의 위치를 "x,y" 형식으로 지정합니다.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>터미널의 열 및 행 수를 "c,r" 형식으로 지정합니다.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>버튼을 눌러 기본 프로필로 새 터미널 탭을 엽니다. 플라이아웃을 열고 원하는 프로필을 선택합니다.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>새 탭</value>
+  </data>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>새 탭에서 열기</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>현재 창을 분할하려면 Alt+클릭</value>
+  </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift 키를 누르고 클릭해서 새 창 열기</value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl 키를 누르고 클릭하여 관리자로 엽니다.</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>최대화</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>최소화</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>최소화</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>최소화</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>의견 보내기</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
+    <value>버전:</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
+    <value>시작</value>
+    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>원본 코드</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
+  </data>
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
+    <value>설명서</value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
+    <value>릴리스 정보</value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
+    <value>개인정보 보호정책</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>타사 통지</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>모두 닫기</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>모든 창을 닫으시겠습니까?</value>
+  </data>
+  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+    <value>모두 닫기</value>
+  </data>
+  <data name="CloseAllDialog.Title" xml:space="preserve">
+    <value>모든 탭을 닫으시겠습니까?</value>
+  </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>경고</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>읽기 전용 터미널을 닫으려고 합니다. 계속하시겠어요?</value>
+  </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>5KB가 넘는 텍스트를 붙여넣으려고 합니다. 계속하시겠습니까?</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>붙여넣기</value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>경고</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
+    <value>여러 줄이 있는 텍스트를 붙여 넣습니다. 이 텍스트를 셸에 붙여넣으면 예기치 않은 명령 실행이 발생할 수 있습니다. 계속하시겠습니까?</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>붙여넣기</value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>경고</value>
+  </data>
+  <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>명령 이름을 입력...</value>
+  </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>일치하는 명령이 없음</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>작업 검색 모드</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>탭 타이틀 모드</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>명령줄 모드</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>"{}"에 대한 추가 옵션</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>명령줄을 실행하면 다음 명령이 실행됩니다.</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>명령줄 구문 분석 오류:</value>
+  </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>명령 팔레트</value>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>탭 전환기</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>탭 이름 입력...</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>일치하는 탭 이름 없음</value>
+  </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>실행할 wt 명령줄 입력</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>"{}"에 대한 추가 옵션</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>명령 이름을 입력...</value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>일치하는 명령이 없음</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>추천 메뉴</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>다른 옵션</value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>찾은 제안: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>심홍</value>
+  </data>
+  <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>강철색</value>
+  </data>
+  <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>중간 해록</value>
+  </data>
+  <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>어두운 주황</value>
+  </data>
+  <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>옅은 자주</value>
+  </data>
+  <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>진한 하늘색</value>
+  </data>
+  <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>라임 녹색</value>
+  </data>
+  <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>노랑</value>
+  </data>
+  <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>남보라</value>
+  </data>
+  <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>남자주</value>
+  </data>
+  <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>라임</value>
+  </data>
+  <data name="TanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>황갈색</value>
+  </data>
+  <data name="MagentaColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>자홍색</value>
+  </data>
+  <data name="CyanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>녹청</value>
+  </data>
+  <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>하늘색</value>
+  </data>
+  <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>진한 회색</value>
+  </data>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>잘못된 링크입니다.</value>
+  </data>
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>이 링크 형식은 현재 지원되지 않습니다.</value>
+  </data>
+  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>설정 파일에 쓸 수 없습니다. 파일에 있는 사용 권한을 확인하여 읽기 전용 플래그가 설정되지 않았는지와 쓰기 권한이 부여되었는지 확인합니다.</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>뒤로</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>뒤로</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>디버그</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>오류</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>경고</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>클립보드 콘텐츠(미리 보기):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>다른 옵션</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>창</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>이름 없는 창</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>새 이름 입력:</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="RenameFailedToast.Title" xml:space="preserve">
+    <value>창 이름을 바꾸지 못함</value>
+  </data>
+  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
+    <value>해당 이름으로 된 다른 창이 이미 있습니다</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>최대화</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>이전 크기로 복원</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>명령 팔레트</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>포커스 터미널</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Windows</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>지정된 시작 디렉터리에서 새 탭 열기</value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>지정된 시작 디렉터리로 새 창 열기</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>창을 분할하고 지정된 디렉터리에서 시작</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>텍스트 내보내기</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>터미널 콘텐츠를 내보내지 못함</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>터미널 콘텐츠를 내보냄</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>찾기</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>일반 텍스트</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>고급 프로필 설정에서 종료 동작을 구성할 수 있습니다.</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>다시 표시 안 함</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>이 터미널 창이 관리자 권한으로 실행되고 있습니다.</value>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>찾은 제안: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>업데이트 확인 중...</value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>업데이트를 사용할 수 있습니다.</value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>지금 설치</value>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>"newTabMenu" 필드에 "remainingProfiles" 형식의 항목이 두 개 이상 있습니다. 첫 번째 항목만 고려됩니다.</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>"__content" 속성은 내부용으로 예약되어 있습니다.</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>제품 정보가 포함된 대화 상자 열기</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>색 선택을 열어 이 탭의 색을 선택합니다.</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>명령 팔레트 열기</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>현재 디렉터리의 활성 프로필을 사용하여 새 탭 열기</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>텍스트 버퍼의 내용을 텍스트 파일로 내보냅니다.</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>검색 대화 상자 열기</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>이 탭 이름 바꾸기</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>설정 페이지 열기</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>현재 디렉터리의 활성 프로필을 사용하여 새 창 열기</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>이 탭의 오른쪽에 있는 모든 탭 닫기</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>이 탭을 제외한 모든 탭 닫기</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>이 탭 닫기</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>비어 있음</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>창 닫기</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>여러 창이 있는 경우 활성 창 닫기</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>탭 색 다시 설정</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
+    <value>탭을 새 창으로 이동</value>
+  </data>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>탭을 새 창으로 이동 </value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>관리자 권한으로 실행</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>활성 창이 "{0}" 탭으로 이동됨</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>"{0}" 탭이 "{1}" 창으로 이동됨</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>"{0}" 탭이 새 창으로 이동됨</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>"{0}" 탭이 위치 "{1}"(으)로 이동했습니다.</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
+    <value>활성 창이 "{1}" 창의 "{0}" 탭으로 이동되었습니다.</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>활성 창이 "{0}" 창으로 이동됨</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>활성 창이 새 창으로 이동됨</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>활성 창이 새 탭으로 이동됨</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
+  <data name="CmdAppendCommandLineDesc" xml:space="preserve">
+    <value>설정하면 이 명령은 프로필의 기본 명령 대신 프로필의 기본 명령에 추가됩니다.</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>연결 다시 시작</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>활성 창 연결 다시 시작</value>
+  </data>
+</root>

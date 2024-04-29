@@ -63,7 +63,7 @@ public:
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool BackIndex() = 0; // DECBI
     virtual bool ForwardIndex() = 0; // DECFI
-    virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
+    virtual bool SetWindowTitle(std::wstring_view title) = 0; // DECSWT, OscWindowTitle
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
@@ -123,7 +123,7 @@ public:
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
     virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
 
-    virtual bool SetClipboard(std::wstring_view content) = 0; // OSCSetClipboard
+    virtual bool SetClipboard(wil::zwstring_view content) = 0; // OSCSetClipboard
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,

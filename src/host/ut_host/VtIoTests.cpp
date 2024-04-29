@@ -259,7 +259,7 @@ public:
         return {};
     }
 
-    const TextBuffer& GetTextBuffer() const noexcept override
+    TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -270,11 +270,6 @@ public:
     }
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override
-    {
-        return std::vector<Microsoft::Console::Types::Viewport>{};
-    }
-
-    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override
     {
         return std::vector<Microsoft::Console::Types::Viewport>{};
     }
@@ -327,11 +322,6 @@ public:
         return false;
     }
 
-    const std::vector<RenderOverlay> GetOverlays() const noexcept override
-    {
-        return std::vector<RenderOverlay>{};
-    }
-
     const bool IsGridLineDrawingAllowed() noexcept override
     {
         return false;
@@ -360,8 +350,14 @@ public:
     {
     }
 
-    void SelectSearchRegions(std::vector<til::inclusive_rect> /*source*/) override
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override
     {
+        return {};
+    }
+
+    const til::point_span* GetSearchHighlightFocused() const noexcept override
+    {
+        return nullptr;
     }
 
     const til::point GetSelectionAnchor() const noexcept

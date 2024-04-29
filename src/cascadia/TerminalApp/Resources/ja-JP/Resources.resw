@@ -1,0 +1,894 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
+    <value>ファイルから設定を読み込むことができませんでした。末尾のコンマを含めて構文エラーを確認してください。</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>(最初のプロファイルを使用している) プロファイルの一覧で、既定のプロファイルが見つかりませんでした。"defaultProfile" がいずれかのプロファイルの GUID と一致していることをご確認ください。</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>設定ファイルに同じ GUID を持つ複数のプロファイルが見つかりました-重複は無視されます。各プロファイルの GUID が一意であることを確認してください。</value>
+  </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>無効な "colorScheme" を含むプロファイルが見つかりました。そのプロファイルを既定の色に設定します。"colorScheme" を設定するときに、この値が "schemes" リストの配色の "name" と一致することを確認してください。</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>設定でプロファイルが見つかりませんでした。</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>すべてのプロファイルが設定で非表示になっています。表示されているプロファイルが少なくとも 1 つ必要です。</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>ファイルから設定を再読み込みできませんでした。末尾のコンマを含む構文エラーを確認します。
+</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>Windows ターミナルの既定の設定を一時的に使用しています。</value>
+  </data>
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
+    <value>設定を読み込めませんでした</value>
+  </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>ユーザー設定の読み込み中にエラーが発生しました</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>警告:</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>"{0}" がお使いのマシンで実行されていません。 これにより、ターミナルがキーボード入力を受信できなくなる可能性があります。</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>設定を再読み込みできませんでした</value>
+  </data>
+  <data name="AboutMenuItem" xml:space="preserve">
+    <value>バージョン情報</value>
+  </data>
+  <data name="FeedbackMenuItem" xml:space="preserve">
+    <value>フィードバック</value>
+  </data>
+  <data name="SettingsMenuItem" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>すべて閉じる</value>
+  </data>
+  <data name="Quit" xml:space="preserve">
+    <value>終了</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>複数ウィンドウ</value>
+  </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>タブを右側に閉じる</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>他のタブを閉じる</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>タブを閉じる</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>[分割] タブ</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>ウィンドウを分割する</value>
+  </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>Web 検索</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>タブの色の変更</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>カスタム</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>リセット</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>[名前の変更] タブ</value>
+  </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>タブを複製する</value>
+  </data>
+  <data name="InvalidBackgroundImage" xml:space="preserve">
+    <value>無効な "backgroundImage" を持つプロファイルが見つかりました。既定では、そのプロファイルに背景画像はありません。"backgroundImage" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
+    <comment>{Locked="\"backgroundImage\""}</comment>
+  </data>
+  <data name="InvalidIcon" xml:space="preserve">
+    <value>無効な "icon" を持つプロファイルが見つかりました。既定では、そのプロファイルにアイコンはありません。"icon" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
+    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>キー バインドの解析中に警告が検出されました:</value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>• "keys" 配列の文字列が多すぎるキー バインドが見つかりました。"keys" 配列に指定できる文字列値は 1 つだけです。</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>•入れ子になっているコマンドのすべてのサブコマンドを解析できませんでした。</value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>•必要なパラメーター値がないするが見つかりました。このするは無視されます。</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• 指定された "テーマ" がテーマの一覧に見つかりませんでした。一時的に既定値にフォールバックしています。</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>"globals" プロパティは廃止されました。設定を更新する必要がある場合があります。 </value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>詳細については、この Web ページを参照してください。</value>
+  </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>"iterateOn" セットを使用してコマンドを展開できませんでした。このコマンドは無視されます。</value>
+    <comment>{Locked="\"iterateOn\""} </comment>
+  </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>無効な "colorScheme" を持つコマンドが見つかりました。このコマンドは無視されます。"colorScheme" を設定するときに、この値が "schemes" リスト内の配色の "name" と一致していることを確認してください。</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>無効な "size" が指定された "splitPane" コマンドが見つかりました。このコマンドは無視されます。サイズは0から1の間であることを確認してください。</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>"startupActions" の解析に失敗しました。</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>同じ名前ですが大文字と小文字が異なる環境変数が複数見つかりました。使用される値は 1 つだけです。</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>新しいタブまたはウィンドウで生成されるオプションのコマンドと引数</value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>別のタブにフォーカスを移動する</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>次のタブにフォーカスを移動する</value>
+  </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>"focus-tab" サブコマンドのエイリアス。</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>前のタブにフォーカスを移動する</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>指定されたインデックスのタブにフォーカスを移動する</value>
+  </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>フォーカスされたウィンドウを指定されたインデックスのタブに移動する</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>フォーカスされたウィンドウを別のタブに移動する</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>"move-pane" サブコマンドのエイリアス。</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>サイズを親ウィンドウに対する割合として指定します。有効な値は (0,1) の間で、排他的です。</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>新しいタブの作成</value>
+  </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>"new-tab" サブコマンドのエイリアス。</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>別のウィンドウにフォーカスを移動する</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>"focus-pane" サブコマンドのエイリアス。</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>指定されたインデックスのウィンドウをフォーカスする</value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>指定されたプロファイルで開きます。プロファイルの名前または GUID を指定できます</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>WT_SESSION 変数を設定します; GUID である必要があります</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>新しい分割ウィンドウの作成</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>"split-pane" サブコマンドのエイリアス。</value>
+    <comment>{Locked="\"split-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>新しいウィンドウを水平方向に分割して作成します ([-]と考えてください)</value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>新しいウィンドウを垂直方向に分割して作成します ([|]と考えてください)</value>
+  </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>フォーカスされたウィンドウのプロファイルを複製して、新しいウィンドウを作成します</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>プロファイルの "startingDirectory" の設定ではなく、指定されたディレクトリで開きます</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
+  </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>プロファイルで設定された "title" ではなく、指定されたタイトルでターミナルを開く</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>指定された色および #rrggbb 形式でタブを開きます</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>タブを開いて、既定のタイトルを無効にし、アプリケーションからのタイトルの変更メッセージを表示しません</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>新しい環境ブロックを作成するのではなく、新しいタブまたはウィンドウを作成するときに、ターミナル独自の環境変数を継承します。これは、"command" が渡されたときに既定で設定されます。 </value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>プロファイルのセットではなく、指定した配色でタブを開き "colorScheme"</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>アプリケーションのバージョンを表示</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>ウィンドウを最大化して起動する</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>ウィンドウを全画面表示モードで起動する</value>
+  </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>指定した方向にある隣のウィンドウにフォーカスを移動する</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>"move-focus" サブコマンドのエイリアス。</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>フォーカスを移動する方向</value>
+  </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>フォーカスされたウィンドウを、指定された方向の隣接するウィンドウと入れ替える</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>フォーカスされたウィンドウを移動する方向</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>ウィンドウをフォーカス モードで起動</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>この パラメーター は内部実装の詳細であり使用しないでください。</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>指定されたコマンドラインを実行するターミナルウィンドウを指定します。 "0" は常に現在のウィンドウを参照します。  </value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>ターミナルの位置を "x,y" 形式で指定します。</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>ターミナルの列数と行数を "c,r" 形式で指定します。</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>ボタンを押して、既定のプロファイルで新しいターミナルタブを開きます。ポップアップを開いて、開くプロファイルを選択します。</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>新しいタブ</value>
+  </data>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>新しいタブを開く</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>Alt を押しながらクリックして現在のウィンドウを分割</value>
+  </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift キーを押しながらクリックして新しいウィンドウを開きます</value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl + クリックして管理者として開く</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>最大化</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>バージョン情報</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>フィードバックの送信</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
+    <value>バージョン:</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
+    <value>はじめに</value>
+    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>ソース コード</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
+  </data>
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
+    <value>ドキュメント</value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
+    <value>リリース ノート</value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
+    <value>プライバシー ポリシー</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>サード パーティ通知</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>すべて閉じる</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>すべてのウィンドウを閉じますか?</value>
+  </data>
+  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+    <value>すべて閉じる</value>
+  </data>
+  <data name="CloseAllDialog.Title" xml:space="preserve">
+    <value>すべてのタブを閉じますか?</value>
+  </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>強制的に閉じる</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>読み取り専用のターミナルを閉じようとしています。続行してもよろしいですか?</value>
+  </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>5 KiB を超える長さのテキストを貼り付けようとしています。続行してもよろしいですか?</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>強制的に貼り付け</value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
+    <value>複数の行を含むテキストを貼り付けようとしています。このテキストをシェルに貼り付けると、コマンドが予期せず実行される可能性があります。続行してもよろしいですか?</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>強制的に貼り付け</value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>コマンド名を入力する...</value>
+  </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>一致するコマンドなし</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>アクション検索モード</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>タブ タイトル モード</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>コマンドライン モード</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>"{}" のその他のオプション</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>コマンドラインを実行すると、次のコマンドが呼び出されます。</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>コマンド ラインの解析に失敗しました:</value>
+  </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>コマンド パレット</value>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>タブ スイッチャー</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>タブ名を入力…</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>一致するタブ名がありません</value>
+  </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>実行する wt コマンドラインを入力してください</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>"{}" のその他のオプション</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>コマンド名を入力する...</value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>一致するコマンドなし</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>提案メニュー</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>その他のオプション</value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>候補が見つかりました: {0} 件</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>クリムゾン</value>
+  </data>
+  <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>スチール ブルー</value>
+  </data>
+  <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>淡いシー グリーン</value>
+  </data>
+  <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>濃いオレンジ</value>
+  </data>
+  <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>淡いバイオレット レッド</value>
+  </data>
+  <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>ドジャー ブルー</value>
+  </data>
+  <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>ライム グリーン</value>
+  </data>
+  <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>黄</value>
+  </data>
+  <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>青紫</value>
+  </data>
+  <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>スレート ブルー</value>
+  </data>
+  <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>ライム</value>
+  </data>
+  <data name="TanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>ベージュ</value>
+  </data>
+  <data name="MagentaColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>マゼンタ</value>
+  </data>
+  <data name="CyanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>シアン</value>
+  </data>
+  <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>スカイ ブルー</value>
+  </data>
+  <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>濃い灰色</value>
+  </data>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>このリンクは無効です:</value>
+  </data>
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>このリンクの種類は現在サポートされていません:</value>
+  </data>
+  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>設定ファイルに書き込むことができませんでした。そのファイルのアクセス許可をチェックして、読み取り専用フラグが設定されておらず、書き込みアクセスが許可されていることを確認してください。</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>デバッグ</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>エラー</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>情報</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>クリップボードのコンテンツ (プレビュー):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>その他のオプション</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>ウィンドウ</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>名前のないウィンドウ</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>新しい名前を入力してください:</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="RenameFailedToast.Title" xml:space="preserve">
+    <value>ウィンドウの名前を変更できませんでした</value>
+  </data>
+  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
+    <value>その名前の別のウィンドウがすでに存在します</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>最大化</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>元に戻す (縮小)</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>コマンド パレット</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>ターミナルにフォーカスする</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Windows</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>指定された開始ディレクトリで新しいタブを開きます</value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>指定された開始ディレクトリで新しいウィンドウを開く</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>ウィンドウを分割し、指定されたディレクトリで開始します</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>テキストのエクスポート</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>ターミナルのコンテンツをエクスポートできませんでした</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>ターミナルのコンテンツが正常にエクスポートされました</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>検索する</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>テキスト</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>終了動作は、プロファイルの詳細設定で構成できます。</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>今後表示しない</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>このターミナル ウィンドウは管理者として実行されています</value>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>候補が見つかりました: {0} 件</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>更新プログラムを確認しています...</value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>利用可能な更新プログラムがあります。</value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>今すぐインストール</value>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>"newTabMenu" フィールドには、"remainingProfiles"型のエントリが複数含まれています。最初の 1 つだけが考慮されます。</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>「__content」プロパティは内部使用のために予約されています</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>製品情報を含むダイアログを開きます</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>カラー ピッカーを開いて、このタブの色を選択します</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>コマンド パレットを開きます</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>現在のディレクトリのアクティブなプロファイルを使用して新しいタブを開きます</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>テキスト バッファーの内容をテキスト ファイルにエクスポートします</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>検索のダイアログを開きます</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>このタブの名前を変更します</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>設定ページを開きます</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>現在のディレクトリのアクティブなプロファイルを使用して新しいウィンドウを開きます</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>このタブの右側にあるすべてのタブを閉じます</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>このタブ以外のすべてのタブを閉じます</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>このタブを閉じます</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>複数のウィンドウが存在する場合は、アクティブなウィンドウを閉じます</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>タブの色をリセット</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
+    <value>タブを新しいウィンドウに移動</value>
+  </data>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>タブを新しいウィンドウに移動 </value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>管理者として実行</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>アクティブなウィンドウを [{0}] タブに移動しました</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>[{0}] タブを "{1}" ウィンドウに移動しました</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>[{0}] タブを新しいウィンドウに移動しました</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>[{0}] タブを "{1}" の位置に移動しました</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
+    <value>アクティブなウィンドウを "{1}" ウィンドウの [{0}] タブに移動しました</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>アクティブなウィンドウを "{0}" ウィンドウに移動しました</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>アクティブなウィンドウを新しいウィンドウに移動しました</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>アクティブなウィンドウを新しいタブに移動しました</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
+  <data name="CmdAppendCommandLineDesc" xml:space="preserve">
+    <value>設定されている場合、コマンドはプロファイルの既定のコマンドを置き換えるのではなく、追加されます。</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>接続の再起動</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>アクティブウィンドウ接続を再起動します</value>
+  </data>
+</root>

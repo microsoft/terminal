@@ -8,6 +8,7 @@
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
+#include "Marks.hpp"
 
 class ROW;
 class TextBuffer;
@@ -71,7 +72,7 @@ struct CharToColumnMapper
 {
     CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept;
 
-    til::CoordType GetLeadingColumnAt(ptrdiff_t offset) noexcept;
+    til::CoordType GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept;
     til::CoordType GetTrailingColumnAt(ptrdiff_t offset) noexcept;
     til::CoordType GetLeadingColumnAt(const wchar_t* str) noexcept;
     til::CoordType GetTrailingColumnAt(const wchar_t* str) noexcept;
@@ -131,7 +132,6 @@ public:
     til::CoordType GetReadableColumnCount() const noexcept;
 
     void Reset(const TextAttribute& attr) noexcept;
-    void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
     void CopyFrom(const ROW& source);
 
     til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
@@ -166,6 +166,11 @@ public:
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
     auto AttrEnd() const noexcept { return _attr.end(); }
+
+    const std::optional<ScrollbarData>& GetScrollbarData() const noexcept;
+    void SetScrollbarData(std::optional<ScrollbarData> data) noexcept;
+    void StartPrompt() noexcept;
+    void EndOutput(std::optional<unsigned int> error) noexcept;
 
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
@@ -225,8 +230,6 @@ private:
     static constexpr uint16_t CharOffsetsTrailer = 0x8000;
     static constexpr uint16_t CharOffsetsMask = 0x7fff;
 
-    template<typename T>
-    static constexpr uint16_t _clampedUint16(T v) noexcept;
     template<typename T>
     constexpr uint16_t _clampedColumn(T v) const noexcept;
     template<typename T>
@@ -299,6 +302,8 @@ private:
     bool _wrapForced = false;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded = false;
+
+    std::optional<ScrollbarData> _promptData = std::nullopt;
 };
 
 #ifdef UNIT_TESTING

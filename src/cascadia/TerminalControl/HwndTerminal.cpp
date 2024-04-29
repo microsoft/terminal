@@ -217,7 +217,6 @@ HRESULT HwndTerminal::Initialize()
 
     auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
     RETURN_IF_FAILED(engine->SetHwnd(_hwnd.get()));
-    RETURN_IF_FAILED(engine->Enable());
     _renderer->AddRenderEngine(engine.get());
 
     _UpdateFont(USER_DEFAULT_SCREEN_DPI);
@@ -249,15 +248,8 @@ try
     // This ensures that teardown is reentrant.
 
     // Shut down the renderer (and therefore the thread) before we implode
-    if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
-    {
-        if (auto localRenderer{ std::exchange(_renderer, nullptr) })
-        {
-            localRenderer->TriggerTeardown();
-            // renderer is destroyed
-        }
-        // renderEngine is destroyed
-    }
+    _renderer.reset();
+    _renderEngine.reset();
 
     if (auto localHwnd{ _hwnd.release() })
     {
@@ -896,7 +888,8 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
+            GSL_SUPPRESS(bounds .3)
+            renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
 
         publicTerminal->_terminal->SetCursorStyle(static_cast<Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle>(theme.CursorStyle));
@@ -1097,9 +1090,9 @@ til::rect HwndTerminal::GetPadding() const noexcept
     return {};
 }
 
-double HwndTerminal::GetScaleFactor() const noexcept
+float HwndTerminal::GetScaleFactor() const noexcept
 {
-    return static_cast<double>(_currentDpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
+    return static_cast<float>(_currentDpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 }
 
 void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)

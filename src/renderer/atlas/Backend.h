@@ -30,9 +30,6 @@ namespace Microsoft::Console::Render::Atlas
     // This helps with benchmarking the application as it'll run beyond display refresh rate.
 #define ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT 0
 
-    // Forces the use of Direct2D for text rendering (= BackendD2D).
-#define ATLAS_DEBUG_FORCE_D2D_MODE 0
-
     // Adds an artificial delay before every render pass. In milliseconds.
 #define ATLAS_DEBUG_RENDER_DELAY 0
 
@@ -84,6 +81,13 @@ namespace Microsoft::Console::Render::Atlas
     constexpr T clamp(T val, T min, T max) noexcept
     {
         return val < min ? min : (max < val ? max : val);
+    }
+
+    template<typename T>
+    constexpr T alignForward(T val, T alignment) noexcept
+    {
+        assert((alignment & (alignment - 1)) == 0); // alignment should be a power of 2
+        return (val + alignment - 1) & ~(alignment - 1);
     }
 
     inline constexpr D2D1_RECT_F GlyphRunEmptyBounds{ 1e38f, 1e38f, -1e38f, -1e38f };

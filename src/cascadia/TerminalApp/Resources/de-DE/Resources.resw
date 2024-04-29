@@ -1,0 +1,896 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
+    <value>Einstellungen konnten nicht aus der Datei geladen werden. Überprüfen Sie auf Syntaxfehler, einschließlich abschließender Kommas.
+</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>Ihr Standardprofil ist in Ihrer Liste von Profilen nicht auffindbar – unter Verwendung des ersten Profils. Überprüfen Sie, ob das "defaultProfile" mit der GUID eines Ihrer Profile übereinstimmt.</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>Es wurden mehrere Profile mit der gleichen GUID in Ihrer Einstellungen-Datei gefunden – Duplikate werden ignoriert. Vergewissern Sie sich, dass die GUID jedes Profils eindeutig ist.
+</value>
+  </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>Profil mit einem ungültigen "colorScheme" gefunden. Dieses Profil wird mit den Standardfarben vorbelegt. Stellen Sie sicher, dass beim Festlegen eines "colorScheme" der Wert mit dem "name" eines Farbschemas in der Liste "schemes" übereinstimmt.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>In Ihren Einstellungen wurden keine Profile gefunden.</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>Alle Profile sind in Ihren Einstellungen verborgen. Sie müssen mindestens ein nicht-verborgenes Profil besitzen.</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>Einstellungen konnten nicht erneut aus der Datei geladen werden. Überprüfen Sie auf Syntaxfehler, einschließlich abschließender Kommas.
+</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>Vorrübergehend werden die Standardeinstellungen für Windows-Terminal verwendet.</value>
+  </data>
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
+    <value>Fehler beim Laden der Einstellungen</value>
+  </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>Beim Laden von Benutzereinstellungen sind Fehler aufgetreten</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>Warnung:</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>Der "{0}" wird nicht auf Ihrem Computer ausgeführt. Dies kann verhindern, dass die Terminal Tastatur Eingaben empfangen.</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>Fehler beim erneuten Laden der Einstellungen</value>
+  </data>
+  <data name="AboutMenuItem" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="FeedbackMenuItem" xml:space="preserve">
+    <value>Feedback</value>
+  </data>
+  <data name="SettingsMenuItem" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>Alle schließen</value>
+  </data>
+  <data name="Quit" xml:space="preserve">
+    <value>Beenden</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>Mehrere Bereiche</value>
+  </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>Tabs nach rechts schließen</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>Andere Registerkarten schließen</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>Tab schließen</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>Bereich schließen</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Registerkarte teilen</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>Bereich teilen</value>
+  </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>Websuche</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>Registerkartenfarbe ändern</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>Benutzerdefiniert</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>Zurücksetzen</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>Registerkarte umbenennen</value>
+  </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Registerkarte kopieren</value>
+  </data>
+  <data name="InvalidBackgroundImage" xml:space="preserve">
+    <value>Profil mit einem ungültigen "backgroundImage" gefunden. Dieses Profil hat standardmäßig kein Hintergrundbild. Stellen Sie sicher, dass beim Festlegen eines "backgroundImage" der Wert ein gültiger Dateipfad zu einem Bild ist.</value>
+    <comment>{Locked="\"backgroundImage\""}</comment>
+  </data>
+  <data name="InvalidIcon" xml:space="preserve">
+    <value>Profil mit einem ungültigen "icon" gefunden. Dieses Profil hat standardmäßig kein Symbol. Stellen Sie sicher, dass beim Festlegen eines "icon" der Wert ein gültiger Dateipfad zu einem Bild ist.</value>
+    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>Beim Analysieren Ihrer Tastenzuordnungen wurden Warnungen gefunden:</value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>• Es wurde eine Tastenzuordnung mit zu vielen Zeichenfolgen für das Array "keys" gefunden. Es sollte nur ein Zeichenfolgenwert im Array "keys" vorhanden sein.</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>• Fehler beim Analysieren aller Unterbefehle des verschachtelten Befehls.</value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>• Es wurde eine Tastenzuordnung gefunden, der ein erforderlicher Parameterwert fehlte. Diese Tastenzuordnung wird ignoriert.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• Das angegebene "Design" wurde in der Liste der Designs nicht gefunden. Vorübergehender Fallback auf den Standardwert.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>Die Eigenschaft "globals" ist veraltet. Möglicherweise müssen Sie Ihre Einstellungen aktualisieren. </value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>Weitere Informationen hierzu finden Sie auf dieser Webseite.</value>
+  </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>Fehler beim Erweitern eines Befehls mit "iterateOn". Dieser Befehl wird ignoriert.</value>
+    <comment>{Locked="\"iterateOn\""} </comment>
+  </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>Ein Befehl wurde mit einem ungültigen "colorScheme" gefunden. Dieser Befehl wird ignoriert. Stellen Sie sicher, dass beim Festlegen eines "colorScheme" der Wert mit dem "name" eines Farb Schemas in der "schemes" Liste überein stimmt.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>Ein "splitPane" Befehl wurde mit einem ungültigen "size" gefunden. Dieser Befehl wird ignoriert. Stellen Sie sicher, dass die Größe zwischen 0 und 1, exklusiv ist.</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>Fehler beim Analysieren von "startupActions".</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>Es wurden mehrere Umgebungsvariablen mit demselben Namen in verschiedenen Fällen gefunden (unterer/oberer Wert) – es wird nur ein Wert verwendet.</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>Ein optionaler Befehl mit Argumenten, der auf der neuen Registerkarte oder im neuen Bereich erscheinen soll</value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>Fokus auf eine andere Registerkarte verschieben</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>Den Fokus auf die nächste Registerkarte setzen</value>
+  </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>Ein Alias für den Unterbefehl "focus-tab".</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>Fokus zur vorherigen Registerkarte verschieben</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>Fokus auf die Registerkarte am angegebenen Index setzen</value>
+  </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>Fokusbereich auf die Registerkarte am angegebenen Index verschieben</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>Fokusbereich auf eine andere Registerkarte verschieben</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>Ein Alias für den Unterbefehl "move-pane".</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>Geben Sie die Größe als Prozent Satz des über geordneten Bereichs an. Gültige Werte liegen zwischen (0, 1), exklusiv.</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>Neue Registerkarte erstellen</value>
+  </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>Ein Alias für den Unterbefehl "new-tab".</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>Fokus auf einen anderen Bereich verschieben</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>Ein Alias für den Unterbefehl "focus-pane".</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>Bereich auf den angegebenen Index fokussieren</value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>Mit dem angegebenen Profil öffnen. Akzeptiert entweder den Namen oder die GUID eines Profils</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Legt die WT_SESSION-Variable fest; muss eine GUID sein.</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>Erstellen eines neuen geteilten Bereichs</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>Ein Alias für den Unterbefehl "split-pane".</value>
+    <comment>{Locked="\"split-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>Erstellen des neuen Bereichs als horizontale Abteilung (Stellen Sie sich das so vor [-])</value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>Erstellen des neuen Bereichs als vertikale Abteilung (Stellen Sie sich das so vor [|])</value>
+  </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>Erstellen des neuen Bereichs durch Duplizieren des Profils des Bereichs im Fokus</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>Im angegebenen Verzeichnis anstelle des im Profil festgelegten "startingDirectory" öffnen</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
+  </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>Öffnen des Terminals mit dem bereitgestellten Titel anstelle des "title"-Satzes des Profils</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>Öffnen Sie die Registerkarte mit der angegebenen Farbe im #rrggbb-Format</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Öffnen der Registerkarte mit „tabTitle“-überschreibendem Standardtitel und Unterdrücken der Titeländerungsmeldungen der Anwendung</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>Erben Sie beim Erstellen der neuen Registerkarte oder des neuen Bereichs die eigenen Umgebungsvariablen des Terminals, anstatt einen neuen Umgebungsblock zu erstellen. Dies wird standardmäßig festgelegt, wenn ein "command" übergeben wird. </value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>Öffnen der Registerkarte mit dem angegebenen Farbschema anstelle des im Profil festgelegten "colorScheme"</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>Die Anwendungsversion anzeigen</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>Fenster maximiert starten</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>Fenster im Vollbildmodus starten</value>
+  </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Fokus in den benachbarten Bereich in der angegebenen Richtung verschieben</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>Ein Alias für den Unterbefehl "move-focus".</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>Die Richtung, in die der Fokus verschoben werden soll</value>
+  </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>Den fokussierten Bereich mit dem angrenzenden Bereich in der angegebenen Richtung tauschen</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>Die Richtung, in die der fokussierte Bereich verschoben werden soll</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>Fenster im Fokusmodus starten</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>Dieser Parameter ist ein internes Implementierungsdetail und sollte nicht verwendet werden.</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Geben Sie ein Terminal Fenster an, in dem die angegebene Befehls Zeile ausgeführt werden soll. "0" bezieht sich immer auf das aktuelle Fenster.  </value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Geben Sie die Position für das Terminal im Format "x,y" an.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Geben Sie die Anzahl der Spalten und Zeilen für das Terminal im Format "c,r" an.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Drücken Sie die Schaltfläche, um eine neue Terminal-Registerkarte mit Ihrem Standardprofil zu öffnen. Öffnen Sie das Flyout, um das Profil auszuwählen, das Sie öffnen möchten.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Neuer Tab</value>
+  </data>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>Neue Registerkarte öffnen</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>ALT+Klicken, um das aktuelle Fenster zu teilen</value>
+  </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Umschalt+Klicken, um ein neues Fenster zu öffnen</value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>STRG+Klicken, um als Administrator zu öffnen</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Maximieren</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Minimieren</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Minimieren</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>Minimieren</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Feedback senden</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
+    <value>Version:</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
+    <value>Erste Schritte</value>
+    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Quellcode</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
+  </data>
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
+    <value>Dokumentation</value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
+    <value>Versionshinweise</value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
+    <value>Datenschutzrichtlinien</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>Hinweise von Drittanbietern</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Alle schließen</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>Möchten Sie alle Fenster schließen?</value>
+  </data>
+  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Alle schließen</value>
+  </data>
+  <data name="CloseAllDialog.Title" xml:space="preserve">
+    <value>Möchten Sie alle Registerkarten schließen?</value>
+  </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Trotzdem schließen</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>Sie sind dabei, ein schreibgeschütztes Terminal zu schließen. Möchten Sie den Vorgang fortsetzen?</value>
+  </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>Sie sind im Begriff, Text einzufügen, der länger als 5 KiB ist. Möchten Sie den Vorgang fort setzen?</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Trotzdem einfügen</value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
+    <value>Sie sind im Begriff, Text einzufügen, der mehrere Zeilen enthält. Wenn Sie diesen Text in Ihre Shell einfügen, kann dies zu einer unerwarteten Ausführung von Befehlen führen. Möchten Sie den Vorgang fort setzen?</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Trotzdem einfügen</value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+  <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Befehlsname eingeben...</value>
+  </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>Keine übereinstimmenden Befehle</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>Aktionssuchmodus</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>Registerkartentitelmodus</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>Befehlszeilenmodus</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>Weitere Optionen für "{}"</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>Durch die Ausführung der Befehlszeile werden die folgenden Befehle aufgerufen:</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>Fehler beim Parsen der Befehlszeile:</value>
+  </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>Befehlspalette</value>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>Registerkarten-Umschalter</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>Registerkartennamen eingeben...</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>Kein übereinstimmender Registerkartenname</value>
+  </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>Geben Sie eine auszuführende wt-Befehlszeile ein</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>Weitere Optionen für "{}"</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Befehlsname eingeben...</value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>Keine übereinstimmenden Befehle</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>Menü "Vorschläge"</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Weitere Optionen</value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>Gefundene Vorschläge: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Karminrot</value>
+  </data>
+  <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stahlblau</value>
+  </data>
+  <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mittleres Seegrün</value>
+  </data>
+  <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Dunkelorange</value>
+  </data>
+  <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mittleres Violettrot</value>
+  </data>
+  <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Dodgerblau</value>
+  </data>
+  <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Limonengrün</value>
+  </data>
+  <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Gelb</value>
+  </data>
+  <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Blauviolett</value>
+  </data>
+  <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Schieferblau</value>
+  </data>
+  <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Limone</value>
+  </data>
+  <data name="TanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Gelbbraun</value>
+  </data>
+  <data name="MagentaColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Magenta</value>
+  </data>
+  <data name="CyanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Zyan</value>
+  </data>
+  <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Himmelblau</value>
+  </data>
+  <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Dunkelgrau</value>
+  </data>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>Dieser Link ist ungültig:</value>
+  </data>
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>Dieser Linktyp wird derzeit nicht unterstützt:</value>
+  </data>
+  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>Wir konnten nicht in Ihre Einstellungsdatei schreiben. Überprüfen Sie die Berechtigungen für diese Datei, um sicherzustellen, dass das Kennzeichen „schreibgeschützt“ nicht aktiviert ist und dass Schreibzugriff erlaubt wird.</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>Debuggen</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>Informationen</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>Zwischenablageinhalt (Vorschau):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Weitere Optionen</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>Fenster</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>Unbenanntes Fenster</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>Geben Sie einen neuen Namen ein:</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="RenameFailedToast.Title" xml:space="preserve">
+    <value>Das Fenster konnte nicht umbenannt werden</value>
+  </data>
+  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
+    <value>Ein anderes Fenster mit diesem Namen existiert bereits</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Maximieren</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Verkleinern</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>Befehlspalette</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>Terminal fokussieren</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Windows</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>Eine neue Registerkarte im angegebenen Startverzeichnis öffnen</value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>Ein neues Fenster mit angegebenem Startverzeichnis öffnen</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>Fenster teilen und im angegebenen Verzeichnis starten</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>Text exportieren</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>Exportieren des Terminalinhalts fehlgeschlagen</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>Terminalinhalt wurde erfolgreich exportiert</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>Unformatierter Text</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>Das Beendigungsverhalten kann in den erweiterten Profileinstellungen konfiguriert werden.</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Nicht mehr anzeigen</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Dieses Terminalfenster wird als Administrator ausgeführt.</value>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>Gefundene Vorschläge: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>Updates werden gesucht...</value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>Ein Update ist verfügbar.</value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>Jetzt installieren</value>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>Das Feld „newTabMenu“ enthält mehr als einen Eintrag vom Typ „remainingProfiles“. Es wird nur der erste berücksichtigt.</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>Die „__content“-Eigenschaft ist für die interne Verwendung reserviert.</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>Dialogfeld öffnen, das Produktinformationen enthält</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>Öffnen Sie die Farbauswahl, um die Farbe dieser Registerkarte auszuwählen.</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>Öffnen der Befehlspalette</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>Neue Registerkarte mithilfe des aktiven Profils im aktuellen Verzeichnis öffnen</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>Exportieren des Inhalts des Textpuffers in eine Textdatei</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>Suchdialogfeld öffnen</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>Diese Registerkarte umbenennen</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>Die Seite "Einstellungen" öffnen</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>Öffnen eines neuen Bereichs mithilfe des aktiven Profils im aktuellen Verzeichnis</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>Alle Registerkarten rechts neben dieser Registerkarte schließen</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>Alle Registerkarten mit Ausnahme dieser Registerkarte schließen</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>Diese Registerkarte schließen</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Leer</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>Bereich schließen</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>Aktiven Bereich schließen, wenn mehrere Bereiche vorhanden sind</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Registerkartenfarbe zurücksetzen</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
+    <value>Registerkarte in neues Fenster verschieben</value>
+  </data>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>Verschiebt die Registerkarte in ein neues Fenster.</value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>Als Administrator ausführen</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>Der aktive Bereich wurde auf die Registerkarte „{0}“ verschoben</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>Registerkarte „{0}“ wurde in das Fenster „{1}“ verschoben</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>Registerkarte „{0}“ in neues Fenster verschoben</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>Registerkarte „{0}“ an Position „{1}“ verschoben</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
+    <value>Der aktive Bereich wurde in "{1}" Fenster auf "{0}" Registerkarte verschoben.</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>Der aktive Bereich wurde in das Fenster "{0}" verschoben</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>Aktiver Bereich in neues Fenster verschoben</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>Aktiver Bereich auf neue Registerkarte verschoben</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
+  <data name="CmdAppendCommandLineDesc" xml:space="preserve">
+    <value>Wenn diese Option festgelegt ist, wird der Befehl an den Standardbefehl des Profils angefügt, anstatt ihn zu ersetzen.</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>Verbindung neu starten</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>Verbindung mit aktivem Bereich neu starten</value>
+  </data>
+</root>

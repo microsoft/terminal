@@ -94,7 +94,19 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    _Flush();
+    // If this frame was triggered because we encountered a VT sequence which
+    // required the buffered state to get printed, we don't want to flush this
+    // frame to the pipe. That might result in us rendering half the output of a
+    // particular frame (as emitted by the client).
+    //
+    // Instead, we'll leave this frame in _buffer, and just keep appending to
+    // it as needed.
+    if (!_noFlushOnEnd)
+    {
+        _Flush();
+    }
+
+    _noFlushOnEnd = false;
     return S_OK;
 }
 
@@ -229,11 +241,6 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::PaintSelection(const til::rect& /*rect*/) noexcept
-{
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT VtEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
 {
     return S_OK;
 }
@@ -472,7 +479,25 @@ using namespace Microsoft::Console::Types;
         _bufferLine.append(cluster.GetText());
         totalWidth += cluster.GetColumns();
     }
+
+    // If any of the values in the buffer are C0 or C1 controls, we need to
+    // convert them to printable codepoints, otherwise they'll end up being
+    // evaluated as control characters by the receiving terminal. We use the
+    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
+    // C1 controls, since that's what you would most likely have seen in the
+    // legacy v1 console with raster fonts.
     const auto cchLine = _bufferLine.size();
+    std::for_each_n(_bufferLine.begin(), cchLine, [](auto& ch) {
+        static constexpr std::wstring_view C0Glyphs = L" ☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼";
+        if (ch < C0Glyphs.size())
+        {
+            ch = til::at(C0Glyphs, ch);
+        }
+        else if (ch >= L'\u007F' && ch < L'\u00A0')
+        {
+            ch = (ch == L'\u007F' ? L'⌂' : L'?');
+        }
+    });
 
     const auto spaceIndex = _bufferLine.find_last_not_of(L' ');
     const auto foundNonspace = spaceIndex != decltype(_bufferLine)::npos;

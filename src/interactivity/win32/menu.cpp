@@ -595,8 +595,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // those properties specifically from the registry in case they were changed.
     ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateExtendedEditKeys();
 
-    gci.ConsoleIme.RefreshAreaAttributes();
-
     gci.SetInterceptCopyPaste(!!pStateInfo->InterceptCopyPaste);
 }
 
