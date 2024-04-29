@@ -142,6 +142,10 @@ jobs:
 
   - template: .\steps-restore-nuget.yml
 
+  - pwsh: |-
+      .\build\scripts\Set-LatestVCToolsVersion.ps1
+    displayName: Work around DD-1541167 (VCToolsVersion)
+
   - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
