@@ -522,14 +522,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     // Case 2 - Step 2: get the auto-detected hyperlink
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
-        std::wstring uri;
-        const auto startIter = _activeBuffer().GetCellDataAt(result->start);
-        const auto endIter = _activeBuffer().GetCellDataAt(result->stop);
-        for (auto iter = startIter; iter != endIter; ++iter)
-        {
-            uri += iter->Chars();
-        }
-        return uri;
+        return _activeBuffer().GetPlainText(result->start, result->stop);
     }
     return {};
 }
