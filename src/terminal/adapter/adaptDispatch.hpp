@@ -193,6 +193,9 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
+            ULONG Size = 0;
+            bool IsBlinkingAllowed = false;
+            CursorType CursorType = CursorType::Legacy;
         };
         struct Offset
         {

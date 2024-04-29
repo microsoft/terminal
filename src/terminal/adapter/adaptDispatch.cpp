@@ -514,6 +514,9 @@ bool AdaptDispatch::CursorSaveState()
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
+    savedCursorState.CursorType = textBuffer.GetCursor().GetType();
+    savedCursorState.IsBlinkingAllowed = textBuffer.GetCursor().IsBlinkingAllowed();
+    savedCursorState.Size = textBuffer.GetCursor().GetSize();
 
     return true;
 }
@@ -535,6 +538,11 @@ bool AdaptDispatch::CursorRestoreState()
 
     // We can then restore the position with a standard CUP operation.
     CursorPosition(savedCursorState.Row, savedCursorState.Column);
+
+    Cursor& cursor = _api.GetTextBuffer().GetCursor();
+    cursor.SetBlinkingAllowed(savedCursorState.IsBlinkingAllowed);
+    cursor.SetType(savedCursorState.CursorType);
+    cursor.SetSize(savedCursorState.Size);
 
     // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
     if (savedCursorState.IsDelayedEOLWrap)
