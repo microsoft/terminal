@@ -488,7 +488,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // the user might have { "command": null, "id": "someID", "keys": "ctrl+c" }
         // i.e. they provided an ID for a null command (which they really shouldn't, there's no purpose)
         // in this case, we do _not_ want to use the id they provided, we want to use an empty id
-        // (empty id in the _KeyMap indicates the the keychord was explicitly unbound)
+        // (empty id in the _KeyMap indicates the keychord was explicitly unbound)
         if (cmd.ActionAndArgs().Action() == ShortcutAction::Invalid)
         {
             _KeyMap.insert_or_assign(keys, L"");
@@ -537,7 +537,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the command ID with the given key chord
     // - an empty string if the key chord is explicitly unbound
     // - nullopt if it is not bound
-    std::optional<winrt::hstring> ActionMap::_GetActionIDByKeyChordInternal(const Control::KeyChord& keys) const
+    std::optional<winrt::hstring> ActionMap::_GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const
     {
         if (const auto keyIDPair = _KeyMap.find(keys); keyIDPair != _KeyMap.end())
         {
@@ -555,7 +555,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // search through our parents
         for (const auto& parent : _parents)
         {
-            if (const auto foundCmdID = parent->_GetActionIDByKeyChordInternal(keys))
+            if (const auto foundCmdID = parent->_GetActionIdByKeyChordInternal(keys))
             {
                 return foundCmdID;
             }
@@ -576,7 +576,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullopt if it is not bound
     std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(const Control::KeyChord& keys) const
     {
-        if (const auto actionIDOptional = _GetActionIDByKeyChordInternal(keys))
+        if (const auto actionIDOptional = _GetActionIdByKeyChordInternal(keys))
         {
             if (!(*actionIDOptional).empty())
             {

@@ -194,8 +194,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // TODO GH#17160
                     // if the command with this id is only going to appear later during settings load
                     // then this will return null, meaning that the command created later on will not register this keybinding
-                    // the keybinding will still work fine within the app, its just that the Command object itself won't know about this keymapping
-                    // we are going to move away from Command needing to know its keymappings in a followup, so this shouldn't matter for very long
+                    // the keybinding will still work fine within the app, its just that the Command object itself won't know about this key mapping
+                    // we are going to move away from Command needing to know its key mappings in a followup, so this shouldn't matter for very long
                     if (const auto cmd = _GetActionByID(idJson))
                     {
                         cmd.RegisterKey(keys);

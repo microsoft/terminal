@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         Model::Command _GetActionByID(const winrt::hstring actionID) const;
-        std::optional<winrt::hstring> _GetActionIDByKeyChordInternal(const Control::KeyChord& keys) const;
+        std::optional<winrt::hstring> _GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
         void _RefreshKeyBindingCaches();
