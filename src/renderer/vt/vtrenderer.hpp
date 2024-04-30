@@ -93,6 +93,7 @@ namespace Microsoft::Console::Render
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
+        size_t _startOfFrameBufferIndex = 0;
 
         std::string _formatBuffer;
         std::string _conversionBuffer;
