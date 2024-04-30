@@ -403,6 +403,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _focusChanged(bool focused);
 
         void _selectSpan(til::point_span s);
+        void _repositionCursorWithMouse(const til::point terminalPosition);
 
         void _contextMenuSelectMark(
             const til::point& pos,

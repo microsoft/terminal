@@ -73,10 +73,7 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
-    auto pfn = std::bind(&AppHost::_HandleCreateWindow,
-                         this,
-                         std::placeholders::_1,
-                         std::placeholders::_2);
+    auto pfn = [this](auto&& PH1, auto&& PH2) { _HandleCreateWindow(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
     _window->SetCreateCallback(pfn);
 
     _windowCallbacks.MouseScrolled = _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
@@ -394,10 +391,7 @@ void AppHost::Initialize()
     // while the screen is off.
     TerminalTrySetAutoCompleteAnimationsWhenOccluded(static_cast<::IUnknown*>(winrt::get_abi(_windowLogic.GetRoot())), true);
 
-    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::TerminalWindow::CalcSnappedDimension,
-                                                _windowLogic,
-                                                std::placeholders::_1,
-                                                std::placeholders::_2));
+    _window->SetSnapDimensionCallback([this](auto&& PH1, auto&& PH2) { return _windowLogic.CalcSnappedDimension(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
 
     // Create a throttled function for updating the window state, to match the
     // one requested by the pty. A 200ms delay was chosen because it's the

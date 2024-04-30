@@ -2200,6 +2200,10 @@
             }
           }
         },
+        "id": {
+          "description": "The ID of this command. If one isn't provided, we will generate one internally.",
+          "type": "string"
+        },
         "iterateOn": {
           "type": "string",
           "description": "Used to create iterable commands based on other objects in your settings. Possible values:\n- \"profiles\" \n- \"schemes\"",

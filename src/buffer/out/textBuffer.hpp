@@ -196,7 +196,7 @@ public:
 
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
 
-    std::wstring GetPlainText(const til::point& start, const til::point& end) const;
+    std::wstring GetPlainText(til::point start, til::point end) const;
 
     struct CopyRequest
     {

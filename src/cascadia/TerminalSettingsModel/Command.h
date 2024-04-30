@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Control::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
         std::wstring _ID;
+        bool _IDWasGenerated{ false };
         std::optional<std::wstring> _iconPath;
         bool _nestedCommand{ false };
 
