@@ -489,6 +489,7 @@
         { "command": { "action": "splitPane", "split": "right" }, "id": "Terminal.SplitPaneRight" },
         { "command": { "action": "splitPane", "splitMode": "duplicate", "split": "down" }, "id": "Terminal.DuplicatePaneDown" },
         { "command": { "action": "splitPane", "splitMode": "duplicate", "split": "right" }, "id": "Terminal.DuplicatePaneRight" },
+        { "command": { "action": "splitPane", "splitMode": "duplicate", "split": "auto" }, "id": "Terminal.DuplicatePaneAuto" },
         { "command": { "action": "resizePane", "direction": "down" }, "id": "Terminal.ResizePaneDown" },
         { "command": { "action": "resizePane", "direction": "left" }, "id": "Terminal.ResizePaneLeft" },
         { "command": { "action": "resizePane", "direction": "right" }, "id": "Terminal.ResizePaneRight" },
