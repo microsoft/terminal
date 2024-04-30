@@ -495,7 +495,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            _KeyMap.insert_or_assign(keys, cmd.ID());   
+            _KeyMap.insert_or_assign(keys, cmd.ID());
         }
 
         cmd.RegisterKey(keys);
