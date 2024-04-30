@@ -111,10 +111,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool _fixUpsAppliedDuringLoad;
 
         void _AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings);
+
+        // _KeyMap is the map of key chords -> action IDs defined in this layer
+        // _ActionMap is the map of action IDs -> commands defined in this layer
+        // These maps are the ones that we deserialize into when parsing the user json and vice-versa
         std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<winrt::hstring, Model::Command> _ActionMap;
+
+        // _CumulativeKeyMapCache is the map of key chords -> action IDs defined in all layers, with child layers overriding parent layers
         Windows::Foundation::Collections::IMap<Control::KeyChord, winrt::hstring> _CumulativeKeyMapCache{ nullptr };
+        // _CumulativeActionMapCache is the map of action IDs -> commands defined in all layers, with child layers overriding parent layers
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _CumulativeActionMapCache{ nullptr };
+
+        // _ResolvedKeyActionMapCache is the map of key chords -> commands defined in all layers, with child layers overriding parent layers
+        // This is effectively a combination of _CumulativeKeyMapCache and _CumulativeActionMapCache and its purpose is so that
+        // we can give the SUI a view of the key chords and the commands they map to
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyActionMapCache{ nullptr };
 
         friend class SettingsModelUnitTests::KeyBindingsTests;

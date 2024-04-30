@@ -65,21 +65,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings));
 
-                // this is a 'command' block and there are keys - meaning this is the legacy style
-                // let the loader know that fixups are needed
-                if (jsonBlock.isMember(JsonKey("keys")))
+                // for non-nested non-iterable commands,
+                // check if this is a legacy-style command block so we can inform the loader that fixups are needed
+                if (jsonBlock.isMember(JsonKey("command")) && !jsonBlock.isMember(JsonKey("iterateOn")))
                 {
-                    _fixUpsAppliedDuringLoad = true;
-                }
-                // for non-nested non-iterable user commands, if there's no ID we generate one for them
-                // let the loader know that fixups are needed
-                if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey("id")) && jsonBlock.isMember(JsonKey("command")) && !jsonBlock.isMember(JsonKey("iterateOn")))
-                {
-                    _fixUpsAppliedDuringLoad = true;
+                    if (jsonBlock.isMember(JsonKey("keys")))
+                    {
+                        // there are keys in this command block - its the legacy style
+                        _fixUpsAppliedDuringLoad = true;
+                    }
+
+                    if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey("id")))
+                    {
+                        // there's no ID in this command block - we will generate one for the user
+                        // inform the loader that the ID needs to be written into the json
+                        _fixUpsAppliedDuringLoad = true;
+                    }
                 }
             }
             else
             {
+                // this is not a command block, so it is a keybinding block
                 _AddKeyBindingHelper(jsonBlock, warnings);
             }
         }
