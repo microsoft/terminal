@@ -191,7 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // make sure the command registers these keys
                 if (!idJson.empty())
                 {
-                    // there is a problem here (stage 3 - make a GH issue and mark the todo here)
+                    // TODO GH#17160
                     // if the command with this id is only going to appear later during settings load
                     // then this will return null, meaning that the command created later on will not register this keybinding
                     // the keybinding will still work fine within the app, its just that the Command object itself won't know about this keymapping

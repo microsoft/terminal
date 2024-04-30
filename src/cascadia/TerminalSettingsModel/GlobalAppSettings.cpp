@@ -264,7 +264,6 @@ Json::Value GlobalAppSettings::ToJson()
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     json[JsonKey(LegacyKeybindingsKey)] = _actionMap->KeyBindingsToJson();
-    // todo: stage 3 - fix tests, they're surely broke with this
 
     return json;
 }
