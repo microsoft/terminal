@@ -155,10 +155,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
 
 void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
 {
-    // we want to do the keybindings map after the actions map so that we have already
-    // stored the action IDs in the action map
-    // also, we want the keybindings map to overwrite any leftover keybindings that might have existed in the first pass,
-    // in case the user did a partial update from legacy to modern
+    // we want to do the keybindings map after the actions map so that we overwrite any leftover keybindings
+    // that might have existed in the first pass, in case the user did a partial update from legacy to modern
     static constexpr std::array bindingsKeys{ ActionsKey, LegacyKeybindingsKey };
     for (const auto& jsonKey : bindingsKeys)
     {

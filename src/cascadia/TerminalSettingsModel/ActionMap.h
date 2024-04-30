@@ -92,7 +92,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
 
-        std::vector<Model::Command> _GetCumulativeActions() const noexcept;
         void _PopulateCumulativeKeyMap(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyBindingsMap);
         void _PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap);
 

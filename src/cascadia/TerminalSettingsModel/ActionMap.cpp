@@ -170,6 +170,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_NameMapCache)
         {
+            if (!_CumulativeActionMapCache)
+            {
+                _RefreshKeyBindingCaches();
+            }
             // populate _NameMapCache
             std::unordered_map<hstring, Model::Command> nameMap{};
             _PopulateNameMapWithSpecialCommands(nameMap);
@@ -226,47 +230,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //             There should only ever by one of each command (identified by the actionID) in the nameMap.
     void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
-        std::unordered_set<winrt::hstring> visitedActionIDs;
-        for (const auto& cmd : _GetCumulativeActions())
+        for (const auto& [_, cmd] : _CumulativeActionMapCache)
         {
-            // Only populate NameMap with actions that haven't been visited already.
-            const auto actionID{ cmd.ID() };
-            if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+            const auto& name{ cmd.Name() };
+            if (!name.empty())
             {
-                const auto& name{ cmd.Name() };
-                if (!name.empty())
-                {
-                    // Update NameMap.
-                    nameMap.insert_or_assign(name, cmd);
-                }
-
-                // Record that we already handled adding this action to the NameMap.
-                visitedActionIDs.emplace(actionID);
+                // Update NameMap.
+                nameMap.insert_or_assign(name, cmd);
             }
         }
-    }
-
-    // Method Description:
-    // - Provides an accumulated list of actions that are exposed. The accumulated list includes actions added in this layer, followed by actions added by our parents.
-    std::vector<Model::Command> ActionMap::_GetCumulativeActions() const noexcept
-    {
-        // First, add actions from our current layer
-        std::vector<Model::Command> cumulativeActions;
-        cumulativeActions.reserve(_ActionMap.size());
-
-        std::transform(_ActionMap.begin(), _ActionMap.end(), std::back_inserter(cumulativeActions), [](std::pair<winrt::hstring, Model::Command> actionPair) {
-            return actionPair.second;
-        });
-
-        // Now, add the accumulated actions from our parents
-        for (const auto& parent : _parents)
-        {
-            const auto parentActions{ parent->_GetCumulativeActions() };
-            cumulativeActions.reserve(cumulativeActions.size() + parentActions.size());
-            cumulativeActions.insert(cumulativeActions.end(), parentActions.begin(), parentActions.end());
-        }
-
-        return cumulativeActions;
     }
 
     // Method Description:
