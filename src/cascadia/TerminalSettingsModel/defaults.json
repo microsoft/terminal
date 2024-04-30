@@ -487,8 +487,8 @@
         { "command": { "action": "splitPane", "split": "down" }, "id": "Terminal.SplitPaneDown" },
         { "command": { "action": "splitPane", "split": "left" }, "id": "Terminal.SplitPaneLeft" },
         { "command": { "action": "splitPane", "split": "right" }, "id": "Terminal.SplitPaneRight" },
-        { "command": { "action": "splitPane", "splitMode": "duplicate", "split": "down" }, "id": "Terminal.SplitPaneDuplicateDown" },
-        { "command": { "action": "splitPane", "splitMode": "duplicate", "split": "right" }, "id": "Terminal.SplitPaneDuplicateRight" },
+        { "command": { "action": "splitPane", "splitMode": "duplicate", "split": "down" }, "id": "Terminal.DuplicatePaneDown" },
+        { "command": { "action": "splitPane", "splitMode": "duplicate", "split": "right" }, "id": "Terminal.DuplicatePaneRight" },
         { "command": { "action": "resizePane", "direction": "down" }, "id": "Terminal.ResizePaneDown" },
         { "command": { "action": "resizePane", "direction": "left" }, "id": "Terminal.ResizePaneLeft" },
         { "command": { "action": "resizePane", "direction": "right" }, "id": "Terminal.ResizePaneRight" },
@@ -531,9 +531,6 @@
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "id": "Terminal.CopySelectedText" },
-        { "command": { "action": "copy", "singleLine": false }, "id": "Terminal.CopySelectedText" },
-        { "command": { "action": "copy", "singleLine": false }, "id": "Terminal.CopySelectedText" },
-        { "command": "paste", "id": "Terminal.PasteFromClipboard" },
         { "command": "paste", "id": "Terminal.PasteFromClipboard" },
         { "command": "selectAll", "id": "Terminal.SelectAll" },
         { "command": "markMode", "id": "Terminal.ToggleMarkMode" },
@@ -670,8 +667,8 @@
 
                 // Pane Management
                 { "keys": "ctrl+shift+w", "id": "Terminal.ClosePane" },
-                { "keys": "alt+shift+-", "id": "Terminal.SplitPaneDuplicateDown" },
-                { "keys": "alt+shift+plus", "id": "Terminal.SplitPaneDuplicateRight" },
+                { "keys": "alt+shift+-", "id": "Terminal.DuplicatePaneDown" },
+                { "keys": "alt+shift+plus", "id": "Terminal.DuplicatePaneRight" },
                 { "keys": "alt+shift+down", "id": "Terminal.ResizePaneDown" },
                 { "keys": "alt+shift+left", "id": "Terminal.ResizePaneLeft" },
                 { "keys": "alt+shift+right", "id": "Terminal.ResizePaneRight" },
