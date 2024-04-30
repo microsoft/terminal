@@ -600,7 +600,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullptr if the action is not bound to a key chord
     Control::KeyChord ActionMap::GetKeyBindingForAction(winrt::hstring cmdID) const
     {
-        // todo: stage 3 what if the user makes an action that does the same thing and edits the keys?
         // Check our internal state.
         if (const auto cmd{ _GetActionByID(cmdID) })
         {

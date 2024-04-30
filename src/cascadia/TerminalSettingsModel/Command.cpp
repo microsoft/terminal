@@ -332,10 +332,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // if this is a user-defined, non-iterable, valid command and they did not provide an id, generate one for them
                 if (result->_ID.empty() && result->_IterateOn == ExpandCommandType::None && result->_ActionAndArgs.Action() != ShortcutAction::Invalid && origin == OriginTag::User)
                 {
-                    // todo: stage 3
-                    // we reach this point for 'unpacked' nested commands, which means we generate IDs for them
-                    // these IDs aren't used anywhere or written to the json, which is intentional, but we should
-                    // figure out a way to not generate them at all
                     result->GenerateID();
                 }
             }
@@ -422,7 +418,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     else
                     {
                         // Override commands with the same name
-                        // todo: stage 3 - we may not need to do this anymore
                         commands.Insert(result->Name(), *result);
                     }
                 }
