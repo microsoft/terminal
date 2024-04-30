@@ -1955,7 +1955,7 @@ namespace winrt::TerminalApp::implementation
         // We don't actually know our own position. So we have to ask the window
         // layer for that.
         const auto launchPosRequest{ winrt::make<LaunchPositionRequest>() };
-        RequestLaunchPosition.raise(*this, launchPosRequest);
+        _RequestLaunchPositionHandlers(*this, launchPosRequest);
         layout.InitialPosition(launchPosRequest.Position());
 
         ApplicationState::SharedInstance().AppendPersistedWindowLayout(layout);
