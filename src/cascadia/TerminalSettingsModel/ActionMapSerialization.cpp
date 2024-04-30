@@ -27,15 +27,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Deserialize an ActionMap from the array `json`. The json array should contain
-    //   an array of serialized `Command` objects.
-    // - These actions are added to the `ActionMap`, where we automatically handle
-    //   overwriting and unbinding actions.
+    // - Deserialize an ActionMap from the array `json`
+    // - The json array either contains an array of serialized `Command` objects,
+    //   or an array of keybindings
+    // - The actions are added to _ActionMap and the keybindings are added to _KeyMap
     // Arguments:
-    // - json: an array of Json::Value's to deserialize into our ActionMap.
+    // - json: an array of Json::Value's to deserialize into our _ActionMap and _KeyMap
     // Return value:
     // - a list of warnings encountered while deserializing the json
-    // todo: update this description
     std::vector<SettingsLoadWarnings> ActionMap::LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
     {
         // It's possible that the user provided keybindings have some warnings in
@@ -97,46 +96,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::Value actionList{ Json::ValueType::arrayValue };
 
-        // Command serializes to an array of JSON objects.
-        // This is because a Command may have multiple key chords associated with it.
-        // The name and icon are only serialized in the first object.
-        // Example:
-        // { "name": "Custom Copy", "command": "copy", "keys": "ctrl+c" }
-        // {                        "command": "copy", "keys": "ctrl+shift+c" }
-        // {                        "command": "copy", "keys": "ctrl+ins" }
-        auto toJsonSpecial = [&actionList](const Model::Command& cmd) {
+        auto toJson = [&actionList](const Model::Command& cmd) {
             const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
-            const auto& cmdJsonArray{ cmdImpl->ToJsonSpecial() };
-            for (const auto& cmdJson : cmdJsonArray)
-            {
-                actionList.append(cmdJson);
-            }
-        };
-
-        auto toJsonStandard = [&actionList](const Model::Command& cmd) {
-            const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
-            const auto& cmdJsonArray{ cmdImpl->ToJsonStandard() };
-            for (const auto& cmdJson : cmdJsonArray)
-            {
-                actionList.append(cmdJson);
-            }
+            const auto& cmdJson{ cmdImpl->ToJson() };
+            actionList.append(cmdJson);
         };
 
         for (const auto& [_, cmd] : _ActionMap)
         {
-            toJsonStandard(cmd);
+            toJson(cmd);
         }
 
         // Serialize all nested Command objects added in the current layer
         for (const auto& [_, cmd] : _NestedCommands)
         {
-            toJsonSpecial(cmd);
+            toJson(cmd);
         }
 
         // Serialize all iterable Command objects added in the current layer
         for (const auto& cmd : _IterableCommands)
         {
-            toJsonSpecial(cmd);
+            toJson(cmd);
         }
 
         return actionList;
