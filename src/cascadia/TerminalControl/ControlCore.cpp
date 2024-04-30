@@ -959,26 +959,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_renderEngine)
         {
-            std::unordered_map<std::wstring_view, uint32_t> featureMap;
-            if (const auto fontFeatures = _settings->FontFeatures())
-            {
-                featureMap.reserve(fontFeatures.Size());
-
-                for (const auto& [tag, param] : fontFeatures)
+            static constexpr auto cloneMap = [](const IFontFeatureMap& map) {
+                std::unordered_map<std::wstring_view, float> clone;
+                if (map)
                 {
-                    featureMap.emplace(tag, param);
+                    clone.reserve(map.Size());
+                    for (const auto& [tag, param] : map)
+                    {
+                        clone.emplace(tag, param);
+                    }
                 }
-            }
-            std::unordered_map<std::wstring_view, float> axesMap;
-            if (const auto fontAxes = _settings->FontAxes())
-            {
-                axesMap.reserve(fontAxes.Size());
+                return clone;
+            };
 
-                for (const auto& [axis, value] : fontAxes)
-                {
-                    axesMap.emplace(axis, value);
-                }
-            }
+            const auto fontFeatures = _settings->FontFeatures();
+            const auto fontAxes = _settings->FontAxes();
+            const auto featureMap = cloneMap(fontFeatures);
+            const auto axesMap = cloneMap(fontAxes);
 
             // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
             //      actually fail. We need a way to gracefully fallback.

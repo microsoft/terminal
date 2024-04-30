@@ -731,6 +731,16 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         Json::Value ToJson(const float val)
         {
+            // Convert floats that are almost integers to proper integers, because that looks way neater in JSON.
+            if (val >= static_cast<float>(Json::Value::minInt) && val <= static_cast<float>(Json::Value::maxInt))
+            {
+                const auto i = static_cast<Json::Value::Int>(std::lround(val));
+                const auto f = static_cast<float>(i);
+                if (std::fabs(f - val) < 1e-6f)
+                {
+                    return i;
+                }
+            }
             return val;
         }
 
@@ -755,6 +765,16 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         Json::Value ToJson(const double val)
         {
+            // Convert floats that are almost integers to proper integers, because that looks way neater in JSON.
+            if (val >= static_cast<double>(Json::Value::minInt) && val <= static_cast<double>(Json::Value::maxInt))
+            {
+                const auto i = static_cast<Json::Value::Int>(std::lround(val));
+                const auto f = static_cast<double>(i);
+                if (std::fabs(f - val) < 1e-6)
+                {
+                    return i;
+                }
+            }
             return val;
         }
 

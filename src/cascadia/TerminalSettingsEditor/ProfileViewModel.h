@@ -33,7 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
-        static Editor::Font FindFontWithLocalizedName(winrt::hstring const& name) noexcept;
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
         Model::TerminalSettings TermSettings() const;
@@ -156,9 +155,3 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         guid _ProfileGuid{};
     };
 };
-
-namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
-{
-    // Since we have static functions, we need a factory.
-    BASIC_FACTORY(ProfileViewModel);
-}
