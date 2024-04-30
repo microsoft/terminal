@@ -495,14 +495,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
             {
-                if (const auto searchMatches = _core.SearchResultRows())
-                {
-                    const til::color color{ _core.ForegroundColor() };
-                    const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(til::color);
+                const auto core = winrt::get_self<ControlCore>(_core);
+                const auto& searchMatches = core->SearchResultRows();
+                const auto color = core->ForegroundColor();
+                const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(til::color);
+                til::CoordType lastRow = til::CoordTypeMin;
 
-                    for (const auto row : searchMatches)
+                for (const auto& span : searchMatches)
+                {
+                    if (lastRow != span.start.y)
                     {
-                        const auto base = dataAt(row) + rightAlignedOffset;
+                        lastRow = span.start.y;
+                        const auto base = dataAt(lastRow) + rightAlignedOffset;
                         drawPip(base, color);
                     }
                 }
