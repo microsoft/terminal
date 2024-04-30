@@ -84,15 +84,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         Model::Command _GetActionByID(const winrt::hstring actionID) const;
+        std::optional<winrt::hstring> _GetActionIDByKeyChordInternal(const Control::KeyChord& keys) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
         void _RefreshKeyBindingCaches();
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
-        void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
 
         std::vector<Model::Command> _GetCumulativeActions() const noexcept;
+        void _PopulateCumulativeKeyMap(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyBindingsMap);
+        void _PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap);
 
         void _TryUpdateActionMap(const Model::Command& cmd);
         void _TryUpdateKeyChord(const Model::Command& cmd);
@@ -100,7 +102,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
-        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
 
         Windows::Foundation::Collections::IVector<Model::Command> _ExpandedCommandsCache{ nullptr };
 
@@ -112,6 +113,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings);
         std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<winrt::hstring, Model::Command> _ActionMap;
+        Windows::Foundation::Collections::IMap<Control::KeyChord, winrt::hstring> _CumulativeKeyMapCache{ nullptr };
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _CumulativeActionMapCache{ nullptr };
+        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyActionMapCache{ nullptr };
 
         friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class SettingsModelUnitTests::DeserializationTests;

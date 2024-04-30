@@ -73,7 +73,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
                 // for non-nested non-iterable user commands, if there's no ID we generate one for them
                 // let the loader know that fixups are needed
-                // todo: stage 3 - there has to be a better way to check this?
                 if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey("id")) && jsonBlock.isMember(JsonKey("command")) && !jsonBlock.isMember(JsonKey("iterateOn")))
                 {
                     _fixUpsAppliedDuringLoad = true;
@@ -175,38 +174,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             winrt::hstring idJson;
             if (JsonUtils::GetValueForKey(json, "keys", keys))
             {
+                // if these keys are already bound to some command,
+                // we need to update that command to erase these keys as we are about to overwrite them
+                if (const auto foundCommand = _GetActionByKeyChordInternal(keys); foundCommand && *foundCommand)
+                {
+                    const auto foundCommandImpl{ get_self<implementation::Command>(*foundCommand) };
+                    foundCommandImpl->EraseKey(keys);
+                }
+
                 // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
                 JsonUtils::GetValueForKey(json, "id", idJson);
 
                 // any existing keybinding with the same keychord in this layer will get overwritten
                 _KeyMap.insert_or_assign(keys, idJson);
 
-                // if there is an id, make sure the command registers these keys
+                // make sure the command registers these keys
                 if (!idJson.empty())
                 {
-                    // there is a problem here (make a GH issue and mark the todo here)
+                    // there is a problem here (stage 3 - make a GH issue and mark the todo here)
                     // if the command with this id is only going to appear later during settings load
                     // then this will return null, meaning that the command created later on will not register this keybinding
                     // the keybinding will still work fine within the app, its just that the Command object itself won't know about this keymapping
-                    // we are going to move away from Command needing to know its keymappings in a followup
-                    const auto cmd{ _GetActionByID(idJson) };
-                    if (cmd)
+                    // we are going to move away from Command needing to know its keymappings in a followup, so this shouldn't matter for very long
+                    if (const auto cmd = _GetActionByID(idJson))
                     {
                         cmd.RegisterKey(keys);
-                    }
-                    else
-                    {
-                        // check for the same ID among our parents
-                        // with the current loader, I don't think we ever get here because we never have parents while parsing the json
-                        // the parents only get added after all jsons have been parsed
-                        for (const auto& parent : _parents)
-                        {
-                            const auto inheritedCmd{ parent->_GetActionByID(idJson) };
-                            if (inheritedCmd)
-                            {
-                                inheritedCmd.RegisterKey(keys);
-                            }
-                        }
                     }
                 }
             }
