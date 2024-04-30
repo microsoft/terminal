@@ -270,7 +270,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Recursively populated keyBindingsMap with ours and our parents' key -> id pairs
+    // - Recursively populate keyBindingsMap with ours and our parents' key -> id pairs
+    // - This is a bottom-up approach, ensuring that the keybindings of the parents are overridden by the children
     void ActionMap::_PopulateCumulativeKeyMap(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyBindingsMap)
     {
         for (const auto& [keys, cmdID] : _KeyMap)
@@ -288,7 +289,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Recursively populated actionMap with ours and our parents' id -> command pairs
+    // - Recursively populate actionMap with ours and our parents' id -> command pairs
+    // - This is a bottom-up approach, ensuring that the actions of the parents are overridden by the children
     void ActionMap::_PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap)
     {
         for (const auto& [cmdID, cmd] : _ActionMap)

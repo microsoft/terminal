@@ -155,7 +155,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
 
 void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
 {
-    // this order change is intentional, we want to do the keybindings map _after_ so that we have already
+    // we want to do the keybindings map after the actions map so that we have already
     // stored the action IDs in the action map
     // also, we want the keybindings map to overwrite any leftover keybindings that might have existed in the first pass,
     // in case the user did a partial update from legacy to modern
