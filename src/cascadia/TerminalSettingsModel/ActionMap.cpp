@@ -64,7 +64,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Retrieves the Command in the current layer
+    // - Retrieves the Command referred to be the given ID
+    // - Will recurse through parents if we don't find it in this layer
     // Arguments:
     // - actionID: the internal ID associated with a Command
     // Return Value:
@@ -126,6 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define ON_ALL_ACTIONS(action) RegisterShortcutAction(ShortcutAction::action, availableActions, visitedActionIDs);
             ALL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
+
             _AvailableActionsCache = single_threaded_map(std::move(availableActions));
         }
         return _AvailableActionsCache.GetView();

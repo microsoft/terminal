@@ -504,31 +504,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::Value cmdList{ Json::ValueType::arrayValue };
 
-        if (_nestedCommand || _IterateOn != ExpandCommandType::None)
+        Json::Value cmdJson{ Json::ValueType::objectValue };
+        JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
+        JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+        if (!_ID.empty())
         {
-            // handle special commands
-            // For these, we can trust _originalJson to be correct.
-            // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
-            //   until we expand the command.
-            cmdList.append(_originalJson);
+            JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
         }
-        else
+
+        if (_ActionAndArgs)
         {
-            Json::Value cmdJson{ Json::ValueType::objectValue };
-            JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
-            JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-            if (!_ID.empty())
-            {
-                JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
-            }
-
-            if (_ActionAndArgs)
-            {
-                cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
-            }
-
-            cmdList.append(cmdJson);
+            cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
         }
+
+        cmdList.append(cmdJson);
 
         return cmdList;
     }
