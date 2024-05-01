@@ -94,18 +94,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetFontWeightFromDouble(double fontWeight);
 
-        const FontFaceDependentsData& FontFaceDependents()
-        {
-            if (!_fontFaceDependents)
-            {
-                _refreshFontFaceDependents();
-            }
-            return *_fontFaceDependents;
-        }
-
-        winrt::hstring MissingFontFaces() { return FontFaceDependents().missingFontFaces; }
-        winrt::hstring ProportionalFontFaces() { return FontFaceDependents().proportionalFontFaces; }
-        bool HasPowerlineCharacters() { return FontFaceDependents().hasPowerlineCharacters; }
+        const FontFaceDependentsData& FontFaceDependents();
+        winrt::hstring MissingFontFaces();
+        winrt::hstring ProportionalFontFaces();
+        bool HasPowerlineCharacters();
 
         Windows::Foundation::Collections::IObservableVector<Editor::FontKeyValuePair> FontAxes();
         bool HasFontAxes() const;
@@ -165,7 +157,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _generateFontFeatures(IDWriteFontFace* fontFace, std::vector<Editor::FontKeyValuePair>& list);
         Windows::UI::Xaml::Controls::MenuFlyoutItemBase _createFontSettingMenuItem(const Editor::FontKeyValuePair& kv);
         void _notifyChangesForFontSettings();
-        void _deleteAllFontSettings(FontSettingIndex index);
+        void _notifyChangesForFontSettingsReactive(FontSettingIndex fontSettingsIndex);
+        void _deleteAllFontKeyValuePairs(FontSettingIndex index);
+        void _addMenuFlyoutItemToUnused(FontSettingIndex index, Windows::UI::Xaml::Controls::MenuFlyoutItemBase item);
 
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;

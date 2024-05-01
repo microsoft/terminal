@@ -309,7 +309,7 @@
                 <StackPanel Spacing="16">
                     <ListView IsItemClickEnabled="False"
                               ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
-                              ItemsSource="{x:Bind Appearance.FontAxes}"
+                              ItemsSource="{x:Bind Appearance.FontAxes, Mode=OneWay}"
                               SelectionMode="None" />
                     <muxc:DropDownButton x:Name="AddFontAxisButton"
                                          x:Uid="Profile_AddFontAxisButton">
@@ -336,7 +336,7 @@
                 <StackPanel Spacing="16">
                     <ListView IsItemClickEnabled="False"
                               ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
-                              ItemsSource="{x:Bind Appearance.FontFeatures}"
+                              ItemsSource="{x:Bind Appearance.FontFeatures, Mode=OneWay}"
                               SelectionMode="None" />
                     <muxc:DropDownButton x:Name="AddFontFeatureButton"
                                          x:Uid="Profile_AddFontFeatureButton">
