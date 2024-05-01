@@ -47,14 +47,8 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
-    _borderSecond.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
+    _borderFirst.Tapped([this](auto& s, auto& e) { _borderTappedHandler(s, e); });
+    _borderSecond.Tapped([this](auto& s, auto& e) { _borderTappedHandler(s, e); });
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -88,14 +82,8 @@ Pane::Pane(std::shared_ptr<Pane> first,
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
-    _borderSecond.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
+    _borderFirst.Tapped([this](auto& s, auto& e) { _borderTappedHandler(s, e); });
+    _borderSecond.Tapped([this](auto& s, auto& e) { _borderTappedHandler(s, e); });
 }
 
 // Extract the terminal settings from the current (leaf) pane's control
@@ -1237,6 +1225,10 @@ void Pane::UpdateVisuals()
 // - <none>
 void Pane::_Focus()
 {
+    if (WasLastFocused())
+    {
+        return;
+    }
     GotFocus.raise(shared_from_this(), FocusState::Programmatic);
     if (const auto& lastContent{ GetLastFocusedContent() })
     {
@@ -3020,4 +3012,10 @@ winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
     }
 
     return _themeResources.unfocusedBorderBrush;
+}
+
+void Pane::_borderTappedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e)
+{
+    _FocusFirstChild();
+    e.Handled(true);
 }

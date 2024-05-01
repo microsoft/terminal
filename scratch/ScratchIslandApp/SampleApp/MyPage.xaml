@@ -51,7 +51,75 @@
                   Padding="16"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
-                  Background="#0000ff" />
+                  Background="#0000ff">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <ComboBox Grid.Row="0"
+                          Width="200"
+                          Header="Colors"
+                          PlaceholderText="Pick a color">
+
+                    <x:String>Blue</x:String>
+                    <x:String>Green</x:String>
+                    <x:String>Red</x:String>
+                    <x:String>Yellow</x:String>
+                </ComboBox>
+                <Border Grid.Row="1"
+                        Background="DarkCyan">
+                    <StackPanel Orientation="Vertical">
+
+                        <ComboBox Width="200"
+                                  HorizontalAlignment="Right"
+                                  Header="Colors"
+                                  PlaceholderText="Inside a border">
+                            <x:String>Blue</x:String>
+                            <x:String>Green</x:String>
+                            <x:String>Red</x:String>
+                            <x:String>Yellow</x:String>
+                        </ComboBox>
+
+                        <Page>
+                            <StackPanel Orientation="Vertical">
+
+                                <ComboBox Width="200"
+                                          HorizontalAlignment="Right"
+                                          Header="Colors"
+                                          PlaceholderText="Inside a border">
+                                    <x:String>Blue</x:String>
+                                    <x:String>Green</x:String>
+                                    <x:String>Red</x:String>
+                                    <x:String>Yellow</x:String>
+                                </ComboBox>
+                            </StackPanel>
+                        </Page>
+
+                        <Border Grid.Row="1"
+                                Background="DarkRed">
+                            <Page>
+                                <StackPanel Orientation="Vertical">
+
+                                    <ComboBox Width="200"
+                                              HorizontalAlignment="Right"
+                                              Header="Colors"
+                                              PlaceholderText="Inside a border">
+                                        <x:String>Blue</x:String>
+                                        <x:String>Green</x:String>
+                                        <x:String>Red</x:String>
+                                        <x:String>Yellow</x:String>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Page>
+                        </Border>
+                    </StackPanel>
+
+
+                </Border>
+
+            </Grid>
 
 
 

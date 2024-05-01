@@ -8,7 +8,7 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct Launch : public HasScrollViewer<Launch>, LaunchT<Launch>
+    struct Launch : public /*HasScrollViewer<Launch>,*/ LaunchT<Launch>
     {
     public:
         Launch();
@@ -17,6 +17,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(Editor::LaunchViewModel, ViewModel, PropertyChanged.raise, nullptr);
+        void ViewChanging(const winrt::Windows::Foundation::IInspectable& sender,
+                          const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/);
     };
 }
 

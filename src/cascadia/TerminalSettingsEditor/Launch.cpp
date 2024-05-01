@@ -41,4 +41,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::LaunchViewModel>();
     }
+    static inline void DismissAllPopups(const winrt::Windows::UI::Xaml::XamlRoot& xamlRoot)
+    {
+        const auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
+        for (const auto& p : popups)
+        {
+            p.IsOpen(false);
+        }
+    }
+    // When the ScrollViewer scrolls, dismiss any popups we might have.
+    void Launch::ViewChanging(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
+    {
+        // Inside this struct, we can't get at the XamlRoot() that our subclass
+        // implements. I mean, _we_ can, but when XAML does its code
+        // generation, _XAML_ won't be able to figure it out.
+        //
+        // Fortunately for us, we don't need to! The sender is a UIElement, so
+        // we can just get _their_ XamlRoot().
+        if (const auto& uielem{ sender.try_as<winrt::Windows::UI::Xaml::UIElement>() })
+        {
+            DismissAllPopups(uielem.XamlRoot());
+        }
+    }
+
 }
