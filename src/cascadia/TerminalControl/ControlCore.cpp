@@ -1654,30 +1654,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
     // - caseSensitive: boolean that represents if the current search is case sensitive
+    // - resetOnly: If true, only Reset() will be called, if anything. FindNext() will never be called.
     // Return Value:
     // - <none>
-    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool reset)
+    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool resetOnly)
     {
         const auto lock = _terminal->LockForWriting();
+        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), text, !caseSensitive);
 
-        bool searchInvalidated = false;
-        std::vector<til::point_span> oldResults;
-        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive, &oldResults))
+        if (searchInvalidated || !resetOnly)
         {
-            searchInvalidated = true;
+            std::vector<til::point_span> oldResults;
 
-            _cachedSearchResultRows = {};
-            if (SnapSearchResultToSelection())
+            if (searchInvalidated)
             {
-                _searcher.MoveToCurrentSelection();
-                SnapSearchResultToSelection(false);
+                oldResults = _searcher.ExtractResults();
+                _searcher.Reset(*_terminal.get(), text, !caseSensitive, !goForward);
+
+                if (SnapSearchResultToSelection())
+                {
+                    _searcher.MoveToCurrentSelection();
+                    SnapSearchResultToSelection(false);
+                }
+
+                _terminal->SetSearchHighlights(_searcher.Results());
+            }
+            else
+            {
+                _searcher.FindNext(!goForward);
             }
 
-            _terminal->SetSearchHighlights(_searcher.Results());
-        }
-        else if (!reset)
-        {
-            _searcher.FindNext();
+            if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
+            {
+                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
+            }
+            _renderer->TriggerSearchHighlight(oldResults);
         }
 
         int32_t totalMatches = 0;
@@ -1686,10 +1697,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             totalMatches = gsl::narrow<int32_t>(_searcher.Results().size());
             currentMatch = gsl::narrow<int32_t>(idx);
-            _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
         }
-
-        _renderer->TriggerSearchHighlight(oldResults);
 
         return {
             .TotalMatches = totalMatches,
@@ -1698,27 +1706,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
     }
 
-    Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
+    const std::vector<til::point_span>& ControlCore::SearchResultRows() const noexcept
     {
-        if (!_cachedSearchResultRows)
-        {
-            auto results = std::vector<int32_t>();
-            auto lastRow = til::CoordTypeMin;
-
-            for (const auto& match : _searcher.Results())
-            {
-                const auto row{ match.start.y };
-                if (row != lastRow)
-                {
-                    results.push_back(row);
-                    lastRow = row;
-                }
-            }
-
-            _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
-        }
-
-        return _cachedSearchResultRows;
+        return _searcher.Results();
     }
 
     void ControlCore::ClearSearch()
@@ -1728,7 +1718,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->SetSearchHighlightFocused({});
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
-        _cachedSearchResultRows = {};
     }
 
     // Method Description:
