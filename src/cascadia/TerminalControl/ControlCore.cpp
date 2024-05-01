@@ -959,26 +959,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_renderEngine)
         {
-            std::unordered_map<std::wstring_view, uint32_t> featureMap;
-            if (const auto fontFeatures = _settings->FontFeatures())
-            {
-                featureMap.reserve(fontFeatures.Size());
-
-                for (const auto& [tag, param] : fontFeatures)
+            static constexpr auto cloneMap = [](const IFontFeatureMap& map) {
+                std::unordered_map<std::wstring_view, float> clone;
+                if (map)
                 {
-                    featureMap.emplace(tag, param);
+                    clone.reserve(map.Size());
+                    for (const auto& [tag, param] : map)
+                    {
+                        clone.emplace(tag, param);
+                    }
                 }
-            }
-            std::unordered_map<std::wstring_view, float> axesMap;
-            if (const auto fontAxes = _settings->FontAxes())
-            {
-                axesMap.reserve(fontAxes.Size());
+                return clone;
+            };
 
-                for (const auto& [axis, value] : fontAxes)
-                {
-                    axesMap.emplace(axis, value);
-                }
-            }
+            const auto fontFeatures = _settings->FontFeatures();
+            const auto fontAxes = _settings->FontAxes();
+            const auto featureMap = cloneMap(fontFeatures);
+            const auto axesMap = cloneMap(fontAxes);
 
             // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
             //      actually fail. We need a way to gracefully fallback.
@@ -1654,30 +1651,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
     // - caseSensitive: boolean that represents if the current search is case sensitive
+    // - resetOnly: If true, only Reset() will be called, if anything. FindNext() will never be called.
     // Return Value:
     // - <none>
-    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool reset)
+    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool resetOnly)
     {
         const auto lock = _terminal->LockForWriting();
+        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), text, !caseSensitive);
 
-        bool searchInvalidated = false;
-        std::vector<til::point_span> oldResults;
-        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive, &oldResults))
+        if (searchInvalidated || !resetOnly)
         {
-            searchInvalidated = true;
+            std::vector<til::point_span> oldResults;
 
-            _cachedSearchResultRows = {};
-            if (SnapSearchResultToSelection())
+            if (searchInvalidated)
             {
-                _searcher.MoveToCurrentSelection();
-                SnapSearchResultToSelection(false);
+                oldResults = _searcher.ExtractResults();
+                _searcher.Reset(*_terminal.get(), text, !caseSensitive, !goForward);
+
+                if (SnapSearchResultToSelection())
+                {
+                    _searcher.MoveToCurrentSelection();
+                    SnapSearchResultToSelection(false);
+                }
+
+                _terminal->SetSearchHighlights(_searcher.Results());
+            }
+            else
+            {
+                _searcher.FindNext(!goForward);
             }
 
-            _terminal->SetSearchHighlights(_searcher.Results());
-        }
-        else if (!reset)
-        {
-            _searcher.FindNext();
+            if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
+            {
+                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
+            }
+            _renderer->TriggerSearchHighlight(oldResults);
         }
 
         int32_t totalMatches = 0;
@@ -1686,10 +1694,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             totalMatches = gsl::narrow<int32_t>(_searcher.Results().size());
             currentMatch = gsl::narrow<int32_t>(idx);
-            _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
         }
-
-        _renderer->TriggerSearchHighlight(oldResults);
 
         return {
             .TotalMatches = totalMatches,
@@ -1698,27 +1703,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
     }
 
-    Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
+    const std::vector<til::point_span>& ControlCore::SearchResultRows() const noexcept
     {
-        if (!_cachedSearchResultRows)
-        {
-            auto results = std::vector<int32_t>();
-            auto lastRow = til::CoordTypeMin;
-
-            for (const auto& match : _searcher.Results())
-            {
-                const auto row{ match.start.y };
-                if (row != lastRow)
-                {
-                    results.push_back(row);
-                    lastRow = row;
-                }
-            }
-
-            _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
-        }
-
-        return _cachedSearchResultRows;
+        return _searcher.Results();
     }
 
     void ControlCore::ClearSearch()
@@ -1728,7 +1715,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->SetSearchHighlightFocused({});
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
-        _cachedSearchResultRows = {};
     }
 
     // Method Description:
@@ -2625,12 +2611,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         CompletionsChanged.raise(*this, *args);
     }
+
+    // Select the region of text between [s.start, s.end), in buffer space
     void ControlCore::_selectSpan(til::point_span s)
     {
+        // s.end is an _exclusive_ point. We need an inclusive one. But
+        // decrement in bounds wants an inclusive one. If you pass an exclusive
+        // one, then it might assert at you for being out of bounds. So we also
+        // take care of the case that the end point is outside the viewport
+        // manually.
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-        bufferSize.DecrementInBounds(s.end);
+        til::point inclusiveEnd = s.end;
+        if (s.end.x == bufferSize.Width())
+        {
+            inclusiveEnd = til::point{ std::max(0, s.end.x - 1), s.end.y };
+        }
+        else
+        {
+            bufferSize.DecrementInBounds(inclusiveEnd);
+        }
 
-        _terminal->SelectNewRegion(s.start, s.end);
+        _terminal->SelectNewRegion(s.start, inclusiveEnd);
         _renderer->TriggerSelection();
     }
 

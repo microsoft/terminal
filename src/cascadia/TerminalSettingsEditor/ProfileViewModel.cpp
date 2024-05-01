@@ -176,36 +176,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     CATCH_LOG();
 
-    Editor::Font ProfileViewModel::FindFontWithLocalizedName(const winrt::hstring& name) noexcept
-    {
-        // look for the current font in our shown list of fonts
-        Editor::Font fallbackFont{ nullptr };
-        try
-        {
-            if (!CompleteFontList())
-            {
-                UpdateFontList();
-            }
-            const auto& currentFontList{ CompleteFontList() };
-            fallbackFont = currentFontList.First().Current();
-            for (const auto& font : currentFontList)
-            {
-                if (font.LocalizedName() == name)
-                {
-                    return font;
-                }
-                else if (font.LocalizedName() == L"Cascadia Mono")
-                {
-                    fallbackFont = font;
-                }
-            }
-        }
-        CATCH_LOG();
-
-        // we couldn't find the desired font, set to "Cascadia Mono" if we found that since it ships by default
-        return fallbackFont;
-    }
-
     static winrt::hstring getLocalizedStringByIndex(IDWriteLocalizedStrings* strings, UINT32 index)
     {
         UINT32 length = 0;
@@ -234,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         THROW_IF_FAILED(family->GetFamilyNames(familyNames.addressof()));
 
         // If en-us is missing we fall back to whatever is at index 0.
-        const auto ci = getLocalizedStringIndex(familyNames.get(), L"en-us", 0);
+        const auto ci = getLocalizedStringIndex(familyNames.get(), L"en-US", 0);
         // If our locale is missing we fall back to en-us.
         const auto li = getLocalizedStringIndex(familyNames.get(), locale, ci);
 
@@ -242,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // If the canonical/localized indices are the same, there's no need to get the other string.
         auto localized = ci == li ? canonical : getLocalizedStringByIndex(familyNames.get(), li);
 
-        return make<Font>(std::move(canonical), std::move(localized), family);
+        return make<Font>(std::move(canonical), std::move(localized));
     }
 
     winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept

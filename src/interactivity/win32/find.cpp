@@ -52,13 +52,14 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            if (searcher.ResetIfStale(gci.renderData, lastFindString, reverse, caseInsensitive))
+            if (searcher.IsStale(gci.renderData, lastFindString, caseInsensitive))
             {
+                searcher.Reset(gci.renderData, lastFindString, caseInsensitive, reverse);
                 searcher.MoveToCurrentSelection();
             }
             else
             {
-                searcher.FindNext();
+                searcher.FindNext(reverse);
             }
 
             if (searcher.SelectCurrent())
