@@ -1440,10 +1440,23 @@ til::point TextBuffer::_GetWordStartForSelection(const til::point target, const 
     // expand left until we hit the left boundary or a different delimiter class
     while (result != bufferSize.Origin() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        //prevent selection wrapping on whitespace selection
-        if (isControlChar && result.x == bufferSize.Left())
+        if (result.x == bufferSize.Left())
         {
-            break;
+            // Prevent wrapping to the previous line if the selection begins on whitespace
+            if (isControlChar)
+            {
+                break;
+            }
+
+            if (result.y > 0)
+            {
+                // Prevent wrapping to the previous line if it was hard-wrapped (e.g. not forced by us to wrap)
+                const auto& priorRow = GetRowByOffset(result.y - 1);
+                if (!priorRow.WasWrapForced())
+                {
+                    break;
+                }
+            }
         }
         bufferSize.DecrementInBounds(result);
     }
@@ -1563,10 +1576,22 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
     // expand right until we hit the right boundary as a ControlChar or a different delimiter class
     while (result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        if (isControlChar && result.x == bufferSize.RightInclusive())
+        if (result.x == bufferSize.RightInclusive())
         {
-            break;
+            // Prevent wrapping to the next line if the selection begins on whitespace
+            if (isControlChar)
+            {
+                break;
+            }
+
+            // Prevent wrapping to the next line if this one was hard-wrapped (e.g. not forced by us to wrap)
+            const auto& row = GetRowByOffset(result.y);
+            if (!row.WasWrapForced())
+            {
+                break;
+            }
         }
+
         bufferSize.IncrementInBoundsCircular(result);
     }
 
