@@ -2988,7 +2988,7 @@ void TextBufferTests::ReflowPromptRegions()
             til::point afterPos = originalPos;
             // walk that original pos dx times into the actual real place in the buffer.
             auto bufferViewport = tb.GetSize();
-            bufferViewport.WalkInBounds(afterPos, dx);
+            bufferViewport.WalkInBounds(afterPos, -dx);
             const auto expectedOutputStart = !afterResize ?
                                                  originalPos : // printed exactly a row, so we're exactly below the prompt
                                                  afterPos;
