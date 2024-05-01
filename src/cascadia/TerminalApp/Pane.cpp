@@ -47,8 +47,8 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped({ this, _borderTappedHandler });
-    _borderSecond.Tapped({ this, _borderTappedHandler });
+    _borderFirst.Tapped({ this, &Pane::_borderTappedHandler });
+    _borderSecond.Tapped({ this, &Pane::_borderTappedHandler });
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -82,8 +82,8 @@ Pane::Pane(std::shared_ptr<Pane> first,
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped({ this, _borderTappedHandler });
-    _borderSecond.Tapped({ this, _borderTappedHandler });
+    _borderFirst.Tapped({ this, &Pane::_borderTappedHandler });
+    _borderSecond.Tapped({ this, &Pane::_borderTappedHandler });
 }
 
 // Extract the terminal settings from the current (leaf) pane's control
