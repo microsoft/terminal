@@ -226,8 +226,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Populates the provided nameMap with all of our actions and our parents actions
     //    while omitting the actions that were already added before
     // Arguments:
-    // - nameMap: the nameMap we're populating. This maps the name (hstring) of a command to the command itself.
-    //             There should only ever by one of each command (identified by the actionID) in the nameMap.
+    // - nameMap: the nameMap we're populating, this maps the name (hstring) of a command to the command itself
     void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
         for (const auto& [_, cmd] : _CumulativeActionMapCache)
@@ -235,8 +234,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto& name{ cmd.Name() };
             if (!name.empty())
             {
-                // Update NameMap.
-                nameMap.insert_or_assign(name, cmd);
+                // there might be a collision here, where there could be 2 different commands with the same name
+                // in this case, prioritize the user's action
+                if (nameMap.find(name) != nameMap.end() && cmd.Origin() != OriginTag::User)
+                {
+                    // a command with this name already exists in the map and this command is not a user-defined one, ignore it
+                    continue;
+                }
+                else
+                {
+                    nameMap.insert_or_assign(name, cmd);
+                }
             }
         }
     }
