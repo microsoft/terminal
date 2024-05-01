@@ -236,6 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 // there might be a collision here, where there could be 2 different commands with the same name
                 // in this case, prioritize the user's action
+                // TODO GH #17160: we should no longer use Command.Name to identify commands anywhere
                 if (nameMap.find(name) == nameMap.end() || cmd.Origin() == OriginTag::User)
                 {
                     // either a command with this name does not exist, or this is a user-defined command with a name
