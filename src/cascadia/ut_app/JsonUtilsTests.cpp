@@ -360,10 +360,10 @@ namespace TerminalAppUnitTests
         TryBasicType(std::wstring{ L"hello" }, "hello");
 
         // float -> double
-        TryBasicType(1.1, 1.1f);
+        TryBasicType(static_cast<double>(1.1f), 1.1f);
 
         // double -> float
-        TryBasicType(1.1f, 1.1);
+        TryBasicType(1.1f, static_cast<double>(1.1f));
 
         TryBasicType(til::color{ 0xab, 0xcd, 0xef }, "#ABCDEF");
         TryBasicType(til::color{ 0xcc, 0xcc, 0xcc }, "#CCC", "#CCCCCC");
