@@ -1225,10 +1225,14 @@ void Pane::UpdateVisuals()
 // - <none>
 void Pane::_Focus()
 {
+    // Don't focus our content if we're already focused. This prevents a bug
+    // where tapping on the arrow in a ComboBox will land in our Tapped handler,
+    // and if we steal focus from the ComboBox, it won't open. See GH#17062
     if (WasLastFocused())
     {
         return;
     }
+
     GotFocus.raise(shared_from_this(), FocusState::Programmatic);
     if (const auto& lastContent{ GetLastFocusedContent() })
     {
