@@ -831,29 +831,64 @@ void Alias::s_ClearCmdExeAliases()
 // - If we found a matching alias, this will be the processed data
 //   and lineCount is updated to the new number of lines.
 // - If we didn't match and process an alias, return an empty string.
-std::wstring Alias::s_MatchAndCopyAlias(std::wstring_view sourceText, const std::wstring& exeName, size_t& lineCount)
+std::wstring Alias::s_MatchAndCopyAlias(std::wstring_view sourceText, std::wstring_view exeName, size_t& lineCount)
 {
     // Check if we have an EXE in the list that matches the request first.
     const auto exeIter = g_aliasData.find(exeName);
     if (exeIter == g_aliasData.end())
     {
-        // We found no data for this exe. Give back an empty string.
+        // We found no data for this exe.
         return {};
     }
 
     const auto& exeList = exeIter->second;
     if (exeList.size() == 0)
     {
-        // If there's no match, give back an empty string.
+        return {};
+    }
+
+    std::wstring_view args[10];
+    size_t argc = 0;
+
+    // Split the source string into whitespace delimited arguments.
+    for (size_t argBegIdx = 0; argBegIdx < sourceText.size();)
+    {
+        // Find the end of the current word (= argument).
+        const auto argEndIdx = sourceText.find_first_of(L' ', argBegIdx);
+        const auto str = til::safe_slice_abs(sourceText, argBegIdx, argEndIdx);
+
+        // str is empty if the text starting at argBegIdx is whitespace.
+        // This can only occur if either the source text starts with whitespace or past
+        // an argument there's only whitespace text left until the end of sourceText.
+        if (str.empty())
+        {
+            break;
+        }
+
+        args[argc] = str;
+        argc++;
+
+        if (argc >= std::size(args))
+        {
+            break;
+        }
+
+        // Find the start of the next word (= argument).
+        // If the rest of the text is only whitespace, argBegIdx will be npos
+        // and the for() loop condition will make us exit.
+        argBegIdx = sourceText.find_first_not_of(L' ', argEndIdx);
+    }
+
+    // As mentioned above, argc will be 0 if the source text starts with whitespace or only consists of whitespace.
+    if (argc == 0)
+    {
         return {};
     }
 
     // The text up to the first space is the alias name.
-    const auto firstArgEndIdx = sourceText.find_first_of(L' ');
-    const auto aliasIter = exeList.find(til::safe_slice_len(sourceText, 0, firstArgEndIdx));
+    const auto aliasIter = exeList.find(args[0]);
     if (aliasIter == exeList.end())
     {
-        // We found no alias pair with this name. Give back an empty string.
         return {};
     }
 
@@ -863,36 +898,9 @@ std::wstring Alias::s_MatchAndCopyAlias(std::wstring_view sourceText, const std:
         return {};
     }
 
-    std::wstring_view args[9];
-    size_t argsCount = 0;
-
-    // Package up space separated strings in source into array of args.
-    for (size_t i = firstArgEndIdx; i < sourceText.size();)
-    {
-        const auto argBegIdx = sourceText.find_first_not_of(L' ', i);
-        const auto argEndIdx = sourceText.find_first_of(L' ', argBegIdx);
-        const auto str = til::safe_slice_abs(sourceText, argBegIdx, argEndIdx);
-
-        if (str.empty())
-        {
-            break;
-        }
-
-        args[argsCount] = str;
-        argsCount++;
-
-        if (argsCount >= std::size(args))
-        {
-            break;
-        }
-
-        i = argEndIdx;
-    }
-
     std::wstring buffer;
     size_t lines = 0;
 
-    // Put together the target string.
     for (auto it = target.begin(), end = target.end(); it != end;)
     {
         auto ch = *it++;
@@ -902,23 +910,27 @@ std::wstring Alias::s_MatchAndCopyAlias(std::wstring_view sourceText, const std:
             continue;
         }
 
+        // $ is our "escape character" and this code handles the escape
+        // sequence consisting of a single subsequent character.
         ch = *it++;
         const auto chLower = til::tolower_ascii(ch);
         if (chLower >= L'1' && chLower <= L'9')
         {
-            // numbered parameter substitution
-            const size_t ArgNumber = chLower - L'1';
-            if (ArgNumber < argsCount)
+            // $1-9 = append the given parameter
+            const size_t idx = chLower - L'0';
+            if (idx < argc)
             {
-                buffer.append(args[ArgNumber]);
+                buffer.append(args[idx]);
             }
         }
         else if (chLower == L'*')
         {
-            // * parameter substitution = all parameters
-            if (argsCount)
+            // $* = append all parameters
+            if (argc > 1)
             {
-                buffer.append(args[0].data(), sourceText.data() + sourceText.size());
+                // args[] is an array of slices into the source text. This appends the text
+                // starting at first argument up to the end of the source to the buffer.
+                buffer.append(args[1].data(), sourceText.data() + sourceText.size());
             }
         }
         else if (chLower == L'l')
@@ -952,17 +964,12 @@ std::wstring Alias::s_MatchAndCopyAlias(std::wstring_view sourceText, const std:
     return buffer;
 }
 
-#ifdef UNIT_TESTING
-void Alias::s_TestAddAlias(std::wstring& exe,
-                           std::wstring& alias,
-                           std::wstring& target)
+void Alias::s_TestAddAlias(std::wstring exe, std::wstring alias, std::wstring target)
 {
-    g_aliasData[exe][alias] = target;
+    g_aliasData[std::move(exe)][std::move(alias)] = std::move(target);
 }
 
 void Alias::s_TestClearAliases()
 {
     g_aliasData.clear();
 }
-
-#endif
