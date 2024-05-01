@@ -57,7 +57,7 @@ class SearchTests
         return true;
     }
 
-    static void DoFoundChecks(Search& s, til::point coordStartExpected, til::CoordType lineDelta)
+    static void DoFoundChecks(Search& s, til::point coordStartExpected, til::CoordType lineDelta, bool reverse)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -70,7 +70,7 @@ class SearchTests
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        s.FindNext();
+        s.FindNext(reverse);
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
@@ -78,7 +78,7 @@ class SearchTests
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        s.FindNext();
+        s.FindNext(reverse);
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
@@ -86,7 +86,7 @@ class SearchTests
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        s.FindNext();
+        s.FindNext(reverse);
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
@@ -98,16 +98,16 @@ class SearchTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         Search s;
-        s.ResetIfStale(gci.renderData, L"AB", false, false);
-        DoFoundChecks(s, {}, 1);
+        s.Reset(gci.renderData, L"AB", false, false);
+        DoFoundChecks(s, {}, 1, false);
     }
 
     TEST_METHOD(ForwardCaseSensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", false, false);
-        DoFoundChecks(s, { 2, 0 }, 1);
+        s.Reset(gci.renderData, L"\x304b", false, false);
+        DoFoundChecks(s, { 2, 0 }, 1, false);
     }
 
     TEST_METHOD(ForwardCaseInsensitive)
@@ -115,47 +115,47 @@ class SearchTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         Search s;
-        s.ResetIfStale(gci.renderData, L"ab", false, true);
-        DoFoundChecks(s, {}, 1);
+        s.Reset(gci.renderData, L"ab", true, false);
+        DoFoundChecks(s, {}, 1, false);
     }
 
     TEST_METHOD(ForwardCaseInsensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", false, true);
-        DoFoundChecks(s, { 2, 0 }, 1);
+        s.Reset(gci.renderData, L"\x304b", true, false);
+        DoFoundChecks(s, { 2, 0 }, 1, false);
     }
 
     TEST_METHOD(BackwardCaseSensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"AB", true, false);
-        DoFoundChecks(s, { 0, 3 }, -1);
+        s.Reset(gci.renderData, L"AB", false, true);
+        DoFoundChecks(s, { 0, 3 }, -1, true);
     }
 
     TEST_METHOD(BackwardCaseSensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", true, false);
-        DoFoundChecks(s, { 2, 3 }, -1);
+        s.Reset(gci.renderData, L"\x304b", false, true);
+        DoFoundChecks(s, { 2, 3 }, -1, true);
     }
 
     TEST_METHOD(BackwardCaseInsensitive)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"ab", true, true);
-        DoFoundChecks(s, { 0, 3 }, -1);
+        s.Reset(gci.renderData, L"ab", true, true);
+        DoFoundChecks(s, { 0, 3 }, -1, true);
     }
 
     TEST_METHOD(BackwardCaseInsensitiveJapanese)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.ResetIfStale(gci.renderData, L"\x304b", true, true);
-        DoFoundChecks(s, { 2, 3 }, -1);
+        s.Reset(gci.renderData, L"\x304b", true, true);
+        DoFoundChecks(s, { 2, 3 }, -1, true);
     }
 };

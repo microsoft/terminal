@@ -129,6 +129,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
             {
                 _ID = generatedID;
+                _IDWasGenerated = true;
                 return true;
             }
         }
@@ -445,7 +446,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Json::Value cmdJson{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-            if (!_ID.empty())
+            if (!_ID.empty() && !_IDWasGenerated)
             {
                 JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
             }
