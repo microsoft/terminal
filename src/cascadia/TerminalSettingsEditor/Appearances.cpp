@@ -813,7 +813,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto& b = rhs.as<MenuFlyoutItem>().Text();
             return til::compare_linguistic_insensitive(a, b) < 0;
         });
-        unused.insert(it, item);
+        unused.insert(it, std::move(item));
     }
 
     void AppearanceViewModel::UpdateFontSetting(const FontKeyValuePair* kvImpl)
