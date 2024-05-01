@@ -493,7 +493,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_v
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 {
     // We're currently faced with a font caching bug that we're unable to reproduce locally. See GH#9375.
     // But it occurs often enough and has no proper workarounds, so we're forced to fix it.
@@ -544,7 +544,7 @@ void AtlasEngine::_resolveTransparencySettings() noexcept
     }
 }
 
-[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
@@ -567,19 +567,20 @@ try
             if (p.first.size() == 4)
             {
                 const auto s = p.first.data();
+                const auto v = static_cast<UINT32>(std::max(0l, lrintf(p.second)));
                 switch (const auto tag = DWRITE_MAKE_FONT_FEATURE_TAG(s[0], s[1], s[2], s[3]))
                 {
                 case DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES:
-                    fontFeatures[0].parameter = p.second;
+                    fontFeatures[0].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES:
-                    fontFeatures[1].parameter = p.second;
+                    fontFeatures[1].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES:
-                    fontFeatures[2].parameter = p.second;
+                    fontFeatures[2].parameter = v;
                     break;
                 default:
-                    fontFeatures.emplace_back(tag, p.second);
+                    fontFeatures.emplace_back(tag, v);
                     break;
                 }
             }
