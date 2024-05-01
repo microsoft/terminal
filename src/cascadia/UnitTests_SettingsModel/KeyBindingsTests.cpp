@@ -157,8 +157,8 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::HashDeduplication()
     {
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
         VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
     }
 
@@ -166,8 +166,8 @@ namespace SettingsModelUnitTests
     {
         Log::Comment(L"These are two actions with different content args. They should have different hashes for their terminal args.");
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"), OriginTag::None);
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "id": "Test.NewTabNoArgs", "keys": ["ctrl+c"]       } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "id": "Test.NewTab0", "keys": ["ctrl+shift+c"] } ])"), OriginTag::None);
         VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
 
         KeyChord ctrlC{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
@@ -712,10 +712,10 @@ namespace SettingsModelUnitTests
 
     void KeyBindingsTests::TestGetKeyBindingForAction()
     {
-        const std::string bindings0String{ R"([ { "command": "closeWindow", "keys": "ctrl+a" } ])" };
-        const std::string bindings1String{ R"([ { "command": { "action": "copy", "singleLine": true }, "keys": "ctrl+b" } ])" };
-        const std::string bindings2String{ R"([ { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+c" } ])" };
-        const std::string bindings3String{ R"([ { "command": "commandPalette", "keys": "ctrl+shift+p" } ])" };
+        const std::string bindings0String{ R"([ { "command": "closeWindow", "id": "Test.CloseWindow", "keys": "ctrl+a" } ])" };
+        const std::string bindings1String{ R"([ { "command": { "action": "copy", "singleLine": true }, "id": "Test.Copy", "keys": "ctrl+b" } ])" };
+        const std::string bindings2String{ R"([ { "command": { "action": "newTab", "index": 0 }, "id": "Test.NewTab", "keys": "ctrl+c" } ])" };
+        const std::string bindings3String{ R"([ { "command": "commandPalette", "id": "Test.CmdPal", "keys": "ctrl+shift+p" } ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
@@ -742,7 +742,7 @@ namespace SettingsModelUnitTests
             Log::Comment(L"simple command: no args");
             actionMap->LayerJson(bindings0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CloseWindow) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.CloseWindow") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control, static_cast<int32_t>('A'), 0 }, kbd);
         }
         {
@@ -750,10 +750,7 @@ namespace SettingsModelUnitTests
             actionMap->LayerJson(bindings1Json, OriginTag::None);
             VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
 
-            auto args{ winrt::make_self<implementation::CopyTextArgs>() };
-            args->SingleLine(true);
-
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CopyText, *args) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.Copy") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control, static_cast<int32_t>('B'), 0 }, kbd);
         }
         {
@@ -761,11 +758,7 @@ namespace SettingsModelUnitTests
             actionMap->LayerJson(bindings2Json, OriginTag::None);
             VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
 
-            auto newTerminalArgs{ winrt::make_self<implementation::NewTerminalArgs>() };
-            newTerminalArgs->ProfileIndex(0);
-            auto args{ winrt::make_self<implementation::NewTabArgs>(*newTerminalArgs) };
-
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::NewTab, *args) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.NewTab") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }, kbd);
         }
         {
@@ -773,7 +766,7 @@ namespace SettingsModelUnitTests
             actionMap->LayerJson(bindings3Json, OriginTag::None);
             VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
 
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.CmdPal") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control | VirtualKeyModifiers::Shift, static_cast<int32_t>('P'), 0 }, kbd);
         }
     }
@@ -807,7 +800,7 @@ namespace SettingsModelUnitTests
 
     void KeyBindingsTests::KeybindingsWithoutVkey()
     {
-        const auto json = VerifyParseSucceeded(R"!([{"command": "quakeMode", "keys":"shift+sc(255)"}])!");
+        const auto json = VerifyParseSucceeded(R"!([{"command": "quakeMode", "id": "Test.NoVKey", "keys":"shift+sc(255)"}])!");
 
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
         actionMap->LayerJson(json, OriginTag::None);

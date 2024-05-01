@@ -432,6 +432,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // (if the shortcut action is invalid, then this is for unbinding and _TryUpdateKeyChord will handle that)
         if (auto cmdID = cmd.ID(); !cmdID.empty() && cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
         {
+            // in the legacy scenario, a user might have several of the same action but only one of them has defined an icon or a name
+            // eg. { "command": "paste", "name": "myPaste", "keys":"ctrl+a" }
+            //     { "command": "paste", "keys": "ctrl+b" }
+            // once they port over to the new implementation, we will reduce it to just one Command object with a generated ID
+            // but several key binding entries, like so
+            //     { "command": "newTab", "id": "User.paste" } -> in the actions map
+            //     { "keys": "ctrl+a", "id": "User.paste" }    -> in the keybindings map
+            //     { "keys": "ctrl+b", "id": "User.paste" }    -> in the keybindings map
+            // however, we have to make sure that we preserve the icon/name that might have been there in one of the command objects
+            // to do that, we check if this command we're adding had an ID that was generated
+            // if so, we check if there already exists a command with that generated ID, and if there is we port over any name/icon there might be
+            // (this may cause us to overwrite in scenarios where the user has an existing command that has the same generated ID but
+            //  performs a different action or has different args, but that falls under "play stupid games")
+            const auto cmdImpl{ get_self<implementation::Command>(cmd) };
+            if (cmdImpl->IdWasGenerated())
+            {
+                if (const auto foundCmd{ _GetActionByID(cmdID) })
+                {
+                    const auto foundCmdImpl{ get_self<implementation::Command>(foundCmd) };
+                    if (foundCmdImpl->HasName() && !cmdImpl->HasName())
+                    {
+                        cmdImpl->Name(foundCmdImpl->Name());
+                    }
+                    if (!foundCmdImpl->IconPath().empty() && cmdImpl->IconPath().empty())
+                    {
+                        cmdImpl->IconPath(foundCmdImpl->IconPath());
+                    }
+                }
+            }
             _ActionMap.insert_or_assign(cmdID, cmd);
         }
     }

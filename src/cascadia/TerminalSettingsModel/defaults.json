@@ -425,7 +425,6 @@
         // Application-level Commands
         { "command": "closeWindow", "id": "Terminal.CloseWindow" },
         { "command": "toggleFullscreen", "id": "Terminal.ToggleFullscreen" },
-        { "command": "toggleFullscreen", "id": "Terminal.ToggleFullscreen" },
         { "command": "toggleFocusMode", "id": "Terminal.ToggleFocusMode" },
         { "command": "toggleAlwaysOnTop", "id": "Terminal.ToggleAlwaysOnTop" },
         { "command": "openNewTabDropdown", "id": "Terminal.OpenNewTabDropdown" },

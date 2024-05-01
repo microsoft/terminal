@@ -1235,11 +1235,11 @@ namespace SettingsModelUnitTests
         const auto settings = createSettings(badSettings);
 
         // KeyMap: ctrl+a/b are mapped to "invalid"
-        // ActionMap: "splitPane" and "invalid" are the only deserialized actions
+        // ActionMap: "splitPane" is the only deserialized action
         // NameMap: "splitPane" has no key binding, but it is still added to the name map
         const auto actionMap = winrt::get_self<implementation::ActionMap>(settings->GlobalSettings().ActionMap());
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
-        VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
+        VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
         VERIFY_ARE_EQUAL(1u, actionMap->NameMap().Size());
         VERIFY_ARE_EQUAL(5u, settings->Warnings().Size());
 
@@ -1981,7 +1981,8 @@ namespace SettingsModelUnitTests
                 },
                 {
                     "name": "bar",
-                    "command": "closePane"
+                    "command": "closePane",
+                    "id": "Test.ClosePane"
                 },
             ],
         })" };
@@ -2005,7 +2006,7 @@ namespace SettingsModelUnitTests
         }
         {
             // Verify ActionMap::GetKeyBindingForAction API
-            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(L"Test.ClosePane") };
             VERIFY_IS_NULL(actualKeyChord);
         }
     }
@@ -2049,7 +2050,8 @@ namespace SettingsModelUnitTests
             "actions": [
                 {
                     "command": { "action": "addMark" },
-                    "name": "Test Action"
+                    "name": "Test Action",
+                    "id": "Test.FragmentAction"
                 },
             ]
         })" };
@@ -2074,6 +2076,7 @@ namespace SettingsModelUnitTests
                 {
                     "command": { "action": "addMark" },
                     "keys": "ctrl+f",
+                    "id": "Test.FragmentAction",
                     "name": "Test Action"
                 },
             ]
@@ -2195,7 +2198,8 @@ namespace SettingsModelUnitTests
             "actions": [
                 {
                     "command": { "action": "addMark" },
-                    "name": "Test Action"
+                    "name": "Test Action",
+                    "id": "Test.FragmentAction"
                 },
             ]
         })" };
