@@ -236,13 +236,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 // there might be a collision here, where there could be 2 different commands with the same name
                 // in this case, prioritize the user's action
-                if (nameMap.find(name) != nameMap.end() && cmd.Origin() != OriginTag::User)
+                if (nameMap.find(name) == nameMap.end() || cmd.Origin() == OriginTag::User)
                 {
-                    // a command with this name already exists in the map and this command is not a user-defined one, ignore it
-                    continue;
-                }
-                else
-                {
+                    // either a command with this name does not exist, or this is a user-defined command with a name
+                    // in either case, update the name map with the command (if this is a user-defined command with
+                    // the same name as an existing command, the existing one will get overwritten)
                     nameMap.insert_or_assign(name, cmd);
                 }
             }
