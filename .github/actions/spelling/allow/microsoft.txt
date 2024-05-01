@@ -1,6 +1,8 @@
 ACLs
 ADMINS
 advapi
+akv
+AKV
 altform
 altforms
 appendwttlogging
