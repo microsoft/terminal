@@ -2361,6 +2361,7 @@ void TextBufferTests::GetWordBoundaries()
     VERIFY_IS_TRUE(_buffer->GetRowByOffset(4).WasWrapForced());
     VERIFY_IS_TRUE(_buffer->GetRowByOffset(5).WasWrapForced());
 
+    // clang-format off
     testData = {
         { { 0, 0 }, { { 0, 0 }, { 0, 0 } } },
         { { 1, 0 }, { { 0, 0 }, { 0, 0 } } },
@@ -2403,6 +2404,7 @@ void TextBufferTests::GetWordBoundaries()
     // 3|spaces    | < wrapped
     // 4|    wrappe| < wrapped
     // 5|d reachEOB| < wrapped
+    // clang-format off
     testData = {
         // tests for first line of text
         { { 0, 0 }, { { 3, 0 }, { 5, 0 } } },
