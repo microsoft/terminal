@@ -157,8 +157,8 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::HashDeduplication()
     {
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "id": "Test.SplitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "id": "Test.SplitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
         VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
     }
 
