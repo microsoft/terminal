@@ -3743,7 +3743,7 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
     else if (subParam == 12)
     {
-        _api.GetTextBuffer().StartCommand();
+        _pages.ActivePage().Buffer().StartCommand();
         return true;
     }
 
@@ -3787,7 +3787,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     bool handled = false;
     if (action == L"SetMark")
     {
-        _api.GetTextBuffer().StartPrompt();
+        _pages.ActivePage().Buffer().StartPrompt();
         handled = true;
     }
 
@@ -3833,19 +3833,19 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         {
         case L'A': // FTCS_PROMPT
         {
-            _api.GetTextBuffer().StartPrompt();
+            _pages.ActivePage().Buffer().StartPrompt();
             handled = true;
             break;
         }
         case L'B': // FTCS_COMMAND_START
         {
-            _api.GetTextBuffer().StartCommand();
+            _pages.ActivePage().Buffer().StartCommand();
             handled = true;
             break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
-            _api.GetTextBuffer().StartOutput();
+            _pages.ActivePage().Buffer().StartOutput();
             handled = true;
             break;
         }
@@ -3866,7 +3866,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                                                                         UINT_MAX;
             }
 
-            _api.GetTextBuffer().EndCurrentCommand(error);
+            _pages.ActivePage().Buffer().EndCurrentCommand(error);
 
             handled = true;
             break;
