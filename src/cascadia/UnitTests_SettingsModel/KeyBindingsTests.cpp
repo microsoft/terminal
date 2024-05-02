@@ -271,32 +271,32 @@ namespace SettingsModelUnitTests
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings0Json, OriginTag::None);
+        actionMap->LayerJson(bindings0Json, OriginTag::User);
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings1Json, OriginTag::None);
+        actionMap->LayerJson(bindings1Json, OriginTag::User);
         VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings2Json, OriginTag::None);
+        actionMap->LayerJson(bindings2Json, OriginTag::User);
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
     }
 
     void KeyBindingsTests::TestArbitraryArgs()
     {
         const std::string bindings0String{ R"([
-            { "command": "copy", "keys": ["ctrl+c"] },
-            { "command": { "action": "copy", "singleLine": false }, "keys": ["ctrl+shift+c"] },
-            { "command": { "action": "copy", "singleLine": true }, "keys": ["alt+shift+c"] },
+            { "command": "copy", "id": "Test.CopyNoArgs", "keys": ["ctrl+c"] },
+            { "command": { "action": "copy", "singleLine": false }, "id": "Test.CopyMultiline", "keys": ["ctrl+shift+c"] },
+            { "command": { "action": "copy", "singleLine": true }, "id": "Test.CopySingleline", "keys": ["alt+shift+c"] },
 
-            { "command": "newTab", "keys": ["ctrl+t"] },
-            { "command": { "action": "newTab", "index": 0 }, "keys": ["ctrl+shift+t"] },
-            { "command": { "action": "newTab", "index": 11 }, "keys": ["ctrl+shift+y"] },
+            { "command": "newTab", "id": "Test.NewTabNoArgs", "keys": ["ctrl+t"] },
+            { "command": { "action": "newTab", "index": 0 }, "id": "Test.NewTab0", "keys": ["ctrl+shift+t"] },
+            { "command": { "action": "newTab", "index": 11 }, "id": "Test.NewTab11", "keys": ["ctrl+shift+y"] },
 
-            { "command": { "action": "copy", "madeUpBool": true }, "keys": ["ctrl+b"] },
-            { "command": { "action": "copy" }, "keys": ["ctrl+shift+b"] },
+            { "command": { "action": "copy", "madeUpBool": true }, "id": "Test.CopyFakeArgs", "keys": ["ctrl+b"] },
+            { "command": { "action": "copy" }, "id": "Test.CopyNullArgs", "keys": ["ctrl+shift+b"] },
 
-            { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": ["ctrl+f"] },
-            { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": ["ctrl+g"] }
+            { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Test.EnlargeFont", "keys": ["ctrl+f"] },
+            { "command": { "action": "adjustFontSize", "delta": -1 }, "id": "Test.ReduceFont", "keys": ["ctrl+g"] }
 
         ])" };
 
@@ -428,10 +428,10 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestSplitPaneArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical" } },
-            { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal" } },
-            { "keys": ["ctrl+g"], "command": { "action": "splitPane" } },
-            { "keys": ["ctrl+h"], "command": { "action": "splitPane", "split": "auto" } }
+            { "keys": ["ctrl+d"], "id": "Test.SplitPaneVertical", "command": { "action": "splitPane", "split": "vertical" } },
+            { "keys": ["ctrl+e"], "id": "Test.SplitPaneHorizontal", "command": { "action": "splitPane", "split": "horizontal" } },
+            { "keys": ["ctrl+g"], "id": "Test.SplitPane", "command": { "action": "splitPane" } },
+            { "keys": ["ctrl+h"], "id": "Test.SplitPaneAuto", "command": { "action": "splitPane", "split": "auto" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -478,9 +478,9 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestSetTabColorArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["ctrl+c"], "command": { "action": "setTabColor", "color": null } },
-            { "keys": ["ctrl+d"], "command": { "action": "setTabColor", "color": "#123456" } },
-            { "keys": ["ctrl+f"], "command": "setTabColor" },
+            { "keys": ["ctrl+c"], "id": "Test.SetTabColorNull", "command": { "action": "setTabColor", "color": null } },
+            { "keys": ["ctrl+d"], "id": "Test.SetTabColor", "command": { "action": "setTabColor", "color": "#123456" } },
+            { "keys": ["ctrl+f"], "id": "Test.SetTabColorNoArgs", "command": "setTabColor" },
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -521,7 +521,7 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestStringOverload()
     {
         const std::string bindings0String{ R"([
-            { "command": "copy", "keys": "ctrl+c" }
+            { "command": "copy", "id": "Test.Copy", "keys": "ctrl+c" }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -543,12 +543,12 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestScrollArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["up"], "command": "scrollUp" },
-            { "keys": ["down"], "command": "scrollDown" },
-            { "keys": ["ctrl+up"], "command": { "action": "scrollUp" } },
-            { "keys": ["ctrl+down"], "command": { "action": "scrollDown" } },
-            { "keys": ["ctrl+shift+up"], "command": { "action": "scrollUp", "rowsToScroll": 10 } },
-            { "keys": ["ctrl+shift+down"], "command": { "action": "scrollDown", "rowsToScroll": 10 } }
+            { "keys": ["up"], "id": "Test.ScrollUp0", "command": "scrollUp" },
+            { "keys": ["down"], "id": "Test.ScrollDown0", "command": "scrollDown" },
+            { "keys": ["ctrl+up"], "id": "Test.ScrollUp1", "command": { "action": "scrollUp" } },
+            { "keys": ["ctrl+down"], "id": "Test.ScrollDown1", "command": { "action": "scrollDown" } },
+            { "keys": ["ctrl+shift+up"], "id": "Test.ScrollUp2", "command": { "action": "scrollUp", "rowsToScroll": 10 } },
+            { "keys": ["ctrl+shift+down"], "id": "Test.ScrollDown2", "command": { "action": "scrollDown", "rowsToScroll": 10 } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -620,8 +620,8 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestMoveTabArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["up"], "command": { "action": "moveTab", "direction": "forward" } },
-            { "keys": ["down"], "command": { "action": "moveTab", "direction": "backward" } }
+            { "keys": ["up"], "id": "Test.MoveTabUp", "command": { "action": "moveTab", "direction": "forward" } },
+            { "keys": ["down"], "id": "Test.MoveTabDown", "command": { "action": "moveTab", "direction": "backward" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -665,9 +665,9 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestToggleCommandPaletteArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["up"], "command": "commandPalette" },
-            { "keys": ["ctrl+up"], "command": { "action": "commandPalette", "launchMode" : "action" } },
-            { "keys": ["ctrl+shift+up"], "command": { "action": "commandPalette", "launchMode" : "commandLine" } }
+            { "keys": ["up"], "id": "Test.CmdPal", "command": "commandPalette" },
+            { "keys": ["ctrl+up"], "id": "Test.CmdPalActionMode", "command": { "action": "commandPalette", "launchMode" : "action" } },
+            { "keys": ["ctrl+shift+up"], "id": "Test.CmdPalLineMode", "command": { "action": "commandPalette", "launchMode" : "commandLine" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);

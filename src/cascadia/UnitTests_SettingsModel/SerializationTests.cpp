@@ -120,13 +120,15 @@ namespace SettingsModelUnitTests
 
                 "experimental.input.forceVT": false,
 
-                "actions": []
+                "actions": [],
+                "keybindings": []
             })" };
 
         static constexpr std::string_view smallGlobalsString{ R"(
             {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-                "actions": []
+                "actions": [],
+                "keybindings": []
             })" };
 
         RoundtripTest<implementation::GlobalAppSettings>(globalsString);
@@ -275,47 +277,50 @@ namespace SettingsModelUnitTests
     {
         // simple command
         static constexpr std::string_view actionsString1{ R"([
-                                                { "command": "paste" }
+                                                { "command": "paste", "id": "Test.Paste" }
                                             ])" };
 
         // complex command
         static constexpr std::string_view actionsString2A{ R"([
-                                                { "command": { "action": "setTabColor" } }
+                                                { "command": { "action": "setTabColor" }, "id": "Test.SetTabColor" }
                                             ])" };
         static constexpr std::string_view actionsString2B{ R"([
-                                                { "command": { "action": "setTabColor", "color": "#112233" } }
+                                                { "command": { "action": "setTabColor", "color": "#112233" }, "id": "Test.SetTabColor112233" }
                                             ])" };
         static constexpr std::string_view actionsString2C{ R"([
-                                                { "command": { "action": "copy" } },
-                                                { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" } }
+                                                { "command": { "action": "copy" }, "id": "Test.Copy" },
+                                                { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" }, "id": "Test.CopyWithArgs" }
                                             ])" };
 
         // simple command with key chords
-        static constexpr std::string_view actionsString3{ R"([
-                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+a" },
-                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+b" }
-                                            ])" };
+        static constexpr std::string_view actionsString3{ R"({ "actions": [
+                                                { "command": "toggleAlwaysOnTop", "id": "Test.ToggleAlwaysOnTop" } ],
+                                            "keybindings": [
+                                                { "keys": "ctrl+a", "id": "Test.ToggleAlwaysOnTop" },
+                                                { "keys": "ctrl+b", "id": "Test.ToggleAlwaysOnTop" } ]})" };
 
         // complex command with key chords
-        static constexpr std::string_view actionsString4A{ R"([
-                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
-                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
-                                            ])" };
+        static constexpr std::string_view actionsString4A{ R"({ "actions":[
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Test.EnlargeFont" } ],
+                                            "keybindings": [
+                                                { "keys": "ctrl+c", "id": "Test.EnlargeFont" },
+                                                { "keys": "ctrl+d", "id": "Test.EnlargeFont" } ]})" };
 
         // command with name and icon and multiple key chords
-        static constexpr std::string_view actionsString5{ R"([
-                                                { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "keys": "ctrl+e" },
-                                                { "command": "scrollToTop", "keys": "ctrl+f" }
-                                            ])" };
+        static constexpr std::string_view actionsString5{ R"({ "actions":[
+                                                { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "id": "Test.ScrollToTop" } ],
+                                            "keybindings": [
+                                                { "id": "Test.ScrollToTop", "keys": "ctrl+f" },
+                                                { "id": "Test.ScrollToTop", "keys": "ctrl+e" } ]})" };
 
         // complex command with new terminal args
         static constexpr std::string_view actionsString6{ R"([
-                                                { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+g" },
+                                                { "command": { "action": "newTab", "index": 0 }, "id": "Test.NewTerminal" },
                                             ])" };
 
         // complex command with meaningful null arg
         static constexpr std::string_view actionsString7{ R"([
-                                                { "command": { "action": "renameWindow", "name": null }, "keys": "ctrl+h" }
+                                                { "command": { "action": "renameWindow", "name": null }, "id": "Test.MeaningfulNull" }
                                             ])" };
 
         // nested command
@@ -397,9 +402,9 @@ namespace SettingsModelUnitTests
                                             ])"" };
 
         // unbound command
-        static constexpr std::string_view actionsString10{ R"([
-                                                { "command": "unbound", "keys": "ctrl+c" }
-                                            ])" };
+        static constexpr std::string_view actionsString10{ R"({ "actions": [],
+                                            "keybindings": [
+                                                { "id": null, "keys": "ctrl+c" } ]})" };
 
         Log::Comment(L"simple command");
         RoundtripTest<implementation::ActionMap>(actionsString1);
@@ -409,14 +414,16 @@ namespace SettingsModelUnitTests
         RoundtripTest<implementation::ActionMap>(actionsString2B);
         RoundtripTest<implementation::ActionMap>(actionsString2C);
 
+        // ActionMap has effectively 2 "to json" calls we need to make, one for the actions and one for the keybindings
+        // So we cannot use RoundtripTest<ActionMap> for actions + keychords, just use RoundTripTest<GlobalAppSettings>
         Log::Comment(L"simple command with key chords");
-        RoundtripTest<implementation::ActionMap>(actionsString3);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString3);
 
         Log::Comment(L"complex commands with key chords");
-        RoundtripTest<implementation::ActionMap>(actionsString4A);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString4A);
 
         Log::Comment(L"command with name and icon and multiple key chords");
-        RoundtripTest<implementation::ActionMap>(actionsString5);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString5);
 
         Log::Comment(L"complex command with new terminal args");
         RoundtripTest<implementation::ActionMap>(actionsString6);
@@ -434,7 +441,7 @@ namespace SettingsModelUnitTests
         RoundtripTest<implementation::ActionMap>(actionsString9D);
 
         Log::Comment(L"unbound command");
-        RoundtripTest<implementation::ActionMap>(actionsString10);
+        RoundtripTest<implementation::GlobalAppSettings>(actionsString10);
     }
 
     void SerializationTests::CascadiaSettings()
@@ -503,7 +510,10 @@ namespace SettingsModelUnitTests
                 }
             ],
             "actions": [
-                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "id": "User.sendInput.E02B3DF9", "keys": "ctrl+k" }
+                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "id": "Test.SendInput" }
+            ],
+            "keybindings": [
+                { "id": "Test.SendInput", "keys": "ctrl+k" }
             ],
             "theme": "system",
             "themes": []
@@ -995,7 +1005,6 @@ namespace SettingsModelUnitTests
                 {
                     "name": "foo",
                     "command": "closePane",
-                    "keys": "ctrl+shift+w",
                     "id": "thisIsMyClosePane"
                 },
                 {
