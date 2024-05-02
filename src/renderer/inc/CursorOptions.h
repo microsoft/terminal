@@ -53,5 +53,8 @@ namespace Microsoft::Console::Render
         // If the cursor has blinked off, this is false.
         // if the cursor has blinked on, this is true.
         bool isOn;
+
+        // Is the cursor within the viewport of the renderer?
+        bool inViewport;
     };
 }
