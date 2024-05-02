@@ -447,6 +447,7 @@
         { "command": "quit", "id": "Terminal.Quit" },
         { "command": "restoreLastClosed", "id": "Terminal.RestoreLastClosed" },
         { "command": "openAbout", "id": "Terminal.OpenAboutDialog" },
+        { "command": "experimental.openTasks", "id": "Terminal.OpenTasks" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

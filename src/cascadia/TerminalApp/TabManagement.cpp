@@ -137,6 +137,16 @@ namespace winrt::TerminalApp::implementation
         // for it. The Title change will be propagated upwards through the tab's
         // PropertyChanged event handler.
         newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
+            // TODO!
+            //
+            // * Make this a method on TerminalPage.
+            // * Convert ActivePaneChanged to a typed event, so it sends the sender (so we don't need to make all these lambdas)
+            // * Stash the task pane as a member on the Terminal? if one was opened.
+            // * If the tab does have a taskpane, then tell the taskpane the active pane changed
+            //
+            // wait don't do any of that. just do that in TerminalTab directly
+            // before we even raise the event you donkey
+
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 

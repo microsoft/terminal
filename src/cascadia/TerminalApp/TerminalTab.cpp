@@ -1249,6 +1249,18 @@ namespace winrt::TerminalApp::implementation
 
         // Raise our own ActivePaneChanged event.
         ActivePaneChanged.raise();
+
+        const auto content{ pane->GetContent() };
+        if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
+        {
+            const auto& termControl{ termContent.GetTermControl() };
+            _rootPane->WalkTree([termControl](const auto& p) {
+                if (const auto& taskPane{ p->GetContent().try_as<TasksPaneContent>() })
+                {
+                    taskPane.SetLastActiveControl(termControl);
+                }
+            });
+        }
     }
 
     // Method Description:

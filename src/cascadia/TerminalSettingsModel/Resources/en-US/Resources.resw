@@ -727,4 +727,8 @@
     <value>Open about dialog</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
   </data>
+  <data name="OpenTasksPaneCommandKey" xml:space="preserve">
+    <value>Open tasks pane</value>
+    <comment>This will open a pane with a list of the users's saved commands in it</comment>
+  </data>
 </root>

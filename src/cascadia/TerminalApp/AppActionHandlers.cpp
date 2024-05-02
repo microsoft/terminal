@@ -6,6 +6,7 @@
 
 #include "TerminalPage.h"
 #include "ScratchpadContent.h"
+#include "TasksPaneContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -1473,4 +1474,25 @@ namespace winrt::TerminalApp::implementation
         _ShowAboutDialog();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleOpenTasksPane(const IInspectable& sender,
+                                            const ActionEventArgs& args)
+    {
+        if (Feature_ScratchpadPane::IsEnabled())
+        {
+            const auto& scratchPane{ winrt::make_self<TasksPaneContent>() };
+            scratchPane->UpdateSettings(_settings);
+            // This is maybe a little wacky - add our key event handler to the pane
+            // we made. So that we can get actions for keys that the content didn't
+            // handle.
+            scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+            scratchPane->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+
+            const auto resultPane = std::make_shared<Pane>(*scratchPane);
+            _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
+            args.Handled(true);
+        }
+    }
+
 }

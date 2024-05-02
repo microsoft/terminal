@@ -1,0 +1,143 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="TerminalApp.TasksPaneContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:TerminalApp"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             AllowFocusOnInteraction="True"
+             IsTabStop="True"
+             TabNavigation="Cycle"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <model:IconPathConverter x:Key="IconSourceConverter" />
+
+            <DataTemplate x:Key="TaskItemTemplate"
+                          x:DataType="local:FilteredTask">
+                <mux:TreeViewItem x:Name="rootItem"
+                                  ItemsSource="{x:Bind Children}"
+                                  Visibility="{x:Bind Visibility, Mode=OneWay}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentPresenter Grid.Column="0">
+                            <IconSourceElement Width="16"
+                                               Height="16"
+                                               IconSource="{x:Bind Item.Icon, Converter={StaticResource IconSourceConverter}}"
+                                               Visibility="Collapsed" />
+                        </ContentPresenter>
+
+                        <Button Grid.Row="0"
+                                Grid.RowSpan="1"
+                                Grid.Column="0"
+                                Padding="3"
+                                VerticalAlignment="Bottom"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                Click="_runCommandButtonClicked"
+                                ToolTipService.ToolTip="Input this command">
+
+                            <Button.Content>
+                                <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                          FontSize="12"
+                                          Glyph="&#xE768;" />
+                                <!--
+                                    xE768 is Play, which is just an outline.
+                                    xF5B0 is PlaySolid, also a good option. Seemed
+                                    better to have a lightweight outline though
+                                -->
+                            </Button.Content>
+
+                            <Button.Resources>
+                                <ResourceDictionary>
+                                    <ResourceDictionary.ThemeDictionaries>
+                                        <ResourceDictionary x:Key="Light">
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                        </ResourceDictionary>
+                                        <ResourceDictionary x:Key="Dark">
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                             Color="{StaticResource SystemAccentColor}" />
+                                        </ResourceDictionary>
+                                        <ResourceDictionary x:Key="HighContrast">
+                                            <SolidColorBrush x:Key="ButtonBackground"
+                                                             Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                             Color="{ThemeResource SystemColorHighlightColor}" />
+                                            <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                             Color="{ThemeResource SystemColorHighlightColor}" />
+                                            <SolidColorBrush x:Key="ButtonForeground"
+                                                             Color="{ThemeResource SystemColorButtonTextColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                        </ResourceDictionary>
+                                    </ResourceDictionary.ThemeDictionaries>
+                                </ResourceDictionary>
+                            </Button.Resources>
+                        </Button>
+
+                        <local:HighlightedTextControl Grid.Column="1"
+                                                      HorizontalAlignment="Left"
+                                                      Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="12,0,0,6"
+                                   FontFamily="Cascadia Mono, Consolas"
+                                   IsTextSelectionEnabled="True"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Text="{x:Bind Input}"
+                                   Visibility="{Binding ElementName=rootItem, Path=IsSelected}" />
+                    </Grid>
+                </mux:TreeViewItem>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="_title"
+                   Grid.Row="0"
+                   Margin="9"
+                   FontSize="24"
+                   Text="Tasks" />
+
+        <TextBox x:Name="_filterBox"
+                 Grid.Row="1"
+                 Margin="8"
+                 PlaceholderText="Filter tasks..."
+                 TextChanged="_filterTextChanged" />
+
+        <mux:TreeView x:Name="_treeView"
+                      Grid.Row="2"
+                      CanDragItems="False"
+                      CanReorderItems="False"
+                      ItemTemplate="{StaticResource TaskItemTemplate}" />
+    </Grid>
+
+</UserControl>

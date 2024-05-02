@@ -454,10 +454,10 @@ namespace winrt::TerminalApp::implementation
     // - command - command to dispatch
     // Return Value:
     // - <none>
-    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command)
     {
         const auto& actionAndArgs = command.ActionAndArgs();
-        _actionDispatch->DoAction(actionAndArgs);
+        _actionDispatch->DoAction(sender, actionAndArgs);
     }
 
     // Method Description:
