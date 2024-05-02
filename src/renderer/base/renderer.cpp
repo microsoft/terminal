@@ -1161,7 +1161,8 @@ void Renderer::_updateCursorInfo()
     _currentCursorOptions.cursorType = _pData->GetCursorStyle();
     _currentCursorOptions.fUseColor = useColor;
     _currentCursorOptions.cursorColor = cursorColor;
-    _currentCursorOptions.isOn = _pData->IsCursorOn() && _pData->IsCursorVisible();
+    _currentCursorOptions.isVisible = _pData->IsCursorVisible();
+    _currentCursorOptions.isOn = _currentCursorOptions.isVisible && _pData->IsCursorOn();
     _currentCursorOptions.inViewport = xInRange && yInRange;
 }
 
@@ -1275,7 +1276,7 @@ void Renderer::_prepareNewComposition()
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    if (_currentCursorOptions.inViewport && _currentCursorOptions.isOn)
+    if (_currentCursorOptions.inViewport && _currentCursorOptions.isVisible)
     {
         LOG_IF_FAILED(pEngine->PaintCursor(_currentCursorOptions));
     }
