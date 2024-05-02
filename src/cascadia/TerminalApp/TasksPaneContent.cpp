@@ -86,9 +86,9 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    NewTerminalArgs TasksPaneContent::GetNewTerminalArgs(const bool /* asContent */) const
+    INewContentArgs TasksPaneContent::GetNewTerminalArgs(BuildStartupKind /*kind*/) const
     {
-        return nullptr;
+        return BaseContentArgs(L"snippets");
     }
 
     winrt::hstring TasksPaneContent::Icon() const

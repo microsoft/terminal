@@ -20,7 +20,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
-        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
+        winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
         // TODO! lots of strings here and in XAML that need RS_-ifying
         winrt::hstring Title() { return L"Tasks"; }
@@ -33,14 +33,14 @@ namespace winrt::TerminalApp::implementation
 
         void SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control);
 
-        til::typed_event<> CloseRequested;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;
-        til::typed_event<> TitleChanged;
-        til::typed_event<> TabColorChanged;
-        til::typed_event<> TaskbarProgressChanged;
         til::typed_event<> ConnectionStateChanged;
-        til::typed_event<> ReadOnlyChanged;
-        til::typed_event<> FocusRequested;
+        til::typed_event<IPaneContent> CloseRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent> TitleChanged;
+        til::typed_event<IPaneContent> TabColorChanged;
+        til::typed_event<IPaneContent> TaskbarProgressChanged;
+        til::typed_event<IPaneContent> ReadOnlyChanged;
+        til::typed_event<IPaneContent> FocusRequested;
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
 
