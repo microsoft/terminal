@@ -151,7 +151,7 @@ namespace SettingsModelUnitTests
 
                 "font": {
                     "face": "Cascadia Mono",
-                    "size": 12.0,
+                    "size": 12,
                     "weight": "normal"
                 },
                 "padding": "8, 8, 8, 8",
@@ -175,7 +175,7 @@ namespace SettingsModelUnitTests
                 "backgroundImage": "made_you_look.jpeg",
                 "backgroundImageStretchMode": "uniformToFill",
                 "backgroundImageAlignment": "center",
-                "backgroundImageOpacity": 1.0,
+                "backgroundImageOpacity": 1,
 
                 "scrollbarState": "visible",
                 "snapOnInput": true,
@@ -298,8 +298,8 @@ namespace SettingsModelUnitTests
 
         // complex command with key chords
         static constexpr std::string_view actionsString4A{ R"([
-                                                { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+c" },
-                                                { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+d" }
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
                                             ])" };
 
         // command with name and icon and multiple key chords
@@ -323,8 +323,8 @@ namespace SettingsModelUnitTests
                                                 {
                                                     "name": "Change font size...",
                                                     "commands": [
-                                                        { "command": { "action": "adjustFontSize", "delta": 1.0 } },
-                                                        { "command": { "action": "adjustFontSize", "delta": -1.0 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": -1 } },
                                                         { "command": "resetFontSize" },
                                                     ]
                                                 }
@@ -523,7 +523,7 @@ namespace SettingsModelUnitTests
                 "name": "Profile with legacy font settings",
 
                 "fontFace": "Cascadia Mono",
-                "fontSize": 12.0,
+                "fontSize": 12,
                 "fontWeight": "normal"
             })" };
 
@@ -533,7 +533,7 @@ namespace SettingsModelUnitTests
 
                 "font": {
                     "face": "Cascadia Mono",
-                    "size": 12.0,
+                    "size": 12,
                     "weight": "normal"
                 }
             })" };
@@ -1007,8 +1007,8 @@ namespace SettingsModelUnitTests
                 {
                     "name": "Change font size...",
                     "commands": [
-                        { "command": { "action": "adjustFontSize", "delta": 1.0 } },
-                        { "command": { "action": "adjustFontSize", "delta": -1.0 } },
+                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                        { "command": { "action": "adjustFontSize", "delta": -1 } },
                         { "command": "resetFontSize" },
                     ]
                 }

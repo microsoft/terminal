@@ -34,10 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        static Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
-        static Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
-        static Font FindFontWithLocalizedName(String name);
-
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;

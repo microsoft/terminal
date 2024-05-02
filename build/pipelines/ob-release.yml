@@ -78,6 +78,13 @@ extends:
     buildConfigurations: ${{ parameters.buildConfigurations }}
     buildPlatforms: ${{ parameters.buildPlatforms }}
     codeSign: true
+    signingIdentity:
+      serviceName: $(SigningServiceName)
+      appId: $(SigningAppId)
+      tenantId: $(SigningTenantId)
+      akvName: $(SigningAKVName)
+      authCertName: $(SigningAuthCertName)
+      signCertName: $(SigningSignCertName)
     terminalInternalPackageVersion: ${{ parameters.terminalInternalPackageVersion }}
     publishSymbolsToPublic: ${{ parameters.publishSymbolsToPublic }}
     publishVpackToWindows: ${{ parameters.publishVpackToWindows }}
