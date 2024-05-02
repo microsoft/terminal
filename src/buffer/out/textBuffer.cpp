@@ -1177,37 +1177,36 @@ void TextBuffer::Reset() noexcept
 }
 
 // Arguments:
-// - start: The y-position of the viewport. We'll clear up until here.
-// - height: the number of rows to keep in the buffer.
-void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordType height)
+// - newFirstRow: The current y-position of the viewport. We'll clear up until here.
+// - rowsToKeep: the number of rows to keep in the buffer.
+void TextBuffer::ClearScrollback(const til::CoordType newFirstRow, const til::CoordType rowsToKeep)
 {
-    // We're already at the top? don't clear ahything. There's no scrollback.
-    if (start <= 0)
+    // We're already at the top? don't clear anything. There's no scrollback.
+    if (newFirstRow <= 0)
     {
         return;
     }
-
     // The new viewport should keep 0 rows? Then just reset everything.
-    if (height <= 0)
+    if (rowsToKeep <= 0)
     {
         _decommit();
         return;
     }
 
-    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, start + height });
+    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, newFirstRow + rowsToKeep });
 
     // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
     // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
-    // The start parameter is relative to the _firstRow. The trick to get the content to the absolute start
+    // The newFirstRow parameter is relative to the _firstRow. The trick to get the content to the absolute start
     // is to simply add _firstRow ourselves and then reset it to 0. This causes ScrollRows() to write into
     // the absolute start while reading from relative coordinates. This works because GetRowByOffset()
     // operates modulo the buffer height and so the possibly-too-large startAbsolute won't be an issue.
-    const auto startAbsolute = _firstRow + start;
+    const auto startAbsolute = _firstRow + newFirstRow;
     _firstRow = 0;
-    ScrollRows(startAbsolute, height, -startAbsolute);
+    ScrollRows(startAbsolute, rowsToKeep, -startAbsolute);
 
     const auto end = _estimateOffsetOfLastCommittedRow();
-    for (auto y = height; y <= end; ++y)
+    for (auto y = rowsToKeep; y <= end; ++y)
     {
         GetMutableRowByOffset(y).Reset(_initialAttributes);
     }
