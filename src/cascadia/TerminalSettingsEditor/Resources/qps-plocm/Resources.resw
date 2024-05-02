@@ -733,9 +733,15 @@
     <value>Ьřоẅşé... !!!</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Άδď ňėώ ƒόņţ α×ϊŝ !!! !!</value>
+  </data>
   <data name="Profile_AddNewFontAxis.Text" xml:space="preserve">
     <value>Λďð ňéẁ !!</value>
     <comment>Button label that adds a new font axis for the current font.</comment>
+  </data>
+  <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Аđδ ŉěω ƒóлт ƒ℮ãтцřе !!! !!!</value>
   </data>
   <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
     <value>Άðδ ⁿэщ !!</value>
