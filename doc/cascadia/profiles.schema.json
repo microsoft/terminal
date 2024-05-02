@@ -1506,7 +1506,7 @@
                 "$ref": "#/$defs/ShortcutAction"
               },
               "minItems": 1,
-              "description": "A list of foo bar actions."
+              "description": "A list of other actions."
             }
           }
         }
