@@ -4,8 +4,6 @@
 #include "precomp.h"
 #include "gdirenderer.hpp"
 
-#include <til/small_vector.h>
-
 #include "../inc/unicode.hpp"
 
 #pragma hdrstop
@@ -832,13 +830,6 @@ CATCH_RETURN();
     const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
 
     RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
-
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT GdiEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
-{
-    UNREFERENCED_PARAMETER(rects);
 
     return S_OK;
 }

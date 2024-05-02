@@ -16,7 +16,7 @@ namespace winrt::MonarchPeasantSample::implementation
 
         void raiseActivatedEvent();
 
-        TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        til::typed_event<> WindowActivated;
 
     private:
         uint64_t _id{ 0 };

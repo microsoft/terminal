@@ -175,7 +175,7 @@ public:
         return _expectedOutputCP;
     }
 
-    void CopyToClipboard(const std::wstring_view /*content*/)
+    void CopyToClipboard(const wil::zwstring_view /*content*/)
     {
         Log::Comment(L"CopyToClipboard MOCK called...");
     }
@@ -211,22 +211,6 @@ public:
         Log::Comment(L"NotifyBufferRotation MOCK called...");
     }
 
-    void MarkPrompt(const ScrollMark& /*mark*/) override
-    {
-        Log::Comment(L"MarkPrompt MOCK called...");
-    }
-    void MarkCommandStart() override
-    {
-        Log::Comment(L"MarkCommandStart MOCK called...");
-    }
-    void MarkOutputStart() override
-    {
-        Log::Comment(L"MarkOutputStart MOCK called...");
-    }
-    void MarkCommandFinish(std::optional<unsigned int> /*error*/) override
-    {
-        Log::Comment(L"MarkCommandFinish MOCK called...");
-    }
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override
     {
         Log::Comment(L"InvokeCompletions MOCK called...");

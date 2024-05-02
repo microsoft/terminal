@@ -405,8 +405,6 @@ bool NonClientIslandWindow::Initialize()
 // - <none>
 void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
-    _clientContent = content;
-
     _rootGrid.Children().Append(content);
 
     // SetRow only works on FrameworkElement's, so cast it to a FWE before

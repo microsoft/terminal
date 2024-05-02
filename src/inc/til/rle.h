@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "small_vector.h"
-
 #ifdef UNIT_TESTING
 class RunLengthEncodingTests;
 #endif
@@ -1044,18 +1042,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution
 {
-    template<typename T, typename S, typename Container>
-    class VerifyOutputTraits<::til::basic_rle<T, S, Container>>
-    {
-        using rle_vector = ::til::basic_rle<T, S, Container>;
-
-    public:
-        static WEX::Common::NoThrowString ToString(const rle_vector& object)
-        {
-            return WEX::Common::NoThrowString(object.to_string().c_str());
-        }
-    };
-
     template<typename T, typename S, typename Container>
     class VerifyCompareTraits<::til::basic_rle<T, S, Container>, ::til::basic_rle<T, S, Container>>
     {

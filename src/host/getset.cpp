@@ -717,8 +717,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
 
-        LOG_IF_FAILED(ConsoleImeResizeCompStrView());
-
         // Attempt to "snap" the viewport to the cursor position. If the cursor
         // is not in the current viewport, we'll try and move the viewport so
         // that the cursor is visible.
@@ -730,7 +728,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             // When evaluating the X offset, we must convert the buffer position to
             // equivalent screen coordinates, taking line rendition into account.
             const auto lineRendition = buffer.GetTextBuffer().GetLineRendition(position.y);
-            const auto screenPosition = BufferToScreenLine({ position.x, position.y, position.x, position.y }, lineRendition);
+            const auto screenPosition = BufferToScreenLine(til::inclusive_rect{ position.x, position.y, position.x, position.y }, lineRendition);
 
             if (currentViewport.left > screenPosition.left)
             {
@@ -859,7 +857,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             // GH#3490 - If we're in conpty mode, don't invalidate the entire
             // viewport. In conpty mode, the VtEngine will later decide what
             // part of the buffer actually needs to be re-sent to the terminal.
-            if (!(g.getConsoleInformation().IsInVtIoMode() && g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
+            if (!(g.getConsoleInformation().IsInVtIoMode() &&
+                  g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
             {
                 WriteToScreen(context, context.GetViewport());
             }
@@ -975,7 +974,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 [[nodiscard]] HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                                const WORD attribute) noexcept
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
         LockConsole();
@@ -985,8 +983,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         const TextAttribute attr{ attribute };
         context.SetAttributes(attr);
-
-        gci.ConsoleIme.RefreshAreaAttributes();
 
         return S_OK;
     }

@@ -27,6 +27,9 @@ parameters:
   - name: publishArtifacts
     type: boolean
     default: true
+  - name: signingIdentity
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -82,10 +85,15 @@ jobs:
       versionEnvVar: XES_PACKAGEVERSIONNUMBER
 
   - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@3
+    - task: EsrpCodeSigning@5
       displayName: Submit *.nupkg to ESRP for code signing
       inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        ConnectedServiceName: ${{ parameters.signingIdentity.serviceName }}
+        AppRegistrationClientId: ${{ parameters.signingIdentity.appId }}
+        AppRegistrationTenantId: ${{ parameters.signingIdentity.tenantId }}
+        AuthAKVName: ${{ parameters.signingIdentity.akvName }}
+        AuthCertName: ${{ parameters.signingIdentity.authCertName }}
+        AuthSignCertName: ${{ parameters.signingIdentity.signCertName }}
         FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
         Pattern: '*.nupkg'
         UseMinimatch: true

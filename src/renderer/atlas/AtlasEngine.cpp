@@ -18,6 +18,7 @@
 // and thus may access both _r and _api.
 
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
+#pragma warning(disable : 4127) // conditional expression is constant
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
@@ -41,8 +42,7 @@ AtlasEngine::AtlasEngine()
     THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_p.dwriteFactory), reinterpret_cast<::IUnknown**>(_p.dwriteFactory.addressof())));
     _p.dwriteFactory4 = _p.dwriteFactory.try_query<IDWriteFactory4>();
 
-    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_p.systemFontFallback.addressof()));
-    _p.systemFontFallback1 = _p.systemFontFallback.try_query<IDWriteFontFallback1>();
+    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_api.systemFontFallback.addressof()));
 
     wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
     THROW_IF_FAILED(_p.dwriteFactory->CreateTextAnalyzer(textAnalyzer.addressof()));
@@ -286,8 +286,36 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(RenderFrameInfo info) noexcept
 {
+    // remove the highlighted regions that falls outside of the dirty region
+    {
+        const auto& highlights = info.searchHighlights;
+
+        // get the buffer origin relative to the viewport, and use it to calculate
+        // the dirty region to be relative to the buffer origin
+        const til::CoordType offsetX = _p.s->viewportOffset.x;
+        const til::CoordType offsetY = _p.s->viewportOffset.y;
+        const til::point bufferOrigin{ -offsetX, -offsetY };
+        const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
+
+        const auto hiBeg = std::lower_bound(highlights.begin(), highlights.end(), dr.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
+        const auto hiEnd = std::upper_bound(hiBeg, highlights.end(), dr.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
+        _api.searchHighlights = { hiBeg, hiEnd };
+
+        // do the same for the focused search highlight
+        if (info.searchHighlightFocused)
+        {
+            const auto focusedStartY = info.searchHighlightFocused->start.y;
+            const auto focusedEndY = info.searchHighlightFocused->end.y;
+            const auto isFocusedInside = (focusedStartY >= dr.top && focusedStartY < dr.bottom) || (focusedEndY >= dr.top && focusedEndY < dr.bottom) || (focusedStartY < dr.top && focusedEndY >= dr.bottom);
+            if (isFocusedInside)
+            {
+                _api.searchHighlightFocused = { info.searchHighlightFocused, 1 };
+            }
+        }
+    }
+
     return S_OK;
 }
 
@@ -308,6 +336,126 @@ CATCH_RETURN()
 {
     return S_OK;
 }
+
+void AtlasEngine::_fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept
+{
+    const auto bitmap = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
+    const auto shift = gsl::narrow_cast<u8>(_p.rows[y]->lineRendition != LineRendition::SingleWidth);
+    auto beg = bitmap + (x1 << shift);
+    auto end = bitmap + (x2 << shift);
+
+    const u32 colors[] = {
+        u32ColorPremultiply(bgColor),
+        fgColor,
+    };
+
+    // This fills the color in the background bitmap, and then in the foreground bitmap.
+    for (size_t i = 0; i < 2; ++i)
+    {
+        const auto color = colors[i];
+
+        for (auto it = beg; it != end; ++it)
+        {
+            if (*it != color)
+            {
+                _p.colorBitmapGenerations[i].bump();
+                std::fill(it, end, color);
+                break;
+            }
+        }
+
+        // go to the same range in the same row, but in the foreground bitmap
+        beg += _p.colorBitmapDepthStride;
+        end += _p.colorBitmapDepthStride;
+    }
+}
+
+// Method Description:
+// - Applies the given highlighting colors to the columns in the highlighted regions within a given range.
+// - Resumes from the last partially painted region if any.
+// Arguments:
+// - highlights: the list of highlighted regions (yet to be painted)
+// - row: the row for which highlighted regions are to be painted
+// - begX: the starting (inclusive) column to paint from (in Buffer coord)
+// - endX: the ending (exclusive) column to paint up to (in Buffer coord)
+// - fgColor: the foreground highlight color
+// - bgColor: the background highlight color
+// Returns:
+// - S_OK if we painted successfully, else an appropriate HRESULT error code
+[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept
+try
+{
+    if (highlights.empty())
+    {
+        return S_OK;
+    }
+
+    const til::CoordType y = row;
+    const til::CoordType x1 = begX;
+    const til::CoordType x2 = endX;
+    const auto offset = til::point{ _p.s->viewportOffset.x, _p.s->viewportOffset.y };
+    auto it = highlights.begin();
+    const auto itEnd = highlights.end();
+    auto hiStart = it->start - offset;
+    auto hiEnd = it->end - offset;
+
+    // Nothing to paint if we haven't reached the row where the highlight region begins
+    if (y < hiStart.y)
+    {
+        return S_OK;
+    }
+
+    // We might have painted a multi-line highlight region in the last call,
+    // so we need to make sure we paint the whole region before moving on to
+    // the next region.
+    if (y > hiStart.y)
+    {
+        const auto isFinalRow = y == hiEnd.y;
+        const auto end = isFinalRow ? std::min(hiEnd.x + 1, x2) : x2;
+        _fillColorBitmap(row, x1, end, fgColor, bgColor);
+
+        // Return early if we couldn't paint the whole region. We will resume
+        // from here in the next call.
+        if (!isFinalRow || end == x2)
+        {
+            return S_OK;
+        }
+
+        ++it;
+    }
+
+    // Pick a highlighted region and (try) to paint it
+    while (it != itEnd)
+    {
+        hiStart = it->start - offset;
+        hiEnd = it->end - offset;
+
+        const auto isStartInside = y == hiStart.y && hiStart.x < x2;
+        const auto isEndInside = y == hiEnd.y && hiEnd.x < x2;
+        if (isStartInside && isEndInside)
+        {
+            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x) + 1, fgColor, bgColor);
+            ++it;
+        }
+        else
+        {
+            // Paint the region partially if start is within the range.
+            if (isStartInside)
+            {
+                const auto start = std::max(x1, hiStart.x);
+                _fillColorBitmap(y, start, x2, fgColor, bgColor);
+            }
+
+            break;
+        }
+    }
+
+    // Shorten the list by removing processed regions
+    highlights = { it, itEnd };
+
+    return S_OK;
+}
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
@@ -346,34 +494,12 @@ try
         _api.bufferLineColumn.emplace_back(columnEnd);
     }
 
-    {
-        const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
-        auto beg = row + (static_cast<size_t>(x) << shift);
-        auto end = row + (static_cast<size_t>(columnEnd) << shift);
+    // Apply the current foreground and background colors to the cells
+    _fillColorBitmap(y, x, columnEnd, _api.currentForeground, _api.currentBackground);
 
-        const u32 colors[] = {
-            u32ColorPremultiply(_api.currentBackground),
-            _api.currentForeground,
-        };
-
-        for (size_t i = 0; i < 2; ++i)
-        {
-            const auto color = colors[i];
-
-            for (auto it = beg; it != end; ++it)
-            {
-                if (*it != color)
-                {
-                    _p.colorBitmapGenerations[i].bump();
-                    std::fill(it, end, color);
-                    break;
-                }
-            }
-
-            beg += _p.colorBitmapDepthStride;
-            end += _p.colorBitmapDepthStride;
-        }
-    }
+    // Apply the highlighting colors to the highlighted cells
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
@@ -415,40 +541,6 @@ try
     _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
     _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
     _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
-    return S_OK;
-}
-CATCH_RETURN()
-
-[[nodiscard]] HRESULT AtlasEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
-try
-{
-    if (rects.empty())
-    {
-        return S_OK;
-    }
-
-    for (const auto& rect : rects)
-    {
-        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
-        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
-        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
-
-        if (rect.bottom <= 0 || rect.top >= _p.s->viewportCellCount.y)
-        {
-            continue;
-        }
-
-        const auto bg = &_p.backgroundBitmap[_p.colorBitmapRowStride * y];
-        const auto fg = &_p.foregroundBitmap[_p.colorBitmapRowStride * y];
-        std::fill(bg + from, bg + to, 0xff3296ff);
-        std::fill(fg + from, fg + to, 0xff000000);
-    }
-
-    for (int i = 0; i < 2; ++i)
-    {
-        _p.colorBitmapGenerations[i].bump();
-    }
-
     return S_OK;
 }
 CATCH_RETURN()
@@ -550,7 +642,7 @@ void AtlasEngine::_handleSettingsUpdate()
 
     if (targetChanged)
     {
-        // target->useSoftwareRendering affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
+        // target->useWARP affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
         // This will indirectly also recreate the backend, when AtlasEngine::_recreateAdapter() detects this change.
         _p.dxgi = {};
     }
@@ -575,7 +667,7 @@ void AtlasEngine::_recreateFontDependentResources()
     {
         wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
 
-        if (FAILED(GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH)))
+        if (!GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH))
         {
             memcpy(&localeName[0], L"en-US", 12);
         }
@@ -841,7 +933,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
 
     if (textFormatAxis)
     {
-        THROW_IF_FAILED(_p.systemFontFallback1->MapCharacters(
+        THROW_IF_FAILED(_p.s->font->fontFallback1->MapCharacters(
             /* analysisSource     */ &analysisSource,
             /* textPosition       */ 0,
             /* textLength         */ textLength,
@@ -859,7 +951,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
         const auto baseStyle = WI_IsFlagSet(_api.attributes, FontRelevantAttributes::Italic) ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
         wil::com_ptr<IDWriteFont> font;
 
-        THROW_IF_FAILED(_p.systemFontFallback->MapCharacters(
+        THROW_IF_FAILED(_p.s->font->fontFallback->MapCharacters(
             /* analysisSource     */ &analysisSource,
             /* textPosition       */ 0,
             /* textLength         */ textLength,

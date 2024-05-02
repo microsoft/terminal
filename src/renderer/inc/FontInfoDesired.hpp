@@ -36,10 +36,12 @@ public:
 
     void SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept;
     void SetEnableBuiltinGlyphs(bool builtinGlyphs) noexcept;
+    void SetEnableColorGlyphs(bool colorGlyphs) noexcept;
 
     const CSSLengthPercentage& GetCellWidth() const noexcept;
     const CSSLengthPercentage& GetCellHeight() const noexcept;
     bool GetEnableBuiltinGlyphs() const noexcept;
+    bool GetEnableColorGlyphs() const noexcept;
     float GetFontSize() const noexcept;
     til::size GetEngineSize() const noexcept;
     bool IsDefaultRasterFont() const noexcept;
@@ -50,4 +52,5 @@ private:
     CSSLengthPercentage _cellWidth;
     CSSLengthPercentage _cellHeight;
     bool _builtinGlyphs = false;
+    bool _colorGlyphs = true;
 };

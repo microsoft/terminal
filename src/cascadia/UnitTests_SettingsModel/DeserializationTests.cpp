@@ -5,11 +5,9 @@
 
 #include "../TerminalSettingsModel/ColorScheme.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../TerminalSettingsModel/resource.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
-
-#include <defaults.h>
-#include <userDefaults.h>
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -49,6 +47,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ValidateKeybindingsWarnings);
         TEST_METHOD(ValidateColorSchemeInCommands);
         TEST_METHOD(ValidateExecuteCommandlineWarning);
+        TEST_METHOD(TestClampingOfStartupColumnAndViewProperties);
         TEST_METHOD(TestTrailingCommas);
         TEST_METHOD(TestCommandsAndKeybindings);
         TEST_METHOD(TestNestedCommandWithoutName);
@@ -541,7 +540,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
 
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
@@ -619,7 +618,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
 
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
@@ -656,7 +655,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
         const auto profiles = settings->AllProfiles();
         VERIFY_ARE_EQUAL(5u, profiles.Size());
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", profiles.GetAt(0).Name());
@@ -1065,7 +1064,7 @@ namespace SettingsModelUnitTests
         const auto guid1String = L"{6239a42c-1111-49a3-80bd-e8fdd045185c}";
         const winrt::guid guid1{ Utils::GuidFromString(guid1String) };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, implementation::LoadStringResource(IDR_DEFAULTS));
 
         VERIFY_ARE_EQUAL(guid1String, settings->GlobalSettings().UnparsedDefaultProfile());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
@@ -1303,6 +1302,20 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->Warnings().GetAt(3));
     }
 
+    void DeserializationTests::TestClampingOfStartupColumnAndViewProperties()
+    {
+        static constexpr std::string_view inputSettings{ R"({
+            "initialCols" : 1000000,
+            "initialRows" : -1000000,
+            "profiles": [{ "name": "profile0" }]
+        })" };
+
+        const auto settings = createSettings(inputSettings);
+
+        VERIFY_ARE_EQUAL(999, settings->GlobalSettings().InitialCols());
+        VERIFY_ARE_EQUAL(1, settings->GlobalSettings().InitialRows());
+    }
+
     void DeserializationTests::TestTrailingCommas()
     {
         static constexpr std::string_view badSettings{ R"({
@@ -1377,11 +1390,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
 
         Log::Comment(L"Note that we're skipping ctrl+B, since that doesn't have `keys` set.");
@@ -1394,11 +1409,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
@@ -1408,11 +1425,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
@@ -1422,11 +1441,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             const KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
@@ -1436,11 +1457,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
 
         Log::Comment(L"Now verify the commands");
@@ -1465,11 +1488,13 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
         }
         {
             // This was renamed to null (aka removed from the name map) in F. So this does not exist.
@@ -2006,7 +2031,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2029,7 +2054,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2054,7 +2079,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2088,7 +2113,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2123,7 +2148,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2149,7 +2174,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2175,7 +2200,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
         loader.FinalizeLayering();
@@ -2189,7 +2214,7 @@ namespace SettingsModelUnitTests
         const auto oldResult{ oldSettings->ToJson() };
 
         Log::Comment(L"Now, create a _new_ settings object from the re-serialization of the first");
-        implementation::SettingsLoader newLoader{ toString(oldResult), DefaultJson };
+        implementation::SettingsLoader newLoader{ toString(oldResult), implementation::LoadStringResource(IDR_DEFAULTS) };
         // NOTABLY! Don't load the fragment here.
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
@@ -2223,7 +2248,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        implementation::SettingsLoader loader{ settings1Json, DefaultJson };
+        implementation::SettingsLoader loader{ settings1Json, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
         loader.FinalizeLayering();
 

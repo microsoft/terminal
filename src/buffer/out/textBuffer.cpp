@@ -11,7 +11,6 @@
 #include "UTextAdapter.h"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../renderer/base/renderer.hpp"
-#include "../types/inc/convert.hpp"
 #include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
@@ -563,12 +562,42 @@ til::point TextBuffer::NavigateCursor(til::point position, til::CoordType distan
 
 // This function is intended for writing regular "lines" of text as it'll set the wrap flag on the given row.
 // You can continue calling the function on the same row as long as state.columnEnd < state.columnLimit.
-void TextBuffer::Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
+void TextBuffer::Replace(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
 {
     auto& r = GetMutableRowByOffset(row);
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
+}
+
+void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
+{
+    auto& r = GetMutableRowByOffset(row);
+    auto& scratch = GetScratchpadRow();
+
+    scratch.CopyFrom(r);
+
+    r.ReplaceText(state);
+    r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
+
+    // Restore trailing text from our backup in scratch.
+    RowWriteState restoreState{
+        .text = scratch.GetText(state.columnBegin, state.columnLimit),
+        .columnBegin = state.columnEnd,
+        .columnLimit = state.columnLimit,
+    };
+    r.ReplaceText(restoreState);
+
+    // Restore trailing attributes as well.
+    if (const auto copyAmount = restoreState.columnEnd - restoreState.columnBegin; copyAmount > 0)
+    {
+        auto& rowAttr = r.Attributes();
+        const auto& scratchAttr = scratch.Attributes();
+        const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), gsl::narrow<uint16_t>(state.columnBegin + copyAmount));
+        rowAttr.replace(gsl::narrow<uint16_t>(restoreState.columnBegin), gsl::narrow<uint16_t>(restoreState.columnEnd), restoreAttr);
+    }
+
+    TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, restoreState.columnEndDirty, row + 1 }));
 }
 
 // Fills an area of the buffer with a given fill character(s) and attributes.
@@ -1084,11 +1113,8 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {
-            const auto fillChar = L' ';
             const auto fillOffset = GetLineWidth(rowIndex);
-            const auto fillLength = gsl::narrow<size_t>(GetSize().Width() - fillOffset);
-            const OutputCellIterator fillData{ fillChar, fillAttributes, fillLength };
-            row.WriteCells(fillData, fillOffset, false);
+            FillRect({ fillOffset, rowIndex, til::CoordTypeMax, rowIndex + 1 }, L" ", fillAttributes);
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
@@ -1179,7 +1205,6 @@ void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordTyp
         GetMutableRowByOffset(y).Reset(_initialAttributes);
     }
 
-    ScrollMarks(-start);
     ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
 }
 
@@ -1240,19 +1265,19 @@ Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
     return _renderer;
 }
 
+void TextBuffer::NotifyPaintFrame() noexcept
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.NotifyPaintFrame();
+    }
+}
+
 void TextBuffer::TriggerRedraw(const Viewport& viewport)
 {
     if (_isActiveBuffer)
     {
         _renderer.TriggerRedraw(viewport);
-    }
-}
-
-void TextBuffer::TriggerRedrawCursor(const til::point position)
-{
-    if (_isActiveBuffer)
-    {
-        _renderer.TriggerRedrawCursor(&position);
     }
 }
 
@@ -1298,7 +1323,8 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 // - the delimiter class for the given char
 DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const
 {
-    return GetRowByOffset(pos.y).DelimiterClassAt(pos.x, wordDelimiters);
+    const auto realPos = ScreenToBufferPosition(pos);
+    return GetRowByOffset(realPos.y).DelimiterClassAt(realPos.x, wordDelimiters);
 }
 
 // Method Description:
@@ -1414,10 +1440,23 @@ til::point TextBuffer::_GetWordStartForSelection(const til::point target, const 
     // expand left until we hit the left boundary or a different delimiter class
     while (result != bufferSize.Origin() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        //prevent selection wrapping on whitespace selection
-        if (isControlChar && result.x == bufferSize.Left())
+        if (result.x == bufferSize.Left())
         {
-            break;
+            // Prevent wrapping to the previous line if the selection begins on whitespace
+            if (isControlChar)
+            {
+                break;
+            }
+
+            if (result.y > 0)
+            {
+                // Prevent wrapping to the previous line if it was hard-wrapped (e.g. not forced by us to wrap)
+                const auto& priorRow = GetRowByOffset(result.y - 1);
+                if (!priorRow.WasWrapForced())
+                {
+                    break;
+                }
+            }
         }
         bufferSize.DecrementInBounds(result);
     }
@@ -1537,10 +1576,22 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
     // expand right until we hit the right boundary as a ControlChar or a different delimiter class
     while (result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        if (isControlChar && result.x == bufferSize.RightInclusive())
+        if (result.x == bufferSize.RightInclusive())
         {
-            break;
+            // Prevent wrapping to the next line if the selection begins on whitespace
+            if (isControlChar)
+            {
+                break;
+            }
+
+            // Prevent wrapping to the next line if this one was hard-wrapped (e.g. not forced by us to wrap)
+            const auto& row = GetRowByOffset(result.y);
+            if (!row.WasWrapForced())
+            {
+                break;
+            }
         }
+
         bufferSize.IncrementInBoundsCircular(result);
     }
 
@@ -1894,8 +1945,8 @@ std::vector<til::point_span> TextBuffer::GetTextSpans(til::point start, til::poi
         // equivalent buffer offsets, taking line rendition into account.
         if (!bufferCoordinates)
         {
-            higherCoord = ScreenToBufferLine(higherCoord, GetLineRendition(higherCoord.y));
-            lowerCoord = ScreenToBufferLine(lowerCoord, GetLineRendition(lowerCoord.y));
+            higherCoord = ScreenToBufferLineInclusive(higherCoord, GetLineRendition(higherCoord.y));
+            lowerCoord = ScreenToBufferLineInclusive(lowerCoord, GetLineRendition(lowerCoord.y));
         }
 
         til::inclusive_rect asRect = { higherCoord.x, higherCoord.y, lowerCoord.x, lowerCoord.y };
@@ -1969,25 +2020,10 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
 // - end - where to end getting text
 // Return Value:
 // - Just the text.
-std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point& end) const
+std::wstring TextBuffer::GetPlainText(const til::point start, const til::point end) const
 {
-    std::wstring text;
-    auto spanLength = SpanLength(start, end);
-    text.reserve(spanLength);
-
-    auto it = GetCellDataAt(start);
-
-    for (; it && spanLength > 0; ++it, --spanLength)
-    {
-        const auto& cell = *it;
-        if (cell.DbcsAttr() != DbcsAttribute::Trailing)
-        {
-            const auto chars = cell.Chars();
-            text.append(chars);
-        }
-    }
-
-    return text;
+    const auto req = CopyRequest::FromConfig(*this, start, end, true, false, false, false);
+    return GetPlainText(req);
 }
 
 // Routine Description:
@@ -2006,8 +2042,8 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
     if (req.blockSelection)
     {
         const auto lineRendition = row.GetLineRendition();
-        const auto minX = req.bufferCoordinates ? req.minX : ScreenToBufferLine(til::point{ req.minX, iRow }, lineRendition).x;
-        const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLine(til::point{ req.maxX, iRow }, lineRendition).x;
+        const auto minX = req.bufferCoordinates ? req.minX : ScreenToBufferLineInclusive(til::point{ req.minX, iRow }, lineRendition).x;
+        const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLineInclusive(til::point{ req.maxX, iRow }, lineRendition).x;
 
         rowBeg = minX;
         rowEnd = maxX + 1; // +1 to get an exclusive end
@@ -2015,8 +2051,8 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
     else
     {
         const auto lineRendition = row.GetLineRendition();
-        const auto beg = req.bufferCoordinates ? req.beg : ScreenToBufferLine(req.beg, lineRendition);
-        const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLine(req.end, lineRendition);
+        const auto beg = req.bufferCoordinates ? req.beg : ScreenToBufferLineInclusive(req.beg, lineRendition);
+        const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLineInclusive(req.end, lineRendition);
 
         rowBeg = iRow != beg.y ? 0 : beg.x;
         rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x + 1; // +1 to get an exclusive end
@@ -2375,7 +2411,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
 
         // \fsN: specifies font size in half-points. E.g. \fs20 results in a font
         // size of 10 pts. That's why, font size is multiplied by 2 here.
-        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\fs{}"), std::to_string(2 * fontHeightPoints));
+        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\fs{}"), 2 * fontHeightPoints);
 
         // Set the background color for the page. But the standard way (\cbN) to do
         // this isn't supported in Word. However, the following control words sequence
@@ -2502,8 +2538,260 @@ void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_
         {
             // Windows uses unsigned wchar_t - RTF uses signed ones.
             // '?' is the fallback ascii character.
-            const auto codeUnitRTFStr = std::to_string(til::bit_cast<int16_t>(codeUnit));
-            fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\u{}?"), codeUnitRTFStr);
+            fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\u{}?"), std::bit_cast<int16_t>(codeUnit));
+        }
+    }
+}
+
+void TextBuffer::Serialize(const wchar_t* destination) const
+{
+    const wil::unique_handle file{ CreateFileW(destination, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+    THROW_LAST_ERROR_IF(!file);
+
+    static constexpr size_t writeThreshold = 32 * 1024;
+    std::wstring buffer;
+    buffer.reserve(writeThreshold + writeThreshold / 2);
+    buffer.push_back(L'\uFEFF');
+
+    const til::CoordType lastRowWithText = GetLastNonSpaceCharacter(nullptr).y;
+    CharacterAttributes previousAttr = CharacterAttributes::Unused1;
+    TextColor previousFg;
+    TextColor previousBg;
+    TextColor previousUl;
+    uint16_t previousHyperlinkId = 0;
+
+    // This iterates through each row. The exit condition is at the end
+    // of the for() loop so that we can properly handle file flushing.
+    for (til::CoordType currentRow = 0;; currentRow++)
+    {
+        const auto& row = GetRowByOffset(currentRow);
+
+        if (const auto lr = row.GetLineRendition(); lr != LineRendition::SingleWidth)
+        {
+            static constexpr std::wstring_view mappings[] = {
+                L"\x1b#6", // LineRendition::DoubleWidth
+                L"\x1b#3", // LineRendition::DoubleHeightTop
+                L"\x1b#4", // LineRendition::DoubleHeightBottom
+            };
+            const auto idx = std::clamp(static_cast<int>(lr) - 1, 0, 2);
+            buffer.append(til::at(mappings, idx));
+        }
+
+        const auto& runs = row.Attributes().runs();
+        auto it = runs.begin();
+        const auto end = runs.end();
+        const auto last = end - 1;
+        til::CoordType oldX = 0;
+
+        for (; it != end; ++it)
+        {
+            const auto attr = it->value.GetCharacterAttributes();
+            const auto hyperlinkId = it->value.GetHyperlinkId();
+            const auto fg = it->value.GetForeground();
+            const auto bg = it->value.GetBackground();
+            const auto ul = it->value.GetUnderlineColor();
+
+            if (previousAttr != attr)
+            {
+                auto attrDelta = attr ^ previousAttr;
+
+                // There's no escape sequence that only turns off either bold/intense or dim/faint. SGR 22 turns off both.
+                // This results in two issues in our generic "Mapping" code below. Assuming, both Intense and Faint were on...
+                // * ...and either turned off, it would emit SGR 22 which turns both attributes off = Wrong.
+                // * ...and both are now off, it would emit SGR 22 twice.
+                //
+                // This extra branch takes care of both issues. If both attributes turned off it'll emit a single \x1b[22m,
+                // if faint turned off \x1b[22;1m (intense is still on), and \x1b[22;2m if intense turned off (vice versa).
+                if (WI_AreAllFlagsSet(previousAttr, CharacterAttributes::Intense | CharacterAttributes::Faint) &&
+                    WI_IsAnyFlagSet(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint))
+                {
+                    wchar_t buf[8] = L"\x1b[22m";
+                    size_t len = 5;
+
+                    if (WI_IsAnyFlagSet(attr, CharacterAttributes::Intense | CharacterAttributes::Faint))
+                    {
+                        buf[4] = L';';
+                        buf[5] = WI_IsAnyFlagSet(attr, CharacterAttributes::Intense) ? L'1' : L'2';
+                        buf[6] = L'm';
+                        len = 7;
+                    }
+
+                    buffer.append(&buf[0], len);
+                    WI_ClearAllFlags(attrDelta, CharacterAttributes::Intense | CharacterAttributes::Faint);
+                }
+
+                {
+                    struct Mapping
+                    {
+                        CharacterAttributes attr;
+                        uint8_t change[2]; // [0] = off, [1] = on
+                    };
+                    static constexpr Mapping mappings[] = {
+                        { CharacterAttributes::Intense, { 22, 1 } },
+                        { CharacterAttributes::Italics, { 23, 3 } },
+                        { CharacterAttributes::Blinking, { 25, 5 } },
+                        { CharacterAttributes::Invisible, { 28, 8 } },
+                        { CharacterAttributes::CrossedOut, { 29, 9 } },
+                        { CharacterAttributes::Faint, { 22, 2 } },
+                        { CharacterAttributes::TopGridline, { 55, 53 } },
+                        { CharacterAttributes::ReverseVideo, { 27, 7 } },
+                    };
+                    for (const auto& mapping : mappings)
+                    {
+                        if (WI_IsAnyFlagSet(attrDelta, mapping.attr))
+                        {
+                            const auto n = til::at(mapping.change, WI_IsAnyFlagSet(attr, mapping.attr));
+                            fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), n);
+                        }
+                    }
+                }
+
+                if (WI_IsAnyFlagSet(attrDelta, CharacterAttributes::UnderlineStyle))
+                {
+                    static constexpr std::wstring_view mappings[] = {
+                        L"\x1b[24m", // UnderlineStyle::NoUnderline
+                        L"\x1b[4m", // UnderlineStyle::SinglyUnderlined
+                        L"\x1b[21m", // UnderlineStyle::DoublyUnderlined
+                        L"\x1b[4:3m", // UnderlineStyle::CurlyUnderlined
+                        L"\x1b[4:4m", // UnderlineStyle::DottedUnderlined
+                        L"\x1b[4:5m", // UnderlineStyle::DashedUnderlined
+                    };
+
+                    auto idx = WI_EnumValue(it->value.GetUnderlineStyle());
+                    if (idx >= std::size(mappings))
+                    {
+                        idx = 1; // UnderlineStyle::SinglyUnderlined
+                    }
+
+                    buffer.append(til::at(mappings, idx));
+                }
+
+                previousAttr = attr;
+            }
+
+            if (previousFg != fg)
+            {
+                switch (fg.GetType())
+                {
+                case ColorType::IsDefault:
+                    buffer.append(L"\x1b[39m");
+                    break;
+                case ColorType::IsIndex16:
+                {
+                    uint8_t index = WI_IsFlagSet(fg.GetIndex(), 8) ? 90 : 30;
+                    index += fg.GetIndex() & 7;
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
+                    break;
+                }
+                case ColorType::IsIndex256:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;5;{}m"), fg.GetIndex());
+                    break;
+                case ColorType::IsRgb:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[38;2;{};{};{}m"), fg.GetR(), fg.GetG(), fg.GetB());
+                    break;
+                default:
+                    break;
+                }
+                previousFg = fg;
+            }
+
+            if (previousBg != bg)
+            {
+                switch (bg.GetType())
+                {
+                case ColorType::IsDefault:
+                    buffer.append(L"\x1b[49m");
+                    break;
+                case ColorType::IsIndex16:
+                {
+                    uint8_t index = WI_IsFlagSet(bg.GetIndex(), 8) ? 100 : 40;
+                    index += bg.GetIndex() & 7;
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[{}m"), index);
+                    break;
+                }
+                case ColorType::IsIndex256:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;5;{}m"), bg.GetIndex());
+                    break;
+                case ColorType::IsRgb:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[48;2;{};{};{}m"), bg.GetR(), bg.GetG(), bg.GetB());
+                    break;
+                default:
+                    break;
+                }
+                previousBg = bg;
+            }
+
+            if (previousUl != ul)
+            {
+                switch (fg.GetType())
+                {
+                case ColorType::IsDefault:
+                    buffer.append(L"\x1b[59m");
+                    break;
+                case ColorType::IsIndex256:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:5:{}m"), ul.GetIndex());
+                    break;
+                case ColorType::IsRgb:
+                    fmt::format_to(std::back_inserter(buffer), FMT_COMPILE(L"\x1b[58:2::{}:{}:{}m"), ul.GetR(), ul.GetG(), ul.GetB());
+                    break;
+                default:
+                    break;
+                }
+                previousUl = ul;
+            }
+
+            if (previousHyperlinkId != hyperlinkId)
+            {
+                if (hyperlinkId)
+                {
+                    const auto uri = GetHyperlinkUriFromId(hyperlinkId);
+                    if (!uri.empty())
+                    {
+                        buffer.append(L"\x1b]8;;");
+                        buffer.append(uri);
+                        buffer.append(L"\x1b\\");
+                        previousHyperlinkId = hyperlinkId;
+                    }
+                }
+                else
+                {
+                    buffer.append(L"\x1b]8;;\x1b\\");
+                    previousHyperlinkId = 0;
+                }
+            }
+
+            auto newX = oldX + it->length;
+            // Trim whitespace with default attributes from the end of each line.
+            if (it == last && it->value == TextAttribute{})
+            {
+                // This can result in oldX > newX, but that's okay because GetText()
+                // is robust against that and returns an empty string.
+                newX = row.MeasureRight();
+            }
+
+            buffer.append(row.GetText(oldX, newX));
+            oldX = newX;
+        }
+
+        const auto moreRowsRemaining = currentRow < lastRowWithText;
+
+        if (!row.WasWrapForced() || !moreRowsRemaining)
+        {
+            buffer.append(L"\r\n");
+        }
+
+        if (buffer.size() >= writeThreshold || !moreRowsRemaining)
+        {
+            const auto fileSize = gsl::narrow<DWORD>(buffer.size() * sizeof(wchar_t));
+            DWORD bytesWritten = 0;
+            THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), buffer.data(), fileSize, &bytesWritten, nullptr));
+            THROW_WIN32_IF_MSG(ERROR_WRITE_FAULT, bytesWritten != fileSize, "failed to write");
+            buffer.clear();
+        }
+
+        if (!moreRowsRemaining)
+        {
+            break;
         }
     }
 }
@@ -2615,6 +2903,18 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             // * when a client application starts writing on this new, empty line,
             //   enlarging the buffer unwraps the text onto the preceding line.
             oldRowLimit = std::max(oldRowLimit, oldCursorPos.x + 1);
+        }
+
+        // Immediately copy this mark over to our new row. The positions of the
+        // marks themselves will be preserved, since they're just text
+        // attributes. But the "bookmark" needs to get moved to the new row too.
+        // * If a row wraps as it reflows, that's fine - we want to leave the
+        //   mark on the row it started on.
+        // * If the second row of a wrapped row had a mark, and it de-flows onto a
+        //   single row, that's fine! The mark was on that logical row.
+        if (oldRow.GetScrollbarData().has_value())
+        {
+            newBuffer.GetMutableRowByOffset(newY).SetScrollbarData(oldRow.GetScrollbarData());
         }
 
         til::CoordType oldX = 0;
@@ -2736,9 +3036,6 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     assert(newCursorPos.y >= 0 && newCursorPos.y < newHeight);
     newCursor.SetSize(oldCursor.GetSize());
     newCursor.SetPosition(newCursorPos);
-
-    newBuffer._marks = oldBuffer._marks;
-    newBuffer._trimMarksOutsideBuffer();
 }
 
 // Method Description:
@@ -2888,9 +3185,82 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
     return results;
 }
 
-const std::vector<ScrollMark>& TextBuffer::GetMarks() const noexcept
+// Collect up all the rows that were marked, and the data marked on that row.
+// This is what should be used for hot paths, like updating the scrollbar.
+std::vector<ScrollMark> TextBuffer::GetMarkRows() const
 {
-    return _marks;
+    std::vector<ScrollMark> marks;
+    const auto bottom = _estimateOffsetOfLastCommittedRow();
+    for (auto y = 0; y <= bottom; y++)
+    {
+        const auto& row = GetRowByOffset(y);
+        const auto& data{ row.GetScrollbarData() };
+        if (data.has_value())
+        {
+            marks.emplace_back(y, *data);
+        }
+    }
+    return marks;
+}
+
+// Get all the regions for all the shell integration marks in the buffer.
+// Marks will be returned in top-down order.
+//
+// This possibly iterates over every run in the buffer, so don't do this on a
+// hot path. Just do this once per user input, if at all possible.
+//
+// Use `limit` to control how many you get, _starting from the bottom_. (e.g.
+// limit=1 will just give you the "most recent mark").
+std::vector<MarkExtents> TextBuffer::GetMarkExtents(size_t limit) const
+{
+    if (limit == 0u)
+    {
+        return {};
+    }
+
+    std::vector<MarkExtents> marks{};
+    const auto bottom = _estimateOffsetOfLastCommittedRow();
+    auto lastPromptY = bottom;
+    for (auto promptY = bottom; promptY >= 0; promptY--)
+    {
+        const auto& currRow = GetRowByOffset(promptY);
+        auto& rowPromptData = currRow.GetScrollbarData();
+        if (!rowPromptData.has_value())
+        {
+            // This row didn't start a prompt, don't even look here.
+            continue;
+        }
+
+        // Future thought! In #11000 & #14792, we considered the possibility of
+        // scrolling to only an error mark, or something like that. Perhaps in
+        // the future, add a customizable filter that's a set of types of mark
+        // to include?
+        //
+        // For now, skip any "Default" marks, since those came from the UI. We
+        // just want the ones that correspond to shell integration.
+
+        if (rowPromptData->category == MarkCategory::Default)
+        {
+            continue;
+        }
+
+        // This row did start a prompt! Find the prompt that starts here.
+        // Presumably, no rows below us will have prompts, so pass in the last
+        // row with text as the bottom
+        marks.push_back(_scrollMarkExtentForRow(promptY, lastPromptY));
+
+        // operator>=(T, optional<U>) will return true if the optional is
+        // nullopt, unfortunately.
+        if (marks.size() >= limit)
+        {
+            break;
+        }
+
+        lastPromptY = promptY;
+    }
+
+    std::reverse(marks.begin(), marks.end());
+    return marks;
 }
 
 // Remove all marks between `start` & `end`, inclusive.
@@ -2898,115 +3268,318 @@ void TextBuffer::ClearMarksInRange(
     const til::point start,
     const til::point end)
 {
-    auto inRange = [&start, &end](const ScrollMark& m) {
-        return (m.start >= start && m.start <= end) ||
-               (m.end >= start && m.end <= end);
+    auto top = std::clamp(std::min(start.y, end.y), 0, _height - 1);
+    auto bottom = std::clamp(std::max(start.y, end.y), 0, _estimateOffsetOfLastCommittedRow());
+
+    for (auto y = top; y <= bottom; y++)
+    {
+        auto& row = GetMutableRowByOffset(y);
+        auto& runs = row.Attributes().runs();
+        row.SetScrollbarData(std::nullopt);
+        for (auto& [attr, length] : runs)
+        {
+            attr.SetMarkAttributes(MarkKind::None);
+        }
+    }
+}
+void TextBuffer::ClearAllMarks()
+{
+    ClearMarksInRange({ 0, 0 }, { _width - 1, _height - 1 });
+}
+
+// Collect up the extent of the prompt and possibly command and output for the
+// mark that starts on this row.
+MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
+                                                const til::CoordType bottomInclusive) const
+{
+    const auto& startRow = GetRowByOffset(rowOffset);
+    const auto& rowPromptData = startRow.GetScrollbarData();
+    assert(rowPromptData.has_value());
+
+    MarkExtents mark{
+        .data = *rowPromptData,
     };
 
-    _marks.erase(std::remove_if(_marks.begin(),
-                                _marks.end(),
-                                inRange),
-                 _marks.end());
-}
-void TextBuffer::ClearAllMarks() noexcept
-{
-    _marks.clear();
-}
+    bool startedPrompt = false;
+    bool startedCommand = false;
+    bool startedOutput = false;
+    MarkKind lastMarkKind = MarkKind::Output;
 
-// Adjust all the marks in the y-direction by `delta`. Positive values move the
-// marks down (the positive y direction). Negative values move up. This will
-// trim marks that are no longer have a start in the bounds of the buffer
-void TextBuffer::ScrollMarks(const int delta)
-{
-    for (auto& mark : _marks)
-    {
-        mark.start.y += delta;
-
-        // If the mark had sub-regions, then move those pointers too
-        if (mark.commandEnd.has_value())
+    const auto endThisMark = [&](auto x, auto y) {
+        if (startedOutput)
         {
-            (*mark.commandEnd).y += delta;
+            mark.outputEnd = til::point{ x, y };
         }
-        if (mark.outputEnd.has_value())
+        if (!startedOutput && startedCommand)
         {
-            (*mark.outputEnd).y += delta;
+            mark.commandEnd = til::point{ x, y };
+        }
+        if (!startedCommand)
+        {
+            mark.end = til::point{ x, y };
+        }
+    };
+    auto x = 0;
+    auto y = rowOffset;
+    til::point lastMarkedText{ x, y };
+    for (; y <= bottomInclusive; y++)
+    {
+        // Now we need to iterate over text attributes. We need to find a
+        // segment of Prompt attributes, we'll skip those. Then there should be
+        // Command attributes. Collect up all of those, till we get to the next
+        // Output attribute.
+
+        const auto& row = GetRowByOffset(y);
+        const auto runs = row.Attributes().runs();
+        x = 0;
+        for (const auto& [attr, length] : runs)
+        {
+            const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+            const auto markKind{ attr.GetMarkAttributes() };
+
+            if (markKind != MarkKind::None)
+            {
+                lastMarkedText = { nextX, y };
+
+                if (markKind == MarkKind::Prompt)
+                {
+                    if (startedCommand || startedOutput)
+                    {
+                        // we got a _new_ prompt. bail out.
+                        break;
+                    }
+                    if (!startedPrompt)
+                    {
+                        // We entered the first prompt here
+                        startedPrompt = true;
+                        mark.start = til::point{ x, y };
+                    }
+                    endThisMark(lastMarkedText.x, lastMarkedText.y);
+                }
+                else if (markKind == MarkKind::Command && startedPrompt)
+                {
+                    startedCommand = true;
+                    endThisMark(lastMarkedText.x, lastMarkedText.y);
+                }
+                else if ((markKind == MarkKind::Output) && startedPrompt)
+                {
+                    startedOutput = true;
+                    if (!mark.commandEnd.has_value())
+                    {
+                        // immediately just end the command at the start here, so we can treat this whole run as output
+                        mark.commandEnd = mark.end;
+                        startedCommand = true;
+                    }
+
+                    endThisMark(lastMarkedText.x, lastMarkedText.y);
+                }
+                // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
+                lastMarkKind = markKind;
+            }
+            // advance to next run of text
+            x = nextX;
+        }
+        // we went over all the runs in this row, but we're not done yet. Keep iterating on the next row.
+    }
+
+    // Okay, we're at the bottom of the buffer? Yea, just return what we found.
+    if (!startedCommand)
+    {
+        // If we never got to a Command or Output run, then we never set .end.
+        // Set it here to the last run we saw.
+        endThisMark(lastMarkedText.x, lastMarkedText.y);
+    }
+    return mark;
+}
+
+std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive) const
+{
+    std::wstring commandBuilder;
+    MarkKind lastMarkKind = MarkKind::Prompt;
+    for (auto y = rowOffset; y <= bottomInclusive; y++)
+    {
+        // Now we need to iterate over text attributes. We need to find a
+        // segment of Prompt attributes, we'll skip those. Then there should be
+        // Command attributes. Collect up all of those, till we get to the next
+        // Output attribute.
+
+        const auto& row = GetRowByOffset(y);
+        const auto runs = row.Attributes().runs();
+        auto x = 0;
+        for (const auto& [attr, length] : runs)
+        {
+            const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+            const auto markKind{ attr.GetMarkAttributes() };
+            if (markKind != lastMarkKind)
+            {
+                if (lastMarkKind == MarkKind::Command)
+                {
+                    // We've changed away from being in a command. We're done.
+                    // Return what we've gotten so far.
+                    return commandBuilder;
+                }
+                // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
+                lastMarkKind = markKind;
+            }
+
+            if (markKind == MarkKind::Command)
+            {
+                commandBuilder += row.GetText(x, nextX);
+            }
+            // advance to next run of text
+            x = nextX;
+        }
+        // we went over all the runs in this row, but we're not done yet. Keep iterating on the next row.
+    }
+    // Okay, we're at the bottom of the buffer? Yea, just return what we found.
+    return commandBuilder;
+}
+
+std::wstring TextBuffer::CurrentCommand() const
+{
+    auto promptY = GetCursor().GetPosition().y;
+    for (; promptY >= 0; promptY--)
+    {
+        const auto& currRow = GetRowByOffset(promptY);
+        auto& rowPromptData = currRow.GetScrollbarData();
+        if (!rowPromptData.has_value())
+        {
+            // This row didn't start a prompt, don't even look here.
+            continue;
+        }
+
+        // This row did start a prompt! Find the prompt that starts here.
+        // Presumably, no rows below us will have prompts, so pass in the last
+        // row with text as the bottom
+        return _commandForRow(promptY, _estimateOffsetOfLastCommittedRow());
+    }
+    return L"";
+}
+
+std::vector<std::wstring> TextBuffer::Commands() const
+{
+    std::vector<std::wstring> commands{};
+    const auto bottom = _estimateOffsetOfLastCommittedRow();
+    auto lastPromptY = bottom;
+    for (auto promptY = bottom; promptY >= 0; promptY--)
+    {
+        const auto& currRow = GetRowByOffset(promptY);
+        auto& rowPromptData = currRow.GetScrollbarData();
+        if (!rowPromptData.has_value())
+        {
+            // This row didn't start a prompt, don't even look here.
+            continue;
+        }
+
+        // This row did start a prompt! Find the prompt that starts here.
+        // Presumably, no rows below us will have prompts, so pass in the last
+        // row with text as the bottom
+        auto foundCommand = _commandForRow(promptY, lastPromptY);
+        if (!foundCommand.empty())
+        {
+            commands.emplace_back(std::move(foundCommand));
+        }
+        lastPromptY = promptY;
+    }
+    std::reverse(commands.begin(), commands.end());
+    return commands;
+}
+
+void TextBuffer::StartPrompt()
+{
+    const auto currentRowOffset = GetCursor().GetPosition().y;
+    auto& currentRow = GetMutableRowByOffset(currentRowOffset);
+    currentRow.StartPrompt();
+
+    _currentAttributes.SetMarkAttributes(MarkKind::Prompt);
+}
+
+bool TextBuffer::_createPromptMarkIfNeeded()
+{
+    // We might get here out-of-order, without seeing a StartPrompt (FTCS A)
+    // first. Since StartPrompt actually sets up the prompt mark on the ROW, we
+    // need to do a bit of extra work here to start a new mark (if the last one
+    // wasn't in an appropriate state).
+
+    const auto mostRecentMarks = GetMarkExtents(1u);
+    if (!mostRecentMarks.empty())
+    {
+        const auto& mostRecentMark = til::at(mostRecentMarks, 0);
+        if (!mostRecentMark.HasOutput())
+        {
+            // The most recent command mark _didn't_ have output yet. Great!
+            // we'll leave it alone, and just start treating text as Command or Output.
+            return false;
+        }
+
+        // The most recent command mark had output. That suggests that either:
+        // * shell integration wasn't enabled (but the user would still
+        //   like lines with enters to be marked as prompts)
+        // * or we're in the middle of a command that's ongoing.
+
+        // If it does have a command, then we're still in the output of
+        // that command.
+        //   --> the current attrs should already be set to Output.
+        if (mostRecentMark.HasCommand())
+        {
+            return false;
+        }
+        // If the mark doesn't have any command - then we know we're
+        // playing silly games with just marking whole lines as prompts,
+        // then immediately going to output.
+        //   --> Below, we'll add a new mark to this row.
+    }
+
+    // There were no marks at all!
+    //   --> add a new mark to this row, set all the attrs in this row
+    //   to be Prompt, and set the current attrs to Output.
+
+    auto& row = GetMutableRowByOffset(GetCursor().GetPosition().y);
+    row.StartPrompt();
+    return true;
+}
+
+bool TextBuffer::StartCommand()
+{
+    const auto createdMark = _createPromptMarkIfNeeded();
+    _currentAttributes.SetMarkAttributes(MarkKind::Command);
+    return createdMark;
+}
+bool TextBuffer::StartOutput()
+{
+    const auto createdMark = _createPromptMarkIfNeeded();
+    _currentAttributes.SetMarkAttributes(MarkKind::Output);
+    return createdMark;
+}
+
+// Find the row above the cursor where this most recent prompt started, and set
+// the exit code on that row's scroll mark.
+void TextBuffer::EndCurrentCommand(std::optional<unsigned int> error)
+{
+    _currentAttributes.SetMarkAttributes(MarkKind::None);
+
+    for (auto y = GetCursor().GetPosition().y; y >= 0; y--)
+    {
+        auto& currRow = GetMutableRowByOffset(y);
+        auto& rowPromptData = currRow.GetScrollbarData();
+        if (rowPromptData.has_value())
+        {
+            currRow.EndOutput(error);
+            return;
         }
     }
-    _trimMarksOutsideBuffer();
 }
 
-// Method Description:
-// - Add a mark to our list of marks, and treat it as the active "prompt". For
-//   the sake of shell integration, we need to know which mark represents the
-//   current prompt/command/output. Internally, we'll always treat the _last_
-//   mark in the list as the current prompt.
-// Arguments:
-// - m: the mark to add.
-void TextBuffer::StartPromptMark(const ScrollMark& m)
+void TextBuffer::SetScrollbarData(ScrollbarData mark, til::CoordType y)
 {
-    _marks.push_back(m);
+    auto& row = GetMutableRowByOffset(y);
+    row.SetScrollbarData(mark);
 }
-// Method Description:
-// - Add a mark to our list of marks. Don't treat this as the active prompt.
-//   This should be used for marks created by the UI or from other user input.
-//   By inserting at the start of the list, we can separate out marks that were
-//   generated by client programs vs ones created by the user.
-// Arguments:
-// - m: the mark to add.
-void TextBuffer::AddMark(const ScrollMark& m)
+void TextBuffer::ManuallyMarkRowAsPrompt(til::CoordType y)
 {
-    _marks.insert(_marks.begin(), m);
-}
-
-void TextBuffer::_trimMarksOutsideBuffer()
-{
-    const til::CoordType height = _height;
-    std::erase_if(_marks, [height](const auto& m) {
-        return (m.start.y < 0) || (m.start.y >= height);
-    });
-}
-
-std::wstring_view TextBuffer::CurrentCommand() const
-{
-    if (_marks.size() == 0)
+    auto& row = GetMutableRowByOffset(y);
+    for (auto& [attr, len] : row.Attributes().runs())
     {
-        return L"";
+        attr.SetMarkAttributes(MarkKind::Prompt);
     }
-
-    const auto& curr{ _marks.back() };
-    const auto& start{ curr.end };
-    const auto& end{ GetCursor().GetPosition() };
-
-    const auto line = start.y;
-    const auto& row = GetRowByOffset(line);
-    return row.GetText(start.x, end.x);
-}
-
-void TextBuffer::SetCurrentPromptEnd(const til::point pos) noexcept
-{
-    if (_marks.empty())
-    {
-        return;
-    }
-    auto& curr{ _marks.back() };
-    curr.end = pos;
-}
-void TextBuffer::SetCurrentCommandEnd(const til::point pos) noexcept
-{
-    if (_marks.empty())
-    {
-        return;
-    }
-    auto& curr{ _marks.back() };
-    curr.commandEnd = pos;
-}
-void TextBuffer::SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept
-{
-    if (_marks.empty())
-    {
-        return;
-    }
-    auto& curr{ _marks.back() };
-    curr.outputEnd = pos;
-    curr.category = category;
 }

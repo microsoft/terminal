@@ -32,16 +32,18 @@ namespace Microsoft.Terminal.Control
         String ProfileName;
         String ProfileSource;
 
-        Boolean EnableUnfocusedAcrylic;
+        Boolean EnableUnfocusedAcrylic { get; };
+        Guid SessionId { get; };
         ScrollbarState ScrollState { get; };
 
         String FontFace { get; };
         Single FontSize { get; };
         Windows.UI.Text.FontWeight FontWeight { get; };
         String Padding { get; };
-        Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
+        Windows.Foundation.Collections.IMap<String, Single> FontFeatures { get; };
         Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
         Boolean EnableBuiltinGlyphs { get; };
+        Boolean EnableColorGlyphs { get; };
         String CellWidth { get; };
         String CellHeight { get; };
 
@@ -57,7 +59,8 @@ namespace Microsoft.Terminal.Control
         TextAntialiasingMode AntialiasingMode { get; };
 
         // Experimental Settings
-        Boolean ForceFullRepaintRendering { get; };
+        Microsoft.Terminal.Control.GraphicsAPI GraphicsAPI { get; };
+        Boolean DisablePartialInvalidation { get; };
         Boolean SoftwareRendering { get; };
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
