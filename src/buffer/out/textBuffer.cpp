@@ -2559,6 +2559,7 @@ void TextBuffer::Serialize(const wchar_t* destination) const
     TextColor previousBg;
     TextColor previousUl;
     uint16_t previousHyperlinkId = 0;
+    bool delayedLineBreak = false;
 
     // This iterates through each row. The exit condition is at the end
     // of the for() loop so that we can properly handle file flushing.
@@ -2578,9 +2579,11 @@ void TextBuffer::Serialize(const wchar_t* destination) const
         }
 
         const auto& runs = row.Attributes().runs();
-        auto it = runs.begin();
+        const auto beg = runs.begin();
         const auto end = runs.end();
+        auto it = beg;
         const auto last = end - 1;
+        const auto lastCharX = row.MeasureRight();
         til::CoordType oldX = 0;
 
         for (; it != end; ++it)
@@ -2760,24 +2763,55 @@ void TextBuffer::Serialize(const wchar_t* destination) const
                 }
             }
 
-            auto newX = oldX + it->length;
-            // Trim whitespace with default attributes from the end of each line.
-            if (it == last && it->value == TextAttribute{})
+            // Initially, the buffer is initialized with the default attributes, but once it begins to scroll,
+            // newly scrolled in rows are initialized with the current attributes. This means we need to set
+            // the current attributes to those of the upcoming row before the row comes up. Or inversely:
+            // We let the row come up, let it set its attributes and only then print the newline.
+            if (delayedLineBreak)
             {
-                // This can result in oldX > newX, but that's okay because GetText()
-                // is robust against that and returns an empty string.
-                newX = row.MeasureRight();
+                buffer.append(L"\r\n");
+                delayedLineBreak = false;
+            }
+
+            auto newX = oldX + it->length;
+
+            // Since our text buffer doesn't store the original input text, the information over the amount of trailing
+            // whitespaces was lost. If we don't do anything here then a row that just says "Hello" would be serialized
+            // to "Hello                    ...". If the user restores the buffer dump with a different window size,
+            // this would result in some fairly ugly reflow. This code attempts to at least trim trailing whitespaces.
+            //
+            // As mentioned above for `delayedLineBreak`, rows are initialized with their first attribute, BUT
+            // only if the viewport has begun to scroll. Otherwise, they're initialized with the default attributes.
+            // In other words, we can only skip \x1b[K = Erase in Line, if both the first/last attribute are the default attribute.
+            static constexpr TextAttribute defaultAttr;
+            const auto trimTrailingWhitespaces = it == last && lastCharX < newX;
+            const auto clearToEndOfLine = trimTrailingWhitespaces && beg->value != defaultAttr || beg->value != defaultAttr;
+
+            if (trimTrailingWhitespaces)
+            {
+                newX = lastCharX;
             }
 
             buffer.append(row.GetText(oldX, newX));
+
+            if (clearToEndOfLine)
+            {
+                buffer.append(L"\x1b[K");
+            }
+
             oldX = newX;
         }
 
         const auto moreRowsRemaining = currentRow < lastRowWithText;
+        delayedLineBreak = !row.WasWrapForced();
 
-        if (!row.WasWrapForced() || !moreRowsRemaining)
+        if (!moreRowsRemaining)
         {
-            buffer.append(L"\r\n");
+            if (previousHyperlinkId)
+            {
+                buffer.append(L"\x1b]8;;\x1b\\");
+            }
+            buffer.append(L"\x1b[m\r\n");
         }
 
         if (buffer.size() >= writeThreshold || !moreRowsRemaining)
