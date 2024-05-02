@@ -2753,7 +2753,7 @@ void TextBuffer::Serialize(const wchar_t* destination) const
             // Since our text buffer doesn't store the original input text, the information over the amount of trailing
             // whitespaces was lost. If we don't do anything here then a row that just says "Hello" would be serialized
             // to "Hello                    ...". If the user restores the buffer dump with a different window size,
-            // this would result in some fairly ugly reflow. This code does attempts to at least trim trailing whitespaces.
+            // this would result in some fairly ugly reflow. This code attempts to at least trim trailing whitespaces.
             //
             // As mentioned above for `delayedLineBreak`, rows are initialized with their first attribute, BUT
             // only if the viewport has begun to scroll. Otherwise, they're initialized with the default attributes.
