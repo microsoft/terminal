@@ -122,11 +122,12 @@ IRenderData* Renderer::GetRenderData() const noexcept
         _CheckViewportAndScroll();
 
         _invalidateCurrentCursor(); // Invalidate the previous cursor position.
-        _updateCursorInfo();
-        _invalidateCurrentCursor(); // Invalidate the new cursor position.
-
         _invalidateOldComposition();
+
+        _updateCursorInfo();
         _compositionCache.reset();
+
+        _invalidateCurrentCursor(); // Invalidate the new cursor position.
         _prepareNewComposition();
 
         FOREACH_ENGINE(pEngine)
