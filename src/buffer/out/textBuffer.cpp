@@ -1193,7 +1193,7 @@ void TextBuffer::ClearScrollback(const til::CoordType newFirstRow, const til::Co
         return;
     }
 
-    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, newFirstRow + rowsToKeep });
+    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, std::max(0, newFirstRow - 1) });
 
     // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
     // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
