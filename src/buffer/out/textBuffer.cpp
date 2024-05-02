@@ -1176,36 +1176,40 @@ void TextBuffer::Reset() noexcept
     _initialAttributes = _currentAttributes;
 }
 
-void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordType height)
+// Arguments:
+// - newFirstRow: The current y-position of the viewport. We'll clear up until here.
+// - rowsToKeep: the number of rows to keep in the buffer.
+void TextBuffer::ClearScrollback(const til::CoordType newFirstRow, const til::CoordType rowsToKeep)
 {
-    if (start <= 0)
+    // We're already at the top? don't clear anything. There's no scrollback.
+    if (newFirstRow <= 0)
     {
         return;
     }
-
-    if (height <= 0)
+    // The new viewport should keep 0 rows? Then just reset everything.
+    if (rowsToKeep <= 0)
     {
         _decommit();
         return;
     }
 
+    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, std::max(0, newFirstRow - 1) });
+
     // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
     // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
-    // The start parameter is relative to the _firstRow. The trick to get the content to the absolute start
+    // The newFirstRow parameter is relative to the _firstRow. The trick to get the content to the absolute start
     // is to simply add _firstRow ourselves and then reset it to 0. This causes ScrollRows() to write into
     // the absolute start while reading from relative coordinates. This works because GetRowByOffset()
     // operates modulo the buffer height and so the possibly-too-large startAbsolute won't be an issue.
-    const auto startAbsolute = _firstRow + start;
+    const auto startAbsolute = _firstRow + newFirstRow;
     _firstRow = 0;
-    ScrollRows(startAbsolute, height, -startAbsolute);
+    ScrollRows(startAbsolute, rowsToKeep, -startAbsolute);
 
     const auto end = _estimateOffsetOfLastCommittedRow();
-    for (auto y = height; y <= end; ++y)
+    for (auto y = rowsToKeep; y <= end; ++y)
     {
         GetMutableRowByOffset(y).Reset(_initialAttributes);
     }
-
-    ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
 }
 
 // Routine Description:
