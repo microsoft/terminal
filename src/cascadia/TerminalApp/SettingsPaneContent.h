@@ -2,13 +2,14 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "SettingsPaneContent.g.h"
+#include "winrt/TerminalApp.h"
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
 {
-    struct SettingsPaneContent : SettingsPaneContentT<SettingsPaneContent>
+    class SettingsPaneContent : public winrt::implements<SettingsPaneContent, IPaneContent>
     {
+    public:
         SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
@@ -19,7 +20,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
-        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
+        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const BuildStartupKind kind) const;
 
         winrt::hstring Title() { return RS_(L"SettingsTab"); }
         uint64_t TaskbarState() { return 0; }
@@ -42,9 +43,4 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Editor::MainPage _sui{ nullptr };
         winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
     };
-}
-
-namespace winrt::TerminalApp::factory_implementation
-{
-    BASIC_FACTORY(SettingsPaneContent);
 }

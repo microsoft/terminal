@@ -7,7 +7,6 @@
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
-#include "LastTabClosedEventArgs.g.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
@@ -42,15 +41,6 @@ namespace winrt::TerminalApp::implementation
     {
         ScrollUp = 0,
         ScrollDown = 1
-    };
-
-    struct LastTabClosedEventArgs : LastTabClosedEventArgsT<LastTabClosedEventArgs>
-    {
-        WINRT_PROPERTY(bool, ClearPersistedState);
-
-    public:
-        LastTabClosedEventArgs(const bool& shouldClear) :
-            _ClearPersistedState{ shouldClear } {};
     };
 
     struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
@@ -105,7 +95,6 @@ namespace winrt::TerminalApp::implementation
 
         bool ShouldImmediatelyHandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         void HandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-        Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
 
         hstring Title();
 
@@ -121,7 +110,8 @@ namespace winrt::TerminalApp::implementation
         SuggestionsControl LoadSuggestionsUI();
 
         winrt::fire_and_forget RequestQuit();
-        winrt::fire_and_forget CloseWindow(bool bypassDialog);
+        winrt::fire_and_forget CloseWindow();
+        void PersistState();
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -175,7 +165,7 @@ namespace winrt::TerminalApp::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         til::typed_event<IInspectable, winrt::hstring> TitleChanged;
-        til::typed_event<IInspectable, winrt::TerminalApp::LastTabClosedEventArgs> LastTabClosed;
+        til::typed_event<IInspectable, IInspectable> CloseWindowRequested;
         til::typed_event<IInspectable, winrt::Windows::UI::Xaml::UIElement> SetTitleBarContent;
         til::typed_event<IInspectable, IInspectable> FocusModeChanged;
         til::typed_event<IInspectable, IInspectable> FullscreenChanged;
@@ -185,7 +175,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IInspectable, IInspectable> SetTaskbarProgress;
         til::typed_event<IInspectable, IInspectable> Initialized;
         til::typed_event<IInspectable, IInspectable> IdentifyWindowsRequested;
-        til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs> RenameWindowRequested;
+        til::typed_event<IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs> RenameWindowRequested;
         til::typed_event<IInspectable, IInspectable> SummonWindowRequested;
 
         til::typed_event<IInspectable, IInspectable> CloseRequested;
@@ -232,7 +222,6 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 
-        bool _maintainStateOnTabClose{ false };
         bool _rearranging{ false };
         std::optional<int> _rearrangeFrom{};
         std::optional<int> _rearrangeTo{};
@@ -350,7 +339,6 @@ namespace winrt::TerminalApp::implementation
         void _DismissTabContextMenus();
         void _FocusCurrentTab(const bool focusAlways);
         bool _HasMultipleTabs() const;
-        void _RemoveAllTabs();
 
         void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
         bool _SelectTab(uint32_t tabIndex);

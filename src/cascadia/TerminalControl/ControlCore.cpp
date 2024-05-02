@@ -9,14 +9,15 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
+#include <LibraryResources.h>
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>
-#include <LibraryResources.h>
 
 #include "EventArgs.h"
-#include "../../buffer/out/search.h"
 #include "../../renderer/atlas/AtlasEngine.h"
+#include "../../renderer/base/renderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
@@ -43,26 +44,26 @@ constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c) noexcept
     {
         Core::OptionalColor result;
         result.Color = c;
         result.HasValue = true;
         return result;
     }
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
+
+    static ::Microsoft::Console::Render::Atlas::GraphicsAPI parseGraphicsAPI(GraphicsAPI api) noexcept
     {
-        Core::OptionalColor result;
-        if (c.has_value())
+        using GA = ::Microsoft::Console::Render::Atlas::GraphicsAPI;
+        switch (api)
         {
-            result.Color = *c;
-            result.HasValue = true;
+        case GraphicsAPI::Direct2D:
+            return GA::Direct2D;
+        case GraphicsAPI::Direct3D11:
+            return GA::Direct3D11;
+        default:
+            return GA::Automatic;
         }
-        else
-        {
-            result.HasValue = false;
-        }
-        return result;
     }
 
     TextColor SelectionColor::AsTextColor() const noexcept
@@ -337,6 +338,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             _renderer->AddRenderEngine(_renderEngine.get());
 
+            // Hook up the warnings callback as early as possible so that we catch everything.
+            _renderEngine->SetWarningCallback([this](HRESULT hr, wil::zwstring_view parameter) {
+                _rendererWarning(hr, parameter);
+            });
+
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
@@ -372,12 +378,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->CreateFromSettings(*_settings, *_renderer);
 
-            // IMPORTANT! Set this callback up sooner than later. If we do it
-            // after Enable, then it'll be possible to paint the frame once
-            // _before_ the warning handler is set up, and then warnings from
-            // the first paint will be ignored!
-            _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
-
             // Tell the render engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid
             // unnecessary callbacks (and locking problems)
@@ -388,7 +388,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
             _renderEngine->SetPixelShaderImagePath(_settings->PixelShaderImagePath());
-            _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+            _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
+            _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
 
             _updateAntiAliasingMode();
@@ -397,14 +398,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // GH#11315: Always do this, even if they don't have acrylic on.
             _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
 
-            THROW_IF_FAILED(_renderEngine->Enable());
-
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
-
-        // Start the connection outside of lock, because it could
-        // start writing output immediately.
-        _connection.Start();
 
         return true;
     }
@@ -883,7 +878,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+        _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
+        _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
@@ -944,6 +940,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _renderer->TriggerRedrawAll(true, true);
         }
+    }
+
+    Control::IControlSettings ControlCore::Settings()
+    {
+        return *_settings;
+    }
+
+    Control::IControlAppearance ControlCore::FocusedAppearance() const
+    {
+        return *_settings->FocusedAppearance();
+    }
+
+    Control::IControlAppearance ControlCore::UnfocusedAppearance() const
+    {
+        return *_settings->UnfocusedAppearance();
     }
 
     void ControlCore::_updateAntiAliasingMode()
@@ -1008,18 +1019,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //      actually fail. We need a way to gracefully fallback.
             LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
             LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
-        }
-
-        // If the actual font isn't what was requested...
-        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
-        {
-            // Then warn the user that we picked something because we couldn't find their font.
-            // Format message with user's choice of font and the font that was chosen instead.
-            const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") },
-                                                      _desiredFont.GetFaceName(),
-                                                      _actualFont.GetFaceName()) };
-            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, message);
-            RaiseNotice.raise(*this, std::move(noticeArgs));
         }
 
         const auto actualNewSize = _actualFont.GetSize();
@@ -1710,9 +1709,53 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_rendererWarning(const HRESULT hr)
+    void ControlCore::PersistToPath(const wchar_t* path) const
     {
-        RendererWarning.raise(*this, winrt::make<RendererWarningArgs>(hr));
+        const auto lock = _terminal->LockForReading();
+        _terminal->SerializeMainBuffer(path);
+    }
+
+    void ControlCore::RestoreFromPath(const wchar_t* path) const
+    {
+        const wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        if (!file)
+        {
+            return;
+        }
+
+        wchar_t buffer[32 * 1024];
+        DWORD read = 0;
+
+        // Ensure the text file starts with a UTF-16 BOM.
+        if (!ReadFile(file.get(), &buffer[0], 2, &read, nullptr) || read < 2 || buffer[0] != L'\uFEFF')
+        {
+            return;
+        }
+
+        for (;;)
+        {
+            if (!ReadFile(file.get(), &buffer[0], sizeof(buffer), &read, nullptr))
+            {
+                break;
+            }
+
+            const auto lock = _terminal->LockForWriting();
+            _terminal->Write({ &buffer[0], read / 2 });
+
+            if (read < sizeof(buffer))
+            {
+                break;
+            }
+        }
+
+        // This pushes the restored contents up into the scrollback.
+        const auto lock = _terminal->LockForWriting();
+        _terminal->Write(L"\x1b[2J");
+    }
+
+    void ControlCore::_rendererWarning(const HRESULT hr, wil::zwstring_view parameter)
+    {
+        RendererWarning.raise(*this, winrt::make<RendererWarningArgs>(hr, winrt::hstring{ parameter }));
     }
 
     winrt::fire_and_forget ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
@@ -1890,7 +1933,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 const auto& last{ marks.back() };
                 const auto [start, end] = last.GetExtent();
-                const auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+                const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+                auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+                bufferSize.IncrementInBounds(lastNonSpace, true);
 
                 // If the user clicked off to the right side of the prompt, we
                 // want to send keystrokes to the last character in the prompt +1.
@@ -1903,17 +1948,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // By only sending keypresses to the end of the command + 1, we
                 // should leave the cursor at the very end of the prompt,
                 // without adding any characters from a previous command.
-                auto clampedClick = terminalPosition;
-                if (terminalPosition > lastNonSpace)
+
+                // terminalPosition is viewport-relative.
+                const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
+                if (bufferPos.y > lastNonSpace.y)
                 {
-                    clampedClick = lastNonSpace + til::point{ 1, 0 };
-                    _terminal->GetTextBuffer().GetSize().Clamp(clampedClick);
+                    // Clicked under the prompt. Bail.
+                    return;
                 }
+
+                // Limit the click to 1 past the last character on the last line.
+                const auto clampedClick = std::min(bufferPos, lastNonSpace);
 
                 if (clampedClick >= end)
                 {
                     // Get the distance between the cursor and the click, in cells.
-                    const auto bufferSize = _terminal->GetTextBuffer().GetSize();
 
                     // First, make sure to iterate from the first point to the
                     // second. The user may have clicked _earlier_ in the
@@ -1943,7 +1992,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         append(_terminal->SendKeyEvent(key, 0, {}, false));
                     }
 
-                    _sendInputToConnection(buffer);
+                    {
+                        // Sending input requires that we're unlocked, because
+                        // writing the input pipe may block indefinitely.
+                        const auto suspension = _terminal->SuspendLock();
+                        _sendInputToConnection(buffer);
+                    }
                 }
             }
         }
@@ -1960,13 +2014,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UpdateSelectionMarkers.raise(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(!showMarkers));
     }
 
-    void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
+    void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine)
     {
         // _renderer will always exist since it's introduced in the ctor
         const auto lock = _terminal->LockForWriting();
         _renderer->AddRenderEngine(pEngine);
     }
-    void ControlCore::DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
+    void ControlCore::DetachUiaEngine(::Microsoft::Console::Render::UiaEngine* const pEngine)
     {
         const auto lock = _terminal->LockForWriting();
         _renderer->RemoveRenderEngine(pEngine);

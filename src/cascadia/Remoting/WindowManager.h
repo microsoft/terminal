@@ -38,10 +38,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t GetNumberOfPeasants();
 
-        static winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
         void UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant);
 
-        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
         bool DoesQuakeWindowExist();
 
         winrt::fire_and_forget RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds);
@@ -51,8 +49,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         til::typed_event<> WindowCreated;
         til::typed_event<> WindowClosed;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs> QuitAllRequested;
-        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs> GetWindowLayoutRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs> RequestNewWindow;
 
     private:
@@ -71,8 +67,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                     const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
         void _bubbleWindowCreated(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e);
         void _bubbleWindowClosed(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e);
-        void _bubbleQuitAllRequested(const winrt::Windows::Foundation::IInspectable& s, const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& e);
-        void _bubbleGetWindowLayoutRequested(const winrt::Windows::Foundation::IInspectable& s, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& e);
     };
 }
 

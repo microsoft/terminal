@@ -20,15 +20,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<TerminalPaneContent, Object> RestartTerminalRequested;
     }
 
-
-    [default_interface] runtimeclass ScratchpadContent : IPaneContent
-    {
-    }
-    [default_interface] runtimeclass SettingsPaneContent : IPaneContent
-    {
-        SettingsPaneContent(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
-    }
-
     [default_interface] runtimeclass FilteredTask : TerminalApp.FilteredCommand
     {
         String Input{ get; };
@@ -44,5 +35,4 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
 
     }
-
 }

@@ -183,9 +183,6 @@
   <data name="Quit" xml:space="preserve">
     <value>끝내기</value>
   </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>모든 탭을 닫으시겠습니까?</value>
-  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>여러 창</value>
   </data>
@@ -331,6 +328,9 @@
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>지정된 프로필로 엽니다. 프로필 이름 또는 GUID 허용</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>WT_SESSION 변수를 설정합니다. GUID여야 합니다.</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
     <value>새 분할 창 만들기</value>
