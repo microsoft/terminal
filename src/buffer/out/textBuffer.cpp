@@ -1176,20 +1176,25 @@ void TextBuffer::Reset() noexcept
     _initialAttributes = _currentAttributes;
 }
 
+// Arguments:
+// - start: The y-position of the viewport. We'll clear up until here.
+// - height: the number of rows to keep in the buffer.
 void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordType height)
 {
+    // We're already at the top? don't clear ahything. There's no scrollback.
     if (start <= 0)
     {
         return;
     }
 
+    // The new viewport should keep 0 rows? Then just reset everything.
     if (height <= 0)
     {
         _decommit();
         return;
     }
 
-    ClearMarksInRange(til::point{ 0, start }, til::point{ _width, start + height });
+    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, start + height });
 
     // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
     // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
