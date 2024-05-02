@@ -550,6 +550,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void TermControl::SelectChar(Core::Point point) const
+    {
+        _core.SelectChar(point);
+    }
+
+    FuzzySearchResult TermControl::FuzzySearch(winrt::hstring needle)
+    {
+        return _core.FuzzySearch(needle);
+    }
+
     void TermControl::SearchMatch(const bool goForward)
     {
         if (_IsClosing())

@@ -4,6 +4,7 @@
 import "ICoreState.idl";
 import "IControlSettings.idl";
 import "EventArgs.idl";
+import "FuzzySearchTextSegment.idl";
 
 namespace Microsoft.Terminal.Control
 {
@@ -134,6 +135,8 @@ namespace Microsoft.Terminal.Control
         void ResumeRendering();
         void BlinkAttributeTick();
 
+        void SelectChar(Microsoft.Terminal.Core.Point point);
+        FuzzySearchResult FuzzySearch(String text);
         SearchResults Search(String text, Boolean goForward, Boolean caseSensitive, Boolean reset);
         void ClearSearch();
         IVector<Int32> SearchResultRows { get; };

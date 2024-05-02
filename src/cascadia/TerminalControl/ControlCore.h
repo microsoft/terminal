@@ -20,6 +20,7 @@
 #include "CommandHistoryContext.g.h"
 
 #include "ControlSettings.h"
+#include "FuzzySearch.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
@@ -219,6 +220,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
+        void SelectChar(Core::Point point);
+        Control::FuzzySearchResult FuzzySearch(const winrt::hstring& text) const;
         SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool reset);
         void ClearSearch();
         void SnapSearchResultToSelection(bool snap) noexcept;
@@ -317,6 +320,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Atlas::AtlasEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
+        std::unique_ptr<::FuzzySearch> _fuzzySearch;
         ::Search _searcher;
         bool _snapSearchResultToSelection;
 

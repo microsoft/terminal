@@ -6,6 +6,7 @@
 
 #include "TerminalPage.h"
 #include "ScratchpadContent.h"
+#include "FuzzySearchPane.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -1463,6 +1464,25 @@ namespace winrt::TerminalApp::implementation
 
             const auto resultPane = std::make_shared<Pane>(*scratchPane);
             _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleOpenFuzzySearch(const IInspectable& sender,
+                                             const ActionEventArgs& args)
+    {
+        if (Feature_FuzzySearch::IsEnabled())
+        {
+            const auto& fuzzySearchPane{ winrt::make_self<FuzzySearchPane>(_GetActiveControl()) };
+
+            // This is maybe a little wacky - add our key event handler to the pane
+            // we made. So that we can get actions for keys that the content didn't
+            // handle.
+            fuzzySearchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+            const auto resultPane = std::make_shared<Pane>(*fuzzySearchPane);
+            _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
+            fuzzySearchPane->Focus();
             args.Handled(true);
         }
     }

@@ -1,0 +1,30 @@
+namespace Microsoft.Terminal.Control
+{
+    [default_interface] runtimeclass FuzzySearchTextSegment : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        FuzzySearchTextSegment();
+        FuzzySearchTextSegment(String text, Boolean isHighlighted);
+
+        String TextSegment { get; };
+        Boolean IsHighlighted { get; };
+    }
+
+    [default_interface] runtimeclass FuzzySearchTextLine : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        FuzzySearchTextLine();
+        FuzzySearchTextLine(Windows.Foundation.Collections.IObservableVector<FuzzySearchTextSegment> segments, Microsoft.Terminal.Core.Point firstPosition);
+
+        Windows.Foundation.Collections.IObservableVector<FuzzySearchTextSegment> Segments;
+        Microsoft.Terminal.Core.Point FirstPosition { get; set; };
+    }
+
+    runtimeclass FuzzySearchResult
+    {
+        FuzzySearchResult();
+        FuzzySearchResult(Windows.Foundation.Collections.IObservableVector<FuzzySearchTextLine> results, Int32 totalRowsSearched, Int32 numberOfResults);
+
+        Windows.Foundation.Collections.IVector<FuzzySearchTextLine> Results;
+        Int32 TotalRowsSearched { get; set; };
+        Int32 NumberOfResults { get; set; };
+    }
+}

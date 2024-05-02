@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="XamlUiaTextRange.cpp" />
+    <ClCompile Include="HwndTerminal.cpp" />
+    <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
+    <ClCompile Include="fzf\fzf.c">
+      <Filter>fzf</Filter>
+    </ClCompile>
+    <ClCompile Include="FuzzySearch.cpp" />
+    <ClCompile Include="FuzzySearchTextSegment.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="XamlUiaTextRange.h" />
+    <ClInclude Include="HwndTerminal.hpp" />
+    <ClInclude Include="HwndTerminalAutomationPeer.hpp" />
+    <ClInclude Include="fzf\fzf.h">
+      <Filter>fzf</Filter>
+    </ClInclude>
+    <ClInclude Include="FuzzySearch.h" />
+    <ClInclude Include="FuzzySearchTextSegment.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="ControlCore.idl" />
+    <Midl Include="ControlInteractivity.idl" />
+    <Midl Include="ScrollBarVisualStateManager.idl" />
+    <Midl Include="ICoreState.idl" />
+    <Midl Include="KeyChord.idl" />
+    <Midl Include="EventArgs.idl" />
+    <Midl Include="IKeyBindings.idl" />
+    <Midl Include="IControlSettings.idl" />
+    <Midl Include="IControlAppearance.idl" />
+    <Midl Include="XamlLights.idl" />
+    <Midl Include="TermControlAutomationPeer.idl" />
+    <Midl Include="InteractivityAutomationPeer.idl" />
+    <Midl Include="IMouseWheelListener.idl" />
+    <Midl Include="FuzzySearchTextSegment.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="SearchBoxControl.xaml" />
+    <Page Include="TermControl.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="fzf">
+      <UniqueIdentifier>{39e45a3e-ceef-4fcf-96cd-bed5bfdacb8b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

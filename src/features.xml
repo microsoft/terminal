@@ -146,6 +146,17 @@
     </feature>
 
     <feature>
+        <name>Feature_FuzzySearch</name>
+        <description>Fuzzy Search Active Terminal Pane</description>
+        <id>9970</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_KeypadModeEnabled</name>
         <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
         <id>16654</id>

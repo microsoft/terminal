@@ -161,6 +161,9 @@
     <ClInclude Include="ScratchpadContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FuzzySearchPane.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SettingsPaneContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
@@ -272,6 +275,9 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ScratchpadContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FuzzySearchPane.cpp">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="SettingsPaneContent.cpp">
@@ -400,7 +406,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
-
   </ItemGroup>
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
@@ -466,10 +471,8 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
   <!--
     By default, the PRI file will contain resource paths beginning with the
     project name. Since we enabled XBF embedding, this *also* includes App.xbf.

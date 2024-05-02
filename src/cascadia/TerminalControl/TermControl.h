@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "FuzzySearchTextSegment.g.h"
 #include "SearchBoxControl.h"
 #include "TermControl.g.h"
 #include "../../buffer/out/search.h"
@@ -136,6 +137,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void CreateSearchBoxControl();
 
+        void SelectChar(Core::Point point) const;
+        Control::FuzzySearchResult FuzzySearch(winrt::hstring needle);
         void SearchMatch(const bool goForward);
 
         bool SearchBoxEditInFocus() const;

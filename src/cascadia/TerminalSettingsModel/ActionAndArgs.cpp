@@ -97,6 +97,7 @@ static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWo
 static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
 static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
 static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
+static constexpr std::string_view OpenFuzzySearchKey{ "experimental.openFuzzySearch" };
 static constexpr std::string_view OpenAboutKey{ "openAbout" };
 
 static constexpr std::string_view ActionKey{ "action" };
@@ -433,6 +434,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
                 { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
                 { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
+                { ShortcutAction::OpenFuzzySearch, RS_(L"OpenFuzzySearchKey") },
                 { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
             };
         }();

@@ -111,6 +111,7 @@
     ON_ALL_ACTIONS(RestartConnection)       \
     ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenScratchpad)          \
+    ON_ALL_ACTIONS(OpenFuzzySearch)         \
     ON_ALL_ACTIONS(OpenAbout)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \

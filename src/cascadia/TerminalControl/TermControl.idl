@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "FuzzySearchTextSegment.idl";
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "ControlInteractivity.idl";
@@ -106,6 +107,8 @@ namespace Microsoft.Terminal.Control
         void CreateSearchBoxControl();
         Boolean SearchBoxEditInFocus();
 
+        void SelectChar(Microsoft.Terminal.Core.Point point);
+        FuzzySearchResult FuzzySearch(String text);
         void SearchMatch(Boolean goForward);
 
         void AdjustFontSize(Single fontSizeDelta);

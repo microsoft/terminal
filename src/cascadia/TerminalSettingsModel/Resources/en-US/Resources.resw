@@ -703,6 +703,9 @@
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>Open scratchpad</value>
   </data>
+  <data name="OpenFuzzySearchKey" xml:space="preserve">
+    <value>Open fuzzy search</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>Select next command output</value>
   </data>
