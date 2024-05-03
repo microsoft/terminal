@@ -449,9 +449,23 @@ namespace winrt::TerminalApp::implementation
 
         {
             ActionAndArgs newTabAction{};
+            INewContentArgs newContentArgs{ state.firstPane->GetTerminalArgsForPane(kind) };
+
+            // Special case here: if there was one pane (which results in no actions
+            // being generated), and it was a settings pane, then promote that to an
+            // open settings action. The openSettings action itself has additional machinery
+            // to prevent multiple top-level settings tabs.
+            const auto wasSettings = state.args.empty() &&
+                                     (newContentArgs && newContentArgs.Type() == L"settings");
+            if (wasSettings)
+            {
+                newTabAction.Action(ShortcutAction::OpenSettings);
+                newTabAction.Args(OpenSettingsArgs{ SettingsTarget::SettingsUI });
+                return std::vector<ActionAndArgs>{ std::move(newTabAction) };
+            }
+
             newTabAction.Action(ShortcutAction::NewTab);
-            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(kind) };
-            newTabAction.Args(newTabArgs);
+            newTabAction.Args(NewTabArgs{ newContentArgs });
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));
         }
