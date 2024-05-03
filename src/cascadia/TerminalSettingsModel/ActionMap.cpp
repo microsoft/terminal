@@ -505,8 +505,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _KeyMap.insert_or_assign(keys, cmd.ID());
         }
-
-        cmd.RegisterKey(keys);
     }
 
     // Method Description:

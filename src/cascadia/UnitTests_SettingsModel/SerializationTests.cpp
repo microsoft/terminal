@@ -1156,7 +1156,7 @@ namespace SettingsModelUnitTests
 
         // modern style:
         // - multiple action blocks whose purpose is simply to define more keybindings for the same action
-        //   get collapsed into one action block, with the name and iconpath preserved and have multiple keybindings instead
+        //   get collapsed into one action block, with the name and icon path preserved and have multiple keybindings instead
         static constexpr std::string_view newSettingsJson{ R"(
         {
             "actions": [
