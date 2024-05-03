@@ -47,6 +47,8 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RoundtripGenerateActionID);
         TEST_METHOD(NoGeneratedIDsForIterableAndNestedCommands);
         TEST_METHOD(GeneratedActionIDsEqualForIdenticalCommands);
+        TEST_METHOD(RoundtripLegacyToModernActions);
+        TEST_METHOD(MultipleActionsAreCollapsed);
 
     private:
         // Method Description:
@@ -1073,5 +1075,124 @@ namespace SettingsModelUnitTests
         const auto sendInputCmd2 = settings2->ActionMap().GetActionByKeyChord(KeyChord{ true, false, true, false, 87, 0 });
 
         VERIFY_ARE_EQUAL(sendInputCmd1.ID(), sendInputCmd1.ID());
+    }
+
+    void SerializationTests::RoundtripLegacyToModernActions()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "id": "Test.SendInput",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "keys": "ctrl+shift+w"
+                },
+                {
+                    "command": "unbound",
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        // modern style:
+        // - no "unbound" actions, these are just keybindings that have no id
+        // - no keys in actions, these are keybindings with an id
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "id": "Test.SendInput"
+                }
+            ],
+            "keybindings": [
+                {
+                    "id": "Test.SendInput",
+                    "keys": "ctrl+shift+w"
+                },
+                {
+                    "id": null,
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(newLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::MultipleActionsAreCollapsed()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "icon": "myCoolIconPath.png",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "keys": "ctrl+shift+w"
+                },
+                {
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        // modern style:
+        // - multiple action blocks whose purpose is simply to define more keybindings for the same action
+        //   get collapsed into one action block, with the name and iconpath preserved and have multiple keybindings instead
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "name": "foo",
+                    "icon": "myCoolIconPath.png",
+                    "command": { "action": "sendInput", "input": "just some input" },
+                    "id": "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
+                }
+            ],
+            "keybindings": [
+                {
+                    "keys": "ctrl+shift+w",
+                    "id": "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
+                },
+                {
+                    "keys": "ctrl+shift+x",
+                    "id": "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(newLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
     }
 }

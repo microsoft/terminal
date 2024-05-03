@@ -157,17 +157,17 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::HashDeduplication()
     {
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "id": "Test.SplitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "id": "Test.SplitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
         VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
     }
 
     void KeyBindingsTests::HashContentArgs()
     {
-        Log::Comment(L"These are two actions with different content args. They should have different hashes for their terminal args.");
+        Log::Comment(L"These are two actions with different content args. They should have different generated IDs for their terminal args.");
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "id": "Test.NewTabNoArgs", "keys": ["ctrl+c"]       } ])"), OriginTag::None);
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "id": "Test.NewTab0", "keys": ["ctrl+shift+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"), OriginTag::User);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"), OriginTag::User);
         VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
 
         KeyChord ctrlC{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
