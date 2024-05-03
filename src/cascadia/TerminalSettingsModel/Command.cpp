@@ -20,14 +20,6 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view IDKey{ "id" };
-static constexpr std::string_view IconKey{ "icon" };
-static constexpr std::string_view ActionKey{ "command" };
-static constexpr std::string_view IterateOnKey{ "iterateOn" };
-static constexpr std::string_view CommandsKey{ "commands" };
-static constexpr std::string_view KeysKey{ "keys" };
-
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
 static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };

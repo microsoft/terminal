@@ -59,22 +59,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // and we can call Command::FromJson on it (Command::FromJson can handle parsing both legacy or modern)
 
             // if there is no "command" field, then it is a modern style keys block
-            // todo: use the CommandsKey / ActionKey static string view in Command.cpp somehow
-            if (jsonBlock.isMember(JsonKey("commands")) || jsonBlock.isMember(JsonKey("command")))
+            if (jsonBlock.isMember(JsonKey(CommandsKey)) || jsonBlock.isMember(JsonKey(ActionKey)))
             {
                 AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings));
 
                 // for non-nested non-iterable commands,
                 // check if this is a legacy-style command block so we can inform the loader that fixups are needed
-                if (jsonBlock.isMember(JsonKey("command")) && !jsonBlock.isMember(JsonKey("iterateOn")))
+                if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)))
                 {
-                    if (jsonBlock.isMember(JsonKey("keys")))
+                    if (jsonBlock.isMember(JsonKey(KeysKey)))
                     {
                         // there are keys in this command block - its the legacy style
                         _fixUpsAppliedDuringLoad = true;
                     }
 
-                    if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey("id")))
+                    if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey(IDKey)))
                     {
                         // there's no ID in this command block - we will generate one for the user
                         // inform the loader that the ID needs to be written into the json
@@ -128,8 +127,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         auto toJson = [&keybindingsList](const KeyChord kc, const winrt::hstring cmdID) {
             Json::Value keyIDPair{ Json::ValueType::objectValue };
-            JsonUtils::SetValueForKey(keyIDPair, "keys", kc);
-            JsonUtils::SetValueForKey(keyIDPair, "id", cmdID);
+            JsonUtils::SetValueForKey(keyIDPair, KeysKey, kc);
+            JsonUtils::SetValueForKey(keyIDPair, IDKey, cmdID);
             keybindingsList.append(keyIDPair);
         };
 
@@ -148,8 +147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // - If there is also an "id" field - we add the pair to our _KeyMap
         // - If there is no "id" field - this is an explicit unbinding, still add it to the _KeyMap,
         //   when this key chord is queried for we will know it is an explicit unbinding
-        // todo: use the KeysKey and IDKey static strings from Command.cpp
-        const auto keysJson{ json[JsonKey("keys")] };
+        const auto keysJson{ json[JsonKey(KeysKey)] };
         if (keysJson.isArray() && keysJson.size() > 1)
         {
             warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
@@ -158,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             Control::KeyChord keys{ nullptr };
             winrt::hstring idJson;
-            if (JsonUtils::GetValueForKey(json, "keys", keys))
+            if (JsonUtils::GetValueForKey(json, KeysKey, keys))
             {
                 // if these keys are already bound to some command,
                 // we need to update that command to erase these keys as we are about to overwrite them
@@ -169,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
 
                 // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
-                JsonUtils::GetValueForKey(json, "id", idJson);
+                JsonUtils::GetValueForKey(json, IDKey, idJson);
 
                 // any existing keybinding with the same keychord in this layer will get overwritten
                 _KeyMap.insert_or_assign(keys, idJson);
