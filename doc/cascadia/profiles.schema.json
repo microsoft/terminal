@@ -2044,7 +2044,7 @@
         ]
       }
     },
-    "Keybinding": {
+    "FullCommand": {
       "additionalProperties": false,
       "properties": {
         "command": {
@@ -2169,21 +2169,6 @@
             }
           ]
         },
-        "keys": {
-          "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
-          "oneOf": [
-            {
-              "$ref": "#/$defs/KeyChordSegment"
-            },
-            {
-              "items": {
-                "$ref": "#/$defs/KeyChordSegment"
-              },
-              "minItems": 1,
-              "type": "array"
-            }
-          ]
-        },
         "icon": {
           "$ref": "#/$defs/Icon"
         },
@@ -2215,7 +2200,7 @@
         "commands": {
           "description": "List of commands to execute",
           "items": {
-            "$ref": "#/$defs/Keybinding/properties/command"
+            "$ref": "#/$defs/FullCommand/properties/command"
           },
           "minItems": 1,
           "type": "array"
@@ -2231,6 +2216,44 @@
         {
           "required": [
             "command"
+          ]
+        }
+      ],
+      "type": "object"
+    },
+    "Keybinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "The ID of the command this keybinding should execute.",
+          "type": "string"
+        },
+        "keys": {
+          "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/KeyChordSegment"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/KeyChordSegment"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "keys",
+            "id"
+          ]
+        },
+        {
+          "required": [
+            "keys"
           ]
         }
       ],
@@ -2439,12 +2462,12 @@
         "actions": {
           "description": "Properties are specific to each custom action.",
           "items": {
-            "$ref": "#/$defs/Keybinding"
+            "$ref": "#/$defs/FullCommand"
           },
           "type": "array"
         },
         "keybindings": {
-          "description": "[deprecated] Use actions instead.",
+          "description": "A list of keychords bound to action IDs",
           "deprecated": true,
           "items": {
             "$ref": "#/$defs/Keybinding"
