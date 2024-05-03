@@ -544,14 +544,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return item;
     }
 
+    // Call this when all the _fontFaceDependents members have changed.
     void AppearanceViewModel::_notifyChangesForFontSettings()
     {
-        _NotifyChanges(
-            L"FontFaceDependents",
-            L"FontAxes",
-            L"FontFeatures",
-            L"HasFontAxes",
-            L"HasFontFeatures");
+        _NotifyChanges(L"FontFaceDependents");
+        _NotifyChanges(L"FontAxes");
+        _NotifyChanges(L"FontFeatures");
+        _NotifyChanges(L"HasFontAxes");
+        _NotifyChanges(L"HasFontFeatures");
+    }
+
+    // Call this when used items moved into unused and vice versa.
+    // Because this doesn't recreate the IObservableVector instances,
+    // we don't need to notify the UI about changes to the "FontAxes" property.
+    void AppearanceViewModel::_notifyChangesForFontSettingsReactive(FontSettingIndex fontSettingsIndex)
+    {
+        _NotifyChanges(L"FontFaceDependents");
+        switch (fontSettingsIndex)
+        {
+        case FontAxesIndex:
+            _NotifyChanges(L"HasFontAxes");
+            break;
+        case FontFeaturesIndex:
+            _NotifyChanges(L"HasFontFeatures");
+            break;
+        default:
+            break;
+        }
     }
 
     double AppearanceViewModel::LineHeight() const
@@ -616,6 +635,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         FontWeight(winrt::Microsoft::Terminal::UI::Converters::DoubleToFontWeight(fontWeight));
     }
 
+    const AppearanceViewModel::FontFaceDependentsData& AppearanceViewModel::FontFaceDependents()
+    {
+        if (!_fontFaceDependents)
+        {
+            _refreshFontFaceDependents();
+        }
+        return *_fontFaceDependents;
+    }
+
+    winrt::hstring AppearanceViewModel::MissingFontFaces()
+    {
+        return FontFaceDependents().missingFontFaces;
+    }
+
+    winrt::hstring AppearanceViewModel::ProportionalFontFaces()
+    {
+        return FontFaceDependents().proportionalFontFaces;
+    }
+
+    bool AppearanceViewModel::HasPowerlineCharacters()
+    {
+        return FontFaceDependents().hasPowerlineCharacters;
+    }
+
     IObservableVector<Editor::FontKeyValuePair> AppearanceViewModel::FontAxes()
     {
         return FontFaceDependents().fontSettingsUsed[FontAxesIndex];
@@ -628,7 +671,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::ClearFontAxes()
     {
-        _deleteAllFontSettings(FontAxesIndex);
+        _deleteAllFontKeyValuePairs(FontAxesIndex);
     }
 
     Model::FontConfig AppearanceViewModel::FontAxesOverrideSource() const
@@ -648,7 +691,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::ClearFontFeatures()
     {
-        _deleteAllFontSettings(FontFeaturesIndex);
+        _deleteAllFontKeyValuePairs(FontFeaturesIndex);
     }
 
     Model::FontConfig AppearanceViewModel::FontFeaturesOverrideSource() const
@@ -664,7 +707,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         const auto kvImpl = winrt::get_self<FontKeyValuePair>(kv);
-        const auto fontSettingsIndex = kvImpl->IsFontFeature() ? 1 : 0;
+        const auto fontSettingsIndex = kvImpl->IsFontFeature() ? FontFeaturesIndex : FontAxesIndex;
         auto& d = *_fontFaceDependents;
         auto& used = d.fontSettingsUsed[fontSettingsIndex];
         auto& unused = d.fontSettingsUnused[fontSettingsIndex];
@@ -686,7 +729,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         unused.erase(it);
 
-        _notifyChangesForFontSettings();
+        _notifyChangesForFontSettingsReactive(fontSettingsIndex);
     }
 
     void AppearanceViewModel::DeleteFontKeyValuePair(const Editor::FontKeyValuePair& kv)
@@ -699,10 +742,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto kvImpl = winrt::get_self<FontKeyValuePair>(kv);
         const auto tag = kvImpl->Key();
         const auto tagString = tagToString(tag);
-        const auto fontSettingsIndex = kvImpl->IsFontFeature() ? 1 : 0;
+        const auto fontSettingsIndex = kvImpl->IsFontFeature() ? FontFeaturesIndex : FontAxesIndex;
         auto& d = *_fontFaceDependents;
         auto& used = d.fontSettingsUsed[fontSettingsIndex];
-        auto& unused = d.fontSettingsUnused[fontSettingsIndex];
 
         const auto fontInfo = _appearance.SourceProfile().FontInfo();
         auto fontSettingsUser = kvImpl->IsFontFeature() ? fontInfo.FontFeatures() : fontInfo.FontAxes();
@@ -719,20 +761,59 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         fontSettingsUser.Remove(std::wstring_view{ tagString });
 
-        // Insert the item into the unused list, keeping it sorted by the display text.
-        {
-            const auto item = _createFontSettingMenuItem(*it);
-            const auto it = std::lower_bound(unused.begin(), unused.end(), item, [](const MenuFlyoutItemBase& lhs, const MenuFlyoutItemBase& rhs) {
-                const auto& a = lhs.as<MenuFlyoutItem>().Text();
-                const auto& b = rhs.as<MenuFlyoutItem>().Text();
-                return til::compare_linguistic_insensitive(a, b) < 0;
-            });
-            unused.insert(it, item);
-        }
-
+        _addMenuFlyoutItemToUnused(fontSettingsIndex, _createFontSettingMenuItem(*it));
         used.RemoveAt(gsl::narrow<uint32_t>(it - used.begin()));
 
-        _notifyChangesForFontSettings();
+        _notifyChangesForFontSettingsReactive(fontSettingsIndex);
+    }
+
+    void AppearanceViewModel::_deleteAllFontKeyValuePairs(FontSettingIndex fontSettingsIndex)
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        if (fontSettingsIndex == FontFeaturesIndex)
+        {
+            fontInfo.ClearFontFeatures();
+        }
+        else
+        {
+            fontInfo.ClearFontAxes();
+        }
+
+        if (!_fontFaceDependents)
+        {
+            return;
+        }
+
+        auto& d = *_fontFaceDependents;
+        auto& used = d.fontSettingsUsed[fontSettingsIndex];
+
+        for (const auto& kv : used)
+        {
+            _addMenuFlyoutItemToUnused(fontSettingsIndex, _createFontSettingMenuItem(kv));
+        }
+
+        used.Clear();
+
+        _notifyChangesForFontSettingsReactive(fontSettingsIndex);
+    }
+
+    // Inserts the given menu item into the unused list, while keeping it sorted by the display text.
+    void AppearanceViewModel::_addMenuFlyoutItemToUnused(FontSettingIndex index, MenuFlyoutItemBase item)
+    {
+        if (!_fontFaceDependents)
+        {
+            return;
+        }
+
+        auto& d = *_fontFaceDependents;
+        auto& unused = d.fontSettingsUnused[index];
+
+        const auto it = std::lower_bound(unused.begin(), unused.end(), item, [](const MenuFlyoutItemBase& lhs, const MenuFlyoutItemBase& rhs) {
+            const auto& a = lhs.as<MenuFlyoutItem>().Text();
+            const auto& b = rhs.as<MenuFlyoutItem>().Text();
+            return til::compare_linguistic_insensitive(a, b) < 0;
+        });
+        unused.insert(it, std::move(item));
     }
 
     void AppearanceViewModel::UpdateFontSetting(const FontKeyValuePair* kvImpl)
@@ -757,37 +838,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         std::ignore = fontSettingsUser.Insert(std::wstring_view{ tagString }, value);
-    }
-
-    void AppearanceViewModel::_deleteAllFontSettings(FontSettingIndex fontSettingsIndex)
-    {
-        const auto fontInfo = _appearance.SourceProfile().FontInfo();
-        if (fontSettingsIndex == FontFeaturesIndex)
-        {
-            fontInfo.ClearFontFeatures();
-        }
-        else
-        {
-            fontInfo.ClearFontAxes();
-        }
-
-        if (!_fontFaceDependents)
-        {
-            return;
-        }
-
-        auto& d = *_fontFaceDependents;
-        auto& used = d.fontSettingsUsed[fontSettingsIndex];
-        auto& unused = d.fontSettingsUnused[fontSettingsIndex];
-
-        for (const auto& kv : used)
-        {
-            unused.emplace_back(_createFontSettingMenuItem(kv));
-        }
-
-        used.Clear();
-
-        _notifyChangesForFontSettings();
+        // Pwease call Profiles_Appearance::_onProfilePropertyChanged to make the pweview connyection wewoad. Thanks!! uwu
+        // ...I hate this.
+        _NotifyChanges(L"uwu");
     }
 
     void AppearanceViewModel::SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
