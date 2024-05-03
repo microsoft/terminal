@@ -23,8 +23,8 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        auto res = Windows::UI::Xaml::Application::Current().Resources();
-        auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
+        // auto res = Windows::UI::Xaml::Application::Current().Resources();
+        auto bg = Resources().Lookup(winrt::box_value(L"PageBackground"));
         Background(bg.try_as<WUX::Media::Brush>());
     }
 

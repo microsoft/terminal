@@ -898,4 +898,15 @@
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Restart the active pane connection</value>
   </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Snippets</value>
+    <comment>Header for a page that includes small snippets of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Filter snippets...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Input this command</value>
+  </data>
 </root>

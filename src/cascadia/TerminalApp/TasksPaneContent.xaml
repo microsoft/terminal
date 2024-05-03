@@ -42,15 +42,15 @@
                                                Visibility="Collapsed" />
                         </ContentPresenter>
 
-                        <Button Grid.Row="0"
+                        <Button x:Uid="SnippetPlayButton"
+                                Grid.Row="0"
                                 Grid.RowSpan="1"
                                 Grid.Column="0"
                                 Padding="3"
                                 VerticalAlignment="Bottom"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
-                                Click="_runCommandButtonClicked"
-                                ToolTipService.ToolTip="Input this command">
+                                Click="_runCommandButtonClicked">
 
                             <Button.Content>
                                 <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -111,10 +111,27 @@
                     </Grid>
                 </mux:TreeViewItem>
             </DataTemplate>
+
+            <ResourceDictionary.ThemeDictionaries>
+                <!--  same as in MainPage, this is SolidBackgroundFillColorTertiary  -->
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="PageBackground">#282828</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="PageBackground">#F9F9F9</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <!--  Define resources for HighContrast mode here  -->
+                    <StaticResource x:Key="PageBackground"
+                                    ResourceKey="SystemColorWindowColorBrush" />
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid Background="{ThemeResource PageBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -122,15 +139,15 @@
         </Grid.RowDefinitions>
 
         <TextBlock x:Name="_title"
+                   x:Uid="SnippetPaneTitle"
                    Grid.Row="0"
-                   Margin="9"
-                   FontSize="24"
-                   Text="Tasks" />
+                   Margin="4"
+                   FontSize="24" />
 
         <TextBox x:Name="_filterBox"
+                 x:Uid="SnippetsFilterBox"
                  Grid.Row="1"
-                 Margin="8"
-                 PlaceholderText="Filter tasks..."
+                 Margin="8,0,8,8"
                  TextChanged="_filterTextChanged" />
 
         <mux:TreeView x:Name="_treeView"

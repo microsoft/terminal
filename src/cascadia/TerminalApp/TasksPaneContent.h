@@ -6,6 +6,7 @@
 #include "FilteredTask.g.h"
 #include "FilteredCommand.h"
 #include "ActionPaletteItem.h"
+#include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -23,7 +24,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
         // TODO! lots of strings here and in XAML that need RS_-ifying
-        winrt::hstring Title() { return L"Tasks"; }
+        winrt::hstring Title() { return RS_(L"SnippetPaneTitle/Text"); }
         uint64_t TaskbarState() { return 0; }
         uint64_t TaskbarProgress() { return 0; }
         bool ReadOnly() { return false; }
@@ -49,7 +50,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
-
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _allTasks{ nullptr };
 
         void _runCommandButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);
