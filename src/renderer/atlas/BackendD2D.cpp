@@ -148,7 +148,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     _viewportCellCount = p.s->viewportCellCount;
 }
 
-void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
+void BackendD2D::_drawBackground(const RenderingPayload& p)
 {
     if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
     {
