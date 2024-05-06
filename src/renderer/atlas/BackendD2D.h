@@ -17,7 +17,7 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
-        void _drawBackground(const RenderingPayload& p) noexcept;
+        void _drawBackground(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
         ATLAS_ATTR_COLD f32 _drawTextPrepareLineRendition(const RenderingPayload& p, const ShapedRow* row, f32 baselineY) const noexcept;
         ATLAS_ATTR_COLD void _drawTextResetLineRendition(const ShapedRow* row) const noexcept;
