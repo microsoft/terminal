@@ -148,11 +148,11 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     _viewportCellCount = p.s->viewportCellCount;
 }
 
-void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
+void BackendD2D::_drawBackground(const RenderingPayload& p)
 {
     if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
     {
-        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32)));
+        THROW_IF_FAILED(_backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32))));
         _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
     }
 
@@ -356,7 +356,7 @@ f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 
         _glyphMetrics = Buffer<DWRITE_GLYPH_METRICS>{ size };
     }
 
-    glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, _glyphMetrics.data(), false);
+    THROW_IF_FAILED(glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, _glyphMetrics.data(), false));
 
     const f32 fontScale = glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
     f32r accumulatedBounds{
@@ -541,7 +541,8 @@ void BackendD2D::_resizeCursorBitmap(const RenderingPayload& p, const til::size 
     const D2D1_SIZE_F sizeF{ static_cast<f32>(newSizeInPx.width), static_cast<f32>(newSizeInPx.height) };
     const D2D1_SIZE_U sizeU{ gsl::narrow_cast<UINT32>(newSizeInPx.width), gsl::narrow_cast<UINT32>(newSizeInPx.height) };
     wil::com_ptr<ID2D1BitmapRenderTarget> cursorRenderTarget;
-    _renderTarget->CreateCompatibleRenderTarget(&sizeF, &sizeU, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, cursorRenderTarget.addressof());
+    THROW_IF_FAILED(_renderTarget->CreateCompatibleRenderTarget(&sizeF, &sizeU, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, cursorRenderTarget.addressof()));
+
     cursorRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     cursorRenderTarget->BeginDraw();
@@ -553,7 +554,7 @@ void BackendD2D::_resizeCursorBitmap(const RenderingPayload& p, const til::size 
     }
     THROW_IF_FAILED(cursorRenderTarget->EndDraw());
 
-    cursorRenderTarget->GetBitmap(_cursorBitmap.put());
+    THROW_IF_FAILED(cursorRenderTarget->GetBitmap(_cursorBitmap.put()));
     _cursorBitmapSize = newSize;
 }
 
