@@ -324,12 +324,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
                 result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
-
-                // if this is a user-defined, non-iterable, valid command and they did not provide an id, generate one for them
-                if (result->_ID.empty() && result->_IterateOn == ExpandCommandType::None && result->_ActionAndArgs.Action() != ShortcutAction::Invalid && origin == OriginTag::User)
-                {
-                    result->GenerateID();
-                }
             }
             else
             {
