@@ -995,9 +995,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/,
                                                          Control::RendererWarningArgs args)
     {
-        // HRESULT is a signed 32-bit integer which would result in a hex output like "-0x7766FFF4",
-        // but canonically HRESULTs are displayed unsigned as "0x8899000C". See GH#11556.
-        const auto hr = std::bit_cast<uint32_t>(args.Result());
+        const auto hr = args.Result();
 
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -1017,8 +1015,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else
             {
+                // HRESULT is a signed 32-bit integer which would result in a hex output like "-0x7766FFF4",
+                // but canonically HRESULTs are displayed unsigned as "0x8899000C". See GH#11556.
+                const auto displayHr = std::bit_cast<uint32_t>(hr);
                 message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
-                                                      hr) };
+                                                      displayHr) };
             }
 
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
