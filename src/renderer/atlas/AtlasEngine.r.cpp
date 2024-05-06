@@ -55,7 +55,7 @@ catch (const wil::ResultException& exception)
 {
     const auto hr = exception.GetErrorCode();
 
-    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == D2DERR_RECREATE_TARGET)
     {
         _p.dxgi = {};
         return E_PENDING;

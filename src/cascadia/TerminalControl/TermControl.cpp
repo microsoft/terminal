@@ -995,7 +995,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/,
                                                          Control::RendererWarningArgs args)
     {
-        const auto hr = static_cast<HRESULT>(args.Result());
+        // HRESULT is a signed 32-bit integer which would result in a hex output like "-0x7766FFF4",
+        // but canonically HRESULTs are displayed unsigned as "0x8899000C". See GH#11556.
+        const auto hr = std::bit_cast<uint32_t>(args.Result());
 
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
