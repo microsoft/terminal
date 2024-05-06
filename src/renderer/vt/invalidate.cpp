@@ -75,7 +75,7 @@ CATCH_RETURN();
     }
     _skipCursor = false;
 
-    _cursorMoved = true;
+    _cursorMoved = psrRegion->origin() != _lastText;
     return S_OK;
 }
 
