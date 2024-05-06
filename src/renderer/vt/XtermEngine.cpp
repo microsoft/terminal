@@ -37,7 +37,16 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      the pipe.
 [[nodiscard]] HRESULT XtermEngine::StartPaint() noexcept
 {
-    RETURN_IF_FAILED(VtEngine::StartPaint());
+    const auto hr = VtEngine::StartPaint();
+    if (hr != S_OK)
+    {
+        // If _noFlushOnEnd was set, and we didn't return early, it would usually
+        // have been reset in the EndPaint call. But since that's not going to
+        // happen now, we need to reset it here, otherwise we may mistakenly skip
+        // the flush on the next frame.
+        _noFlushOnEnd = false;
+        return hr;
+    }
 
     _trace.TraceLastText(_lastText);
 
@@ -80,15 +89,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         for (size_t i = 1; i < dirty.size(); ++i)
         {
             dirtyView = Viewport::Union(dirtyView, Viewport::FromExclusive(til::at(dirty, i)));
-        }
-    }
-
-    if (!_quickReturn)
-    {
-        if (_WillWriteSingleChar())
-        {
-            // Don't re-enable the cursor.
-            _quickReturn = true;
         }
     }
 

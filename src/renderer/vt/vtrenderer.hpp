@@ -113,7 +113,6 @@ namespace Microsoft::Console::Render
         til::point _lastText;
         til::point _scrollDelta;
 
-        bool _quickReturn;
         bool _clearedAllThisFrame;
         bool _cursorMoved;
         bool _resized;
@@ -213,8 +212,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT _MoveCursor(const til::point coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
         [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
-
-        bool _WillWriteSingleChar() const;
 
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop
