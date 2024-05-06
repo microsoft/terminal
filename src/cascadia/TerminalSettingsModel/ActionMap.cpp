@@ -58,6 +58,80 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hasher.finalize();
     }
 
+    // Method Description:
+    // - Detects if any of the user's actions are identical to the inbox actions,
+    //   and if so, deletes them and redirects their keybindings to the inbox actions
+    // - We have to do this here instead of when loading since we don't actually have
+    //   any parents while loading the user settings, the parents are added after
+    void ActionMap::_FinalizeInheritance()
+    {
+        // first, gather the inbox actions from the relevant parent
+        std::unordered_map<InternalActionID, Model::Command> InboxActions;
+        winrt::com_ptr<implementation::ActionMap> foundParent{ nullptr };
+        for (const auto parent : _parents)
+        {
+            for (const auto [_, cmd] : parent->_ActionMap)
+            {
+                if (cmd.Origin() != OriginTag::InBox)
+                {
+                    // only one parent contains all the inbox actions and that parent contains only inbox actions,
+                    // so if we found a non-inbox action we can just skip to the next parent
+                    break;
+                }
+                foundParent = parent;
+                break;
+            }
+        }
+
+        if (foundParent)
+        {
+            for (const auto [_, cmd] : foundParent->_ActionMap)
+            {
+                InboxActions.emplace(Hash(cmd.ActionAndArgs()), cmd);
+            }
+        }
+
+        // now, look through our _ActionMap for commands that
+        // - had an ID generated for them
+        // - do not have a name/icon path
+        // - have a hash that matches a command in the inbox actions
+        std::unordered_set<winrt::hstring> IdsToRemove;
+        for (const auto [userID, userCmd] : _ActionMap)
+        {
+            const auto userCmdImpl{ get_self<Command>(userCmd) };
+
+            // Note we don't need to explicitly check for the origin tag here since we only generate IDs for user actions,
+            // so if we ID was generated it means this is a user action
+            if (userCmdImpl->IdWasGenerated() && !userCmdImpl->HasName() && userCmd.IconPath().empty())
+            {
+                const auto userActionHash = Hash(userCmd.ActionAndArgs());
+                if (const auto inboxCmd = InboxActions.find(userActionHash); inboxCmd != InboxActions.end())
+                {
+                    for (auto [key, cmdID] : _KeyMap)
+                    {
+                        // for any of our keys that point to the user action, point them to the inbox action instead
+                        if (cmdID == userID)
+                        {
+                            _KeyMap.insert_or_assign(key, inboxCmd->second.ID());
+
+                            // register the keys with the inbox action
+                            inboxCmd->second.RegisterKey(key);
+                        }
+                    }
+
+                    // add this ID to our set of IDs to remove
+                    IdsToRemove.insert(userID);
+                }
+            }
+        }
+
+        // now, remove the commands with the IDs we found
+        for (const auto id : IdsToRemove)
+        {
+            _ActionMap.erase(id);
+        }
+    }
+
     bool ActionMap::FixUpsAppliedDuringLoad() const
     {
         return _fixUpsAppliedDuringLoad;

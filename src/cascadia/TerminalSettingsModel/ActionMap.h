@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {
+        void _FinalizeInheritance() override;
+
         // views
         Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();

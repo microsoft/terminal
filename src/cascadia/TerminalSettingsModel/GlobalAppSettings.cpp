@@ -45,6 +45,7 @@ void GlobalAppSettings::_FinalizeInheritance()
             }
         }
     }
+    _actionMap->_FinalizeInheritance();
 }
 
 winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
