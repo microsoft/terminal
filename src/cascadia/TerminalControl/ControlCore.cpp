@@ -161,7 +161,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::chrono::milliseconds{ 100 },
             [weakTerminal = std::weak_ptr{ _terminal }, weakThis = get_weak(), dispatcher = _dispatcher]() {
                 dispatcher.TryEnqueue(DispatcherQueuePriority::Normal, [weakThis]() {
-                    if (const auto self = weakThis.get(); !self->_IsClosing())
+                    if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
                         self->OutputIdle.raise(*self, nullptr);
                     }
@@ -179,7 +179,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher,
             std::chrono::milliseconds{ 8 },
             [weakThis = get_weak()](const auto& update) {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
                     core->ScrollPositionChanged.raise(*core, update);
                 }
