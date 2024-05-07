@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dispatcher,
             TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {
                     control->_WarningBellHandlers(*control, nullptr);
                 }
@@ -138,7 +138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
-                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {
                     control->_throttledUpdateScrollbar(update);
                 }
@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _originalSelectedSecondaryElements.Append(e);
         }
         ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
                 const auto& menu{ control->ContextMenu() };
                 menu.PrimaryCommands().Clear();
@@ -198,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         });
         SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
                 const auto& menu{ control->SelectionContextMenu() };
                 menu.PrimaryCommands().Clear();

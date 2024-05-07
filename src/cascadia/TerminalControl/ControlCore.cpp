@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
