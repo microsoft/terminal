@@ -61,21 +61,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // if there is no "command" field, then it is a modern style keys block
             if (jsonBlock.isMember(JsonKey(CommandsKey)) || jsonBlock.isMember(JsonKey(ActionKey)))
             {
-                AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings));
-
-                // for non-nested non-iterable commands,
-                // check if this is a legacy-style command block so we can inform the loader that fixups are needed
-                if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)))
+                Control::KeyChord keys{ nullptr };
+                if (jsonBlock.isMember(JsonKey(KeysKey)))
                 {
-                    if (jsonBlock.isMember(JsonKey(KeysKey)))
+                    const auto keysJson{ json[JsonKey(KeysKey)] };
+                    if (keysJson.isArray() && keysJson.size() > 1)
                     {
-                        // there are keys in this command block - its the legacy style
+                        warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
+                    }
+                    else
+                    {
+                        JsonUtils::GetValueForKey(json, KeysKey, keys);
+
+                        // there are keys in this command block meaning this is the legacy style -
+                        // inform the loader that fixups are needed
                         _fixUpsAppliedDuringLoad = true;
                     }
+                }
 
+                AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings), keys);
+
+                if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)))
+                {
                     if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey(IDKey)))
                     {
-                        // there's no ID in this command block - we will generate one for the user
+                        // for non-nested non-iterable commands,
+                        // if there's no ID in the command block we will generate one for the user -
                         // inform the loader that the ID needs to be written into the json
                         _fixUpsAppliedDuringLoad = true;
                     }

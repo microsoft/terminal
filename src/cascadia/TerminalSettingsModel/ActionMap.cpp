@@ -449,7 +449,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Adds a command to the ActionMap
     // Arguments:
     // - cmd: the command we're adding
-    void ActionMap::AddAction(const Model::Command& cmd)
+    void ActionMap::AddAction(const Model::Command& cmd, const Control::KeyChord& keys)
     {
         // _Never_ add null to the ActionMap
         if (!cmd)
@@ -489,7 +489,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //  Add the new keybinding to the _KeyMap
 
         _TryUpdateActionMap(cmd);
-        _TryUpdateKeyChord(cmd);
+        _TryUpdateKeyChord(cmd, keys);
     }
 
     // Method Description:
@@ -548,12 +548,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Update our internal state with the key chord of the newly registered action
     // Arguments:
     // - cmd: the action we're trying to register
-    void ActionMap::_TryUpdateKeyChord(const Model::Command& cmd)
+    void ActionMap::_TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys)
     {
         // Example (this is a legacy case, where the keys are provided in the same block as the command):
         //   {                "command": "copy", "keys": "ctrl+c" } --> we are registering a new key chord
         //   { "name": "foo", "command": "copy" }                   --> no change to keys, exit early
-        const auto keys{ cmd.Keys() };
         if (!keys)
         {
             // the user is not trying to update the keys.
@@ -773,7 +772,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->RegisterKey(keys);
         cmd->ActionAndArgs(action);
         cmd->GenerateID();
-        AddAction(*cmd);
+        AddAction(*cmd, keys);
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Control::KeyChord GetKeyBindingForAction(winrt::hstring cmdID) const;
 
         // population
-        void AddAction(const Model::Command& cmd);
+        void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);
 
         // JSON
         static com_ptr<ActionMap> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap);
 
         void _TryUpdateActionMap(const Model::Command& cmd);
-        void _TryUpdateKeyChord(const Model::Command& cmd);
+        void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
