@@ -4882,7 +4882,7 @@ ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
                 {
                     buffer += L'\\';
                 }
-                engine.ActionPassThroughString(buffer);
+                engine.ActionPassThroughString(buffer, true);
                 buffer.clear();
             }
             return !endOfString;

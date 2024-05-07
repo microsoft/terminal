@@ -38,7 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrintString(const std::wstring_view string) override;
 
-        bool ActionPassThroughString(const std::wstring_view string) override;
+        bool ActionPassThroughString(const std::wstring_view string, const bool flush) override;
 
         bool ActionEscDispatch(const VTID id) override;
 
