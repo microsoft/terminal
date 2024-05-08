@@ -263,7 +263,7 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::Quit()
+    void TerminalWindow::PersistState()
     {
         if (_root)
         {

@@ -61,7 +61,7 @@ namespace TerminalApp
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
-        void Quit();
+        void PersistState();
 
         Windows.UI.Xaml.UIElement GetRoot();
 
