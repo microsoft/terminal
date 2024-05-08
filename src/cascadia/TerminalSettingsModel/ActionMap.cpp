@@ -680,8 +680,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _RefreshKeyBindingCaches();
         }
 
-        // I dislike that we have to do an O(n) lookup everytime we want to get the keybinding for an action -
-        // an alternative is having the key->action map be a bimap (would require a dependency), or store another map that is just
+        // I dislike that we have to do an O(n) lookup every time we want to get the keybinding for an action -
+        // an alternative is having the key->action map be a bi-map (would require a dependency), or store another map that is just
         // the reverse direction (action->key) which would be mean storing the same data twice but getting faster lookup
         for (const auto [key, action] : _ResolvedKeyActionMapCache)
         {

@@ -1184,7 +1184,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
         {
             const auto action = nameAndCommand.Value();
-            // nested commands cannot have keybinds bound to them, so just pass in the command and no keys
+            // nested commands cannot have keys bound to them, so just pass in the command and no keys
             auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, L"") };
             auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
             _currentNestedCommands.Append(nestedFilteredCommand);
