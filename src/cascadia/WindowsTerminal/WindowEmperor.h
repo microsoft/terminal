@@ -51,6 +51,7 @@ private:
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
 
+    bool _requiresPersistenceCleanupOnExit = false;
     bool _quitting{ false };
 
     void _windowStartedHandlerPostXAML(const std::shared_ptr<WindowThread>& sender);
