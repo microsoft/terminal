@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (jsonBlock.isMember(JsonKey(CommandsKey)) || jsonBlock.isMember(JsonKey(ActionKey)))
             {
                 Control::KeyChord keys{ nullptr };
-                if (jsonBlock.isMember(JsonKey(KeysKey)))
+                if (withKeybindings && jsonBlock.isMember(JsonKey(KeysKey)))
                 {
                     const auto keysJson{ json[JsonKey(KeysKey)] };
                     if (keysJson.isArray() && keysJson.size() > 1)
@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     }
                 }
 
-                AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings), keys);
+                AddAction(*Command::FromJson(jsonBlock, warnings, origin), keys);
 
                 if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)))
                 {
@@ -169,33 +169,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             winrt::hstring idJson;
             if (JsonUtils::GetValueForKey(json, KeysKey, keys))
             {
-                // if these keys are already bound to some command,
-                // we need to update that command to erase these keys as we are about to overwrite them
-                if (const auto foundCommand = _GetActionByKeyChordInternal(keys); foundCommand && *foundCommand)
-                {
-                    const auto foundCommandImpl{ get_self<implementation::Command>(*foundCommand) };
-                    foundCommandImpl->EraseKey(keys);
-                }
-
                 // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
                 JsonUtils::GetValueForKey(json, IDKey, idJson);
 
                 // any existing keybinding with the same keychord in this layer will get overwritten
                 _KeyMap.insert_or_assign(keys, idJson);
-
-                // make sure the command registers these keys
-                if (!idJson.empty())
-                {
-                    // TODO GH#17160
-                    // if the command with this id is only going to appear later during settings load
-                    // then this will return null, meaning that the command created later on will not register this keybinding
-                    // the keybinding will still work fine within the app, its just that the Command object itself won't know about this key mapping
-                    // we are going to move away from Command needing to know its key mappings in a followup, so this shouldn't matter for very long
-                    if (const auto cmd = _GetActionByID(idJson))
-                    {
-                        cmd.RegisterKey(keys);
-                    }
-                }
             }
         }
         return;

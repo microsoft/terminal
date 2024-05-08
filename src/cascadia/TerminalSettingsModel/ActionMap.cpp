@@ -113,9 +113,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         if (cmdID == userID)
                         {
                             _KeyMap.insert_or_assign(key, inboxCmd->second.ID());
-
-                            // register the keys with the inbox action
-                            inboxCmd->second.RegisterKey(key);
                         }
                     }
 
@@ -559,16 +556,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return;
         }
 
-        // Handle collisions
-        if (const auto foundCommand = _GetActionByKeyChordInternal(keys); foundCommand && *foundCommand)
-        {
-            // collision: the key chord is bound to some command, make sure that command erases
-            //            this key chord as we are about to overwrite it
-
-            const auto foundCommandImpl{ get_self<implementation::Command>(*foundCommand) };
-            foundCommandImpl->EraseKey(keys);
-        }
-
         // Assign the new action in the _KeyMap
         // However, there's a strange edge case here - since we're parsing a legacy or modern block,
         // the user might have { "command": null, "id": "someID", "keys": "ctrl+c" }
@@ -686,12 +673,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the key chord that executes the given action
     // - nullptr if the action is not bound to a key chord
-    Control::KeyChord ActionMap::GetKeyBindingForAction(winrt::hstring cmdID) const
+    Control::KeyChord ActionMap::GetKeyBindingForAction(winrt::hstring cmdID)
     {
-        // Check our internal state.
-        if (const auto cmd{ _GetActionByID(cmdID) })
+        if (!_ResolvedKeyActionMapCache)
         {
-            return cmd.Keys();
+            _RefreshKeyBindingCaches();
+        }
+
+        // I dislike that we have to do an O(n) lookup everytime we want to get the keybinding for an action -
+        // an alternative is having the key->action map be a bimap (would require a dependency), or store another map that is just
+        // the reverse direction (action->key) which would be mean storing the same data twice but getting faster lookup
+        for (const auto [key, action] : _ResolvedKeyActionMapCache)
+        {
+            if (action.ID() == cmdID)
+            {
+                // if there are multiple keys bound to this action, we will just return the first one we find
+                return key;
+            }
         }
 
         // This key binding does not exist
@@ -726,11 +724,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _KeyMap.insert_or_assign(newKeys, cmd.ID());
             _KeyMap.insert_or_assign(oldKeys, L"");
         }
-
-        // make sure to update the Command with these changes
-        const auto cmdImpl{ get_self<implementation::Command>(cmd) };
-        cmdImpl->EraseKey(oldKeys);
-        cmdImpl->RegisterKey(newKeys);
 
         return true;
     }
@@ -769,7 +762,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action)
     {
         auto cmd{ make_self<Command>() };
-        cmd->RegisterKey(keys);
         cmd->ActionAndArgs(action);
         cmd->GenerateID();
         AddAction(*cmd, keys);

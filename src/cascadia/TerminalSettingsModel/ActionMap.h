@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // queries
         Model::Command GetActionByKeyChord(const Control::KeyChord& keys) const;
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
-        Control::KeyChord GetKeyBindingForAction(winrt::hstring cmdID) const;
+        Control::KeyChord GetKeyBindingForAction(winrt::hstring cmdID);
 
         // population
         void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);

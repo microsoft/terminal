@@ -11,7 +11,7 @@ namespace winrt::TerminalApp::implementation
     struct ActionPaletteItem : ActionPaletteItemT<ActionPaletteItem, PaletteItem>
     {
         ActionPaletteItem() = default;
-        ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command);
+        ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command, const winrt::hstring keyChordText);
 
         WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);
 
