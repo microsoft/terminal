@@ -180,14 +180,15 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 //      we don't know what to do with it)
 // Arguments:
 // - string - string to dispatch.
+// - flush - set to true if the string should be flushed immediately.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
+bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string, const bool flush)
 {
     auto success = true;
     if (_pTtyConnection != nullptr)
     {
-        const auto hr = _pTtyConnection->WriteTerminalW(string);
+        const auto hr = _pTtyConnection->WriteTerminalW(string, flush);
         LOG_IF_FAILED(hr);
         success = SUCCEEDED(hr);
     }

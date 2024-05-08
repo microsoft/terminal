@@ -733,9 +733,15 @@
     <value>Procurar...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Adicionar novo eixo de fonte</value>
+  </data>
   <data name="Profile_AddNewFontAxis.Text" xml:space="preserve">
     <value>Adicionar novo</value>
     <comment>Button label that adds a new font axis for the current font.</comment>
+  </data>
+  <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Adicionar novo recurso de fonte</value>
   </data>
   <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
     <value>Adicionar novo</value>

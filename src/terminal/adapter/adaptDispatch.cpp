@@ -3371,10 +3371,6 @@ bool AdaptDispatch::_EraseAll()
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newPageTop, newPageBottom);
 
-    // Clear any marks that remain below the start of the
-    textBuffer.ClearMarksInRange(til::point{ 0, newPageTop },
-                                 til::point{ pageWidth, bufferHeight });
-
     // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this ED sequence to the connected
     // terminal application. While we're in conpty mode, when the client
@@ -4966,7 +4962,7 @@ ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
                 {
                     buffer += L'\\';
                 }
-                engine.ActionPassThroughString(buffer);
+                engine.ActionPassThroughString(buffer, true);
                 buffer.clear();
             }
             return !endOfString;
