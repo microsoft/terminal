@@ -111,8 +111,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool _fixUpsAppliedDuringLoad;
 
-        void _AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings);
-
         // _KeyMap is the map of key chords -> action IDs defined in this layer
         // _ActionMap is the map of action IDs -> commands defined in this layer
         // These maps are the ones that we deserialize into when parsing the user json and vice-versa
