@@ -90,6 +90,7 @@ Powerline
 powerline
 ptys
 pwshw
+quickfix
 qof
 qps
 Remappings
