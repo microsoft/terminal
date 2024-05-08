@@ -717,8 +717,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
 
-        LOG_IF_FAILED(ConsoleImeResizeCompStrView());
-
         // Attempt to "snap" the viewport to the cursor position. If the cursor
         // is not in the current viewport, we'll try and move the viewport so
         // that the cursor is visible.
@@ -976,7 +974,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 [[nodiscard]] HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                                const WORD attribute) noexcept
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
         LockConsole();
@@ -986,8 +983,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         const TextAttribute attr{ attribute };
         context.SetAttributes(attr);
-
-        gci.ConsoleIme.RefreshAreaAttributes();
 
         return S_OK;
     }

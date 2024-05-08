@@ -49,8 +49,6 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
-#include <vector>
-
 #include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
@@ -198,7 +196,7 @@ public:
 
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
 
-    std::wstring GetPlainText(const til::point& start, const til::point& end) const;
+    std::wstring GetPlainText(til::point start, til::point end) const;
 
     struct CopyRequest
     {

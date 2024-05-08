@@ -38,10 +38,29 @@
                         Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
                         CornerRadius="1" />
             </DataTemplate>
-            <CollectionViewSource x:Key="FontAxesCVS"
-                                  x:Name="FontAxesCVS" />
-            <CollectionViewSource x:Key="FontFeaturesCVS"
-                                  x:Name="FontFeaturesCVS" />
+
+            <DataTemplate x:Key="FontKeyValuePairTemplate"
+                          x:DataType="local:FontKeyValuePair">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind KeyDisplayString}" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    Value="{x:Bind Value, Mode=TwoWay}" />
+                    <Button Grid.Column="2"
+                            Click="DeleteFontKeyValuePair_Click"
+                            Style="{StaticResource DeleteButtonStyle}"
+                            Tag="{x:Bind (local:FontKeyValuePair)}">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE74D;" />
+                    </Button>
+                </Grid>
+            </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -190,8 +209,7 @@
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
 
                 <StackPanel Margin="0,8,0,0">
-                    <AutoSuggestBox x:Name="_fontFaceBox"
-                                    x:Uid="Profile_FontFaceBox"
+                    <AutoSuggestBox x:Uid="Profile_FontFaceBox"
                                     GotFocus="FontFaceBox_GotFocus"
                                     ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                                     ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
@@ -247,8 +265,7 @@
             </local:SettingContainer>
 
             <!--  Font Weight  -->
-            <local:SettingContainer x:Name="FontWeightContainer"
-                                    x:Uid="Profile_FontWeight"
+            <local:SettingContainer x:Uid="Profile_FontWeight"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontWeight}"
                                     HasSettingValue="{x:Bind Appearance.HasFontWeight, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontWeightOverrideSource, Mode=OneWay}"
@@ -284,56 +301,19 @@
                     </Grid>
                 </StackPanel>
             </local:SettingContainer>
-            <local:SettingContainer x:Name="FontAxesContainer"
-                                    x:Uid="Profile_FontAxes"
+            <local:SettingContainer x:Uid="Profile_FontAxes"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontAxes}"
                                     HasSettingValue="{x:Bind Appearance.HasFontAxes, Mode=OneWay}"
-                                    IsEnabled="{x:Bind Appearance.AreFontAxesAvailable, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontAxesOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Spacing="16">
                     <ListView IsItemClickEnabled="False"
-                              ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
-                              SelectionMode="None">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="Padding" Value="0" />
-                                <Setter Property="Margin" Value="0" />
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.Resources>
-                            <CollectionViewSource x:Key="FontAxesNamesCVS"
-                                                  x:Name="FontAxesNamesCVS" />
-                        </ListView.Resources>
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="local:AxisKeyValuePair">
-                                <Grid ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <ComboBox Grid.Column="0"
-                                              IsSynchronizedWithCurrentItem="False"
-                                              ItemsSource="{Binding Source={StaticResource FontAxesNamesCVS}}"
-                                              SelectedIndex="{x:Bind AxisIndex, Mode=TwoWay}" />
-                                    <muxc:NumberBox Grid.Column="1"
-                                                    Value="{x:Bind AxisValue, Mode=TwoWay}" />
-                                    <Button Grid.Column="2"
-                                            HorizontalAlignment="Right"
-                                            Click="DeleteAxisKeyValuePair_Click"
-                                            Style="{StaticResource DeleteButtonStyle}"
-                                            Tag="{x:Bind AxisKey, Mode=OneWay}">
-                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                                  Glyph="&#xE74D;" />
-                                    </Button>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    <Button Click="AddNewAxisKeyValuePair_Click"
-                            IsEnabled="{x:Bind Appearance.CanFontAxesBeAdded, Mode=OneWay}">
-                        <Button.Content>
+                              ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
+                              ItemsSource="{x:Bind Appearance.FontAxes, Mode=OneWay}"
+                              SelectionMode="None" />
+                    <muxc:DropDownButton x:Name="AddFontAxisButton"
+                                         x:Uid="Profile_AddFontAxisButton">
+                        <muxc:DropDownButton.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon VerticalAlignment="Bottom"
                                           FontSize="{StaticResource StandardIconSize}"
@@ -341,60 +321,26 @@
                                 <TextBlock x:Uid="Profile_AddNewFontAxis"
                                            Style="{StaticResource IconButtonTextBlockStyle}" />
                             </StackPanel>
-                        </Button.Content>
-                    </Button>
+                        </muxc:DropDownButton.Content>
+                        <muxc:DropDownButton.Flyout>
+                            <MenuFlyout />
+                        </muxc:DropDownButton.Flyout>
+                    </muxc:DropDownButton>
                 </StackPanel>
             </local:SettingContainer>
-            <local:SettingContainer x:Name="FontFeaturesContainer"
-                                    x:Uid="Profile_FontFeatures"
+            <local:SettingContainer x:Uid="Profile_FontFeatures"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontFeatures}"
                                     HasSettingValue="{x:Bind Appearance.HasFontFeatures, Mode=OneWay}"
-                                    IsEnabled="{x:Bind Appearance.AreFontFeaturesAvailable, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontFeaturesOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Spacing="16">
                     <ListView IsItemClickEnabled="False"
-                              ItemsSource="{Binding Source={StaticResource FontFeaturesCVS}}"
-                              SelectionMode="None">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="Padding" Value="0" />
-                                <Setter Property="Margin" Value="0" />
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.Resources>
-                            <CollectionViewSource x:Key="FontFeaturesNamesCVS"
-                                                  x:Name="FontFeaturesNamesCVS" />
-                        </ListView.Resources>
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="local:FeatureKeyValuePair">
-                                <Grid ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <ComboBox Grid.Column="0"
-                                              IsSynchronizedWithCurrentItem="False"
-                                              ItemsSource="{Binding Source={StaticResource FontFeaturesNamesCVS}}"
-                                              SelectedIndex="{x:Bind FeatureIndex, Mode=TwoWay}" />
-                                    <muxc:NumberBox Grid.Column="1"
-                                                    Value="{x:Bind FeatureValue, Mode=TwoWay}" />
-                                    <Button Grid.Column="2"
-                                            HorizontalAlignment="Right"
-                                            Click="DeleteFeatureKeyValuePair_Click"
-                                            Style="{StaticResource DeleteButtonStyle}"
-                                            Tag="{x:Bind FeatureKey, Mode=OneWay}">
-                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                                  Glyph="&#xE74D;" />
-                                    </Button>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    <Button Click="AddNewFeatureKeyValuePair_Click"
-                            IsEnabled="{x:Bind Appearance.CanFontFeaturesBeAdded, Mode=OneWay}">
-                        <Button.Content>
+                              ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
+                              ItemsSource="{x:Bind Appearance.FontFeatures, Mode=OneWay}"
+                              SelectionMode="None" />
+                    <muxc:DropDownButton x:Name="AddFontFeatureButton"
+                                         x:Uid="Profile_AddFontFeatureButton">
+                        <muxc:DropDownButton.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon VerticalAlignment="Bottom"
                                           FontSize="{StaticResource StandardIconSize}"
@@ -402,8 +348,11 @@
                                 <TextBlock x:Uid="Profile_AddNewFontFeature"
                                            Style="{StaticResource IconButtonTextBlockStyle}" />
                             </StackPanel>
-                        </Button.Content>
-                    </Button>
+                        </muxc:DropDownButton.Content>
+                        <muxc:DropDownButton.Flyout>
+                            <MenuFlyout />
+                        </muxc:DropDownButton.Flyout>
+                    </muxc:DropDownButton>
                 </StackPanel>
             </local:SettingContainer>
 
@@ -721,8 +670,7 @@
             </local:SettingContainer>
 
             <!--  Background Image Opacity  -->
-            <local:SettingContainer x:Name="BackgroundImageOpacityContainer"
-                                    x:Uid="Profile_BackgroundImageOpacity"
+            <local:SettingContainer x:Uid="Profile_BackgroundImageOpacity"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageOpacity}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageOpacity, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageOpacityOverrideSource, Mode=OneWay}"

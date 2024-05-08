@@ -47,14 +47,8 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
-    _borderSecond.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
+    _borderFirst.Tapped({ this, &Pane::_borderTappedHandler });
+    _borderSecond.Tapped({ this, &Pane::_borderTappedHandler });
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -88,14 +82,8 @@ Pane::Pane(std::shared_ptr<Pane> first,
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
-    _borderSecond.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
+    _borderFirst.Tapped({ this, &Pane::_borderTappedHandler });
+    _borderSecond.Tapped({ this, &Pane::_borderTappedHandler });
 }
 
 // Extract the terminal settings from the current (leaf) pane's control
@@ -151,7 +139,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
         // When creating a pane the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
-        const auto splitSize = (kind != BuildStartupKind::None && _IsLeaf() ? .5 : 1. - _desiredSplitPosition);
+        const auto splitSize = (kind != BuildStartupKind::None && _IsLeaf() ? 0.5f : 1.0f - _desiredSplitPosition);
         SplitPaneArgs args{ SplitType::Manual, splitDirection, splitSize, terminalArgs };
         actionAndArgs.Args(args);
 
@@ -1237,6 +1225,14 @@ void Pane::UpdateVisuals()
 // - <none>
 void Pane::_Focus()
 {
+    // Don't focus our content if we're already focused. This prevents a bug
+    // where tapping on the arrow in a ComboBox will land in our Tapped handler,
+    // and if we steal focus from the ComboBox, it won't open. See GH#17062
+    if (WasLastFocused())
+    {
+        return;
+    }
+
     GotFocus.raise(shared_from_this(), FocusState::Programmatic);
     if (const auto& lastContent{ GetLastFocusedContent() })
     {
@@ -1595,12 +1591,12 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
     const auto splitWidth = _splitState == SplitState::Vertical;
 
     Size removedOriginalSize{
-        ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
-        ::base::saturated_cast<float>(removedChild->_root.ActualHeight())
+        static_cast<float>(removedChild->_root.ActualWidth()),
+        static_cast<float>(removedChild->_root.ActualHeight())
     };
     Size remainingOriginalSize{
-        ::base::saturated_cast<float>(remainingChild->_root.ActualWidth()),
-        ::base::saturated_cast<float>(remainingChild->_root.ActualHeight())
+        static_cast<float>(remainingChild->_root.ActualWidth()),
+        static_cast<float>(remainingChild->_root.ActualHeight())
     };
 
     // Remove both children from the grid
@@ -1902,7 +1898,7 @@ void Pane::_SetupEntranceAnimation()
     //   looks bad.
     _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
 
-    const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
+    const auto [firstSize, secondSize] = _CalcChildrenSizes(static_cast<float>(totalSize));
 
     // This is safe to capture this, because it's only being called in the
     // context of this method (not on another thread)
@@ -3020,4 +3016,10 @@ winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
     }
 
     return _themeResources.unfocusedBorderBrush;
+}
+
+void Pane::_borderTappedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e)
+{
+    _FocusFirstChild();
+    e.Handled(true);
 }

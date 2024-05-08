@@ -156,7 +156,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command2");
@@ -167,7 +167,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command4");
@@ -178,7 +178,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command5");
@@ -189,7 +189,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command6");
@@ -211,7 +211,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command8");
@@ -222,7 +222,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Left, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command9");
@@ -233,7 +233,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Up, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
         {
             auto command = commands.Lookup(L"command10");
@@ -244,7 +244,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.5f, realArgs.SplitSize());
         }
     }
 
@@ -274,7 +274,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_ARE_EQUAL(0.25, realArgs.SplitSize());
+            VERIFY_ARE_EQUAL(0.25f, realArgs.SplitSize());
         }
     }
 

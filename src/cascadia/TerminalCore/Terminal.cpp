@@ -422,19 +422,7 @@ CATCH_RETURN()
 
 void Terminal::Write(std::wstring_view stringView)
 {
-    const auto& cursor = _activeBuffer().GetCursor();
-    const til::point cursorPosBefore{ cursor.GetPosition() };
-
     _stateMachine->ProcessString(stringView);
-
-    const til::point cursorPosAfter{ cursor.GetPosition() };
-
-    // Firing the CursorPositionChanged event is very expensive so we try not to
-    // do that when the cursor does not need to be redrawn.
-    if (cursorPosBefore != cursorPosAfter)
-    {
-        _NotifyTerminalCursorPositionChanged();
-    }
 }
 
 // Method Description:
@@ -534,14 +522,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     // Case 2 - Step 2: get the auto-detected hyperlink
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
-        std::wstring uri;
-        const auto startIter = _activeBuffer().GetCellDataAt(result->start);
-        const auto endIter = _activeBuffer().GetCellDataAt(result->stop);
-        for (auto iter = startIter; iter != endIter; ++iter)
-        {
-            uri += iter->Chars();
-        }
-        return uri;
+        return _activeBuffer().GetPlainText(result->start, result->stop);
     }
     return {};
 }
@@ -1099,18 +1080,6 @@ void Terminal::_NotifyScrollEvent()
     }
 }
 
-void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
-{
-    if (_pfnCursorPositionChanged)
-    {
-        try
-        {
-            _pfnCursorPositionChanged();
-        }
-        CATCH_LOG();
-    }
-}
-
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
@@ -1134,11 +1103,6 @@ void Terminal::SetCopyToClipboardCallback(std::function<void(wil::zwstring_view)
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
     _pfnScrollPositionChanged.swap(pfn);
-}
-
-void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept
-{
-    _pfnCursorPositionChanged.swap(pfn);
 }
 
 // Method Description:
@@ -1257,6 +1221,30 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
 void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
 {
     _pfnCompletionsChanged.swap(pfn);
+}
+
+// Method Description:
+// - Stores the search highlighted regions in the terminal
+void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept
+{
+    _assertLocked();
+    _searchHighlights = highlights;
+}
+
+// Method Description:
+// - Stores the focused search highlighted region in the terminal
+// - If the region isn't empty, it will be brought into view
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx)
+{
+    _assertLocked();
+    _searchHighlightFocused = focusedIdx;
+
+    // bring the focused region into the view if the index is in valid range
+    if (focusedIdx < _searchHighlights.size())
+    {
+        const auto focused = til::at(_searchHighlights, focusedIdx);
+        _ScrollToPoints(focused.start, focused.end);
+    }
 }
 
 Scheme Terminal::GetColorScheme() const

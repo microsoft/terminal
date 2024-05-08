@@ -44,12 +44,12 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    double TitlebarControl::CaptionButtonWidth()
+    float TitlebarControl::CaptionButtonWidth()
     {
         // Divide by three, since we know there are only three buttons. When
         // Windows 12 comes along and adds another, we can update this /s
-        static auto width{ MinMaxCloseControl().ActualWidth() / 3.0 };
-        return width;
+        const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
+        return static_cast<float>(minMaxCloseWidth) / 3.0f;
     }
 
     IInspectable TitlebarControl::Content()

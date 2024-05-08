@@ -8,6 +8,7 @@
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
 #include "RequestReceiveContentArgs.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 
 #include <filesystem>
 
@@ -1946,11 +1947,17 @@ namespace winrt::TerminalApp::implementation
         layout.LaunchMode({ mode });
 
         // Only save the content size because the tab size will be added on load.
-        const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
-        const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const auto contentWidth = static_cast<float>(_tabContent.ActualWidth());
+        const auto contentHeight = static_cast<float>(_tabContent.ActualHeight());
         const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
 
         layout.InitialSize(windowSize);
+
+        // We don't actually know our own position. So we have to ask the window
+        // layer for that.
+        const auto launchPosRequest{ winrt::make<LaunchPositionRequest>() };
+        RequestLaunchPosition.raise(*this, launchPosRequest);
+        layout.InitialPosition(launchPosRequest.Position());
 
         ApplicationState::SharedInstance().AppendPersistedWindowLayout(layout);
     }
@@ -2351,8 +2358,8 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
-        const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
-        const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const auto contentWidth = static_cast<float>(_tabContent.ActualWidth());
+        const auto contentHeight = static_cast<float>(_tabContent.ActualHeight());
         const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
         const auto realSplitType = activeTab->PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
@@ -3145,7 +3152,8 @@ namespace winrt::TerminalApp::implementation
                                                   TerminalConnection::ITerminalConnection existingConnection)
 
     {
-        if (const auto& newTerminalArgs{ contentArgs.try_as<NewTerminalArgs>() })
+        const auto& newTerminalArgs{ contentArgs.try_as<NewTerminalArgs>() };
+        if (contentArgs == nullptr || newTerminalArgs != nullptr || contentArgs.Type().empty())
         {
             // Terminals are of course special, and have to deal with debug taps, duplicating the tab, etc.
             return _MakeTerminalPane(newTerminalArgs, sourceTab, existingConnection);

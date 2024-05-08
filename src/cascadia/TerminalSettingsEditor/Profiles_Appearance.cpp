@@ -3,13 +3,11 @@
 
 #include "pch.h"
 #include "Profiles_Appearance.h"
-#include "Profiles_Appearance.g.cpp"
+
 #include "ProfileViewModel.h"
 #include "PreviewConnection.h"
-#include "EnumEntry.h"
 
-#include <LibraryResources.h>
-#include "..\WinRTUtils\inc\Utils.h"
+#include "Profiles_Appearance.g.cpp"
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
@@ -64,10 +62,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile.DeleteUnfocusedAppearance();
     }
 
-    void Profiles_Appearance::_onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&) const
+    void Profiles_Appearance::_onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&)
     {
-        const auto settings = _Profile.TermSettings();
-        _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
-        _previewControl.UpdateControlSettings(settings, settings);
+        if (!_updatePreviewControl)
+        {
+            _updatePreviewControl = std::make_shared<ThrottledFuncTrailing<>>(
+                winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+                std::chrono::milliseconds{ 100 },
+                [this]() {
+                    const auto settings = _Profile.TermSettings();
+                    _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
+                    _previewControl.UpdateControlSettings(settings, settings);
+                });
+        }
+
+        _updatePreviewControl->Run();
     }
 }

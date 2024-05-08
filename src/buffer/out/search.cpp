@@ -8,28 +8,26 @@
 
 using namespace Microsoft::Console::Types;
 
-bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive)
+bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept
+{
+    return _renderData != &renderData ||
+           _needle != needle ||
+           _caseInsensitive != caseInsensitive ||
+           _lastMutationId != renderData.GetTextBuffer().GetLastMutationId();
+}
+
+bool Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive, bool reverse)
 {
     const auto& textBuffer = renderData.GetTextBuffer();
-    const auto lastMutationId = textBuffer.GetLastMutationId();
-
-    if (_needle == needle &&
-        _caseInsensitive == caseInsensitive &&
-        _lastMutationId == lastMutationId)
-    {
-        _step = reverse ? -1 : 1;
-        return false;
-    }
 
     _renderData = &renderData;
     _needle = needle;
     _caseInsensitive = caseInsensitive;
-    _lastMutationId = lastMutationId;
+    _lastMutationId = textBuffer.GetLastMutationId();
 
     _results = textBuffer.SearchText(needle, caseInsensitive);
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
-
     return true;
 }
 
@@ -93,8 +91,9 @@ void Search::MovePastPoint(const til::point anchor) noexcept
     _index = (index + count) % count;
 }
 
-void Search::FindNext() noexcept
+void Search::FindNext(bool reverse) noexcept
 {
+    _step = reverse ? -1 : 1;
     if (const auto count{ gsl::narrow_cast<ptrdiff_t>(_results.size()) })
     {
         _index = (_index + _step + count) % count;
@@ -109,28 +108,6 @@ const til::point_span* Search::GetCurrent() const noexcept
         return &til::at(_results, index);
     }
     return nullptr;
-}
-
-void Search::HighlightResults() const
-{
-    std::vector<til::inclusive_rect> toSelect;
-    const auto& textBuffer = _renderData->GetTextBuffer();
-
-    for (const auto& r : _results)
-    {
-        const auto rbStart = textBuffer.BufferToScreenPosition(r.start);
-        const auto rbEnd = textBuffer.BufferToScreenPosition(r.end);
-
-        til::inclusive_rect re;
-        re.top = rbStart.y;
-        re.bottom = rbEnd.y;
-        re.left = rbStart.x;
-        re.right = rbEnd.x;
-
-        toSelect.emplace_back(re);
-    }
-
-    _renderData->SelectSearchRegions(std::move(toSelect));
 }
 
 // Routine Description:
@@ -156,6 +133,11 @@ bool Search::SelectCurrent() const
 const std::vector<til::point_span>& Search::Results() const noexcept
 {
     return _results;
+}
+
+std::vector<til::point_span>&& Search::ExtractResults() noexcept
+{
+    return std::move(_results);
 }
 
 ptrdiff_t Search::CurrentMatch() const noexcept

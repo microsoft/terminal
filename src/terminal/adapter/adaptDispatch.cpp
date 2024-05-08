@@ -178,9 +178,10 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     _ApplyCursorMovementFlags(cursor);
 
-    // Notify UIA of new text.
+    // Notify terminal and UIA of new text.
     // It's important to do this here instead of in TextBuffer, because here you
-    // have access to the entire line of text.
+    // have access to the entire line of text, whereas TextBuffer writes it one
+    // character at a time via the OutputCellIterator.
     textBuffer.TriggerNewTextNotification(string);
 }
 
@@ -3293,10 +3294,6 @@ bool AdaptDispatch::_EraseAll()
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
 
-    // Clear any marks that remain below the start of the
-    textBuffer.ClearMarksInRange(til::point{ 0, newViewportTop },
-                                 til::point{ bufferSize.Width(), bufferSize.Height() });
-
     // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this ED sequence to the connected
     // terminal application. While we're in conpty mode, when the client
@@ -4885,7 +4882,7 @@ ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
                 {
                     buffer += L'\\';
                 }
-                engine.ActionPassThroughString(buffer);
+                engine.ActionPassThroughString(buffer, true);
                 buffer.clear();
             }
             return !endOfString;

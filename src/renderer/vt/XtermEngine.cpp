@@ -37,7 +37,16 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      the pipe.
 [[nodiscard]] HRESULT XtermEngine::StartPaint() noexcept
 {
-    RETURN_IF_FAILED(VtEngine::StartPaint());
+    const auto hr = VtEngine::StartPaint();
+    if (hr != S_OK)
+    {
+        // If _noFlushOnEnd was set, and we didn't return early, it would usually
+        // have been reset in the EndPaint call. But since that's not going to
+        // happen now, we need to reset it here, otherwise we may mistakenly skip
+        // the flush on the next frame.
+        _noFlushOnEnd = false;
+        return hr;
+    }
 
     _trace.TraceLastText(_lastText);
 
@@ -45,6 +54,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // visible, then PaintCursor will be called, and we'll set this to true
     // during the frame.
     _nextCursorIsVisible = false;
+    _startOfFrameBufferIndex = _buffer.size();
 
     // Do not perform synchronization clearing in passthrough mode.
     // In passthrough, the terminal leads and we follow what it is
@@ -82,15 +92,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         }
     }
 
-    if (!_quickReturn)
-    {
-        if (_WillWriteSingleChar())
-        {
-            // Don't re-enable the cursor.
-            _quickReturn = true;
-        }
-    }
-
     return S_OK;
 }
 
@@ -112,7 +113,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         // by prepending a cursor off.
         if (_lastCursorIsVisible != Tribool::False)
         {
-            _buffer.insert(0, "\x1b[?25l");
+            _buffer.insert(_startOfFrameBufferIndex, "\x1b[?25l");
             _lastCursorIsVisible = Tribool::False;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
@@ -519,9 +520,10 @@ CATCH_RETURN();
 //      proper utf-8 string, depending on our mode.
 // Arguments:
 // - wstr - wstring of text to be written
+// - flush - set to true if the string should be flushed immediately
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr) noexcept
+[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr, const bool flush) noexcept
 {
     RETURN_IF_FAILED(_fUseAsciiOnly ?
                          VtEngine::_WriteTerminalAscii(wstr) :
@@ -534,8 +536,11 @@ CATCH_RETURN();
     // cause flickering (where we've buffered some state but not the whole
     // "frame" as specified by the app). We'll just immediately buffer this
     // sequence, and flush it when the render thread comes around to paint the
-    // frame normally.
-
+    // frame normally, unless a flush has been explicitly requested.
+    if (flush)
+    {
+        _flushImpl();
+    }
     return S_OK;
 }
 

@@ -47,6 +47,20 @@ using namespace Microsoft::Console::Render::Atlas;
 static constexpr D2D1_MATRIX_3X2_F identityTransform{ .m11 = 1, .m22 = 1 };
 static constexpr D2D1_COLOR_F whiteColor{ 1, 1, 1, 1 };
 
+static u64 queryPerfFreq() noexcept
+{
+    LARGE_INTEGER li;
+    QueryPerformanceFrequency(&li);
+    return std::bit_cast<u64>(li.QuadPart);
+}
+
+static u64 queryPerfCount() noexcept
+{
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return std::bit_cast<u64>(li.QuadPart);
+}
+
 BackendD3D::BackendD3D(const RenderingPayload& p)
 {
     THROW_IF_FAILED(p.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _vertexShader.addressof()));
@@ -485,7 +499,14 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             THROW_IF_FAILED(p.device->CreateSamplerState(&desc, _customShaderSamplerState.put()));
         }
 
-        _customShaderStartTime = std::chrono::steady_clock::now();
+        // Since floats are imprecise we need to constrain the time value into a range that can be accurately represented.
+        // Assuming a monitor refresh rate of 1000 Hz, we can still easily represent 1000 seconds accurately (roughly 16 minutes).
+        // 10000 seconds would already result in a 50% error. So to avoid this, we use queryPerfCount() modulo _customShaderPerfTickMod.
+        // The use of a power of 10 is intentional, because shaders are often periodic and this makes any decimal multiplier up to 3 fractional
+        // digits not break the periodicity. For instance, with a wraparound of 1000 seconds sin(1.234*x) is still perfectly periodic.
+        const auto freq = queryPerfFreq();
+        _customShaderPerfTickMod = freq * 1000;
+        _customShaderSecsPerPerfTick = 1.0f / freq;
     }
 }
 
@@ -1221,7 +1242,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     DWRITE_RENDERING_MODE renderingMode{};
     DWRITE_GRID_FIT_MODE gridFitMode{};
     THROW_IF_FAILED(fontFaceEntry.fontFace->GetRecommendedRenderingMode(
-        /* fontEmSize       */ fontEmSize,
+        /* fontEmSize       */ glyphRun.fontEmSize,
         /* dpiX             */ 1, // fontEmSize is already in pixel
         /* dpiY             */ 1, // fontEmSize is already in pixel
         /* transform        */ nullptr,
@@ -1271,6 +1292,39 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     // Allocate a buffer of `width * height` bytes.
     THROW_IF_FAILED(glyphRunAnalysis->CreateAlphaTexture(DWRITE_TEXTURE_ALIASED_1x1, &textureBounds, buffer.data(), buffer.size()));
     // The buffer now contains a grayscale alpha mask.
+#endif
+
+    // This code finds the local font file path. Useful for debugging as it
+    // gets you the font.ttf <> glyphIndex pair to uniquely identify glyphs.
+#if 0
+    std::vector<std::wstring> paths;
+
+    UINT32 numberOfFiles;
+    THROW_IF_FAILED(fontFaceEntry.fontFace->GetFiles(&numberOfFiles, nullptr));
+    wil::com_ptr<IDWriteFontFile> fontFiles[8];
+    THROW_IF_FAILED(fontFaceEntry.fontFace->GetFiles(&numberOfFiles, fontFiles[0].addressof()));
+
+    for (UINT32 i = 0; i < numberOfFiles; ++i)
+    {
+        wil::com_ptr<IDWriteFontFileLoader> loader;
+        THROW_IF_FAILED(fontFiles[i]->GetLoader(loader.addressof()));
+
+        void const* fontFileReferenceKey;
+        UINT32 fontFileReferenceKeySize;
+        THROW_IF_FAILED(fontFiles[i]->GetReferenceKey(&fontFileReferenceKey, &fontFileReferenceKeySize));
+
+        if (const auto localLoader = loader.try_query<IDWriteLocalFontFileLoader>())
+        {
+            UINT32 filePathLength;
+            THROW_IF_FAILED(localLoader->GetFilePathLengthFromKey(fontFileReferenceKey, fontFileReferenceKeySize, &filePathLength));
+
+            filePathLength++;
+            std::wstring filePath(filePathLength, L'\0');
+            THROW_IF_FAILED(localLoader->GetFilePathFromKey(fontFileReferenceKey, fontFileReferenceKeySize, filePath.data(), filePathLength));
+
+            paths.emplace_back(std::move(filePath));
+        }
+    }
 #endif
 
     const int scale = row.lineRendition != LineRendition::SingleWidth;
@@ -1470,7 +1524,7 @@ BackendD3D::ShadingType BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p
     const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
     const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
     const auto softFontIndex = glyphIndex - 0xEF20u;
-    const auto data = til::clamp_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
+    const auto data = til::safe_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
 
     // This happens if someone wrote a U+EF2x character (by accident), but we don't even have soft fonts enabled yet.
     if (data.empty() || data.size() != height)
@@ -2111,8 +2165,12 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {
     {
+        // See the comment in _recreateCustomShader() which initializes the two members below and explains what they do.
+        const auto now = queryPerfCount();
+        const auto time = static_cast<int>(now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
+
         const CustomConstBuffer data{
-            .time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count(),
+            .time = time,
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
             .resolution = {
                 static_cast<f32>(_viewportCellCount.x * p.s->font->cellSize.x),

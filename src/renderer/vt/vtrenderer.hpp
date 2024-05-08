@@ -64,7 +64,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
-        [[nodiscard]] HRESULT PaintSelections(const std::vector<til::rect>& rects) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
@@ -79,7 +78,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT RequestCursor() noexcept;
         [[nodiscard]] HRESULT InheritCursor(const til::point coordCursor) noexcept;
         [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string_view str) noexcept;
-        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
+        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str, const bool flush = false) noexcept = 0;
         void SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const terminalOwner);
         void SetResizeQuirk(const bool resizeQuirk);
         void SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept;
@@ -94,6 +93,7 @@ namespace Microsoft::Console::Render
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
+        size_t _startOfFrameBufferIndex = 0;
 
         std::string _formatBuffer;
         std::string _conversionBuffer;
@@ -113,7 +113,6 @@ namespace Microsoft::Console::Render
         til::point _lastText;
         til::point _scrollDelta;
 
-        bool _quickReturn;
         bool _clearedAllThisFrame;
         bool _cursorMoved;
         bool _resized;
@@ -213,8 +212,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT _MoveCursor(const til::point coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
         [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
-
-        bool _WillWriteSingleChar() const;
 
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop

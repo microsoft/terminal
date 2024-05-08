@@ -284,15 +284,15 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, INewContentArgs contentArgs);
-        SplitPaneArgs(SplitDirection split, Double size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, Single size, INewContentArgs contentArgs);
         SplitPaneArgs(SplitDirection split, INewContentArgs contentArgs);
         SplitPaneArgs(SplitType splitMode);
 
         SplitDirection SplitDirection { get; };
         INewContentArgs ContentArgs { get; };
         SplitType SplitMode { get; };
-        Double SplitSize { get; };
+        Single SplitSize { get; };
     };
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
@@ -661,6 +661,7 @@ namespace Microsoft.Terminal.Settings.Model
         Command();
 
         String Name { get; };
+        String ID { get; };
         ActionAndArgs ActionAndArgs { get; };
         Microsoft.Terminal.Control.KeyChord Keys { get; };
         void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);
@@ -714,7 +715,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_FONT_SETTING(String, FontFace);
         INHERITABLE_FONT_SETTING(Single, FontSize);
         INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);
-        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontFeatures);
         INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
         INHERITABLE_FONT_SETTING(Boolean, EnableBuiltinGlyphs);
         INHERITABLE_FONT_SETTING(Boolean, EnableColorGlyphs);
@@ -827,7 +828,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(String, BackgroundImagePath);
         String ExpandedBackgroundImagePath { get; };
 
-        INHERITABLE_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        INHERITABLE_APPEARANCE_SETTING(Single, BackgroundImageOpacity);
         INHERITABLE_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         INHERITABLE_APPEARANCE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
 
@@ -836,7 +837,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(String, PixelShaderImagePath);
         INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
         INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
-        INHERITABLE_APPEARANCE_SETTING(Double, Opacity);
+        INHERITABLE_APPEARANCE_SETTING(Single, Opacity);
         INHERITABLE_APPEARANCE_SETTING(Boolean, UseAcrylic);
     };
 

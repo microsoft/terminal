@@ -188,7 +188,7 @@
     <value>複数ウィンドウ</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>閉じる...</value>
+    <value>閉じる</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>タブを右側に閉じる</value>
@@ -203,28 +203,28 @@
     <value>ウィンドウを閉じる</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>分割タブ</value>
+    <value>[分割] タブ</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>分割ウィンドウ</value>
+    <value>ウィンドウを分割する</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web 検索</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>色...</value>
+    <value>タブの色の変更</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>カスタム...</value>
+    <value>カスタム</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>リセット</value>
   </data>
   <data name="RenameTabText" xml:space="preserve">
-    <value>タブ名を変更</value>
+    <value>[名前の変更] タブ</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
-    <value>タブの複製</value>
+    <value>タブを複製する</value>
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>無効な "backgroundImage" を持つプロファイルが見つかりました。既定では、そのプロファイルに背景画像はありません。"backgroundImage" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
@@ -485,7 +485,7 @@
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>サードパーティに関する通知</value>
+    <value>サード パーティ通知</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -724,7 +724,7 @@
     <value>最大化</value>
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
-    <value>元に戻す</value>
+    <value>元に戻す (縮小)</value>
   </data>
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>コマンド パレット</value>
@@ -759,7 +759,7 @@
     <value>検索する</value>
   </data>
   <data name="PlainText" xml:space="preserve">
-    <value>プレーンテキスト</value>
+    <value>テキスト</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>終了動作は、プロファイルの詳細設定で構成できます。</value>
@@ -828,7 +828,7 @@
     <value>このタブを閉じます</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>空っぽ...</value>
+    <value>なし</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>ウィンドウを閉じる</value>
@@ -847,7 +847,7 @@
     <value>タブを新しいウィンドウに移動 </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>管理者として実行する</value>
+    <value>管理者として実行</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">

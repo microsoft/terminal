@@ -620,7 +620,10 @@ try
     // -> We need to turn [_beg,_end) into (_beg,_end).
     exclusiveBegin.x--;
 
-    _searcher.ResetIfStale(*_pData, queryText, searchBackward, ignoreCase);
+    if (_searcher.IsStale(*_pData, queryText, ignoreCase))
+    {
+        _searcher.Reset(*_pData, queryText, ignoreCase, searchBackward);
+    }
     _searcher.MovePastPoint(searchBackward ? _end : exclusiveBegin);
 
     til::point hitBeg{ til::CoordTypeMax, til::CoordTypeMax };

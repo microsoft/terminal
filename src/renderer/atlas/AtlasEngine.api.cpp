@@ -5,6 +5,7 @@
 #include "AtlasEngine.h"
 
 #include "Backend.h"
+#include "../../buffer/out/textBuffer.hpp"
 #include "../base/FontCache.h"
 
 // #### NOTE ####
@@ -92,6 +93,28 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
         _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
         _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
     }
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
+{
+    const auto viewportOrigin = til::point{ _api.s->viewportOffset.x, _api.s->viewportOffset.y };
+    const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
+    const auto cellCountX = static_cast<til::CoordType>(_api.s->viewportCellCount.x);
+    for (const auto& hi : highlights)
+    {
+        hi.iterate_rows(cellCountX, [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+            const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
+            beg <<= shift;
+            end <<= shift;
+            til::rect rect{ beg, row, end + 1, row + 1 };
+            rect = rect.to_origin(viewportOrigin);
+            rect &= viewport;
+            _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
+            _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
+        });
+    }
+
     return S_OK;
 }
 
@@ -470,7 +493,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_v
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 {
     // We're currently faced with a font caching bug that we're unable to reproduce locally. See GH#9375.
     // But it occurs often enough and has no proper workarounds, so we're forced to fix it.
@@ -521,7 +544,7 @@ void AtlasEngine::_resolveTransparencySettings() noexcept
     }
 }
 
-[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
@@ -544,19 +567,20 @@ try
             if (p.first.size() == 4)
             {
                 const auto s = p.first.data();
+                const auto v = static_cast<UINT32>(std::max(0l, lrintf(p.second)));
                 switch (const auto tag = DWRITE_MAKE_FONT_FEATURE_TAG(s[0], s[1], s[2], s[3]))
                 {
                 case DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES:
-                    fontFeatures[0].parameter = p.second;
+                    fontFeatures[0].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES:
-                    fontFeatures[1].parameter = p.second;
+                    fontFeatures[1].parameter = v;
                     break;
                 case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES:
-                    fontFeatures[2].parameter = p.second;
+                    fontFeatures[2].parameter = v;
                     break;
                 default:
-                    fontFeatures.emplace_back(tag, p.second);
+                    fontFeatures.emplace_back(tag, v);
                     break;
                 }
             }

@@ -1,6 +1,8 @@
 ACLs
 ADMINS
 advapi
+akv
+AKV
 altform
 altforms
 appendwttlogging
@@ -14,6 +16,7 @@ autoexec
 backplating
 bitmaps
 BOMs
+checkcflags
 COMPUTERNAME
 CPLs
 cpptools
@@ -101,3 +104,4 @@ wtl
 wtt
 wttlog
 Xamarin
+xfgcheck
