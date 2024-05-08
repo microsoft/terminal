@@ -436,6 +436,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
     std::wstring finalizedString;
     std::wstring activeComposition;
     til::small_vector<Render::CompositionRange, 2> activeCompositionRanges;
+    bool activeCompositionEncountered = false;
 
     const GUID* guids[] = { &GUID_PROP_COMPOSING, &GUID_PROP_ATTRIBUTE };
     wil::com_ptr<ITfReadOnlyProperty> props;
@@ -499,7 +500,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 ULONG len = bufCap;
                 THROW_IF_FAILED(range->GetText(ec, TF_TF_MOVESTART, buf, len, &len));
 
-                if (!composing)
+                if (!composing && !activeCompositionEncountered)
                 {
                     finalizedString.append(buf, len);
                 }
@@ -518,6 +519,8 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
 
             const auto attr = _textAttributeFromAtom(atom);
             activeCompositionRanges.emplace_back(totalLen, attr);
+
+            activeCompositionEncountered |= composing;
         }
     }
 
