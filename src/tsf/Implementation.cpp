@@ -500,6 +500,8 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 ULONG len = bufCap;
                 THROW_IF_FAILED(range->GetText(ec, TF_TF_MOVESTART, buf, len, &len));
 
+                // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
+                // In other words, don't put text that's in the middle between two active compositions into the finalized string.
                 if (!composing && !activeCompositionEncountered)
                 {
                     finalizedString.append(buf, len);
