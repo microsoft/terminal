@@ -44,6 +44,10 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         // have been reset in the EndPaint call. But since that's not going to
         // happen now, we need to reset it here, otherwise we may mistakenly skip
         // the flush on the next frame.
+        if (!_noFlushOnEnd)
+        {
+            _Flush();
+        }
         _noFlushOnEnd = false;
         return hr;
     }
