@@ -40,6 +40,7 @@ namespace ControlUnitTests
 
         TEST_METHOD(TestSelectCommandSimple);
         TEST_METHOD(TestSelectOutputSimple);
+        TEST_METHOD(TestCommandContext);
         TEST_METHOD(TestSelectOutputScrolling);
         TEST_METHOD(TestSelectOutputExactWrap);
 
@@ -507,6 +508,54 @@ namespace ControlUnitTests
             const til::point expectedEnd{ 21, 3 }; // x = the end of the text
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+    void ControlCoreTests::TestCommandContext()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(L"Foo-bar");
+        conn->WriteInput(L"\x1b]133;C\x7");
+
+        conn->WriteInput(L"\r\n");
+        conn->WriteInput(L"This is some text     \r\n");
+        conn->WriteInput(L"with varying amounts  \r\n");
+        conn->WriteInput(L"of whitespace         \r\n");
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the command context");
+
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"Write 'Bar' to the command...");
+        conn->WriteInput(L"Bar");
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"Bar", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"then delete it");
+        conn->WriteInput(L"\b \b");
+        conn->WriteInput(L"\b \b");
+        conn->WriteInput(L"\b \b");
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
         }
     }
 
