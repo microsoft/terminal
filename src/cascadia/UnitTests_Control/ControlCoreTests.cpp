@@ -543,8 +543,8 @@ namespace ControlUnitTests
         Log::Comment(L"Write 'Bar' to the command...");
         conn->WriteInput(L"Bar");
         {
-            DebugBreak();
             auto historyContext{ core->CommandHistory() };
+            // Bar shouldn't be in the history, it should be the current command
             VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
             VERIFY_ARE_EQUAL(L"Bar", historyContext.CurrentCommandline());
         }
@@ -556,6 +556,7 @@ namespace ControlUnitTests
         {
             auto historyContext{ core->CommandHistory() };
             VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            // The current commandline is now empty
             VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
         }
     }

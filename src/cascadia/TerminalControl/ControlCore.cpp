@@ -2246,19 +2246,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return winrt::hstring{ L"" };
         };
 
+        const auto currentCommand = _terminal->CurrentCommand();
+        const auto trimmedCurrentCommand = trimToHstring(currentCommand);
+
         for (const auto& commandInBuffer : bufferCommands)
         {
-            if (const auto hstr {trimToHstring(commandInBuffer)} ; !hstr.empty() )
+            if (const auto hstr{ trimToHstring(commandInBuffer) };
+                (!hstr.empty() && hstr != trimmedCurrentCommand))
             {
                 commands.push_back(hstr);
             }
         }
 
+        // If the very last thing in the list of recent commands, is exacly the
+        // same as the current command, then let's not include it in the
+        // history. It's literally the thing the user has typed, RIGHT now.
+        if (commands.back() == trimmedCurrentCommand)
+        {
+            commands.pop_back();
+        }
+
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
-
-        const auto currentCommand = _terminal->CurrentCommand();
-        context->CurrentCommandline(trimToHstring(currentCommand));
-
+        context->CurrentCommandline(trimmedCurrentCommand);
         return *context;
     }
 
