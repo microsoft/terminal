@@ -223,9 +223,7 @@
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single"
-                      Style="{StaticResource NoAnimationsPls}">
-                <!--<ListView.ItemContainerTransitions></ListView.ItemContainerTransitions>-->
-            </ListView>
+                      Style="{StaticResource NoAnimationsPls}" />
 
         </Grid>
 
