@@ -21,7 +21,7 @@ namespace ControlUnitTests
     class ControlCoreTests
     {
         BEGIN_TEST_CLASS(ControlCoreTests)
-            // TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
+            TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
         END_TEST_CLASS()
 
         TEST_METHOD(ComPtrSettings);
