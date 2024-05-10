@@ -104,7 +104,7 @@
                 Remove all item animations from the suggestions UI. They're
                 entirely too slow to let that UI be usable.
             -->
-            <Style x:Key="NoAnimationsPls"
+            <Style x:Key="NoAnimationsPlease"
                    TargetType="ListView">
                 <Setter Property="ItemContainerTransitions">
                     <Setter.Value>
@@ -223,7 +223,7 @@
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single"
-                      Style="{StaticResource NoAnimationsPls}" />
+                      Style="{StaticResource NoAnimationsPlease}" />
 
         </Grid>
 
