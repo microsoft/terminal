@@ -2261,7 +2261,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If the very last thing in the list of recent commands, is exacly the
         // same as the current command, then let's not include it in the
         // history. It's literally the thing the user has typed, RIGHT now.
-        if (commands.back() == trimmedCurrentCommand)
+        if (!commands.empty() && commands.back() == trimmedCurrentCommand)
         {
             commands.pop_back();
         }
