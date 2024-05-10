@@ -2235,19 +2235,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::vector<winrt::hstring> commands;
         const auto bufferCommands{ textBuffer.Commands() };
-        for (const auto& commandInBuffer : bufferCommands)
-        {
-            const auto strEnd = commandInBuffer.find_last_not_of(UNICODE_SPACE);
+
+        auto trimToHstring = [](const auto& s) -> winrt::hstring {
+            const auto strEnd = s.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
-                const auto trimmed = commandInBuffer.substr(0, strEnd + 1);
+                const auto trimmed = s.substr(0, strEnd + 1);
+                return winrt::hstring{ trimmed };
+            }
+            return winrt::hstring{ L"" };
+        };
 
-                commands.push_back(winrt::hstring{ trimmed });
+        for (const auto& commandInBuffer : bufferCommands)
+        {
+            if (const auto hstr {trimToHstring(commandInBuffer)} ; !hstr.empty() )
+            {
+                commands.push_back(hstr);
             }
         }
 
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
-        context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
+
+        const auto currentCommand = _terminal->CurrentCommand();
+        context->CurrentCommandline(trimToHstring(currentCommand));
 
         return *context;
     }

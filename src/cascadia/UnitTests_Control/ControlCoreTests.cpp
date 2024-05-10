@@ -21,7 +21,7 @@ namespace ControlUnitTests
     class ControlCoreTests
     {
         BEGIN_TEST_CLASS(ControlCoreTests)
-            TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
+            // TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
         END_TEST_CLASS()
 
         TEST_METHOD(ComPtrSettings);
@@ -543,6 +543,7 @@ namespace ControlUnitTests
         Log::Comment(L"Write 'Bar' to the command...");
         conn->WriteInput(L"Bar");
         {
+            DebugBreak();
             auto historyContext{ core->CommandHistory() };
             VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
             VERIFY_ARE_EQUAL(L"Bar", historyContext.CurrentCommandline());
