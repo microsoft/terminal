@@ -12,6 +12,7 @@
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             MinWidth="256"
              AllowFocusOnInteraction="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
              IsTabStop="True"
@@ -99,6 +100,19 @@
                                                GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
                                                NestedItemTemplate="{StaticResource NestedItemTemplate}" />
 
+            <Style x:Key="NoAnimationsPls"
+                   TargetType="ListView">
+                <Setter Property="ItemContainerTransitions">
+                    <Setter.Value>
+                        <TransitionCollection>
+                            <!--<AddDeleteThemeTransition/>-->
+                            <ContentThemeTransition />
+                            <!--<ReorderThemeTransition/>-->
+                            <!--<EntranceThemeTransition IsStaggeringEnabled="False"/>-->
+                        </TransitionCollection>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -203,7 +217,10 @@
                       ItemClick="_listItemClicked"
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
-                      SelectionMode="Single" />
+                      SelectionMode="Single"
+                      Style="{StaticResource NoAnimationsPls}">
+                <!--<ListView.ItemContainerTransitions></ListView.ItemContainerTransitions>-->
+            </ListView>
 
         </Grid>
 
