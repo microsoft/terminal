@@ -100,13 +100,18 @@
                                                GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
                                                NestedItemTemplate="{StaticResource NestedItemTemplate}" />
 
+            <!--
+                Remove all item animations from the suggestions UI. They're
+                entirely too slow to let that UI be usable.
+            -->
             <Style x:Key="NoAnimationsPls"
                    TargetType="ListView">
                 <Setter Property="ItemContainerTransitions">
                     <Setter.Value>
                         <TransitionCollection>
-                            <!--<AddDeleteThemeTransition/>-->
+                            <!--  (deleted transitions are let for reference for what we removed)  -->
                             <ContentThemeTransition />
+                            <!--<AddDeleteThemeTransition/>-->
                             <!--<ReorderThemeTransition/>-->
                             <!--<EntranceThemeTransition IsStaggeringEnabled="False"/>-->
                         </TransitionCollection>
