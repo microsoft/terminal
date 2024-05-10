@@ -1178,8 +1178,8 @@ void Renderer::_invalidateCurrentCursor() const
     const auto view = buffer.GetSize();
     const auto coord = _currentCursorOptions.coordCursor;
 
-    const auto lineRendition = buffer.GetLineRendition(coord.y);
-    const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
+    const auto lineRendition = _currentCursorOptions.lineRendition;
+    const auto cursorWidth = _currentCursorOptions.fIsDoubleWidth ? 2 : 1;
 
     til::rect rect{ coord.x, coord.y, coord.x + cursorWidth, coord.y + 1 };
     rect = BufferToScreenLine(rect, lineRendition);
