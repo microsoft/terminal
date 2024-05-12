@@ -122,7 +122,7 @@ RenderThread::~RenderThread()
 
     if (SUCCEEDED(hr))
     {
-        auto hThread = CreateThread(nullptr, // non-inheritable security attributes
+        auto hThread = _beginthreadex(nullptr, // non-inheritable security attributes
                                     0, // use default stack size
                                     s_ThreadProc,
                                     this,
