@@ -16,7 +16,7 @@ HANDLE ConsoleInputThread::Start()
     HANDLE hThread = nullptr;
     auto dwThreadId = (DWORD)-1;
 
-    hThread = CreateThread(nullptr,
+    hThread = _beginthreadex(nullptr,
                            0,
                            ConsoleInputThreadProcWin32,
                            nullptr,
