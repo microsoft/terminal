@@ -142,7 +142,7 @@ void VtConsole::_spawn(const std::wstring& command)
     // Create our own output handling thread
     // Each console needs to make sure to drain the output from its backing host.
     _dwOutputThreadId = (DWORD)-1;
-    _hOutputThread = CreateThread(nullptr,
+    _hOutputThread = _beginthreadex(nullptr,
                                   0,
                                   StaticOutputThreadProc,
                                   this,
