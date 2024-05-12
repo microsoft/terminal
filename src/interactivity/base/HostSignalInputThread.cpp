@@ -185,7 +185,7 @@ bool HostSignalInputThread::_GetData(std::span<std::byte> buffer)
     // 0 is the right value, https://devblogs.microsoft.com/oldnewthing/20040223-00/?p=40503
     _dwThreadId = 0;
 
-    _hThread.reset(CreateThread(nullptr,
+    _hThread.reset(_beginthreadex(nullptr,
                                 0,
                                 HostSignalInputThread::StaticThreadProc,
                                 this,
