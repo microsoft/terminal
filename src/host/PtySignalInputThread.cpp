@@ -325,7 +325,7 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;
 
-    hThread = CreateThread(nullptr,
+    hThread = _beginthreadex(nullptr,
                            0,
                            PtySignalInputThread::StaticThreadProc,
                            this,
