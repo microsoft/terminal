@@ -496,7 +496,7 @@ void CreateIOThreads()
     // The VtConsoles themselves handle their output threads.
 
     DWORD dwInputThreadId = (DWORD)-1;
-    HANDLE hInputThread = CreateThread(nullptr,
+    HANDLE hInputThread = _beginthreadex(nullptr,
                                        0,
                                        InputThread,
                                        nullptr,
