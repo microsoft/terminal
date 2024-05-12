@@ -378,7 +378,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
         connectMessage = heapConnectMessage.get();
     }
 
-    const auto hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
+    const auto hThread = _beginthreadex(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
 
     // If we successfully started the other thread, it's that guy's problem to free the connect message.
