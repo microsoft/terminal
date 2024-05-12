@@ -373,7 +373,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Create our own output handling thread
         // This must be done after the pipes are populated.
         // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(
+        _hOutputThread.reset(_beginthreadex(
             nullptr,
             0,
             [](LPVOID lpParameter) noexcept {
