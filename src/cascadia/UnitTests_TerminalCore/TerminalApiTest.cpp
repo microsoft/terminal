@@ -91,7 +91,7 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
     };
 
     Log::Comment(L"Launching thread to write data.");
-    const auto thread = CreateThread(
+    const auto thread = _beginthreadex(
         nullptr,
         0,
         [](LPVOID data) -> DWORD {
