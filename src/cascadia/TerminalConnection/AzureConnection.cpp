@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _httpClient.DefaultRequestHeaders().UserAgent().TryParseAdd(HttpUserAgent);
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(
+        _hOutputThread.reset(_beginthreadex(
             nullptr,
             0,
             [](LPVOID lpParameter) noexcept {
