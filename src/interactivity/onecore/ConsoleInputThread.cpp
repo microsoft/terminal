@@ -110,7 +110,7 @@ HANDLE ConsoleInputThread::Start() noexcept
 {
     auto dwThreadId = gsl::narrow_cast<DWORD>(-1);
 
-    const auto hThread = CreateThread(nullptr,
+    const auto hThread = _beginthreadex(nullptr,
                                       0,
                                       ConsoleInputThreadProcOneCore,
                                       nullptr,
