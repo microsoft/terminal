@@ -184,6 +184,16 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
 #endif
 }
 
+BackendD3D::~BackendD3D()
+{
+    // In case an exception is thrown for some reason between BeginDraw() and EndDraw()
+    // we still technically need to call EndDraw() before releasing any resources.
+    if (_d2dBeganDrawing)
+    {
+        LOG_IF_FAILED(_d2dRenderTarget->EndDraw());
+    }
+}
+
 void BackendD3D::ReleaseResources() noexcept
 {
     _renderTargetView.reset();
