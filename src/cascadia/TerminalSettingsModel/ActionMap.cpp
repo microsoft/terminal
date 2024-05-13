@@ -981,7 +981,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // Here, we want to manually generate a send input name, but
                 // without visualizing space and backspace
                 //
-                // This is exacly the body of SendInputArgs::GenerateName, but
+                // This is exactly the body of SendInputArgs::GenerateName, but
                 // with visualize_nonspace_control_codes instead of
                 // visualize_control_codes, to make filtering in the suggestions
                 // UI easier.
