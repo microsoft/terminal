@@ -109,7 +109,7 @@
                 <Setter Property="ItemContainerTransitions">
                     <Setter.Value>
                         <TransitionCollection>
-                            <!--  (deleted transitions are let for reference for what we removed)  -->
+                            <!--  (deleted transitions are left for reference for what we removed)  -->
                             <ContentThemeTransition />
                             <!--<AddDeleteThemeTransition/>-->
                             <!--<ReorderThemeTransition/>-->
