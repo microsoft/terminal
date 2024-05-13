@@ -349,7 +349,7 @@
           "description": "Sets the DWrite font features for the given font. For example, { \"ss01\": 1, \"liga\":0 } will enable ss01 and disable ligatures.",
           "type": "object",
           "patternProperties": {
-            "^(([A-Za-z0-9]){4})$": {
+            "^[\\x20-\\x7E]{4}$": {
               "type": "integer"
             }
           },
@@ -359,7 +359,7 @@
           "description": "Sets the DWrite font axes for the given font. For example, { \"wght\": 200 } will set the font weight to 200.",
           "type": "object",
           "patternProperties": {
-            "^([A-Za-z]{4})$": {
+            "^[\\x20-\\x7E]{4}$": {
               "type": "number"
             }
           },
@@ -1501,8 +1501,10 @@
               "const": "multipleActions"
             },
             "actions": {
-              "$ref": "#/$defs/ShortcutAction",
               "type": "array",
+              "items": {
+                "$ref": "#/$defs/ShortcutAction"
+              },
               "minItems": 1,
               "description": "A list of other actions."
             }
@@ -1891,6 +1893,14 @@
       ],
       "type": "string"
     },
+    "IconStyle": {
+      "enum": [
+        "default",
+        "hidden",
+        "monochrome"
+      ],
+      "type": "string"
+    },
     "ThemeColor": {
       "description": "A special kind of color for use in themes. Can be an #rrggbb color, #rrggbbaa color, or a special value. 'accent' is evaluated as the user's selected Accent color in the OS, and 'terminalBackground' will be evaluated as the background color of the active terminal pane.",
       "oneOf": [
@@ -1928,6 +1938,10 @@
         "showCloseButton": {
           "description": "Controls the visibility of the close button on the tab",
           "$ref": "#/$defs/ShowCloseButton"
+        },
+        "iconStyle": {
+          "description": "Controls the appearance of a tab's icon",
+          "$ref": "#/$defs/IconStyle"
         }
       }
     },
@@ -2064,6 +2078,9 @@
             },
             {
               "$ref": "#/$defs/SwitchToTabAction"
+            },
+            {
+              "$ref": "#/$defs/ScrollToMarkAction"
             },
             {
               "$ref": "#/$defs/MoveFocusAction"
@@ -2215,7 +2232,15 @@
         "commands": {
           "description": "List of commands to execute",
           "items": {
-            "$ref": "#/$defs/Keybinding/properties/command"
+            "type": "object",
+            "properties": {
+              "command": {
+                "$ref": "#/$defs/Keybinding/properties/command"
+              },
+              "name": {
+                "$ref": "#/$defs/Keybinding/properties/name"
+              }
+            }
           },
           "minItems": 1,
           "type": "array"
@@ -2776,9 +2801,14 @@
             "type": "string"
           }
         },
-        "experimental.autoMarkPrompts": {
+        "autoMarkPrompts": {
           "default": false,
           "description": "When set to true, prompts will automatically be marked.",
+          "type": "boolean"
+        },
+        "experimental.autoMarkPrompts": {
+          "deprecated": true,
+          "description": "This has been replaced by autoMarkPrompts in 1.21",
           "type": "boolean"
         },
         "experimental.retroTerminalEffect": {
@@ -2786,8 +2816,18 @@
           "type": "boolean"
         },
         "experimental.showMarksOnScrollbar": {
+          "deprecated": true,
+          "description": "This has been replaced by showMarksOnScrollbar in 1.21",
+          "type": "boolean"
+        },
+        "showMarksOnScrollbar": {
           "default": false,
           "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
+          "type": "boolean"
+        },
+        "experimental.rightClickContextMenu": {
+          "default": false,
+          "description": "When set to true, right-clicking on the terminal will show a context menu. When set to false, right-click will copy",
           "type": "boolean"
         },
         "experimental.repositionCursorWithMouse": {

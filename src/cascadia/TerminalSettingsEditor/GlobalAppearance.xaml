@@ -31,7 +31,8 @@
         <local:SettingContainer x:Uid="Globals_Language"
                                 Visibility="{x:Bind ViewModel.LanguageSelectorAvailable}">
             <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
-                      SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}">
+                      SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
                         <TextBlock Text="{x:Bind local:GlobalAppearanceViewModel.LanguageDisplayConverter((x:String))}" />

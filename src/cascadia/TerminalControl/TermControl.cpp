@@ -248,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dispatcher,
             TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {
                     control->WarningBell.raise(*control, nullptr);
                 }
@@ -258,7 +258,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
-                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {
                     control->_throttledUpdateScrollbar(update);
                 }
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _originalSelectedSecondaryElements.Append(e);
         }
         ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
                 const auto& menu{ control->ContextMenu() };
                 menu.PrimaryCommands().Clear();
@@ -317,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         });
         SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
                 const auto& menu{ control->SelectionContextMenu() };
                 menu.PrimaryCommands().Clear();
@@ -544,7 +544,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
 
                 _searchBox->Open([weakThis = get_weak()]() {
-                    if (const auto self = weakThis.get(); !self->_IsClosing())
+                    if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
                         self->_searchBox->SetFocusOnTextbox();
                         self->_refreshSearch();
@@ -1120,7 +1120,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             co_return;
         }
 
-        const auto hr = args.Result();
+        // HRESULT is a signed 32-bit integer which would result in a hex output like "-0x7766FFF4",
+        // but canonically HRESULTs are displayed unsigned as "0x8899000C". See GH#11556.
+        const auto hr = std::bit_cast<uint32_t>(args.Result());
         const auto parameter = args.Parameter();
         winrt::hstring message;
 

@@ -2336,16 +2336,32 @@ void TextBufferTests::GetWordBoundaries()
     }
 
     _buffer->Reset();
-    _buffer->ResizeTraditional({ 10, 5 });
+    _buffer->ResizeTraditional({ 10, 6 });
     const std::vector<std::wstring> secondText = { L"this wordiswrapped",
+                                                   L"notwrapped"
                                                    L"spaces        wrapped reachEOB" };
-    //Buffer looks like:
-    //  this wordi
-    //  swrapped
-    //  spaces
-    //      wrappe
-    //  d reachEOB
+
     WriteLinesToBuffer(secondText, *_buffer);
+
+    //Buffer looks like:
+    //   0123456789
+    // 0|this wordi| < wrapped
+    // 1|swrapped  | < not wrapped
+    // 2|notwrapped| < not wrapped
+    // 3|spaces    | < wrapped
+    // 4|    wrappe| < wrapped
+    // 5|d reachEOB| < wrapped
+
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(0).WasWrapForced());
+    VERIFY_IS_FALSE(_buffer->GetRowByOffset(1).WasWrapForced());
+    // GH#780 See the comment in WriteLinesToBuffer
+    // VERIFY_IS_FALSE(_buffer->GetRowByOffset(2).WasWrapForced());
+    _buffer->GetMutableRowByOffset(2).SetWrapForced(false); // Ugh
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(3).WasWrapForced());
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(4).WasWrapForced());
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(5).WasWrapForced());
+
+    // clang-format off
     testData = {
         { { 0, 0 }, { { 0, 0 }, { 0, 0 } } },
         { { 1, 0 }, { { 0, 0 }, { 0, 0 } } },
@@ -2358,15 +2374,18 @@ void TextBufferTests::GetWordBoundaries()
         { { 9, 1 }, { { 8, 1 }, { 5, 0 } } },
 
         { { 0, 2 }, { { 0, 2 }, { 0, 2 } } },
-        { { 7, 2 }, { { 6, 2 }, { 0, 2 } } },
+        { { 9, 2 }, { { 0, 2 }, { 0, 2 } } },
+                                  // v accessibility does not consider wrapping
+        { { 0, 3 }, { { 0, 3 }, { 0, 2 } } },
+        { { 7, 3 }, { { 6, 3 }, { 0, 2 } } },
+                                  // v accessibility does not consider wrapping
+        { { 1, 4 }, { { 0, 4 }, { 0, 2 } } },
+        { { 4, 4 }, { { 4, 4 }, { 4, 4 } } },
+        { { 8, 4 }, { { 4, 4 }, { 4, 4 } } },
 
-        { { 1, 3 }, { { 0, 3 }, { 0, 2 } } },
-        { { 4, 3 }, { { 4, 3 }, { 4, 3 } } },
-        { { 8, 3 }, { { 4, 3 }, { 4, 3 } } },
-
-        { { 0, 4 }, { { 4, 3 }, { 4, 3 } } },
-        { { 1, 4 }, { { 1, 4 }, { 4, 3 } } },
-        { { 9, 4 }, { { 2, 4 }, { 2, 4 } } },
+        { { 0, 5 }, { { 4, 4 }, { 4, 4 } } },
+        { { 1, 5 }, { { 1, 5 }, { 4, 4 } } },
+        { { 9, 5 }, { { 2, 5 }, { 2, 5 } } },
     };
     for (const auto& test : testData)
     {
@@ -2377,12 +2396,15 @@ void TextBufferTests::GetWordBoundaries()
     }
 
     //GetWordEnd for Wrapping Text
-    //Buffer looks like:
-    //  this wordi
-    //  swrapped
-    //  spaces
-    //      wrappe
-    //  d reachEOB
+    // Buffer:
+    //   0123456789
+    // 0|this wordi| < wrapped
+    // 1|swrapped  | < not wrapped
+    // 2|notwrapped| < not wrapped
+    // 3|spaces    | < wrapped
+    // 4|    wrappe| < wrapped
+    // 5|d reachEOB| < wrapped
+    // clang-format off
     testData = {
         // tests for first line of text
         { { 0, 0 }, { { 3, 0 }, { 5, 0 } } },
@@ -2395,17 +2417,20 @@ void TextBufferTests::GetWordBoundaries()
         { { 7, 1 }, { { 7, 1 }, { 0, 2 } } },
         { { 9, 1 }, { { 9, 1 }, { 0, 2 } } },
 
-        { { 0, 2 }, { { 5, 2 }, { 4, 3 } } },
-        { { 7, 2 }, { { 9, 2 }, { 4, 3 } } },
+        { { 0, 2 }, { { 9, 2 }, { 4, 4 } } },
+        { { 9, 2 }, { { 9, 2 }, { 4, 4 } } },
 
-        { { 1, 3 }, { { 3, 3 }, { 4, 3 } } },
-        { { 4, 3 }, { { 0, 4 }, { 2, 4 } } },
-        { { 8, 3 }, { { 0, 4 }, { 2, 4 } } },
+        { { 0, 3 }, { { 5, 3 }, { 4, 4 } } },
+        { { 7, 3 }, { { 9, 3 }, { 4, 4 } } },
 
-        { { 0, 4 }, { { 0, 4 }, { 2, 4 } } },
-        { { 1, 4 }, { { 1, 4 }, { 2, 4 } } },
-        { { 4, 4 }, { { 9, 4 }, { 0, 5 } } },
-        { { 9, 4 }, { { 9, 4 }, { 0, 5 } } },
+        { { 1, 4 }, { { 3, 4 }, { 4, 4 } } },
+        { { 4, 4 }, { { 0, 5 }, { 2, 5 } } },
+        { { 8, 4 }, { { 0, 5 }, { 2, 5 } } },
+
+        { { 0, 5 }, { { 0, 5 }, { 2, 5 } } },
+        { { 1, 5 }, { { 1, 5 }, { 2, 5 } } },
+        { { 4, 5 }, { { 9, 5 }, { 0, 6 } } },
+        { { 9, 5 }, { { 9, 5 }, { 0, 6 } } },
     };
     // clang-format on
 

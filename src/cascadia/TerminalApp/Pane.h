@@ -314,6 +314,8 @@ private:
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
 
+    void _borderTappedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
+
     // Function Description:
     // - Returns true if the given direction can be used with the given split
     //   type.

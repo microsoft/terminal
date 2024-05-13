@@ -60,6 +60,9 @@ parameters:
   - name: extraPublishJobs
     type: object
     default: []
+  - name: signingIdentity
+    type: object
+    default: {}
 
 resources:
   repositories:
@@ -125,6 +128,7 @@ extends:
               generateSbom: false # this is handled by onebranch
               removeAllNonSignedFiles: true # appease the overlords
               codeSign: ${{ parameters.codeSign }}
+              signingIdentity: ${{ parameters.signingIdentity }}
               beforeBuildSteps: # Right before we build, lay down the universal package and localizations
                 - task: PkgESSetupBuild@12
                   displayName: Package ES - Setup Build
@@ -161,6 +165,7 @@ extends:
                 generateSbom: false # this is handled by onebranch
                 removeAllNonSignedFiles: true # appease the overlords
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
                 beforeBuildSteps:
                   - task: PkgESSetupBuild@12
                     displayName: Package ES - Setup Build
@@ -214,6 +219,7 @@ extends:
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # Handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
                 afterBuildSteps:
                   # This directory has to exist, even if we aren't using createvpack, because the Guardian rules demand it.
                   - pwsh: |-
@@ -241,6 +247,7 @@ extends:
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # this is handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
 
           - ${{ if eq(parameters.buildWPF, true) }}:
             - template: ./build/pipelines/templates-v2/job-build-package-wpf.yml@self
@@ -258,6 +265,7 @@ extends:
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # this is handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
 
       - stage: Publish
         displayName: Publish

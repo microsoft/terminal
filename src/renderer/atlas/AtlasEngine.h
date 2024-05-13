@@ -78,7 +78,7 @@ namespace Microsoft::Console::Render::Atlas
         void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
         void SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept;
         [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
 
     private:
         // AtlasEngine.cpp
@@ -96,7 +96,7 @@ namespace Microsoft::Console::Render::Atlas
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
-        [[nodiscard]] HRESULT _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
+        [[nodiscard]] HRESULT _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
         void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr);
         [[nodiscard]] bool _updateWithNearbyFontCollection() noexcept;
 

@@ -47,14 +47,8 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
-    _borderSecond.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
+    _borderFirst.Tapped({ this, &Pane::_borderTappedHandler });
+    _borderSecond.Tapped({ this, &Pane::_borderTappedHandler });
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -88,14 +82,8 @@ Pane::Pane(std::shared_ptr<Pane> first,
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _borderFirst.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
-    _borderSecond.Tapped([this](auto&, auto& e) {
-        _FocusFirstChild();
-        e.Handled(true);
-    });
+    _borderFirst.Tapped({ this, &Pane::_borderTappedHandler });
+    _borderSecond.Tapped({ this, &Pane::_borderTappedHandler });
 }
 
 // Extract the terminal settings from the current (leaf) pane's control
@@ -1237,6 +1225,14 @@ void Pane::UpdateVisuals()
 // - <none>
 void Pane::_Focus()
 {
+    // Don't focus our content if we're already focused. This prevents a bug
+    // where tapping on the arrow in a ComboBox will land in our Tapped handler,
+    // and if we steal focus from the ComboBox, it won't open. See GH#17062
+    if (WasLastFocused())
+    {
+        return;
+    }
+
     GotFocus.raise(shared_from_this(), FocusState::Programmatic);
     if (const auto& lastContent{ GetLastFocusedContent() })
     {
@@ -3020,4 +3016,10 @@ winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
     }
 
     return _themeResources.unfocusedBorderBrush;
+}
+
+void Pane::_borderTappedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e)
+{
+    _FocusFirstChild();
+    e.Handled(true);
 }
