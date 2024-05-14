@@ -1898,7 +1898,10 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::PersistState()
     {
-        if (_startupState != StartupState::Initialized)
+        // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
+        // We shouldn't persist such windows.
+        const auto tabCount = _tabs.Size();
+        if (_startupState != StartupState::Initialized || tabCount == 0)
         {
             return;
         }
@@ -1914,7 +1917,7 @@ namespace winrt::TerminalApp::implementation
 
         // if the focused tab was not the last tab, restore that
         auto idx = _GetFocusedTabIndex();
-        if (idx && idx != _tabs.Size() - 1)
+        if (idx && idx != tabCount - 1)
         {
             ActionAndArgs action;
             action.Action(ShortcutAction::SwitchToTab);
