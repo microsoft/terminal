@@ -13,6 +13,7 @@ namespace Microsoft::Console::Render::Atlas
     struct BackendD3D : IBackend
     {
         BackendD3D(const RenderingPayload& p);
+        ~BackendD3D() override;
 
         void ReleaseResources() noexcept override;
         void Render(RenderingPayload& payload) override;
