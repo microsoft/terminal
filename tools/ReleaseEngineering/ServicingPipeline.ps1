@@ -94,13 +94,13 @@ $RemoteForCurrentBranch = & git config "branch.$Branch.remote"
 $CommitsBehind = [int](& git rev-list --count "$RemoteForCurrentBranch/$Branch" "^$Branch")
 
 If ($LASTEXITCODE -Ne 0) {
-	Write-Error "Failed to determine branch divergence"
-	Exit 1
+    Write-Error "Failed to determine branch divergence"
+    Exit 1
 }
 
 If ($CommitsBehind -Gt 0) {
-	Write-Error "Local branch $Branch is out of date with $RemoteForCurrentBranch; consider git pull"
-	Exit 1
+    Write-Error "Local branch $Branch is out of date with $RemoteForCurrentBranch; consider git pull"
+    Exit 1
 }
 
 $Entries = @(& git log $SourceBranch --first-parent --grep "(#\($($Cards.Number -Join "\|")\))" "--pretty=format:%H%x1C%s"  |
