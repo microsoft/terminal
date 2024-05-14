@@ -39,18 +39,28 @@ void BackendD2D::Render(RenderingPayload& p)
     }
 
     _renderTarget->BeginDraw();
+    try
+    {
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_DUMP_RENDER_TARGET
-    // Invalidating the render target helps with spotting Present1() bugs.
-    _renderTarget->Clear();
+        // Invalidating the render target helps with spotting Present1() bugs.
+        _renderTarget->Clear();
 #endif
-    _drawBackground(p);
-    _drawCursorPart1(p);
-    _drawText(p);
-    _drawCursorPart2(p);
-    _drawSelection(p);
+        _drawBackground(p);
+        _drawCursorPart1(p);
+        _drawText(p);
+        _drawCursorPart2(p);
+        _drawSelection(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
-    _debugShowDirty(p);
+        _debugShowDirty(p);
 #endif
+    }
+    catch (...)
+    {
+        // In case an exception is thrown for some reason between BeginDraw() and EndDraw()
+        // we still technically need to call EndDraw() before releasing any resources.
+        LOG_IF_FAILED(_renderTarget->EndDraw());
+        throw;
+    }
     THROW_IF_FAILED(_renderTarget->EndDraw());
 
 #if ATLAS_DEBUG_DUMP_RENDER_TARGET
