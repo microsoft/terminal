@@ -391,9 +391,9 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
         // Size of the viewport / swap chain in pixel.
-        u16x2 targetSize{ 1, 1 };
+        u16x2 targetSize{ 0, 0 };
         // Size of the portion of the text buffer that we're drawing on the screen.
-        u16x2 viewportCellCount{ 1, 1 };
+        u16x2 viewportCellCount{ 0, 0 };
         // The position of the viewport inside the text buffer (in cells).
         u16x2 viewportOffset{ 0, 0 };
     };

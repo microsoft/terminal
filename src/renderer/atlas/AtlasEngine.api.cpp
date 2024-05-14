@@ -597,7 +597,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 {
     const auto requestedFamily = fontInfoDesired.GetFamily();
     auto requestedWeight = fontInfoDesired.GetWeight();
-    auto fontSize = fontInfoDesired.GetFontSize();
+    auto fontSize = std::clamp(fontInfoDesired.GetFontSize(), 1.0f, 100.0f);
     auto requestedSize = fontInfoDesired.GetEngineSize();
 
     if (!requestedFaceName)

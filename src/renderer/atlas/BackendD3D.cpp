@@ -219,6 +219,18 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
 #endif
 }
 
+#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
+BackendD3D::~BackendD3D()
+{
+    // In case an exception is thrown for some reason between BeginDraw() and EndDraw()
+    // we still technically need to call EndDraw() before releasing any resources.
+    if (_d2dBeganDrawing)
+    {
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
+        LOG_IF_FAILED(_d2dRenderTarget->EndDraw());
+    }
+}
+
 void BackendD3D::ReleaseResources() noexcept
 {
     _renderTargetView.reset();
