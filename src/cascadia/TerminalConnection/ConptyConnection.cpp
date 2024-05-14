@@ -193,8 +193,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _inPipe{ hIn },
         _outPipe{ hOut }
     {
-        _sessionId = Utils::CreateGuid();
-
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         _piClient.hProcess = hClientProcess;
 
