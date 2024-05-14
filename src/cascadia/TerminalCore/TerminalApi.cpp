@@ -22,8 +22,9 @@ TRACELOGGING_DEFINE_PROVIDER(g_hCTerminalCoreProvider,
 
 void Terminal::ReturnResponse(const std::wstring_view response)
 {
-    if (_pfnWriteInput)
+    if (_pfnWriteInput && !response.empty())
     {
+        const auto suspension = _readWriteLock.suspend();
         _pfnWriteInput(response);
     }
 }
