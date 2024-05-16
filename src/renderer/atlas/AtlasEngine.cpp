@@ -74,9 +74,8 @@ try
         _handleSettingsUpdate();
     }
 
-    if (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION || _hackTriggerRedrawAll)
+    if constexpr (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION)
     {
-        _hackTriggerRedrawAll = false;
         _api.invalidatedRows = invalidatedRowsAll;
         _api.scrollOffset = 0;
     }
@@ -703,8 +702,6 @@ void AtlasEngine::_recreateFontDependentResources()
             _api.textFormatAxes[i] = { fontAxisValues.data(), fontAxisValues.size() };
         }
     }
-
-    _hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !_hackIsBackendD2D;
 }
 
 void AtlasEngine::_recreateCellCountDependentResources()
@@ -765,17 +762,12 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    const auto builtinGlyphs = _p.s->font->builtinGlyphs;
     const auto beg = _api.bufferLine.data();
     const auto len = _api.bufferLine.size();
     size_t segmentBeg = 0;
     size_t segmentEnd = 0;
     bool custom = false;
-
-    if (!_hackWantsBuiltinGlyphs)
-    {
-        _mapRegularText(0, len);
-        return;
-    }
 
     while (segmentBeg < len)
     {
@@ -789,7 +781,7 @@ void AtlasEngine::_flushBufferLine()
                 codepoint = til::combine_surrogates(codepoint, beg[i++]);
             }
 
-            const auto c = BuiltinGlyphs::IsBuiltinGlyph(codepoint) || BuiltinGlyphs::IsSoftFontChar(codepoint);
+            const auto c = (builtinGlyphs && BuiltinGlyphs::IsBuiltinGlyph(codepoint)) || BuiltinGlyphs::IsSoftFontChar(codepoint);
             if (custom != c)
             {
                 break;
