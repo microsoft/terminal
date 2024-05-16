@@ -684,7 +684,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryT
         pair_type{ "separator", ValueType::Separator },
         pair_type{ "folder", ValueType::Folder },
         pair_type{ "remainingProfiles", ValueType::RemainingProfiles },
-        pair_type{ "matchProfiles", ValueType::MatchProfiles },        
+        pair_type{ "matchProfiles", ValueType::MatchProfiles },
     };
 };
 
