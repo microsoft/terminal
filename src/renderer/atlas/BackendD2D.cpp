@@ -407,7 +407,7 @@ D2D1_RECT_U BackendD2D::_prepareBuiltinGlyph(const RenderingPayload& p, char32_t
     }
 
     const auto brush = _brushWithColor(0xffffffff);
-    D2D1_RECT_F rectF{
+    const D2D1_RECT_F rectF{
         static_cast<f32>(rectU.left),
         static_cast<f32>(rectU.top),
         static_cast<f32>(rectU.right),
@@ -656,7 +656,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         THROW_IF_FAILED(sink->Close());
 
         const auto brush = _brushWithColor(r.underlineColor);
-        D2D1_RECT_F clipRect{ from, rowTop, to, rowBottom };
+        const D2D1_RECT_F clipRect{ from, rowTop, to, rowBottom };
         _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
         _renderTarget->DrawGeometry(geometry.get(), brush, duHeight, nullptr);
         _renderTarget->PopAxisAlignedClip();
