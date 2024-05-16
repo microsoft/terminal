@@ -74,9 +74,8 @@ try
         _handleSettingsUpdate();
     }
 
-    if (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION || _hackTriggerRedrawAll)
+    if constexpr (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION)
     {
-        _hackTriggerRedrawAll = false;
         _api.invalidatedRows = invalidatedRowsAll;
         _api.scrollOffset = 0;
     }
@@ -703,8 +702,6 @@ void AtlasEngine::_recreateFontDependentResources()
             _api.textFormatAxes[i] = { fontAxisValues.data(), fontAxisValues.size() };
         }
     }
-
-    _hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !_hackIsBackendD2D;
 }
 
 void AtlasEngine::_recreateCellCountDependentResources()
@@ -770,12 +767,6 @@ void AtlasEngine::_flushBufferLine()
     size_t segmentBeg = 0;
     size_t segmentEnd = 0;
     bool custom = false;
-
-    if (!_hackWantsBuiltinGlyphs)
-    {
-        _mapRegularText(0, len);
-        return;
-    }
 
     while (segmentBeg < len)
     {
