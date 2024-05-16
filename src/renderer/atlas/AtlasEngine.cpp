@@ -768,6 +768,12 @@ void AtlasEngine::_flushBufferLine()
     size_t segmentEnd = 0;
     bool custom = false;
 
+    if (!_p.s->font->builtinGlyphs)
+    {
+        _mapRegularText(0, len);
+        return;
+    }
+
     while (segmentBeg < len)
     {
         segmentEnd = segmentBeg;
