@@ -186,7 +186,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hRef,
                                        const HANDLE hServerProcess,
                                        const HANDLE hClientProcess,
-                                       TERMINAL_STARTUP_INFO startupInfo) :
+                                       const TERMINAL_STARTUP_INFO& startupInfo) :
         _rows{ 25 },
         _cols{ 80 },
         _guid{ Utils::CreateGuid() },

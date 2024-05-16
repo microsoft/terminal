@@ -1190,13 +1190,16 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
 
     const auto strongThis = weakThis.lock();
-    // GH #16235: If we don't have a window logic, we're already refrigerating, and won't have our _window either.
-    if (!strongThis || _windowLogic == nullptr)
+    if (!strongThis)
     {
         co_return;
     }
 
-    _windowLogic.Quit();
+    if (_appLogic && _windowLogic && _appLogic.ShouldUsePersistedLayout())
+    {
+        _windowLogic.PersistState();
+    }
+
     PostQuitMessage(0);
 }
 
