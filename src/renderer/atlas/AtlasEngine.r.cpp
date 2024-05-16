@@ -77,7 +77,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw()) || _hackTriggerRedrawAll;
+    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw());
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -282,21 +282,15 @@ void AtlasEngine::_recreateBackend()
     {
     case GraphicsAPI::Direct2D:
         _b = std::make_unique<BackendD2D>();
-        _hackIsBackendD2D = true;
         break;
     default:
         _b = std::make_unique<BackendD3D>(_p);
-        _hackIsBackendD2D = false;
         break;
     }
 
     // This ensures that the backends redraw their entire viewports whenever a new swap chain is created,
     // EVEN IF we got called when no actual settings changed (i.e. rendering failure, etc.).
     _p.MarkAllAsDirty();
-
-    const auto hackWantsBuiltinGlyphs = _p.s->font->builtinGlyphs && !_hackIsBackendD2D;
-    _hackTriggerRedrawAll = _hackWantsBuiltinGlyphs != hackWantsBuiltinGlyphs;
-    _hackWantsBuiltinGlyphs = hackWantsBuiltinGlyphs;
 }
 
 void AtlasEngine::_handleSwapChainUpdate()
