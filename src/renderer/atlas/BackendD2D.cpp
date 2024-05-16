@@ -318,6 +318,8 @@ f32 BackendD2D::_drawBuiltinGlyphs(const RenderingPayload& p, const ShapedRow* r
 
     for (size_t i = m.glyphsFrom; i < m.glyphsTo; ++i)
     {
+        // This code runs when fontFace == nullptr. This is only the case for builtin glyphs which then use the glyphIndices
+        // to store UTF16 code points. In other words, this doesn't accidentally corrupt any actual glyph indices.
         u32 ch = row->glyphIndices[i];
         if (til::is_leading_surrogate(ch))
         {
@@ -325,6 +327,9 @@ f32 BackendD2D::_drawBuiltinGlyphs(const RenderingPayload& p, const ShapedRow* r
             ch = til::combine_surrogates(ch, row->glyphIndices[i]);
         }
 
+        // If we don't have support for ID2D1SpriteBatch we don't support builtin glyphs.
+        // But we do still need to account for the glyphAdvances, which is why we can't just skip everything.
+        // It's very unlikely for a target device to not support ID2D1SpriteBatch as it's very old at this point.
         if (_builtinGlyphBatch)
         {
             if (const auto off = BuiltinGlyphs::GetBitmapCellIndex(ch); off >= 0)
@@ -344,7 +349,17 @@ f32 BackendD2D::_drawBuiltinGlyphs(const RenderingPayload& p, const ShapedRow* r
 
 void BackendD2D::_prepareBuiltinGlyphRenderTarget(const RenderingPayload& p)
 {
-    if (!_builtinGlyphBatch || _builtinGlyphsRenderTarget)
+    // If we don't have support for ID2D1SpriteBatch none of the related members will be initialized or used.
+    // We can just early-return in that case.
+    if (!_builtinGlyphBatch)
+    {
+        return;
+    }
+
+    // If the render target is already created, all of the below has already been done in a previous frame.
+    // Once the relevant settings change for some reason (primarily the font->cellSize), then _handleSettingsUpdate()
+    // will reset the render target which will cause us to skip this condition and re-initialize it below.
+    if (_builtinGlyphsRenderTarget)
     {
         return;
     }
@@ -356,8 +371,11 @@ void BackendD2D::_prepareBuiltinGlyphRenderTarget(const RenderingPayload& p)
 
     // This block of code calculates the size of a power-of-2 texture that has an area larger than the given `area`.
     // For instance, for an area of 985x1946 = 1916810 it would result in a u/v of 2048x1024 (area = 2097152).
-    // This has 2 benefits: GPUs like power-of-2 textures and it ensures that we don't resize the texture
-    // every time you resize the window by a pixel. Instead it only grows/shrinks by a factor of 2.
+    // We throw the "v" in this case away, because we don't really need power-of-2 textures here,
+    // but you can find the complete code over in BackendD3D. If someone deleted it in the meantime:
+    //   const auto index = bitness_of_area_minus_1 - std::countl_zero(area - 1); // aka: _BitScanReverse
+    //   const auto u = 1u << ((index + 2) / 2);
+    //   const auto v = 1u << ((index + 1) / 2);
     unsigned long index;
     _BitScanReverse(&index, area - 1);
     const auto potWidth = 1u << ((index + 2) / 2);
@@ -388,6 +406,7 @@ D2D1_RECT_U BackendD2D::_prepareBuiltinGlyph(const RenderingPayload& p, char32_t
     const u32 t = (off / _builtinGlyphsBitmapCellCountU) * h;
     D2D1_RECT_U rectU{ l, t, l + w, t + h };
 
+    // Check if we previously cached this glyph already.
     if (_builtinGlyphsReady[off])
     {
         return rectU;
@@ -421,6 +440,8 @@ D2D1_RECT_U BackendD2D::_prepareBuiltinGlyph(const RenderingPayload& p, char32_t
 
 void BackendD2D::_flushBuiltinGlyphs()
 {
+    // If we don't have support for ID2D1SpriteBatch none of the related members will be initialized or used.
+    // We can just early-return in that case.
     if (!_builtinGlyphBatch)
     {
         return;
@@ -431,6 +452,7 @@ void BackendD2D::_flushBuiltinGlyphs()
         THROW_IF_FAILED(_builtinGlyphsRenderTarget->EndDraw());
         _builtinGlyphsRenderTargetActive = false;
     }
+
     if (const auto count = _builtinGlyphBatch->GetSpriteCount(); count > 0)
     {
         _renderTarget4->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -632,6 +654,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         wil::com_ptr<ID2D1GeometrySink> sink;
         THROW_IF_FAILED(geometry->Open(sink.addressof()));
 
+        // This adds complete periods of the wave until we reach the end of the range.
         sink->BeginFigure({ x, center }, D2D1_FIGURE_BEGIN_HOLLOW);
         for (D2D1_QUADRATIC_BEZIER_SEGMENT segment; x < to;)
         {

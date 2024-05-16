@@ -1131,9 +1131,14 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         const auto lineOffsetX = isHollowRect || isLineX ? lineWidthHalf : 0.0f;
         const auto lineOffsetY = isHollowRect || isLineY ? lineWidthHalf : 0.0f;
 
-        // We need to round the coordinates to avoid antialiasing.
-        // In order to get a consistent rounding behavior across different glyphs, across different target coordinates,
-        // it's important that we first round them only then add the target coordinate.
+        // Direct2D draws strokes centered on the path. In order to make them pixel-perfect we need to round the
+        // coordinates to whole pixels, but offset by half the stroke width (= the radius of the stroke).
+        //
+        // All floats up to this point will be highly "consistent" between different `rect`s of identical size and
+        // different shapes, because the above calculations work with only a small set of constant floats.
+        // However, the addition of a potentially fractional begX/Y with a highly variable `rect` position is different.
+        // Rounding beg/endX/Y first ensures that we continue to get a consistent behavior between calls.
+        // This is particularly noticeable at smaller font sizes, where the line width is just a pixel or two.
         const auto begXabs = rectX + roundf(begX - lineOffsetX) + lineOffsetX;
         const auto begYabs = rectY + roundf(begY - lineOffsetY) + lineOffsetY;
         const auto endXabs = rectX + roundf(endX + lineOffsetX) - lineOffsetX;
