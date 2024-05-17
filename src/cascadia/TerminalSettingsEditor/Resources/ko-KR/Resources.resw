@@ -895,6 +895,9 @@
     <value>글꼴</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>여러 글꼴을 ASCII 쉼표로 구분하여 사용할 수 있습니다.</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>글꼴 크기</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>사용하도록 설정하면 터미널은 글꼴을 사용하는 대신 블록 요소 및 상자 그리기 문자에 대한 사용자 지정 문자 모양을 그립니다. 이 기능은 GPU 가속을 사용할 수 있는 경우에만 작동합니다.</value>
+    <value>사용하도록 설정하면 터미널은 글꼴을 사용하는 대신 블록 요소 및 상자 그리기 문자에 대한 사용자 지정 문자 모양을 그립니다. Direct2D를 그래픽 API로 사용할 때는 이 기능을 사용할 수 없습니다.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
