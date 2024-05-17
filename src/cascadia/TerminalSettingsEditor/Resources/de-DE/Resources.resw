@@ -895,6 +895,9 @@
     <value>Schriftart</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>Sie können mehrere Schriftarten verwenden, indem Sie sie durch ein ASCII-Komma voneinander trennen.</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Schriftgrad</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>Wenn diese Option aktiviert ist, zeichnet das Terminal benutzerdefinierte Glyphen für Blockelement- und Feldzeichnungszeichen, anstatt die Schriftart zu verwenden. Dieses Feature funktioniert nur, wenn GPU-Beschleunigung verfügbar ist.</value>
+    <value>Wenn diese Option aktiviert ist, zeichnet das Terminal benutzerdefinierte Glyphen für Blockelement- und Feldzeichnungszeichen, anstatt die Schriftart zu verwenden. Dieses Feature ist nicht verfügbar, wenn Direct2D als Grafik-API verwendet wird.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
