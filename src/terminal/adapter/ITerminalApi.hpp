@@ -39,9 +39,15 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void ReturnResponse(const std::wstring_view response) = 0;
 
+        struct BufferState
+        {
+            TextBuffer& buffer;
+            til::rect viewport;
+            bool isMainBuffer;
+        };
+
         virtual StateMachine& GetStateMachine() = 0;
-        virtual TextBuffer& GetTextBuffer() = 0;
-        virtual til::rect GetViewport() const = 0;
+        virtual BufferState GetBufferAndViewport() = 0;
         virtual void SetViewportPosition(const til::point position) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
