@@ -504,7 +504,15 @@ try
                                                                L"\\Reference",
                                                                FALSE));
 
-    const auto serverProcess = GetCurrentProcess();
+    // Give a copy of our own process handle to be tracked.
+    wil::unique_process_handle serverProcess;
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                               GetCurrentProcess(),
+                                               GetCurrentProcess(),
+                                               serverProcess.addressof(),
+                                               SYNCHRONIZE,
+                                               FALSE,
+                                               0));
 
     ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
 
@@ -585,7 +593,7 @@ try
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
-                                                  serverProcess,
+                                                  serverProcess.get(),
                                                   clientProcess.get(),
                                                   myStartupInfo));
 
