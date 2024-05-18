@@ -895,6 +895,9 @@
     <value>Type de police</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>Vous pouvez utiliser plusieurs polices en les séparant par une virgule ASCII.</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Taille de police</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>Lorsque cette option est activée, le terminal dessine des glyphes personnalisés pour les éléments de bloc et les caractères de dessin de boîte au lieu d’utiliser la police. Cette fonctionnalité ne fonctionne que lorsque l’accélération GPU est disponible.</value>
+    <value>Lorsque cette option est activée, le terminal dessine des glyphes personnalisés pour les éléments de bloc et les caractères de dessin de boîte au lieu d’utiliser la police. Cette fonctionnalité n’est pas disponible lors de l’utilisation de Direct2D comme API Graphics.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

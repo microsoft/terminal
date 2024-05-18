@@ -34,14 +34,9 @@ Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() n
     return *_stateMachine;
 }
 
-TextBuffer& Terminal::GetTextBuffer() noexcept
+ITerminalApi::BufferState Terminal::GetBufferAndViewport() noexcept
 {
-    return _activeBuffer();
-}
-
-til::rect Terminal::GetViewport() const noexcept
-{
-    return til::rect{ _GetMutableViewport().ToInclusive() };
+    return { _activeBuffer(), til::rect{ _GetMutableViewport().ToInclusive() }, !_inAltBuffer() };
 }
 
 void Terminal::SetViewportPosition(const til::point position) noexcept

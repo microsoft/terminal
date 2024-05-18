@@ -895,6 +895,9 @@
     <value>Начертание шрифта</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>Вы можете использовать несколько шрифтов, разделив их запятой ASCII.</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Размер шрифта</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>Если этот параметр включен, терминал рисует собственные глифы для элементов блока и символов рисования прямоугольников вместо использования шрифта. Эта функция работает только тогда, когда доступно ускорение графического процессора.</value>
+    <value>Если этот параметр включен, терминал рисует собственные глифы для элементов блока и символов рисования прямоугольников вместо использования шрифта. Эта функция недоступна при использовании Direct2D в качестве API графики.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
