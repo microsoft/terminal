@@ -5,17 +5,16 @@ last updated: 2022-12-14
 issue id: 1595
 ---
 
-# Windows Terminal - Tasks
+# Windows Terminal - Snippets
+
+<sub>nee "Tasks"</sub>
 
 > **Note**:
 >
 > This is a draft document. This doc largely predates the creation of the
 > [Suggestions UI]. Many of the elements of this doc need to be updated to
 > reflect newer revisions to the Suggestions UI.
->
-> It is included with the remainder of my North Star docs, because it was always
-> a part of that story. A future revision will come through to polish this doc
-> into a final form.
+
 
 ## Abstract
 
@@ -30,7 +29,6 @@ recalled by the user simply thinking **"what do I want to do"**, rather than
 "how do I do it".
 
 ## Background
-
 
 > **Note**:
 >
@@ -64,29 +62,33 @@ support for starting processes, with a set of args. These args can also be
 picked at runtime, and custom sets of arguments can be specified for individual
 arguments.
 
-We've had verbatim feedback that developers already attempt to record useful
-commandlines in various different ways - in OneNotes, in shell scripts, in
-aliases. Sharing these Providing a unified way to easily store, browse, and use
-these command lines should be valuable to developers already doing this.
-Furthermore, developers often share these commands with the rest of their teams.
-A static file in their project containing commands for the whole team seems like
-a simple solution to this problem.
+We've had verbatim feedback that developers already attempt to record useful 
+commandlines in various different ways - in OneNotes, in shell scripts, in 
+aliases. Furthermore, developers often share these commands with the rest of 
+their teams. Providing a unified way to easily store, browse, and use these 
+command lines should be valuable to developers  already doing this. A static 
+file in their project containing commands for the whole team seems like a simple 
+solution to this problem.
 
 ### User Stories
 
 Story |  Size | Description
 --|-----------|--
-A | 🐣 Crawl  | Users can bring up a menu of command line tasks and quickly execute them
-B | 🐣 Crawl  | Fragment apps can provide tasks to a users settings
+A | ✅  | Users can bring up a menu of command line tasks and quickly execute them
+B | ✅   | Fragment apps can provide tasks to a users settings
 D | 🚶 Walk   | The user can save commands straight to their settings with a `wt` command
 E | 🚶 Walk   | Users can have different tasks enabled for different profiles(/shells?)
+G | 🚶 Walk   | The Terminal displays a Snippets Pane for easy browsing of relevant snippets 
+Y | 🚶 Walk   | Users should be able to save snippets directly from the commandline 
 F | 🏃‍♂️ Run    | The terminal can automatically look for command fragments in the tree of the CWD
-H | 🏃‍♂️ Run    | Tasks are filterable by tool (`git`, `docker`, etc.)
-I | 🏃‍♂️ Run    | ? Tasks can both be atomic  _tasks_ and longer scripts. Tasks can be sent straightaway to the Terminal, while the longer scripts are more for reference (ex: [winget script]).
-J | 🏃‍♂️ Run    | Tasks can be filtered by text the user has already typed
-K | 🚀 Sprint | Tasks can have promptable sections of input
+X | 🏃‍♂️ Run    | Snippets with multiple lines can be sent only conditionally on the success of the previous command (with shell integration)
+J | ✅    | Snippets can be filtered by text the user has already typed
+K | 🚀 Sprint | Snippets can have promptable sections of input
 L | 🚀 Sprint | Community tasks are hosted in a public GH repo
 M | 🚀 Sprint | A simple UX (either web or in Terminal) is exposed for interacting with public GH repo of tasks
+
+<!-- H | 🏃‍♂️ Run    | Snippets are filterable by tool (`git`, `docker`, etc.) -->
+<!-- I | 🏃‍♂️ Run    | Snippets can both be atomic  _tasks_ and longer scripts. Snippets can be sent straightaway to the Terminal, while the longer scripts are more for reference (ex: [winget script]). -->
 
 ### Elevator Pitch
 
@@ -117,16 +119,6 @@ with a cross-shell mechanism of exposing them to even beginners. With fragment
 extensions, tools can bundle common workflows together with their application so
 the Terminal can automatically load them for the user.
 
-### Community Tasks
-
-_The big stretch version of this feature._
-
-A community currated list of Tasks, for various tools. Stored publicly on a
-GitHub repo (a la the winget-pkgs repo). Users can submit tasks with
-descriptions of what the task does. The Terminal can plug into that repo
-automatically and fetch the latest community commands, immediately giving the
-user access to a wide bearth of common tasks.
-
 ## Business Justification
 
 It will delight developers.
@@ -142,16 +134,13 @@ to the user, in the context of what they're working on.
 The following are some examples from VsCode, Warp. These are meant to be
 illustrative of what these menus already look like in the wild:
 
-![](img/vscode-tasks-000.gif)
+<!-- TODO! uncomment ![](img/vscode-tasks-000.gif) -->
 
-![](img/warp-workflows-000.gif)
+<!-- TODO! uncomment ![](img/warp-workflows-000.gif) -->
 
-The following gif was a prototype of [shell-driven autocompletion]. This was
-more for suggestions from the shell, to the Terminal, but is helpful for
-visualizing what this might look like in the Windows Terminal.
+TODO! update these
 
-![](img/shell-autocomplete-jul-2022-000.gif)
-
+<!-- 
 A prototype of the recent commands UI, powered by shell integration:
 
 ![](img/command-history-suggestions.gif)
@@ -166,12 +155,129 @@ A prototype of saving a command directly to the user's settings, then invoking i
 
 A prototype of reading tasks from the CWD
 
-![](img/tasks-from-cwd.gif)
+![](img/tasks-from-cwd.gif) -->
 
 <hr> <!-- end of onepager -->
 
 ### Implementation Details
 
+For the most part, this is already implemented as the `sendInput` action. These 
+actions send text to the terminal already, and work quite well as snippets. 
+
+#### Basics
+
+We'll want to also augment `sendInput` to add support for `input` as an array of strings, not only a single string value. When the input is a list of strings, then the terminal can send each string, seperated by the <kbd>enter</kbd> key. 
+We can also add a `waitForSuccess` parameter to `sendInput` (with a default value of `false`). If that's set to `true`, and shell integration is enabled, then the Terminal will wait to send each command until the previous command exits. 
+
+As another minor improvement, we'll add a `description` property to Commands. This will allow users to add additional information to snippets which we can surface. Additionally, extension authors could provide more details as well. 
+
+As a matter of renaming, we'll also update `"source": "tasks"` for the `SuggestionsSource` enum to instead be `snippets` (and gracefully update that where we find it). "tasks" was an older name for this feature, and "snippets" will better align with our partners in VsCode. 
+
+##### Multi-line snippets example
+
+Consider the [following script](https://gist.github.com/zadjii-msft/b598eebd6c5601328498e3e7acc581a7):
+
+```pwsh
+$s=Invoke-GitHubGraphQlApi "query{organization(login:`"Microsoft`"){projectV2(number: 159) { id } } }"
+
+$tasks = get-githubissue  -Labels "Issue-Task" -state open
+$bugs = get-githubissue  -Labels "Issue-Bug" -state open
+$issues = $tasks + $bugs
+
+$issues | ? {$_.labels.Name -notcontains "Needs-Triage" } | ? { $_.milestone.title -Ne "Icebox ❄" } | ? type -Ne "PullRequest" | select -expand node_id | % {
+  $resp = add-githubbetaprojectitem -projectnodeid $s.organization.projectV2.id -ContentNodeId $_ ;
+}
+```
+
+As just a raw sendInput action with a single `input`, this would look like the following:
+
+```jsonc
+{
+    "command":
+    {
+        "action": "sendInput",
+        "input": "$s=Invoke-GitHubGraphQlApi \"query{organization(login:`\"Microsoft`\"){projectV2(number: 159) { id } } }\"\r\n$tasks = get-githubissue  -Labels \"Issue-Task\" -state open\r\n$bugs = get-githubissue  -Labels \"Issue-Bug\" -state open\r\n$issues = $tasks + $bugs\r\n$issues | ? {$_.labels.Name -notcontains \"Needs-Triage\" } | ? { $_.milestone.title -Ne \"Icebox ❄\" } | ? type -Ne \"PullRequest\" | select -expand node_id | % {\r\n  $resp = add-githubbetaprojectitem -projectnodeid $s.organization.projectV2.id -ContentNodeId $_ ;\r\n}"
+    },
+    "name": "Upload to project board",
+    "description": "Sync all our issues and bugs that have been triaged and are actually on the backlog to the big-ol project",
+},
+```
+
+This JSON is basically entirely unusable. Since JSON doesn't support multiline
+strings, then every line has to be joined to a single line, seperated by `\r\n`.
+
+Insstead, the following version of this command uses an array for the `input` parameter. This then implies that each string should be sent in sequence, with <kbd>enter</kbd> between
+them.
+
+```jsonc
+{
+    "command":
+    {
+        "action": "sendInput",
+        "input":
+        [
+            "$s=Invoke-GitHubGraphQlApi \"query{organization(login:`\"Microsoft`\"){projectV2(number: 159) { id } } }\"",
+            "$tasks = get-githubissue  -Labels \"Issue-Task\" -state open",
+            "$bugs = get-githubissue  -Labels \"Issue-Bug\" -state open",
+            "$issues = $tasks + $bugs",
+            "$issues | ? {$_.labels.Name -notcontains \"Needs-Triage\" } | ? { $_.milestone.title -Ne \"Icebox ❄\" } | ? type -Ne \"PullRequest\" | select -expand node_id | % {",
+            "  $resp = add-githubbetaprojectitem -projectnodeid $s.organization.projectV2.id -ContentNodeId $_ ;",
+            "}",
+            ""
+        ]
+    },
+    "name": "Upload to project board",
+    "description": "Sync all our issues and bugs that have been triaged and are actually on the backlog to the big-ol project",
+},
+```
+This is slightly more maintainable. But now, a user could set `"waitForSuccess": true`, and if any part of the script fails, then the rest of it won't be sent to the shell. 
+
+#### Fragment actions
+
+This was already added in [#TODO!](https://link/to/issue). These will allow third-party developers to create apps which add additional snippets to the Terminal. These will require app developers to add `id`s to each action they add in this way. Users can then bind that action `id` to a keybinding, if they so choose. 
+
+#### Examples
+
+
+### Snippets pane
+
+With non-terminal content landing in 1.21 Preview, it's now simple to add additional types of panes to add to the Terminal. We'll support a new pane `"type": "snippets"`, to support opening the Snippets pane. 
+
+This will be a pane with a `TreeView` in it and a text box to filter results (ala the Command Palette). 
+
+Each item in the TreeView will be a kind of `FilteredCommand`, with a play button to support quickly running the command. 
+
+This pane could also support all the different suggestion sources that the Suggestions UI supports - `recentCommands` could be plumbed into it from the currently active 
+This pane could also support checkboxes to filter different suggestion sources. 
+
+### Per-Project Snippets (`.wt.json`)
+
+> [INFO!]
+>
+> TODO!: Let's make sure to discuss the filename. It doesn't need to be `.wt.json`. That seemed to match things like `.clang-format`, `.vsconfig`, etc, but then also included the extension. However, node projects just use `package.json` without the leading `.` for storing per-project commands. Perhaps `.wt.json` is the worst of both? The best of both?
+
+Users may also want to leave snippets in the root of their repo, for others to use as well. To support this, the Terminal will automatically look for a `.wt.json` file in any directories that are parents of the CWD of the shell, and load actions from that file as if it were a fragment extension as well. That will start with the `startingDirectory` for any new panes created. If the user has shell integration configured to tell the Terminal about the CWD, then we'll refresh that list as the user changes directories. 
+
+* In `Terminal.Settings.Model`, we will store a cached map of path->actions. 
+  * that if multiple panes are all in the same CWD, they don't need to individually re-read the file from disk and regenerate that part of the map. 
+* I believe it should be impossible for a keybinding to be bound to a local action. Even if it has an ID, the file won't be loaded when we build the keymap, and we don't really want the keymap changing based on CWD. Also, with the actions living in an entirely separate map of CWD->actions, the keybindings in the main map won't be able to easily get to them. See also [Security considerations](#TODO!/link/me/up) for more.
+* If the Snippets pane or Sugestions UI is opened with `local` suggestions as a source, then we'll just append the appropriate list of suggestions for the active control's CWD. 
+  * We don't need to have the control raise an event when the CWD changes - we can lazy-load these actions when a UI element that requires it is first invoked. 
+* The Command Palette is trickier, since it binds directly to the action map. We'd need to be able to freely modify that map at runtime, which might be prohibitively annoying. 
+<!-- * If we want these actions to show up in the Command Palette, we'll need to:
+  * We'll stash these actions in the action map as they're loaded. (in `Terminal.Settings.Model`)
+  * We'll need to be able to dynamically remove them at runtime from the map (in `Terminal.Settings.Model`) -->
+* If we find multiple `.wt.json` files in the ancestors of the CWD (e.g. for `c:\a\b\c\d\`, there's a `c:\a\.wt.json` and a `c:\a\b\c\.wt.json`), then we'll add each one separately to the map of paths->CWDs. When requesting the actual actions for `c:\a\b\c\d\`, we'll layer the ones from `c:\a\` before the ones from `c:\a\b\c`, so that deeper descendants take precedence.  
+
+### Saving snippets from the commandline
+
+_This has laready been prototyped in [#TODO!](add/the/link)_
+
+Users 
+
+-----------------
+(above this is done)
+<!-- 
 [TODO!]: # TODO! ---------------------------------------------------------------
 What info do we all want for these tasks?
 
@@ -196,7 +302,6 @@ What info do we all want for these tasks?
   - So maybe this is a **bad idea**. Maybe we should just leave tasks as "this
     is just a string of text for the commandline, you gotta know which shell to
     use it with"
-
 
 #### Layering actions
 
@@ -306,8 +411,8 @@ them.
 
 Still gross, but at least maintainable.
 
-YAML or something else might make more sense here.
-
+YAML or something else might make more sense here. -->
+<!-- 
 #### Per-project tasks(`.wt.json`?)
 
 In addition to tasks stored in the user's `settings.json`, we also want to provide users with a way to store commands relative to their projects. These can be checked in to source control repositories alongside code. When the
@@ -343,7 +448,7 @@ filesystem-relative commands. This seems to me like a bit of a silly file name.
 Node proejcts can store various aliases for commands in their `package.json`
 file. Perhaps the `.` prefix isn't necessary. Would `wt.json` be too silly?
 
-[TODO!]: # TODO! ---------------------------------------------------------------
+[TODO!]: # TODO! --------------------------------------------------------------- -->
 
 ##### Save to project on the commandline
 
@@ -379,7 +484,11 @@ Fragment extensions. Case in point: https://github.com/abduvik/just-enough-serie
 
 <tr><td><strong>Compatibility</strong></td><td>
 
-[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+I considered supporting YAML for local snippets (`.wt.json`), instead of JSON. JSON is not super friendly to command-lines - since everything's gotta be encapsulated as a string. 
+Embedding tabs `\t`, newlines `\r`, escape characters, is fairly straightforward.
+However, quotes can get complicated fast in JSON, since they've got to be escaped too, and with many CLI utilities also having separate quote-parsing rules, JSON can get unwieldy quickly. 
+
+However, supporting YAML directly would require us to spec out a YAML syntax for these files, and also find an OSS YAML parser and implement support for it. That would be quite a bit more expensive than JSON. 
 
 </td></tr>
 
@@ -391,17 +500,23 @@ Fragment extensions. Case in point: https://github.com/abduvik/just-enough-serie
 
 <tr><td><strong>Sustainability</strong></td><td>
 
-[comment]: # TODO!
+No substantial climate impacts expected here. We're not using expensive compute resources for this feature, so the impact should be comparable to any other Terminal feature. 
 
 </td></tr>
 
 <tr><td><strong>Localization</strong></td><td>
 
-[comment]: # TODO!
-
-Mildly worried here about the potential for community-driven tasks to have
+I'm mildly worried here about the potential for community-driven tasks to have
 non-localized descriptions. We may need to accept a `description:{ en-us:"",
-pt-br:"", ...}`-style map of language->string descriptions.
+pt-br:"", ...}`-style map of language->string descriptions. That may just need to be a future consideration for now. 
+
+</td></tr>
+
+
+<tr><td><strong>Security</strong></td><td>
+
+Another reason we shouldn't support keys being able to be lazy-bound to local snippets:
+It's entirely too easy for `malicious.exe` to create a file in `%homepath%` that creates a snippet for `\u003pwn-your-machine.exe\r` (or similar). Any app can read your settings file, and it is again too easy for that malicious app to set it's own action `id` to the same as some other well-meaning local snippet's ID which you DO have bound to a key. 
 
 </td></tr>
 
@@ -414,8 +529,7 @@ pt-br:"", ...}`-style map of language->string descriptions.
 ### 🐣 Crawl
 * [ ] The command palette needs to be able to display both the command name and a comment?
   - This will need to be reconciled with [#7039], which tracks displaying non-localized names in the command palette
-* [ ] The command palette is refactored to allow it to interact as the Tasks panel
-* [ ] [#1595] An action for opening the tasks panel, filled with all `sendInput` commands
+* [X] [#1595] Add the Suggestions UI, with support for `tasks`
 * [ ] Fragments can add **actions** to a user's settings
 * [ ] [#10436] Users can manage all their fragments extensions directly in the Settings UI
 
@@ -448,7 +562,26 @@ This "tasks panel" is a part of a much bigger picture. We fully intend to reuse
 this for the shell-driven autocompletions that xterm.js (read:VsCode) and
 PowerShell are working on (vaguely tracked by [#3121]).
 
-Longer workflows might be best exposed as [Notebooks].
+Longer workflows might be better exposed as notebooks. We've already got a mind 
+to support [markdown in a notebook-like experience](https://TODO!/put/link/here) 
+in the Terminal. For longer scripts that may need rich markup between commands, 
+that will likely be a better UX. 
+
+For what it is worth, [Warp] uses .yaml files for their "workflows".  As an example, see [`clone_all_repos_in_org.yaml`](https://github.com/warpdotdev/workflows/blob/main/specs/git/clone_all_repos_in_org.yaml). 
+
+We may want to straight up just seemlessly support that syntax as well. Converting them to WT-compatible json is fairly trivial [[1](#footnote-1)]. 
+
+Furthermore, the commands are all licensed under Apache 2.0, which means they can be easily consumed by other OSS projects and shared with other developers. This leads us to the next future consideration: 
+
+### Community Snippets
+
+_The big stretch version of this feature._
+
+It would be supremely cool to have a community currated list of Snippets, for various tools. Stored publicly on a
+GitHub repo (a la the winget-pkgs repo). Users can submit Snippets with
+descriptions of what the Snippet does. The Terminal can plug into that repo
+automatically and fetch the latest community commands, immediately giving the
+user access to a wide bearth of common Snippets. That could easily be done as another suggestion source (in the same vein as `local` is.)
 
 ## Resources
 
@@ -457,7 +590,7 @@ Longer workflows might be best exposed as [Notebooks].
 
 ### Footnotes
 
-<a name="footnote-1"><a>[1]: We may want to straight up just seemlessly support that syntax. The commands are all licensed under Apache 2.0. Converting them to WT-compatible json is fairly trivial:
+<a name="footnote-1"></a>[1]: For your consideration, a python script that will take the Warp workflow YAML and convert it into json that the Terminal can load. 
 
 ```python
 import yaml
@@ -465,7 +598,7 @@ import json
 
 def parse_yaml_files(directory):
     json_data = {}
-    json_data["name"] = f"{directory} tasks..."
+    json_data["name"] = f"{directory} workflows..."
     json_data["commands"] = []
 
     for filename in os.listdir(directory):
@@ -502,7 +635,7 @@ def parse_yaml_files(directory):
 [#12857]: https://github.com/microsoft/terminal/issues/12857
 [#5790]: https://github.com/microsoft/terminal/issues/5790
 [Notebooks]: ./Markdown%20Notebooks.md
-[Terminal North Star]: ./Terminal-North-Star.md
+[Suggestions UI]: ./Suggestions-UI.md
 [#keep]: https://github.com/zadjii/keep
 [VsCode Tasks]: https://github.com/microsoft/terminal/blob/main/.vscode/tasks.json
 
