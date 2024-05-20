@@ -81,20 +81,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         _clearedAllThisFrame = true;
         _firstPaint = false;
     }
-    else
-    {
-        std::span<const til::rect> dirty;
-        RETURN_IF_FAILED(GetDirtyArea(dirty));
-
-        // If we have 0 or 1 dirty pieces in the area, set as appropriate.
-        auto dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromExclusive(til::at(dirty, 0));
-
-        // If there's more than 1, union them all up with the 1 we already have.
-        for (size_t i = 1; i < dirty.size(); ++i)
-        {
-            dirtyView = Viewport::Union(dirtyView, Viewport::FromExclusive(til::at(dirty, i)));
-        }
-    }
 
     return S_OK;
 }
@@ -246,7 +232,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     auto hr = S_OK;
     const auto originalPos = _lastText;
     _trace.TraceMoveCursor(_lastText, coord);
-    auto performedSoftWrap = false;
     if (coord.x != _lastText.x || coord.y != _lastText.y)
     {
         if (coord.x == 0 && coord.y == 0)
@@ -272,7 +257,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             if (previousLineWrapped)
             {
-                performedSoftWrap = true;
                 _trace.TraceWrapped();
                 hr = S_OK;
             }
