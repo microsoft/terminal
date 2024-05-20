@@ -66,17 +66,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::_FinalizeInheritance()
     {
         // first, gather the inbox actions from the relevant parent
-        std::unordered_map<InternalActionID, Model::Command> InboxActions;
+        std::unordered_map<InternalActionID, Model::Command> inboxActions;
         winrt::com_ptr<implementation::ActionMap> foundParent{ nullptr };
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
-            for (const auto [_, cmd] : parent->_ActionMap)
+            for (const auto& [_, cmd] : parent->_ActionMap)
             {
                 if (cmd.Origin() != OriginTag::InBox)
                 {
                     // only one parent contains all the inbox actions and that parent contains only inbox actions,
                     // so if we found a non-inbox action we can just skip to the next parent
-                    break;
+                    continue;
                 }
                 foundParent = parent;
                 break;
@@ -85,9 +85,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (foundParent)
         {
-            for (const auto [_, cmd] : foundParent->_ActionMap)
+            for (const auto& [_, cmd] : foundParent->_ActionMap)
             {
-                InboxActions.emplace(Hash(cmd.ActionAndArgs()), cmd);
+                inboxActions.emplace(Hash(cmd.ActionAndArgs()), cmd);
             }
         }
 
@@ -105,9 +105,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (userCmdImpl->IdWasGenerated() && !userCmdImpl->HasName() && userCmd.IconPath().empty())
             {
                 const auto userActionHash = Hash(userCmd.ActionAndArgs());
-                if (const auto inboxCmd = InboxActions.find(userActionHash); inboxCmd != InboxActions.end())
+                if (const auto inboxCmd = inboxActions.find(userActionHash); inboxCmd != inboxActions.end())
                 {
-                    for (auto [key, cmdID] : _KeyMap)
+                    for (const auto& [key, cmdID] : _KeyMap)
                     {
                         // for any of our keys that point to the user action, point them to the inbox action instead
                         if (cmdID == userID)
@@ -126,10 +126,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // now, remove the commands with the IDs we found
-        for (const auto id : IdsToRemove)
-        {
-            _ActionMap.erase(id);
-        }
+        std::erase_if(_ActionMap, [&IdsToRemove](const auto& pair) { return IdsToRemove.contains(pair.first); });
     }
 
     bool ActionMap::FixUpsAppliedDuringLoad() const
@@ -158,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return cmd;
         }
 
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
             if (const auto inheritedCmd = parent->_GetActionByID(actionID))
             {
@@ -311,7 +308,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // there might be a collision here, where there could be 2 different commands with the same name
                 // in this case, prioritize the user's action
                 // TODO GH #17166: we should no longer use Command.Name to identify commands anywhere
-                if (nameMap.find(name) == nameMap.end() || cmd.Origin() == OriginTag::User)
+                if (!nameMap.contains(name) || cmd.Origin() == OriginTag::User)
                 {
                     // either a command with this name does not exist, or this is a user-defined command with a name
                     // in either case, update the name map with the command (if this is a user-defined command with
@@ -329,13 +326,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         for (const auto& [keys, cmdID] : _KeyMap)
         {
-            if (keyBindingsMap.find(keys) == keyBindingsMap.end())
+            if (!keyBindingsMap.contains(keys))
             {
                 keyBindingsMap.emplace(keys, cmdID);
             }
         }
 
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
             parent->_PopulateCumulativeKeyMap(keyBindingsMap);
         }
@@ -348,13 +345,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         for (const auto& [cmdID, cmd] : _ActionMap)
         {
-            if (actionMap.find(cmdID) == actionMap.end())
+            if (!actionMap.contains(cmdID))
             {
                 actionMap.emplace(cmdID, cmd);
             }
         }
 
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
             parent->_PopulateCumulativeActionMap(actionMap);
         }
@@ -388,7 +385,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _PopulateCumulativeKeyMap(accumulatedKeybindingsMap);
         _PopulateCumulativeActionMap(accumulatedActionsMap);
 
-        for (const auto [keys, cmdID] : accumulatedKeybindingsMap)
+        for (const auto& [keys, cmdID] : accumulatedKeybindingsMap)
         {
             if (const auto idCmdPair = accumulatedActionsMap.find(cmdID); idCmdPair != accumulatedActionsMap.end())
             {
@@ -576,14 +573,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // i.e. they provided an ID for a null command (which they really shouldn't, there's no purpose)
         // in this case, we do _not_ want to use the id they provided, we want to use an empty id
         // (empty id in the _KeyMap indicates the keychord was explicitly unbound)
-        if (cmd.ActionAndArgs().Action() == ShortcutAction::Invalid)
-        {
-            _KeyMap.insert_or_assign(keys, L"");
-        }
-        else
-        {
-            _KeyMap.insert_or_assign(keys, cmd.ID());
-        }
+        const auto action = cmd.ActionAndArgs().Action();
+        const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
+        _KeyMap.insert_or_assign(keys, id);
     }
 
     // Method Description:
@@ -626,15 +618,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (const auto keyIDPair = _KeyMap.find(keys); keyIDPair != _KeyMap.end())
         {
-            if (const auto cmdID = keyIDPair->second; !cmdID.empty())
-            {
-                return cmdID;
-            }
-            else
-            {
-                // the keychord is defined in this layer, but points to an empty string - explicitly unbound
-                return L"";
-            }
+            // the keychord is defined in this layer, return the ID (ID be empty, in which case this key is explicitly unbound)
+            return keyIDPair->second;
         }
 
         // search through our parents

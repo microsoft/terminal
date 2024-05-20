@@ -125,17 +125,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::Value keybindingsList{ Json::ValueType::arrayValue };
 
-        auto toJson = [&keybindingsList](const KeyChord kc, const winrt::hstring cmdID) {
-            Json::Value keyIDPair{ Json::ValueType::objectValue };
-            JsonUtils::SetValueForKey(keyIDPair, KeysKey, kc);
-            JsonUtils::SetValueForKey(keyIDPair, IDKey, cmdID);
-            keybindingsList.append(keyIDPair);
-        };
-
         // Serialize all standard keybinding objects in the current layer
         for (const auto& [keys, cmdID] : _KeyMap)
         {
-            toJson(keys, cmdID);
+            Json::Value keyIDPair{ Json::ValueType::objectValue };
+            JsonUtils::SetValueForKey(keyIDPair, KeysKey, keys);
+            JsonUtils::SetValueForKey(keyIDPair, IDKey, cmdID);
+            keybindingsList.append(keyIDPair);
         }
 
         return keybindingsList;
@@ -151,40 +147,41 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (keysJson.isArray() && keysJson.size() > 1)
         {
             warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
+            return;
         }
-        else
+
+        Control::KeyChord keys{ nullptr };
+        winrt::hstring idJson;
+        if (!JsonUtils::GetValueForKey(json, KeysKey, keys))
         {
-            Control::KeyChord keys{ nullptr };
-            winrt::hstring idJson;
-            if (JsonUtils::GetValueForKey(json, KeysKey, keys))
+            return;
+        }
+
+        // if these keys are already bound to some command,
+        // we need to update that command to erase these keys as we are about to overwrite them
+        if (const auto foundCommand = _GetActionByKeyChordInternal(keys); foundCommand && *foundCommand)
+        {
+            const auto foundCommandImpl{ get_self<implementation::Command>(*foundCommand) };
+            foundCommandImpl->EraseKey(keys);
+        }
+
+        // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
+        JsonUtils::GetValueForKey(json, IDKey, idJson);
+
+        // any existing keybinding with the same keychord in this layer will get overwritten
+        _KeyMap.insert_or_assign(keys, idJson);
+
+        // make sure the command registers these keys
+        if (!idJson.empty())
+        {
+            // TODO GH#17160
+            // if the command with this id is only going to appear later during settings load
+            // then this will return null, meaning that the command created later on will not register this keybinding
+            // the keybinding will still work fine within the app, its just that the Command object itself won't know about this key mapping
+            // we are going to move away from Command needing to know its key mappings in a followup, so this shouldn't matter for very long
+            if (const auto cmd = _GetActionByID(idJson))
             {
-                // if these keys are already bound to some command,
-                // we need to update that command to erase these keys as we are about to overwrite them
-                if (const auto foundCommand = _GetActionByKeyChordInternal(keys); foundCommand && *foundCommand)
-                {
-                    const auto foundCommandImpl{ get_self<implementation::Command>(*foundCommand) };
-                    foundCommandImpl->EraseKey(keys);
-                }
-
-                // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
-                JsonUtils::GetValueForKey(json, IDKey, idJson);
-
-                // any existing keybinding with the same keychord in this layer will get overwritten
-                _KeyMap.insert_or_assign(keys, idJson);
-
-                // make sure the command registers these keys
-                if (!idJson.empty())
-                {
-                    // TODO GH#17160
-                    // if the command with this id is only going to appear later during settings load
-                    // then this will return null, meaning that the command created later on will not register this keybinding
-                    // the keybinding will still work fine within the app, its just that the Command object itself won't know about this key mapping
-                    // we are going to move away from Command needing to know its key mappings in a followup, so this shouldn't matter for very long
-                    if (const auto cmd = _GetActionByID(idJson))
-                    {
-                        cmd.RegisterKey(keys);
-                    }
-                }
+                cmd.RegisterKey(keys);
             }
         }
         return;
