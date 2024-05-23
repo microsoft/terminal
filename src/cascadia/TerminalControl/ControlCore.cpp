@@ -1657,7 +1657,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool resetOnly)
     {
         const auto lock = _terminal->LockForWriting();
-        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), text, !caseSensitive);
+        SearchFlag flags{};
+        WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !caseSensitive);
+        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), text, flags);
 
         if (searchInvalidated || !resetOnly)
         {
@@ -1666,7 +1668,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (searchInvalidated)
             {
                 oldResults = _searcher.ExtractResults();
-                _searcher.Reset(*_terminal.get(), text, !caseSensitive, !goForward);
+                _searcher.Reset(*_terminal.get(), text, flags, !goForward);
 
                 if (SnapSearchResultToSelection())
                 {

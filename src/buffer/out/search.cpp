@@ -8,24 +8,24 @@
 
 using namespace Microsoft::Console::Types;
 
-bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept
+bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags) const noexcept
 {
     return _renderData != &renderData ||
            _needle != needle ||
-           _caseInsensitive != caseInsensitive ||
+           _flags != flags ||
            _lastMutationId != renderData.GetTextBuffer().GetLastMutationId();
 }
 
-bool Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive, bool reverse)
+bool Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags, bool reverse)
 {
     const auto& textBuffer = renderData.GetTextBuffer();
 
     _renderData = &renderData;
     _needle = needle;
-    _caseInsensitive = caseInsensitive;
+    _flags = flags;
     _lastMutationId = textBuffer.GetLastMutationId();
 
-    _results = textBuffer.SearchText(needle, caseInsensitive);
+    _ok = textBuffer.SearchText(needle, _flags, _results);
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
     return true;

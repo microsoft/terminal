@@ -1559,7 +1559,7 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 
                 if (!textView.empty())
                 {
-                    const auto hits = textBuffer.SearchText(textView, true);
+                    const auto hits = textBuffer.SearchText(textView, SearchFlag::CaseInsensitive);
                     for (const auto& s : hits)
                     {
                         colorSelection(s.start, s.end, attr);

@@ -701,7 +701,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
                     ClearSelection();
 
                     const auto& textBuffer = gci.renderData.GetTextBuffer();
-                    const auto hits = textBuffer.SearchText(str, true);
+                    const auto hits = textBuffer.SearchText(str, SearchFlag::CaseInsensitive);
                     for (const auto& s : hits)
                     {
                         ColorSelection(s.start, s.end, selectionAttr);

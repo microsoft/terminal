@@ -98,7 +98,7 @@ class SearchTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         Search s;
-        s.Reset(gci.renderData, L"AB", false, false);
+        s.Reset(gci.renderData, L"AB", SearchFlag::None, false);
         DoFoundChecks(s, {}, 1, false);
     }
 
@@ -106,7 +106,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.Reset(gci.renderData, L"\x304b", false, false);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::None, false);
         DoFoundChecks(s, { 2, 0 }, 1, false);
     }
 
@@ -115,7 +115,7 @@ class SearchTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         Search s;
-        s.Reset(gci.renderData, L"ab", true, false);
+        s.Reset(gci.renderData, L"ab", SearchFlag::CaseInsensitive, false);
         DoFoundChecks(s, {}, 1, false);
     }
 
@@ -123,7 +123,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.Reset(gci.renderData, L"\x304b", true, false);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::CaseInsensitive, false);
         DoFoundChecks(s, { 2, 0 }, 1, false);
     }
 
@@ -131,7 +131,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.Reset(gci.renderData, L"AB", false, true);
+        s.Reset(gci.renderData, L"AB", SearchFlag::None, true);
         DoFoundChecks(s, { 0, 3 }, -1, true);
     }
 
@@ -139,7 +139,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.Reset(gci.renderData, L"\x304b", false, true);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::None, true);
         DoFoundChecks(s, { 2, 3 }, -1, true);
     }
 
@@ -147,7 +147,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.Reset(gci.renderData, L"ab", true, true);
+        s.Reset(gci.renderData, L"ab", SearchFlag::CaseInsensitive, true);
         DoFoundChecks(s, { 0, 3 }, -1, true);
     }
 
@@ -155,7 +155,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Search s;
-        s.Reset(gci.renderData, L"\x304b", true, true);
+        s.Reset(gci.renderData, L"\x304b", SearchFlag::CaseInsensitive, true);
         DoFoundChecks(s, { 2, 3 }, -1, true);
     }
 };

@@ -23,7 +23,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
     // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the
     //   find dialog is opened, it will default to the last used option.
     static auto reverse = true;
-    static auto caseInsensitive = true;
+    static SearchFlag flags{ SearchFlag::CaseInsensitive };
     static std::wstring lastFindString;
     static Search searcher;
 
@@ -32,7 +32,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
     case WM_INITDIALOG:
         SetWindowLongPtrW(hWnd, DWLP_USER, lParam);
         CheckRadioButton(hWnd, ID_CONSOLE_FINDUP, ID_CONSOLE_FINDDOWN, (reverse ? ID_CONSOLE_FINDUP : ID_CONSOLE_FINDDOWN));
-        CheckDlgButton(hWnd, ID_CONSOLE_FINDCASE, !caseInsensitive);
+        CheckDlgButton(hWnd, ID_CONSOLE_FINDCASE, WI_IsFlagClear(flags, SearchFlag::CaseInsensitive));
         SetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, lastFindString.c_str());
         return TRUE;
     case WM_COMMAND:
@@ -46,15 +46,15 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             length = GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, lastFindString.data(), gsl::narrow_cast<int>(length + 1));
             lastFindString.resize(length);
 
-            caseInsensitive = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
+            WI_UpdateFlag(flags, SearchFlag::CaseInsensitive, IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0);
             reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
 
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            if (searcher.IsStale(gci.renderData, lastFindString, caseInsensitive))
+            if (searcher.IsStale(gci.renderData, lastFindString, flags))
             {
-                searcher.Reset(gci.renderData, lastFindString, caseInsensitive, reverse);
+                searcher.Reset(gci.renderData, lastFindString, flags, reverse);
                 searcher.MoveToCurrentSelection();
             }
             else
