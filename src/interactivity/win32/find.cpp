@@ -33,6 +33,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
         SetWindowLongPtrW(hWnd, DWLP_USER, lParam);
         CheckRadioButton(hWnd, ID_CONSOLE_FINDUP, ID_CONSOLE_FINDDOWN, (reverse ? ID_CONSOLE_FINDUP : ID_CONSOLE_FINDDOWN));
         CheckDlgButton(hWnd, ID_CONSOLE_FINDCASE, WI_IsFlagClear(flags, SearchFlag::CaseInsensitive));
+        CheckDlgButton(hWnd, ID_CONSOLE_FINDREGEX, WI_IsFlagSet(flags, SearchFlag::RegularExpression));
         SetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, lastFindString.c_str());
         return TRUE;
     case WM_COMMAND:
@@ -47,6 +48,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             lastFindString.resize(length);
 
             WI_UpdateFlag(flags, SearchFlag::CaseInsensitive, IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0);
+            WI_UpdateFlag(flags, SearchFlag::RegularExpression, IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDREGEX) != 0);
             reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
 
             LockConsole();
