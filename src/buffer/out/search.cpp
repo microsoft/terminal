@@ -25,7 +25,9 @@ bool Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const st
     _flags = flags;
     _lastMutationId = textBuffer.GetLastMutationId();
 
-    _ok = textBuffer.SearchText(needle, _flags, _results);
+    auto result = textBuffer.SearchText(needle, _flags);
+    _ok = result.has_value();
+    _results = std::move(result).value_or(std::vector<til::point_span>{});
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
     return true;
@@ -143,4 +145,9 @@ std::vector<til::point_span>&& Search::ExtractResults() noexcept
 ptrdiff_t Search::CurrentMatch() const noexcept
 {
     return _index;
+}
+
+bool Search::IsOk() const noexcept
+{
+    return _ok;
 }

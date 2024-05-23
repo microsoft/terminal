@@ -49,6 +49,7 @@ public:
     const std::vector<til::point_span>& Results() const noexcept;
     std::vector<til::point_span>&& ExtractResults() noexcept;
     ptrdiff_t CurrentMatch() const noexcept;
+    bool IsOk() const noexcept;
 
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.
@@ -57,6 +58,7 @@ private:
     SearchFlag _flags{};
     uint64_t _lastMutationId = 0;
 
+    bool _ok{ false };
     std::vector<til::point_span> _results;
     ptrdiff_t _index = 0;
     ptrdiff_t _step = 0;

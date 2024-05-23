@@ -3185,14 +3185,15 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 
 // Searches through the entire (committed) text buffer for `needle` and returns the coordinates in absolute coordinates.
 // The end coordinates of the returned ranges are considered inclusive.
-std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& needle, SearchFlag flags) const
+std::optional<std::vector<til::point_span>> TextBuffer::SearchText(const std::wstring_view& needle, SearchFlag flags) const
 {
     return SearchText(needle, flags, 0, til::CoordTypeMax);
 }
 
 // Searches through the given rows [rowBeg,rowEnd) for `needle` and returns the coordinates in absolute coordinates.
 // While the end coordinates of the returned ranges are considered inclusive, the [rowBeg,rowEnd) range is half-open.
-std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& needle, SearchFlag flags, til::CoordType rowBeg, til::CoordType rowEnd) const
+// Returns nullopt if the parameters were invalid (e.g. regex search was requested with an invalid regex)
+std::optional<std::vector<til::point_span>> TextBuffer::SearchText(const std::wstring_view& needle, SearchFlag flags, til::CoordType rowBeg, til::CoordType rowEnd) const
 {
     rowEnd = std::min(rowEnd, _estimateOffsetOfLastCommittedRow() + 1);
 
@@ -3220,6 +3221,11 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 
     UErrorCode status = U_ZERO_ERROR;
     const auto re = ICU::CreateRegex(needle, icuFlags, &status);
+    if (status > U_ZERO_ERROR)
+    {
+        return std::nullopt;
+    }
+
     uregex_setUText(re.get(), &text, &status);
 
     if (uregex_find(re.get(), -1, &status))
