@@ -25,6 +25,7 @@ enum class SearchFlag : unsigned int
     None = 0,
 
     CaseInsensitive = 1 << 0,
+    RegularExpression = 1 << 1,
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(SearchFlag);

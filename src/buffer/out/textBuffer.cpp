@@ -3206,8 +3206,17 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 
     auto text = ICU::UTextFromTextBuffer(*this, rowBeg, rowEnd);
 
-    uint32_t icuFlags{ UREGEX_LITERAL };
+    uint32_t icuFlags{ 0 };
     WI_SetFlagIf(icuFlags, UREGEX_CASE_INSENSITIVE, WI_IsFlagSet(flags, SearchFlag::CaseInsensitive));
+
+    if (WI_IsFlagSet(flags, SearchFlag::RegularExpression))
+    {
+        WI_SetFlag(icuFlags, UREGEX_MULTILINE);
+    }
+    else
+    {
+        WI_SetFlag(icuFlags, UREGEX_LITERAL);
+    }
 
     UErrorCode status = U_ZERO_ERROR;
     const auto re = ICU::CreateRegex(needle, icuFlags, &status);
