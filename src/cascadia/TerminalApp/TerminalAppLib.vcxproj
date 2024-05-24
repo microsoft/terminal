@@ -74,6 +74,12 @@
     <Page Include="TasksPaneContent.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="CodeBlock.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MarkdownPaneContent.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -176,6 +182,12 @@
     </ClInclude>
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="CodeBlock.h">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="MarkdownPaneContent.h">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -294,6 +306,14 @@
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="CodeBlock.cpp">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="MarkdownPaneContent.cpp">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -366,6 +386,14 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="TerminalSettingsCache.idl" />
+    <Midl Include="CodeBlock.idl">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="MarkdownPaneContent.idl">
+      <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -384,6 +412,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\dep\md4c\md4c.vcxproj">
+      <Project>{7CAE5851-50D5-4934-8D5E-30361A8A40F3}</Project>
     </ProjectReference>
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to

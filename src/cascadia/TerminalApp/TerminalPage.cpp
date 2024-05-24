@@ -24,6 +24,7 @@
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
 #include "TasksPaneContent.h"
+#include "MarkdownPaneContent.h"
 #include "TabRowControl.h"
 #include "Utils.h"
 
@@ -3184,6 +3185,64 @@ namespace winrt::TerminalApp::implementation
             tasksContent->UpdateSettings(_settings);
             tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
             tasksContent->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+
+            content = *tasksContent;
+        }
+        else if (paneType == L"markdown")
+        {
+
+    //     if (Feature_ScratchpadPane::IsEnabled())
+    //     {
+    //         winrt::hstring filePath = L"";
+    //         if (args)
+    //         {
+    //             if (const auto& realArgs = args.ActionArgs().try_as<OpenMarkdownPaneArgs>())
+    //             {
+    //                 // Use the CWD of the Terminal to evaluate this path, like a
+    //                 // startingDirectory. This lets the `wtd open` command work
+    //                 // on relative file paths.
+
+    //                 filePath = _evaluatePathForCwd(realArgs.Path());
+    //             }
+    //         }
+
+    //         const auto& scratchPane{ winrt::make_self<MarkdownPaneContent>(filePath) };
+    //         scratchPane->UpdateSettings(_settings);
+    //         // This is maybe a little wacky - add our key event handler to the pane
+    //         // we made. So that we can get actions for keys that the content didn't
+    //         // handle.
+    //         scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+    //         // scratchPane->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+    //         scratchPane->DispatchActionRequested([weak = get_weak()](const auto& sender, const auto& actionAndArgs) {
+    //             if (const auto& page{ weak.get() })
+    //             {
+    //                 page->_actionDispatch->DoAction(sender, actionAndArgs);
+    //             }
+    //         });
+
+    //         const auto resultPane = std::make_shared<Pane>(*scratchPane);
+    //         _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
+    //         args.Handled(true);
+    //     }
+    // }
+
+
+
+
+
+            const auto& tasksContent{ winrt::make_self<MarkdownPaneContent>(L"") };
+            tasksContent->UpdateSettings(_settings);
+            tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+            // This one doesn't use DispatchCommand, because we don't create
+            // Command's freely at runtime like we do with just plain old actions.
+            tasksContent->DispatchActionRequested([weak = get_weak()](const auto& sender, const auto& actionAndArgs) {
+                if (const auto& page{ weak.get() })
+                {
+                    page->_actionDispatch->DoAction(sender, actionAndArgs);
+                }
+            });
 
             content = *tasksContent;
         }
