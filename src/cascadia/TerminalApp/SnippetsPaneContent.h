@@ -11,11 +11,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-<<<<<<< HEAD:src/cascadia/TerminalApp/SnippetsPaneContent.h
-    struct SnippetsPaneContent : SnippetsPaneContentT<SnippetsPaneContent>
-=======
-    struct TasksPaneContent : TasksPaneContentT<TasksPaneContent>, BasicPaneEvents
->>>>>>> f8e5bfa09 (hey this works great):src/cascadia/TerminalApp/TasksPaneContent.h
+    struct SnippetsPaneContent : SnippetsPaneContentT<SnippetsPaneContent>, BasicPaneEvents
     {
         SnippetsPaneContent();
 
