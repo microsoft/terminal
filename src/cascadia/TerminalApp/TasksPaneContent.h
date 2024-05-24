@@ -106,6 +106,7 @@ namespace winrt::TerminalApp::implementation
         };
 
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> Children() { return _children; }
+        bool HasChildren() { return _children.Size() > 0; }
         winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
 
         // Used to control if this item is visible in the TreeView. Turns out,

@@ -22,6 +22,7 @@ namespace TerminalApp
     {
         String Input{ get; };
         Windows.Foundation.Collections.IObservableVector<FilteredTask> Children { get; };
+        Boolean HasChildren { get; };
         Windows.UI.Xaml.Visibility Visibility { get; };
     }
 
