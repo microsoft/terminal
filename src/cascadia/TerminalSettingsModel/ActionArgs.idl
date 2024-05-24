@@ -227,7 +227,6 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass SendInputArgs : IActionArgs
     {
         SendInputArgs(String input);
-
         String Input { get; };
     };
 

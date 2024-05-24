@@ -1,0 +1,170 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="TerminalApp.CodeBlock"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:contract7NotPresent="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractNotPresent(Windows.Foundation.UniversalApiContract,7)"
+             xmlns:contract7Present="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract,7)"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:TerminalApp"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             d:DesignHeight="256"
+             d:DesignWidth="1024"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+
+
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="BlockBackgroundColor">#f6f8fa</Color>
+                    <Color x:Key="BlockBorderColor">#d3d3d3</Color>
+                    <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
+                    <Color x:Key="PlayButtonNormalColor">#88222222</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <!--<Color x:Key="BlockBackgroundColor">#161b22</Color>-->
+                    <Color x:Key="BlockBackgroundColor">#1e1e1e</Color>
+                    <Color x:Key="BlockBorderColor">#30363d</Color>
+                    <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
+                    <Color x:Key="PlayButtonNormalColor">#8888</Color>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+
+            <Style x:Key="PlayButtonTemplate"
+                   TargetType="Button">
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Background" Value="Transparent" />
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="ButtonBaseElement"
+                                    Padding="{TemplateBinding Padding}"
+                                    AutomationProperties.AccessibilityView="Raw"
+                                    Background="{TemplateBinding Background}"
+                                    BackgroundSizing="{TemplateBinding BackgroundSizing}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="{TemplateBinding CornerRadius}">
+                                <Viewbox Width="20"
+                                         Height="20">
+                                    <Grid>
+                                        <FontIcon x:Name="ButtonBackgroundIcon"
+                                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                  Foreground="{ThemeResource PlayButtonHoveredColor}"
+                                                  Glyph="&#xF5b0;"
+                                                  Visibility="Collapsed" />
+                                        <FontIcon x:Name="ButtonOutlineIcon"
+                                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                  Foreground="{ThemeResource PlayButtonNormalColor}"
+                                                  Glyph="&#xE768;" />
+                                        <muxc:ProgressRing x:Name="StatusProgress"
+                                                           IsActive="False" />
+                                    </Grid>
+                                    <!--  TODO! FontFamily="{ThemeResource SymbolThemeFontFamily}"  -->
+                                </Viewbox>
+
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+
+                                        <VisualState x:Name="Normal">
+                                            <VisualState.Setters>
+                                                <Setter Target="ButtonBackgroundIcon.Visibility" Value="Collapsed" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="ButtonBackgroundIcon.Visibility" Value="Visible" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+
+
+                                        <VisualState x:Name="Disabled" />
+                                    </VisualStateGroup>
+
+                                    <VisualStateGroup x:Name="PlayButtonStates">
+                                        <VisualState x:Name="Ready">
+                                            <VisualState.Setters>
+                                                <Setter Target="ButtonBackgroundIcon.Glyph" Value="&#xF5b0;" />
+                                                <Setter Target="ButtonOutlineIcon.Glyph" Value="&#xE768;" />
+                                                <Setter Target="StatusProgress.IsActive" Value="False" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+
+                                        <VisualState x:Name="Running">
+                                            <VisualState.Setters>
+                                                <Setter Target="ButtonBackgroundIcon.Glyph" Value=" " />
+                                                <Setter Target="ButtonOutlineIcon.Glyph" Value=" " />
+                                                <Setter Target="StatusProgress.IsActive" Value="True" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+
+                                        <VisualState x:Name="AlreadyRan">
+                                            <VisualState.Setters>
+                                                <Setter Target="ButtonBackgroundIcon.Glyph" Value="&#xe72c;" />
+                                                <Setter Target="ButtonOutlineIcon.Glyph" Value="&#xe72c;" />
+                                                <Setter Target="StatusProgress.IsActive" Value="False" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+
+                                </VisualStateManager.VisualStateGroups>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+
+            </Style>
+            <Style x:Key="CodeBlockLineTemplate"
+                   TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Cascadia Code" />
+            </Style>
+
+        </ResourceDictionary>
+
+    </UserControl.Resources>
+
+    <Grid HorizontalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Button x:Name="RunButton"
+                Grid.Column="0"
+                Margin="0,9,0,0"
+                Padding="0"
+                VerticalAlignment="Top"
+                Style="{StaticResource PlayButtonTemplate}"
+                Tapped="_playPressed" />
+        <Border Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource BlockBackgroundColor}"
+                BorderBrush="{ThemeResource BlockBorderColor}"
+                BorderThickness="1"
+                CornerRadius="4">
+            <StackPanel x:Name="CommandsAndOutput">
+                <StackPanel x:Name="CommandLines"
+                            Padding="8">
+                    <TextBlock FontFamily="Cascadia Code"
+                               IsTextSelectionEnabled="True"
+                               Text="{x:Bind Commandlines}" />
+                </StackPanel>
+                <StackPanel x:Name="OutputBlockContainer"
+                            Visibility="Collapsed">
+                    <!--  Put the TermControl here.  -->
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+
+</UserControl>
