@@ -278,9 +278,9 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        auto res = Windows::UI::Xaml::Application::Current().Resources();
-        auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
-        Background(bg.try_as<WUX::Media::Brush>());
+        // auto bg = Resources().Lookup(winrt::box_value(L"PageBackground"));
+        // auto brush = bg.try_as<WUX::Media::Brush>();
+        // Background(brush);
 
         FilePathInput().Text(initialPath);
         _filePath = FilePathInput().Text();

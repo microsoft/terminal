@@ -11,9 +11,32 @@
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              mc:Ignorable="d">
 
-    <UserControl.Resources />
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <!--  same as in MainPage, this is SolidBackgroundFillColorTertiary  -->
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="PageBackground">#282828</Color>
+                    <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
+                    <Color x:Key="PlayButtonNormalColor">#8888</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="PageBackground">#F9F9F9</Color>
+                    <Color x:Key="PlayButtonHoveredColor">#257f01</Color>
+                    <Color x:Key="PlayButtonNormalColor">#88222222</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <!--  Define resources for HighContrast mode here  -->
+                    <StaticResource x:Key="PageBackground"
+                                    ResourceKey="SystemColorWindowColorBrush" />
+                </ResourceDictionary>
 
-    <Grid x:Name="Root">
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid x:Name="Root"
+          Background="{ThemeResource PageBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
