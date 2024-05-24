@@ -5,16 +5,7 @@ last updated: 2022-12-14
 issue id: 1595
 ---
 
-# Windows Terminal - Snippets
-
-<sub>nee "Tasks"</sub>
-
-> **Note**:
->
-> This is a draft document. This doc largely predates the creation of the
-> [Suggestions UI]. Many of the elements of this doc need to be updated to
-> reflect newer revisions to the Suggestions UI.
-
+# Windows Terminal - Snippets  <!-- nee "Tasks" -->
 
 ## Abstract
 
@@ -87,9 +78,6 @@ K | 🚀 Sprint | Snippets can have promptable sections of input
 L | 🚀 Sprint | Community tasks are hosted in a public GH repo
 M | 🚀 Sprint | A simple UX (either web or in Terminal) is exposed for interacting with public GH repo of tasks
 
-<!-- H | 🏃‍♂️ Run    | Snippets are filterable by tool (`git`, `docker`, etc.) -->
-<!-- I | 🏃‍♂️ Run    | Snippets can both be atomic  _tasks_ and longer scripts. Snippets can be sent straightaway to the Terminal, while the longer scripts are more for reference (ex: [winget script]). -->
-
 ### Elevator Pitch
 
 The Terminal can remember long command-lines and display them with user-friendly
@@ -124,40 +112,6 @@ the Terminal can automatically load them for the user.
 It will delight developers.
 
 ## Scenario Details
-
-### UI/UX Design
-
-For the most part, we'll be using the [Suggestions UI] to display tasks to the
-user. This is a text cursor-relative UI surface that can quickly display actions
-to the user, in the context of what they're working on.
-
-The following are some examples from VsCode, Warp. These are meant to be
-illustrative of what these menus already look like in the wild:
-
-<!-- TODO! uncomment ![](img/vscode-tasks-000.gif) -->
-
-<!-- TODO! uncomment ![](img/warp-workflows-000.gif) -->
-
-TODO! update these
-
-<!-- 
-A prototype of the recent commands UI, powered by shell integration:
-
-![](img/command-history-suggestions.gif)
-
-A prototype of the tasks UI, powered by the user's settings:
-
-![](img/tasks-suggestions.gif)
-
-A prototype of saving a command directly to the user's settings, then invoking it via the tasks UI
-
-![](img/save-command.gif)
-
-A prototype of reading tasks from the CWD
-
-![](img/tasks-from-cwd.gif) -->
-
-<hr> <!-- end of onepager -->
 
 ### Implementation Details
 
@@ -273,7 +227,62 @@ Users may also want to leave snippets in the root of their repo, for others to u
 
 _This has laready been prototyped in [#TODO!](add/the/link)_
 
-Users 
+Users should be able to save commands as snippets directly from the commandline. Consider: you've just run the command that worked the way you need it to. You shouldn't have to open the settings to then separatey ccopy-paste the command in to save it. It should be as easy as <kbd>Up</kbd>, <kbd>Home</kbd>, `wt save `, <kbd>Enter</kbd>.
+
+The exact syntax as follows:
+
+This will be powered by a `saveInput` (TODO! that's not right is it) action behind the scenes. After running this command, a toast will be presented to the user to indicate success/failure. 
+
+#### `save` subcommand
+
+`save [--name,-n name][--description,-d description][-- commandline]`
+
+Saves a given commandline as a sendInput action to the Terminal settings file. This will immediately write the Terminal settings file. 
+
+**Parameters**:
+* `--name,-n name`: The name to assign to the `name` parameter of the saved command. If omitted, then the parameter will be left blank, and the command will use the auto-generated "Send input:..." name in menus.
+* `--description,-d`: The description to optionally assign to the command. 
+* `commandline`: The commandline to save as the `input` of the `sendInput` action. 
+
+If the `save` subcommand is ran without any other subcommands, the Terminal will
+imply the `-w 0` arguments, to attempt to send this action to the current
+Terminal window. (unless of course, `-w` was manually provided on the
+commandline). When run with other subcommands, then the action will just be ran
+in the same window as all the other subcommands.  
+
+### UI/UX Design
+
+For the most part, we'll be using the [Suggestions UI] to display tasks to the
+user. This is a text cursor-relative UI surface that can quickly display actions
+to the user, in the context of what they're working on.
+
+The following are some examples from VsCode, Warp. These are meant to be
+illustrative of what these menus already look like in the wild:
+
+<!-- TODO! uncomment ![](img/vscode-tasks-000.gif) -->
+
+<!-- TODO! uncomment ![](img/warp-workflows-000.gif) -->
+
+TODO! update these
+
+<!-- 
+A prototype of the recent commands UI, powered by shell integration:
+
+![](img/command-history-suggestions.gif)
+
+A prototype of the tasks UI, powered by the user's settings:
+
+![](img/tasks-suggestions.gif)
+
+A prototype of saving a command directly to the user's settings, then invoking it via the tasks UI
+
+![](img/save-command.gif)
+
+A prototype of reading tasks from the CWD
+
+![](img/tasks-from-cwd.gif) -->
+
+<hr> <!-- end of onepager -->
 
 -----------------
 (above this is done)
@@ -484,11 +493,16 @@ Fragment extensions. Case in point: https://github.com/abduvik/just-enough-serie
 
 <tr><td><strong>Compatibility</strong></td><td>
 
-I considered supporting YAML for local snippets (`.wt.json`), instead of JSON. JSON is not super friendly to command-lines - since everything's gotta be encapsulated as a string. 
-Embedding tabs `\t`, newlines `\r`, escape characters, is fairly straightforward.
-However, quotes can get complicated fast in JSON, since they've got to be escaped too, and with many CLI utilities also having separate quote-parsing rules, JSON can get unwieldy quickly. 
+I considered supporting YAML for local snippets (`.wt.json`), instead of JSON.
+JSON is not super friendly to command-lines - since everything's gotta be
+encapsulated as a string. Embedding tabs `\t`, newlines `\r`, escape characters,
+is fairly straightforward. However, quotes can get complicated fast in JSON,
+since they've got to be escaped too, and with many CLI utilities also having
+separate quote-parsing rules, JSON can get unwieldy quickly.
 
-However, supporting YAML directly would require us to spec out a YAML syntax for these files, and also find an OSS YAML parser and implement support for it. That would be quite a bit more expensive than JSON. 
+However, supporting YAML directly would require us to spec out a YAML syntax for
+these files, and also find an OSS YAML parser and implement support for it. That
+would be quite a bit more expensive than JSON.
 
 </td></tr>
 
@@ -500,7 +514,9 @@ However, supporting YAML directly would require us to spec out a YAML syntax for
 
 <tr><td><strong>Sustainability</strong></td><td>
 
-No substantial climate impacts expected here. We're not using expensive compute resources for this feature, so the impact should be comparable to any other Terminal feature. 
+No substantial climate impacts expected here. We're not using expensive compute
+resources for this feature, so the impact should be comparable to any other
+Terminal feature.
 
 </td></tr>
 
@@ -508,15 +524,20 @@ No substantial climate impacts expected here. We're not using expensive compute 
 
 I'm mildly worried here about the potential for community-driven tasks to have
 non-localized descriptions. We may need to accept a `description:{ en-us:"",
-pt-br:"", ...}`-style map of language->string descriptions. That may just need to be a future consideration for now. 
+pt-br:"", ...}`-style map of language->string descriptions. That may just need
+to be a future consideration for now.
 
 </td></tr>
 
 
 <tr><td><strong>Security</strong></td><td>
 
-Another reason we shouldn't support keys being able to be lazy-bound to local snippets:
-It's entirely too easy for `malicious.exe` to create a file in `%homepath%` that creates a snippet for `\u003pwn-your-machine.exe\r` (or similar). Any app can read your settings file, and it is again too easy for that malicious app to set it's own action `id` to the same as some other well-meaning local snippet's ID which you DO have bound to a key. 
+Another reason we shouldn't support keys being able to be lazy-bound to local
+snippets: It's entirely too easy for `malicious.exe` to create a file in
+`%homepath%` that creates a snippet for `\u003pwn-your-machine.exe\r` (or
+similar). Any app can read your settings file, and it is again too easy for that
+malicious app to set it's own action `id` to the same as some other well-meaning
+local snippet's ID which you DO have bound to a key.
 
 </td></tr>
 
@@ -556,32 +577,31 @@ It's entirely too easy for `malicious.exe` to create a file in `%homepath%` that
 
 ### Future Considerations
 
-[comment]: # Are there other future features planned that might affect the current design of this setting? The team can help with this section during the review.
 
-This "tasks panel" is a part of a much bigger picture. We fully intend to reuse
-this for the shell-driven autocompletions that xterm.js (read:VsCode) and
-PowerShell are working on (vaguely tracked by [#3121]).
-
-Longer workflows might be better exposed as notebooks. We've already got a mind 
-to support [markdown in a notebook-like experience](https://TODO!/put/link/here) 
-in the Terminal. For longer scripts that may need rich markup between commands, 
-that will likely be a better UX. 
-
-For what it is worth, [Warp] uses .yaml files for their "workflows".  As an example, see [`clone_all_repos_in_org.yaml`](https://github.com/warpdotdev/workflows/blob/main/specs/git/clone_all_repos_in_org.yaml). 
-
-We may want to straight up just seemlessly support that syntax as well. Converting them to WT-compatible json is fairly trivial [[1](#footnote-1)]. 
-
-Furthermore, the commands are all licensed under Apache 2.0, which means they can be easily consumed by other OSS projects and shared with other developers. This leads us to the next future consideration: 
+* We may want to add additional params to the `save` subcommand in the future, to configure where the snippet is saved:
+  * `--local`: Save to the `.wt.json` in the CWD, if there is one (or create one)
+  * `--parent`: Save to the `.wt.json` in the first ancestor of the CWD, if there is one. Otherwise create one here. 
+  * `--settings`: Manually save to the settings file?
+  * `--profile`: save to this profile???? Not sure if this is actually possible. Maybe with the `WT_SESSION_ID` env var to figure out which profile is in use for the pane with that ID
+* Longer workflows might be better exposed as notebooks. We've already got a mind 
+  to support [markdown in a notebook-like experience](https://TODO!/put/link/here) 
+  in the Terminal. For longer scripts that may need rich markup between commands, 
+  that will likely be a better UX. 
+* For what it is worth, [Warp] uses .yaml files for their "workflows".  As an example, see [`clone_all_repos_in_org.yaml`](https://github.com/warpdotdev/workflows/blob/main/specs/git/clone_all_repos_in_org.yaml). 
+  We may want to straight up just seemlessly support that syntax as well. Converting them to WT-compatible json is fairly trivial [[1](#footnote-1)]. 
+  Furthermore, the commands are all licensed under Apache 2.0, which means they can be easily consumed by other OSS projects and shared with other developers. This leads us to the next future consideration: 
 
 ### Community Snippets
 
 _The big stretch version of this feature._
 
-It would be supremely cool to have a community currated list of Snippets, for various tools. Stored publicly on a
-GitHub repo (a la the winget-pkgs repo). Users can submit Snippets with
-descriptions of what the Snippet does. The Terminal can plug into that repo
-automatically and fetch the latest community commands, immediately giving the
-user access to a wide bearth of common Snippets. That could easily be done as another suggestion source (in the same vein as `local` is.)
+It would be supremely cool to have a community currated list of Snippets, for
+various tools. Stored publicly on a GitHub repo (a la the winget-pkgs repo).
+Users can submit Snippets with descriptions of what the Snippet does. The
+Terminal can plug into that repo automatically and fetch the latest community
+commands, immediately giving the user access to a wide bearth of common
+Snippets. That could easily be done as another suggestion source (in the same
+vein as `local` is.)
 
 ## Resources
 
