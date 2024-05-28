@@ -161,7 +161,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::chrono::milliseconds{ 100 },
             [weakTerminal = std::weak_ptr{ _terminal }, weakThis = get_weak(), dispatcher = _dispatcher]() {
                 dispatcher.TryEnqueue(DispatcherQueuePriority::Normal, [weakThis]() {
-                    if (const auto self = weakThis.get(); !self->_IsClosing())
+                    if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
                         self->OutputIdle.raise(*self, nullptr);
                     }
@@ -179,7 +179,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher,
             std::chrono::milliseconds{ 8 },
             [weakThis = get_weak()](const auto& update) {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
                     core->ScrollPositionChanged.raise(*core, update);
                 }
@@ -2235,20 +2235,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::vector<winrt::hstring> commands;
         const auto bufferCommands{ textBuffer.Commands() };
-        for (const auto& commandInBuffer : bufferCommands)
-        {
-            const auto strEnd = commandInBuffer.find_last_not_of(UNICODE_SPACE);
+
+        auto trimToHstring = [](const auto& s) -> winrt::hstring {
+            const auto strEnd = s.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
-                const auto trimmed = commandInBuffer.substr(0, strEnd + 1);
+                const auto trimmed = s.substr(0, strEnd + 1);
+                return winrt::hstring{ trimmed };
+            }
+            return winrt::hstring{ L"" };
+        };
 
-                commands.push_back(winrt::hstring{ trimmed });
+        const auto currentCommand = _terminal->CurrentCommand();
+        const auto trimmedCurrentCommand = trimToHstring(currentCommand);
+
+        for (const auto& commandInBuffer : bufferCommands)
+        {
+            if (const auto hstr{ trimToHstring(commandInBuffer) };
+                (!hstr.empty() && hstr != trimmedCurrentCommand))
+            {
+                commands.push_back(hstr);
             }
         }
 
-        auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
-        context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
+        // If the very last thing in the list of recent commands, is exactly the
+        // same as the current command, then let's not include it in the
+        // history. It's literally the thing the user has typed, RIGHT now.
+        if (!commands.empty() && commands.back() == trimmedCurrentCommand)
+        {
+            commands.pop_back();
+        }
 
+        auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
+        context->CurrentCommandline(trimmedCurrentCommand);
         return *context;
     }
 

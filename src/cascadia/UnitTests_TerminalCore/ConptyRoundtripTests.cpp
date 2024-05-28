@@ -239,12 +239,14 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(MultilinePromptRegions);
     TEST_METHOD(ManyMultilinePromptsWithTrailingSpaces);
     TEST_METHOD(ReflowPromptRegions);
+    TEST_METHOD(ClearMarksTest);
 
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
     void _resizeConpty(const til::CoordType sx, const til::CoordType sy);
     void _clearConpty();
+    void _clear(int clearBufferMethod, SCREEN_INFORMATION& si);
 
     [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> _performResize(const til::size newSize);
 
@@ -2720,9 +2722,6 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:clearBufferMethod", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr auto ClearLikeCls = 0;
-    constexpr auto ClearLikeClearHost = 1;
-    constexpr auto ClearWithVT = 2;
     INIT_TEST_PROPERTY(int, clearBufferMethod, L"Controls whether we clear the buffer like cmd or like powershell");
 
     Log::Comment(L"This test checks the shims for cmd.exe and powershell.exe. "
@@ -2789,6 +2788,31 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
     VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
 
+    _clear(clearBufferMethod, si);
+
+    VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
+    VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true);
+}
+
+void ConptyRoundtripTests::_clear(int clearBufferMethod, SCREEN_INFORMATION& si)
+{
+    constexpr auto ClearLikeCls = 0;
+    constexpr auto ClearLikeClearHost = 1;
+    constexpr auto ClearWithVT = 2;
+
+    auto& sm = si.GetStateMachine();
+
     if (clearBufferMethod == ClearLikeCls)
     {
         // Execute the cls, EXACTLY LIKE CMD.
@@ -2840,20 +2864,6 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
 
         sm.ProcessString(L"\x1b[3J");
     }
-
-    VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
-    VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
-
-    Log::Comment(L"Painting the frame");
-    VERIFY_SUCCEEDED(renderer.PaintFrame());
-
-    Log::Comment(L"========== Checking the host buffer state (after) ==========");
-    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
-
-    Log::Comment(L"Painting the frame");
-    VERIFY_SUCCEEDED(renderer.PaintFrame());
-    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
-    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true);
 }
 
 void ConptyRoundtripTests::TestResizeWithCookedRead()
@@ -4944,4 +4954,99 @@ void ConptyRoundtripTests::ReflowPromptRegions()
 
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true, true);
+}
+
+void ConptyRoundtripTests::ClearMarksTest()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:clearBufferMethod", L"{0, 1, 2}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(int, clearBufferMethod, L"Controls whether we clear the buffer like cmd or like powershell");
+
+    Log::Comment(L"This test checks the shims for cmd.exe and powershell.exe. "
+                 L"Their build in commands for clearing the console buffer "
+                 L"should work to clear the terminal buffer, not just the "
+                 L"terminal viewport.");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    auto& sm = si.GetStateMachine();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = false;
+
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+
+    auto writePrompt = [](StateMachine& stateMachine, const auto& path) {
+        // A prompt looks like:
+        // `PWSH C:\> `
+        //
+        // which is 10 characters for "C:\"
+        stateMachine.ProcessString(FTCS_D);
+        stateMachine.ProcessString(FTCS_A);
+        stateMachine.ProcessString(L"\x1b]9;9;");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"\x7");
+        stateMachine.ProcessString(L"PWSH ");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"> ");
+        stateMachine.ProcessString(FTCS_B);
+    };
+    auto writeCommand = [](StateMachine& stateMachine, const auto& cmd) {
+        stateMachine.ProcessString(cmd);
+        stateMachine.ProcessString(FTCS_C);
+        stateMachine.ProcessString(L"\r\n");
+    };
+
+    for (auto i = 0; i < end; i++)
+    {
+        writePrompt(sm, L"C:\\");
+        writeCommand(sm, L"Foo-bar");
+        sm.ProcessString(L"This is some text     \r\n");
+    }
+    writePrompt(sm, L"C:\\");
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool afterClear = false) {
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+        const auto marks = tb.GetMarkExtents();
+        if (afterClear)
+        {
+            VERIFY_ARE_EQUAL(0u, marks.size());
+        }
+        else
+        {
+            VERIFY_IS_GREATER_THAN(marks.size(), 1u, L"There should be at least one mark");
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
+
+    VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
+    VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
+
+    _clear(clearBufferMethod, si);
+
+    VERIFY_ARE_EQUAL(si.GetViewport().Dimensions(), si.GetBufferSize().Dimensions());
+    VERIFY_ARE_EQUAL(si.GetViewport(), si.GetBufferSize());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive(), true);
 }

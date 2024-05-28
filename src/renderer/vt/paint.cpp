@@ -20,30 +20,30 @@ using namespace Microsoft::Console::Types;
 //      HRESULT error code if painting didn't start successfully.
 [[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
+    // When unit testing, there may be no pipe, but we still need to paint.
     if (!_hFile)
     {
-        return S_FALSE;
+        return S_OK;
     }
 
     // If we're using line renditions, and this is a full screen paint, we can
     // potentially stop using them at the end of this frame.
     _stopUsingLineRenditions = _usingLineRenditions && _AllIsInvalid();
 
-    // If there's nothing to do, quick return
+    // If there's nothing to do, we won't need to paint.
     auto somethingToDo = _invalidMap.any() ||
                          _scrollDelta != til::point{ 0, 0 } ||
                          _cursorMoved ||
                          _titleChanged;
 
-    _quickReturn = !somethingToDo;
-    _trace.TraceStartPaint(_quickReturn,
+    _trace.TraceStartPaint(!somethingToDo,
                            _invalidMap,
                            _lastViewport.ToExclusive(),
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
 
-    return _quickReturn ? S_FALSE : S_OK;
+    return somethingToDo ? S_OK : S_FALSE;
 }
 
 // Routine Description:
@@ -142,9 +142,9 @@ using namespace Microsoft::Console::Types;
         _usingLineRenditions = true;
     }
     // One simple optimization is that we can skip sending the line attributes
-    // when _quickReturn is true. That indicates that we're writing out a single
-    // character, which should preclude there being a rendition switch.
-    if (_usingLineRenditions && !_quickReturn)
+    // when we're writing out a single character, which should preclude there
+    // being a rendition switch.
+    if (_usingLineRenditions && !_invalidMap.one())
     {
         RETURN_IF_FAILED(_MoveCursor({ _lastText.x, targetRow }));
         switch (lineRendition)

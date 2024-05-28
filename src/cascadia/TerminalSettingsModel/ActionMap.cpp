@@ -6,6 +6,7 @@
 #include "ActionMap.h"
 #include "Command.h"
 #include "AllShortcutActions.h"
+#include <LibraryResources.h>
 
 #include "ActionMap.g.cpp"
 
@@ -964,7 +965,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
 
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
-            const auto inputString{ (std::wstring_view)(inArgs ? inArgs.Input() : L"") };
+
+            const auto inputString{ inArgs ? inArgs.Input() : L"" };
             auto args = winrt::make_self<SendInputArgs>(
                 winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
                                             L"",
@@ -980,9 +982,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // Here, we want to manually generate a send input name, but
                 // without visualizing space and backspace
                 //
-                // TODO! Do we want to include `Send Input: ` in the generated
-                // string? I think it looks better without it tbh
-                copy->Name(winrt::hstring{ til::visualize_nonspace_control_codes(std::wstring{ inputString }) });
+                // This is exactly the body of SendInputArgs::GenerateName, but
+                // with visualize_nonspace_control_codes instead of
+                // visualize_control_codes, to make filtering in the suggestions
+                // UI easier.
+
+                const auto escapedInput = til::visualize_nonspace_control_codes(std::wstring{ inputString });
+                const auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+                copy->Name(winrt::hstring{ name });
             }
 
             return *copy;

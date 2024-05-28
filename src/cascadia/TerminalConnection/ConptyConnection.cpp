@@ -180,12 +180,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hRef,
                                        const HANDLE hServerProcess,
                                        const HANDLE hClientProcess,
-                                       TERMINAL_STARTUP_INFO startupInfo) :
+                                       const TERMINAL_STARTUP_INFO& startupInfo) :
         _rows{ 25 },
         _cols{ 80 },
         _inPipe{ hIn },
         _outPipe{ hOut }
     {
+        _sessionId = Utils::CreateGuid();
+
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         _piClient.hProcess = hClientProcess;
 
