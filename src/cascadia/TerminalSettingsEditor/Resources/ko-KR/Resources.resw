@@ -1303,7 +1303,7 @@
     <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightLight.Content" xml:space="preserve">
-    <value>밝게</value>
+    <value>가늘게</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightMedium.Content" xml:space="preserve">
@@ -1315,7 +1315,7 @@
     <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightSemi-bold.Content" xml:space="preserve">
-    <value>약간 굵은</value>
+    <value>약간 굵게</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightSemi-light.Content" xml:space="preserve">
@@ -1323,7 +1323,7 @@
     <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightThin.Content" xml:space="preserve">
-    <value>얇은</value>
+    <value>얇게</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontFeature_rlig" xml:space="preserve">
