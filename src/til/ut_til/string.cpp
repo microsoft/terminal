@@ -7,6 +7,25 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+template<>
+class WEX::TestExecution::VerifyOutputTraits<std::vector<std::wstring>>
+{
+public:
+    static WEX::Common::NoThrowString ToString(const std::vector<std::wstring>& vec)
+    {
+        WEX::Common::NoThrowString str;
+        str.Append(L"{ ");
+        for (size_t i = 0; i < vec.size(); ++i)
+        {
+            str.Append(i == 0 ? L"\"" : L", \"");
+            str.Append(vec[i].c_str());
+            str.Append(L"\"");
+        }
+        str.Append(L" }");
+        return str;
+    }
+};
+
 class StringTests
 {
     TEST_CLASS(StringTests);
@@ -198,5 +217,25 @@ class StringTests
     {
         VERIFY_IS_TRUE(til::is_legal_path(LR"(C:\Users\Documents and Settings\Users\;\Why not)"));
         VERIFY_IS_FALSE(til::is_legal_path(LR"(C:\Users\Documents and Settings\"Quote-un-quote users")"));
+    }
+
+    TEST_METHOD(IterateFontFamilies)
+    {
+        static constexpr auto expected = [](auto&&... args) {
+            return std::vector<std::wstring>{ std::forward<decltype(args)>(args)... };
+        };
+        static constexpr auto actual = [](std::wstring_view families) {
+            std::vector<std::wstring> split;
+            til::iterate_font_families(families, [&](std::wstring&& str) {
+                split.emplace_back(std::move(str));
+            });
+            return split;
+        };
+
+        VERIFY_ARE_EQUAL(expected(L"foo", L" b  a  r ", LR"(b"az)"), actual(LR"(  foo  ," b  a  r ",b\"az)"));
+        VERIFY_ARE_EQUAL(expected(LR"(foo, bar)"), actual(LR"("foo, bar")"));
+        VERIFY_ARE_EQUAL(expected(LR"("foo")", LR"('bar')"), actual(LR"('"foo"', "'bar'")"));
+        VERIFY_ARE_EQUAL(expected(LR"("foo")", LR"('bar')"), actual(LR"("\"foo\"", '\'bar\'')"));
+        VERIFY_ARE_EQUAL(expected(L"foo"), actual(LR"(,,,,foo,,,,)"));
     }
 };

@@ -22,10 +22,15 @@ try
     RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
 
+    pData->LockConsole();
+    const auto unlock = wil::scope_exit([&]() noexcept {
+        pData->UnlockConsole();
+    });
+
     _pProvider = pProvider;
     _pData = pData;
     _start = pData->GetViewport().Origin();
-    _end = pData->GetViewport().Origin();
+    _end = _start;
     _blockRange = false;
     _wordDelimiters = wordDelimiters;
 
@@ -41,9 +46,16 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData
                                                  _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
-    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
+    pData->LockConsole();
+    const auto unlock = wil::scope_exit([&]() noexcept {
+        pData->UnlockConsole();
+    });
+
+    _pProvider = pProvider;
+    _pData = pData;
     // GH#8730: The cursor position may be in a delayed state, resulting in it being out of bounds.
     // If that's the case, clamp it to be within bounds.
     // TODO GH#12440: We should be able to just check some fields off of the Cursor object,
@@ -51,6 +63,8 @@ try
     _start = cursor.GetPosition();
     pData->GetTextBuffer().GetSize().Clamp(_start);
     _end = _start;
+    _blockRange = false;
+    _wordDelimiters = wordDelimiters;
 
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
@@ -66,15 +80,15 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData
                                                  _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
-    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
+    RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
+    RETURN_HR_IF_NULL(E_INVALIDARG, pData);
 
-    // start must be before or equal to end
+    _pProvider = pProvider;
+    _pData = pData;
     _start = std::min(start, end);
     _end = std::max(start, end);
-
-    // This should be the only way to set if we are a blockRange
-    // This is used for blockSelection
     _blockRange = blockRange;
+    _wordDelimiters = wordDelimiters;
 
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
@@ -148,9 +162,6 @@ til::point UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) cons
 // - true if range is degenerate, false otherwise.
 bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const til::point val) noexcept
 {
-    // GH#6402: Get the actual buffer size here, instead of the one
-    //          constrained by the virtual bottom.
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
     switch (endpoint)
     {
     case TextPatternRangeEndpoint_End:
@@ -620,7 +631,10 @@ try
     // -> We need to turn [_beg,_end) into (_beg,_end).
     exclusiveBegin.x--;
 
-    _searcher.ResetIfStale(*_pData, queryText, searchBackward, ignoreCase);
+    if (_searcher.IsStale(*_pData, queryText, ignoreCase))
+    {
+        _searcher.Reset(*_pData, queryText, ignoreCase, searchBackward);
+    }
     _searcher.MovePastPoint(searchBackward ? _end : exclusiveBegin);
 
     til::point hitBeg{ til::CoordTypeMax, til::CoordTypeMax };

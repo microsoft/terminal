@@ -91,6 +91,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 
 #include "til.h"
 #include "til/mutex.h"
+#include "til/winrt.h"
 
 #include <SafeDispatcherTimer.h>
 

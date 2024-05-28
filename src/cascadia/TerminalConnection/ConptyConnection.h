@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          const HANDLE hRef,
                          const HANDLE hServerProcess,
                          const HANDLE hClientProcess,
-                         TERMINAL_STARTUP_INFO startupInfo);
+                         const TERMINAL_STARTUP_INFO& startupInfo);
 
         ConptyConnection() noexcept = default;
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const winrt::guid& guid,
                                                                          const winrt::guid& profileGuid);
 
-        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+        til::event<TerminalOutputHandler> TerminalOutput;
 
     private:
         static void closePseudoConsoleAsync(HPCON hPC) noexcept;
@@ -90,7 +90,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         til::u8state _u8State{};
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
-        bool _passthroughMode{};
         bool _inheritCursor{ false };
 
         til::env _initialEnv{};

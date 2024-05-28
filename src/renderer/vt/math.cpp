@@ -52,38 +52,3 @@ void VtEngine::_OrRect(_Inout_ til::inclusive_rect* const pRectExisting, const t
     pRectExisting->right = std::max(pRectExisting->right, pRectToOr->right);
     pRectExisting->bottom = std::max(pRectExisting->bottom, pRectToOr->bottom);
 }
-
-// Method Description:
-// - Returns true if the invalidated region indicates that we only need to
-//      simply print text from the current cursor position. This will prevent us
-//      from sending extra VT set-up/tear down sequences (?12h/l) when all we
-//      need to do is print more text at the current cursor position.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff only the next character is invalid
-bool VtEngine::_WillWriteSingleChar() const
-{
-    // If there is no scroll delta, return false.
-    if (til::point{ 0, 0 } != _scrollDelta)
-    {
-        return false;
-    }
-
-    // If there is more than one invalid char, return false.
-    if (!_invalidMap.one())
-    {
-        return false;
-    }
-
-    // Get the single point at which things are invalid.
-    const auto invalidPoint = _invalidMap.runs().front().origin();
-
-    // Either the next character to the right or the immediately previous
-    //      character should follow this code path
-    //      (The immediate previous character would suggest a backspace)
-    auto invalidIsNext = invalidPoint == _lastText;
-    auto invalidIsLast = invalidPoint == til::point{ _lastText.x - 1, _lastText.y };
-
-    return invalidIsNext || invalidIsLast;
-}

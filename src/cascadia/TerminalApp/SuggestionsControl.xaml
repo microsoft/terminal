@@ -12,6 +12,7 @@
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             MinWidth="256"
              AllowFocusOnInteraction="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
              IsTabStop="True"
@@ -99,6 +100,24 @@
                                                GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
                                                NestedItemTemplate="{StaticResource NestedItemTemplate}" />
 
+            <!--
+                Remove all item animations from the suggestions UI. They're
+                entirely too slow to let that UI be usable.
+            -->
+            <Style x:Key="NoAnimationsPlease"
+                   TargetType="ListView">
+                <Setter Property="ItemContainerTransitions">
+                    <Setter.Value>
+                        <TransitionCollection>
+                            <!--  (deleted transitions are left for reference for what we removed)  -->
+                            <ContentThemeTransition />
+                            <!--<AddDeleteThemeTransition/>-->
+                            <!--<ReorderThemeTransition/>-->
+                            <!--<EntranceThemeTransition IsStaggeringEnabled="False"/>-->
+                        </TransitionCollection>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -203,7 +222,8 @@
                       ItemClick="_listItemClicked"
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
-                      SelectionMode="Single" />
+                      SelectionMode="Single"
+                      Style="{StaticResource NoAnimationsPlease}" />
 
         </Grid>
 

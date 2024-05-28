@@ -181,6 +181,8 @@
                 BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
                 CornerRadius="{ThemeResource OverlayCornerRadius}"
                 Orientation="Horizontal"
+                PointerPressed="SearchBoxPointerPressedHandler"
+                PointerReleased="SearchBoxPointerReleasedHandler"
                 Shadow="{StaticResource SharedShadow}"
                 Translation="0,0,16">
         <StackPanel.RenderTransform>

@@ -53,21 +53,6 @@
                             Click="_CloseOnExitInfoDismissHandler" />
                 </mux:InfoBar.ActionButton>
             </mux:InfoBar>
-
-            <mux:InfoBar x:Name="SetAsDefaultInfoBar"
-                         x:Uid="SetAsDefaultInfoBar"
-                         x:Load="False"
-                         CloseButtonClick="_SetAsDefaultDismissHandler"
-                         CornerRadius="0"
-                         IsClosable="True"
-                         IsIconVisible="True"
-                         IsOpen="False"
-                         Severity="Informational">
-                <mux:InfoBar.ActionButton>
-                    <HyperlinkButton x:Uid="SetAsDefaultTip_OpenSettingsLink"
-                                     Click="_SetAsDefaultOpenSettingsHandler" />
-                </mux:InfoBar.ActionButton>
-            </mux:InfoBar>
         </StackPanel>
 
         <Grid x:Name="TabContent"

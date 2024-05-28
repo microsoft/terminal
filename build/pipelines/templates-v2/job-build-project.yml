@@ -65,6 +65,9 @@ parameters:
   - name: removeAllNonSignedFiles
     type: boolean
     default: false
+  - name: signingIdentity
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -141,6 +144,10 @@ jobs:
     displayName: Generate NOTICE.html from NOTICE.md
 
   - template: .\steps-restore-nuget.yml
+
+  - pwsh: |-
+      .\build\scripts\Set-LatestVCToolsVersion.ps1
+    displayName: Work around DD-1541167 (VCToolsVersion)
 
   - ${{ parameters.beforeBuildSteps }}
 
@@ -235,13 +242,14 @@ jobs:
 
     # Code-sign everything we just put together.
     # We run the signing in Terminal.BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
-    - task: EsrpCodeSigning@3
-      displayName: Submit Signing Request
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: '$(Terminal.BinDir)'
-        signType: batchSigning
-        batchSignPolicyFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
+    - template: steps-esrp-signing.yml
+      parameters:
+        displayName: Submit Signing Request
+        signingIdentity: ${{ parameters.signingIdentity }}
+        inputs:
+          FolderPath: '$(Terminal.BinDir)'
+          signType: batchSigning
+          batchSignPolicyFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
 
     # We only need to re-pack the MSIX if we actually signed, so this can stay in the codeSign conditional
     - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:

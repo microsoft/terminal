@@ -33,7 +33,7 @@ parameters:
       - arm64
   - name: codeSign
     type: boolean
-    default: true
+    default: false
   - name: generateSbom
     type: boolean
     default: true

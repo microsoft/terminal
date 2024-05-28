@@ -6,7 +6,6 @@
 #include "Monarch.h"
 #include "CommandlineArgs.h"
 #include "FindTargetWindowArgs.h"
-#include "QuitAllRequestedArgs.h"
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
@@ -95,8 +94,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
             peasant.RenameRequested({ this, &Monarch::_renameRequested });
 
-            peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
-            peasant.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
+            peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { ShowNotificationIconRequested.raise(*this, nullptr); });
+            peasant.HideNotificationIconRequested([this](auto&&, auto&&) { HideNotificationIconRequested.raise(*this, nullptr); });
             peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
             {
@@ -111,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-            _WindowCreatedHandlers(nullptr, nullptr);
+            WindowCreated.raise(nullptr, nullptr);
             return newPeasantsId;
         }
         catch (...)
@@ -135,21 +134,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none> used
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                   const winrt::Windows::Foundation::IInspectable& /*args*/)
+    void Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
-        // Let the process hosting the monarch run any needed logic before
-        // closing all windows.
-        auto args = winrt::make_self<implementation::QuitAllRequestedArgs>();
-        _QuitAllRequestedHandlers(*this, *args);
-
-        if (const auto action = args->BeforeQuitAllAction())
+        if (_quitting.exchange(true, std::memory_order_relaxed))
         {
-            co_await action;
+            return;
         }
 
-        _quitting.store(true);
-        // Tell all peasants to exit.
         const auto callback = [&](const auto& id, const auto& p) {
             // We want to tell our peasant to quit last, so that we don't try
             // to perform a bunch of elections on quit.
@@ -197,7 +188,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // If we are quitting we don't care about maintaining our list of
         // peasants anymore, and don't need to notify the host that something
         // changed.
-        if (_quitting.load(std::memory_order_acquire))
+        if (_quitting.load(std::memory_order_relaxed))
         {
             return;
         }
@@ -207,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             std::unique_lock lock{ _peasantsMutex };
             _peasants.erase(peasantId);
         }
-        _WindowClosedHandlers(nullptr, nullptr);
+        WindowClosed.raise(nullptr, nullptr);
     }
 
     // Method Description:
@@ -650,7 +641,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto findWindowArgs{ winrt::make_self<Remoting::implementation::FindTargetWindowArgs>(args) };
 
         // This is handled by some handler in-proc
-        _FindTargetWindowRequestedHandlers(*this, *findWindowArgs);
+        FindTargetWindowRequested.raise(*this, *findWindowArgs);
 
         // After the event was handled, ResultTargetWindow() will be filled with
         // the parsed result.
@@ -741,7 +732,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     result->WindowName(targetWindowName);
                     result->ShouldCreateWindow(true);
 
-                    _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+                    RequestNewWindow.raise(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
 
                     // If this fails, it'll be logged in the following
                     // TraceLoggingWrite statement, with succeeded=false
@@ -779,7 +770,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 result->Id(windowID);
                 result->WindowName(targetWindowName);
 
-                _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+                RequestNewWindow.raise(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
 
                 return *result;
             }
@@ -796,7 +787,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
         result->WindowName(targetWindowName);
 
-        _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+        RequestNewWindow.raise(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
 
         return *result;
     }
@@ -1036,30 +1027,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _forEachPeasant(func, onError);
     }
 
-    // Method Description:
-    // - Ask all peasants to return their window layout as json
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The collection of window layouts from each peasant.
-    Windows::Foundation::Collections::IVector<winrt::hstring> Monarch::GetAllWindowLayouts()
-    {
-        std::vector<winrt::hstring> vec;
-        auto callback = [&](const auto& /*id*/, const auto& p) {
-            vec.emplace_back(p.GetWindowLayout());
-        };
-        auto onError = [](auto&& id) {
-            TraceLoggingWrite(g_hRemotingProvider,
-                              "Monarch_GetAllWindowLayouts_Failed",
-                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not get a window layout from"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        };
-        _forEachPeasant(callback, onError);
-
-        return winrt::single_threaded_vector(std::move(vec));
-    }
-
     void Monarch::RequestMoveContent(winrt::hstring window,
                                      winrt::hstring content,
                                      uint32_t tabIndex,
@@ -1115,7 +1082,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             auto request = winrt::make_self<implementation::WindowRequestedArgs>(nameIsReserved ? L"" : window,
                                                                                  content,
                                                                                  windowBounds);
-            _RequestNewWindowHandlers(*this, *request);
+            RequestNewWindow.raise(*this, *request);
         }
     }
 

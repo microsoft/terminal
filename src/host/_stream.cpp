@@ -125,7 +125,7 @@ void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wst
         auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
         state.columnBegin = cursorPosition.x;
-        textBuffer.Write(cursorPosition.y, textBuffer.GetCurrentAttributes(), state);
+        textBuffer.Replace(cursorPosition.y, textBuffer.GetCurrentAttributes(), state);
         cursorPosition.x = state.columnEnd;
 
         if (wrapAtEOL && state.columnEnd >= state.columnLimit)

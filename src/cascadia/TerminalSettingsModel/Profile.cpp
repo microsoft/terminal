@@ -34,6 +34,9 @@ static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
 
+static constexpr std::string_view LegacyAutoMarkPromptsKey{ "experimental.autoMarkPrompts" };
+static constexpr std::string_view LegacyShowMarksKey{ "experimental.showMarksOnScrollbar" };
+
 Profile::Profile(guid guid) noexcept :
     _Guid(guid)
 {
@@ -181,6 +184,11 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+
+    // Try to load some legacy keys, to migrate them.
+    // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
+    JsonUtils::GetValueForKey(json, LegacyShowMarksKey, _ShowMarks);
+    JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);

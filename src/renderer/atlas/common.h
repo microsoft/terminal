@@ -146,6 +146,8 @@ namespace Microsoft::Console::Render::Atlas
     using i32x4 = vec4<i32>;
     using i32r = rect<i32>;
 
+    using u64 = uint64_t;
+
     using f32 = float;
     using f32x2 = vec2<f32>;
     using f32x4 = vec4<f32>;
@@ -311,11 +313,20 @@ namespace Microsoft::Console::Render::Atlas
         DWRITE_SCRIPT_ANALYSIS analysis;
     };
 
+    enum class GraphicsAPI
+    {
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
+
     struct TargetSettings
     {
         HWND hwnd = nullptr;
         bool useAlpha = false;
-        bool useSoftwareRendering = false;
+        bool useWARP = false;
+        bool disablePresent1 = false;
+        GraphicsAPI graphicsAPI = GraphicsAPI::Automatic;
     };
 
     enum class AntialiasingMode : u8
@@ -336,7 +347,8 @@ namespace Microsoft::Console::Render::Atlas
     struct FontSettings
     {
         wil::com_ptr<IDWriteFontCollection> fontCollection;
-        wil::com_ptr<IDWriteFontFamily> fontFamily;
+        wil::com_ptr<IDWriteFontFallback> fontFallback;
+        wil::com_ptr<IDWriteFontFallback1> fontFallback1; // optional, might be nullptr
         std::wstring fontName;
         std::vector<DWRITE_FONT_FEATURE> fontFeatures;
         std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
@@ -392,9 +404,9 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
         // Size of the viewport / swap chain in pixel.
-        u16x2 targetSize{ 1, 1 };
+        u16x2 targetSize{ 0, 0 };
         // Size of the portion of the text buffer that we're drawing on the screen.
-        u16x2 viewportCellCount{ 1, 1 };
+        u16x2 viewportCellCount{ 0, 0 };
         // The position of the viewport inside the text buffer (in cells).
         u16x2 viewportOffset{ 0, 0 };
     };
@@ -479,10 +491,8 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1Factory> d2dFactory;
         wil::com_ptr<IDWriteFactory2> dwriteFactory;
         wil::com_ptr<IDWriteFactory4> dwriteFactory4; // optional, might be nullptr
-        wil::com_ptr<IDWriteFontFallback> systemFontFallback;
-        wil::com_ptr<IDWriteFontFallback1> systemFontFallback1; // optional, might be nullptr
         wil::com_ptr<IDWriteTextAnalyzer1> textAnalyzer;
-        std::function<void(HRESULT)> warningCallback;
+        std::function<void(HRESULT, wil::zwstring_view)> warningCallback;
         std::function<void(HANDLE)> swapChainChangedCallback;
 
         //// Parameters which are constant for the existence of the backend.
