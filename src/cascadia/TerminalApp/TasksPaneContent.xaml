@@ -38,20 +38,19 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="{TemplateBinding CornerRadius}">
-                                <Viewbox Width="20"
-                                         Height="20">
+                                <Viewbox Width="14"
+                                         Height="14">
                                     <Grid>
                                         <FontIcon x:Name="ButtonBackgroundIcon"
-                                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                                   Foreground="{ThemeResource PlayButtonHoveredColor}"
                                                   Glyph="&#xF5b0;"
                                                   Visibility="Collapsed" />
                                         <FontIcon x:Name="ButtonOutlineIcon"
-                                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                                   Foreground="{ThemeResource PlayButtonNormalColor}"
                                                   Glyph="&#xE768;" />
                                     </Grid>
-                                    <!--  TODO! FontFamily="{ThemeResource SymbolThemeFontFamily}"  -->
                                 </Viewbox>
 
                                 <VisualStateManager.VisualStateGroups>
@@ -80,22 +79,6 @@
                                                 <Setter Target="StatusProgress.IsActive" Value="False" />
                                             </VisualState.Setters>
                                         </VisualState>
-                                        <!--
-                                        <VisualState x:Name="Running">
-                                            <VisualState.Setters>
-                                                <Setter Target="ButtonBackgroundIcon.Glyph" Value=" " />
-                                                <Setter Target="ButtonOutlineIcon.Glyph" Value=" " />
-                                                <Setter Target="StatusProgress.IsActive" Value="True" />
-                                            </VisualState.Setters>
-                                        </VisualState>
-
-                                        <VisualState x:Name="AlreadyRan">
-                                            <VisualState.Setters>
-                                                <Setter Target="ButtonBackgroundIcon.Glyph" Value="&#xe72c;" />
-                                                <Setter Target="ButtonOutlineIcon.Glyph" Value="&#xe72c;" />
-                                                <Setter Target="StatusProgress.IsActive" Value="False" />
-                                            </VisualState.Setters>
-                                        </VisualState>-->
                                     </VisualStateGroup>
 
                                 </VisualStateManager.VisualStateGroups>
@@ -142,7 +125,7 @@
                                 Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(HasChildren), Mode=OneWay}">
 
                             <Button.Content>
-                                <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                           FontSize="12"
                                           Glyph="&#xE768;" />
                                 <!--

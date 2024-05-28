@@ -23,7 +23,6 @@ namespace winrt::TerminalApp::implementation
         void Close();
         winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
-        // TODO! lots of strings here and in XAML that need RS_-ifying
         winrt::hstring Title() { return RS_(L"SnippetPaneTitle/Text"); }
         uint64_t TaskbarState() { return 0; }
         uint64_t TaskbarProgress() { return 0; }

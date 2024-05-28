@@ -529,6 +529,7 @@
         { "command": { "action": "movePane", "index": 8 }, "id": "Terminal.MovePaneToTab8" },
         { "command": { "action": "movePane", "window": "new" }, "id": "Terminal.MovePaneToNewWindow" },
         { "command": "restartConnection", "id": "Terminal.RestartConnection" },
+        { "command": { "action": "splitPane", "type": "snippets" }, "id": "Terminal.OpenSnippetsPane", "name": { "key": "SnippetsPaneCommandName" } },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c", "id": "Terminal.CopySelectedText" },
