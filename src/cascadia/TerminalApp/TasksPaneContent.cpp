@@ -47,7 +47,7 @@ namespace winrt::TerminalApp::implementation
 
         // You'd think that `FilterToSendInput(queryString)` would work. It
         // doesn't! That uses the queryString as the current command the user
-        // has typed, then relies on the sxnui to _also_ filter with that
+        // has typed, then relies on the suggestions UI to _also_ filter with that
         // string.
 
         const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
@@ -115,7 +115,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& strongControl{ _control.get() })
             {
                 // By using the last active control as the sender here, the
-                // actiopn dispatch will send this to the active control,
+                // action dispatch will send this to the active control,
                 // thinking that it is the control that requested this event.
                 DispatchCommandRequested.raise(strongControl, taskVM->Command());
             }
