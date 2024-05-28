@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "TasksPaneContent.g.h"
+#include "SnippetsPaneContent.g.h"
 #include "FilteredTask.g.h"
 #include "FilteredCommand.h"
 #include "ActionPaletteItem.h"
@@ -10,9 +10,9 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TasksPaneContent : TasksPaneContentT<TasksPaneContent>
+    struct SnippetsPaneContent : SnippetsPaneContentT<SnippetsPaneContent>
     {
-        TasksPaneContent();
+        SnippetsPaneContent();
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
 
     private:
-        friend struct TasksPaneContentT<TasksPaneContent>; // for Xaml to bind events
+        friend struct SnippetsPaneContentT<SnippetsPaneContent>; // for Xaml to bind events
 
         winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
@@ -136,5 +136,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    BASIC_FACTORY(TasksPaneContent);
+    BASIC_FACTORY(SnippetsPaneContent);
 }

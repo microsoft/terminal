@@ -1255,7 +1255,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& termControl{ termContent.GetTermControl() };
             _rootPane->WalkTree([termControl](const auto& p) {
-                if (const auto& taskPane{ p->GetContent().try_as<TasksPaneContent>() })
+                if (const auto& taskPane{ p->GetContent().try_as<SnippetsPaneContent>() })
                 {
                     taskPane.SetLastActiveControl(termControl);
                 }

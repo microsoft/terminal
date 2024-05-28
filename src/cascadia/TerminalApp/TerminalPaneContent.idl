@@ -26,9 +26,9 @@ namespace TerminalApp
         Windows.UI.Xaml.Visibility Visibility { get; };
     }
 
-    [default_interface] runtimeclass TasksPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent
+    [default_interface] runtimeclass SnippetsPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent
     {
-        TasksPaneContent();
+        SnippetsPaneContent();
         void SetLastActiveControl(Microsoft.Terminal.Control.TermControl control);
 
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;

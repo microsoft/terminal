@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "TasksPaneContent.h"
-#include "TasksPaneContent.g.cpp"
+#include "SnippetsPaneContent.h"
+#include "SnippetsPaneContent.g.cpp"
 #include "FilteredTask.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -19,7 +19,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TasksPaneContent::TasksPaneContent()
+    SnippetsPaneContent::SnippetsPaneContent()
     {
         InitializeComponent();
 
@@ -28,7 +28,7 @@ namespace winrt::TerminalApp::implementation
         Background(bg.try_as<WUX::Media::Brush>());
     }
 
-    void TasksPaneContent::_updateFilteredCommands()
+    void SnippetsPaneContent::_updateFilteredCommands()
     {
         const auto& queryString = _filterBox().Text();
 
@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TasksPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    void SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         _settings = settings;
 
@@ -62,53 +62,53 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredCommands();
     }
 
-    void TasksPaneContent::_filterTextChanged(const IInspectable& /*sender*/,
-                                              const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    void SnippetsPaneContent::_filterTextChanged(const IInspectable& /*sender*/,
+                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         _updateFilteredCommands();
     }
 
-    winrt::Windows::UI::Xaml::FrameworkElement TasksPaneContent::GetRoot()
+    winrt::Windows::UI::Xaml::FrameworkElement SnippetsPaneContent::GetRoot()
     {
         return *this;
     }
-    winrt::Windows::Foundation::Size TasksPaneContent::MinimumSize()
+    winrt::Windows::Foundation::Size SnippetsPaneContent::MinimumSize()
     {
         return { 1, 1 };
     }
-    void TasksPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
+    void SnippetsPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
     {
         reason;
         // _box.Focus(reason);
     }
-    void TasksPaneContent::Close()
+    void SnippetsPaneContent::Close()
     {
         CloseRequested.raise(*this, nullptr);
     }
 
-    INewContentArgs TasksPaneContent::GetNewTerminalArgs(BuildStartupKind /*kind*/) const
+    INewContentArgs SnippetsPaneContent::GetNewTerminalArgs(BuildStartupKind /*kind*/) const
     {
         return BaseContentArgs(L"snippets");
     }
 
-    winrt::hstring TasksPaneContent::Icon() const
+    winrt::hstring SnippetsPaneContent::Icon() const
     {
         static constexpr std::wstring_view glyph{ L"\xe70b" }; // QuickNote
         return winrt::hstring{ glyph };
     }
 
-    winrt::Windows::UI::Xaml::Media::Brush TasksPaneContent::BackgroundBrush()
+    winrt::Windows::UI::Xaml::Media::Brush SnippetsPaneContent::BackgroundBrush()
     {
         return Background();
     }
 
-    void TasksPaneContent::SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control)
+    void SnippetsPaneContent::SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control)
     {
         _control = control;
     }
 
-    void TasksPaneContent::_runCommandButtonClicked(const Windows::Foundation::IInspectable& sender,
-                                                    const Windows::UI::Xaml::RoutedEventArgs&)
+    void SnippetsPaneContent::_runCommandButtonClicked(const Windows::Foundation::IInspectable& sender,
+                                                       const Windows::UI::Xaml::RoutedEventArgs&)
     {
         if (const auto& taskVM{ sender.try_as<WUX::Controls::Button>().DataContext().try_as<FilteredTask>() })
         {

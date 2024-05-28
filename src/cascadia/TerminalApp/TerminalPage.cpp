@@ -23,7 +23,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
-#include "TasksPaneContent.h"
+#include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "Utils.h"
 
@@ -3183,7 +3183,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (paneType == L"snippets")
         {
-            const auto& tasksContent{ winrt::make_self<TasksPaneContent>() };
+            const auto& tasksContent{ winrt::make_self<SnippetsPaneContent>() };
             tasksContent->UpdateSettings(_settings);
             tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
             tasksContent->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });

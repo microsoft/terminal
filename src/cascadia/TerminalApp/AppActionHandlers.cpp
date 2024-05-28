@@ -6,7 +6,6 @@
 
 #include "TerminalPage.h"
 #include "ScratchpadContent.h"
-#include "TasksPaneContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
