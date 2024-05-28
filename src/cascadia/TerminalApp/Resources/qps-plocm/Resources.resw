@@ -1,0 +1,901 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
+    <value>Şετťĭиġś ςòűłď йσт ьé ŀŏдðéď ƒřǿм ƒīļē. Ĉнėćķ ƒσŗ ŝуήтª× ĕяŗбґş, ιйçľůďĩηĝ тŗāіļīňġ ćǿмmāŝ. !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>Ĉōûłδ πбτ ƒΐпď ýǿύѓ ďēƒдûľт ρŕõƒĩłę ìń ўôùґ ļïѕτ ǿƒ φѓôƒĭłеś - µšìήğ ţнε ƒįŗѕт ρřόƒїłê. Ćĥеćķ ťõ måķє şυґę ţнé "defaultProfile" мªţčћéş ťђё ĠŪĨĎ θƒ θŋē оƒ уоùŗ ρґоƒïℓёś. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>₣óŭиď мύŀťìрŀэ φŕσƒïĺєś ẃïτћ ŧнě ѕámĕ ĠŲІÐ įй ўоűя ѕĕţţîήĝš ƒìŀė - įģŉǿřΐⁿğ δûρľΐçâтéŝ. Мãĸё śμѓέ ĕáĉћ ρяσƒîĺė'ѕ ĢŰĮÐ īş ϋńîqџë. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>₣ŏúņđ ā ρřόƒįľĕ щĭťћ ǻή ϊпνåŀίď "colorScheme". Ďēƒāúłтіиğ ţħąţ ряόƒίŀе ţŏ тĥέ ðеƒãµľţ çбĺбŗś. Мāκέ śûѓè ťћаτ ŵђéň ŝєŧťίńĝ д "colorScheme", τħε νåĺμě мäτςĥέş τнέ "name" όƒ а čòľбя ѕćн℮mē īń тћέ "schemes" ļίŝт. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>Ňǿ ρяóƒíℓěş щ℮ŕέ ƒòμйδ ϊη ỳοūґ ś℮ŧтĭπģѕ. !!! !!! !!! !!!</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>Аℓł ρяοƒįłέš ωèяê ђΐđðěŉ îη ўőϋř śěŧτϊиģş. Ϋŏυ müѕŧ ħäνė άţ ļεǻѕτ οñє пóй-ћίďðēŉ φŗóƒįŀē. !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>Ѕєŧτĩņğš ¢ŏûłď ποţ ьė řëĺбάδзď ƒŕŏм ƒίľе. Çĥэςκ ƒõг şÿπţаж ěгяōŗš, îņ¢ŀύðīⁿğ ťŕăïŀĩπĝ čǿmмãş. !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>Ťемрőŗāřĩľŷ űśϊⁿģ ťђё Щìπδоωş Ţεѓмîήäĺ δêƒаμłт şèţτïńġś. !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
+    <value>₣äĩľєď τσ ŀőåð ŝέťţĩⁿģŝ !!! !!! </value>
+  </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>Εŋĉőųņŧзяëď зяѓōяś ŵħΐļê ŀθαðĩήġ ùŝéѓ śзťŧĭпģŝ !!! !!! !!! !!! !</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>ÓΚ </value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>Ŵаґήĩήģ: !!</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>Ŧħє "{0}" ĭşп'ţ řμллĭиġ оŉ ўόùг мàςĥįńë. Ŧħїś ¢áⁿ φřэνєńτ тнэ Тэґмïñăĺ ƒŕöm ŗеς℮íνίиĝ ķēỳвŏαŗδ ĭⁿрΰţ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>ФĶ </value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>₣áĭļèđ ťσ ѓéłøǻð şèŧŧíпĝŝ !!! !!! !</value>
+  </data>
+  <data name="FeedbackUriValue" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2125419</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
+  <data name="AboutMenuItem" xml:space="preserve">
+    <value>∆вòΰŧ !</value>
+  </data>
+  <data name="FeedbackMenuItem" xml:space="preserve">
+    <value>₣ęęðъâçќ !!</value>
+  </data>
+  <data name="SettingsMenuItem" xml:space="preserve">
+    <value>Śêŧťіňğŝ !!</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Ĉάπςеŀ !</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>Ċľθŝє αŀļ !!!</value>
+  </data>
+  <data name="Quit" xml:space="preserve">
+    <value>Qùíт !</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>Мµļтíрłĕ φдпėŝ !!! !</value>
+  </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>Ćļôŝέ !</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>Ċĺοşέ ţаъş ťό ŧђé яΐğђт !!! !!! </value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>Ćĺόѕ℮ őтђèř ŧâьś !!! !</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>Сĺôšę ťăв !!!</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>Ćŀöśё ρаņé !!!</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Šрľīτ τàв !!!</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>Šрŀіт φªňë !!!</value>
+  </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>Ẅёв şĕаŕčĥ !!!</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>Ċħāņğě τāв ςōĺöя !!! !</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>Ċµѕťøм !</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>Яěšěŧ !</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>Γεñамē ťãв !!!</value>
+  </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Ďϋφľіčάтέ τàв !!! </value>
+  </data>
+  <data name="InvalidBackgroundImage" xml:space="preserve">
+    <value>₣σúŋδ ą φѓοƒĩļé ẃϊţħ äй ïηνàĺìď "backgroundImage". Đēƒãųŀŧϊпğ ťнªт φѓőƒĭļè το нªνе πō ьąçќġгθúпδ ιмãġė. Маĸē śμѓē ŧћäţ ẁђēή šêťτϊлġ å "backgroundImage", ţĥě νаłųё ïŝ ά νάľîď ƒĩŀê φąťħ ţŏ άń ΐмąġė. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>{Locked="\"backgroundImage\""}</comment>
+  </data>
+  <data name="InvalidIcon" xml:space="preserve">
+    <value>₣ǿũиđ à рřöƒϊℓз ŵĩţн аñ įņνàŀїδ "icon". Ðěƒаúľτīŋğ ţħаτ ρřόƒìŀё тб ђâνє пǿ íčой. Мàĸë ŝùřë ŧĥаţ ωĥĕл ŝеτŧīлĝ ăй "icon", τħε νāłϋë ïŝ ă νàľīđ ƒïŀè рªтн ţő äи ïмäģё. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>Щαѓńΐňģš ώĕřе ƒбŭπδ ώħīļë рăяşìⁿġ ўσυŕ κёỳвĩиðīήġş: !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>• ₣бūήð â ķёуьĩńðīⁿģ шĩŧђ τõб mªńÿ ѕťгίńġŝ ƒóř ţћ℮ "keys" åѓгàÿ. Тħėгē ѕĥōμĺđ бñľў вĕ ŏи℮ ѕтřïлģ νăŀůé ĭŉ ţĥė "keys" άřřàγ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>• ₣ąìļ℮đ ţŏ ρǻŕşε âłľ śцъċőммåиðѕ ōƒ л℮śť℮ď сömmąπđ. !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>• ₣оůñð ā κėуьίπðîηĝ тħаŧ ẃáś мįѕśϊňģ д ѓ℮qûιŗзð рαřǻмęţεř νăľυë. Тнίѕ кεγьĩņđíņģ щìľļ вє įĝлóяеđ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• Тћë ѕрèçїƒĭёď "τћ℮мé" ώαѕ ήøţ ƒόûπđ ΐл ťћê ℓíŝť σƒ ťнεmέѕ. Ŧěмрǿŕдѓΐļγ ƒдℓłίńģ вà¢ĸ τő ŧнě đέƒαùŀŧ νǻľΰê. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>Τђз "globals" φѓóрεѓţγ ιŝ δęρѓêсâŧėď - ýбųѓ ŝέтŧїпĝš мìġħţ ηзέď црđªтïйġ.  !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefUrl" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2128258</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>₣οř мòŕе îήƒθ, şéэ ţħìѕ ŵєь рąġé. !!! !!! !!! </value>
+  </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>₣ăіľέđ ţö ехρåņď ǻ çǿммãηδ ẃìţĥ "iterateOn" şετ. Ťĥīš ćōmмåиď щΐℓĺ ве ĭģňóѓëđ. !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="\"iterateOn\""} </comment>
+  </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>₣óŭйď ã сóмmаńδ ẁϊţђ дή îⁿναļīð "colorScheme". Тћîŝ ĉǿмmαήδ ωïĺĺ вε íğлŏгëð. Мâķэ ѕϋŗê τĥāţ ẅћэй šěτťîņġ å "colorScheme", ţĥé νаļΰé мªŧçћєѕ ţħє "name" őƒ ă ¢ôℓôř ŝςђзмê įň тнε "schemes" ľïşŧ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>₣ŏΰπđ ā "splitPane" ¢ǿммäήđ ŵìтћ ăη îŋνąłιđ "size". Ţђíѕ ċǿммªпđ ŵīĺℓ ьė ìĝñōгёđ. Мăќέ šύгз τĥě śιźê įѕ ъèτшέëπ 0 äⁿð 1, εхčļûŝίνз. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>₣âìľęď ťǿ рαяŝé "startupActions". !!! !!! !!! </value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>₣öųñđ múℓтĭφļę èⁿνіŕθлмėňţ ναřίдъľêѕ ẅïτħ ťħз śăмė ήámе їή đїƒƒέřέηт čãşзś (ĺóщěг/ůрρеŕ) - óлℓŷ οиę νǻľµě ẁιľľ вё ųşέď. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>Åŉ ǿртíоñαŀ ċοmмäηď, ẁίŧћ ãŗĝūměŉтş, ţô вέ šρªẃйèđ įņ ťђė πεẁ ŧав ŏŗ рªņε !!! !!! !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>Μòνê ƒöčµѕ ŧθ ãņøτнёř τåъ !!! !!! !</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>Мõνè ƒòćüŝ τθ ťћé пĕ×т ťαъ !!! !!! !</value>
+  </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>Дŋ äℓĭάş ƒоř τћę "focus-tab" šųъčǿммáñđ. !!! !!! !!! !!!</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>Μöνє ƒоćüŝ ŧó ţĥë рřěνĩομѕ тãь !!! !!! !!!</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>Мονé ƒоćűŝ ťħέ τåь àτ ţĥé ĝįνèň іňďėж !!! !!! !!! !!</value>
+  </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>Μόνě ƒôçџś℮ď φąπέ τŏ ţħĕ ŧäв ǻτ тћė ģΐνеņ ĭñðěх !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>Μǿνê ƒõćυѕěð φâή℮ ťθ ǻлοτĥёŗ τąв !!! !!! !!! </value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>Ăⁿ āℓíąš ƒбŕ тнĕ "move-pane" šúъćбммàⁿδ. !!! !!! !!! !!!</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>Ѕрёċϊƒÿ тђĕ ѕîžĕ αѕ ǻ ρēŕċêйτдģе őƒ ŧħě φǻґзйť φàņē. Vдℓίδ νǻŀùзş āŗε ьεтщ℮ёň (0,1), е×ςĺúŝινе. !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>Çґέăťė ã πėш τáв !!! !</value>
+  </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>Ăи άℓîªŝ ƒōř τħë "new-tab" śμвċόmмãŋδ. !!! !!! !!! !!</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>Μǿνé ƒосųŝ тô дπøţћєг рáņė !!! !!! !</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>Áй áℓįãš ƒòŗ тђĕ "focus-pane" şυъĉöммàńđ. !!! !!! !!! !!!</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>₣ό¢űѕ тнê φàπĕ аţ тђè ğĭνėй ïŋðεж !!! !!! !!! </value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>Θφêп шĩτћ ťнě ģìνēή ρѓøƒìĺę. Âćĉеφťś ёĩτĥėŗ τђė йάмє øя ĠŮΪÐ õƒ а φŕóƒίℓè !!! !!! !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Šέŧś ŧћэ ẀŦ_ŜÉŜŜІΟΝ νăяíåьłé; mµśτ вэ â ĢŨÎĐ !!! !!! !!! !!! !</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>Ĉґéáŧе д ήэẅ ŝφĺĭτ рãňё !!! !!! </value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>Āл ªļïâś ƒбг ŧћê "split-pane" ŝύвćőммäňδ. !!! !!! !!! !!!</value>
+    <comment>{Locked="\"split-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>Ċŕéάťё ťћè ⁿеẁ рâлè åś ǻ ħôŕîžőņτąŀ śρļίτ (ŧнїπĸ [-]) !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>Ċяěªтĕ ŧнέ ⁿèω ρаηе ªš ā νēѓτîčäŀ ѕрĺįť (тĥїπќ [|]) !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>Ĉřεâте тħè пέẁ φаńè ъỳ ďцрłíçăţιηğ ťħе φгоƒíľз оƒ τĥě ƒőċūşëð рāиē !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>Óрεŋ ιŋ τћē ĝіνèή ðіґėсťσŗý ΐńѕţêªđ ôƒ тħ℮ рřоƒĭľė'ŝ şĕŧ "startingDirectory" !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
+  </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>Òрèи ŧћ℮ тεгміņдľ шįтђ τћз рŕσνϊðэđ ţϊťľё їņšτèāď οƒ ŧħз рѓοƒïℓε'š śēт "title" !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>Фрєŋ τћę ťāь ẃĭŧĥ ŧĥē ѕρεçíƒĩĕď ċŏĺőŗ, ίŉ #řґģģьь ƒöřмàŧ !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Όрзи тћê тäъ ŵîтн ŧãвŦìтŀέ øνėřѓĩδіиĝ δęƒåυĺŧ тīτłê ǻйď ѕűррŕ℮ѕśìήĝ τĭťℓé ċћаπġё mεśšàğзš ƒŗøм тћê ªрρĺĩčªτĭóņ !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>İηĥегïт ţĥě ťεřmĭŉǻł'ŝ õώп εņνĩŕόňмěñť νāřĭáьŀĕś ώнēл ĉгėǻтΐŉġ ţħз πęш ţáь ŏŕ ρäη℮, ŗãŧħёř ťĥªή ¢řēäţіηĝ ǻ ƒŗėśћ èήνιгőŋм℮иť ьļο¢к. Тħїš ďęƒαüłŧŝ τõ ѕёţ ẅħēň ą "command" îş ρãśŝéđ.  !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>Øρéη ŧĥē ŧаь щïţђ ţнё ѕрě¢ίƒĩеð ¢θℓôя şĉнем℮, īπѕτêåδ òƒ τĥё φřőƒĭľе'ŝ ѕ℮ť "colorScheme" !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>Ďìśрℓàÿ тћē åφφłîςдťίøп νēřšįóń !!! !!! !!!</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>Ļáūńçн тћё ẅïиďоŵ мåжімĩźęð !!! !!! !!</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>£âµńĉн тнė щίπđощ їŉ ƒûℓŀşċŕėēη мøđè !!! !!! !!! !</value>
+  </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Мονë ƒόçцŝ τô ţнε дďјαçéŉţ φáπέ ίņ τнë ѕрéςĩƒїĕδ δіŗéćťïőп !!! !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>Åп âℓιāś ƒóř ŧђз "move-focus" šůъçόмmàпð. !!! !!! !!! !!!</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>Тнê đιřèсţïöп ţό мøνĕ ƒŏčúś ìή !!! !!! !!!</value>
+  </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>Šшдφ ťĥė ƒоčùšěď рдйê ŵīťђ ŧнё ãđĵă¢èņτ φåиé íŋ ťĥē šρêςīƒĭзδ đìѓз¢ţįőñ !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>Тнě διяèċτîõη ţό mōνе ťћë ƒòčϋš℮δ рαπ℮ īп !!! !!! !!! !!!</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>Ľãūлçĥ тħέ щíиδσώ ìй ƒô¢ũš мôďз !!! !!! !!!</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>Ŧћїѕ ρąяáмėŧєѓ ĭş āη їňтεŕήåŀ íмφĺêmёņťдţïòπ ďёŧåĩļ дηð šнŏųļδ ñōţ ьë ųšėð. !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Šрêςĩƒγ а ťĕгmìŋаł ẁϊпðõω τσ ґύŋ τнз ģίνĕи ĉömмαпđľįŉе їй. "0" āℓώąŷš řеƒěŗş ťσ ŧħė çŭґřęπť ẁįŉđǿω.  !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Šрëĉίƒў тћε рόŝíŧιòή ƒōя тнě тėřmįηдŀ, ϊп "х,ÿ" ƒθřмάŧ. !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Ѕφёĉĩƒỳ тнэ ņµmъ℮ґ øƒ ςòļůmйś ăŋð гøшş ƒöŕ тнε τєѓмϊⁿãŀ, ĩŉ "ċ,ř" ƒθяmãţ. !!! !!! !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Рґзѕś тђз вůťŧôй ŧǿ ǿφеη ā ŉéẃ ţєѓmîńąŀ ťâв ωϊŧђ ýθůř đęƒăμℓţ ρŗôƒїĺε. Óρĕп τћё ƒłýбцť ţø śεŀèςŧ шĥïčĥ φřŏƒίļê ўσμ ẁάлτ ţσ όрεй. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ňèώ Ŧäъ !!</value>
+  </data>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>Όрèπ ª йěŵ ταв !!! !</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>Ǻℓт+Сłĩċк тö šрŀîţ ţћë сцřѓèήŧ ẅїпðбω !!! !!! !!! !!</value>
+  </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Śħîƒť+Çľιćĸ тō όрзⁿ ª йзώ ẁίπðôш !!! !!! !!! </value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>€ţŕł+Čℓїčķ τõ ορêņ αŝ аðmìñĩѕτŕăţòг !!! !!! !!! !</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ćℓőŝз !</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ĉļøşз !</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>Ĉļόѕě !</value>
+  </data>
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Μджįmïźэ !!</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Μïиιmіžё !!</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Μîⁿĩmĩż℮ !!</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>Мĩиîmĩżє !!</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>Åвōύţ !</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ѕеηð ƒę℮đвäçк !!! </value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>ΦΚ </value>
+  </data>
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
+    <value>Véяšîõп: !!</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
+    <value>Ġеťтΐñĝ ѕτдŗτęď !!! !</value>
+    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Ѕοџŗсė ¢ŏđе !!!</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
+  </data>
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
+    <value>Đŏĉµмěⁿтатïõñ !!! </value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
+    <value>Ŗеľ℮àşε πòτéš !!! </value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
+    <value>Ρґїνãсÿ ρöĺĩςỳ !!! !</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>Ţћĩřð-Ρářŧγ ñοŧīĉęŝ !!! !!!</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>Ċдйĉέł !</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>€ļőşε áļľ !!!</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>Ďõ γбű ẁāŋţ ťó ςℓσśĕ äℓℓ шîйđбẁś? !!! !!! !!! </value>
+  </data>
+  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
+    <value>Ćăŉċęℓ !</value>
+  </data>
+  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ćļõѕέ аłℓ !!!</value>
+  </data>
+  <data name="CloseAllDialog.Title" xml:space="preserve">
+    <value>Đσ ŷőū шдиŧ тò čļòŝз αŀľ ţâвŝ? !!! !!! !!!</value>
+  </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>Čǻñčėŀ !</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Сłŏѕε άñÿẃåγ !!! </value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Ẁαгйïņğ !!</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>Ϋôů ářє дъоϋť ŧо ćľōśέ ª гęаð-öйĺу тêřmĩńäĺ. Đǿ ỳøü ωîśђ ŧő ćőŉţїñϋέ? !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Сâήçеŀ !</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>Ўōµ ąřε ăвőüť ţò ρãѕŧĕ ťê×ŧ тħãт ïš ľôŉğзŗ ŧђąи 5 ЌΐБ. Đθ γŏΰ ẅĩşħ τò ςõиŧĭňūê? !!! !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ρâşτз ăπуẅаý !!! </value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>Ẃâгηïņğ !!</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Ćªήĉěł !</value>
+  </data>
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
+    <value>Ϋбů áяē авôцţ τŏ ρªѕŧê ťĕхţ ťĥâť ĉοлŧäїлš mųŀťїрŀē ĺΐиέš. Ĭƒ ýŏû рαśτё ťђìš ť℮хŧ îήŧø γõũŗ ѕћêℓļ, íτ mду ŗéśμļт įŋ ţħ℮ цпęхρ℮çťêď з×эćúтϊŏⁿ õƒ ςōмmãⁿðş. Đο убŭ ẃīѕн τõ ċôŉŧïñûε? !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ρªšţє аńŷẁàŷ !!! </value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>Щāŕñιπĝ !!</value>
+  </data>
+  <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Ťýφě á ĉθmmāņđ йăмē... !!! !!! </value>
+  </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>Ŋό маŧ¢ĥΐŋğ сóмmăлđš !!! !!!</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>∆ćŧìøп şєāяćħ мóδє !!! !!</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>Тàв ťїтłé môðэ !!! !</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>Çοmмăπď-ĺιиé мõđэ !!! !!</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>Μояē öφтίóπś ƒőř "{}" !!! !!!</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>Ėжėсùţīпğ ¢ōmмªñð ĺїπĕ ẁíĺł ĭиνокė тħе ƒöĺℓŏщîпġ çõmмāⁿďѕ: !!! !!! !!! !!! !!! !!</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>₣āіľ℮ď рàгśīпģ ¢бммäⁿδ ĺīñè: !!! !!! !!</value>
+  </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>Ćσmmăηδ ράŀĕтţ℮ !!! !</value>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>Τăь ѕωîťςћêг !!! </value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>Ţýρё ă тăъ пâmě... !!! !!</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>Ńô мατćнìņģ ţдъ пªмĕ !!! !!!</value>
+  </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>Èηŧĕґ ǻ wt ċθmмаŉđļïŉė тο ŕūŉ !!! !!! !!!</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>Μōŗè σφŧïθлš ƒόŕ "{}" !!! !!!</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Ťÿφė å ċοmмªйđ ηаmє... !!! !!! </value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>Ņô mάťςћίņĝ ċоmмάņďš !!! !!!</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>Šύğġěşţįσпś м℮ŉμ !!! !</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Мόѓė ōφťіŏⁿś !!! </value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>Śΰġģ℮šτϊθñѕ ƒöüⁿδ: {0} !!! !!! </value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>€яïmşǿń !!</value>
+  </data>
+  <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ѕťéêℓ βľυэ !!!</value>
+  </data>
+  <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Μёδιųm Ѕεд Ğґзēη !!! !</value>
+  </data>
+  <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ďäŕќ Õřäňğè !!!</value>
+  </data>
+  <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Мęðϊům Vĭõľзт Ѓεð !!! !!</value>
+  </data>
+  <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ðôđğēг Βĺϋę !!!</value>
+  </data>
+  <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ĺіmз Ĝґéĕи !!!</value>
+  </data>
+  <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>¥ęℓłοẃ !</value>
+  </data>
+  <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ьľùе Vΐбŀэτ !!!</value>
+  </data>
+  <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Şŀаťę Βĺûė !!!</value>
+  </data>
+  <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>£ϊмз !</value>
+  </data>
+  <data name="TanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ťåπ </value>
+  </data>
+  <data name="MagentaColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Μàğэⁿτα !!</value>
+  </data>
+  <data name="CyanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ċуåň !</value>
+  </data>
+  <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Šќŷ ßľϋ℮ !!</value>
+  </data>
+  <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ðàŗκ Ğѓáγ !!!</value>
+  </data>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>Τћїš ŀĩňк іѕ įňνдŀíď: !!! !!!</value>
+  </data>
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>Ťђïś łϊηќ ŧурē ιş çũґѓзⁿτľÿ ñστ şΰρρоŕŧĕđ: !!! !!! !!! !!! </value>
+  </data>
+  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Сąñс℮ł !</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Śëţťĩпğś !!</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>Ẃε ςőűℓđ пòт ωяΐτë ŧô γôύг šěťтïπĝŝ ƒīłě. Çђêĉĸ ţђэ φеřмìşŝΐóпѕ õл ťђàτ ƒĩŀε ţб έπšμґé ţђäť тћê ѓέάδ-õлļỳ ƒŀãġ ΐš ŉοт ŝėт ǻпď ţнăт ẅѓīţĕ ăсċéšş ĩş ģŗдŋτëđ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Бдçķ !</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ьãςк !</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>ΘК </value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>Ďêъŭģ !</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>∑ŕřοґ !</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>Īπƒóřмąτιŏŉ !!!</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>Шãřñїņģ !!</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>€ℓірьоåŗδ ĉóńťęňтѕ (φѓενĭεẃ): !!! !!! !!!</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Мθґе бφŧīбπš !!! </value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>Ẅίńďöщ !</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>υŉňàмěđ ẅіπďōẅ !!! !</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>Єиŧ℮ŗ ă ñéẁ йάmё: !!! !!</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>ÒК </value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>Сªⁿċĕĺ !</value>
+  </data>
+  <data name="RenameFailedToast.Title" xml:space="preserve">
+    <value>₣âιļĕđ ŧо ѓëňąмë щϊπδǿω !!! !!! </value>
+  </data>
+  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
+    <value>Άņόтĥěŗ ẃїлðοω ẁιťĥ ťћаť пâmě ăļřéàδў ёжìśŧѕ !!! !!! !!! !!! !</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Μą×ìmϊżé !!</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Ŕèšŧòяё ďǿẃи !!! </value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>Ċòмmāńδ рªľėτťë !!! !</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>₣ôćűŝ Ţеґмĭйâŀ !!! !</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Ẃϊйδοŵš !!</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>Фφĕń ª пёẅ ţâь ίи ğīνęņ ѕŧāятĩлğ δįŗęćтŏяγ !!! !!! !!! !!! </value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>Οφэй ä ŋёώ ẅįńðбώ ẁįτђ ĝĩνēη šτáгтϊŋĝ ðĭřěçŧøгγ !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>Ŝρℓΐŧ ŧнė ẁίňďõŵ άпδ ŝţâґţ ίń ģįνëŉ δϊгέ¢ŧøяў !!! !!! !!! !!! !</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>Ė×φōŗŧ ţєхŧ !!!</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>₣ăìľεď ťθ эхроґт ţеґmίñдļ ¢ōйт℮лť !!! !!! !!! </value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>Ŝūĉčєšśƒυłłγ ĕ×φòŗтэð тēгмïŉãℓ ĉοŉťëⁿţ !!! !!! !!! !!</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>₣ìпđ !</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>Ρĺáīň тěхт !!!</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>Ťéямїлâŧîόň ь℮ћäνįőř čªή вĕ ċοñƒĩġџřèδ įŋ ăδνåл¢êð ряòƒιļє şėŧтіиĝś. !!! !!! !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Ďόń'ţ šħόω ãĝάϊл !!! !</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ţђіś Тĕřмїηǻℓ шĩⁿðöŵ ïѕ ѓüñňĩñģ ãŝ áðmĭⁿîşŧŕãţθŕ !!! !!! !!! !!! !!</value>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>Ѕũğġεšтįóпş ƒōцŉđ: {0} !!! !!! </value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>Çђęċќїŋğ ƒσř ũρδàτέѕ... !!! !!! </value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>Δŉ μρđаŧè ĭś ăνăϊłªвľė. !!! !!! </value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>Ϊŋśţāŀŀ πбẁ !!!</value>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>Ŧђê "newTabMenu" ƒιêŀď čσñţąϊйѕ mōѓé ťђǻñ öŋė ёňτŕý őƒ τýρê "ґёмãīліηģРяöƒïľєś". Φпĺў τђё ƒΐѓšτ όñè ώїłł ьè ĉőлѕìδēяёδ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>Ťђέ "__content" φŕόφέŕτγ íś řêšзřνеð ƒσř ійтėŕňåℓ ΰşè !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>Фφèη а ðїаļθĝ ćбⁿťáĭηΐñģ ρřσđůčŧ ілƒǿřmãтĩöή !!! !!! !!! !!! !</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>Ωφĕй ŧнė ¢óŀοŕ φĩċĸęř τσ ¢ђőōѕė ťħê сõľòŗ бƒ ŧħįѕ τªь !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>Øρĕл ţће сǿmмåήđ ρãĺέτŧě !!! !!! !</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>Óρέл â ŉзш τàв ũśĭлġ ŧħё ąċŧîνê ρŕøƒΐĺé ĩи ţħě çúггзηт đĩřзçţøřý !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>Ēхφõґт τĥе сǿήŧĕиŧѕ ōƒ τђė ťε×τ ъũƒƒεř ĩήŧо α ţé×ť ƒιļê !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>Φρéņ ŧнĕ şęâřςћ ðíάŀŏģ !!! !!! </value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>Ŗėлαмē тħíŝ тåв !!! !</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>Òφĕņ тĥе šэτŧīлğš ρдģė !!! !!! </value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>Ωрėŋ д πėẁ φâиě űѕīⁿģ тĥэ ã¢τίνë рřŏƒίĺê îŋ ţћэ çūŗгěηт ďíř℮ĉŧõгỳ !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>Сłǿśе ǻĺľ τăвś ţô ŧн℮ яîĝħť őƒ τђїş тάв !!! !!! !!! !!!</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>€ļόѕĕ ªŀŀ ŧáвѕ έ×ćèρт ŧнìş ŧåв !!! !!! !!!</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>Ĉłоśэ ťĥìŝ ţªъ !!! !</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Ёмφţγ !</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>Ĉĺοŝе φаиę !!!</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>Çĺόś℮ τнĕ ă¢τίν℮ рáлĕ ιƒ mϋŀţїрĺë φàńęś άŗє рřęšеńт !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Ґέšεт τăъ ċǿℓőґ !!! !</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
+    <value>Мόνз ţǻь ŧö ŉ℮ω ώĭŋδōώ !!! !!! </value>
+  </data>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>Мøνëŝ ŧªъ ŧǿ ã пεẃ шίŋđоẁ  !!! !!! !</value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>Ŕμŋ ąś åďmįиíšťґąţőя !!! !!!</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>∆çťíνĕ рåⁿэ мôνеð ťб "{0}" ţав !!! !!! !!!</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>"{0}" ťāъ мōνęđ τŏ "{1}" шΐπδŏẅ !!! !!! !!!</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>"{0}" тąь mǿνєđ ŧσ ήèώ ẅĩŋďøẃ !!! !!! !!!</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>"{0}" ŧαв мονĕđ το φóŝїŧíŏñ "{1}" !!! !!! !!! </value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
+    <value>Α¢ťϊνë рãņє môνέď τō "{0}" ţâъ ĭή "{1}" ẃĩńδθш !!! !!! !!! !!! !</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>Λςťìνє рáиė mόνéð ťб "{0}" ŵîńđθω !!! !!! !!! </value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>Αĉťįνέ ρªņз mσνёđ τǿ ήёẃ ẃîпďǿω !!! !!! !!!</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>Дсţϊνё φαŋє mбν℮ð ťŏ ηеẁ ταв !!! !!! !!</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
+  <data name="CmdAppendCommandLineDesc" xml:space="preserve">
+    <value>Ĩƒ šęţ, ŧнĕ ¢ömmдлδ ŵîĺł ьέ åφрєйδĕđ τσ ŧђė рřŏƒїłє'ş đзƒªūľţ ¢οmмăńδ іñѕţέáđ øƒ ѓēρļąċĭлĝ їţ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>Γēѕŧâяŧ ćǿńńēčťїöл !!! !!</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>Γėşťáгţ ŧħ℮ ãčтĩνέ ρăйё сǿηńëςтιóņ !!! !!! !!! !</value>
+  </data>
+</root>

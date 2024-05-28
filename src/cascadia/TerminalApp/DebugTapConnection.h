@@ -19,13 +19,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
+
+        winrt::guid SessionId() const noexcept;
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept;
 
         void SetInputTap(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& inputTap);
 
-        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);
+        til::event<winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler> TerminalOutput;
 
-        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Windows::Foundation::IInspectable);
+        til::typed_event<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Windows::Foundation::IInspectable> StateChanged;
 
     private:
         void _PrintInput(const hstring& data);

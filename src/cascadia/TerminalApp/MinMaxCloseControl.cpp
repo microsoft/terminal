@@ -69,18 +69,18 @@ namespace winrt::TerminalApp::implementation
     void MinMaxCloseControl::_MinimizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                             const RoutedEventArgs& e)
     {
-        _MinimizeClickHandlers(*this, e);
+        MinimizeClick.raise(*this, e);
     }
 
     void MinMaxCloseControl::_MaximizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                             const RoutedEventArgs& e)
     {
-        _MaximizeClickHandlers(*this, e);
+        MaximizeClick.raise(*this, e);
     }
     void MinMaxCloseControl::_CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                          const RoutedEventArgs& e)
     {
-        _CloseClickHandlers(*this, e);
+        CloseClick.raise(*this, e);
     }
 
     void MinMaxCloseControl::SetWindowVisualState(WindowVisualState visualState)
@@ -116,6 +116,9 @@ namespace winrt::TerminalApp::implementation
 
         switch (visualState)
         {
+        case WindowVisualState::WindowVisualStateIconified:
+            // Iconified (aka minimized) state should preserve the active window styling
+            break;
         case WindowVisualState::WindowVisualStateMaximized:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
 
@@ -124,9 +127,7 @@ namespace winrt::TerminalApp::implementation
             CloseButton().Height(maximizedHeight);
             MaximizeToolTip().Text(RS_(L"WindowRestoreDownButtonToolTip"));
             break;
-
         case WindowVisualState::WindowVisualStateNormal:
-        case WindowVisualState::WindowVisualStateIconified:
         default:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
 

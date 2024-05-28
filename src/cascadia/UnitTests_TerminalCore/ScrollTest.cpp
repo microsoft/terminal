@@ -2,18 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <WexTestClass.h>
-
-#include <DefaultSettings.h>
-
-#include "../renderer/inc/DummyRenderer.hpp"
-#include "../renderer/base/Renderer.hpp"
-#include "../renderer/dx/DxRenderer.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
-#include "MockTermSettings.h"
-#include "consoletaeftemplates.hpp"
-#include "../../inc/TestUtils.h"
+#include "../renderer/inc/DummyRenderer.hpp"
+#include "../renderer/inc/RenderEngineBase.hpp"
 
 using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;

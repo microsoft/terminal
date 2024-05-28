@@ -3,8 +3,6 @@
 
 #include "precomp.h"
 
-#include <til/small_vector.h>
-
 using namespace std::literals;
 using namespace WEX::Common;
 using namespace WEX::Logging;

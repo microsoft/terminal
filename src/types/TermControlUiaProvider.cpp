@@ -145,7 +145,7 @@ til::rect TermControlUiaProvider::GetPadding() const noexcept
     return _controlInfo->GetPadding();
 }
 
-double TermControlUiaProvider::GetScaleFactor() const noexcept
+float TermControlUiaProvider::GetScaleFactor() const noexcept
 {
     return _controlInfo->GetScaleFactor();
 }

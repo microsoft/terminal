@@ -42,6 +42,12 @@ public:
     bool DeleteCharacter(const VTInt /*count*/) override { return false; } // DCH
     bool ScrollUp(const VTInt /*distance*/) override { return false; } // SU
     bool ScrollDown(const VTInt /*distance*/) override { return false; } // SD
+    bool NextPage(const VTInt /*pageCount*/) override { return false; } // NP
+    bool PrecedingPage(const VTInt /*pageCount*/) override { return false; } // PP
+    bool PagePositionAbsolute(const VTInt /*page*/) override { return false; } // PPA
+    bool PagePositionRelative(const VTInt /*pageCount*/) override { return false; } // PPR
+    bool PagePositionBack(const VTInt /*pageCount*/) override { return false; } // PPB
+    bool RequestDisplayedExtent() override { return false; } // DECRQDE
     bool InsertLine(const VTInt /*distance*/) override { return false; } // IL
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
     bool InsertColumn(const VTInt /*distance*/) override { return false; } // DECIC
@@ -56,11 +62,12 @@ public:
     bool ReverseLineFeed() override { return false; } // RI
     bool BackIndex() override { return false; } // DECBI
     bool ForwardIndex() override { return false; } // DECFI
-    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
+    bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // DECSWT, OscWindowTitle
     bool HorizontalTabSet() override { return false; } // HTS
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
+    bool TabSet(const VTParameter /*setType*/) override { return false; } // DECST8C
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground
     bool SetDefaultBackground(const DWORD /*color*/) override { return false; } // OSCDefaultBackground
@@ -106,6 +113,7 @@ public:
     bool LockingShiftRight(const VTInt /*gsetNumber*/) override { return false; } // LS1R, LS2R, LS3R
     bool SingleShift(const VTInt /*gsetNumber*/) override { return false; } // SS2, SS3
     bool AcceptC1Controls(const bool /*enabled*/) override { return false; } // DECAC1
+    bool AnnounceCodeStructure(const VTInt /*ansiLevel*/) override { return false; } // ACS
 
     bool SoftReset() override { return false; } // DECSTR
     bool HardReset() override { return false; } // RIS
@@ -114,7 +122,7 @@ public:
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*color*/) override { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
-    bool SetClipboard(std::wstring_view /*content*/) override { return false; } // OscSetClipboard
+    bool SetClipboard(wil::zwstring_view /*content*/) override { return false; } // OscSetClipboard
 
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
@@ -139,7 +147,10 @@ public:
                                const DispatchTypes::DrcsFontSet /*fontSet*/,
                                const DispatchTypes::DrcsFontUsage /*fontUsage*/,
                                const VTParameter /*cellHeight*/,
-                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+                               const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+
+    bool RequestUserPreferenceCharset() override { return false; } // DECRQUPSS
+    StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECAUPSS
 
     StringHandler DefineMacro(const VTInt /*macroId*/,
                               const DispatchTypes::MacroDeleteControl /*deleteControl*/,

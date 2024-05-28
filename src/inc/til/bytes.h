@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "type_traits.h"
-
 namespace til
 {
     template<ContiguousBytes Target>

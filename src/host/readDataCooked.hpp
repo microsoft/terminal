@@ -160,6 +160,7 @@ private:
     ptrdiff_t _writeCharsUnprocessed(const std::wstring_view& text) const;
     til::point _offsetPosition(til::point pos, ptrdiff_t distance) const;
     void _offsetCursorPosition(ptrdiff_t distance) const;
+    void _offsetCursorPositionAlways(ptrdiff_t distance) const;
     til::CoordType _getColumnAtRelativeCursorPosition(ptrdiff_t distance) const;
 
     void _popupPush(PopupKind kind);

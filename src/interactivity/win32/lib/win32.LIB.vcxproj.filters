@@ -48,9 +48,6 @@
     <ClCompile Include="..\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\WindowIme.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\WindowDpiApi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -108,9 +105,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\WindowIme.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\WindowDpiApi.hpp">

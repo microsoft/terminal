@@ -1,0 +1,730 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SetColorSchemeParentCommandName" xml:space="preserve">
+    <value>配色パターンの選択</value>
+  </data>
+  <data name="NewTabParentCommandName" xml:space="preserve">
+    <value>新しいタブ</value>
+  </data>
+  <data name="SplitPaneParentCommandName" xml:space="preserve">
+    <value>ウィンドウを分割する</value>
+  </data>
+  <data name="ApplicationDisplayNamePortable" xml:space="preserve">
+    <value>ターミナル (ポータブル)</value>
+    <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
+  </data>
+  <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
+    <value>ターミナル (パッケージ化されていません)</value>
+    <comment>This display name is used when the application's name cannot be determined</comment>
+  </data>
+  <data name="ApplicationVersionUnknown" xml:space="preserve">
+    <value>不明</value>
+    <comment>This is displayed when the version of the application cannot be determined</comment>
+  </data>
+  <data name="AdjustFontSizeCommandKey" xml:space="preserve">
+    <value>フォント サイズを調整する</value>
+  </data>
+  <data name="CloseOtherTabsCommandKey" xml:space="preserve">
+    <value>インデックス {0} 以外のタブを閉じる</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseOtherTabsDefaultCommandKey" xml:space="preserve">
+    <value>他のすべてのタブを閉じる</value>
+  </data>
+  <data name="ClosePaneCommandKey" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="CloseTabAtIndexCommandKey" xml:space="preserve">
+    <value>インデックス {0}のタブを閉じる</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseTabCommandKey" xml:space="preserve">
+    <value>タブを閉じる</value>
+  </data>
+  <data name="CloseTabsAfterCommandKey" xml:space="preserve">
+    <value>インデックス {0} の後にタブを閉じる</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CopySuffix" xml:space="preserve">
+    <value>コピー</value>
+    <comment>The suffix we add to the name of a duplicated profile.</comment>
+  </data>
+  <data name="MoveTabCommandKey" xml:space="preserve">
+    <value>タブの移動 {0}</value>
+    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+  </data>
+  <data name="MoveTabToWindowCommandKey" xml:space="preserve">
+    <value>タブをウィンドウ "{0}" に移動</value>
+    <comment>{0} will be replaced with a user-specified name of a window</comment>
+  </data>
+  <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
+    <value>タブを新しいウィンドウに移動</value>
+  </data>
+  <data name="MoveTabDirectionForward" xml:space="preserve">
+    <value>前方</value>
+  </data>
+  <data name="MoveTabDirectionBackward" xml:space="preserve">
+    <value>後方</value>
+  </data>
+  <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
+    <value>現在のタブの後のすべてのタブを閉じる</value>
+  </data>
+  <data name="CloseWindowCommandKey" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="OpenSystemMenuCommandKey" xml:space="preserve">
+    <value>システム メニューを開く</value>
+  </data>
+  <data name="CommandPromptDisplayName" xml:space="preserve">
+    <value>コマンド プロンプト</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
+  </data>
+  <data name="CopyTextAsSingleLineCommandKey" xml:space="preserve">
+    <value>1 行としてテキストをコピーする</value>
+  </data>
+  <data name="CopyTextCommandKey" xml:space="preserve">
+    <value>テキストをコピーする</value>
+  </data>
+  <data name="DecreaseFontSizeCommandKey" xml:space="preserve">
+    <value>フォント サイズを縮小する</value>
+  </data>
+  <data name="DecreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>フォント サイズを縮小する。 {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
+  </data>
+  <data name="DirectionDown" xml:space="preserve">
+    <value>下</value>
+  </data>
+  <data name="DirectionLeft" xml:space="preserve">
+    <value>左</value>
+  </data>
+  <data name="DirectionRight" xml:space="preserve">
+    <value>右</value>
+  </data>
+  <data name="DirectionUp" xml:space="preserve">
+    <value>上</value>
+  </data>
+  <data name="DirectionPrevious" xml:space="preserve">
+    <value>以前</value>
+  </data>
+  <data name="DuplicatePaneCommandKey" xml:space="preserve">
+    <value>ウィンドウの複製する</value>
+  </data>
+  <data name="DuplicateTabCommandKey" xml:space="preserve">
+    <value>タブを複製する</value>
+  </data>
+  <data name="ExecuteCommandlineCommandKey" xml:space="preserve">
+    <value>このウィンドウで CommandLine "{0}" を実行する</value>
+    <comment>{0} will be replaced with a user-defined commandline</comment>
+  </data>
+  <data name="FindCommandKey" xml:space="preserve">
+    <value>検索する</value>
+  </data>
+  <data name="FindNextCommandKey" xml:space="preserve">
+    <value>次の検索一致を検索</value>
+  </data>
+  <data name="FindPrevCommandKey" xml:space="preserve">
+    <value>以前の検索一致を検索</value>
+  </data>
+  <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
+    <value>フォント サイズを拡大する</value>
+  </data>
+  <data name="IncreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>フォント サイズを拡大する。 {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
+  </data>
+  <data name="MoveFocusCommandKey" xml:space="preserve">
+    <value>フォーカスを移動</value>
+  </data>
+  <data name="MoveFocusWithArgCommandKey" xml:space="preserve">
+    <value>フォーカスを移動する{0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="MoveFocusToLastUsedPane" xml:space="preserve">
+    <value>前回使用したウィンドウにフォーカスを移動する</value>
+  </data>
+  <data name="MoveFocusNextInOrder" xml:space="preserve">
+    <value>次のウィンドウに順番にフォーカスを移動する</value>
+  </data>
+  <data name="MoveFocusPreviousInOrder" xml:space="preserve">
+    <value>前のウィンドウに順番にフォーカスを移動する</value>
+  </data>
+  <data name="MoveFocusFirstPane" xml:space="preserve">
+    <value>最初のウィンドウにフォーカスを移動する</value>
+  </data>
+  <data name="MoveFocusParentPane" xml:space="preserve">
+    <value>親ウィンドウにフォーカスを移動する</value>
+  </data>
+  <data name="MoveFocusChildPane" xml:space="preserve">
+    <value>子ウィンドウにフォーカスを移動する</value>
+  </data>
+  <data name="SwapPaneCommandKey" xml:space="preserve">
+    <value>ウィンドウを入れ替える</value>
+  </data>
+  <data name="SwapPaneWithArgCommandKey" xml:space="preserve">
+    <value>ウィンドウを入れ替える {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="SwapPaneToLastUsedPane" xml:space="preserve">
+    <value>ウィンドウを最後に使用したウィンドウと入れ替える</value>
+  </data>
+  <data name="SwapPaneNextInOrder" xml:space="preserve">
+    <value>ウィンドウを次のウィンドウと順番に入れ替える</value>
+  </data>
+  <data name="SwapPanePreviousInOrder" xml:space="preserve">
+    <value>ウィンドウを前のウィンドウと順番に入れ替える</value>
+  </data>
+  <data name="SwapPaneFirstPane" xml:space="preserve">
+    <value>最初のウィンドウとウィンドウを入れ替える</value>
+  </data>
+  <data name="NewTabCommandKey" xml:space="preserve">
+    <value>新しいタブ</value>
+  </data>
+  <data name="NewWindowCommandKey" xml:space="preserve">
+    <value>新しいウィンドウ</value>
+  </data>
+  <data name="IdentifyWindowCommandKey" xml:space="preserve">
+    <value>ウィンドウの識別</value>
+  </data>
+  <data name="IdentifyWindowsCommandKey" xml:space="preserve">
+    <value>ウィンドウの識別</value>
+  </data>
+  <data name="NextTabCommandKey" xml:space="preserve">
+    <value>次のタブ</value>
+  </data>
+  <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
+    <value>設定ファイルおよび既定の設定ファイル (JSON) を開く</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenDefaultSettingsCommandKey" xml:space="preserve">
+    <value>既定の設定ファイル (JSON) を開く</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
+    <value>新しいタブ ドロップダウンを開く</value>
+  </data>
+  <data name="OpenSettingsCommandKey" xml:space="preserve">
+    <value>設定ファイル (JSON) を開く</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
+    <value>タブの色の設定</value>
+  </data>
+  <data name="PasteTextCommandKey" xml:space="preserve">
+    <value>貼り付け</value>
+  </data>
+  <data name="PrevTabCommandKey" xml:space="preserve">
+    <value>前のタブ</value>
+  </data>
+  <data name="RenameTabCommandKey" xml:space="preserve">
+    <value>"{0}"にタブ名を変更する</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetFontSizeCommandKey" xml:space="preserve">
+    <value>フォント サイズをリセットする</value>
+  </data>
+  <data name="ResetTabColorCommandKey" xml:space="preserve">
+    <value>タブの色をリセット</value>
+  </data>
+  <data name="ResetTabNameCommandKey" xml:space="preserve">
+    <value>タブのタイトルをリセット</value>
+  </data>
+  <data name="OpenTabRenamerCommandKey" xml:space="preserve">
+    <value>タブ タイトル名の変更</value>
+  </data>
+  <data name="ResizePaneCommandKey" xml:space="preserve">
+    <value>ウィンドウのサイズの変更する</value>
+  </data>
+  <data name="ResizePaneWithArgCommandKey" xml:space="preserve">
+    <value>ウィンドウのサイズを変更する {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
+  </data>
+  <data name="ScrollDownCommandKey" xml:space="preserve">
+    <value>下へスクロール</value>
+  </data>
+  <data name="ScrollDownSeveralRowsCommandKey" xml:space="preserve">
+    <value>{0} 行下へスクロール</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
+  </data>
+  <data name="ScrollDownPageCommandKey" xml:space="preserve">
+    <value>1ページ下にスクロール</value>
+  </data>
+  <data name="ScrollUpCommandKey" xml:space="preserve">
+    <value>上へスクロール</value>
+  </data>
+  <data name="ScrollUpSeveralRowsCommandKey" xml:space="preserve">
+    <value>{0} 行上へスクロール</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
+  </data>
+  <data name="ScrollUpPageCommandKey" xml:space="preserve">
+    <value>1 ページ上にスクロールする</value>
+  </data>
+  <data name="ScrollToTopCommandKey" xml:space="preserve">
+    <value>履歴の一番上までスクロール</value>
+  </data>
+  <data name="ScrollToBottomCommandKey" xml:space="preserve">
+    <value>履歴の一番下までスクロール</value>
+  </data>
+  <data name="ScrollToPreviousMarkCommandKey" xml:space="preserve">
+    <value>前のマークまでスクロールする</value>
+  </data>
+  <data name="ScrollToNextMarkCommandKey" xml:space="preserve">
+    <value>次のマークまでスクロールする</value>
+  </data>
+  <data name="ScrollToFirstMarkCommandKey" xml:space="preserve">
+    <value>最初のマークまでスクロールする</value>
+  </data>
+  <data name="ScrollToLastMarkCommandKey" xml:space="preserve">
+    <value>最後のマークまでスクロールする</value>
+  </data>
+  <data name="AddMarkCommandKey" xml:space="preserve">
+    <value>スクロール マークを追加する</value>
+  </data>
+  <data name="AddMarkWithColorCommandKey" xml:space="preserve">
+    <value>スクロール マークを追加する、color:{0}</value>
+    <comment>{Locked="color"}. "color" is a literal parameter name that shouldn't be translated. {0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
+  </data>
+  <data name="ClearMarkCommandKey" xml:space="preserve">
+    <value>マークをクリアする</value>
+  </data>
+  <data name="ClearAllMarksCommandKey" xml:space="preserve">
+    <value>すべてのマークをクリアする</value>
+  </data>
+  <data name="SendInputCommandKey" xml:space="preserve">
+    <value>入力の送信: 「{0}」</value>
+    <comment>{0} will be replaced with a string of input as defined by the user</comment>
+  </data>
+  <data name="SetColorSchemeCommandKey" xml:space="preserve">
+    <value>配色を{0} に設定</value>
+    <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
+  </data>
+  <data name="SetTabColorCommandKey" xml:space="preserve">
+    <value>タブの色をに設定する{0}</value>
+    <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>
+  </data>
+  <data name="SplitHorizontalCommandKey" xml:space="preserve">
+    <value>ウィンドウを左右に分割</value>
+  </data>
+  <data name="MovePaneCommandKey" xml:space="preserve">
+    <value>ウィンドウの移動</value>
+  </data>
+  <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
+    <value>ウィンドウを新しいウィンドウに移動</value>
+  </data>
+  <data name="SplitPaneCommandKey" xml:space="preserve">
+    <value>ウィンドウを分割する</value>
+  </data>
+  <data name="SplitVerticalCommandKey" xml:space="preserve">
+    <value>ウィンドウを上下に分割</value>
+  </data>
+  <data name="SwitchToTabCommandKey" xml:space="preserve">
+    <value>タブに切り替え</value>
+  </data>
+  <data name="SwitchToLastTabCommandKey" xml:space="preserve">
+    <value>最後のタブに切り替える</value>
+  </data>
+  <data name="TabSearchCommandKey" xml:space="preserve">
+    <value>タブの検索</value>
+  </data>
+  <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
+    <value>常に手前に表示するモードに切り替える</value>
+  </data>
+  <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
+    <value>コマンド パレットに切り替える</value>
+  </data>
+  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
+    <value>最近使ったコマンド</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>候補を開く</value>
+  </data>
+  <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
+    <value>コマンド ライン モードでコマンド パレットを切り替えます</value>
+  </data>
+  <data name="ToggleFocusModeCommandKey" xml:space="preserve">
+    <value>フォーカス モードを切り替える</value>
+    <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
+  </data>
+  <data name="EnableFocusModeCommandKey" xml:space="preserve">
+    <value>フォーカス モードを有効にする</value>
+  </data>
+  <data name="DisableFocusModeCommandKey" xml:space="preserve">
+    <value>フォーカス モードを利用不可にする</value>
+  </data>
+  <data name="ToggleFullscreenCommandKey" xml:space="preserve">
+    <value>全画面表示に切り替える</value>
+  </data>
+  <data name="EnableFullScreenCommandKey" xml:space="preserve">
+    <value>全画面表示を有効にする</value>
+  </data>
+  <data name="DisableFullScreenCommandKey" xml:space="preserve">
+    <value>全画面表示を利用不可にする</value>
+  </data>
+  <data name="EnableMaximizedCommandKey" xml:space="preserve">
+    <value>ウィンドウの最大化</value>
+  </data>
+  <data name="DisableMaximizedCommandKey" xml:space="preserve">
+    <value>最大化ウィンドウを復元する</value>
+  </data>
+  <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
+    <value>ウィンドウ分割の方向の切り替え</value>
+  </data>
+  <data name="TogglePaneZoomCommandKey" xml:space="preserve">
+    <value>ウィンドウのズームの切り替え</value>
+  </data>
+  <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>ウィンドウを読み取り専用モードに切り替える</value>
+  </data>
+  <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>ウィンドウの読み取り専用モードを有効にする</value>
+  </data>
+  <data name="DisablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>ウィンドウの読み取り専用モードを無効にする</value>
+  </data>
+  <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
+    <value>ターミナルの視覚効果の切り替え</value>
+  </data>
+  <data name="BreakIntoDebuggerCommandKey" xml:space="preserve">
+    <value>デバッガーに挿入します</value>
+  </data>
+  <data name="OpenSettingsUICommandKey" xml:space="preserve">
+    <value>設定を開く</value>
+  </data>
+  <data name="RenameWindowCommandKey" xml:space="preserve">
+    <value>ウィンドウの名前を "{0}" に変更する</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetWindowNameCommandKey" xml:space="preserve">
+    <value>ウィンドウの名前をリセットする</value>
+  </data>
+  <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
+    <value>ウィンドウの名前を変更...</value>
+  </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>ターミナルの現在の作業ディレクトリを表示する</value>
+  </data>
+  <data name="GlobalSummonCommandKey" xml:space="preserve">
+    <value>ターミナル ウィンドウの表示/非表示</value>
+  </data>
+  <data name="QuakeModeCommandKey" xml:space="preserve">
+    <value>Quake ウィンドウの表示/非表示</value>
+    <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
+  </data>
+  <data name="FocusPaneCommandKey" xml:space="preserve">
+    <value>ウィンドウ {0} をフォーカスする</value>
+    <comment>{0} will be replaced with a user-specified number</comment>
+  </data>
+  <data name="ExportBufferToPathCommandKey" xml:space="preserve">
+    <value>テキストを {0} にエクスポートする</value>
+    <comment>{0} will be replaced with a user-specified file path</comment>
+  </data>
+  <data name="ExportBufferCommandKey" xml:space="preserve">
+    <value>テキストのエクスポート</value>
+  </data>
+  <data name="ClearAllCommandKey" xml:space="preserve">
+    <value>バッファーのクリア</value>
+    <comment>A command to clear the entirety of the Terminal output buffer</comment>
+  </data>
+  <data name="ClearViewportCommandKey" xml:space="preserve">
+    <value>ビューポートのクリア</value>
+    <comment>A command to clear the active viewport of the Terminal</comment>
+  </data>
+  <data name="ClearScrollbackCommandKey" xml:space="preserve">
+    <value>スクロールバックのクリア</value>
+    <comment>A command to clear the part of the buffer above the viewport</comment>
+  </data>
+  <data name="DefaultWindowsConsoleName" xml:space="preserve">
+    <value>Windows で自動的に選択する</value>
+    <comment>This is the default option if a user doesn't choose to override Microsoft's choice of a Terminal.</comment>
+  </data>
+  <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
+    <value>Microsoft Corporation</value>
+    <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
+  </data>
+  <data name="InboxWindowsConsoleName" xml:space="preserve">
+    <value>Windows コンソール ホスト</value>
+    <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
+  </data>
+  <data name="QuitCommandKey" xml:space="preserve">
+    <value>ターミナルの終了</value>
+  </data>
+  <data name="SetOpacityParentCommandName" xml:space="preserve">
+    <value>背景の不透明度の設定</value>
+  </data>
+  <data name="IncreaseOpacityCommandKey" xml:space="preserve">
+    <value>背景の不透明度を {0}% 上げる</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="DecreaseOpacityCommandKey" xml:space="preserve">
+    <value>背景の不透明度を {0}% 下げる</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="AdjustOpacityCommandKey" xml:space="preserve">
+    <value>背景の不透明度を {0}% に設定する</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="RestoreLastClosedCommandKey" xml:space="preserve">
+    <value>最後に閉じたウィンドウまたはタブを復元する</value>
+  </data>
+  <data name="SelectAllCommandKey" xml:space="preserve">
+    <value>すべてのテキストを選択</value>
+  </data>
+  <data name="MarkModeCommandKey" xml:space="preserve">
+    <value>マーク モードの切り替え</value>
+    <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
+  </data>
+  <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
+    <value>ブロック選択の切り替え</value>
+  </data>
+  <data name="SwitchSelectionEndpointCommandKey" xml:space="preserve">
+    <value>選択エンドポイントの切り替え</value>
+  </data>
+  <data name="ColorSelection_allMatches" xml:space="preserve">
+    <value>すべて一致</value>
+    <comment>This is used in the description of an action which changes the color of selected text, to indicate that not only the selected text will be colored, but also all matching text.</comment>
+  </data>
+  <data name="ColorSelection_fg_action" xml:space="preserve">
+    <value>色の選択範囲、前景: {0}{1}</value>
+    <comment>This is the description of an action which changes the color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_bg_action" xml:space="preserve">
+    <value>色の選択範囲、背景: {0}{1}</value>
+    <comment>This is the description of an action which changes the background color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_fg_bg_action" xml:space="preserve">
+    <value>色の選択範囲、前景: {0}、背景: {1}{2}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background. {0}: the foreground color. {1}: the background color. {2}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_default_action" xml:space="preserve">
+    <value>色の選択範囲、(既定の前景/背景){0}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background to the default colors. {0}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_defaultColor" xml:space="preserve">
+    <value>[既定]</value>
+    <comment>This is used in the description of an action which changes the color of selected text, as a placeholder for a color, to indicate that the default (foreground or background) color will be used.</comment>
+  </data>
+  <data name="ColorSelection_Black" xml:space="preserve">
+    <value>黒;ブラック</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Red" xml:space="preserve">
+    <value>赤;レッド</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Green" xml:space="preserve">
+    <value>緑;グリーン</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Yellow" xml:space="preserve">
+    <value>黄;イエロー</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Blue" xml:space="preserve">
+    <value>青;ブルー</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Purple" xml:space="preserve">
+    <value>紫</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Cyan" xml:space="preserve">
+    <value>シアン</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_White" xml:space="preserve">
+    <value>白;ホワイト</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlack" xml:space="preserve">
+    <value>明るい黒</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightRed" xml:space="preserve">
+    <value>明るい赤</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightGreen" xml:space="preserve">
+    <value>明るい緑</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightYellow" xml:space="preserve">
+    <value>明るい黄</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlue" xml:space="preserve">
+    <value>明るい青</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightPurple" xml:space="preserve">
+    <value>明るい紫</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightCyan" xml:space="preserve">
+    <value>明るいシアン</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightWhite" xml:space="preserve">
+    <value>明るい白</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
+    <value>単語に選択範囲を展開する</value>
+  </data>
+  <data name="ShowContextMenuCommandKey" xml:space="preserve">
+    <value>コンテキスト メニューの表示</value>
+  </data>
+  <data name="CloseOtherPanesCommandKey" xml:space="preserve">
+    <value>他のすべてのウィンドウを閉じる</value>
+  </data>
+  <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
+    <value>ブロードキャスト入力をすべてのウィンドウに切り替える</value>
+    <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
+  </data>
+  <data name="RestartConnectionKey" xml:space="preserve">
+    <value>接続の再起動</value>
+  </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>スクラッチパッドを開く</value>
+  </data>
+  <data name="SelectOutputNextCommandKey" xml:space="preserve">
+    <value>次のコマンド出力を選択</value>
+  </data>
+  <data name="SelectOutputPreviousCommandKey" xml:space="preserve">
+    <value>前のコマンド出力を選択</value>
+  </data>
+  <data name="SelectCommandNextCommandKey" xml:space="preserve">
+    <value>次のコマンド出力を選択</value>
+  </data>
+  <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
+    <value>前のコマンドを選択</value>
+  </data>
+  <data name="SearchForTextCommandKey" xml:space="preserve">
+    <value>{0} の検索</value>
+    <comment>{0} will be replaced with a user-specified URL to a web page</comment>
+  </data>
+  <data name="SearchWebCommandKey" xml:space="preserve">
+    <value>選択したテキストを Web で検索</value>
+    <comment>This will open a web browser to search for some user-selected text</comment>
+  </data>
+  <data name="OpenAboutCommandKey" xml:space="preserve">
+    <value>バージョン情報ダイアログを開く</value>
+    <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+</root>

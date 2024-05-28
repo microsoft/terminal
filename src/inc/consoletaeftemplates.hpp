@@ -61,7 +61,7 @@ namespace WEX::TestExecution
             return true;
         }
 
-        const auto nDiff = static_cast<std::make_signed_t<U>>(til::bit_cast<U>(a) - til::bit_cast<U>(b));
+        const auto nDiff = static_cast<std::make_signed_t<U>>(std::bit_cast<U>(a) - std::bit_cast<U>(b));
         const auto uDiff = static_cast<U>(nDiff < 0 ? -nDiff : nDiff);
         return uDiff <= 4;
     }

@@ -374,7 +374,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -467,7 +467,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-        _OpenJsonHandlers(nullptr, target);
+        OpenJson.raise(nullptr, target);
     }
 
     void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
@@ -475,7 +475,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
         {
             const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-            _OpenJsonHandlers(nullptr, target);
+            OpenJson.raise(nullptr, target);
         }
     }
 
@@ -602,7 +602,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
-        profileNavItem.Icon(IconPathConverter::IconWUX(profile.Icon()));
+        profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
 
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
@@ -612,7 +612,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
                 if (args.PropertyName() == L"Icon")
                 {
-                    menuItem.Icon(IconPathConverter::IconWUX(tag.Icon()));
+                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.Icon()));
                 }
                 else if (args.PropertyName() == L"Name")
                 {
@@ -622,7 +622,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
 
         // Add an event handler for when the user wants to delete a profile.
-        profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
+        profile.DeleteProfileRequested({ this, &MainPage::_DeleteProfile });
 
         return profileNavItem;
     }

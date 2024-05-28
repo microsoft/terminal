@@ -5,7 +5,39 @@
 
 #include <array>
 #include <cassert>
-#include <cstdio>
+#include <string_view>
+
+// The following list of colors is only used as a debug aid and not part of the final product.
+// They're licensed under:
+//
+//   Apache-Style Software License for ColorBrewer software and ColorBrewer Color Schemes
+//
+//   Copyright (c) 2002 Cynthia Brewer, Mark Harrower, and The Pennsylvania State University.
+//
+//   Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software distributed
+//   under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+//   CONDITIONS OF ANY KIND, either express or implied. See the License for the
+//   specific language governing permissions and limitations under the License.
+//
+namespace colorbrewer
+{
+    inline constexpr uint32_t pastel1[]{
+        0xfbb4ae,
+        0xb3cde3,
+        0xccebc5,
+        0xdecbe4,
+        0xfed9a6,
+        0xffffcc,
+        0xe5d8bd,
+        0xfddaec,
+        0xf2f2f2,
+    };
+}
 
 // Another variant of "defer" for C++.
 namespace
@@ -76,15 +108,15 @@ static void printfUTF16(_In_z_ _Printf_format_string_ wchar_t const* const forma
 
 static void wait()
 {
-    printUTF16(L"\x1B[9999;1HPress any key to continue...");
+    printUTF16(L"\x1b[9999;1HPress any key to continue...");
     _getch();
 }
 
 static void clear()
 {
     printUTF16(
-        L"\x1B[H" // move cursor to 0,0
-        L"\x1B[2J" // clear screen
+        L"\x1b[H" // move cursor to 0,0
+        L"\x1b[2J" // clear screen
     );
 }
 
@@ -110,64 +142,93 @@ int main()
     };
 
     {
-        struct ConsoleAttributeTest
+        struct AttributeTest
         {
             const wchar_t* text = nullptr;
             WORD attribute = 0;
         };
-        static constexpr ConsoleAttributeTest consoleAttributeTests[]{
-            { L"Console attributes:", 0 },
+
+        {
+            static constexpr AttributeTest consoleAttributeTests[]{
+                { L"Console attributes:", 0 },
 #define MAKE_TEST_FOR_ATTRIBUTE(attr) { L## #attr, attr }
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_HORIZONTAL),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_LVERTICAL),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_RVERTICAL),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_REVERSE_VIDEO),
-            MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_UNDERSCORE),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_HORIZONTAL),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_LVERTICAL),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_RVERTICAL),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_REVERSE_VIDEO),
+                MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_UNDERSCORE),
 #undef MAKE_TEST_FOR_ATTRIBUTE
-            { L"all gridlines", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE },
-            { L"all attributes", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE },
-        };
+                { L"all gridlines", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE },
+                { L"all attributes", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE },
+            };
 
-        SHORT row = 2;
-        for (const auto& t : consoleAttributeTests)
-        {
-            const auto length = static_cast<DWORD>(wcslen(t.text));
-            printfUTF16(L"\x1B[%d;5H%s", row + 1, t.text);
+            SHORT row = 2;
+            for (const auto& t : consoleAttributeTests)
+            {
+                const auto length = static_cast<DWORD>(wcslen(t.text));
+                printfUTF16(L"\x1b[%d;5H%s", row + 1, t.text);
 
-            WORD attributes[32];
-            std::fill_n(&attributes[0], length, static_cast<WORD>(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | t.attribute));
+                WORD attributes[32];
+                std::fill_n(&attributes[0], length, static_cast<WORD>(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | t.attribute));
 
-            DWORD numberOfAttrsWritten;
-            WriteConsoleOutputAttribute(outputHandle, attributes, length, { 4, row }, &numberOfAttrsWritten);
+                DWORD numberOfAttrsWritten;
+                WriteConsoleOutputAttribute(outputHandle, attributes, length, { 4, row }, &numberOfAttrsWritten);
 
-            row += 2;
+                row += 2;
+            }
         }
 
-        struct VTAttributeTest
         {
-            const wchar_t* text = nullptr;
-            int sgr = 0;
-        };
-        static constexpr VTAttributeTest vtAttributeTests[]{
-            { L"ANSI escape SGR:", 0 },
-            { L"bold", 1 },
-            { L"faint", 2 },
-            { L"italic", 3 },
-            { L"underline", 4 },
-            { L"reverse", 7 },
-            { L"strikethrough", 9 },
-            { L"double underline", 21 },
-            { L"overlined", 53 },
-        };
+            static constexpr AttributeTest basicSGR[]{
+                { L"bold", 1 },
+                { L"faint", 2 },
+                { L"italic", 3 },
+                { L"underline", 4 },
+                { L"reverse", 7 },
+                { L"strikethrough", 9 },
+                { L"double underline", 21 },
+                { L"overlined", 53 },
+            };
 
-        row = 3;
-        for (const auto& t : vtAttributeTests)
-        {
-            printfUTF16(L"\x1B[%d;45H\x1b[%dm%s\x1b[m", row, t.sgr, t.text);
-            row += 2;
+            printfUTF16(L"\x1b[3;39HANSI escape SGR:");
+
+            int row = 5;
+            for (const auto& t : basicSGR)
+            {
+                printfUTF16(L"\x1b[%d;39H\x1b[%dm%s\x1b[m", row, t.attribute, t.text);
+                row += 2;
+            }
+
+            printfUTF16(L"\x1b[%d;39H\x1b]8;;https://example.com\x1b\\hyperlink\x1b]8;;\x1b\\", row);
         }
 
-        printfUTF16(L"\x1B[%d;45H\x1b]8;;https://example.com\x1b\\hyperlink\x1b]8;;\x1b\\", row);
+        {
+            static constexpr AttributeTest styledUnderlines[]{
+                { L"straight", 1 },
+                { L"double", 2 },
+                { L"curly", 3 },
+                { L"dotted", 4 },
+                { L"dashed", 5 },
+            };
+
+            printfUTF16(L"\x1b[3;63HStyled Underlines:");
+
+            int row = 5;
+            for (const auto& t : styledUnderlines)
+            {
+                printfUTF16(L"\x1b[%d;63H\x1b[4:%dm", row, t.attribute);
+
+                const auto len = wcslen(t.text);
+                for (size_t i = 0; i < len; ++i)
+                {
+                    const auto color = colorbrewer::pastel1[i % std::size(colorbrewer::pastel1)];
+                    printfUTF16(L"\x1b[58:2::%d:%d:%dm%c", (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff, t.text[i]);
+                }
+
+                printfUTF16(L"\x1b[m");
+                row += 2;
+            }
+        }
 
         wait();
         clear();
@@ -175,19 +236,19 @@ int main()
 
     {
         printUTF16(
-            L"\x1B[3;5HDECDWL Double Width \U0001FAE0 \x1B[45;92mA\u0353\u0353\x1B[m B\u036F\u036F"
-            L"\x1B[4;3H\x1b#6DECDWL Double Width         \U0001FAE0 \x1B[45;92mA\u0353\u0353\x1B[m B\u036F\u036F"
-            L"\x1B[7;5HDECDHL Double Height \U0001F952\U0001F6C1 A\u0353\u0353 \x1B[45;92mB\u036F\u036F\x1B[m \x1B[45;92mX\u0353\u0353\x1B[m Y\u036F\u036F"
-            L"\x1B[8;3H\x1b#3DECDHL Double Height Top    \U0001F952 A\u0353\u0353 \x1B[45;92mB\u036F\u036F\x1B[m"
-            L"\x1B[9;3H\x1b#4DECDHL Double Height Bottom \U0001F6C1 \x1B[45;92mX\u0353\u0353\x1B[m Y\u036F\u036F"
-            L"\x1B[13;5H\x1b]8;;https://example.com\x1b\\DECDxL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
-            L"\x1B[15;5H\x1b]8;;https://example.com\x1b\\DECDxL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
-            L"\x1B[17;3H\x1b#6\x1b]8;;https://vt100.net/docs/vt510-rm/DECDWL.html\x1b\\DECDWL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
-            L"\x1B[19;3H\x1b#6\x1b]8;;https://vt100.net/docs/vt510-rm/DECDWL.html\x1b\\DECDWL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
-            L"\x1B[21;3H\x1b#3\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
-            L"\x1B[22;3H\x1b#4\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
-            L"\x1B[24;3H\x1b#3\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
-            L"\x1B[25;3H\x1b#4\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m");
+            L"\x1b[3;5HDECDWL Double Width \U0001FAE0 \x1b[45;92mA\u0353\u0353\x1b[m B\u036F\u036F"
+            L"\x1b[4;3H\x1b#6DECDWL Double Width         \U0001FAE0 \x1b[45;92mA\u0353\u0353\x1b[m B\u036F\u036F"
+            L"\x1b[7;5HDECDHL Double Height \U0001F952\U0001F6C1 A\u0353\u0353 \x1b[45;92mB\u036F\u036F\x1b[m \x1b[45;92mX\u0353\u0353\x1b[m Y\u036F\u036F"
+            L"\x1b[8;3H\x1b#3DECDHL Double Height Top    \U0001F952 A\u0353\u0353 \x1b[45;92mB\u036F\u036F\x1b[m"
+            L"\x1b[9;3H\x1b#4DECDHL Double Height Bottom \U0001F6C1 \x1b[45;92mX\u0353\u0353\x1b[m Y\u036F\u036F"
+            L"\x1b[12;5H\x1b]8;;https://example.com\x1b\\DECDxL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[3;4:3;58:2::255:0:0mita\x1b[58:2::0:255:0mlic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1b[14;5H\x1b]8;;https://example.com\x1b\\DECDxL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
+            L"\x1b[16;3H\x1b#6\x1b]8;;https://vt100.net/docs/vt510-rm/DECDWL.html\x1b\\DECDWL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[3;4:3;58:2::255:0:0mita\x1b[58:2::0:255:0mlic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1b[18;3H\x1b#6\x1b]8;;https://vt100.net/docs/vt510-rm/DECDWL.html\x1b\\DECDWL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
+            L"\x1b[20;3H\x1b#3\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[3;4:3;58:2::255:0:0mita\x1b[58:2::0:255:0mlic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1b[21;3H\x1b#4\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[3;4:3;58:2::255:0:0mita\x1b[58:2::0:255:0mlic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1b[23;3H\x1b#3\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
+            L"\x1b[24;3H\x1b#4\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1b[45;92m!\x1b[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m");
 
         static constexpr WORD attributes[]{
             FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_GRID_HORIZONTAL,
@@ -203,7 +264,7 @@ int main()
         DWORD numberOfAttrsWritten;
         DWORD offset = 0;
 
-        for (const auto r : { 12, 14, 16, 18, 20, 21, 23, 24 })
+        for (const auto r : { 11, 13, 15, 17, 19, 20, 22, 23 })
         {
             COORD coord;
             coord.X = r > 14 ? 2 : 4;
@@ -277,14 +338,14 @@ int main()
 
 #define DRCS_SEQUENCE L"\x1b( @#\x1b(A"
         printUTF16(
-            L"\x1B[3;5HDECDLD and DRCS test - it should show \"WT\" in a single cell"
-            L"\x1B[5;5HRegular: " DRCS_SEQUENCE L""
-            L"\x1B[7;3H\x1b#6DECDWL: " DRCS_SEQUENCE L""
-            L"\x1B[9;3H\x1b#3DECDHL: " DRCS_SEQUENCE L""
-            L"\x1B[10;3H\x1b#4DECDHL: " DRCS_SEQUENCE L""
+            L"\x1b[3;5HDECDLD and DRCS test - it should show \"WT\" in a single cell"
+            L"\x1b[5;5HRegular: " DRCS_SEQUENCE L""
+            L"\x1b[7;3H\x1b#6DECDWL: " DRCS_SEQUENCE L""
+            L"\x1b[9;3H\x1b#3DECDHL: " DRCS_SEQUENCE L""
+            L"\x1b[10;3H\x1b#4DECDHL: " DRCS_SEQUENCE L""
             // We map soft fonts into the private use area starting at U+EF20. This test ensures
             // that we correctly map actual fallback glyphs mixed into the DRCS glyphs.
-            L"\x1B[12;5HUnicode Fallback: \uE000\uE001" DRCS_SEQUENCE L"\uE003\uE004");
+            L"\x1b[12;5HUnicode Fallback: \uE000\uE001" DRCS_SEQUENCE L"\uE003\uE004");
 #undef DRCS_SEQUENCE
 
         wait();

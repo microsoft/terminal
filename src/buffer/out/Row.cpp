@@ -92,47 +92,35 @@ CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* cha
 
 // If given a position (`offset`) inside the ROW's text, this function will return the corresponding column.
 // This function in particular returns the glyph's first column.
-til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t offset) noexcept
+til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept
 {
-    offset = clamp(offset, 0, _lastCharOffset);
+    targetOffset = clamp(targetOffset, 0, _lastCharOffset);
+
+    // This code needs to fulfill two conditions on top of the obvious (a forward/backward search):
+    // A: We never want to stop on a column that is marked with CharOffsetsTrailer (= "GetLeadingColumn").
+    // B: With these parameters we always want to stop at currentOffset=4:
+    //      _charOffsets={4, 6}
+    //      currentOffset=4 *OR* 6
+    //      targetOffset=5
+    //    This is because we're being asked for a "LeadingColumn", while the caller gave us the offset of a
+    //    trailing surrogate pair or similar. Returning the column of the leading half is the correct choice.
 
     auto col = _currentColumn;
-    const auto currentOffset = _charOffsets[col];
+    auto currentOffset = _charOffsets[col];
 
-    // Goal: Move the _currentColumn cursor to a cell which contains the given target offset.
-    // Depending on where the target offset is we have to either search forward or backward.
-    if (offset < currentOffset)
+    // A plain forward-search until we find our targetOffset.
+    // This loop may iterate too far and thus violate our example in condition B, however...
+    while (targetOffset > (currentOffset & CharOffsetsMask))
     {
-        // Backward search.
-        // Goal: Find the first preceding column where the offset is <= the target offset. This results in the first
-        // cell that contains our target offset, even if that offset is in the middle of a long grapheme.
-        //
-        // We abuse the fact that the trailing half of wide glyphs is marked with CharOffsetsTrailer to our advantage.
-        // Since they're >0x8000, the `offset < _charOffsets[col]` check will always be true and ensure we iterate over them.
-        //
-        // Since _charOffsets cannot contain negative values and because offset has been
-        // clamped to be positive we naturally exit when reaching the first column.
-        for (; offset < _charOffsets[col - 1]; --col)
-        {
-        }
+        currentOffset = _charOffsets[++col];
     }
-    else if (offset > currentOffset)
+    // This backward-search is not just a counter-part to the above, but simultaneously also handles conditions A and B.
+    // It abuses the fact that columns marked with CharOffsetsTrailer are >0x8000 and targetOffset is always <0x8000.
+    // This means we skip all "trailer" columns when iterating backwards, and only stop on a non-trailer (= condition A).
+    // Condition B is fixed simply because we iterate backwards after the forward-search (in that exact order).
+    while (targetOffset < currentOffset)
     {
-        // Forward search.
-        // Goal: Find the first subsequent column where the offset is > the target offset.
-        // We stop 1 column before that however so that the next loop works correctly.
-        // It's the inverse of the loop above.
-        //
-        // Since offset has been clamped to be at most 1 less than the maximum
-        // _charOffsets value the loop naturally exits before hitting the end.
-        for (; offset >= (_charOffsets[col + 1] & CharOffsetsMask); ++col)
-        {
-        }
-        // Now that we found the cell that definitely includes this char offset,
-        // we have to iterate back to the cell's starting column.
-        for (; WI_IsFlagSet(_charOffsets[col], CharOffsetsTrailer); --col)
-        {
-        }
+        currentOffset = _charOffsets[--col];
     }
 
     _currentColumn = col;
@@ -242,6 +230,7 @@ void ROW::Reset(const TextAttribute& attr) noexcept
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
+    _promptData = std::nullopt;
     _init();
 }
 
@@ -360,12 +349,6 @@ void ROW::_init() noexcept
 #pragma warning(push)
 }
 
-void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)
-{
-    _attr = attr;
-    _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
-}
-
 void ROW::CopyFrom(const ROW& source)
 {
     _lineRendition = source._lineRendition;
@@ -377,7 +360,8 @@ void ROW::CopyFrom(const ROW& source)
     };
     CopyTextFrom(state);
 
-    TransferAttributes(source.Attributes(), _columnCount);
+    _attr = source.Attributes();
+    _attr.resize_trailing_extent(_columnCount);
 }
 
 // Returns the previous possible cursor position, preceding the given column.
@@ -402,6 +386,18 @@ til::CoordType ROW::NavigateToNext(til::CoordType column) const noexcept
 til::CoordType ROW::AdjustToGlyphStart(til::CoordType column) const noexcept
 {
     return _adjustBackward(_clampedColumn(column));
+}
+
+// Returns the (exclusive) ending column of the glyph at the given column.
+// In other words, if you have 3 wide glyphs
+//   AA BB CC
+//   01 23 45 <-- column
+// Examples:
+// - `AdjustToGlyphEnd(4)` returns 6.
+// - `AdjustToGlyphEnd(3)` returns 4.
+til::CoordType ROW::AdjustToGlyphEnd(til::CoordType column) const noexcept
+{
+    return _adjustForward(_clampedColumnInclusive(column));
 }
 
 // Routine Description:
@@ -918,7 +914,7 @@ const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexce
 
 TextAttribute ROW::GetAttrByColumn(const til::CoordType column) const
 {
-    return _attr.at(_clampedUint16(column));
+    return _attr.at(_clampedColumn(column));
 }
 
 std::vector<uint16_t> ROW::GetHyperlinks() const
@@ -939,36 +935,10 @@ uint16_t ROW::size() const noexcept
     return _columnCount;
 }
 
-til::CoordType ROW::MeasureLeft() const noexcept
+// Routine Description:
+// - Retrieves the column that is one after the last non-space character in the row.
+til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
 {
-    const auto text = GetText();
-    const auto beg = text.begin();
-    const auto end = text.end();
-    auto it = beg;
-
-    for (; it != end; ++it)
-    {
-        if (*it != L' ')
-        {
-            break;
-        }
-    }
-
-    return gsl::narrow_cast<til::CoordType>(it - beg);
-}
-
-til::CoordType ROW::MeasureRight() const noexcept
-{
-    if (_wrapForced)
-    {
-        auto width = _columnCount;
-        if (_doubleBytePadded)
-        {
-            width--;
-        }
-        return width;
-    }
-
     const auto text = GetText();
     const auto beg = text.begin();
     const auto end = text.end();
@@ -988,7 +958,42 @@ til::CoordType ROW::MeasureRight() const noexcept
     //
     // An example: The row is 10 cells wide and `it` points to the second character.
     // `it - beg` would return 1, but it's possible it's actually 1 wide glyph and 8 whitespace.
-    return gsl::narrow_cast<til::CoordType>(_columnCount - (end - it));
+    return gsl::narrow_cast<til::CoordType>(GetReadableColumnCount() - (end - it));
+}
+
+til::CoordType ROW::MeasureLeft() const noexcept
+{
+    const auto text = GetText();
+    const auto beg = text.begin();
+    const auto end = text.end();
+    auto it = beg;
+
+    for (; it != end; ++it)
+    {
+        if (*it != L' ')
+        {
+            break;
+        }
+    }
+
+    return gsl::narrow_cast<til::CoordType>(it - beg);
+}
+
+// Routine Description:
+// - Retrieves the column that is one after the last valid character in the row.
+til::CoordType ROW::MeasureRight() const noexcept
+{
+    if (_wrapForced)
+    {
+        auto width = _columnCount;
+        if (_doubleBytePadded)
+        {
+            width--;
+        }
+        return width;
+    }
+
+    return GetLastNonSpaceColumn();
 }
 
 bool ROW::ContainsText() const noexcept
@@ -1093,12 +1098,6 @@ DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_v
 }
 
 template<typename T>
-constexpr uint16_t ROW::_clampedUint16(T v) noexcept
-{
-    return static_cast<uint16_t>(clamp(v, 0, 65535));
-}
-
-template<typename T>
 constexpr uint16_t ROW::_clampedColumn(T v) const noexcept
 {
     return static_cast<uint16_t>(clamp(v, 0, _columnCount - 1));
@@ -1171,4 +1170,46 @@ CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexce
     // UTF-16 stores them in 1 char. In other words, usually a ROW will have N chars for N columns.
     const auto guessedColumn = gsl::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
     return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
+}
+
+const std::optional<ScrollbarData>& ROW::GetScrollbarData() const noexcept
+{
+    return _promptData;
+}
+void ROW::SetScrollbarData(std::optional<ScrollbarData> data) noexcept
+{
+    _promptData = data;
+}
+
+void ROW::StartPrompt() noexcept
+{
+    if (!_promptData.has_value())
+    {
+        // You'd be tempted to write:
+        //
+        // _promptData = ScrollbarData{
+        //     .category = MarkCategory::Prompt,
+        //     .color = std::nullopt,
+        //     .exitCode = std::nullopt,
+        // };
+        //
+        // But that's not very optimal! Read this thread for a breakdown of how
+        // weird std::optional can be some times:
+        //
+        // https://github.com/microsoft/terminal/pull/16937#discussion_r1553660833
+
+        _promptData.emplace(MarkCategory::Prompt);
+    }
+}
+
+void ROW::EndOutput(std::optional<unsigned int> error) noexcept
+{
+    if (_promptData.has_value())
+    {
+        _promptData->exitCode = error;
+        if (error.has_value())
+        {
+            _promptData->category = *error == 0 ? MarkCategory::Success : MarkCategory::Error;
+        }
+    }
 }

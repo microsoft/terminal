@@ -20,7 +20,7 @@ Author(s):
 #include "Command.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class KeyBindingsTests;
     class DeserializationTests;
@@ -66,11 +66,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddAction(const Model::Command& cmd);
 
         // JSON
-        static com_ptr<ActionMap> FromJson(const Json::Value& json);
-        std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json);
+        static com_ptr<ActionMap> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
+        std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings = true);
         Json::Value ToJson() const;
 
         // modification
+        bool GenerateIDsForActions();
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
         void DeleteKeyBinding(const Control::KeyChord& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
@@ -123,8 +124,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //   than is necessary to be serialized.
         std::unordered_map<InternalActionID, Model::Command> _MaskingActions;
 
-        friend class SettingsModelLocalTests::KeyBindingsTests;
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::TerminalSettingsTests;
+        friend class SettingsModelUnitTests::KeyBindingsTests;
+        friend class SettingsModelUnitTests::DeserializationTests;
+        friend class SettingsModelUnitTests::TerminalSettingsTests;
     };
 }

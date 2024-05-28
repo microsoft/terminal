@@ -78,10 +78,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT RequestCursor() noexcept;
         [[nodiscard]] HRESULT InheritCursor(const til::point coordCursor) noexcept;
         [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string_view str) noexcept;
-        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
+        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str, const bool flush = false) noexcept = 0;
         void SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const terminalOwner);
         void SetResizeQuirk(const bool resizeQuirk);
-        void SetPassthroughMode(const bool passthrough) noexcept;
         void SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept;
         void SetTerminalCursorTextPosition(const til::point coordCursor) noexcept;
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
@@ -94,6 +93,7 @@ namespace Microsoft::Console::Render
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
+        size_t _startOfFrameBufferIndex = 0;
 
         std::string _formatBuffer;
         std::string _conversionBuffer;
@@ -111,9 +111,9 @@ namespace Microsoft::Console::Render
         til::pmr::bitmap _invalidMap;
 
         til::point _lastText;
+        til::point _lastCursorOrigin;
         til::point _scrollDelta;
 
-        bool _quickReturn;
         bool _clearedAllThisFrame;
         bool _cursorMoved;
         bool _resized;
@@ -137,7 +137,9 @@ namespace Microsoft::Console::Render
 
         bool _resizeQuirk{ false };
         bool _passthrough{ false };
+        bool _noFlushOnEnd{ false };
         bool _corked{ false };
+        bool _flushRequested{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _WriteFill(const size_t n, const char c) noexcept;
@@ -211,8 +213,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT _MoveCursor(const til::point coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
         [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
-
-        bool _WillWriteSingleChar() const;
 
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop

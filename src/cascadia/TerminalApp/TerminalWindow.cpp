@@ -226,7 +226,7 @@ namespace winrt::TerminalApp::implementation
         auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"),
                                                            SystemMenuChangeAction::Add,
                                                            SystemMenuItemHandler(this, &TerminalWindow::_OpenSettingsUI));
-        _SystemMenuChangeRequestedHandlers(*this, *args);
+        SystemMenuChangeRequested.raise(*this, *args);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -263,11 +263,11 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::Quit()
+    void TerminalWindow::PersistState()
     {
         if (_root)
         {
-            _root->CloseWindow(true);
+            _root->PersistState();
         }
     }
 
@@ -562,9 +562,21 @@ namespace winrt::TerminalApp::implementation
     {
         winrt::Windows::Foundation::Size proposedSize{};
 
+        // In focus mode, we don't want to include our own tab row in the size
+        // of the window that we hand back. So we account for passing
+        // --focusMode on the commandline here, and the mode in the settings.
+        // Below, we'll also account for if focus mode was persisted into the
+        // session for restoration.
+        bool focusMode = _appArgs.GetLaunchMode().value_or(_settings.GlobalSettings().LaunchMode()) == LaunchMode::FocusMode;
+
         const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (const auto layout = LoadPersistedLayout())
         {
+            if (layout.LaunchMode())
+            {
+                focusMode = layout.LaunchMode().Value() == LaunchMode::FocusMode;
+            }
+
             if (layout.InitialSize())
             {
                 proposedSize = layout.InitialSize().Value();
@@ -602,7 +614,7 @@ namespace winrt::TerminalApp::implementation
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
-        if (_settings.GlobalSettings().ShowTabsInTitlebar())
+        if (_settings.GlobalSettings().ShowTabsInTitlebar() && !focusMode)
         {
             // In the past, we used to actually instantiate a TitlebarControl
             // and use Measure() to determine the DesiredSize of the control, to
@@ -620,7 +632,7 @@ namespace winrt::TerminalApp::implementation
             static constexpr auto titlebarHeight = 40;
             proposedSize.Height += (titlebarHeight)*scale;
         }
-        else if (_settings.GlobalSettings().AlwaysShowTabs())
+        else if (_settings.GlobalSettings().AlwaysShowTabs() && !focusMode)
         {
             // Same comment as above, but with a TabRowControl.
             //
@@ -748,7 +760,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::_RefreshThemeRoutine()
     {
         // Propagate the event to the host layer, so it can update its own UI
-        _RequestedThemeChangedHandlers(*this, Theme());
+        RequestedThemeChanged.raise(*this, Theme());
     }
 
     // This may be called on a background thread, or the main thread, but almost
@@ -767,7 +779,7 @@ namespace winrt::TerminalApp::implementation
             _root->SetSettings(_settings, true);
 
             // Bubble the notification up to the AppHost, now that we've updated our _settings.
-            _SettingsChangedHandlers(*this, args);
+            SettingsChanged.raise(*this, args);
 
             if (FAILED(args.Result()))
             {
@@ -863,7 +875,7 @@ namespace winrt::TerminalApp::implementation
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
+                if (auto keyListener{ focusedObject.try_as<UI::IDirectKeyListener>() })
                 {
                     if (keyListener.OnDirectKeyEvent(vkey, scanCode, down))
                     {
@@ -891,7 +903,7 @@ namespace winrt::TerminalApp::implementation
                         // don't want to go around the loop again.
                         if (!focusedObject)
                         {
-                            if (auto keyListener{ _root.try_as<IDirectKeyListener>() })
+                            if (auto keyListener{ _root.try_as<UI::IDirectKeyListener>() })
                             {
                                 return keyListener.OnDirectKeyEvent(vkey, scanCode, down);
                             }
@@ -916,32 +928,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalWindow::CloseWindow(LaunchPosition pos, const bool isLastWindow)
+    void TerminalWindow::CloseWindow()
     {
         if (_root)
         {
-            // If persisted layout is enabled and we are the last window closing
-            // we should save our state.
-            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && isLastWindow)
-            {
-                if (const auto layout = _root->GetWindowLayout())
-                {
-                    layout.InitialPosition(pos);
-                    const auto state = ApplicationState::SharedInstance();
-                    state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
-                }
-            }
-
-            _root->CloseWindow(false);
-        }
-    }
-
-    void TerminalWindow::ClearPersistedWindowState()
-    {
-        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
-        {
-            auto state = ApplicationState::SharedInstance();
-            state.PersistedWindowLayouts(nullptr);
+            _root->CloseWindow();
         }
     }
 
@@ -1134,19 +1125,6 @@ namespace winrt::TerminalApp::implementation
         return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
-    hstring TerminalWindow::GetWindowLayoutJson(LaunchPosition position)
-    {
-        if (_root != nullptr)
-        {
-            if (const auto layout = _root->GetWindowLayout())
-            {
-                layout.InitialPosition(position);
-                return WindowLayout::ToJson(layout);
-            }
-        }
-        return L"";
-    }
-
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)
     {
         _loadFromPersistedLayoutIdx = idx;
@@ -1239,7 +1217,7 @@ namespace winrt::TerminalApp::implementation
             // If we're entering Quake Mode from Focus Mode, then this will do nothing
             // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
             _root->SetFocusMode(true);
-            _IsQuakeWindowChangedHandlers(*this, nullptr);
+            IsQuakeWindowChanged.raise(*this, nullptr);
         }
     }
     void TerminalWindow::WindowId(const uint64_t& id)
@@ -1272,7 +1250,7 @@ namespace winrt::TerminalApp::implementation
                 // Create the equivalent NewTab action.
                 const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
                                                                        Settings::Model::NewTabArgs(firstAction.Args() ?
-                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().ContentArgs() :
                                                                                                        nullptr) };
                 args.SetAt(0, newAction);
             }
@@ -1359,8 +1337,8 @@ namespace winrt::TerminalApp::implementation
             // PropertyChangedEventArgs will throw.
             try
             {
-                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
-                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
+                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
             }
             CATCH_LOG();
         }

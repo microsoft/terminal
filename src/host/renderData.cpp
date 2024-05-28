@@ -42,9 +42,9 @@ til::point RenderData::GetTextBufferEndPosition() const noexcept
 //   the appropriate windowing.
 // Return Value:
 // - Text buffer with cell information for display
-const TextBuffer& RenderData::GetTextBuffer() const noexcept
+TextBuffer& RenderData::GetTextBuffer() const noexcept
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
@@ -77,6 +77,16 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
     CATCH_LOG();
 
     return result;
+}
+
+// Method Description:
+// - Retrieves one rectangle per line describing the area of the viewport
+//   that should be highlighted
+// Return Value:
+// - Vector of rects describing the highlighted area
+std::span<const til::point_span> RenderData::GetSearchHighlights() const noexcept
+{
+    return {};
 }
 
 // Method Description:
@@ -198,47 +208,6 @@ CursorType RenderData::GetCursorStyle() const noexcept
 ULONG RenderData::GetCursorPixelWidth() const noexcept
 {
     return ServiceLocator::LocateGlobals().cursorPixelWidth;
-}
-
-// Routine Description:
-// - Retrieves overlays to be drawn on top of the main screen buffer area.
-// - Overlays are drawn from first to last
-//  (the highest overlay should be given last)
-// Return Value:
-// - Iterable set of overlays
-const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOverlays() const noexcept
-{
-    std::vector<Microsoft::Console::Render::RenderOverlay> overlays;
-
-    try
-    {
-        // First retrieve the IME information and build overlays.
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto& ime = gci.ConsoleIme;
-
-        for (const auto& composition : ime.ConvAreaCompStr)
-        {
-            // Only send the overlay to the renderer on request if it's not supposed to be hidden at this moment.
-            if (!composition.IsHidden())
-            {
-                // This is holding the data.
-                const auto& textBuffer = composition.GetTextBuffer();
-
-                // The origin of the text buffer above (top left corner) is supposed to sit at this
-                // point within the visible viewport of the current window.
-                const auto origin = composition.GetAreaBufferInfo().coordConView;
-
-                // This is the area of the viewport that is actually in use relative to the text buffer itself.
-                // (e.g. 0,0 is the origin of the text buffer above, not the placement within the visible viewport)
-                const auto used = Viewport::FromInclusive(composition.GetAreaBufferInfo().rcViewCaWindow);
-
-                overlays.emplace_back(Microsoft::Console::Render::RenderOverlay{ textBuffer, origin, used });
-            }
-        }
-    }
-    CATCH_LOG();
-
-    return overlays;
 }
 
 // Method Description:
@@ -369,6 +338,11 @@ void RenderData::ClearSelection()
 void RenderData::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+}
+
+const til::point_span* RenderData::GetSearchHighlightFocused() const noexcept
+{
+    return nullptr;
 }
 
 // Routine Description:

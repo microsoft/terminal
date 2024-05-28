@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "TaskbarState.idl";
-import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
@@ -14,11 +13,6 @@ namespace TerminalApp
         Microsoft.Terminal.Control.ControlInteractivity TryLookupCore(UInt64 id);
         void Detach(Microsoft.Terminal.Control.TermControl control);
     }
-
-    [default_interface] runtimeclass LastTabClosedEventArgs
-    {
-        Boolean ClearPersistedState { get; };
-    };
 
     [default_interface] runtimeclass RenameWindowRequestedArgs
     {
@@ -57,7 +51,12 @@ namespace TerminalApp
         Boolean IsQuakeWindow();
     };
 
-    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
+    runtimeclass LaunchPositionRequest
+    {
+        Microsoft.Terminal.Settings.Model.LaunchPosition Position;
+    }
+
+    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
     {
         TerminalPage(WindowProperties properties, ContentManager manager);
 
@@ -87,7 +86,7 @@ namespace TerminalApp
         void SendContentToOther(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
@@ -104,5 +103,7 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
+
+        event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
     }
 }

@@ -52,25 +52,16 @@ StateMachine& ConhostInternalGetSet::GetStateMachine()
 }
 
 // Routine Description:
-// - Retrieves the text buffer for the active output buffer.
+// - Retrieves the text buffer and virtual viewport for the active output
+//   buffer. Also returns a flag indicating whether it's the main buffer.
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the TextBuffer instance.
-TextBuffer& ConhostInternalGetSet::GetTextBuffer()
+// - a tuple with the buffer reference, viewport, and main buffer flag.
+ITerminalApi::BufferState ConhostInternalGetSet::GetBufferAndViewport()
 {
-    return _io.GetActiveOutputBuffer().GetTextBuffer();
-}
-
-// Routine Description:
-// - Retrieves the virtual viewport of the active output buffer.
-// Arguments:
-// - <none>
-// Return Value:
-// - the exclusive coordinates of the viewport.
-til::rect ConhostInternalGetSet::GetViewport() const
-{
-    return _io.GetActiveOutputBuffer().GetVirtualViewport().ToExclusive();
+    auto& info = _io.GetActiveOutputBuffer();
+    return { info.GetTextBuffer(), info.GetVirtualViewport().ToExclusive(), info.Next == nullptr };
 }
 
 // Routine Description:
@@ -159,12 +150,13 @@ void ConhostInternalGetSet::WarningBell()
 // Routine Description:
 // - Sets the title of the console window.
 // Arguments:
-// - title - The null-terminated string to set as the window title
+// - title - The string to set as the window title
 // Return Value:
 // - <none>
 void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 {
-    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTitle(title.empty() ? gci.GetOriginalTitle() : title);
 }
 
 // Routine Description:
@@ -250,7 +242,7 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 // - content - the text to be copied.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::CopyToClipboard(const std::wstring_view /*content*/)
+void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view /*content*/)
 {
     // TODO
 }
@@ -423,25 +415,6 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
-void ConhostInternalGetSet::MarkPrompt(const ::ScrollMark& /*mark*/)
-{
-    // Not implemented for conhost.
-}
-
-void ConhostInternalGetSet::MarkCommandStart()
-{
-    // Not implemented for conhost.
-}
-
-void ConhostInternalGetSet::MarkOutputStart()
-{
-    // Not implemented for conhost.
-}
-
-void ConhostInternalGetSet::MarkCommandFinish(std::optional<unsigned int> /*error*/)
-{
-    // Not implemented for conhost.
-}
 void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
 {
     // Not implemented for conhost.

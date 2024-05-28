@@ -442,10 +442,17 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
         // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
         // I went with insert mode.
         //
+        // The old implementation also failed to clear the end of the prompt if you pressed tab in the middle of it.
+        // You can reproduce this issue by launching cmd in an old conhost build and writing "<command that doesn't exist> foo",
+        // moving your cursor to the space past the <command> and pressing tab. Nothing will happen but the "foo" will be inaccessible.
+        // I've now fixed this behavior by adding an additional Replace() before the _flushBuffer() call that removes the tail end.
+        //
         // It is important that we don't actually print that character out though, as it's only for the calling application to see.
         // That's why we flush the contents before the insertion and then ensure that the _flushBuffer() call in Read() exits early.
+        const auto cursor = _buffer.GetCursorPosition();
+        _buffer.Replace(cursor, npos, nullptr, 0);
         _flushBuffer();
-        _buffer.Replace(_buffer.GetCursorPosition(), 0, &wch, 1);
+        _buffer.Replace(cursor, 0, &wch, 1);
         _buffer.MarkAsClean();
 
         _controlKeyState = modifiers;
@@ -845,15 +852,12 @@ void COOKED_READ_DATA::_flushBuffer()
 
     // If the contents of _buffer became shorter we'll have to erase the previously printed contents.
     _erase(eraseDistance);
-    _offsetCursorPosition(-eraseDistance - distanceAfterCursor);
+    // Using the *Always() variant ensures that we reset the blinking timer, etc., even if the cursor didn't move.
+    _offsetCursorPositionAlways(-eraseDistance - distanceAfterCursor);
 
     _buffer.MarkAsClean();
     _distanceCursor = distanceBeforeCursor;
     _distanceEnd = distanceEnd;
-
-    const auto pos = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    _screenInfo.MakeCursorVisible(pos);
-    std::ignore = _screenInfo.SetCursorPosition(pos, true);
 }
 
 // This is just a small helper to fill the next N cells starting at the current cursor position with whitespace.
@@ -1045,15 +1049,21 @@ til::point COOKED_READ_DATA::_offsetPosition(til::point pos, ptrdiff_t distance)
     };
 }
 
-// This moves the cursor `distance`-many cells back up in the buffer.
-// It's intended to be used in combination with _writeChars.
+// See _offsetCursorPositionAlways(). This wrapper is just here to avoid doing
+// expensive cursor movements when there's nothing to move. A no-op wrapper.
 void COOKED_READ_DATA::_offsetCursorPosition(ptrdiff_t distance) const
 {
-    if (distance == 0)
+    if (distance != 0)
     {
-        return;
+        _offsetCursorPositionAlways(distance);
     }
+}
 
+// This moves the cursor `distance`-many cells around in the buffer.
+// It's intended to be used in combination with _writeChars.
+// Usually you should use _offsetCursorPosition() to no-op distance==0.
+void COOKED_READ_DATA::_offsetCursorPositionAlways(ptrdiff_t distance) const
+{
     const auto& textBuffer = _screenInfo.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
     const auto pos = _offsetPosition(cursor.GetPosition(), distance);
@@ -1182,13 +1192,13 @@ try
         buffer.front() = L'┌';
         buffer.back() = L'┐';
         state.text = buffer;
-        textBuffer.Write(contentRect.top - 1, attributes, state);
+        textBuffer.Replace(contentRect.top - 1, attributes, state);
 
         // bottom line └───┘
         buffer.front() = L'└';
         buffer.back() = L'┘';
         state.text = buffer;
-        textBuffer.Write(contentRect.bottom, attributes, state);
+        textBuffer.Replace(contentRect.bottom, attributes, state);
 
         // middle lines │   │
         buffer.assign(widthSizeT, L' ');
@@ -1197,7 +1207,7 @@ try
         for (til::CoordType y = contentRect.top; y < contentRect.bottom; ++y)
         {
             state.text = buffer;
-            textBuffer.Write(y, attributes, state);
+            textBuffer.Replace(y, attributes, state);
         }
     }
 
@@ -1381,7 +1391,7 @@ void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_
             .columnBegin = popup.contentRect.right - CommandNumberMaxInputLength,
             .columnLimit = popup.contentRect.right,
         };
-        _screenInfo.GetTextBuffer().Write(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
+        _screenInfo.GetTextBuffer().Replace(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
     }
 }
 
@@ -1464,7 +1474,7 @@ void COOKED_READ_DATA::_popupDrawPrompt(const Popup& popup, const UINT id) const
         .columnBegin = popup.contentRect.left,
         .columnLimit = popup.contentRect.right,
     };
-    _screenInfo.GetTextBuffer().Write(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
+    _screenInfo.GetTextBuffer().Replace(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
 }
 
 void COOKED_READ_DATA::_popupDrawCommandList(Popup& popup) const
@@ -1523,7 +1533,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(Popup& popup) const
         buffer.append(width, L' ');
 
         state.text = buffer;
-        _screenInfo.GetTextBuffer().Write(y, attr, state);
+        _screenInfo.GetTextBuffer().Replace(y, attr, state);
     }
 
     cl.dirtyHeight = height;

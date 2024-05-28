@@ -25,17 +25,19 @@ class Search final
 public:
     Search() = default;
 
-    bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
+    bool IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept;
+    bool Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive, bool reverse);
 
     void MoveToCurrentSelection();
     void MoveToPoint(til::point anchor) noexcept;
     void MovePastPoint(til::point anchor) noexcept;
-    void FindNext() noexcept;
+    void FindNext(bool reverse) noexcept;
 
     const til::point_span* GetCurrent() const noexcept;
     bool SelectCurrent() const;
 
     const std::vector<til::point_span>& Results() const noexcept;
+    std::vector<til::point_span>&& ExtractResults() noexcept;
     ptrdiff_t CurrentMatch() const noexcept;
 
 private:

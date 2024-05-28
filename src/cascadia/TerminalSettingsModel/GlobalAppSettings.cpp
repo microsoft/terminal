@@ -9,6 +9,8 @@
 
 #include "GlobalAppSettings.g.cpp"
 
+#include <LibraryResources.h>
+
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI::Xaml;
@@ -34,13 +36,6 @@ void GlobalAppSettings::_FinalizeInheritance()
     {
         _actionMap->AddLeastImportantParent(parent->_actionMap);
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
-        for (const auto& [k, v] : parent->_colorSchemes)
-        {
-            if (!_colorSchemes.HasKey(k))
-            {
-                _colorSchemes.Insert(k, v);
-            }
-        }
 
         for (const auto& [k, v] : parent->_themes)
         {
@@ -122,14 +117,14 @@ winrt::Microsoft::Terminal::Settings::Model::ActionMap GlobalAppSettings::Action
 // - json: an object which should be a serialization of a GlobalAppSettings object.
 // Return Value:
 // - a new GlobalAppSettings instance created from the values in `json`
-winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value& json)
+winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value& json, const OriginTag origin)
 {
     auto result = winrt::make_self<GlobalAppSettings>();
-    result->LayerJson(json);
+    result->LayerJson(json, origin);
     return result;
 }
 
-void GlobalAppSettings::LayerJson(const Json::Value& json)
+void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origin)
 {
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
     // GH#8076 - when adding enum values to this key, we also changed it from
@@ -142,12 +137,30 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
+    // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values
+    // We only want to assign if the value did change through clamping,
+    // otherwise we could end up setting defaults that get persisted
+    if (this->HasInitialCols())
+    {
+        this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
+    }
+    if (this->HasInitialRows())
+    {
+        this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
+    }
+    LayerActionsFrom(json, origin, true);
+
+    JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
+}
+
+void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
+{
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
     for (const auto& jsonKey : bindingsKeys)
     {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            auto warnings = _actionMap->LayerJson(bindings);
+            auto warnings = _actionMap->LayerJson(bindings, origin, withKeybindings);
 
             // It's possible that the user provided keybindings have some warnings
             // in them - problems that we should alert the user to, but we can
@@ -158,8 +171,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     }
-
-    JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
 }
 
 // Method Description:
@@ -176,6 +187,28 @@ void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
 void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
 {
     _colorSchemes.TryRemove(schemeName);
+}
+
+winrt::Microsoft::Terminal::Settings::Model::ColorScheme GlobalAppSettings::DuplicateColorScheme(const Model::ColorScheme& source)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, source);
+
+    auto newName = fmt::format(FMT_COMPILE(L"{} ({})"), source.Name(), RS_(L"CopySuffix"));
+    auto nextCandidateIndex = 2;
+
+    // Check if this name already exists and if so, append a number
+    while (_colorSchemes.HasKey(newName))
+    {
+        // There is a theoretical unsigned integer wraparound, which is OK
+        newName = fmt::format(FMT_COMPILE(L"{} ({} {})"), source.Name(), RS_(L"CopySuffix"), nextCandidateIndex++);
+    }
+
+    auto duplicated{ winrt::get_self<ColorScheme>(source)->Copy() };
+    duplicated->Name(hstring{ newName });
+    duplicated->Origin(OriginTag::User);
+
+    AddColorScheme(*duplicated);
+    return *duplicated;
 }
 
 // Method Description:
@@ -198,8 +231,24 @@ const std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarni
 // - <none>
 // Return Value:
 // - the JsonObject representing this instance
-Json::Value GlobalAppSettings::ToJson() const
+Json::Value GlobalAppSettings::ToJson()
 {
+    // These experimental options should be removed from the settings file if they're at their default value.
+    // This prevents them from sticking around forever, even if the user was just experimenting with them.
+    // One could consider this a workaround for the settings UI right now not having a "reset to default" button for these.
+    if (_GraphicsAPI == Control::GraphicsAPI::Automatic)
+    {
+        _GraphicsAPI.reset();
+    }
+    if (_DisablePartialInvalidation == false)
+    {
+        _DisablePartialInvalidation.reset();
+    }
+    if (_SoftwareRendering == false)
+    {
+        _SoftwareRendering.reset();
+    }
+
     Json::Value json{ Json::ValueType::objectValue };
 
     JsonUtils::SetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);

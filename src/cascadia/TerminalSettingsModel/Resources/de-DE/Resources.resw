@@ -1,0 +1,730 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SetColorSchemeParentCommandName" xml:space="preserve">
+    <value>Farbschema auswählen</value>
+  </data>
+  <data name="NewTabParentCommandName" xml:space="preserve">
+    <value>Neue Registerkarte</value>
+  </data>
+  <data name="SplitPaneParentCommandName" xml:space="preserve">
+    <value>Bereich teilen</value>
+  </data>
+  <data name="ApplicationDisplayNamePortable" xml:space="preserve">
+    <value>Terminal (portierbar)</value>
+    <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
+  </data>
+  <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
+    <value>Terminal (nicht paketiert)</value>
+    <comment>This display name is used when the application's name cannot be determined</comment>
+  </data>
+  <data name="ApplicationVersionUnknown" xml:space="preserve">
+    <value>Unbekannt</value>
+    <comment>This is displayed when the version of the application cannot be determined</comment>
+  </data>
+  <data name="AdjustFontSizeCommandKey" xml:space="preserve">
+    <value>Schriftgrad anpassen</value>
+  </data>
+  <data name="CloseOtherTabsCommandKey" xml:space="preserve">
+    <value>Registerkarten außer Index {0} schließen</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseOtherTabsDefaultCommandKey" xml:space="preserve">
+    <value>Aller anderen Registerkarten schließen</value>
+  </data>
+  <data name="ClosePaneCommandKey" xml:space="preserve">
+    <value>Bereich schließen</value>
+  </data>
+  <data name="CloseTabAtIndexCommandKey" xml:space="preserve">
+    <value>Registerkarte bei Index {0} schließen</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseTabCommandKey" xml:space="preserve">
+    <value>Registerkarte schließen</value>
+  </data>
+  <data name="CloseTabsAfterCommandKey" xml:space="preserve">
+    <value>Registerkarten nach Index {0} schließen</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CopySuffix" xml:space="preserve">
+    <value>Kopieren</value>
+    <comment>The suffix we add to the name of a duplicated profile.</comment>
+  </data>
+  <data name="MoveTabCommandKey" xml:space="preserve">
+    <value>Registerkarte {0} verschieben</value>
+    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+  </data>
+  <data name="MoveTabToWindowCommandKey" xml:space="preserve">
+    <value>Registerkarte in Fenster "{0}" verschieben</value>
+    <comment>{0} will be replaced with a user-specified name of a window</comment>
+  </data>
+  <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
+    <value>Registerkarte in ein neues Fenster verschieben</value>
+  </data>
+  <data name="MoveTabDirectionForward" xml:space="preserve">
+    <value>vorwärts</value>
+  </data>
+  <data name="MoveTabDirectionBackward" xml:space="preserve">
+    <value>rückwärts</value>
+  </data>
+  <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
+    <value>Alle Registerkarten nach der aktuellen Registerkarte schließen</value>
+  </data>
+  <data name="CloseWindowCommandKey" xml:space="preserve">
+    <value>Fenster schließen</value>
+  </data>
+  <data name="OpenSystemMenuCommandKey" xml:space="preserve">
+    <value>Systemmenü öffnen</value>
+  </data>
+  <data name="CommandPromptDisplayName" xml:space="preserve">
+    <value>Eingabeaufforderung</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
+  </data>
+  <data name="CopyTextAsSingleLineCommandKey" xml:space="preserve">
+    <value>Text als Einzelzeile kopieren</value>
+  </data>
+  <data name="CopyTextCommandKey" xml:space="preserve">
+    <value>Text kopieren</value>
+  </data>
+  <data name="DecreaseFontSizeCommandKey" xml:space="preserve">
+    <value>Schriftgrad verkleinern</value>
+  </data>
+  <data name="DecreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>Schriftgrad verkleinern, Größe: {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
+  </data>
+  <data name="DirectionDown" xml:space="preserve">
+    <value>unten</value>
+  </data>
+  <data name="DirectionLeft" xml:space="preserve">
+    <value>links</value>
+  </data>
+  <data name="DirectionRight" xml:space="preserve">
+    <value>rechts</value>
+  </data>
+  <data name="DirectionUp" xml:space="preserve">
+    <value>oben</value>
+  </data>
+  <data name="DirectionPrevious" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="DuplicatePaneCommandKey" xml:space="preserve">
+    <value>Bereich duplizieren</value>
+  </data>
+  <data name="DuplicateTabCommandKey" xml:space="preserve">
+    <value>Duplikat</value>
+  </data>
+  <data name="ExecuteCommandlineCommandKey" xml:space="preserve">
+    <value>Befehlszeile "{0}" in diesem Fenster ausführen</value>
+    <comment>{0} will be replaced with a user-defined commandline</comment>
+  </data>
+  <data name="FindCommandKey" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="FindNextCommandKey" xml:space="preserve">
+    <value>Nächste Suchübereinstimmung finden</value>
+  </data>
+  <data name="FindPrevCommandKey" xml:space="preserve">
+    <value>Vorherige Suchübereinstimmung finden</value>
+  </data>
+  <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
+    <value>Schriftgrad vergrößern</value>
+  </data>
+  <data name="IncreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>Schriftgrad vergrößern, Größe: {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
+  </data>
+  <data name="MoveFocusCommandKey" xml:space="preserve">
+    <value>Fokus verschieben</value>
+  </data>
+  <data name="MoveFocusWithArgCommandKey" xml:space="preserve">
+    <value>Fokus verschieben {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="MoveFocusToLastUsedPane" xml:space="preserve">
+    <value>Fokus in den zuletzt verwendeten Bereich verschieben</value>
+  </data>
+  <data name="MoveFocusNextInOrder" xml:space="preserve">
+    <value>Fokus der Reihe nach auf den nächsten Bereich verschieben</value>
+  </data>
+  <data name="MoveFocusPreviousInOrder" xml:space="preserve">
+    <value>Fokus der Reihe nach auf den vorherigen Bereich verschieben</value>
+  </data>
+  <data name="MoveFocusFirstPane" xml:space="preserve">
+    <value>Fokus auf den nächsten Bereich setzen</value>
+  </data>
+  <data name="MoveFocusParentPane" xml:space="preserve">
+    <value>Fokus auf den übergeordneten Bereich verschieben</value>
+  </data>
+  <data name="MoveFocusChildPane" xml:space="preserve">
+    <value>Fokus auf den untergeordneten Bereich verschieben</value>
+  </data>
+  <data name="SwapPaneCommandKey" xml:space="preserve">
+    <value>Bereich austauschen</value>
+  </data>
+  <data name="SwapPaneWithArgCommandKey" xml:space="preserve">
+    <value>Bereich {0} austauschen</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="SwapPaneToLastUsedPane" xml:space="preserve">
+    <value>Bereiche mit dem zuletzt verwendeten Bereich austauschen</value>
+  </data>
+  <data name="SwapPaneNextInOrder" xml:space="preserve">
+    <value>Bereiche mit dem nächsten Bereich in der angegebenen Reihenfolge austauschen</value>
+  </data>
+  <data name="SwapPanePreviousInOrder" xml:space="preserve">
+    <value>Bereiche mit dem vorherigen Bereich in der angegebenen Reihenfolge austauschen</value>
+  </data>
+  <data name="SwapPaneFirstPane" xml:space="preserve">
+    <value>Bereiche mit dem ersten Bereich austauschen</value>
+  </data>
+  <data name="NewTabCommandKey" xml:space="preserve">
+    <value>Neue Registerkarte</value>
+  </data>
+  <data name="NewWindowCommandKey" xml:space="preserve">
+    <value>Neues Fenster</value>
+  </data>
+  <data name="IdentifyWindowCommandKey" xml:space="preserve">
+    <value>Fenster identifizieren</value>
+  </data>
+  <data name="IdentifyWindowsCommandKey" xml:space="preserve">
+    <value>Fenster identifizieren</value>
+  </data>
+  <data name="NextTabCommandKey" xml:space="preserve">
+    <value>Nächste Registerkarte</value>
+  </data>
+  <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
+    <value>Öffnen von Einstellungen und Standardeinstellungsdateien (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenDefaultSettingsCommandKey" xml:space="preserve">
+    <value>Standardeinstellungsdatei öffnen (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
+    <value>Dropdownliste der neuen Registerkarte öffnen</value>
+  </data>
+  <data name="OpenSettingsCommandKey" xml:space="preserve">
+    <value>Einstellungsdatei öffnen (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
+    <value>Registerkartenfarbe festlegen</value>
+  </data>
+  <data name="PasteTextCommandKey" xml:space="preserve">
+    <value>Einfügen</value>
+  </data>
+  <data name="PrevTabCommandKey" xml:space="preserve">
+    <value>Vorherige Registerkarte</value>
+  </data>
+  <data name="RenameTabCommandKey" xml:space="preserve">
+    <value>Registerkarte auf „{0}“ umbenennen</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetFontSizeCommandKey" xml:space="preserve">
+    <value>Schriftgrad zurücksetzen</value>
+  </data>
+  <data name="ResetTabColorCommandKey" xml:space="preserve">
+    <value>Registerkartenfarbe zurücksetzen</value>
+  </data>
+  <data name="ResetTabNameCommandKey" xml:space="preserve">
+    <value>Den Titel der Registerkarte zurücksetzen</value>
+  </data>
+  <data name="OpenTabRenamerCommandKey" xml:space="preserve">
+    <value>Registerkartentitel umbenennen</value>
+  </data>
+  <data name="ResizePaneCommandKey" xml:space="preserve">
+    <value>Bereich skalieren</value>
+  </data>
+  <data name="ResizePaneWithArgCommandKey" xml:space="preserve">
+    <value>Bereich {0} skalieren</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
+  </data>
+  <data name="ScrollDownCommandKey" xml:space="preserve">
+    <value>Nach unten scrollen</value>
+  </data>
+  <data name="ScrollDownSeveralRowsCommandKey" xml:space="preserve">
+    <value>{0} Zeile(n) nach unten scrollen</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
+  </data>
+  <data name="ScrollDownPageCommandKey" xml:space="preserve">
+    <value>Um eine Seite nach unten scrollen</value>
+  </data>
+  <data name="ScrollUpCommandKey" xml:space="preserve">
+    <value>Nach oben scrollen</value>
+  </data>
+  <data name="ScrollUpSeveralRowsCommandKey" xml:space="preserve">
+    <value>{0} Zeile(n) nach oben scrollen</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
+  </data>
+  <data name="ScrollUpPageCommandKey" xml:space="preserve">
+    <value>Eine Seite nach oben scrollen</value>
+  </data>
+  <data name="ScrollToTopCommandKey" xml:space="preserve">
+    <value>Zum Anfang des Verlaufs scrollen</value>
+  </data>
+  <data name="ScrollToBottomCommandKey" xml:space="preserve">
+    <value>Zum Ende des Verlaufs scrollen</value>
+  </data>
+  <data name="ScrollToPreviousMarkCommandKey" xml:space="preserve">
+    <value>Blättern Sie zur vorherigen Markierung</value>
+  </data>
+  <data name="ScrollToNextMarkCommandKey" xml:space="preserve">
+    <value>Zur nächsten Markierung scrollen</value>
+  </data>
+  <data name="ScrollToFirstMarkCommandKey" xml:space="preserve">
+    <value>Zur ersten Markierung scrollen</value>
+  </data>
+  <data name="ScrollToLastMarkCommandKey" xml:space="preserve">
+    <value>Zur letzten Markierung scrollen</value>
+  </data>
+  <data name="AddMarkCommandKey" xml:space="preserve">
+    <value>Hinzufügen einer Bildlaufmarke</value>
+  </data>
+  <data name="AddMarkWithColorCommandKey" xml:space="preserve">
+    <value>Hinzufügen einer Bildlaufmarke, color:{0}</value>
+    <comment>{Locked="color"}. "color" is a literal parameter name that shouldn't be translated. {0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
+  </data>
+  <data name="ClearMarkCommandKey" xml:space="preserve">
+    <value>Markierung löschen</value>
+  </data>
+  <data name="ClearAllMarksCommandKey" xml:space="preserve">
+    <value>Alle Markierungen löschen</value>
+  </data>
+  <data name="SendInputCommandKey" xml:space="preserve">
+    <value>Eingabe senden: "{0}"</value>
+    <comment>{0} will be replaced with a string of input as defined by the user</comment>
+  </data>
+  <data name="SetColorSchemeCommandKey" xml:space="preserve">
+    <value>Farbschema auf {0} festlegen</value>
+    <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
+  </data>
+  <data name="SetTabColorCommandKey" xml:space="preserve">
+    <value>Registerkartenfarbe auf {0} festlegen</value>
+    <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>
+  </data>
+  <data name="SplitHorizontalCommandKey" xml:space="preserve">
+    <value>Bereich horizontal teilen</value>
+  </data>
+  <data name="MovePaneCommandKey" xml:space="preserve">
+    <value>Bereich verschieben</value>
+  </data>
+  <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
+    <value>Bereich in neues Fenster verschieben</value>
+  </data>
+  <data name="SplitPaneCommandKey" xml:space="preserve">
+    <value>Bereich teilen</value>
+  </data>
+  <data name="SplitVerticalCommandKey" xml:space="preserve">
+    <value>Bereich vertikal teilen</value>
+  </data>
+  <data name="SwitchToTabCommandKey" xml:space="preserve">
+    <value>Zu Registerkarte wechseln</value>
+  </data>
+  <data name="SwitchToLastTabCommandKey" xml:space="preserve">
+    <value>Zur letzten Registerkarte wechseln</value>
+  </data>
+  <data name="TabSearchCommandKey" xml:space="preserve">
+    <value>Registerkarte suchen</value>
+  </data>
+  <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
+    <value>Modus "Immer im Vordergrund" umschalten</value>
+  </data>
+  <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
+    <value>Befehlspalette ein/aus</value>
+  </data>
+  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
+    <value>Zuletzt verwendete Befehle</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>Vorschläge öffnen</value>
+  </data>
+  <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
+    <value>Befehlspalette im Befehlszeilenmodus ein/aus</value>
+  </data>
+  <data name="ToggleFocusModeCommandKey" xml:space="preserve">
+    <value>Fokusmodus umschalten</value>
+    <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
+  </data>
+  <data name="EnableFocusModeCommandKey" xml:space="preserve">
+    <value>Fokusmodus aktivieren</value>
+  </data>
+  <data name="DisableFocusModeCommandKey" xml:space="preserve">
+    <value>Fokusmodus deaktivieren</value>
+  </data>
+  <data name="ToggleFullscreenCommandKey" xml:space="preserve">
+    <value>Vollbild ein/aus</value>
+  </data>
+  <data name="EnableFullScreenCommandKey" xml:space="preserve">
+    <value>Vollbild aktivieren</value>
+  </data>
+  <data name="DisableFullScreenCommandKey" xml:space="preserve">
+    <value>Vollbild deaktivieren</value>
+  </data>
+  <data name="EnableMaximizedCommandKey" xml:space="preserve">
+    <value>Fenster maximieren</value>
+  </data>
+  <data name="DisableMaximizedCommandKey" xml:space="preserve">
+    <value>Maximiertes Fenster wiederherstellen</value>
+  </data>
+  <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
+    <value>Geteilte Ausrichtung des Bereichs umschalten</value>
+  </data>
+  <data name="TogglePaneZoomCommandKey" xml:space="preserve">
+    <value>Zoomfenster umschalten</value>
+  </data>
+  <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Schreibschutz des Bereichs umschalten</value>
+  </data>
+  <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Schreibgeschützten Modus des Bereichs aktivieren</value>
+  </data>
+  <data name="DisablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Schreibgeschützten Modus des Bereichs deaktivieren</value>
+  </data>
+  <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
+    <value>Visuelle Effekte des Terminals umschalten</value>
+  </data>
+  <data name="BreakIntoDebuggerCommandKey" xml:space="preserve">
+    <value>Debugger unterbrechen</value>
+  </data>
+  <data name="OpenSettingsUICommandKey" xml:space="preserve">
+    <value>Einstellungen öffnen</value>
+  </data>
+  <data name="RenameWindowCommandKey" xml:space="preserve">
+    <value>Fenster in „{0}“ umbenennen</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetWindowNameCommandKey" xml:space="preserve">
+    <value>Fensternamen zurücksetzen</value>
+  </data>
+  <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
+    <value>Fenster umbenennen</value>
+  </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>Aktuelles Arbeitsverzeichnis des Terminals anzeigen</value>
+  </data>
+  <data name="GlobalSummonCommandKey" xml:space="preserve">
+    <value>Terminalfenster ein-/ausblenden</value>
+  </data>
+  <data name="QuakeModeCommandKey" xml:space="preserve">
+    <value>Quake-Fenster ein-/ausblenden</value>
+    <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
+  </data>
+  <data name="FocusPaneCommandKey" xml:space="preserve">
+    <value>Bereich {0} fokussieren</value>
+    <comment>{0} will be replaced with a user-specified number</comment>
+  </data>
+  <data name="ExportBufferToPathCommandKey" xml:space="preserve">
+    <value>Text nach {0} exportieren</value>
+    <comment>{0} will be replaced with a user-specified file path</comment>
+  </data>
+  <data name="ExportBufferCommandKey" xml:space="preserve">
+    <value>Text exportieren</value>
+  </data>
+  <data name="ClearAllCommandKey" xml:space="preserve">
+    <value>Puffer löschen</value>
+    <comment>A command to clear the entirety of the Terminal output buffer</comment>
+  </data>
+  <data name="ClearViewportCommandKey" xml:space="preserve">
+    <value>Viewport löschen</value>
+    <comment>A command to clear the active viewport of the Terminal</comment>
+  </data>
+  <data name="ClearScrollbackCommandKey" xml:space="preserve">
+    <value>Bildlauf löschen</value>
+    <comment>A command to clear the part of the buffer above the viewport</comment>
+  </data>
+  <data name="DefaultWindowsConsoleName" xml:space="preserve">
+    <value>Windows entscheiden lassen</value>
+    <comment>This is the default option if a user doesn't choose to override Microsoft's choice of a Terminal.</comment>
+  </data>
+  <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
+    <value>Microsoft Corporation</value>
+    <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
+  </data>
+  <data name="InboxWindowsConsoleName" xml:space="preserve">
+    <value>Windows-Konsolenhost</value>
+    <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
+  </data>
+  <data name="QuitCommandKey" xml:space="preserve">
+    <value>Terminal beenden</value>
+  </data>
+  <data name="SetOpacityParentCommandName" xml:space="preserve">
+    <value>Hintergrunddeckkraft festlegen</value>
+  </data>
+  <data name="IncreaseOpacityCommandKey" xml:space="preserve">
+    <value>Hintergrunddeckkraft um {0} % erhöhen</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="DecreaseOpacityCommandKey" xml:space="preserve">
+    <value>Hintergrunddeckkraft um {0} % verringern</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="AdjustOpacityCommandKey" xml:space="preserve">
+    <value>Hintergrunddeckkraft auf {0} % festlegen</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="RestoreLastClosedCommandKey" xml:space="preserve">
+    <value>Wiederherstellen des letzten geschlossenen Fensters oder der letzten geschlossenen Registerkarte</value>
+  </data>
+  <data name="SelectAllCommandKey" xml:space="preserve">
+    <value>Gesamten Text auswählen</value>
+  </data>
+  <data name="MarkModeCommandKey" xml:space="preserve">
+    <value>Markierungsmodus umschalten</value>
+    <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
+  </data>
+  <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
+    <value>Blockauswahl umschalten</value>
+  </data>
+  <data name="SwitchSelectionEndpointCommandKey" xml:space="preserve">
+    <value>Auswahlendpunkt wechseln</value>
+  </data>
+  <data name="ColorSelection_allMatches" xml:space="preserve">
+    <value>Alle Übereinstimmungen</value>
+    <comment>This is used in the description of an action which changes the color of selected text, to indicate that not only the selected text will be colored, but also all matching text.</comment>
+  </data>
+  <data name="ColorSelection_fg_action" xml:space="preserve">
+    <value>Farbauswahl, Vordergrund: {0}{1}</value>
+    <comment>This is the description of an action which changes the color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_bg_action" xml:space="preserve">
+    <value>Farbauswahl, Hintergrund: {0}{1}</value>
+    <comment>This is the description of an action which changes the background color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_fg_bg_action" xml:space="preserve">
+    <value>Farbauswahl, Vordergrund: {0}, Hintergrund: {1}{2}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background. {0}: the foreground color. {1}: the background color. {2}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_default_action" xml:space="preserve">
+    <value>Farbauswahl, (Standardvordergrund/-hintergrund){0}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background to the default colors. {0}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_defaultColor" xml:space="preserve">
+    <value>[Standard]</value>
+    <comment>This is used in the description of an action which changes the color of selected text, as a placeholder for a color, to indicate that the default (foreground or background) color will be used.</comment>
+  </data>
+  <data name="ColorSelection_Black" xml:space="preserve">
+    <value>schwarz</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Red" xml:space="preserve">
+    <value>rot</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Green" xml:space="preserve">
+    <value>grün</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Yellow" xml:space="preserve">
+    <value>gelb</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Blue" xml:space="preserve">
+    <value>blau</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Purple" xml:space="preserve">
+    <value>lila</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Cyan" xml:space="preserve">
+    <value>zyan</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_White" xml:space="preserve">
+    <value>weiß</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlack" xml:space="preserve">
+    <value>leuchtend schwarz</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightRed" xml:space="preserve">
+    <value>hellrot</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightGreen" xml:space="preserve">
+    <value>hellgrün</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightYellow" xml:space="preserve">
+    <value>hellgelb</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlue" xml:space="preserve">
+    <value>hellblau</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightPurple" xml:space="preserve">
+    <value>helllila</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightCyan" xml:space="preserve">
+    <value>helles Zyan</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightWhite" xml:space="preserve">
+    <value>leuchtend weiß</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
+    <value>Auswahl auf Wort erweitern</value>
+  </data>
+  <data name="ShowContextMenuCommandKey" xml:space="preserve">
+    <value>Kontextmenü anzeigen</value>
+  </data>
+  <data name="CloseOtherPanesCommandKey" xml:space="preserve">
+    <value>Alle anderen Bereiche schließen</value>
+  </data>
+  <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
+    <value>Übertragungseingabe in alle Bereiche umschalten</value>
+    <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
+  </data>
+  <data name="RestartConnectionKey" xml:space="preserve">
+    <value>Verbindung neu starten</value>
+  </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>Notizblock öffnen</value>
+  </data>
+  <data name="SelectOutputNextCommandKey" xml:space="preserve">
+    <value>Nächste Befehlsausgabe auswählen</value>
+  </data>
+  <data name="SelectOutputPreviousCommandKey" xml:space="preserve">
+    <value>Vorherige Befehlsausgabe auswählen</value>
+  </data>
+  <data name="SelectCommandNextCommandKey" xml:space="preserve">
+    <value>Nächsten Befehl auswählen</value>
+  </data>
+  <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
+    <value>Vorherigen Befehl auswählen</value>
+  </data>
+  <data name="SearchForTextCommandKey" xml:space="preserve">
+    <value>"{0}" suchen</value>
+    <comment>{0} will be replaced with a user-specified URL to a web page</comment>
+  </data>
+  <data name="SearchWebCommandKey" xml:space="preserve">
+    <value>Im Web nach ausgewähltem Text suchen</value>
+    <comment>This will open a web browser to search for some user-selected text</comment>
+  </data>
+  <data name="OpenAboutCommandKey" xml:space="preserve">
+    <value>Dialogfeld „Info“ öffnen</value>
+    <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+</root>

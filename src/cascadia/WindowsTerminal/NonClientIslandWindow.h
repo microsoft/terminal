@@ -30,6 +30,7 @@ public:
     static constexpr const int topBorderVisibleHeight = 1;
 
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
+    ~NonClientIslandWindow() override;
 
     void Refrigerate() noexcept override;
 
@@ -57,7 +58,6 @@ private:
     std::optional<til::point> _oldIslandPos;
 
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
-    winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
     til::color _backgroundBrushColor;

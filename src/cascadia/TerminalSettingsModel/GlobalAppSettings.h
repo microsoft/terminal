@@ -27,7 +27,7 @@ Author(s):
 #include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class ColorSchemeTests;
@@ -44,13 +44,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
+        Model::ColorScheme DuplicateColorScheme(const Model::ColorScheme& scheme);
 
         Model::ActionMap ActionMap() const noexcept;
 
-        static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
-        void LayerJson(const Json::Value& json);
+        static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
+        void LayerJson(const Json::Value& json, const OriginTag origin);
+        void LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings = true);
 
-        Json::Value ToJson() const;
+        Json::Value ToJson();
 
         const std::vector<SettingsLoadWarnings>& KeybindingsWarnings() const;
 
@@ -83,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr bool debugFeaturesDefault{ true };
 #endif
 
-        winrt::guid _defaultProfile;
+        winrt::guid _defaultProfile{};
         bool _legacyReloadEnvironmentVariables{ true };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
 

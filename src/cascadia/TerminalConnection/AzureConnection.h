@@ -8,12 +8,12 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "ConnectionStateHolder.h"
+#include "BaseTerminalConnection.h"
 #include "AzureClient.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
+    struct AzureConnection : AzureConnectionT<AzureConnection>, BaseTerminalConnection<AzureConnection>
     {
         static winrt::guid ConnectionType() noexcept;
         static bool IsAzureConnectionAvailable() noexcept;
@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+        til::event<TerminalOutputHandler> TerminalOutput;
 
     private:
         til::CoordType _initialRows{};

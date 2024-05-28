@@ -33,7 +33,7 @@ parameters:
       - arm64
   - name: codeSign
     type: boolean
-    default: true
+    default: false
   - name: generateSbom
     type: boolean
     default: true
@@ -103,10 +103,6 @@ stages:
                 feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
                 packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
                 versionListDownload: ${{ parameters.terminalInternalPackageVersion }}
-
-            - template: ./steps-fetch-and-prepare-localizations.yml
-              parameters:
-                includePseudoLoc: true
 
       - ${{ if eq(parameters.buildWPF, true) }}:
         # Add an Any CPU build flavor for the WPF control bits

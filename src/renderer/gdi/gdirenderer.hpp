@@ -116,12 +116,16 @@ namespace Microsoft::Console::Render
         struct LineMetrics
         {
             int gridlineWidth;
-            int underlineOffset;
-            int underlineOffset2;
+            int underlineCenter;
             int underlineWidth;
+            int doubleUnderlinePosTop;
+            int doubleUnderlinePosBottom;
+            int doubleUnderlineWidth;
             int strikethroughOffset;
             int strikethroughWidth;
-            int curlylinePeakHeight;
+            int curlyLineCenter;
+            int curlyLinePeriod;
+            int curlyLineControlPointOffset;
         };
 
         LineMetrics _lineMetrics;

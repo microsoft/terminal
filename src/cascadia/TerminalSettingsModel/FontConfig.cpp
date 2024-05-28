@@ -30,6 +30,25 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
     MTSM_FONT_SETTINGS(FONT_SETTINGS_COPY)
 #undef FONT_SETTINGS_COPY
 
+    // We cannot simply copy the font axes and features with `fontInfo->_FontAxes = source->_FontAxes;`
+    // since that'll just create a reference; we have to manually copy the values.
+    static constexpr auto cloneFontMap = [](const IFontFeatureMap& map) {
+        std::map<winrt::hstring, float> fontAxes;
+        for (const auto& [k, v] : map)
+        {
+            fontAxes.emplace(k, v);
+        }
+        return winrt::single_threaded_map(std::move(fontAxes));
+    };
+    if (source->_FontAxes)
+    {
+        fontInfo->_FontAxes = cloneFontMap(*source->_FontAxes);
+    }
+    if (source->_FontFeatures)
+    {
+        fontInfo->_FontFeatures = cloneFontMap(*source->_FontFeatures);
+    }
+
     return fontInfo;
 }
 

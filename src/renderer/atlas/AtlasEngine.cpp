@@ -4,7 +4,10 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <til/unicode.h>
+
 #include "Backend.h"
+#include "BuiltinGlyphs.h"
 #include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
@@ -15,11 +18,13 @@
 // and thus may access both _r and _api.
 
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
+#pragma warning(disable : 4127) // conditional expression is constant
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
 using namespace Microsoft::Console::Render::Atlas;
@@ -37,8 +42,7 @@ AtlasEngine::AtlasEngine()
     THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_p.dwriteFactory), reinterpret_cast<::IUnknown**>(_p.dwriteFactory.addressof())));
     _p.dwriteFactory4 = _p.dwriteFactory.try_query<IDWriteFactory4>();
 
-    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_p.systemFontFallback.addressof()));
-    _p.systemFontFallback1 = _p.systemFontFallback.try_query<IDWriteFontFallback1>();
+    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_api.systemFontFallback.addressof()));
 
     wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
     THROW_IF_FAILED(_p.dwriteFactory->CreateTextAnalyzer(textAnalyzer.addressof()));
@@ -281,8 +285,36 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PrepareRenderInfo(RenderFrameInfo info) noexcept
 {
+    // remove the highlighted regions that falls outside of the dirty region
+    {
+        const auto& highlights = info.searchHighlights;
+
+        // get the buffer origin relative to the viewport, and use it to calculate
+        // the dirty region to be relative to the buffer origin
+        const til::CoordType offsetX = _p.s->viewportOffset.x;
+        const til::CoordType offsetY = _p.s->viewportOffset.y;
+        const til::point bufferOrigin{ -offsetX, -offsetY };
+        const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
+
+        const auto hiBeg = std::lower_bound(highlights.begin(), highlights.end(), dr.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
+        const auto hiEnd = std::upper_bound(hiBeg, highlights.end(), dr.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
+        _api.searchHighlights = { hiBeg, hiEnd };
+
+        // do the same for the focused search highlight
+        if (info.searchHighlightFocused)
+        {
+            const auto focusedStartY = info.searchHighlightFocused->start.y;
+            const auto focusedEndY = info.searchHighlightFocused->end.y;
+            const auto isFocusedInside = (focusedStartY >= dr.top && focusedStartY < dr.bottom) || (focusedEndY >= dr.top && focusedEndY < dr.bottom) || (focusedStartY < dr.top && focusedEndY >= dr.bottom);
+            if (isFocusedInside)
+            {
+                _api.searchHighlightFocused = { info.searchHighlightFocused, 1 };
+            }
+        }
+    }
+
     return S_OK;
 }
 
@@ -303,6 +335,126 @@ CATCH_RETURN()
 {
     return S_OK;
 }
+
+void AtlasEngine::_fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept
+{
+    const auto bitmap = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
+    const auto shift = gsl::narrow_cast<u8>(_p.rows[y]->lineRendition != LineRendition::SingleWidth);
+    auto beg = bitmap + (x1 << shift);
+    auto end = bitmap + (x2 << shift);
+
+    const u32 colors[] = {
+        u32ColorPremultiply(bgColor),
+        fgColor,
+    };
+
+    // This fills the color in the background bitmap, and then in the foreground bitmap.
+    for (size_t i = 0; i < 2; ++i)
+    {
+        const auto color = colors[i];
+
+        for (auto it = beg; it != end; ++it)
+        {
+            if (*it != color)
+            {
+                _p.colorBitmapGenerations[i].bump();
+                std::fill(it, end, color);
+                break;
+            }
+        }
+
+        // go to the same range in the same row, but in the foreground bitmap
+        beg += _p.colorBitmapDepthStride;
+        end += _p.colorBitmapDepthStride;
+    }
+}
+
+// Method Description:
+// - Applies the given highlighting colors to the columns in the highlighted regions within a given range.
+// - Resumes from the last partially painted region if any.
+// Arguments:
+// - highlights: the list of highlighted regions (yet to be painted)
+// - row: the row for which highlighted regions are to be painted
+// - begX: the starting (inclusive) column to paint from (in Buffer coord)
+// - endX: the ending (exclusive) column to paint up to (in Buffer coord)
+// - fgColor: the foreground highlight color
+// - bgColor: the background highlight color
+// Returns:
+// - S_OK if we painted successfully, else an appropriate HRESULT error code
+[[nodiscard]] HRESULT AtlasEngine::_drawHighlighted(std::span<const til::point_span>& highlights, const u16 row, const u16 begX, const u16 endX, const u32 fgColor, const u32 bgColor) noexcept
+try
+{
+    if (highlights.empty())
+    {
+        return S_OK;
+    }
+
+    const til::CoordType y = row;
+    const til::CoordType x1 = begX;
+    const til::CoordType x2 = endX;
+    const auto offset = til::point{ _p.s->viewportOffset.x, _p.s->viewportOffset.y };
+    auto it = highlights.begin();
+    const auto itEnd = highlights.end();
+    auto hiStart = it->start - offset;
+    auto hiEnd = it->end - offset;
+
+    // Nothing to paint if we haven't reached the row where the highlight region begins
+    if (y < hiStart.y)
+    {
+        return S_OK;
+    }
+
+    // We might have painted a multi-line highlight region in the last call,
+    // so we need to make sure we paint the whole region before moving on to
+    // the next region.
+    if (y > hiStart.y)
+    {
+        const auto isFinalRow = y == hiEnd.y;
+        const auto end = isFinalRow ? std::min(hiEnd.x + 1, x2) : x2;
+        _fillColorBitmap(row, x1, end, fgColor, bgColor);
+
+        // Return early if we couldn't paint the whole region. We will resume
+        // from here in the next call.
+        if (!isFinalRow || end == x2)
+        {
+            return S_OK;
+        }
+
+        ++it;
+    }
+
+    // Pick a highlighted region and (try) to paint it
+    while (it != itEnd)
+    {
+        hiStart = it->start - offset;
+        hiEnd = it->end - offset;
+
+        const auto isStartInside = y == hiStart.y && hiStart.x < x2;
+        const auto isEndInside = y == hiEnd.y && hiEnd.x < x2;
+        if (isStartInside && isEndInside)
+        {
+            _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x) + 1, fgColor, bgColor);
+            ++it;
+        }
+        else
+        {
+            // Paint the region partially if start is within the range.
+            if (isStartInside)
+            {
+                const auto start = std::max(x1, hiStart.x);
+                _fillColorBitmap(y, start, x2, fgColor, bgColor);
+            }
+
+            break;
+        }
+    }
+
+    // Shorten the list by removing processed regions
+    highlights = { it, itEnd };
+
+    return S_OK;
+}
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
@@ -341,34 +493,12 @@ try
         _api.bufferLineColumn.emplace_back(columnEnd);
     }
 
-    {
-        const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
-        auto beg = row + (static_cast<size_t>(x) << shift);
-        auto end = row + (static_cast<size_t>(columnEnd) << shift);
+    // Apply the current foreground and background colors to the cells
+    _fillColorBitmap(y, x, columnEnd, _api.currentForeground, _api.currentBackground);
 
-        const u32 colors[] = {
-            u32ColorPremultiply(_api.currentBackground),
-            _api.currentForeground,
-        };
-
-        for (size_t i = 0; i < 2; ++i)
-        {
-            const auto color = colors[i];
-
-            for (auto it = beg; it != end; ++it)
-            {
-                if (*it != color)
-                {
-                    _p.colorBitmapGenerations[i].bump();
-                    std::fill(it, end, color);
-                    break;
-                }
-            }
-
-            beg += _p.colorBitmapDepthStride;
-            end += _p.colorBitmapDepthStride;
-        }
-    }
+    // Apply the highlighting colors to the highlighted cells
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
+    RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlightFocused, y, x, columnEnd, highlightFocusFg, highlightFocusBg));
 
     _api.lastPaintBufferLineCoord = { x, y };
     return S_OK;
@@ -511,7 +641,7 @@ void AtlasEngine::_handleSettingsUpdate()
 
     if (targetChanged)
     {
-        // target->useSoftwareRendering affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
+        // target->useWARP affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
         // This will indirectly also recreate the backend, when AtlasEngine::_recreateAdapter() detects this change.
         _p.dxgi = {};
     }
@@ -536,12 +666,12 @@ void AtlasEngine::_recreateFontDependentResources()
     {
         wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
 
-        if (FAILED(GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH)))
+        if (!GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH))
         {
             memcpy(&localeName[0], L"en-US", 12);
         }
 
-        _api.userLocaleName = std::wstring{ &localeName[0] };
+        _p.userLocaleName = std::wstring{ &localeName[0] };
     }
 
     if (_p.s->font->fontAxisValues.empty())
@@ -602,7 +732,7 @@ void AtlasEngine::_recreateCellCountDependentResources()
     // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
     // backgroundBitmapStride is a "count" of u32 and not in bytes,
     // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
-    _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->viewportCellCount.x) + 7) & ~7;
+    _p.colorBitmapRowStride = alignForward<size_t>(_p.s->viewportCellCount.x, 8);
     _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->viewportCellCount.y;
     _p.colorBitmap = Buffer<u32, 32>(_p.colorBitmapDepthStride * 2);
     _p.backgroundBitmap = { _p.colorBitmap.data(), _p.colorBitmapDepthStride };
@@ -632,14 +762,60 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    const auto builtinGlyphs = _p.s->font->builtinGlyphs;
+    const auto beg = _api.bufferLine.data();
+    const auto len = _api.bufferLine.size();
+    size_t segmentBeg = 0;
+    size_t segmentEnd = 0;
+    bool custom = false;
+
+    while (segmentBeg < len)
+    {
+        segmentEnd = segmentBeg;
+        do
+        {
+            auto i = segmentEnd;
+            char32_t codepoint = beg[i++];
+            if (til::is_leading_surrogate(codepoint) && i < len)
+            {
+                codepoint = til::combine_surrogates(codepoint, beg[i++]);
+            }
+
+            const auto c = (builtinGlyphs && BuiltinGlyphs::IsBuiltinGlyph(codepoint)) || BuiltinGlyphs::IsSoftFontChar(codepoint);
+            if (custom != c)
+            {
+                break;
+            }
+
+            segmentEnd = i;
+        } while (segmentEnd < len);
+
+        if (segmentBeg != segmentEnd)
+        {
+            if (custom)
+            {
+                _mapBuiltinGlyphs(segmentBeg, segmentEnd);
+            }
+            else
+            {
+                _mapRegularText(segmentBeg, segmentEnd);
+            }
+        }
+
+        segmentBeg = segmentEnd;
+        custom = !custom;
+    }
+}
+
+void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
+{
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
-#pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
-    for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
+    for (u32 idx = gsl::narrow_cast<u32>(offBeg), mappedEnd = 0; idx < offEnd; idx = mappedEnd)
     {
         u32 mappedLength = 0;
         wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.addressof());
+        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -663,7 +839,7 @@ void AtlasEngine::_flushBufferLine()
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
 
-        if (_api.s->font->fontFeatures.empty())
+        if (_p.s->font->fontFeatures.empty())
         {
             // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
             for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
@@ -678,10 +854,10 @@ void AtlasEngine::_flushBufferLine()
 
                     for (size_t i = 0; i < complexityLength; ++i)
                     {
-                        const size_t col1 = _api.bufferLineColumn[idx + i + 0];
-                        const size_t col2 = _api.bufferLineColumn[idx + i + 1];
+                        const auto col1 = _api.bufferLineColumn[idx + i + 0];
+                        const auto col2 = _api.bufferLineColumn[idx + i + 1];
                         const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-                        const auto fg = colors[col1 << shift];
+                        const auto fg = colors[static_cast<size_t>(col1) << shift];
                         row.glyphIndices.emplace_back(_api.glyphIndices[i]);
                         row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
                         row.glyphOffsets.emplace_back();
@@ -716,9 +892,31 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
+void AtlasEngine::_mapBuiltinGlyphs(size_t offBeg, size_t offEnd)
+{
+    auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
+    auto initialIndicesCount = row.glyphIndices.size();
+    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+    const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+    const auto base = reinterpret_cast<const u16*>(_api.bufferLine.data());
+    const auto len = offEnd - offBeg;
+
+    row.glyphIndices.insert(row.glyphIndices.end(), base + offBeg, base + offEnd);
+    row.glyphAdvances.insert(row.glyphAdvances.end(), len, static_cast<f32>(_p.s->font->cellSize.x));
+    row.glyphOffsets.insert(row.glyphOffsets.end(), len, {});
+
+    for (size_t i = offBeg; i < offEnd; ++i)
+    {
+        const auto col = _api.bufferLineColumn[i];
+        row.colors.emplace_back(colors[static_cast<size_t>(col) << shift]);
+    }
+
+    row.mappings.emplace_back(nullptr, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()));
+}
+
 void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const
 {
-    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), text, textLength };
+    TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), text, textLength };
     const auto& textFormatAxis = _api.textFormatAxes[static_cast<size_t>(_api.attributes)];
 
     // We don't read from scale anyways.
@@ -727,7 +925,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
 
     if (textFormatAxis)
     {
-        THROW_IF_FAILED(_p.systemFontFallback1->MapCharacters(
+        THROW_IF_FAILED(_p.s->font->fontFallback1->MapCharacters(
             /* analysisSource     */ &analysisSource,
             /* textPosition       */ 0,
             /* textLength         */ textLength,
@@ -745,7 +943,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
         const auto baseStyle = WI_IsFlagSet(_api.attributes, FontRelevantAttributes::Italic) ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
         wil::com_ptr<IDWriteFont> font;
 
-        THROW_IF_FAILED(_p.systemFontFallback->MapCharacters(
+        THROW_IF_FAILED(_p.s->font->fontFallback->MapCharacters(
             /* analysisSource     */ &analysisSource,
             /* textPosition       */ 0,
             /* textLength         */ textLength,
@@ -773,7 +971,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 {
     _api.analysisResults.clear();
 
-    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
     TextAnalysisSink analysisSink{ _api.analysisResults };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
 
@@ -818,7 +1016,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* isSideways          */ false,
                 /* isRightToLeft       */ 0,
                 /* scriptAnalysis      */ &a.analysis,
-                /* localeName          */ _api.userLocaleName.c_str(),
+                /* localeName          */ _p.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
                 /* features            */ &features,
                 /* featureRangeLengths */ &featureRangeLengths,
@@ -870,7 +1068,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* isSideways          */ false,
             /* isRightToLeft       */ 0,
             /* scriptAnalysis      */ &a.analysis,
-            /* localeName          */ _api.userLocaleName.c_str(),
+            /* localeName          */ _p.userLocaleName.c_str(),
             /* features            */ &features,
             /* featureRangeLengths */ &featureRangeLengths,
             /* featureRanges       */ featureRanges,
@@ -945,53 +1143,31 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         return;
     }
 
-    auto pos1 = from;
-    auto pos2 = pos1;
-    size_t col1 = _api.bufferLineColumn[from];
-    size_t col2 = col1;
+    auto pos = from;
+    auto col1 = _api.bufferLineColumn[from];
     auto initialIndicesCount = row.glyphIndices.size();
-    const auto softFontAvailable = !_p.s->font->softFontPattern.empty();
-    auto currentlyMappingSoftFont = isSoftFontChar(_api.bufferLine[pos1]);
     const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
     const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
 
-    while (pos2 < to)
+    while (pos < to)
     {
-        col2 = _api.bufferLineColumn[++pos2];
+        const auto col2 = _api.bufferLineColumn[++pos];
         if (col1 == col2)
         {
             continue;
         }
 
-        const auto cols = col2 - col1;
-        const auto ch = static_cast<u16>(_api.bufferLine[pos1]);
-        const auto nowMappingSoftFont = isSoftFontChar(ch);
-
-        row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
-        row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
+        row.glyphIndices.emplace_back(_api.replacementCharacterGlyphIndex);
+        row.glyphAdvances.emplace_back(static_cast<f32>((col2 - col1) * _p.s->font->cellSize.x));
         row.glyphOffsets.emplace_back();
-        row.colors.emplace_back(colors[col1 << shift]);
+        row.colors.emplace_back(colors[static_cast<size_t>(col1) << shift]);
 
-        if (currentlyMappingSoftFont != nowMappingSoftFont)
-        {
-            const auto indicesCount = row.glyphIndices.size();
-            const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? nullptr : _api.replacementCharacterFontFace.get();
-
-            if (indicesCount > initialIndicesCount)
-            {
-                row.mappings.emplace_back(fontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
-                initialIndicesCount = indicesCount;
-            }
-        }
-
-        pos1 = pos2;
         col1 = col2;
-        currentlyMappingSoftFont = nowMappingSoftFont;
     }
 
     {
         const auto indicesCount = row.glyphIndices.size();
-        const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? nullptr : _api.replacementCharacterFontFace.get();
+        const auto fontFace = _api.replacementCharacterFontFace.get();
 
         if (indicesCount > initialIndicesCount)
         {

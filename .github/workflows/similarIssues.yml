@@ -13,7 +13,8 @@ jobs:
       - id: getBody
         uses: craigloewen-msft/GitGudSimilarIssues@main
         with:
-          issuetitle: ${{ github.event.issue.title }}
+          issueTitle: ${{ github.event.issue.title }}
+          issueBody: ${{ github.event.issue.body }}
           repo: ${{ github.repository }}
           similaritytolerance: "0.8"
   add-comment:
@@ -21,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
+    if: needs.getSimilarIssues.outputs.message != ''
     steps:
       - name: Add comment
         run: gh issue comment "$NUMBER" --repo "$REPO" --body "$BODY"

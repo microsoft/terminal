@@ -24,9 +24,6 @@
     <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
-    <ClCompile Include="SettingsTab.cpp">
-      <Filter>tab</Filter>
-    </ClCompile>
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
@@ -62,9 +59,6 @@
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="Tab.h">
-      <Filter>tab</Filter>
-    </ClInclude>
-    <ClInclude Include="SettingsTab.h">
       <Filter>tab</Filter>
     </ClInclude>
     <ClInclude Include="FilteredCommand.h">
@@ -116,7 +110,6 @@
     </Midl>
     <Midl Include="PaletteItemTemplateSelector.idl" />
     <Midl Include="TabBase.idl" />
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
