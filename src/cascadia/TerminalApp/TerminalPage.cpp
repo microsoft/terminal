@@ -2237,6 +2237,29 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // When the tab's active pane changes, we'll want to lookup a new icon
+    // for it. The Title change will be propagated upwards through the tab's
+    // PropertyChanged event handler.
+    void TerminalPage::_activePaneChanged(winrt::TerminalApp::TerminalTab sender,
+                                          Windows::Foundation::IInspectable args)
+    {
+        if (const auto tab{ _GetTerminalTabImpl(sender) })
+        {
+            // Possibly update the icon of the tab.
+            _UpdateTabIcon(*tab);
+
+            _updateThemeColors();
+
+            // Update the taskbar progress as well. We'll raise our own
+            // SetTaskbarProgress event here, to get tell the hosting
+            // application to re-query this value from us.
+            SetTaskbarProgress.raise(*this, nullptr);
+
+            auto profile = tab->GetFocusedProfile();
+            _UpdateBackground(profile);
+        }
+    }
+
     uint32_t TerminalPage::NumberOfTabs() const
     {
         return _tabs.Size();
