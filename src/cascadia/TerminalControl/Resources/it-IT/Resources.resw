@@ -176,7 +176,7 @@
     <value>Riprendi</value>
   </data>
   <data name="HowToOpenRun.Text" xml:space="preserve">
-    <value>CTRL+clic per aprire il collegamento</value>
+    <value>CTRL+CLIC per aprire il collegamento</value>
   </data>
   <data name="TermControl_NoMatch" xml:space="preserve">
     <value>Nessun risultato</value>
