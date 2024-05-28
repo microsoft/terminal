@@ -15,7 +15,7 @@ perform tasks from the command-line. For simple everyday commands, this might no
 be so hard. For longer commands, or ones used less frequently, there's quite a
 bit of mental overhead trying to recall the exact syntax. For teams, it might be
 helpful to share these tasks with everyone on the project. The Terminal can be a
-aveneue by which complicated tasks can be remembered, shared, discovered and
+avenue by which complicated tasks can be remembered, shared, discovered and
 recalled by the user simply thinking **"what do I want to do"**, rather than
 "how do I do it".
 
@@ -48,17 +48,17 @@ It is hard to say that the ultimate vision here isn't partially inspired by the
 augment the command-line experience, by making the command-line more
 approachable. Warp quite clearly has the same concept in "workflows" - scripts
 which the user can build and Warp (a Terminal emulator) can insert quickly. Fig,
-on the other hand, is more focused on just simplifing the command-line
+on the other hand, is more focused on just simplifying the command-line
 experience. Fig is more about providing additional metadata to the user as
 they're typing. They are [also working on workflows], so there's clearly quite a
 bit of ecosystem-wide demand for more discoverable command-line tooling.
 
-We've had verbatim feedback that developers already attempt to record useful 
-commandlines in various different ways - in OneNotes, in shell scripts, in 
-aliases. Furthermore, developers often share these commands with the rest of 
-their teams. Providing a unified way to easily store, browse, and use these 
-command lines should be valuable to developers  already doing this. A static 
-file in their project containing commands for the whole team seems like a simple 
+We've had verbatim feedback that developers already attempt to record useful
+commandlines in various different ways - in OneNotes, in shell scripts, in
+aliases. Furthermore, developers often share these commands with the rest of
+their teams. Providing a unified way to easily store, browse, and use these
+command lines should be valuable to developers  already doing this. A static
+file in their project containing commands for the whole team seems like a simple
 solution to this problem.
 
 ### User Stories
@@ -69,8 +69,8 @@ A | ✅ Done   | Users can bring up a menu of command line tasks and quickly exe
 B | ✅ Done   | Fragment apps can provide tasks to a users settings
 C | 🚶 Walk   | The user can save commands straight to their settings with a `wt` command
 D | 🚶 Walk   | Users can have different tasks enabled for different profiles(/shells?)
-E | 🚶 Walk   | The Terminal displays a Snippets Pane for easy browsing of relevant snippets 
-F | 🚶 Walk   | Users should be able to save snippets directly from the commandline 
+E | 🚶 Walk   | The Terminal displays a Snippets Pane for easy browsing of relevant snippets
+F | 🚶 Walk   | Users should be able to save snippets directly from the commandline
 G | 🏃‍♂️ Run    | The terminal can automatically look for command fragments in the tree of the CWD
 H | 🏃‍♂️ Run    | Snippets with multiple lines can be sent only conditionally on the success of the previous command (with shell integration)
 I | ✅ Done   | Snippets can be filtered by text the user has already typed
@@ -115,14 +115,14 @@ It will delight developers.
 
 ### Implementation Details
 
-For the most part, this is already implemented as the `sendInput` action. These 
-actions send text to the terminal already, and work quite well as snippets. 
+For the most part, this is already implemented as the `sendInput` action. These
+actions send text to the terminal already, and work quite well as snippets.
 
 #### Basics
 
 We'll want to also augment `sendInput` to add support for `input` as an array of
 strings, not only a single string value. When the input is a list of strings,
-then the terminal can send each string, seperated by the <kbd>enter</kbd> key.
+then the terminal can send each string, separated by the <kbd>enter</kbd> key.
 We can also add a `waitForSuccess` parameter to `sendInput` (with a default
 value of `false`). If that's set to `true`, and shell integration is enabled,
 then the Terminal will wait to send each command until the previous command
@@ -144,12 +144,12 @@ Consider the [following script](https://gist.github.com/zadjii-msft/b598eebd6c56
 ```pwsh
 $s=Invoke-GitHubGraphQlApi "query{organization(login:`"Microsoft`"){projectV2(number: 159) { id } } }"
 
-$tasks = get-githubissue  -Labels "Issue-Task" -state open
-$bugs = get-githubissue  -Labels "Issue-Bug" -state open
+$tasks = get-GitHubIssue  -Labels "Issue-Task" -state open
+$bugs = get-GitHubIssue  -Labels "Issue-Bug" -state open
 $issues = $tasks + $bugs
 
-$issues | ? {$_.labels.Name -notcontains "Needs-Triage" } | ? { $_.milestone.title -Ne "Icebox ❄" } | ? type -Ne "PullRequest" | select -expand node_id | % {
-  $resp = add-githubbetaprojectitem -projectnodeid $s.organization.projectV2.id -ContentNodeId $_ ;
+$issues | ? {$_.labels.Name -NotContains "Needs-Triage" } | ? { $_.milestone.title -Ne "Icebox ❄" } | ? type -Ne "PullRequest" | select -expand node_id | % {
+  $resp = Add-GitHubBetaProjectItem -ProjectNodeId $s.organization.projectV2.id -ContentNodeId $_ ;
 }
 ```
 
@@ -160,7 +160,7 @@ As just a raw sendInput action with a single `input`, this would look like the f
     "command":
     {
         "action": "sendInput",
-        "input": "$s=Invoke-GitHubGraphQlApi \"query{organization(login:`\"Microsoft`\"){projectV2(number: 159) { id } } }\"\r\n$tasks = get-githubissue  -Labels \"Issue-Task\" -state open\r\n$bugs = get-githubissue  -Labels \"Issue-Bug\" -state open\r\n$issues = $tasks + $bugs\r\n$issues | ? {$_.labels.Name -notcontains \"Needs-Triage\" } | ? { $_.milestone.title -Ne \"Icebox ❄\" } | ? type -Ne \"PullRequest\" | select -expand node_id | % {\r\n  $resp = add-githubbetaprojectitem -projectnodeid $s.organization.projectV2.id -ContentNodeId $_ ;\r\n}"
+        "input": "$s=Invoke-GitHubGraphQlApi \"query{organization(login:`\"Microsoft`\"){projectV2(number: 159) { id } } }\"\r\n$tasks = get-GitHubIssue  -Labels \"Issue-Task\" -state open\r\n$bugs = get-GitHubIssue  -Labels \"Issue-Bug\" -state open\r\n$issues = $tasks + $bugs\r\n$issues | ? {$_.labels.Name -NotContains \"Needs-Triage\" } | ? { $_.milestone.title -Ne \"Icebox ❄\" } | ? type -Ne \"PullRequest\" | select -expand node_id | % {\r\n  $resp = Add-GitHubBetaProjectItem -ProjectNodeId $s.organization.projectV2.id -ContentNodeId $_ ;\r\n}"
     },
     "name": "Upload to project board",
     "description": "Sync all our issues and bugs that have been triaged and are actually on the backlog to the big-ol project",
@@ -170,7 +170,7 @@ As just a raw sendInput action with a single `input`, this would look like the f
 This JSON is basically entirely unusable. Since JSON doesn't support multiline
 strings, then every line has to be joined to a single line, seperated by `\r\n`.
 
-Insstead, the following version of this command uses an array for the `input`
+Instead, the following version of this command uses an array for the `input`
 parameter. This then implies that each string should be sent in sequence, with
 <kbd>enter</kbd> between them.
 
@@ -182,11 +182,11 @@ parameter. This then implies that each string should be sent in sequence, with
         "input":
         [
             "$s=Invoke-GitHubGraphQlApi \"query{organization(login:`\"Microsoft`\"){projectV2(number: 159) { id } } }\"",
-            "$tasks = get-githubissue  -Labels \"Issue-Task\" -state open",
-            "$bugs = get-githubissue  -Labels \"Issue-Bug\" -state open",
+            "$tasks = get-GitHubIssue  -Labels \"Issue-Task\" -state open",
+            "$bugs = get-GitHubIssue  -Labels \"Issue-Bug\" -state open",
             "$issues = $tasks + $bugs",
-            "$issues | ? {$_.labels.Name -notcontains \"Needs-Triage\" } | ? { $_.milestone.title -Ne \"Icebox ❄\" } | ? type -Ne \"PullRequest\" | select -expand node_id | % {",
-            "  $resp = add-githubbetaprojectitem -projectnodeid $s.organization.projectV2.id -ContentNodeId $_ ;",
+            "$issues | ? {$_.labels.Name -NotContains \"Needs-Triage\" } | ? { $_.milestone.title -Ne \"Icebox ❄\" } | ? type -Ne \"PullRequest\" | select -expand node_id | % {",
+            "  $resp = Add-GitHubBetaProjectItem -ProjectNodeId $s.organization.projectV2.id -ContentNodeId $_ ;",
             "}",
             ""
         ]
@@ -202,11 +202,10 @@ it won't be sent to the shell.
 
 #### Fragment actions
 
-This was already added in [#TODO!](https://link/to/issue). These will allow
-third-party developers to create apps which add additional snippets to the
-Terminal. These will require app developers to add `id`s to each action they add
-in this way. Users can then bind that action `id` to a keybinding, if they so
-choose.
+This was already added in [#16185]. These will allow third-party developers to
+create apps which add additional snippets to the Terminal. These will require
+app developers to add `id`s to each action they add in this way. Users can then
+bind that action `id` to a keybinding, if they so choose.
 
 Case in point:
 https://github.com/abduvik/just-enough-series/tree/master/courses/docker+docker-compose.
@@ -231,8 +230,8 @@ suggestion sources.
 
 ### Per-Project Snippets (`.wt.json`)
 
-> [INFO!] 
-> 
+> [INFO!]
+>
 > TODO!: Let's make sure to discuss the filename. It doesn't need to be
 > `.wt.json`. That seemed to match things like `.clang-format`, `.vsconfig`,
 > etc, but then also included the extension. However, node projects just use
@@ -247,7 +246,7 @@ will start with the `startingDirectory` for any new panes created. If the user
 has shell integration configured to tell the Terminal about the CWD, then we'll
 refresh that list as the user changes directories.
 
-* In `Terminal.Settings.Model`, we will store a cached map of path->actions. 
+* In `Terminal.Settings.Model`, we will store a cached map of path->actions.
   * that if multiple panes are all in the same CWD, they don't need to
     individually re-read the file from disk and regenerate that part of the map.
 * I believe it should be impossible for a keybinding to be bound to a local
@@ -255,8 +254,8 @@ refresh that list as the user changes directories.
   keymap, and we don't really want the keymap changing based on CWD. Also, with
   the actions living in an entirely separate map of CWD->actions, the
   keybindings in the main map won't be able to easily get to them. See also
-  [Security considerations](#TODO!/link/me/up) for more.
-* If the Snippets pane or Sugestions UI is opened with `local` suggestions as a
+  [Security considerations](#security) for more.
+* If the Snippets pane or Suggestions UI is opened with `local` suggestions as a
   source, then we'll just append the appropriate list of suggestions for the
   active control's CWD.
   * We don't need to have the control raise an event when the CWD changes - we
@@ -272,25 +271,25 @@ refresh that list as the user changes directories.
     `Terminal.Settings.Model`) -->
 * If we find multiple `.wt.json` files in the ancestors of the CWD (e.g. for
   `c:\a\b\c\d\`, there's a `c:\a\.wt.json` and a `c:\a\b\c\.wt.json`), then
-  we'll add each one separately to the map of paths->CWDs. When requesting the
-  actual actions for `c:\a\b\c\d\`, we'll layer the ones from `c:\a\` before the
-  ones from `c:\a\b\c`, so that deeper descendants take precedence.  
+  we'll add each one separately to the map of paths->directories. When
+  requesting the actual actions for `c:\a\b\c\d\`, we'll layer the ones from
+  `c:\a\` before the ones from `c:\a\b\c`, so that deeper descendants take
+  precedence.
 
 ### Saving snippets from the commandline
 
-_This has already been prototyped in [#TODO!](add/the/link)_
+_This has already been prototyped in [#16513]_
 
 Users should be able to save commands as snippets directly from the commandline.
 Consider: you've just run the command that worked the way you need it to. You
-shouldn't have to open the settings to then separatey ccopy-paste the command in
+shouldn't have to open the settings to then separately copy-paste the command in
 to save it. It should be as easy as <kbd>Up</kbd>, <kbd>Home</kbd>, `wt save `,
 <kbd>Enter</kbd>.
 
 The exact syntax as follows:
 
-This will be powered by a `saveInput` (TODO! that's not right is it) action
-behind the scenes. After running this command, a toast will be presented to the
-user to indicate success/failure.
+This will be powered by a `saveSnippet` action behind the scenes. After running
+this command, a toast will be presented to the user to indicate success/failure.
 
 #### `save` subcommand
 
@@ -303,19 +302,18 @@ This will immediately write the Terminal settings file.
 * `--name,-n name`: The name to assign to the `name` parameter of the saved
   command. If omitted, then the parameter will be left blank, and the command
   will use the auto-generated "Send input:..." name in menus.
-* `--description,-d`: The description to optionally assign to the command. 
-* `commandline`: The commandline to save as the `input` of the `sendInput` action. 
+* `--description,-d`: The description to optionally assign to the command.
+* `commandline`: The commandline to save as the `input` of the `sendInput` action.
 
 If the `save` subcommand is ran without any other subcommands, the Terminal will
 imply the `-w 0` arguments, to attempt to send this action to the current
 Terminal window. (unless of course, `-w` was manually provided on the
 commandline). When run with other subcommands, then the action will just be ran
-in the same window as all the other subcommands.  
+in the same window as all the other subcommands.
 
 > [!NOTE] In other team discussions, we've considered initially merging this
 > subcommand as `x-save`, where `x-` implies "experimental". We may want to use
-> that to merge [TODO!](erics/pr/here) while we wait for this spec to be
-> approved.
+> that to merge [#16513] while we wait for this spec to be approved.
 
 ### UI/UX Design
 
@@ -330,27 +328,17 @@ illustrative of what these menus already look like in the wild:
 
 ![](img/warp-workflows-000.gif)
 
-TODO! update these
-
-<!-- 
-A prototype of the recent commands UI, powered by shell integration:
-
-![](img/command-history-suggestions.gif)
-
-A prototype of the tasks UI, powered by the user's settings:
-
-![](img/tasks-suggestions.gif)
-
-A prototype of saving a command directly to the user's settings, then invoking it via the tasks UI
+A prototype of saving a command directly to the user's settings, then invoking
+it via the suggestions UI
 
 ![](img/save-command.gif)
 
 A prototype of reading tasks from the CWD
 
-![](img/tasks-from-cwd.gif) -->
+![](img/tasks-from-cwd.gif)
 
 
-## Tenents
+## Tenets
 
 <table>
 
@@ -371,7 +359,8 @@ would be quite a bit more expensive than JSON.
 
 <tr><td><strong>Accessibility</strong></td><td>
 
-[comment]: # TODO!
+Nothing particular to call out here. The Snippets pane will need to be a11y
+tested, like most of our other UI surfaces.
 
 </td></tr>
 
@@ -392,12 +381,11 @@ to be a future consideration for now.
 
 </td></tr>
 
-
-<tr><td><strong>Security</strong></td><td>
+<tr><td><a name="security"></a><strong>Security</strong></td><td>
 
 Another reason we shouldn't support keys being able to be lazy-bound to local
 snippets: It's entirely too easy for `malicious.exe` to create a file in
-`%homepath%` that creates a snippet for `\u003pwn-your-machine.exe\r` (or
+`%HomePath%` that creates a snippet for `\u003pwn-your-machine.exe\r` (or
 similar). Any app can read your settings file, and it is again too easy for that
 malicious app to set it's own action `id` to the same as some other well-meaning
 local snippet's ID which you DO have bound to a key.
@@ -406,7 +394,7 @@ local snippet's ID which you DO have bound to a key.
 
 </table>
 
-### Other potential issues 
+### Other potential issues
 
 Something like `wt save ping 8.8.8.8 > foo.txt` isn't going to work the way
 users want. The shell is gonna get the first crack at parsing that commandline,
@@ -431,25 +419,26 @@ adding/removing other settings too? Profiles?
 * [ ] The terminal can look for a settings file of tasks in a profile's
   `startingDirectory` (regardless of shell integration being enabled)
 * [ ] [#5790] - profile specific actions
-* [ ] [#12927] TODO! what is this issue?
 * [ ] [#12857] Ability to save selected text as a `sendInput` action
-* [ ] Re-evaluate showing some sort of "ghost text or other preview for snippets
+* [ ] [#12861] Re-evaluate showing some sort of "ghost text or other preview for snippets
 
 ### 🏃‍♂️ Run
 * [ ] When the user `cd`s to a directory (with shell integration enabled), the
   terminal can load the tasks from that directory tree
 * [ ] [#10436] Users can manage all their fragments extensions directly in the Settings UI
-* [ ] Fork of [#12927] - promptable sections can accept a command to dynamically populate options
 * [ ] The suggestions UI & snippets pane can filter not only on name of a
-  command, but for snippets, the input as well.  
+  command, but for snippets, the input as well.
+* [ ] [#12927] Enlighten the suggestions UI to support (_a yet undeclared syntax
+  for_) snippets with prompt-able sections in them
 
-<!-- 
-TODO! I think I can delete this section. It's too vague. Make sure that 12927 above is promptable parameters. 
+<!--
+
+These are perhaps too vague to be included in the official spec, but they are left here for posterity:
 
 ### 🚀 Sprint
-(_these ones in)
 
-* [ ] Enlighten the suggestions UI to understand a yet undeclared syntax for snippets with promptable sections in them. 
+* [ ] Fork of [#12927] - prompt-able sections can accept a command to dynamically populate options
+* [ ] Enlighten the suggestions UI to understand a yet undeclared syntax for snippets with prompt-able sections in them.
 * [ ] Stand up a dedicated repo for `terminal-snippets`
   * [ ] Pull those down, or compile them in, or so -->
 
@@ -458,7 +447,7 @@ TODO! I think I can delete this section. It's too vague. Make sure that 12927 ab
 Snippets are something that developers immediately understand the value of.
 After talking with users, everyone we talked with immediately understood the
 concept, and you could see the gears turning on ways to integrate this into
-their own workflows.  
+their own workflows.
 
 ### Future Considerations
 
@@ -473,41 +462,38 @@ their own workflows.
     Maybe with the `WT_SESSION_ID` env var to figure out which profile is in use
     for the pane with that ID
 * Longer workflows might be better exposed as notebooks. We've already got a
-  mind to support
-  [markdown in a notebook-like experience](https://TODO!/put/link/here) in the
+  mind to support [markdown in a notebook-like
+  experience](https://github.com/microsoft/terminal/issues/16495) in the
   Terminal. For longer scripts that may need rich markup between commands, that
   will likely be a better UX.
 * For what it is worth, [Warp] uses .yaml files for their "workflows". As an
   example, see
   [`clone_all_repos_in_org.yaml`](https://github.com/warpdotdev/workflows/blob/main/specs/git/clone_all_repos_in_org.yaml).
-  We may want to straight up just seemlessly support that syntax as well.
+  We may want to straight up just seamlessly support that syntax as well.
   Converting them to WT-compatible json is fairly trivial [[1](#footnote-1)].
   Furthermore, the commands are all licensed under Apache 2.0, which means they
   can be easily consumed by other OSS projects and shared with other developers.
   This leads us to the next future consideration:
-* Discoverability will be important. Perhhaps the actions page could have a 
+* Discoverability will be important. Perhaps the actions page could have a
   toggle to immediately filter to "snippets"? Which then also displays some text
   like "Tip: save snippets directly from the commandline with
   `wt save <the commandline>`".
 * We should easily be able to put "Save command as snippet" into the quick fix
-  menu next to an individual prompt, when shell integration is enabled.  
+  menu next to an individual prompt, when shell integration is enabled.
 
 #### Community Snippets
 
 _The big stretch version of this feature._
 
-It would be supremely cool to have a community currated list of Snippets, for
+It would be supremely cool to have a community curated list of Snippets, for
 various tools. Stored publicly on a GitHub repo (a la the winget-pkgs repo).
 Users can submit Snippets with descriptions of what the Snippet does. The
 Terminal can plug into that repo automatically and fetch the latest community
-commands, immediately giving the user access to a wide bearth of common
+commands, immediately giving the user access to a wide berth of common
 Snippets. That could easily be done as another suggestion source (in the same
 vein as `local` is.)
 
 ## Resources
-
-[comment]: # Be sure to add links to references, resources, footnotes, etc.
-
 
 ### Footnotes
 
@@ -534,6 +520,7 @@ super straightforward.
 [#keep]: https://github.com/zadjii/keep
 [VsCode Tasks]: https://github.com/microsoft/terminal/blob/main/.vscode/tasks.json
 
-<!-- TODO! -->
-[shell-driven autocompletion]: ./Terminal-North-Star.md#Shell_autocompletion
-
+[#16185]: https://github.com/microsoft/terminal/pull/16185
+[#16513]: https://github.com/microsoft/terminal/pull/16513
+[#12861]: https://github.com/microsoft/terminal/issues/12861
+[#16495]: https://github.com/microsoft/terminal/issues/16495

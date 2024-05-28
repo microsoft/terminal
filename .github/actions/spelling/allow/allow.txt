@@ -90,6 +90,7 @@ postmodern
 Powerline
 powerline
 ptys
+pwn
 pwshw
 qof
 qps
@@ -135,6 +136,7 @@ We'd
 westus
 wildcards
 workarounds
+wtconfig
 XBox
 YBox
 yeru
