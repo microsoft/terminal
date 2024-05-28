@@ -74,7 +74,7 @@ F | 🚶 Walk   | Users should be able to save snippets directly from the comman
 G | 🏃‍♂️ Run    | The terminal can automatically look for command fragments in the tree of the CWD
 H | 🏃‍♂️ Run    | Snippets with multiple lines can be sent only conditionally on the success of the previous command (with shell integration)
 I | ✅ Done   | Snippets can be filtered by text the user has already typed
-J | 🚀 Sprint | Snippets can have promptable sections of input
+J | 🚀 Sprint | Snippets can have prompt-able sections of input
 K | 🚀 Sprint | Community tasks are hosted in a public GH repo
 L | 🚀 Sprint | A simple UX (either web or in Terminal) is exposed for interacting with public GH repo of tasks
 
@@ -168,7 +168,7 @@ As just a raw sendInput action with a single `input`, this would look like the f
 ```
 
 This JSON is basically entirely unusable. Since JSON doesn't support multiline
-strings, then every line has to be joined to a single line, seperated by `\r\n`.
+strings, then every line has to be joined to a single line, separated by `\r\n`.
 
 Instead, the following version of this command uses an array for the `input`
 parameter. This then implies that each string should be sent in sequence, with
