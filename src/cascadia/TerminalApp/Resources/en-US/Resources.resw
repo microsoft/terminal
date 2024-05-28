@@ -907,4 +907,10 @@
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Restart the active pane connection</value>
   </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Action saved</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Action save failed</value>
+  </data>
 </root>

@@ -1288,22 +1288,22 @@ namespace winrt::TerminalApp::implementation
 
                     try
                     {
-                        KeyChord keyChord = nullptr;
-                        hstring keyChordText = L"";
+                        winrt::Microsoft::Terminal::Control::KeyChord keyChord = nullptr;
                         if (!realArgs.KeyChord().empty())
                         {
                             keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
-                            keyChordText = KeyChordSerialization::ToString(keyChord);
                         }
-
                         _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
-                        ActionSaved(realArgs.Commandline(), realArgs.Name(), keyChordText);
                         _settings.WriteSettingsToDisk();
+                        ActionSaved(realArgs.Commandline(), realArgs.Name(), realArgs.KeyChord());
                     }
                     catch (const winrt::hresult_error& ex)
                     {
-                        const auto message = ex.message();
+                        auto code = ex.code();
+                        auto message = ex.message();
                         ActionSaveFailed(message);
+                        args.Handled(true);
+                        return;
                     }
 
                     args.Handled(true);

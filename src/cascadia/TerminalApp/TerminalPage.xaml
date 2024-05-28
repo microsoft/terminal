@@ -8,6 +8,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="using:TerminalApp"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
       Background="Transparent"
       mc:Ignorable="d">
@@ -215,11 +216,14 @@
                 <StackPanel HorizontalAlignment="Stretch"
                             Orientation="Vertical">
                     <TextBlock x:Name="ActionSavedNameText"
-                               Text="" />
+                               Text="{x:Bind SavedActionName, Mode=OneWay}"
+                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionName), Mode=OneWay}" />
                     <TextBlock x:Name="ActionSavedKeyChordText"
-                               Text="" />
+                               Text="{x:Bind SavedActionKeyChord, Mode=OneWay}"
+                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionKeyChord), Mode=OneWay}" />
                     <TextBlock x:Name="ActionSavedCommandLineText"
-                               Text="" />
+                               Text="{x:Bind SavedActionCommandLine, Mode=OneWay}"
+                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionCommandLine), Mode=OneWay}" />
                 </StackPanel>
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
