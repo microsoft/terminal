@@ -4245,9 +4245,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
             _UpdateTeachingTipTheme(ActionSavedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
-            ActionSavedNameText().Text(L"Name: " + name);
-            ActionSavedKeyChordText().Text(L"Key Chord: " + keyChord);
-            ActionSavedCommandLineText().Text(L"Input: " + input);
+            SavedActionName(L"Name: " + name);
+            SavedActionKeyChord(L"Key Chord: " + keyChord);
+            SavedActionCommandLine(L"Input: " + input);
 
             if (page->_actionSavedToast != nullptr)
             {

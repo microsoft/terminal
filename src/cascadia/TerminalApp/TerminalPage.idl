@@ -72,6 +72,10 @@ namespace TerminalApp
         void IdentifyWindow();
         void RenameFailed();
 
+        String SavedActionName { get; };
+        String SavedActionKeyChord { get; };
+        String SavedActionCommandLine { get; };
+
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
         // and because of GH#5224.

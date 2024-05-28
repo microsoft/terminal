@@ -202,6 +202,10 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, _PropertyChangedHandlers, nullptr);
 
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SavedActionName, _PropertyChangedHandlers, L"");
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SavedActionKeyChord, _PropertyChangedHandlers, L"");
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SavedActionCommandLine, _PropertyChangedHandlers, L"");
+
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
         std::optional<HWND> _hostingHwnd;
