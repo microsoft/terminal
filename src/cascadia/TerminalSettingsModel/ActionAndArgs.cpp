@@ -52,7 +52,7 @@ static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
-static constexpr std::string_view SaveTaskKey{ "saveTask" };
+static constexpr std::string_view SaveTaskKey{ "experimental.saveTask" };
 static constexpr std::string_view SuggestionsKey{ "showSuggestions" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };

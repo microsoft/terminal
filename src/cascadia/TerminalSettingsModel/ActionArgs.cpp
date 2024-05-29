@@ -950,21 +950,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SaveTaskArgs::GenerateName() const
     {
-        std::wstringstream ss;
-
-        ss << RS_(L"SaveActionNamePrefix").c_str() << L" commandline: " << Commandline().c_str();
-
-        if (!Name().empty())
+        if (Feature_SaveTask::IsEnabled())
         {
-            ss << L", name: " << Name().c_str();
-        }
+            std::wstringstream ss;
 
-        if (!KeyChord().empty())
-        {
-            ss << L", keyChord " << KeyChord().c_str();
-        }
+            ss << RS_(L"SaveActionNamePrefix").c_str() << L" commandline: " << Commandline().c_str();
 
-        return winrt::hstring{ ss.str() };
+            if (!Name().empty())
+            {
+                ss << L", name: " << Name().c_str();
+            }
+
+            if (!KeyChord().empty())
+            {
+                ss << L", keyChord " << KeyChord().c_str();
+            }
+
+            return winrt::hstring{ ss.str() };
+        }
+        return L"";
     }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)

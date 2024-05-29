@@ -1267,44 +1267,47 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (args)
+        if (Feature_SaveTask::IsEnabled())
         {
-            if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
+            if (args)
             {
-                if (realArgs.Commandline().empty())
+                if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
                 {
-                    if (const auto termControl{ _GetActiveControl() })
+                    if (realArgs.Commandline().empty())
                     {
-                        if (termControl.HasSelection())
+                        if (const auto termControl{ _GetActiveControl() })
                         {
-                            const auto selections{ termControl.SelectedText(true) };
-                            const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
-                            realArgs.Commandline(selection);
+                            if (termControl.HasSelection())
+                            {
+                                const auto selections{ termControl.SelectedText(true) };
+                                const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                                realArgs.Commandline(selection);
+                            }
                         }
                     }
-                }
 
-                try
-                {
-                    KeyChord keyChord = nullptr;
-                    hstring keyChordText = L"";
-                    if (!realArgs.KeyChord().empty())
+                    try
                     {
-                        keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
-                        keyChordText = KeyChordSerialization::ToString(keyChord);
+                        KeyChord keyChord = nullptr;
+                        hstring keyChordText = L"";
+                        if (!realArgs.KeyChord().empty())
+                        {
+                            keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                            keyChordText = KeyChordSerialization::ToString(keyChord);
+                        }
+
+                        _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
+                        ActionSaved(realArgs.Commandline(), realArgs.Name(), keyChordText);
+                        _settings.WriteSettingsToDisk();
+                    }
+                    catch (const winrt::hresult_error& ex)
+                    {
+                        const auto message = ex.message();
+                        ActionSaveFailed(message);
                     }
 
-                    _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
-                    ActionSaved(realArgs.Commandline(), realArgs.Name(), keyChordText);
-                    _settings.WriteSettingsToDisk();
+                    args.Handled(true);
                 }
-                catch (const winrt::hresult_error& ex)
-                {
-                    const auto message = ex.message();
-                    ActionSaveFailed(message);
-                }
-
-                args.Handled(true);
             }
         }
     }
