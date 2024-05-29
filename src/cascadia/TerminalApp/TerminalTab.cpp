@@ -952,6 +952,7 @@ namespace winrt::TerminalApp::implementation
             [this](auto&& sender, auto&&) {
                 if (const auto content{ sender.try_as<TerminalApp::IPaneContent>() })
                 {
+                    // Calling Close() while walking the tree is not safe, because Close() mutates the tree.
                     const auto pane = _rootPane->_FindPane([&](const auto& p) -> std::shared_ptr<Pane> {
                         if (p->GetContent() == content)
                         {
