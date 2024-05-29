@@ -216,14 +216,20 @@
                 <StackPanel HorizontalAlignment="Stretch"
                             Orientation="Vertical">
                     <TextBlock x:Name="ActionSavedNameText"
-                               Text="{x:Bind SavedActionName, Mode=OneWay}"
-                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionName), Mode=OneWay}" />
+                            Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionName), Mode=OneWay}">
+                        <Run Text="Name: " />
+                        <Run Text="{x:Bind SavedActionName, Mode=OneWay}" />
+                    </TextBlock>
                     <TextBlock x:Name="ActionSavedKeyChordText"
-                               Text="{x:Bind SavedActionKeyChord, Mode=OneWay}"
-                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionKeyChord), Mode=OneWay}" />
+                            Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionKeyChord), Mode=OneWay}">
+                        <Run Text="Key Chord: " />
+                        <Run Text="{x:Bind SavedActionKeyChord, Mode=OneWay}" />
+                    </TextBlock>
                     <TextBlock x:Name="ActionSavedCommandLineText"
-                               Text="{x:Bind SavedActionCommandLine, Mode=OneWay}"
-                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionCommandLine), Mode=OneWay}" />
+                               Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(SavedActionCommandLine), Mode=OneWay}">
+                        <Run Text="Input: " />
+                        <Run Text="{x:Bind SavedActionCommandLine, Mode=OneWay}" />
+                    </TextBlock>
                 </StackPanel>
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
