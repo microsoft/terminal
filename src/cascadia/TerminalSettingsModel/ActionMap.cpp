@@ -95,22 +95,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // - had an ID generated for them
         // - do not have a name/icon path
         // - have a hash that matches a command in the inbox actions
-        std::unordered_set<winrt::hstring> IdsToRemove;
-        for (const auto [userID, userCmd] : _ActionMap)
-        {
-            const auto userCmdImpl{ get_self<Command>(userCmd) };
-
-            // Note we don't need to explicitly check for the origin tag here since we only generate IDs for user actions,
-            // so if we ID was generated it means this is a user action
-            if (userCmdImpl->IdWasGenerated() && !userCmdImpl->HasName() && userCmd.IconPath().empty())
+        std::erase_if(_ActionMap, [&](const auto& pair) {
+            const auto userCmdImpl{ get_self<Command>(pair.second) };
+            if (userCmdImpl->IdWasGenerated() && !userCmdImpl->HasName() && userCmdImpl->IconPath().empty())
             {
-                const auto userActionHash = Hash(userCmd.ActionAndArgs());
+                const auto userActionHash = Hash(userCmdImpl->ActionAndArgs());
                 if (const auto inboxCmd = inboxActions.find(userActionHash); inboxCmd != inboxActions.end())
                 {
                     for (const auto& [key, cmdID] : _KeyMap)
                     {
                         // for any of our keys that point to the user action, point them to the inbox action instead
-                        if (cmdID == userID)
+                        if (cmdID == pair.first)
                         {
                             _KeyMap.insert_or_assign(key, inboxCmd->second.ID());
 
@@ -119,14 +114,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         }
                     }
 
-                    // add this ID to our set of IDs to remove
-                    IdsToRemove.insert(userID);
+                    // remove this pair
+                    return true;
                 }
             }
-        }
-
-        // now, remove the commands with the IDs we found
-        std::erase_if(_ActionMap, [&IdsToRemove](const auto& pair) { return IdsToRemove.contains(pair.first); });
+            return false;
+        });
     }
 
     bool ActionMap::FixUpsAppliedDuringLoad() const
