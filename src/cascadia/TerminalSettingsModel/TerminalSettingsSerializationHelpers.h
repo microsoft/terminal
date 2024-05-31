@@ -35,10 +35,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 // - Helper for converting a user-specified adjustTextMode value to its corresponding enum
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(5) = {
         pair_type{ "never", ValueType::Never },
         pair_type{ "indexed", ValueType::Indexed },
         pair_type{ "always", ValueType::Always },
+        pair_type{ "automaticIndexed", ValueType::AutomaticIndexed },
+        pair_type{ "automaticAlways", ValueType::AutomaticAlways },
     };
 
     // Override mapping parser to add boolean parsing

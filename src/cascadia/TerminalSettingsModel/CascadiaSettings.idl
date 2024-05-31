@@ -16,6 +16,7 @@ namespace Microsoft.Terminal.Settings.Model
         static String SettingsPath { get; };
         static String DefaultSettingsPath { get; };
         static Boolean IsPortableMode { get; };
+        static Boolean HighContrastMode;
 
         static String ApplicationDisplayName { get; };
         static String ApplicationVersion { get; };

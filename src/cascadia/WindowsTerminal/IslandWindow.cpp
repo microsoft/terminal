@@ -758,6 +758,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             // themes, color schemes that might depend on the OS theme
             if (param == L"ImmersiveColorSet")
             {
+                bool updateSettings = false;
+
                 // GH#15732: Don't update the settings, unless the theme
                 // _actually_ changed. ImmersiveColorSet gets sent more often
                 // than just on a theme change. It notably gets sent when the PC
@@ -766,7 +768,28 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 if (isCurrentlyDark != _currentSystemThemeIsDark)
                 {
                     _currentSystemThemeIsDark = isCurrentlyDark;
-                    UpdateSettingsRequested.raise();
+                    updateSettings = true;
+                }
+
+                bool isCurrentlyHighContrast = []() {
+                    HIGHCONTRAST hc = { 0 };
+                    hc.cbSize = sizeof(HIGHCONTRAST);
+                    if (SystemParametersInfo(SPI_GETHIGHCONTRAST, sizeof(hc), &hc, 0))
+                    {
+                        return (bool)(hc.dwFlags & HCF_HIGHCONTRASTON);
+                    }
+                    return false;
+                }();
+
+                if (isCurrentlyHighContrast != _currentHighContrastModeState)
+                {
+                    _currentHighContrastModeState = isCurrentlyHighContrast;
+                    updateSettings = true;
+                }
+
+                if (updateSettings)
+                {
+                    UpdateSettingsRequested.raise(_currentHighContrastModeState);
                 }
             }
         }

@@ -65,6 +65,7 @@ namespace winrt::TerminalApp::implementation
         bool IsolatedMode();
         bool AllowHeadless();
         bool RequestsTrayIcon();
+        void SetHighContrast(bool highContrast);
 
         TerminalApp::TerminalWindow CreateNewWindow();
 

@@ -663,6 +663,11 @@ namespace winrt::TerminalApp::implementation
                globals.MinimizeToNotificationArea();
     }
 
+    void AppLogic::SetHighContrast(bool highContrast)
+    {
+        _settings.HighContrastMode(highContrast);
+    }
+
     bool AppLogic::AllowHeadless()
     {
         if (!_loadedInitialSettings)

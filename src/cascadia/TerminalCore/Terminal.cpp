@@ -141,7 +141,22 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
-    switch (appearance.AdjustIndistinguishableColors())
+    // If we're in high contrast mode and AIC is set to Automatic Indexed/Always,
+    // fallback to Indexed/Always respectively.
+    const auto deducedAIC = [this, &appearance]() {
+        const auto initialAIC = appearance.AdjustIndistinguishableColors();
+        switch (initialAIC)
+        {
+        case AdjustTextMode::AutomaticIndexed:
+            return _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
+        case AdjustTextMode::AutomaticAlways:
+            return _highContrastMode ? AdjustTextMode::Always : AdjustTextMode::Never;
+        default:
+            return initialAIC;
+        }
+    }();
+
+    switch (deducedAIC)
     {
     case AdjustTextMode::Always:
         renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
@@ -209,6 +224,11 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // workaround to force the control to redraw any scrollbar marks whose color
     // may have changed.
     _NotifyScrollEvent();
+}
+
+void Terminal::SetHighContrastInfo(bool hc)
+{
+    _highContrastMode = hc;
 }
 
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)

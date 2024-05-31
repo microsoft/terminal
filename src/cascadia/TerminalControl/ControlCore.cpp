@@ -864,6 +864,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
         _runtimeFocusedOpacity = std::nullopt;
+        _terminal->SetHighContrastInfo(settings.HighContrastMode());
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();

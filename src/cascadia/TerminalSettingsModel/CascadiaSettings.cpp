@@ -23,6 +23,8 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
+bool CascadiaSettings::_highContrastMode{ false };
+
 // Creating a child of a profile requires us to copy certain
 // required attributes. This method handles those attributes.
 //
@@ -51,6 +53,16 @@ std::string_view Model::implementation::LoadStringResource(int resourceID)
     const auto sz = SizeofResource(moduleInstanceHandle, resource);
     const auto ptr = LockResource(loaded);
     return { reinterpret_cast<const char*>(ptr), sz };
+}
+
+bool CascadiaSettings::HighContrastMode()
+{
+    return _highContrastMode;
+}
+
+void CascadiaSettings::HighContrastMode(bool value)
+{
+    _highContrastMode = value;
 }
 
 winrt::hstring CascadiaSettings::Hash() const noexcept

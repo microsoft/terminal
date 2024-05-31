@@ -45,6 +45,7 @@ namespace TerminalApp
         Boolean IsolatedMode { get; };
         Boolean AllowHeadless { get; };
         Boolean RequestsTrayIcon { get; };
+        void SetHighContrast(Boolean highContrast);
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 

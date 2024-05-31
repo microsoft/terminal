@@ -850,9 +850,10 @@ safe_void_coroutine WindowEmperor::_windowIsQuakeWindowChanged(winrt::Windows::F
     co_await wil::resume_foreground(this->_dispatcher);
     _checkWindowsForNotificationIcon();
 }
-safe_void_coroutine WindowEmperor::_windowRequestUpdateSettings()
+safe_void_coroutine WindowEmperor::_windowRequestUpdateSettings(bool highContrastEnabled)
 {
     // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
     co_await wil::resume_foreground(this->_dispatcher);
+    _app.Logic().SetHighContrast(highContrastEnabled);
     _app.Logic().ReloadSettings();
 }

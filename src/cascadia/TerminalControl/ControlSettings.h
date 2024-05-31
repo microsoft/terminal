@@ -26,6 +26,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         CONTROL_SETTINGS(SETTINGS_GEN)
 #undef SETTINGS_GEN
 
+        WINRT_PROPERTY(bool, HighContrastMode, false);
+
     private:
         winrt::com_ptr<ControlAppearance> _unfocusedAppearance{ nullptr };
         winrt::com_ptr<ControlAppearance> _focusedAppearance{ nullptr };
