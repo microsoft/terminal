@@ -518,7 +518,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlInteractivity::_mouseTransparencyHandler(const int32_t mouseDelta) const
     {
         // Transparency is on a scale of [0.0,1.0], so only increment by .01.
-        const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
+        const auto effectiveDelta = mouseDelta < 0 ? -.01f : .01f;
         _core->AdjustOpacity(effectiveDelta);
     }
 
@@ -554,7 +554,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // underneath us. We wouldn't know - we don't want the overhead of
         // another ScrollPositionChanged handler. If the scrollbar should be
         // somewhere other than where it is currently, then start from that row.
-        const auto currentInternalRow = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        const auto currentInternalRow = std::lround(_internalScrollbarPosition);
         const auto currentCoreRow = _core->ScrollOffset();
         const auto currentOffset = currentInternalRow == currentCoreRow ?
                                        _internalScrollbarPosition :
@@ -564,13 +564,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // However, for us, the signs are flipped.
         // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
         // but the "smooth scrolling" mode results in non-int values
-        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
+        const auto rowDelta = mouseDelta / (-1.0f * WHEEL_DELTA);
 
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ::base::saturated_cast<double>(_core->ViewHeight()) : _rowsToScroll };
-        auto newValue = (rowsToScroll * rowDelta) + (currentOffset);
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
+        const auto newValue = rowsToScroll * rowDelta + currentOffset;
 
         // Update the Core's viewport position, and raise a
         // ScrollPositionChanged event to update the scrollbar
@@ -600,17 +600,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newValue: The new top of the viewport
     // Return Value:
     // - <none>
-    void ControlInteractivity::UpdateScrollbar(const double newValue)
+    void ControlInteractivity::UpdateScrollbar(const float newValue)
     {
         // Set this as the new value of our internal scrollbar representation.
         // We're doing this so we can accumulate fractional amounts of a row to
         // scroll each time the mouse scrolls.
-        _internalScrollbarPosition = std::clamp<double>(newValue, 0.0, _core->BufferHeight());
+        _internalScrollbarPosition = std::clamp(newValue, 0.0f, static_cast<float>(_core->BufferHeight()));
 
         // If the new scrollbar position, rounded to an int, is at a different
         // row, then actually update the scroll position in the core, and raise
         // a ScrollPositionChanged to inform the control.
-        auto viewTop = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        const auto viewTop = std::lround(_internalScrollbarPosition);
         if (viewTop != _core->ScrollOffset())
         {
             _core->UserScrollViewport(viewTop);

@@ -353,11 +353,11 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
-struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<double>
+struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<float>
 {
-    double FromJson(const Json::Value& json)
+    float FromJson(const Json::Value& json)
     {
-        return ::base::saturated_cast<double>(json.asUInt()) / 100.0;
+        return static_cast<float>(json.asUInt()) / 100.0f;
     }
 
     bool CanConvert(const Json::Value& json)
@@ -370,9 +370,9 @@ struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model
         return value >= 0 && value <= 100;
     }
 
-    Json::Value ToJson(const double& val)
+    Json::Value ToJson(const float val)
     {
-        return std::clamp(::base::saturated_cast<uint32_t>(std::round(val * 100.0)), 0u, 100u);
+        return std::clamp(::base::saturated_cast<uint32_t>(std::round(val * 100.0f)), 0u, 100u);
     }
 
     std::string TypeDescription() const
@@ -760,4 +760,13 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     {
         return "SelectionColor (#rrggbb, #rgb, #rrggbbaa, iNN)";
     }
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "direct2d", ValueType::Direct2D },
+        pair_type{ "direct3d11", ValueType::Direct3D11 },
+    };
 };

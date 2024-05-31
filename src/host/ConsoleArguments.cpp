@@ -23,7 +23,6 @@ const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
-const std::wstring_view ConsoleArguments::PASSTHROUGH_ARG = L"--passthrough";
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -467,12 +466,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
-        else if (arg == PASSTHROUGH_ARG)
-        {
-            _passthroughMode = true;
-            s_ConsumeArg(args, i);
-            hr = S_OK;
-        }
         else if (arg.substr(0, FILEPATH_LEADER_PREFIX.length()) == FILEPATH_LEADER_PREFIX)
         {
             // beginning of command line -- includes file path
@@ -600,11 +593,6 @@ bool ConsoleArguments::ShouldCreateServerHandle() const
 bool ConsoleArguments::ShouldRunAsComServer() const
 {
     return _runAsComServer;
-}
-
-bool ConsoleArguments::IsPassthroughMode() const noexcept
-{
-    return _passthroughMode;
 }
 
 HANDLE ConsoleArguments::GetServerHandle() const

@@ -60,14 +60,6 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     *ppRetVal = nullptr;
     RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(ppRetVal, *this));
 
-#if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
-    OutputDebugString(L"Clone\n");
-    std::wstringstream ss;
-    ss << _id << L" cloned to " << (static_cast<UiaTextRangeBase*>(*ppRetVal))->_id;
-    std::wstring str = ss.str();
-    OutputDebugString(str.c_str());
-    OutputDebugString(L"\n");
-#endif
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgClone apiMsg;

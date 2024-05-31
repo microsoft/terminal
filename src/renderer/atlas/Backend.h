@@ -30,9 +30,6 @@ namespace Microsoft::Console::Render::Atlas
     // This helps with benchmarking the application as it'll run beyond display refresh rate.
 #define ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT 0
 
-    // Forces the use of Direct2D for text rendering (= BackendD2D).
-#define ATLAS_DEBUG_FORCE_D2D_MODE 0
-
     // Adds an artificial delay before every render pass. In milliseconds.
 #define ATLAS_DEBUG_RENDER_DELAY 0
 

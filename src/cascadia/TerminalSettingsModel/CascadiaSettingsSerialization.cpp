@@ -504,6 +504,10 @@ bool SettingsLoader::FixupUserSettings()
         fixedUp = true;
     }
 
+    // we need to generate an ID for a command in the user settings if it doesn't already have one
+    auto actionMap{ winrt::get_self<ActionMap>(userSettings.globals->ActionMap()) };
+    actionMap->GenerateIDsForActions();
+
     return fixedUp;
 }
 
@@ -1242,6 +1246,13 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
     const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
     const auto hash = fmt::format(L"{:016x}-{:016x}", fileHash, fileTime.QuadPart);
     return winrt::hstring{ hash };
+}
+
+// This returns something akin to %LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState
+// just like SettingsPath(), but without the trailing \settings.json.
+winrt::hstring CascadiaSettings::SettingsDirectory()
+{
+    return winrt::hstring{ GetBaseSettingsPath().native() };
 }
 
 // function Description:

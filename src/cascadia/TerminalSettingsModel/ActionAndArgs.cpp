@@ -96,6 +96,7 @@ static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
 static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
 static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
+static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
 static constexpr std::string_view OpenAboutKey{ "openAbout" };
 
 static constexpr std::string_view ActionKey{ "action" };
@@ -431,6 +432,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
                 { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
                 { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
+                { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
                 { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
             };
         }();
@@ -446,6 +448,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         const auto found = GeneratedActionNames.find(_Action);
         return found != GeneratedActionNames.end() ? found->second : L"";
+    }
+
+    // Function Description:
+    // - This will generate an ID for this ActionAndArgs, based on the ShortcutAction and the Args
+    // - It will always create the same ID if the ShortcutAction and the Args are the same
+    // - Note: this should only be called for User-created actions
+    // - Example: The "SendInput 'abc'" action will have the generated ID "User.sendInput.<hash of 'abc'>"
+    // Return Value:
+    // - The ID, based on the ShortcutAction and the Args
+    winrt::hstring ActionAndArgs::GenerateID() const
+    {
+        if (_Action != ShortcutAction::Invalid)
+        {
+            auto actionKeyString = ActionToStringMap.find(_Action)->second;
+            auto result = fmt::format(FMT_COMPILE(L"User.{}"), actionKeyString);
+            if (_Args)
+            {
+                // If there are args, we need to append the hash of the args
+                // However, to make it a little more presentable we
+                // 1. truncate the hash to 32 bits
+                // 2. convert it to a hex string
+                // there is a _tiny_ chance of collision because of the truncate but unlikely for
+                // the number of commands a user is expected to have
+                const auto argsHash32 = static_cast<uint32_t>(_Args.Hash() & 0xFFFFFFFF);
+                // {0:X} formats the truncated hash to an uppercase hex string
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE(L".{:X}"), argsHash32);
+            }
+            return winrt::hstring{ result };
+        }
+        return L"";
     }
 
     winrt::hstring ActionAndArgs::Serialize(const winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs>& args)

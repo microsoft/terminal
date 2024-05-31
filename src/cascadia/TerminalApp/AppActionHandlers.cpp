@@ -5,6 +5,7 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -237,6 +238,32 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // * Helper to try and get a ProfileIndex out of a NewTerminalArgs out of a
+    //   NewContentArgs. For the new tab and split pane action, we want to _not_
+    //   handle the event if an invalid profile index was passed.
+    //
+    // Return value:
+    // * True if the args are NewTerminalArgs, and the profile index was out of bounds.
+    // * False otherwise.
+    static bool _shouldBailForInvalidProfileIndex(const CascadiaSettings& settings, const INewContentArgs& args)
+    {
+        if (!args)
+        {
+            return false;
+        }
+        if (const auto& terminalArgs{ args.try_as<NewTerminalArgs>() })
+        {
+            if (const auto index = terminalArgs.ProfileIndex())
+            {
+                if (gsl::narrow<uint32_t>(index.Value()) >= settings.ActiveProfiles().Size())
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
@@ -246,16 +273,10 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
-                if (const auto index = realArgs.TerminalArgs().ProfileIndex())
-                {
-                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
-                    {
-                        args.Handled(false);
-                        return;
-                    }
-                }
+                args.Handled(false);
+                return;
             }
 
             const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
@@ -265,8 +286,8 @@ namespace winrt::TerminalApp::implementation
             _SplitPane(terminalTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
-                       ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       _MakePane(realArgs.TerminalArgs(), duplicateFromTab));
+                       realArgs.SplitSize(),
+                       _MakePane(realArgs.ContentArgs(), duplicateFromTab));
             args.Handled(true);
         }
     }
@@ -444,19 +465,13 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
-                if (const auto index = newTerminalArgs.ProfileIndex())
-                {
-                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
-                    {
-                        args.Handled(false);
-                        return;
-                    }
-                }
+                args.Handled(false);
+                return;
             }
 
-            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
+            LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs()));
             args.Handled(true);
         }
     }
@@ -868,8 +883,23 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget TerminalPage::_OpenNewWindow(const NewTerminalArgs newTerminalArgs)
+    fire_and_forget TerminalPage::_OpenNewWindow(const INewContentArgs newContentArgs)
     {
+        auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() };
+
+        // Do nothing for non-terminal panes.
+        //
+        // Theoretically, we could define a `IHasCommandline` interface, and
+        // stick `ToCommandline` on that interface, for any kind of pane that
+        // wants to be convertable to a wt commandline.
+        //
+        // Another idea we're thinking about is just `wt do {literal json for an
+        // action}`, which might be less leaky
+        if (terminalArgs == nullptr)
+        {
+            co_return;
+        }
+
         // Hop to the BG thread
         co_await winrt::resume_background();
 
@@ -882,8 +912,7 @@ namespace winrt::TerminalApp::implementation
         // `-w -1` will ensure a new window is created.
         winrt::hstring cmdline{
             fmt::format(L"-w -1 new-tab {}",
-                        newTerminalArgs ? newTerminalArgs.ToCommandline().c_str() :
-                                          L"")
+                        terminalArgs.ToCommandline().c_str())
         };
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
@@ -908,29 +937,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
-        NewTerminalArgs newTerminalArgs{ nullptr };
+        INewContentArgs newContentArgs{ nullptr };
         // If the caller provided NewTerminalArgs, then try to use those
         if (actionArgs)
         {
             if (const auto& realArgs = actionArgs.ActionArgs().try_as<NewWindowArgs>())
             {
-                newTerminalArgs = realArgs.TerminalArgs();
+                newContentArgs = realArgs.ContentArgs();
             }
         }
         // Otherwise, if no NewTerminalArgs were provided, then just use a
         // default-constructed one. The default-constructed one implies that
         // nothing about the launch should be modified (just use the default
         // profile).
-        if (!newTerminalArgs)
+        if (!newContentArgs)
         {
-            newTerminalArgs = NewTerminalArgs();
+            newContentArgs = NewTerminalArgs{};
         }
 
-        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+        if (const auto& terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
+        {
+            const auto profile{ _settings.GetProfileForArgs(terminalArgs) };
+            terminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        }
 
         // Manually fill in the evaluated profile.
-        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-        _OpenNewWindow(newTerminalArgs);
+        _OpenNewWindow(newContentArgs);
         actionArgs.Handled(true);
     }
 
@@ -1215,7 +1247,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
             {
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
+                    control.AdjustOpacity(realArgs.Opacity() / 100.0f, realArgs.Relative());
                 });
                 args.Handled(res);
             }
@@ -1401,7 +1433,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto activePane{ activeTab->GetActivePane() })
             {
-                _restartPaneConnection(activePane);
+                _restartPaneConnection(activePane->GetContent().try_as<TerminalApp::TerminalPaneContent>(), nullptr);
             }
         }
         args.Handled(true);
@@ -1416,6 +1448,25 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleOpenScratchpad(const IInspectable& sender,
+                                             const ActionEventArgs& args)
+    {
+        if (Feature_ScratchpadPane::IsEnabled())
+        {
+            const auto& scratchPane{ winrt::make_self<ScratchpadContent>() };
+
+            // This is maybe a little wacky - add our key event handler to the pane
+            // we made. So that we can get actions for keys that the content didn't
+            // handle.
+            scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+            const auto resultPane = std::make_shared<Pane>(*scratchPane);
+            _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleOpenAbout(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {

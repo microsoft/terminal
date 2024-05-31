@@ -34,10 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        static Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
-        static Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
-        static Font FindFontWithLocalizedName(String name);
-
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
@@ -75,7 +71,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
 
-        Boolean VtPassthroughAvailable { get; };
         Boolean ShowMarksAvailable { get; };
         Boolean AutoMarkPromptsAvailable { get; };
         Boolean RepositionCursorWithMouseAvailable { get; };
@@ -96,7 +91,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAcrylic);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, Opacity);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, Opacity);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
@@ -111,7 +106,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, VtPassthrough);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RightClickContextMenu);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ShowMarks);

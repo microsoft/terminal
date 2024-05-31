@@ -1,7 +1,27 @@
 {
     "C_Cpp.default.browse.databaseFilename": "${workspaceFolder}\\.vscode\\.BROWSE.VC.DB",
+    "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
     "C_Cpp.default.browse.path": [
         "${workspaceFolder}"
+    ],
+    "C_Cpp.default.cppStandard": "c++20",
+    "C_Cpp.default.cStandard": "c17",
+    "C_Cpp.default.defines": [
+        "_DEBUG",
+        "_UNICODE",
+        "BUILD_ONECORE_INTERACTIVITY",
+        "DBG",
+        "NT_SUCCESS",
+        "UNICODE",
+        "UNIT_TESTING",
+        "INLINE_TEST_METHOD_MARKUP",
+    ],
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/**/Generated Files",
+        "${workspaceFolder}/**/inc",
+        "${workspaceFolder}/**/include",
+        "${workspaceFolder}/**/Include"
     ],
     "C_Cpp.loggingLevel": "None",
     "files.associations": {
@@ -98,14 +118,13 @@
         "coroutine": "cpp",
         "format": "cpp",
         "forward_list": "cpp",
-        "latch": "cpp"
+        "latch": "cpp",
+        "gsl_assert": "cpp"
     },
     "files.exclude": {
         "**/bin/**": true,
+        "**/Generated Files/**": true,
         "**/obj/**": true,
-        "**/Generated Files/**": true
+        "**/packages/**": true,
     },
-    "search.exclude": {
-        "**/packages/**": true
-    }
 }

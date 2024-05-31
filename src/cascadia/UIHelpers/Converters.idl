@@ -18,6 +18,7 @@ namespace Microsoft.Terminal.UI
 
         // Strings
         static Boolean StringsAreNotEqual(String expected, String actual);
+        static Boolean StringNotEmpty(String value);
         static Windows.UI.Xaml.Visibility StringNotEmptyToVisibility(String value);
         static String StringOrEmptyIfPlaceholder(String placeholder, String value);
 

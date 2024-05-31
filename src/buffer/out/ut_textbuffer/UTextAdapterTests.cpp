@@ -6,6 +6,7 @@
 #include "WexTestClass.h"
 #include "../textBuffer.hpp"
 #include "../../renderer/inc/DummyRenderer.hpp"
+#include "../search.h"
 
 template<>
 class WEX::TestExecution::VerifyOutputTraits<std::vector<til::point_span>>
@@ -41,7 +42,7 @@ class UTextAdapterTests
         RowWriteState state{
             .text = L"abc 𝒶𝒷𝒸 abc ネコちゃん",
         };
-        buffer.Write(0, TextAttribute{}, state);
+        buffer.Replace(0, TextAttribute{}, state);
         VERIFY_IS_TRUE(state.text.empty());
 
         static constexpr auto s = [](til::CoordType beg, til::CoordType end) -> til::point_span {
@@ -49,15 +50,15 @@ class UTextAdapterTests
         };
 
         auto expected = std::vector{ s(0, 2), s(8, 10) };
-        auto actual = buffer.SearchText(L"abc", false);
+        auto actual = buffer.SearchText(L"abc", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
 
         expected = std::vector{ s(5, 5) };
-        actual = buffer.SearchText(L"𝒷", false);
+        actual = buffer.SearchText(L"𝒷", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
 
         expected = std::vector{ s(12, 15) };
-        actual = buffer.SearchText(L"ネコ", false);
+        actual = buffer.SearchText(L"ネコ", SearchFlag::None);
         VERIFY_ARE_EQUAL(expected, actual);
     }
 };
