@@ -409,6 +409,7 @@ void TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     GraphemeState state{ .beg = chars.data() + position };
     cwd.GraphemeNext(state, chars);
     return position + state.len;
@@ -418,6 +419,7 @@ size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position)
 size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     GraphemeState state{ .beg = chars.data() + position };
     cwd.GraphemePrev(state, chars);
     return position - state.len;
@@ -469,6 +471,7 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         col--;
     }
 
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     GraphemeState state{ .beg = chars.data() + dist };
 
     while (dist < len)
