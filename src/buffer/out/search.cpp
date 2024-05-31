@@ -8,24 +8,26 @@
 
 using namespace Microsoft::Console::Types;
 
-bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive) const noexcept
+bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags) const noexcept
 {
     return _renderData != &renderData ||
            _needle != needle ||
-           _caseInsensitive != caseInsensitive ||
+           _flags != flags ||
            _lastMutationId != renderData.GetTextBuffer().GetLastMutationId();
 }
 
-bool Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool caseInsensitive, bool reverse)
+bool Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags, bool reverse)
 {
     const auto& textBuffer = renderData.GetTextBuffer();
 
     _renderData = &renderData;
     _needle = needle;
-    _caseInsensitive = caseInsensitive;
+    _flags = flags;
     _lastMutationId = textBuffer.GetLastMutationId();
 
-    _results = textBuffer.SearchText(needle, caseInsensitive);
+    auto result = textBuffer.SearchText(needle, _flags);
+    _ok = result.has_value();
+    _results = std::move(result).value_or(std::vector<til::point_span>{});
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
     return true;
@@ -143,4 +145,9 @@ std::vector<til::point_span>&& Search::ExtractResults() noexcept
 ptrdiff_t Search::CurrentMatch() const noexcept
 {
     return _index;
+}
+
+bool Search::IsOk() const noexcept
+{
+    return _ok;
 }

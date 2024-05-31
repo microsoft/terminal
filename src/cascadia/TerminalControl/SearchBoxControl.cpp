@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _focusableElements.insert(TextBox());
         _focusableElements.insert(CloseButton());
         _focusableElements.insert(CaseSensitivityButton());
+        _focusableElements.insert(RegexButton());
         _focusableElements.insert(GoForwardButton());
         _focusableElements.insert(GoBackwardButton());
 
@@ -235,6 +236,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return CaseSensitivityButton().IsChecked().GetBoolean();
     }
 
+    bool SearchBoxControl::RegularExpression()
+    {
+        return RegexButton().IsChecked().GetBoolean();
+    }
+
     // Method Description:
     // - Handler for pressing Enter on TextBox, trigger
     //   text search
@@ -256,11 +262,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                Search.raise(Text(), !GoForward(), CaseSensitive());
+                Search.raise(Text(), !GoForward(), CaseSensitive(), RegularExpression());
             }
             else
             {
-                Search.raise(Text(), GoForward(), CaseSensitive());
+                Search.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
             }
             e.Handled(true);
         }
@@ -351,7 +357,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        Search.raise(Text(), GoForward(), CaseSensitive());
+        Search.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
     }
 
     // Method Description:
@@ -372,7 +378,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // kick off search
-        Search.raise(Text(), GoForward(), CaseSensitive());
+        Search.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
     }
 
     // Method Description:
@@ -410,7 +416,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        SearchChanged.raise(Text(), GoForward(), CaseSensitive());
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
     }
 
     // Method Description:
@@ -422,7 +428,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchBoxControl::CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        SearchChanged.raise(Text(), GoForward(), CaseSensitive());
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
+    }
+
+    void SearchBoxControl::RegexButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    {
+        SearchChanged.raise(Text(), GoForward(), CaseSensitive(), RegularExpression());
     }
 
     // Method Description:
@@ -515,7 +526,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     double SearchBoxControl::_GetStatusMaxWidth()
     {
         const auto fontSize = StatusBox().FontSize();
-        const auto maxLength = std::max({ _TextWidth(_FormatStatus(-1, -1), fontSize),
+        const auto maxLength = std::max({ _TextWidth(RS_(L"SearchRegexInvalid"), fontSize),
+                                          _TextWidth(_FormatStatus(-1, -1), fontSize),
                                           _TextWidth(_FormatStatus(0, -1), fontSize),
                                           _TextWidth(_FormatStatus(MaximumTotalResultsToShowInStatus, MaximumTotalResultsToShowInStatus - 1), fontSize),
                                           _TextWidth(_FormatStatus(MaximumTotalResultsToShowInStatus + 1, MaximumTotalResultsToShowInStatus - 1), fontSize),
@@ -532,9 +544,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - currentMatch - the index of the current match (0-based)
     // Return Value:
     // - <none>
-    void SearchBoxControl::SetStatus(int32_t totalMatches, int32_t currentMatch)
+    void SearchBoxControl::SetStatus(int32_t totalMatches, int32_t currentMatch, bool searchRegexInvalid)
     {
-        const auto status = _FormatStatus(totalMatches, currentMatch);
+        hstring status;
+        if (searchRegexInvalid)
+        {
+            status = RS_(L"SearchRegexInvalid");
+        }
+        else
+        {
+            status = _FormatStatus(totalMatches, currentMatch);
+        }
         StatusBox().Text(status);
     }
 

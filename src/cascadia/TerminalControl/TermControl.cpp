@@ -568,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), false));
+            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false));
         }
     }
 
@@ -597,11 +597,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_Search(const winrt::hstring& text,
                               const bool goForward,
-                              const bool caseSensitive)
+                              const bool caseSensitive,
+                              const bool regularExpression)
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            _handleSearchResults(_core.Search(text, goForward, caseSensitive, false));
+            _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
         }
     }
 
@@ -615,13 +616,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_SearchChanged(const winrt::hstring& text,
                                      const bool goForward,
-                                     const bool caseSensitive)
+                                     const bool caseSensitive,
+                                     const bool regularExpression)
     {
         if (_searchBox && _searchBox->IsOpen())
         {
             // We only want to update the search results based on the new text. Set
             // `resetOnly` to true so we don't accidentally update the current match index.
-            const auto result = _core.Search(text, goForward, caseSensitive, true);
+            const auto result = _core.Search(text, goForward, caseSensitive, regularExpression, true);
             _handleSearchResults(result);
         }
     }
@@ -3747,7 +3749,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, true));
+        const auto regularExpression = _searchBox->RegularExpression();
+        _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, true));
     }
 
     void TermControl::_handleSearchResults(SearchResults results)
@@ -3764,7 +3767,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch);
+            _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
         }
 
         if (results.SearchInvalidated)
