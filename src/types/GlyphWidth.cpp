@@ -10,9 +10,9 @@
 //      wide or not. See CodepointWidthDetector::IsWide
 bool IsGlyphFullWidth(const std::wstring_view& glyph) noexcept
 {
-    int width;
-    CodepointWidthDetector::Singleton().GraphemeNext(glyph, 0, &width);
-    return width == 2;
+    GraphemeState state;
+    CodepointWidthDetector::Singleton().GraphemeNext(state, glyph);
+    return state.width == 2;
 }
 
 // Function Description:

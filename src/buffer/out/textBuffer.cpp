@@ -409,14 +409,18 @@ void TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
-    return cwd.GraphemeNext(chars, position, nullptr);
+    GraphemeState state{ .beg = chars.data() + position };
+    cwd.GraphemeNext(state, chars);
+    return position + state.len;
 }
 
 // It's the counterpart to GraphemeNext. See GraphemeNext.
 size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
-    return cwd.GraphemePrev(chars, position, nullptr);
+    GraphemeState state{ .beg = chars.data() + position };
+    cwd.GraphemePrev(state, chars);
+    return position - state.len;
 }
 
 // Ever wondered how much space a piece of text needs before inserting it? This function will tell you!
@@ -465,11 +469,13 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         col--;
     }
 
+    GraphemeState state{ .beg = chars.data() + dist };
+
     while (dist < len)
     {
-        int width;
-        dist = cwd.GraphemeNext(chars, dist, &width);
-        col += width;
+        cwd.GraphemeNext(state, chars);
+        dist += state.len;
+        col += state.width;
 
         // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
         // because if we tried inserting a wide glyph into just 1 remaining column it will

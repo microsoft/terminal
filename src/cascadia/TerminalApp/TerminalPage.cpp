@@ -4,18 +4,11 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
-#include "TerminalPage.g.cpp"
-#include "RenameWindowRequestedArgs.g.cpp"
-#include "RequestMoveContentArgs.g.cpp"
-#include "RequestReceiveContentArgs.g.cpp"
-#include "LaunchPositionRequest.g.cpp"
 
-#include <filesystem>
-
-#include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
+#include <Utils.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -24,7 +17,12 @@
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
 #include "TabRowControl.h"
-#include "Utils.h"
+
+#include "TerminalPage.g.cpp"
+#include "RenameWindowRequestedArgs.g.cpp"
+#include "RequestMoveContentArgs.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -1211,6 +1209,26 @@ namespace winrt::TerminalApp::implementation
                                                                                         TerminalSettings settings,
                                                                                         const bool inheritCursor)
     {
+        // The only way to create string references to literals in WinRT is through std::optional. Fun!
+        static std::optional<winrt::param::hstring> textMeasurement;
+        static const auto textMeasurementInit = [&]() {
+            switch (_settings.GlobalSettings().TextMeasurement())
+            {
+            case TextMeasurement::Graphemes:
+                textMeasurement.emplace(L"graphemes");
+                break;
+            case TextMeasurement::Wcswidth:
+                textMeasurement.emplace(L"wcswidth");
+                break;
+            case TextMeasurement::Console:
+                textMeasurement.emplace(L"console");
+                break;
+            default:
+                break;
+            }
+            return true;
+        }();
+
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
@@ -1280,6 +1298,11 @@ namespace winrt::TerminalApp::implementation
             {
                 valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
             }
+        }
+
+        if (textMeasurement)
+        {
+            valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(*textMeasurement));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})

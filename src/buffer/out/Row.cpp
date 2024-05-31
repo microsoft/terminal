@@ -566,6 +566,7 @@ void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordTyp
 void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars)
 try
 {
+    assert(width >= 1 && width <= 2);
     WriteHelper h{ *this, columnBegin, _columnCount, chars };
     if (!h.IsValid())
     {
@@ -634,16 +635,17 @@ catch (...)
     throw;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::ReplaceText() noexcept
+void ROW::WriteHelper::ReplaceText() noexcept
 {
     // This function starts with a fast-pass for ASCII. ASCII is still predominant in technical areas.
     //
     // We can infer the "end" from the amount of columns we're given (colLimit - colBeg),
     // because ASCII is always 1 column wide per character.
-    const auto len = std::min<size_t>(chars.size(), colLimit - colBeg);
+    auto len = std::min<size_t>(chars.size(), colLimit - colEnd);
     size_t ch = chBeg;
+    size_t off = 0;
 
-    for (size_t off = 0; off < len; ++off)
+    for (; off < len; ++off)
     {
         if (chars[off] >= 0x80) [[unlikely]]
         {
@@ -660,27 +662,70 @@ catch (...)
     charsConsumed = ch - chBeg;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off) noexcept
+void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
     const auto len = chars.size();
 
-    // The non-ASCII character we have encountered may be a combining mark, like "a^" which is then displayed as "â".
-    // In order to recognize both characters as a single grapheme, we need to back up by 1 ASCII character
-    // and let MeasureNext() find the next proper grapheme boundary.
-    if (off != 0)
+    // Check if the new text joins with the existing contents of the row to form a single grapheme cluster.
+    if (off == 0)
     {
+        auto colPrev = colBeg;
+        while (colPrev > 0 && row._uncheckedIsTrailer(--colPrev))
+        {
+        }
+
+        const auto chPrev = row._uncheckedCharOffset(colPrev);
+        const std::wstring_view charsPrev{ row._chars.data() + chPrev, ch - chPrev };
+
+        GraphemeState state;
+        cwd.GraphemeNext(state, charsPrev);
+        cwd.GraphemeNext(state, chars);
+
+        if (state.len > 0)
+        {
+            colBegDirty = colPrev;
+            colEnd = colPrev;
+
+            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + state.width);
+            if (colEndNew > colLimit)
+            {
+                colEndDirty = colLimit;
+                charsConsumed = ch - chBeg;
+                return;
+            }
+
+            // Fill our char-offset buffer with 1 entry containing the mapping from the
+            // current column (colEnd) to the start of the glyph in the string (ch)...
+            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev);
+            // ...followed by 0-N entries containing an indication that the
+            // columns are just a wide-glyph extension of the preceding one.
+            while (colEnd < colEndNew)
+            {
+                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev | CharOffsetsTrailer);
+            }
+
+            ch += state.len;
+            off += state.len;
+        }
+    }
+    else
+    {
+        // The non-ASCII character we have encountered may be a combining mark, like "a^" which is then displayed as "â".
+        // In order to recognize both characters as a single grapheme, we need to back up by 1 ASCII character
+        // and let MeasureNext() find the next proper grapheme boundary.
         --colEnd;
         --ch;
         --off;
     }
 
+    GraphemeState state{ .beg = chars.data() + off };
+
     while (off < len)
     {
-        int width;
-        const auto end = cwd.GraphemeNext(chars, off, &width);
+        cwd.GraphemeNext(state, chars);
 
-        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
+        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + state.width);
         if (colEndNew > colLimit)
         {
             colEndDirty = colLimit;
@@ -698,8 +743,8 @@ catch (...)
             til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
         }
 
-        ch += end - off;
-        off = end;
+        ch += state.len;
+        off += state.len;
     }
 
     colEndDirty = colEnd;
@@ -804,7 +849,7 @@ catch (...)
 }
 #pragma warning(pop)
 
-[[msvc::forceinline]] void ROW::WriteHelper::Finish()
+void ROW::WriteHelper::Finish()
 {
     colEndDirty = row._adjustForward(colEndDirty);
 

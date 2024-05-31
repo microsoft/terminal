@@ -810,7 +810,8 @@ bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
             // You can't update the repeat count of such a A,B pair, because they're stored as A,A,B,B (down-down, up-up).
             // I believe the proper approach is to store pairs of characters as pairs, update their combined
             // repeat count and only when they're being read de-coalesce them into their alternating form.
-            !IsGlyphFullWidth(inKey.uChar.UnicodeChar))
+            // TODO:GH#8000 IsGlyphFullWidth was replaced with til::is_surrogate to get rid off the former. Neither approach is fully correct.
+            !til::is_surrogate(inKey.uChar.UnicodeChar))
         {
             lastKey.wRepeatCount += inKey.wRepeatCount;
             return true;

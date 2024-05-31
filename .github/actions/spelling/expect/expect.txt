@@ -179,7 +179,6 @@ changelists
 charinfo
 CHARSETINFO
 chh
-chonker
 chshdng
 CHT
 CLASSSTRING
@@ -1049,7 +1048,6 @@ mdmerge
 MDs
 MEASUREITEM
 megamix
-Meh
 memallocator
 meme
 MENUCHAR
@@ -1988,6 +1986,7 @@ WCIW
 WCSHELPER
 wcsicmp
 wcsrev
+wcswidth
 wddm
 wddmcon
 WDDMCONSOLECONTEXT
@@ -2142,6 +2141,7 @@ XFORM
 XIn
 XManifest
 XMath
+XNamespace
 xorg
 XPan
 XResource
