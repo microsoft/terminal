@@ -48,6 +48,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(NoGeneratedIDsForIterableAndNestedCommands);
         TEST_METHOD(GeneratedActionIDsEqualForIdenticalCommands);
         TEST_METHOD(RoundtripLegacyToModernActions);
+        TEST_METHOD(RoundtripUserActionsSameAsInBoxAreRemoved);
         TEST_METHOD(MultipleActionsAreCollapsed);
 
     private:
@@ -1114,6 +1115,49 @@ namespace SettingsModelUnitTests
                 },
                 {
                     "id": null,
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        VERIFY_IS_TRUE(loader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        VERIFY_IS_FALSE(newLoader.FixupUserSettings(), L"Validate that there is no need to write back to disk");
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::RoundtripUserActionsSameAsInBoxAreRemoved()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "actions": [
+                {
+                    "command": "paste",
+                    "keys": "ctrl+shift+x"
+                }
+            ]
+        })" };
+
+        // this action is the same as in inbox one,
+        // so we will delete this action from the user's file but retain the keybinding
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "actions": [
+            ],
+            "keybindings": [
+                {
+                    "id": "Terminal.PasteFromClipboard",
                     "keys": "ctrl+shift+x"
                 }
             ]

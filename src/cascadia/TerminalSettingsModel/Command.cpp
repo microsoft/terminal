@@ -121,14 +121,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
             {
                 _ID = generatedID;
-                _IdWasGenerated = true;
+                _IDWasGenerated = true;
             }
         }
     }
 
-    bool Command::IdWasGenerated()
+    bool Command::IDWasGenerated()
     {
-        return _IdWasGenerated;
+        return _IDWasGenerated;
     }
 
     void Command::Name(const hstring& value)

@@ -69,15 +69,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     if (jsonBlock.isMember(JsonKey(KeysKey)))
                     {
-                        // there are keys in this command block - its the legacy style
-                        _fixUpsAppliedDuringLoad = true;
+                        // there are keys in this command block - it's the legacy style
+                        _fixupsAppliedDuringLoad = true;
                     }
 
                     if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey(IDKey)))
                     {
                         // there's no ID in this command block - we will generate one for the user
                         // inform the loader that the ID needs to be written into the json
-                        _fixUpsAppliedDuringLoad = true;
+                        _fixupsAppliedDuringLoad = true;
                     }
                 }
             }

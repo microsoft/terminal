@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring ID() const noexcept;
         void GenerateID();
-        bool IdWasGenerated();
+        bool IDWasGenerated();
 
         Control::KeyChord Keys() const noexcept;
         hstring KeyChordText() const noexcept;
@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Control::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
         std::wstring _ID;
-        bool _IdWasGenerated{ false };
+        bool _IDWasGenerated{ false };
         std::optional<std::wstring> _iconPath;
         bool _nestedCommand{ false };
 
