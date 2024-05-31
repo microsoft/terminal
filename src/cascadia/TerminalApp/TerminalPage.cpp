@@ -1008,13 +1008,12 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto actionEntry = entry.as<ActionEntry>();
                 const auto actionId = actionEntry.ActionId();
-                if (_settings.ActionMap().GetActionById(actionId) == nullptr)
+                if (_settings.ActionMap().GetActionById(actionId))
                 {
-                    break;
+                    auto actionItem = _CreateNewTabFlyoutAction(actionId);
+                    items.push_back(actionItem);
                 }
 
-                auto actionItem = _CreateNewTabFlyoutAction(actionId);
-                items.push_back(actionItem);
                 break;
             }
             }
@@ -1121,7 +1120,7 @@ namespace winrt::TerminalApp::implementation
             _SetAcceleratorForMenuItem(actionMenuItem, actionKeyChord);
         }
 
-        auto actionName = action.Name();
+        const auto actionName = action.Name();
         actionMenuItem.Text(actionName);
 
         // If there's an icon set for this action, set it as the icon for
