@@ -20,7 +20,7 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct EnumMappings : EnumMappingsT<EnumMappings>
+    struct EnumMappings
     {
     public:
         EnumMappings() = default;
