@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
                                                                                            winrt::hstring currentCommandline,
                                                                                            bool directories);
-        static void AddLocalCommands(const Windows::Foundation::Collections::IVector<Model::Command>&, winrt::hstring localTasksFileContents);
+        static Windows::Foundation::Collections::IVector<Model::Command> ParseLocalCommands(winrt::hstring localTasksFileContents);
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);

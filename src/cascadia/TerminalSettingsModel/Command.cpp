@@ -707,8 +707,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
 
-    void Command::AddLocalCommands(const Windows::Foundation::Collections::IVector<Model::Command>& commands,
-                                   winrt::hstring localTasksFileContents)
+    IVector<Model::Command> Command::ParseLocalCommands(winrt::hstring localTasksFileContents)
     {
         auto data = winrt::to_string(localTasksFileContents);
         std::string errs;
@@ -718,6 +717,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
+        
+        auto result = std::vector<Model::Command>();
         if (auto actions{ root[JsonKey("actions")] })
         {
             std::vector<SettingsLoadWarnings> warnings;
@@ -726,9 +727,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 auto parsed = Command::FromJson(json, warnings, OriginTag::Generated, false);
                 if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
                     continue;
-                commands.Append(*parsed);
+                // commands.Append(*parsed);
+                result.push_back(*parsed);
             }
         }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
 
 }

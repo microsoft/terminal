@@ -14,11 +14,13 @@
         {
             "command": { "action": "sendInput", "input": "bcz\r" },
             "name": "Clean & build solution",
+            "icon": "\uE8e6",
             "description": "Start over. Go get your coffee. "
         },
         {
             "command": { "action": "sendInput", "input": "nuget push -apikey az -source TerminalDependencies %userprofile%\\Downloads" },
             "name": "Upload package to nuget feed",
+            "icon": "\uE898",
             "description": "Go download a .nupkg, put it in ~/Downloads, and use this to push to our private feed."
         },
 
