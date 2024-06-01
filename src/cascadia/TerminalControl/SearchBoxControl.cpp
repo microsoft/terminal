@@ -155,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // search box remains in Visible state (though not really *visible*) during the
             // first load. So, we only need to apply this check here (after checking that
             // we're done initializing).
-            if(IsOpen())
+            if (IsOpen())
             {
                 callback();
                 return;
