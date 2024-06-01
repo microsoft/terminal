@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
-        winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSendInput(winrt::hstring currentCommandline);
+        winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSnippets(winrt::hstring currentCommandline, winrt::hstring currentWorkingDirectory);
 
     private:
         Model::Command _GetActionByID(const winrt::hstring actionID) const;
@@ -127,6 +127,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // This is effectively a combination of _CumulativeKeyMapCache and _CumulativeActionMapCache and its purpose is so that
         // we can give the SUI a view of the key chords and the commands they map to
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyActionMapCache{ nullptr };
+
+        std::unordered_map<hstring, std::vector<Model::Command>> _cwdLocalSnippetsCache{};
 
         friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class SettingsModelUnitTests::DeserializationTests;

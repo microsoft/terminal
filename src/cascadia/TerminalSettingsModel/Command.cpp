@@ -724,7 +724,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             std::vector<SettingsLoadWarnings> warnings;
             for (const auto& json : actions)
             {
-                auto parsed = Command::FromJson(json, warnings, OriginTag::Generated, false);
+                auto parsed = Command::FromJson(json, warnings, OriginTag::Generated);
                 if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
                     continue;
                 // commands.Append(*parsed);

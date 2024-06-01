@@ -1343,24 +1343,26 @@ namespace winrt::TerminalApp::implementation
         std::vector<Command> commandsCollection;
         Control::CommandHistoryContext context{ nullptr };
         winrt::hstring currentCommandline = L"";
+        winrt::hstring currentWorkingDirectory = L"";
 
         // If the user wanted to use the current commandline to filter results,
         //    OR they wanted command history (or some other source that
         //       requires context from the control)
         // then get that here.
-        const bool shouldGetContext = realArgs.UseCommandline() ||
-                                        WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::Local);
-        if (shouldGetContext)
-        {
+        // const bool shouldGetContext = realArgs.UseCommandline() ||
+        //                                 WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::Local);
+        // if (shouldGetContext)
+        // {
             if (const auto& control{ _GetActiveControl() })
             {
                 context = control.CommandHistory();
                 if (context)
                 {
                     currentCommandline = context.CurrentCommandline();
+                    currentWorkingDirectory = context.CurrentWorkingDirectory();
                 }
             }
-        }
+        // }
 
         // Aggregate all the commands from the different sources that
         // the user selected.
@@ -1369,7 +1371,7 @@ namespace winrt::TerminalApp::implementation
         // their settings file. Ask the ActionMap for those.
         if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
         {
-            const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
+            const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSnippets(currentCommandline, currentWorkingDirectory);
             for (const auto& t : tasks)
             {
                 commandsCollection.push_back(t);
@@ -1389,27 +1391,27 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (WI_IsFlagSet(source, SuggestionsSource::Local) &&
-            context != nullptr)
-        {
-            // TODO! this is wack. CurrentWorkingDirectory should be it's own
-            // property, or a property of ControlCore.DirectoryHistory() or
-            // something. I only have 5 minutes to pch tho so garbage will do
-            auto cwd = context.CurrentWorkingDirectory();// strongControl.CommandHistory().CurrentWorkingDirectory();
-            if (!cwd.empty())
-            {
-                co_await winrt::resume_background();
-                auto localTasksFileContents = CascadiaSettings::ReadFile(cwd + L"\\.wt.json");
-                if (!localTasksFileContents.empty())
-                {
-                    const auto localCommands = Command::ParseLocalCommands(localTasksFileContents);
-                                for (const auto& t : localCommands)
-            {
-                commandsCollection.push_back(t);
-            }
-                }
-            }
-        }
+        // if (WI_IsFlagSet(source, SuggestionsSource::Local) &&
+        //     context != nullptr)
+        // {
+        //     // TODO! this is wack. CurrentWorkingDirectory should be it's own
+        //     // property, or a property of ControlCore.DirectoryHistory() or
+        //     // something. I only have 5 minutes to pch tho so garbage will do
+        //     auto cwd = context.CurrentWorkingDirectory();// strongControl.CommandHistory().CurrentWorkingDirectory();
+        //     if (!cwd.empty())
+        //     {
+        //         co_await winrt::resume_background();
+        //         auto localTasksFileContents = CascadiaSettings::ReadFile(cwd + L"\\.wt.json");
+        //         if (!localTasksFileContents.empty())
+        //         {
+        //             const auto localCommands = Command::ParseLocalCommands(localTasksFileContents);
+        //             for (const auto& t : localCommands)
+        //             {
+        //                 commandsCollection.push_back(t);
+        //             }
+        //         }
+        //     }
+        // }
 
         co_await wil::resume_foreground(Dispatcher());
 
