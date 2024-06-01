@@ -2256,7 +2256,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             return winrt::hstring{ L"" };
         };
-
         const auto currentCommand = _terminal->CurrentCommand();
         const auto trimmedCurrentCommand = trimToHstring(currentCommand);
 
@@ -2279,6 +2278,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(trimmedCurrentCommand);
+
+        context->CurrentWorkingDirectory(winrt::hstring{ _terminal->GetWorkingDirectory() });
+
         return *context;
     }
 
