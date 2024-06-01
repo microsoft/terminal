@@ -25,7 +25,7 @@ using namespace winrt::Microsoft::Terminal::Control;
 #endif
 
 #if defined(_M_IX86)
-#define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "56911147"
+#define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "35488AA6"
 #else
 #define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "58D1971"
 #endif
