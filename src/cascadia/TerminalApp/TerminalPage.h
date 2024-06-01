@@ -548,6 +548,8 @@ namespace winrt::TerminalApp::implementation
 
         void _loadQueryExtension();
 
+        void _activePaneChanged(winrt::TerminalApp::TerminalTab tab, Windows::Foundation::IInspectable args);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);

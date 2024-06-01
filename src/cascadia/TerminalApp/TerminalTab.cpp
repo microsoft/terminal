@@ -1242,7 +1242,7 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyReadOnly();
 
         // Raise our own ActivePaneChanged event.
-        ActivePaneChanged.raise();
+        ActivePaneChanged.raise(*this, nullptr);
     }
 
     // Method Description:
