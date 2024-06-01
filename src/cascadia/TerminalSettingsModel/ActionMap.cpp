@@ -70,19 +70,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::ActionMap> foundParent{ nullptr };
         for (const auto& parent : _parents)
         {
-            for (const auto& [_, cmd] : parent->_ActionMap)
+            const auto parentMap = parent->_ActionMap;
+            if (parentMap.begin() != parentMap.end() && parentMap.begin()->second.Origin() == OriginTag::InBox)
             {
-                if (cmd.Origin() != OriginTag::InBox)
-                {
-                    // only one parent contains all the inbox actions and that parent contains only inbox actions,
-                    // so if we found a non-inbox action we can just skip to the next parent
-                    break;
-                }
+                // only one parent contains all the inbox actions and that parent contains only inbox actions,
+                // so if we found an inbox action we know this is the parent we are looking for
                 foundParent = parent;
-            }
-
-            if (foundParent)
-            {
                 break;
             }
         }
