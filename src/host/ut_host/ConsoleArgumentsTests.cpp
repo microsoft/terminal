@@ -31,7 +31,6 @@ public:
 
     TEST_METHOD(HeadlessArgTests);
     TEST_METHOD(SignalHandleTests);
-    TEST_METHOD(FeatureArgTests);
 };
 
 ConsoleArguments CreateAndParse(std::wstring& commandline, HANDLE hVtIn, HANDLE hVtOut)
