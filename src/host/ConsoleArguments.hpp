@@ -44,8 +44,9 @@ public:
     bool HasSignalHandle() const;
     HANDLE GetSignalHandle() const;
 
-    const std::wstring& GetClientCommandline() const;
-    const std::wstring& GetVtMode() const;
+    std::wstring GetOriginalCommandLine() const;
+    std::wstring GetClientCommandline() const;
+    std::wstring GetVtMode() const;
     const std::wstring& GetTextMeasurement() const;
     bool GetForceV1() const;
     bool GetForceNoHandoff() const;
@@ -58,6 +59,23 @@ public:
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests();
 #endif
+
+    static const std::wstring_view VT_MODE_ARG;
+    static const std::wstring_view HEADLESS_ARG;
+    static const std::wstring_view SERVER_HANDLE_ARG;
+    static const std::wstring_view SIGNAL_HANDLE_ARG;
+    static const std::wstring_view HANDLE_PREFIX;
+    static const std::wstring_view CLIENT_COMMANDLINE_ARG;
+    static const std::wstring_view FORCE_V1_ARG;
+    static const std::wstring_view FORCE_NO_HANDOFF_ARG;
+    static const std::wstring_view FILEPATH_LEADER_PREFIX;
+    static const std::wstring_view WIDTH_ARG;
+    static const std::wstring_view HEIGHT_ARG;
+    static const std::wstring_view INHERIT_CURSOR_ARG;
+    static const std::wstring_view RESIZE_QUIRK;
+    static const std::wstring_view FEATURE_ARG;
+    static const std::wstring_view FEATURE_PTY_ARG;
+    static const std::wstring_view COM_SERVER_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -134,6 +152,8 @@ private:
     [[nodiscard]] static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                                     _Inout_ size_t& index,
                                                     _Out_opt_ short* const pSetting);
+    [[nodiscard]] static HRESULT s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args,
+                                                      _Inout_ size_t& index);
 
     [[nodiscard]] static HRESULT s_ParseHandleArg(const std::wstring& handleAsText,
                                                   _Inout_ DWORD& handleAsVal);

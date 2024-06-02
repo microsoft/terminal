@@ -2061,111 +2061,133 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 {
-    static constexpr auto mapTempBoolState = [](bool enabled) { return enabled ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled; };
-    static constexpr auto mapPermBoolState = [](bool enabled) { return enabled ? DispatchTypes::DECRPM_PermanentlyEnabled : DispatchTypes::DECRPM_PermanentlyDisabled; };
-    auto state = DispatchTypes::DECRPM_Unsupported;
+    VTInt state = DispatchTypes::DECRPM_Unsupported;
 
     switch (param)
     {
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
-        state = mapTempBoolState(_modes.test(Mode::InsertReplace));
+        state = _modes.test(Mode::InsertReplace) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
         // VT apps expect that the system and input modes are the same, so if
         // they become out of sync, we just act as if LNM mode isn't supported.
         if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
         {
-            state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::LineFeed));
+            state = _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+            ;
         }
         break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
-        state = mapTempBoolState(_api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi));
+        state = _api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
         // DECCOLM is not supported in conpty mode
         if (!_api.IsConsolePty())
         {
-            state = mapTempBoolState(_modes.test(Mode::Column));
+            state = _modes.test(Mode::Column) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+            ;
         }
         break;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
-        state = mapTempBoolState(_renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed));
+        state = _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECOM_OriginMode:
-        state = mapTempBoolState(_modes.test(Mode::Origin));
+        state = _modes.test(Mode::Origin) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        state = mapTempBoolState(_api.GetSystemMode(ITerminalApi::Mode::AutoWrap));
+        state = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        state = mapTempBoolState(_pages.ActivePage().Cursor().IsBlinkingAllowed());
+        state = _pages.ActivePage().Cursor().IsBlinkingAllowed() ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        state = mapTempBoolState(_pages.ActivePage().Cursor().IsVisible());
+        state = _pages.ActivePage().Cursor().IsVisible() ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         // DECCOLM is not supported in conpty mode
         if (!_api.IsConsolePty())
         {
-            state = mapTempBoolState(_modes.test(Mode::AllowDECCOLM));
+            state = _modes.test(Mode::AllowDECCOLM) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+            ;
         }
         break;
     case DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode:
-        state = mapTempBoolState(_modes.test(Mode::PageCursorCoupling));
+        state = _modes.test(Mode::PageCursorCoupling) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::Keypad));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::Keypad) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
-        state = mapTempBoolState(_modes.test(Mode::AllowDECSLRM));
+        state = _modes.test(Mode::AllowDECSLRM) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::DECECM_EraseColorMode:
-        state = mapTempBoolState(_modes.test(Mode::EraseColor));
+        state = _modes.test(Mode::EraseColor) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
-        state = mapTempBoolState(_usingAltBuffer);
+        state = _usingAltBuffer ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        state = mapTempBoolState(_api.GetSystemMode(ITerminalApi::Mode::BracketedPaste));
+        state = _api.GetSystemMode(ITerminalApi::Mode::BracketedPaste) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
-    {
-        const auto mode = CodepointWidthDetector::Singleton().GetMode();
-        state = mapPermBoolState(mode == TextMeasurementMode::Graphemes);
+        state = CodepointWidthDetector::Singleton().GetMode() == TextMeasurementMode::Graphemes ? DispatchTypes::DECRPM_PermanentlyEnabled : DispatchTypes::DECRPM_PermanentlyDisabled;
         break;
-    }
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
-        state = mapTempBoolState(_terminalInput.GetInputMode(TerminalInput::Mode::Win32));
+        state = _terminalInput.GetInputMode(TerminalInput::Mode::Win32) ? DispatchTypes::DECRPM_Enabled : DispatchTypes::DECRPM_Disabled;
+        ;
         break;
     default:
         break;

@@ -635,7 +635,7 @@ catch (...)
     throw;
 }
 
-void ROW::WriteHelper::ReplaceText() noexcept
+[[msvc::forceinline]] void ROW::WriteHelper::ReplaceText() noexcept
 {
     // This function starts with a fast-pass for ASCII. ASCII is still predominant in technical areas.
     //
@@ -662,7 +662,7 @@ void ROW::WriteHelper::ReplaceText() noexcept
     charsConsumed = ch - chBeg;
 }
 
-void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off) noexcept
+[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
     const auto len = chars.size();
@@ -849,7 +849,7 @@ catch (...)
 }
 #pragma warning(pop)
 
-void ROW::WriteHelper::Finish()
+[[msvc::forceinline]] void ROW::WriteHelper::Finish()
 {
     colEndDirty = row._adjustForward(colEndDirty);
 

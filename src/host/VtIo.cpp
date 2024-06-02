@@ -9,11 +9,11 @@
 #include "../renderer/vt/Xterm256Engine.hpp"
 
 #include "../renderer/base/renderer.hpp"
+#include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/utils.hpp"
 #include "handle.h" // LockConsole
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
-#include "../types/inc/CodepointWidthDetector.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;

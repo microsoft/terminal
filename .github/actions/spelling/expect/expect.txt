@@ -295,7 +295,6 @@ CREATESTRUCT
 CREATESTRUCTW
 createvpack
 crisman
-CRLFs
 crloew
 CRTLIBS
 csbi
@@ -597,7 +596,6 @@ ffd
 FFDE
 FFFD
 FFFDb
-FFrom
 fgbg
 FGCOLOR
 FGHIJ
@@ -1165,7 +1163,6 @@ NOMINMAX
 NOMOVE
 NONALERT
 nonbreaking
-noncharacter
 nonclient
 NONINFRINGEMENT
 NONPREROTATED
@@ -1478,7 +1475,6 @@ READMODE
 rectread
 redef
 redefinable
-Redir
 redist
 REDSCROLL
 REFCLSID
@@ -1889,7 +1885,6 @@ UPDATEDISPLAY
 UPDOWN
 UPKEY
 upss
-UPSS
 uregex
 URegular
 usebackq
@@ -1984,7 +1979,6 @@ wchars
 WCIA
 WCIW
 WCSHELPER
-wcsicmp
 wcsrev
 wcswidth
 wddm

@@ -7,21 +7,23 @@
 #include <shellapi.h>
 using namespace Microsoft::Console::Utils;
 
-static constexpr std::wstring_view VT_MODE_ARG{ L"--vtmode" };
-static constexpr std::wstring_view HEADLESS_ARG{ L"--headless" };
-static constexpr std::wstring_view SERVER_HANDLE_ARG{ L"--server" };
-static constexpr std::wstring_view SIGNAL_HANDLE_ARG{ L"--signal" };
-static constexpr std::wstring_view HANDLE_PREFIX{ L"0x" };
-static constexpr std::wstring_view CLIENT_COMMANDLINE_ARG{ L"--" };
-static constexpr std::wstring_view FORCE_V1_ARG{ L"-ForceV1" };
-static constexpr std::wstring_view FORCE_NO_HANDOFF_ARG{ L"-ForceNoHandoff" };
-static constexpr std::wstring_view FILEPATH_LEADER_PREFIX{ L"\\??\\" };
-static constexpr std::wstring_view WIDTH_ARG{ L"--width" };
-static constexpr std::wstring_view HEIGHT_ARG{ L"--height" };
-static constexpr std::wstring_view INHERIT_CURSOR_ARG{ L"--inheritcursor" };
-static constexpr std::wstring_view RESIZE_QUIRK{ L"--resizeQuirk" };
+const std::wstring_view ConsoleArguments::VT_MODE_ARG = L"--vtmode";
+const std::wstring_view ConsoleArguments::HEADLESS_ARG = L"--headless";
+const std::wstring_view ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
+const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
+const std::wstring_view ConsoleArguments::HANDLE_PREFIX = L"0x";
+const std::wstring_view ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
+const std::wstring_view ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
+const std::wstring_view ConsoleArguments::FORCE_NO_HANDOFF_ARG = L"-ForceNoHandoff";
+const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
+const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
+const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
+const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
+const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
+const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
+const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 static constexpr std::wstring_view GLYPH_WIDTH{ L"--textMeasurement" };
-static constexpr std::wstring_view COM_SERVER_ARG{ L"-Embedding" };
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -203,6 +205,37 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     return (hasNext) ? S_OK : E_INVALIDARG;
 }
 
+// Routine Description:
+// Similar to s_GetArgumentValue.
+// Attempts to get the next arg as a "feature" arg - this can be used for
+//      feature detection.
+// If the next arg is not recognized, then we don't support that feature.
+// Currently, the only supported feature arg is `pty`, to identify pty support.
+// Arguments:
+//  args: A collection of wstrings representing command-line arguments
+//  index: the index of the argument of which to get the value for. The value
+//      should be at (index+1). index will be decremented by one on success.
+//  pSetting: receives the string at index+1
+// Return Value:
+//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//      failure.
+[[nodiscard]] HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
+{
+    auto hr = E_INVALIDARG;
+    auto hasNext = (index + 1) < args.size();
+    if (hasNext)
+    {
+        s_ConsumeArg(args, index);
+        auto value = args[index];
+        if (value == FEATURE_PTY_ARG)
+        {
+            hr = S_OK;
+        }
+        s_ConsumeArg(args, index);
+    }
+    return (hasNext) ? hr : E_INVALIDARG;
+}
+
 // Method Description:
 // Routine Description:
 //  Given the commandline of tokens `args`, tries to find the argument at
@@ -353,10 +386,13 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     std::vector<std::wstring> args;
     auto hr = S_OK;
 
+    // Make a mutable copy of the commandline for tokenizing
+    auto copy = _commandline;
+
     // Tokenize the commandline
     auto argc = 0;
     wil::unique_hlocal_ptr<PWSTR[]> argv;
-    argv.reset(CommandLineToArgvW(_commandline.c_str(), &argc));
+    argv.reset(CommandLineToArgvW(copy.c_str(), &argc));
     RETURN_LAST_ERROR_IF(argv == nullptr);
 
     for (auto i = 1; i < argc; ++i)
@@ -371,7 +407,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     {
         hr = E_INVALIDARG;
 
-        const std::wstring_view arg{ args[i] };
+        auto arg = args[i];
 
         if (arg.substr(0, HANDLE_PREFIX.length()) == HANDLE_PREFIX ||
             arg == SERVER_HANDLE_ARG)
@@ -380,7 +416,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             // --server 0x4 (new method)
             // 0x4 (legacy method)
             // If we see >1 of these, it's invalid.
-            std::wstring serverHandleVal{ arg };
+            auto serverHandleVal = arg;
 
             if (arg == SERVER_HANDLE_ARG)
             {
@@ -449,6 +485,10 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         else if (arg == HEIGHT_ARG)
         {
             hr = s_GetArgumentValue(args, i, &_height);
+        }
+        else if (arg == FEATURE_ARG)
+        {
+            hr = s_HandleFeatureValue(args, i);
         }
         else if (arg == HEADLESS_ARG)
         {
@@ -580,12 +620,17 @@ HANDLE ConsoleArguments::GetVtOutHandle() const
     return _vtOutHandle;
 }
 
-const std::wstring& ConsoleArguments::GetClientCommandline() const
+std::wstring ConsoleArguments::GetOriginalCommandLine() const
+{
+    return _commandline;
+}
+
+std::wstring ConsoleArguments::GetClientCommandline() const
 {
     return _clientCommandline;
 }
 
-const std::wstring& ConsoleArguments::GetVtMode() const
+std::wstring ConsoleArguments::GetVtMode() const
 {
     return _vtMode;
 }

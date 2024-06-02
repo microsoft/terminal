@@ -134,6 +134,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
     // This is plenty of space to hold the formatted string
+    wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
 
@@ -154,18 +155,17 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         break;
     }
 
-    wil::unique_process_heap_string cmd;
-    RETURN_IF_FAILED(wil::str_printf_nothrow(
-        cmd,
-        L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
-        _ConsoleHostPath(),
-        bInheritCursor ? L"--inheritcursor " : L"",
-        bResizeQuirk ? L"--resizeQuirk " : L"",
-        textMeasurement,
-        size.X,
-        size.Y,
-        std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
-        std::bit_cast<uintptr_t>(serverHandle.get())));
+    swprintf_s(cmd,
+               MAX_PATH,
+               L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+               _ConsoleHostPath(),
+               bInheritCursor ? L"--inheritcursor " : L"",
+               bResizeQuirk ? L"--resizeQuirk " : L"",
+               textMeasurement,
+               size.X,
+               size.Y,
+               std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
+               std::bit_cast<uintptr_t>(serverHandle.get()));
 
     STARTUPINFOEXW siEx{ 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
@@ -221,7 +221,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         {
             // Call create process
             RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
-                                                      cmd.get(),
+                                                      cmd,
                                                       nullptr,
                                                       nullptr,
                                                       TRUE,
@@ -236,7 +236,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
             // Call create process
             RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(hToken,
                                                             _ConsoleHostPath(),
-                                                            cmd.get(),
+                                                            cmd,
                                                             nullptr,
                                                             nullptr,
                                                             TRUE,
