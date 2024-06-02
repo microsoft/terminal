@@ -825,9 +825,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _ExpandedCommandsCache;
     }
 
-    IVector<Model::Command> _filterToSnippets(IMapView<hstring, Model::Command> nameMap,
+    std::vector<Model::Command> _filterToSnippets(IMapView<hstring, Model::Command> nameMap,
                                                winrt::hstring currentCommandline,
-                                               winrt::hstring currentWorkingDirectory)
+                                               const std::vector<Model::Command>& localCommands)
     {
         std::vector<Model::Command> results{};
 
@@ -868,8 +868,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         };
 
-        // iterate over all the commands in all our actions...
-        for (auto&& [name, command] : nameMap)
+        const auto addCommand = [&](auto& command)
         {
             // If this is not a nested command, and it's a sendInput command...
             if (!command.HasNestedCommands() &&
@@ -882,7 +881,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             else if (command.HasNestedCommands())
             {
                 // Look for any sendInput commands nested underneath us
-                auto innerResults = _filterToSnippets(command.NestedCommands(), currentCommandline, currentWorkingDirectory);
+                std::vector<Model::Command> empty{};
+                auto innerResults = winrt::single_threaded_vector<Model::Command>(std::move(_filterToSnippets(command.NestedCommands(), currentCommandline, empty)));
 
                 if (innerResults.Size() > 0)
                 {
@@ -898,68 +898,82 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     results.push_back(*copy);
                 }
             }
+        };
+
+        // iterate over all the commands in all our actions...
+        for (auto&& [name, command] : nameMap)
+        {
+            addCommand(command);
         }
 
-        return winrt::single_threaded_vector<Model::Command>(std::move(results));
+        for (const auto& command : localCommands) {
+            addCommand(command);
+        }
+
+        // return winrt::single_threaded_vector<Model::Command>(std::move(results));
+        return results;
+    }
+
+    winrt::Windows::Foundation::IAsyncAction ActionMap::_updateLocalSnippetCache(winrt::hstring currentWorkingDirectory)
+    {
+        co_await winrt::resume_background();
+        auto localTasksFileContents = CascadiaSettings::ReadFile(currentWorkingDirectory + L"\\.wt.json");
+        if (!localTasksFileContents.empty())
+        {
+            auto data = winrt::to_string(localTasksFileContents);
+            std::string errs;
+            static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+            Json::Value root;
+            if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+            {
+                throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+            }
+            
+            auto result = std::vector<Model::Command>();
+            if (auto actions{ root[JsonKey("actions")] })
+            {
+                std::vector<SettingsLoadWarnings> warnings;
+                for (const auto& json : actions)
+                {
+                    auto parsed = Command::FromJson(json, warnings, OriginTag::Generated);
+                    if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
+                        continue;
+                    // commands.Append(*parsed);
+                    result.push_back(*parsed);
+                }
+            }
+
+            _cwdLocalSnippetsCache.insert_or_assign(currentWorkingDirectory, result);
+        }
+
+        co_return;
     }
 
     winrt::Windows::Foundation::IAsyncOperation<IVector<Model::Command>> ActionMap::FilterToSnippets(
         winrt::hstring currentCommandline,
         winrt::hstring currentWorkingDirectory)
     {
-        auto results = _filterToSnippets(NameMap(), currentCommandline, currentWorkingDirectory);
 
         auto cachedCwdCommands = _cwdLocalSnippetsCache.find(currentWorkingDirectory);
         if (cachedCwdCommands == _cwdLocalSnippetsCache.end())
         {
             // we haven't cached this path yet
-
-            auto localTasksFileContents = CascadiaSettings::ReadFile(currentWorkingDirectory + L"\\.wt.json");
-            if (!localTasksFileContents.empty())
-            {
-                // const auto localCommands = Command::ParseLocalCommands(localTasksFileContents);
-                // for (const auto& t : localCommands)
-                // {
-                //     commandsCollection.push_back(t);
-                // }
-
-                auto data = winrt::to_string(localTasksFileContents);
-                std::string errs;
-                static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-                Json::Value root;
-                if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
-                {
-                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-                }
-                
-                auto result = std::vector<Model::Command>();
-                if (auto actions{ root[JsonKey("actions")] })
-                {
-                    std::vector<SettingsLoadWarnings> warnings;
-                    for (const auto& json : actions)
-                    {
-                        auto parsed = Command::FromJson(json, warnings, OriginTag::Generated);
-                        if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
-                            continue;
-                        // commands.Append(*parsed);
-                        result.push_back(*parsed);
-                    }
-                }
-
-                _cwdLocalSnippetsCache.insert_or_assign(currentWorkingDirectory, result);
-                cachedCwdCommands = _cwdLocalSnippetsCache.find(currentWorkingDirectory);
-            }
+            co_await _updateLocalSnippetCache(currentWorkingDirectory);
+            cachedCwdCommands = _cwdLocalSnippetsCache.find(currentWorkingDirectory);
         }
+        auto cachedCommands = cachedCwdCommands != _cwdLocalSnippetsCache.end() ? 
+            cachedCwdCommands->second :
+            std::vector<Model::Command>{};
 
-        if (cachedCwdCommands != _cwdLocalSnippetsCache.end())
-        {
-            const auto commands = cachedCwdCommands->second;
-            for (const auto& cmd : commands)
-            {
-                results.Append(cmd);
-            }
-        }
+        // if (cachedCwdCommands != _cwdLocalSnippetsCache.end())
+        // {
+        //     const auto commands = cachedCwdCommands->second;
+        //     for (const auto& cmd : commands)
+        //     {
+        //         results.Append(cmd);
+        //     }
+        // }
 
-        co_return results;
+        co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCommands));
     }
 }
