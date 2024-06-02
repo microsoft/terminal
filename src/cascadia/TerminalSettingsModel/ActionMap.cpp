@@ -829,7 +829,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                winrt::hstring currentCommandline,
                                                winrt::hstring currentWorkingDirectory)
     {
-        auto results = winrt::single_threaded_vector<Model::Command>();
+        std::vector<Model::Command> results{};
 
         const auto numBackspaces = currentCommandline.size();
         // Helper to clone a sendInput command into a new Command, with the
@@ -876,7 +876,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 command.ActionAndArgs().Action() == ShortcutAction::SendInput)
             {
                 // copy it into the results.
-                results.Append(createInputAction(command));
+                results.push_back(createInputAction(command));
             }
             // If this is nested...
             else if (command.HasNestedCommands())
@@ -895,15 +895,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     auto copy = cmdImpl->Copy();
                     copy->NestedCommands(innerResults.GetView());
 
-                    results.Append(*copy);
+                    results.push_back(*copy);
                 }
             }
         }
 
-        return results;
+        return winrt::single_threaded_vector<Model::Command>(std::move(results));
     }
 
-    IVector<Model::Command> ActionMap::FilterToSnippets(
+    winrt::Windows::Foundation::IAsyncOperation<IVector<Model::Command>> ActionMap::FilterToSnippets(
         winrt::hstring currentCommandline,
         winrt::hstring currentWorkingDirectory)
     {
@@ -960,6 +960,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        return results;
+        co_return results;
     }
 }
