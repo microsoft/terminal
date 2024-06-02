@@ -3548,6 +3548,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.CommandHistory();
     }
+    winrt::hstring TermControl::CurrentWorkingDirectory() const
+    {
+        return _core.CurrentWorkingDirectory();
+    }
 
     Core::Scheme TermControl::ColorScheme() const noexcept
     {

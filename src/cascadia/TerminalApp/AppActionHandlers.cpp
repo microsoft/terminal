@@ -1331,7 +1331,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
             {
                 _doHandleSuggestions(realArgs);
-                
+
                 args.Handled(true);
             }
         }
@@ -1349,20 +1349,21 @@ namespace winrt::TerminalApp::implementation
         //    OR they wanted command history (or some other source that
         //       requires context from the control)
         // then get that here.
-        // const bool shouldGetContext = realArgs.UseCommandline() ||
-        //                                 WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::Local);
-        // if (shouldGetContext)
-        // {
-            if (const auto& control{ _GetActiveControl() })
+        const bool shouldGetContext = realArgs.UseCommandline() ||
+                                      WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory);
+        if (const auto& control{ _GetActiveControl() })
+        {
+            currentWorkingDirectory = control.CurrentWorkingDirectory();
+
+            if (shouldGetContext)
             {
                 context = control.CommandHistory();
                 if (context)
                 {
                     currentCommandline = context.CurrentCommandline();
-                    currentWorkingDirectory = context.CurrentWorkingDirectory();
                 }
             }
-        // }
+        }
 
         // Aggregate all the commands from the different sources that
         // the user selected.
@@ -1395,10 +1396,9 @@ namespace winrt::TerminalApp::implementation
 
         // Open the palette with all these commands in it.
         _OpenSuggestions(_GetActiveControl(),
-                            winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
-                            SuggestionsMode::Palette,
-                            currentCommandline);
-            
+                         winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
+                         SuggestionsMode::Palette,
+                         currentCommandline);
     }
 
     void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,

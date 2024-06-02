@@ -717,7 +717,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
-        
+
         auto result = std::vector<Model::Command>();
         if (auto actions{ root[JsonKey("actions")] })
         {
