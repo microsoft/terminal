@@ -4,14 +4,14 @@
 #pragma once
 
 #include "ConptyConnection.g.h"
-#include "ConnectionStateHolder.h"
+#include "BaseTerminalConnection.h"
 
 #include "ITerminalHandoff.h"
 #include <til/env.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct ConptyConnection : ConptyConnectionT<ConptyConnection>, ConnectionStateHolder<ConptyConnection>
+    struct ConptyConnection : ConptyConnectionT<ConptyConnection>, BaseTerminalConnection<ConptyConnection>
     {
         ConptyConnection(const HANDLE hSig,
                          const HANDLE hIn,
@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          const HANDLE hRef,
                          const HANDLE hServerProcess,
                          const HANDLE hClientProcess,
-                         TERMINAL_STARTUP_INFO startupInfo);
+                         const TERMINAL_STARTUP_INFO& startupInfo);
 
         ConptyConnection() noexcept = default;
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
@@ -36,7 +36,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void ReparentWindow(const uint64_t newParent);
 
-        winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
         WORD ShowWindow() const noexcept;
@@ -58,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const winrt::guid& guid,
                                                                          const winrt::guid& profileGuid);
 
-        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+        til::event<TerminalOutputHandler> TerminalOutput;
 
     private:
         static void closePseudoConsoleAsync(HPCON hPC) noexcept;
@@ -77,7 +76,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingTitle{};
         bool _initialVisibility{ true };
         Windows::Foundation::Collections::ValueSet _environment{ nullptr };
-        guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 
         bool _receivedFirstByte{ false };
@@ -92,7 +90,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         til::u8state _u8State{};
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
-        bool _passthroughMode{};
         bool _inheritCursor{ false };
 
         til::env _initialEnv{};

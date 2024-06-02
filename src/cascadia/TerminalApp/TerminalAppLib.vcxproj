@@ -88,9 +88,6 @@
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="SettingsTab.h">
-      <DependentUpon>SettingsTab.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="PaletteItem.h" />
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
@@ -130,9 +127,6 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
-    <ClInclude Include="EmptyStringVisibilityConverter.h">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
@@ -161,7 +155,19 @@
     <ClInclude Include="SettingsLoadEventArgs.h">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TerminalPaneContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ScratchpadContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsPaneContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
+    <ClInclude Include="TerminalSettingsCache.h">
+      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
@@ -181,9 +187,6 @@
     <ClCompile Include="PaletteItemTemplateSelector.cpp">
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
-    </ClCompile>
-    <ClCompile Include="SettingsTab.cpp">
-      <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
@@ -232,12 +235,11 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="FilteredCommand.cpp" />
-    <ClCompile Include="EmptyStringVisibilityConverter.cpp">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
-    <ClCompile Include="ColorHelper.cpp" />
+    <ClCompile Include="ColorHelper.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -266,8 +268,20 @@
     <ClCompile Include="TerminalWindow.cpp">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TerminalPaneContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ScratchpadContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsPaneContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="TerminalSettingsCache.cpp">
+      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
@@ -278,7 +292,6 @@
     header in TerminalApp.vcxproj (as well as in this file) -->
     <Midl Include="ActionPaletteItem.idl" />
     <Midl Include="CommandLinePaletteItem.idl" />
-    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="AboutDialog.idl">
       <DependentUpon>AboutDialog.xaml</DependentUpon>
     </Midl>
@@ -288,7 +301,6 @@
     <Midl Include="PaletteItemTemplateSelector.idl">
       <SubType>Designer</SubType>
     </Midl>
-    <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
@@ -339,7 +351,9 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
+    <Midl Include="IPaneContent.idl" />
+    <Midl Include="TerminalPaneContent.idl" />
+    <Midl Include="TerminalSettingsCache.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -382,6 +396,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj">
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
 
   </ItemGroup>

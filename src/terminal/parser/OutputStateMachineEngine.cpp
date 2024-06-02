@@ -87,8 +87,8 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::SUB:
         // The SUB control is used to cancel a control sequence in the same
         // way as CAN, but unlike CAN it also displays an error character,
-        // typically a reverse question mark.
-        _dispatch->Print(L'\u2E2E');
+        // typically a reverse question mark (Unicode substitute form two).
+        _dispatch->Print(L'\u2426');
         break;
     case AsciiChars::DEL:
         // The DEL control can sometimes be translated into a printable glyph
@@ -180,14 +180,15 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 //      we don't know what to do with it)
 // Arguments:
 // - string - string to dispatch.
+// - flush - set to true if the string should be flushed immediately.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
+bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string, const bool flush)
 {
     auto success = true;
     if (_pTtyConnection != nullptr)
     {
-        const auto hr = _pTtyConnection->WriteTerminalW(string);
+        const auto hr = _pTtyConnection->WriteTerminalW(string, flush);
         LOG_IF_FAILED(hr);
         success = SUCCEEDED(hr);
     }
@@ -273,6 +274,15 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         break;
     case EscActionCodes::DECAC1_AcceptC1Controls:
         success = _dispatch->AcceptC1Controls(true);
+        break;
+    case EscActionCodes::ACS_AnsiLevel1:
+        success = _dispatch->AnnounceCodeStructure(1);
+        break;
+    case EscActionCodes::ACS_AnsiLevel2:
+        success = _dispatch->AnnounceCodeStructure(2);
+        break;
+    case EscActionCodes::ACS_AnsiLevel3:
+        success = _dispatch->AnnounceCodeStructure(3);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
         success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
@@ -546,6 +556,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::SD_ScrollDown:
         success = _dispatch->ScrollDown(parameters.at(0));
         break;
+    case CsiActionCodes::NP_NextPage:
+        success = _dispatch->NextPage(parameters.at(0));
+        break;
+    case CsiActionCodes::PP_PrecedingPage:
+        success = _dispatch->PrecedingPage(parameters.at(0));
+        break;
     case CsiActionCodes::ANSISYSRC_CursorRestore:
         success = _dispatch->CursorRestoreState();
         break;
@@ -564,6 +580,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::TBC_TabClear:
         success = parameters.for_each([&](const auto clearType) {
             return _dispatch->TabClear(clearType);
+        });
+        break;
+    case CsiActionCodes::DECST8C_SetTabEvery8Columns:
+        success = parameters.for_each([&](const auto setType) {
+            return _dispatch->TabSet(setType);
         });
         break;
     case CsiActionCodes::ECH_EraseCharacters:
@@ -586,6 +607,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         }
         success = true;
         break;
+    case CsiActionCodes::PPA_PagePositionAbsolute:
+        success = _dispatch->PagePositionAbsolute(parameters.at(0));
+        break;
+    case CsiActionCodes::PPR_PagePositionRelative:
+        success = _dispatch->PagePositionRelative(parameters.at(0));
+        break;
+    case CsiActionCodes::PPB_PagePositionBack:
+        success = _dispatch->PagePositionBack(parameters.at(0));
+        break;
     case CsiActionCodes::DECSCUSR_SetCursorStyle:
         success = _dispatch->SetCursorStyle(parameters.at(0));
         break;
@@ -594,6 +624,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
         success = _dispatch->SetCharacterProtectionAttribute(parameters);
+        break;
+    case CsiActionCodes::DECRQDE_RequestDisplayedExtent:
+        success = _dispatch->RequestDisplayedExtent();
         break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
@@ -629,6 +662,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
         success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        break;
+    case CsiActionCodes::DECRQUPSS_RequestUserPreferenceSupplementalSet:
+        success = _dispatch->RequestUserPreferenceCharset();
         break;
     case CsiActionCodes::DECIC_InsertColumn:
         success = _dispatch->InsertColumn(parameters.at(0));
@@ -694,6 +730,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(6),
                                           parameters.at(7));
         break;
+    case DcsActionCodes::DECAUPSS_AssignUserPreferenceSupplementalSet:
+        handler = _dispatch->AssignUserPreferenceCharset(parameters.at(0));
+        break;
     case DcsActionCodes::DECDMAC_DefineMacro:
         handler = _dispatch->DefineMacro(parameters.at(0).value_or(0), parameters.at(1), parameters.at(2));
         break;
@@ -746,14 +785,11 @@ bool OutputStateMachineEngine::ActionIgnore() noexcept
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch. This will be a BEL or ST char.
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
-                                                 const size_t parameter,
-                                                 const std::wstring_view string)
+bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const std::wstring_view string)
 {
     auto success = false;
 
@@ -762,10 +798,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetIconAndWindowTitle:
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
+    case OscActionCodes::DECSWT_SetWindowTitle:
     {
-        std::wstring title;
-        success = _GetOscTitle(string, title);
-        success = success && _dispatch->SetWindowTitle(title);
+        success = _dispatch->SetWindowTitle(string);
         break;
     }
     case OscActionCodes::SetColor:
@@ -910,21 +945,6 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/, const VT
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
     return false;
-}
-
-// Routine Description:
-// - Null terminates, then returns, the string that we've collected as part of the OSC string.
-// Arguments:
-// - string - Osc String input
-// - title - Where to place the Osc String to use as a title.
-// Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
-                                            std::wstring& title) const
-{
-    title = string;
-
-    return !string.empty();
 }
 
 // Routine Description:

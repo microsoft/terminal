@@ -198,24 +198,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         std::wstring to_string() const
         {
-            std::wstringstream wss;
-            wss << L"Color " << ToHexString(false);
-            return wss.str();
+            return ToHexString(false);
         }
+
         std::wstring ToHexString(const bool omitAlpha = false) const
         {
-            std::wstringstream wss;
-            wss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
-            // Force the compiler to promote from byte to int. Without it, the
-            // stringstream will try to write the components as chars
-            wss << std::setw(2) << static_cast<int>(r);
-            wss << std::setw(2) << static_cast<int>(g);
-            wss << std::setw(2) << static_cast<int>(b);
-            if (!omitAlpha)
+            auto str = fmt::format(FMT_COMPILE(L"#{:02X}{:02X}{:02X}{:02X}"), r, g, b, a);
+            if (omitAlpha)
             {
-                wss << std::setw(2) << static_cast<int>(a);
+                str.resize(7);
             }
-            return wss.str();
+            return str;
         }
     };
 #pragma warning(pop)

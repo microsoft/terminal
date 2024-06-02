@@ -5,14 +5,10 @@
 #include "WindowEmperor.h"
 
 #include "../inc/WindowingBehavior.h"
-
 #include "../../types/inc/utils.hpp"
-
 #include "../WinRTUtils/inc/WtExeUtils.h"
-
 #include "resource.h"
 #include "NotificationIcon.h"
-#include <til/env.h>
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -38,26 +34,6 @@ WindowEmperor::WindowEmperor() noexcept :
     });
 
     _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
-
-    // BODGY
-    //
-    // There's a mysterious crash in XAML on Windows 10 if you just let the App
-    // get dtor'd. By all accounts, it doesn't make sense. To mitigate this, we
-    // need to intentionally leak a reference to our App. Crazily, if you just
-    // let the app get cleaned up with the rest of the process when the process
-    // exits, then it doesn't crash. But if you let it get explicitly dtor'd, it
-    // absolutely will crash on exit.
-    //
-    // GH#15410 has more details.
-
-    auto a{ _app };
-    ::winrt::detach_abi(a);
-}
-
-WindowEmperor::~WindowEmperor()
-{
-    _app.Close();
-    _app = nullptr;
 }
 
 void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
@@ -82,7 +58,7 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
     }
 }
 
-bool WindowEmperor::HandleCommandlineArgs()
+void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
@@ -98,28 +74,32 @@ bool WindowEmperor::HandleCommandlineArgs()
         }
     }
 
-    // Get the requested initial state of the window from our startup info. For
-    // something like `start /min`, this will set the wShowWindow member to
-    // SW_SHOWMINIMIZED. We'll need to make sure is bubbled all the way through,
-    // so we can open a new window with the same state.
-    STARTUPINFOW si;
-    GetStartupInfoW(&si);
-    const uint32_t showWindow = WI_IsFlagSet(si.dwFlags, STARTF_USESHOWWINDOW) ? si.wShowWindow : SW_SHOW;
+    // GetEnvironmentStringsW() returns a double-null terminated string.
+    // The hstring(wchar_t*) constructor however only works for regular null-terminated strings.
+    // Due to that we need to manually search for the terminator.
+    winrt::hstring env;
+    {
+        const wil::unique_environstrings_ptr strings{ GetEnvironmentStringsW() };
+        const auto beg = strings.get();
+        auto end = beg;
 
-    const auto currentEnv{ til::env::from_current_environment() };
+        for (; *end; end += wcsnlen(end, SIZE_T_MAX) + 1)
+        {
+        }
 
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow, winrt::hstring{ currentEnv.to_string() } };
+        env = winrt::hstring{ beg, gsl::narrow<uint32_t>(end - beg) };
+    }
 
+    const Remoting::CommandlineArgs eventArgs{ args, cwd, gsl::narrow_cast<uint32_t>(nCmdShow), std::move(env) };
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
-
     const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
+    int exitCode = 0;
 
-    const bool makeWindow = result.ShouldCreateWindow();
-    if (makeWindow)
+    if (result.ShouldCreateWindow())
     {
         _createNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
-
         _becomeMonarch();
+        WaitForWindows();
     }
     else
     {
@@ -127,11 +107,16 @@ bool WindowEmperor::HandleCommandlineArgs()
         if (!res.Message.empty())
         {
             AppHost::s_DisplayMessageBox(res);
-            std::quick_exit(res.ExitCode);
         }
+        exitCode = res.ExitCode;
     }
 
-    return makeWindow;
+    // There's a mysterious crash in XAML on Windows 10 if you just let _app get destroyed (GH#15410).
+    // We also need to ensure that all UI threads exit before WindowEmperor leaves the scope on the main thread (MSFT:46744208).
+    // Both problems can be solved and the shutdown accelerated by using TerminateProcess.
+    // std::exit(), etc., cannot be used here, because those use ExitProcess for unpackaged applications.
+    TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(exitCode));
+    __assume(false);
 }
 
 void WindowEmperor::WaitForWindows()
@@ -142,6 +127,9 @@ void WindowEmperor::WaitForWindows()
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
+
+    _finalizeSessionPersistence();
+    TerminateProcess(GetCurrentProcess(), 0);
 }
 
 void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
@@ -361,115 +349,24 @@ void WindowEmperor::_becomeMonarch()
     _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
     _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
 
-    // If the monarch receives a QuitAll event it will signal this event to be
-    // ran before each peasant is closed.
-    _revokers.QuitAllRequested = _manager.QuitAllRequested(winrt::auto_revoke, { this, &WindowEmperor::_quitAllRequested });
-
-    // The monarch should be monitoring if it should save the window layout.
-    // We want at least some delay to prevent the first save from overwriting
-    _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _saveWindowLayoutsRepeat(); }));
-    _getWindowLayoutThrottler.value()();
+    // If a previous session of Windows Terminal stored buffer_*.txt files, then we need to clean all those up on exit
+    // that aren't needed anymore, even if the user disabled the ShouldUsePersistedLayout() setting in the meantime.
+    {
+        const auto state = ApplicationState::SharedInstance();
+        const auto layouts = state.PersistedWindowLayouts();
+        _requiresPersistenceCleanupOnExit = layouts && layouts.Size() > 0;
+    }
 }
 
 // sender and args are always nullptr
 void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&,
                                             const winrt::Windows::Foundation::IInspectable&)
 {
-    if (_getWindowLayoutThrottler)
-    {
-        _getWindowLayoutThrottler.value()();
-    }
-
     // If we closed out the quake window, and don't otherwise need the tray
     // icon, let's get rid of it.
     _checkWindowsForNotificationIcon();
 }
 
-// Raised from our windowManager (on behalf of the monarch). We respond by
-// giving the monarch an async function that the manager should wait on before
-// completing the quit.
-void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
-                                      const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
-{
-    _quitting = true;
-
-    // Make sure that the current timer is destroyed so that it doesn't attempt
-    // to run while we are in the middle of quitting.
-    if (_getWindowLayoutThrottler.has_value())
-    {
-        _getWindowLayoutThrottler.reset();
-    }
-
-    // Tell the monarch to wait for the window layouts to save before
-    // everyone quits.
-    args.BeforeQuitAllAction(_saveWindowLayouts());
-}
-
-#pragma region LayoutPersistence
-
-winrt::Windows::Foundation::IAsyncAction WindowEmperor::_saveWindowLayouts()
-{
-    // Make sure we run on a background thread to not block anything.
-    co_await winrt::resume_background();
-
-    if (_app.Logic().ShouldUsePersistedLayout())
-    {
-        try
-        {
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_SaveWindowLayouts_Collect",
-                              TraceLoggingDescription("Logged when collecting window state"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-            const auto layoutJsons = _manager.GetAllWindowLayouts();
-
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_SaveWindowLayouts_Save",
-                              TraceLoggingDescription("Logged when writing window state"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-            _app.Logic().SaveWindowLayoutJsons(layoutJsons);
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_SaveWindowLayouts_Failed",
-                              TraceLoggingDescription("An error occurred when collecting or writing window state"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        }
-    }
-
-    co_return;
-}
-
-winrt::fire_and_forget WindowEmperor::_saveWindowLayoutsRepeat()
-{
-    // Make sure we run on a background thread to not block anything.
-    co_await winrt::resume_background();
-
-    co_await _saveWindowLayouts();
-
-    // Don't need to save too frequently.
-    co_await winrt::resume_after(30s);
-
-    // As long as we are supposed to keep saving, request another save.
-    // This will be delayed by the throttler so that at most one save happens
-    // per 10 seconds, if a save is requested by another source simultaneously.
-    if (_getWindowLayoutThrottler.has_value())
-    {
-        TraceLoggingWrite(g_hWindowsTerminalProvider,
-                          "AppHost_requestGetLayout",
-                          TraceLoggingDescription("Logged when triggering a throttled write of the window state"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-        _getWindowLayoutThrottler.value()();
-    }
-}
 #pragma endregion
 
 #pragma region WindowProc
@@ -584,19 +481,92 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
 // we'll undoubtedly crash.
 winrt::fire_and_forget WindowEmperor::_close()
 {
-    {
-        auto fridge{ _oldThreads.lock() };
-        for (auto& window : *fridge)
-        {
-            window->ThrowAway();
-        }
-        fridge->clear();
-    }
-
     // Important! Switch back to the main thread for the emperor. That way, the
     // quit will go to the emperor's message pump.
     co_await wil::resume_foreground(_dispatcher);
     PostQuitMessage(0);
+}
+
+void WindowEmperor::_finalizeSessionPersistence() const
+{
+    const auto state = ApplicationState::SharedInstance();
+
+    // Ensure to write the state.json before we TerminateProcess()
+    state.Flush();
+
+    if (!_requiresPersistenceCleanupOnExit)
+    {
+        return;
+    }
+
+    // Get the "buffer_{guid}.txt" files that we expect to be there
+    std::unordered_set<winrt::guid> sessionIds;
+    if (const auto layouts = state.PersistedWindowLayouts())
+    {
+        for (const auto& windowLayout : layouts)
+        {
+            for (const auto& actionAndArgs : windowLayout.TabLayout())
+            {
+                const auto args = actionAndArgs.Args();
+                NewTerminalArgs terminalArgs{ nullptr };
+
+                if (const auto tabArgs = args.try_as<NewTabArgs>())
+                {
+                    terminalArgs = tabArgs.ContentArgs().try_as<NewTerminalArgs>();
+                }
+                else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
+                {
+                    terminalArgs = paneArgs.ContentArgs().try_as<NewTerminalArgs>();
+                }
+
+                if (terminalArgs)
+                {
+                    sessionIds.emplace(terminalArgs.SessionId());
+                }
+            }
+        }
+    }
+
+    // Remove the "buffer_{guid}.txt" files that shouldn't be there
+    // e.g. "buffer_FD40D746-163E-444C-B9B2-6A3EA2B26722.txt"
+    {
+        const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
+        const auto filter = settingsDirectory / L"buffer_*";
+        WIN32_FIND_DATAW ffd;
+
+        // This could also use std::filesystem::directory_iterator.
+        // I was just slightly bothered by how it doesn't have a O(1) .filename()
+        // function, even though the underlying Win32 APIs provide it for free.
+        // Both work fine.
+        const wil::unique_hfind handle{ FindFirstFileExW(filter.c_str(), FindExInfoBasic, &ffd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
+        if (!handle)
+        {
+            return;
+        }
+
+        do
+        {
+            const auto nameLen = wcsnlen_s(&ffd.cFileName[0], ARRAYSIZE(ffd.cFileName));
+            const std::wstring_view name{ &ffd.cFileName[0], nameLen };
+
+            if (nameLen != 47)
+            {
+                continue;
+            }
+
+            wchar_t guidStr[39];
+            guidStr[0] = L'{';
+            memcpy(&guidStr[1], name.data() + 7, 36 * sizeof(wchar_t));
+            guidStr[37] = L'}';
+            guidStr[38] = L'\0';
+
+            const auto id = Utils::GuidFromString(&guidStr[0]);
+            if (!sessionIds.contains(id))
+            {
+                std::filesystem::remove(settingsDirectory / name);
+            }
+        } while (FindNextFileW(handle.get(), &ffd));
+    }
 }
 
 #pragma endregion

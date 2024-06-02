@@ -22,11 +22,10 @@ public:
     void Microwave(
         winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
         winrt::Microsoft::Terminal::Remoting::Peasant peasant);
-    void ThrowAway();
 
     uint64_t PeasantID();
 
-    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
+    til::event<winrt::delegate<void()>> UpdateSettingsRequested;
 
 private:
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
@@ -43,8 +42,6 @@ private:
     winrt::event_token _UpdateSettingsRequestedToken;
 
     std::unique_ptr<::IslandWindow> _warmWindow{ nullptr };
-    std::mutex _microwave;
-    std::condition_variable _microwaveBuzzer;
 
     int _messagePump();
     void _pumpRemainingXamlMessages();

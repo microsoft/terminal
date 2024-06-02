@@ -59,7 +59,7 @@ public:
         return true;
     };
 
-    bool ActionPassThroughString(const std::wstring_view string) override
+    bool ActionPassThroughString(const std::wstring_view string, const bool /*flush*/) override
     {
         passedThrough += string;
         return true;
@@ -73,9 +73,7 @@ public:
 
     bool ActionIgnore() override { return true; };
 
-    bool ActionOscDispatch(const wchar_t /* wch */,
-                           const size_t /* parameter */,
-                           const std::wstring_view /* string */) override
+    bool ActionOscDispatch(const size_t /* parameter */, const std::wstring_view /* string */) override
     {
         if (pfnFlushToTerminal)
         {

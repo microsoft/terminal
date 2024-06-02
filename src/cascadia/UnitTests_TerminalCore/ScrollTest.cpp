@@ -2,18 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <WexTestClass.h>
-
-#include <DefaultSettings.h>
-
-#include "../renderer/inc/DummyRenderer.hpp"
-#include "../renderer/base/Renderer.hpp"
-#include "../renderer/dx/DxRenderer.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
-#include "MockTermSettings.h"
-#include "consoletaeftemplates.hpp"
-#include "../../inc/TestUtils.h"
+#include "../renderer/inc/DummyRenderer.hpp"
+#include "../renderer/inc/RenderEngineBase.hpp"
 
 using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
@@ -59,7 +51,6 @@ namespace
         HRESULT PaintBufferLine(std::span<const Cluster> /*clusters*/, til::point /*coord*/, bool /*fTrimLeft*/, bool /*lineWrapped*/) noexcept { return S_OK; }
         HRESULT PaintBufferGridLines(GridLineSet /*lines*/, COLORREF /*gridlineColor*/, COLORREF /*underlineColor*/, size_t /*cchLine*/, til::point /*coordTarget*/) noexcept { return S_OK; }
         HRESULT PaintSelection(const til::rect& /*rect*/) noexcept { return S_OK; }
-        HRESULT PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept { return S_OK; }
         HRESULT PaintCursor(const CursorOptions& /*options*/) noexcept { return S_OK; }
         HRESULT UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/, const RenderSettings& /*renderSettings*/, gsl::not_null<IRenderData*> /*pData*/, bool /*usingSoftFont*/, bool /*isSettingDefaultBrushes*/) noexcept { return S_OK; }
         HRESULT UpdateFont(const FontInfoDesired& /*FontInfoDesired*/, _Out_ FontInfo& /*FontInfo*/) noexcept { return S_OK; }

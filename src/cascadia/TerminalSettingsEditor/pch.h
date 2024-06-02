@@ -49,6 +49,7 @@
 #include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Microsoft.Terminal.UI.h>
 
 #include <shlobj.h>
 #include <shobjidl_core.h>
@@ -56,5 +57,6 @@
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/winrt.h>
 
 #include <cppwinrt_utils.h>

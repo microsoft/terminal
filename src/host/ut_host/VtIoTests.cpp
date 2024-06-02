@@ -12,10 +12,6 @@
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
 
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-#include "../../renderer/dx/DxRenderer.hpp"
-#endif
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -37,10 +33,6 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestStackAllocMany);
 
     TEST_METHOD(RendererDtorAndThread);
-
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-    TEST_METHOD(RendererDtorAndThreadAndDx);
-#endif
 
     TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
 };
@@ -267,7 +259,7 @@ public:
         return {};
     }
 
-    const TextBuffer& GetTextBuffer() const noexcept override
+    TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -278,11 +270,6 @@ public:
     }
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override
-    {
-        return std::vector<Microsoft::Console::Types::Viewport>{};
-    }
-
-    std::vector<Microsoft::Console::Types::Viewport> GetSearchSelectionRects() noexcept override
     {
         return std::vector<Microsoft::Console::Types::Viewport>{};
     }
@@ -335,11 +322,6 @@ public:
         return false;
     }
 
-    const std::vector<RenderOverlay> GetOverlays() const noexcept override
-    {
-        return std::vector<RenderOverlay>{};
-    }
-
     const bool IsGridLineDrawingAllowed() noexcept override
     {
         return false;
@@ -368,8 +350,14 @@ public:
     {
     }
 
-    void SelectSearchRegions(std::vector<til::inclusive_rect> /*source*/) override
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override
     {
+        return {};
+    }
+
+    const til::point_span* GetSearchHighlightFocused() const noexcept override
+    {
+        return nullptr;
     }
 
     const til::point GetSelectionAnchor() const noexcept
@@ -427,37 +415,6 @@ void VtIoTests::RendererDtorAndThread()
         pRenderer.reset();
     }
 }
-
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-void VtIoTests::RendererDtorAndThreadAndDx()
-{
-    Log::Comment(NoThrowString().Format(
-        L"Test deleting a Renderer a bunch of times"));
-
-    for (auto i = 0; i < 16; ++i)
-    {
-        auto data = std::make_unique<MockRenderData>();
-        auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
-        auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
-        VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
-
-        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        pRenderer->AddRenderEngine(dxEngine.get());
-        // Sleep for a hot sec to make sure the thread starts before we enable painting
-        // If you don't, the thread might wait on the paint enabled event AFTER
-        // EnablePainting gets called, and if that happens, then the thread will
-        // never get destructed. This will only ever happen in the vstest test runner,
-        // which is what CI uses.
-        /*Sleep(500);*/
-
-        (void)dxEngine->Enable();
-        pThread->EnablePainting();
-        pRenderer->TriggerTeardown();
-        pRenderer.reset();
-    }
-}
-#endif
 
 void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
 {

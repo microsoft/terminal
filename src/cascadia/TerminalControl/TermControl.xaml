@@ -1302,8 +1302,7 @@
                                         x:Load="False"
                                         Closed="_CloseSearchBoxControl"
                                         Search="_Search"
-                                        SearchChanged="_SearchChanged"
-                                        Visibility="Collapsed" />
+                                        SearchChanged="_SearchChanged" />
             </Grid>
 
             <ScrollBar x:Name="ScrollBar"
@@ -1332,11 +1331,6 @@
                    Visibility="Collapsed" />
 
         </Grid>
-
-        <local:TSFInputControl x:Name="TSFInputControl"
-                               CompositionCompleted="_CompositionCompleted"
-                               CurrentCursorPosition="_CurrentCursorPositionHandler"
-                               CurrentFontInfo="_FontInfoHandler" />
 
         <Grid x:Name="RendererFailedNotice"
               HorizontalAlignment="Center"

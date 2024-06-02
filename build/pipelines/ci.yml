@@ -4,6 +4,7 @@ trigger:
     include:
       - main
       - feature/*
+      - gh-readonly-queue/*
   paths:
     exclude:
       - doc/*

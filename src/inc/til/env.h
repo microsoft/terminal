@@ -19,6 +19,22 @@ class EnvTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
+    // A case-insensitive wide-character map is used to store environment variables
+    // due to documented requirements:
+    //
+    //      "All strings in the environment block must be sorted alphabetically by name.
+    //      The sort is case-insensitive, Unicode order, without regard to locale.
+    //      Because the equal sign is a separator, it must not be used in the name of
+    //      an environment variable."
+    //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
+    struct env_key_sorter
+    {
+        [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+        {
+            return compare_ordinal_insensitive(lhs, rhs) < 0;
+        }
+    };
+
     namespace details
     {
 
@@ -70,7 +86,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 inline constexpr wil::zwstring_view system_env_var_root{ LR"(SYSTEM\CurrentControlSet\Control\Session Manager\Environment)" };
                 inline constexpr wil::zwstring_view user_env_var_root{ LR"(Environment)" };
                 inline constexpr wil::zwstring_view user_volatile_env_var_root{ LR"(Volatile Environment)" };
-                inline constexpr wil::zwstring_view user_volatile_session_env_var_root_pattern{ LR"(Volatile Environment\{0:d})" };
             };
         };
 
@@ -161,7 +176,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         friend class ::EnvTests;
 #endif
 
-        std::map<std::wstring, std::wstring, til::wstring_case_insensitive_compare> _envMap{};
+        std::map<std::wstring, std::wstring, til::env_key_sorter> _envMap{};
 
         // We make copies of the environment variable names to ensure they are null terminated.
         void get(wil::zwstring_view variable)
@@ -348,8 +363,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             static constexpr std::wstring_view temp{ L"temp" };
             static constexpr std::wstring_view tmp{ L"tmp" };
-            if (til::compare_string_ordinal(var, temp) == CSTR_EQUAL ||
-                til::compare_string_ordinal(var, tmp) == CSTR_EQUAL)
+            if (til::compare_ordinal_insensitive(var, temp) == 0 ||
+                til::compare_ordinal_insensitive(var, tmp) == 0)
             {
                 return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
             }
@@ -364,9 +379,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             static constexpr std::wstring_view path{ L"Path" };
             static constexpr std::wstring_view libPath{ L"LibPath" };
             static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
-            return til::compare_string_ordinal(input, path) == CSTR_EQUAL ||
-                   til::compare_string_ordinal(input, libPath) == CSTR_EQUAL ||
-                   til::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
+            return til::compare_ordinal_insensitive(input, path) == 0 ||
+                   til::compare_ordinal_insensitive(input, libPath) == 0 ||
+                   til::compare_ordinal_insensitive(input, os2LibPath) == 0;
         }
 
         void parse(const wchar_t* lastCh)
@@ -456,7 +471,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // not processing autoexec.bat
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_env_var_root);
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_volatile_env_var_root);
-            get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(til::details::vars::reg::user_volatile_session_env_var_root_pattern, NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
+            get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(FMT_COMPILE(LR"(Volatile Environment\{})"), NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
         }
 
         std::wstring to_string() const

@@ -57,7 +57,6 @@ namespace Microsoft::Console::Render
                                                    const size_t cchLine,
                                                    const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
-        [[nodiscard]] HRESULT PaintSelections(const std::vector<til::rect>& rects) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
@@ -117,11 +116,11 @@ namespace Microsoft::Console::Render
         struct LineMetrics
         {
             int gridlineWidth;
-            int thinLineWidth;
             int underlineCenter;
             int underlineWidth;
             int doubleUnderlinePosTop;
             int doubleUnderlinePosBottom;
+            int doubleUnderlineWidth;
             int strikethroughOffset;
             int strikethroughWidth;
             int curlyLineCenter;

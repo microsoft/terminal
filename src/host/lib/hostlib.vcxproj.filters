@@ -27,9 +27,6 @@
     <ClCompile Include="..\consoleInformation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\convarea.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\dbcs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -99,16 +96,10 @@
     <ClCompile Include="..\stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\telemetry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\tracing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\conimeinfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ntprivapi.cpp">
@@ -153,13 +144,7 @@
     <ClCompile Include="..\PtySignalInputThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\conareainfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\CursorBlinker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\VtApiRoutines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -197,9 +182,6 @@
     <ClInclude Include="..\stream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\telemetry.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\tracing.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -221,13 +203,7 @@
     <ClInclude Include="..\conddkrefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\conimeinfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\conserv.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\conv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\conwinuserrefs.h">
@@ -305,20 +281,15 @@
     <ClInclude Include="..\history.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\conareainfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\CursorBlinker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\IIoProvider.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\VtApiRoutines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
 </Project>

@@ -267,7 +267,7 @@ static constexpr std::array<til::color, 256> standard256ColorTable{
     til::color{ 0xEE, 0xEE, 0xEE },
 };
 
-static constinit til::presorted_static_map xorgAppVariantColorTable{
+static constexpr til::presorted_static_map xorgAppVariantColorTable{
     std::pair{ "antiquewhite"sv, std::array<til::color, 5>{ til::color{ 250, 235, 215 }, til::color{ 255, 239, 219 }, til::color{ 238, 223, 204 }, til::color{ 205, 192, 176 }, til::color{ 139, 131, 120 } } },
     std::pair{ "aquamarine"sv, std::array<til::color, 5>{ til::color{ 127, 255, 212 }, til::color{ 127, 255, 212 }, til::color{ 118, 238, 198 }, til::color{ 102, 205, 170 }, til::color{ 69, 139, 116 } } },
     std::pair{ "azure"sv, std::array<til::color, 5>{ til::color{ 240, 255, 255 }, til::color{ 240, 255, 255 }, til::color{ 224, 238, 238 }, til::color{ 193, 205, 205 }, til::color{ 131, 139, 139 } } },
@@ -348,7 +348,7 @@ static constinit til::presorted_static_map xorgAppVariantColorTable{
     std::pair{ "yellow"sv, std::array<til::color, 5>{ til::color{ 255, 255, 0 }, til::color{ 255, 255, 0 }, til::color{ 238, 238, 0 }, til::color{ 205, 205, 0 }, til::color{ 139, 139, 0 } } },
 };
 
-static constinit til::presorted_static_map xorgAppColorTable{
+static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "aliceblue"sv, til::color{ 240, 248, 255 } },
     std::pair{ "aqua"sv, til::color{ 0, 255, 255 } },
     std::pair{ "beige"sv, til::color{ 245, 245, 220 } },
@@ -464,7 +464,7 @@ void Utils::InitializeColorTable(const std::span<COLORREF> table)
 std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept
 try
 {
-    std::stringstream ss;
+    std::string stem;
     size_t variantIndex = 0;
     auto foundVariant = false;
     for (const auto c : wstr)
@@ -485,7 +485,7 @@ try
         }
 
         // Ignore spaces.
-        if (std::iswspace(c))
+        if (c == L' ' || c == L'\f' || c == L'\n' || c == L'\r' || c == L'\t' || c == L'\v')
         {
             continue;
         }
@@ -498,11 +498,10 @@ try
             return std::nullopt;
         }
 
-        ss << gsl::narrow_cast<char>(std::towlower(c));
+        stem += gsl::narrow_cast<char>(til::tolower_ascii(c));
     }
 
-    auto name = ss.str();
-    const auto variantColorIter = xorgAppVariantColorTable.find(name);
+    const auto variantColorIter = xorgAppVariantColorTable.find(stem);
     if (variantColorIter != xorgAppVariantColorTable.end())
     {
         const auto colors = variantColorIter->second;
@@ -513,7 +512,7 @@ try
     }
 
     // Calculate the color value for gray0 - gray99.
-    if ((name == "gray" || name == "grey") && foundVariant)
+    if ((stem == "gray" || stem == "grey") && foundVariant)
     {
         if (variantIndex > 100) // size_t is unsigned, so >=0 is implicit
         {
@@ -523,7 +522,7 @@ try
         return til::color{ component, component, component };
     }
 
-    const auto colorIter = xorgAppColorTable.find(name);
+    const auto colorIter = xorgAppColorTable.find(stem);
     if (colorIter != xorgAppColorTable.end())
     {
         return colorIter->second;

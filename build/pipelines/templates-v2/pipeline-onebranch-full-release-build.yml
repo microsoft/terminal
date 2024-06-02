@@ -52,10 +52,17 @@ parameters:
   - name: publishVpackToWindows
     type: boolean
     default: false
+  - name: symbolPublishingSubscription
+    type: string
+  - name: symbolPublishingProject
+    type: string
 
   - name: extraPublishJobs
     type: object
     default: []
+  - name: signingIdentity
+    type: object
+    default: {}
 
 resources:
   repositories:
@@ -78,6 +85,10 @@ extends:
     cloudvault: # https://aka.ms/obpipelines/cloudvault
       enabled: false
     globalSdl: # https://aka.ms/obpipelines/sdl
+      enableCheckCFlags: false # CheckCFlags is broken and exploding our builds; to remove, :g/BAD-FLAGS/d
+      asyncSdl:
+        enabled: true
+        tsaOptionsFile: 'build/config/tsa.json'
       tsa:
         enabled: true
         configFile: '$(Build.SourcesDirectory)\build\config\tsa.json'
@@ -100,6 +111,8 @@ extends:
             parameters:
               pool: { type: windows }
               variables:
+                ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(JobOutputDirectory)
@@ -115,6 +128,7 @@ extends:
               generateSbom: false # this is handled by onebranch
               removeAllNonSignedFiles: true # appease the overlords
               codeSign: ${{ parameters.codeSign }}
+              signingIdentity: ${{ parameters.signingIdentity }}
               beforeBuildSteps: # Right before we build, lay down the universal package and localizations
                 - task: PkgESSetupBuild@12
                   displayName: Package ES - Setup Build
@@ -128,16 +142,14 @@ extends:
                     packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
                     versionListDownload: ${{ parameters.terminalInternalPackageVersion }}
 
-                - template: ./build/pipelines/templates-v2/steps-fetch-and-prepare-localizations.yml@self
-                  parameters:
-                    includePseudoLoc: true
-
           - ${{ if eq(parameters.buildWPF, true) }}:
             # Add an Any CPU build flavor for the WPF control bits
             - template: ./build/pipelines/templates-v2/job-build-project.yml@self
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -153,6 +165,7 @@ extends:
                 generateSbom: false # this is handled by onebranch
                 removeAllNonSignedFiles: true # appease the overlords
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
                 beforeBuildSteps:
                   - task: PkgESSetupBuild@12
                     displayName: Package ES - Setup Build
@@ -169,6 +182,8 @@ extends:
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -204,6 +219,7 @@ extends:
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # Handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
                 afterBuildSteps:
                   # This directory has to exist, even if we aren't using createvpack, because the Guardian rules demand it.
                   - pwsh: |-
@@ -220,6 +236,8 @@ extends:
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -229,12 +247,15 @@ extends:
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # this is handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
 
           - ${{ if eq(parameters.buildWPF, true) }}:
             - template: ./build/pipelines/templates-v2/job-build-package-wpf.yml@self
               parameters:
                 pool: { type: windows }
                 variables:
+                  ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                  ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                   ob_git_checkout: false # This job checks itself out
                   ob_git_skip_checkout_none: true
                   ob_outputDirectory: $(JobOutputDirectory)
@@ -244,18 +265,22 @@ extends:
                 buildPlatforms: ${{ parameters.buildPlatforms }}
                 generateSbom: false # this is handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
 
       - stage: Publish
         displayName: Publish
-        dependsOn: [Build, Package]
+        dependsOn: [Build]
         jobs:
-          - template: ./build/pipelines/templates-v2/job-publish-symbols.yml@self
+          - template: ./build/pipelines/templates-v2/job-publish-symbols-using-symbolrequestprod-api.yml@self
             parameters:
               pool: { type: windows }
               includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
-              symbolPatGoesInTaskInputs: true # onebranch tries to muck with the PAT variable, so we need to change how it get the PAT
               symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
+              subscription: ${{ parameters.symbolPublishingSubscription }}
+              symbolProject: ${{ parameters.symbolPublishingProject }}
               variables:
+                ob_sdl_checkcflags_enabled: false # BAD-FLAGS
+                ob_sdl_xfgcheck_enabled: false # BAD-FLAGS
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
                 ob_outputDirectory: $(Build.ArtifactStagingDirectory)

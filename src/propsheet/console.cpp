@@ -96,10 +96,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
             gpStateInfo->FaceName[0] = TEXT('\0');
         }
 
-        if (Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
-        {
-            LOG_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(g_selectedPackage));
-        }
+        LOG_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(g_selectedPackage));
 
         if (gpStateInfo->LinkTitle != nullptr)
         {
@@ -552,14 +549,7 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE* pPsp, const s
         {
             pTerminalPage->dwSize = sizeof(PROPSHEETPAGE);
             pTerminalPage->hInstance = ghInstance;
-            if (Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
-            {
-                pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL_WITH_DEFTERM);
-            }
-            else
-            {
-                pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL);
-            }
+            pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL_WITH_DEFTERM);
             pTerminalPage->pfnDlgProc = TerminalDlgProc;
             pTerminalPage->lParam = TERMINAL_PAGE_INDEX;
             pTerminalPage->dwFlags = PSP_DEFAULT;
@@ -629,10 +619,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     // Find the available default console/terminal packages
     //
 
-    if (Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
-    {
-        LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(g_availablePackages, g_selectedPackage));
-    }
+    LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(g_availablePackages, g_selectedPackage));
 
     //
     // Get the current page number

@@ -1,0 +1,893 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
+    <value>無法從檔案載入設定。檢查包含後置逗號的語法錯誤。</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>在您的配置檔案清單中找不到您的預設設定檔-正在使用第一個設定檔。請確認 "defaultProfile" 符合您設定檔的 GUID。</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>在您的設定檔中找到多個具有相同 GUID 的設定檔-忽略重複專案。請確定每個設定檔的 GUID 都是唯一的。</value>
+  </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>找到含有無效「"colorScheme"」的設定檔。將該設定檔預設為預設色彩。設定「"colorScheme"」時，請確認這個值符合「"schemes"」清單中色彩配置的「"name"」。</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>在您的設定中找不到設定檔。</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>在您的設定中，所有的設定檔都被隱藏了。您必須至少有一個非隱藏的設定檔。</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>無法從檔案重新載入設定。檢查包含後置逗號的語法錯誤。</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>暫時使用 Windows 終端機預設設定。</value>
+  </data>
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
+    <value>無法載入設定</value>
+  </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>載入使用者設定時發生錯誤</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>確定</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>警告:</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>"{0}" 未在您的電腦上執行。這可能會讓終端機無法接收鍵盤輸入。</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>確定</value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>無法重新載入設定</value>
+  </data>
+  <data name="AboutMenuItem" xml:space="preserve">
+    <value>關於</value>
+  </data>
+  <data name="FeedbackMenuItem" xml:space="preserve">
+    <value>意見反應</value>
+  </data>
+  <data name="SettingsMenuItem" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>全部關閉</value>
+  </data>
+  <data name="Quit" xml:space="preserve">
+    <value>結束</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>多個窗格</value>
+  </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>關閉右側的索引標籤</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>關閉其他索引標籤</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>關閉索引標籤</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>關閉窗格</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>分割索引標籤</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>分割窗格</value>
+  </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>網頁搜尋</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>變更索引標籤色彩</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>自訂</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>重設</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>重新命名索引標籤</value>
+  </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>複製索引標籤</value>
+  </data>
+  <data name="InvalidBackgroundImage" xml:space="preserve">
+    <value>找到具有無效 "backgroundImage" 的設定檔。將該設定檔的預設值設為沒有背景影像。請確定設定 "backgroundImage" 時，該值是影像的有效檔案路徑。</value>
+    <comment>{Locked="\"backgroundImage\""}</comment>
+  </data>
+  <data name="InvalidIcon" xml:space="preserve">
+    <value>已發現具有無效 "icon" 的設定檔。將該設定檔預設為無圖示。設定 "icon" 時，請確認值是有效的影像檔案路徑。</value>
+    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>剖析金鑰繫結時發現警告:</value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>• 發現 "keys"陣列中金鑰繫結的字串太多。"keys" 陣列中應該只有一個字串值。</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>• 無法剖析巢狀命令的所有子命令。</value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>• 發現一個缺少所需參數值的金鑰繫結。這個金鑰繫結將會被忽略。</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• 主題清單中找不到指定的「主題」。暫時回到預設值。</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>["globals"] 屬性受到取代 - 您的設定可能需要更新。</value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>如需詳細資訊，請參閱此網頁。</value>
+  </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>無法在設定 "iterateOn" 的情況下展開命令。將忽略此命令。</value>
+    <comment>{Locked="\"iterateOn\""} </comment>
+  </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>找不到具有無效 "colorScheme" 的命令。將會略過此命令。請確定設定 "colorScheme" 時，該值符合 ["schemes"] 清單中的色彩配置 "name"。</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>找到含有無效 "size" 的 "splitPane" 命令。將會略過此命令。請確定大小介於0和1之間（不含首尾）。</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>無法剖析 "startupActions"。</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>在不同案例中發現多個環境變數具有相同名稱 (下/上) - 只會使用一個值。</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>含有引數的選用命令，可在新的索引標籤或窗格生成</value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>將焦點移到其他索引標籤</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>將焦點移至下一個索引標籤</value>
+  </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>"focus-tab" 子命令的別名。</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>將焦點移到上一個索引標籤</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>將焦點移至指定索引的索引標籤</value>
+  </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>將焦點窗格移至指定索引的索引標籤</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>將焦點窗格移至另一個索引標籤</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>"move-pane" 子命令的別名。</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>以父窗格的百分比來指定大小。有效值介於 (0,1)（不含首尾）。</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>建立新的索引標籤</value>
+  </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>"new-tab" 子命令的別名。</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>將焦點移到其他窗格</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>"focus-pane" 子命令的別名。</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>將窗格聚焦在指定的索引</value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>使用指定的設定檔開啟。接受設定檔的名稱或 GUID</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>設定 WT_SESSION 變數; 必須為 GUID</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>建立新的分割窗格</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>"split-pane" 子命令的別名。</value>
+    <comment>{Locked="\"split-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>以水平分割建立新的窗格 (例如 [-])</value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>以垂直分割建立新窗格 (考慮 [|])</value>
+  </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>透過複製焦點窗格的設定檔來建立新的窗格</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>在指定目錄中開啟，而不是在設定檔的 "startingDirectory" 集合中開啟</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
+  </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>使用提供的標題開啟終端，而不是使用設定檔設定的 "title"</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>以 #rrggbb 格式開啟具有指定色彩的索引標籤</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>開啟索引標籤，使用索引標籤標題覆寫預設標題，並抑制應用程式的標題變更訊息</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>建立新索引標籤或窗格時，繼承終端機自己的環境變數，而非建立全新環境區塊。這是傳遞 "command" 時所要設定的預設值。</value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>使用指定的色彩配置 (而不是設定檔的集合 "colorScheme") 來開啟索引標籤</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>顯示應用程式版本</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>將視窗最大化啟動</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>以全螢幕模式啟動視窗</value>
+  </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>將焦點以指定的方向移到相鄰窗格</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>"move-focus" 子命令的別名。</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>移動焦點的方向</value>
+  </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>以特定的方向，將焦點窗格與相鄰窗格交換</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>移動焦點窗格的方向</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>以焦點模式啟動視窗</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>此參數是內部實作詳細資料，不應使用。</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>指定要執行指定命令列的終端視窗。「0」永遠都指目前的視窗。 </value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>以 "x,y" 格式指定終端機的位置。</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>以 "c,r" 格式指定終端機的欄數和列數。</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>按下按鈕，以打開附有您預設設定檔的新終端機索引標籤。開啟飛出視窗，選取您想要開啟的設定檔。</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>新增索引標籤</value>
+  </data>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>開啟新索引標籤</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>按住 Alt 再按一下滑鼠左鍵，以分割目前的視窗</value>
+  </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift+按一下以開啟新視窗</value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl+按一下以系統管理員身分開啟</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>最大化</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>關於</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>傳送意見反應</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>確定</value>
+  </data>
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
+    <value>版本:</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
+    <value>開始使用</value>
+    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>原始碼</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
+  </data>
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
+    <value>文件</value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
+    <value>版本資訊</value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
+    <value>隱私權政策</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>第三方注意事項</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>全部關閉</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>您要關閉所有視窗嗎?</value>
+  </data>
+  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+    <value>全部關閉</value>
+  </data>
+  <data name="CloseAllDialog.Title" xml:space="preserve">
+    <value>您要關閉所有索引標籤嗎?</value>
+  </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>仍要關閉</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>您即將關閉唯讀終端機。您要繼續嗎?</value>
+  </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>您即將貼上超過 5 KiB 的文字。您想要繼續嗎？</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>仍要貼上</value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
+    <value>您即將貼上含有多行的文字。如果您將此文字貼到您的 shell，可能會導致意外執行命令。您要繼續嗎？</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>仍要貼上</value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>輸入命令名稱......</value>
+  </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>沒有相符的命令</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>動作搜尋模式</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>索引標籤標題模式</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>命令列模式</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>「{}」的更多選項</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>執行命令列將會叫用下列命令：</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>命令列解析失敗：</value>
+  </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>命令選擇區</value>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>索引標籤切換器</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>輸入索引標籤名稱。。。</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>沒有相符的索引標籤名稱</value>
+  </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>輸入要執行的 wt 命令列</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>「{}」的更多選項</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>輸入命令名稱......</value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>沒有相符的命令</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>建議選單</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>其他選項</value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>找到的建議: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>深紅色</value>
+  </data>
+  <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>鋼青</value>
+  </data>
+  <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>中海藻綠</value>
+  </data>
+  <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>深橘色</value>
+  </data>
+  <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>中紫紅</value>
+  </data>
+  <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>道奇藍</value>
+  </data>
+  <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>檸檬綠</value>
+  </data>
+  <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>黃色</value>
+  </data>
+  <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>藍紫</value>
+  </data>
+  <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>岩藍</value>
+  </data>
+  <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>亮綠</value>
+  </data>
+  <data name="TanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>深黃褐</value>
+  </data>
+  <data name="MagentaColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>洋紅色</value>
+  </data>
+  <data name="CyanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>青色</value>
+  </data>
+  <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>天藍</value>
+  </data>
+  <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>深灰色</value>
+  </data>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>此連結無效:</value>
+  </data>
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>目前不支援此連結類型:</value>
+  </data>
+  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>我們無法寫入您的設定檔。請檢查該檔案的許可權，確定未設定唯讀旗標，並授與寫入權限。</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>確定</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>偵錯</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>錯誤</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>資訊</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>剪貼簿內容 (預覽):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>其他選項</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>視窗</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>未命名的視窗</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>輸入新名稱：</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>確定</value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="RenameFailedToast.Title" xml:space="preserve">
+    <value>無法重新命名視窗</value>
+  </data>
+  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
+    <value>已存在另一個具有該名稱的視窗</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>最大化</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>往下還原</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>命令選擇區</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>焦點終端機</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Windows</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>開啟指定起始目錄中的新索引標籤</value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>開啟具有所提供起始目錄的新視窗</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>分割視窗並從指定目錄開始</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>匯出文字</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>無法匯出終端機內容</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>已成功匯出終端機內容</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>尋找</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>純文字</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>您可以在進階設定檔設定中設定終止行為。</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>不要再顯示</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>此終端機視窗目前以系統管理員身分執行</value>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>找到的建議: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>正在檢查更新...</value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>有可用的更新。</value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>立即安裝</value>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>"newTabMenu"欄位包含多個類型為 "remainingProfiles" 的專案。只會考慮第一個。</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>"__content"屬性保留供內部使用</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>開啟包含產品資訊的對話方塊</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>開啟色彩選擇器以選擇此索引標籤的色彩</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>開啟命令選擇區</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>使用目前目錄中的使用中設定檔開啟新索引標籤</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>將文字緩衝區的內容匯出至文字檔</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>開啟搜尋對話方塊</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>重新命名此索引標籤</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>開啟設定頁面</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>使用目前目錄中的使用中設定檔開啟新窗格</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>關閉此索引標籤右側的所有索引標籤</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>除了此索引標籤之外的所有索引標籤</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>關閉此索引標籤</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>清空</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>關閉窗格</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>如果有多個窗格，請關閉使用中的窗格</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>重設索引標籤色彩</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
+    <value>將索引標籤移至新視窗</value>
+  </data>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>將索引標籤移至新視窗 </value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>以系統管理員身分執行</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>活動窗格已移動至「{0}」索引標籤</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>「{0}」索引標籤已移至「{1}」視窗</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>「{0}」索引標籤已移至新視窗</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>「{0}」索引標籤已移至位置「{1}」</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
+    <value>活動窗格已移至 "{1}" 視窗中的 "{0}" 索引標籤</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>活動窗格已移動至「{0}」視窗</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>活動窗格已移至新視窗</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>活動窗格已移至新索引標籤</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
+  <data name="CmdAppendCommandLineDesc" xml:space="preserve">
+    <value>如果設定，命令會附加到設定檔的預設命令，而不是取代命令。</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>重新啟動連線</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>重新啟動使用中的窗格連線</value>
+  </data>
+</root>
