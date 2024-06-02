@@ -70,7 +70,6 @@ namespace Microsoft.Terminal.Control
     {
         IVector<String> History { get; };
         String CurrentCommandline { get; };
-        String CurrentWorkingDirectory { get; };
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState
