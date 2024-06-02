@@ -23,26 +23,29 @@ struct GraphemeState
 {
     // These are the [out] parameters for GraphemeNext/Prev.
     //
-    // If a previous call to GraphemeNext/Prev returned false (= reached the end of the string), then on the first call
-    // with the next string argument, beg/len will contain the parts of the grapheme cluster that are found in that
+    // If a previous call returned false (= reached the end of the string), then on the first call with
+    // the next string, beg/len will contain the parts of the grapheme cluster that are found in that
     // new string argument. That's true even if the two strings don't join to form a single cluster.
-    // In that case beg/len will simply be an empty string. It's basically an indicator in that case for
-    // "yup, that cluster in the last string was complete after all".
+    // In that case beg/len will simply be an empty string. It basically tells you
+    // "Yup, that cluster in the last string was complete after all".
     //
-    // width on the other hand will be updated to always contain the width of the complete cluster,
-    // even if the cluster is split across multiple string arguments.
+    // However, width will always be updated to represent the width of the current cluster.
+    //
+    // For instance, if the first string is a narrow emoji and the second one is U+FE0F, the first call will return
+    // the emoji with a width of 1, and the second call will return U+FE0F with a width of 2.
+    // You know these two belong together because the first call returned false.
+    // The total width is not 1+2 but rather just 2.
     const wchar_t* beg = nullptr;
     size_t len = 0;
     // width will always be either 1 or 2.
-    int32_t width = 0;
+    int width = 0;
 
     // If GraphemeNext/Prev return false (= reached the end of the string), they'll fill these struct
     // members with some info so that we can check if it joins with the start of the next string argument.
     // _state is stored ~flipped, so that we can differentiate between it being unset (0) and it being set to 0 (~0 = 255).
-    uint8_t _state = 0;
-    uint8_t _last = 0;
-    uint8_t _totalWidth = 0;
-    uint8_t _unused = 0;
+    int _state = 0;
+    int _last = 0;
+    int _totalWidth = 0;
 };
 
 struct CodepointWidthDetector
@@ -62,10 +65,10 @@ private:
     __declspec(noinline) bool _graphemePrevWcswidth(GraphemeState& s, const wchar_t* beg, const wchar_t* clusterEnd) noexcept;
     __declspec(noinline) bool _graphemeNextConsole(GraphemeState& s, const wchar_t* end, const wchar_t* clusterBeg) noexcept;
     __declspec(noinline) bool _graphemePrevConsole(GraphemeState& s, const wchar_t* beg, const wchar_t* clusterEnd) noexcept;
-    __declspec(noinline) uint8_t _checkFallbackViaCache(char32_t codepoint) noexcept;
+    __declspec(noinline) int _checkFallbackViaCache(char32_t codepoint) noexcept;
 
-    std::unordered_map<char32_t, uint8_t> _fallbackCache;
+    std::unordered_map<char32_t, int> _fallbackCache;
     std::function<bool(const std::wstring_view&)> _pfnFallbackMethod;
     TextMeasurementMode _mode = TextMeasurementMode::Graphemes;
-    uint8_t _ambiguousWidth = 1;
+    int _ambiguousWidth = 1;
 };

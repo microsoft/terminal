@@ -581,7 +581,7 @@ static constexpr uint32_t s_joinRules[2][16] = {
         0b00000000000000000000000000000000,
     },
 };
-constexpr uint8_t ucdLookup(const char32_t cp) noexcept
+constexpr int ucdLookup(const char32_t cp) noexcept
 {
     const auto s0 = s_stage0[cp >> 11];
     const auto s1 = s_stage1[s0 + ((cp >> 6) & 31)];
@@ -589,17 +589,17 @@ constexpr uint8_t ucdLookup(const char32_t cp) noexcept
     const auto s3 = s_stage3[s2 + ((cp >> 0) & 7)];
     return s3;
 }
-constexpr uint8_t ucdGraphemeJoins(const uint8_t state, const uint8_t lead, const uint8_t trail) noexcept
+constexpr int ucdGraphemeJoins(const int state, const int lead, const int trail) noexcept
 {
     const auto l = lead & 15;
     const auto t = trail & 15;
     return (s_joinRules[state][l] >> (t * 2)) & 3;
 }
-constexpr bool ucdGraphemeDone(const uint8_t state) noexcept
+constexpr bool ucdGraphemeDone(const int state) noexcept
 {
     return state == 3;
 }
-constexpr uint8_t ucdToCharacterWidth(const uint8_t val) noexcept
+constexpr int ucdToCharacterWidth(const int val) noexcept
 {
     return val >> 6;
 }
@@ -695,9 +695,9 @@ bool CodepointWidthDetector::GraphemeNext(GraphemeState& s, const std::wstring_v
     }
 
     auto clusterEnd = clusterBeg;
-    uint8_t state = s._state;
-    uint8_t totalWidth = 0;
-    uint8_t lead;
+    int state = s._state;
+    int totalWidth = 0;
+    int lead;
     char32_t cp;
 
     // The _state is stored ~flipped, so that we can differentiate
@@ -746,7 +746,8 @@ bool CodepointWidthDetector::GraphemeNext(GraphemeState& s, const std::wstring_v
 
         if (ucdGraphemeDone(state))
         {
-            state = 255;
+            // We'll later do a `state = ~state` which will result in `state == 0`.
+            state = ~0;
             lead = 0;
             break;
         }
@@ -764,7 +765,7 @@ bool CodepointWidthDetector::GraphemeNext(GraphemeState& s, const std::wstring_v
     s._state = state;
     s._last = lead;
     s._totalWidth = totalWidth;
-    return state != 0;
+    return clusterEnd < end;
 }
 
 // This code is identical to GraphemeNext() but with the order of operations reversed since we're iterating backwards.
@@ -791,9 +792,9 @@ bool CodepointWidthDetector::GraphemePrev(GraphemeState& s, const std::wstring_v
     }
 
     auto clusterBeg = clusterEnd;
-    uint8_t state = s._state;
-    uint8_t totalWidth = 0;
-    uint8_t trail;
+    int state = s._state;
+    int totalWidth = 0;
+    int trail;
     char32_t cp;
 
     // The _state is stored ~flipped, so that we can differentiate
@@ -842,7 +843,8 @@ bool CodepointWidthDetector::GraphemePrev(GraphemeState& s, const std::wstring_v
 
         if (ucdGraphemeDone(state))
         {
-            state = 255;
+            // We'll later do a `state = ~state` which will result in `state == 0`.
+            state = ~0;
             trail = 0;
             break;
         }
@@ -860,7 +862,7 @@ bool CodepointWidthDetector::GraphemePrev(GraphemeState& s, const std::wstring_v
     s._state = state;
     s._last = trail;
     s._totalWidth = totalWidth;
-    return state != 0;
+    return clusterBeg > beg;
 }
 
 __declspec(noinline) bool CodepointWidthDetector::_graphemeNextWcswidth(GraphemeState& s, const wchar_t* end, const wchar_t* clusterBeg) noexcept
@@ -871,8 +873,8 @@ __declspec(noinline) bool CodepointWidthDetector::_graphemeNextWcswidth(Grapheme
     }
 
     auto clusterEnd = clusterBeg;
-    uint8_t state = s._state;
-    uint8_t totalWidth = 0;
+    int state = s._state;
+    int totalWidth = 0;
 
     for (;;)
     {
@@ -906,7 +908,7 @@ __declspec(noinline) bool CodepointWidthDetector::_graphemeNextWcswidth(Grapheme
     s.len = static_cast<int>(clusterEnd - clusterBeg);
     s.width = totalWidth < 1 ? 1 : (totalWidth > 2 ? 2 : totalWidth);
     s._state = state;
-    return state != 0;
+    return clusterEnd < end;
 }
 
 __declspec(noinline) bool CodepointWidthDetector::_graphemePrevWcswidth(GraphemeState& s, const wchar_t* beg, const wchar_t* clusterEnd) noexcept
@@ -942,7 +944,7 @@ __declspec(noinline) bool CodepointWidthDetector::_graphemePrevWcswidth(Grapheme
     s.beg = clusterBeg;
     s.len = static_cast<int>(clusterEnd - clusterBeg);
     s.width = totalWidth;
-    return totalWidth != 0;
+    return clusterBeg > beg;
 }
 
 bool CodepointWidthDetector::_graphemeNextConsole(GraphemeState& s, const wchar_t* end, const wchar_t* clusterBeg) noexcept
@@ -983,7 +985,7 @@ bool CodepointWidthDetector::_graphemePrevConsole(GraphemeState& s, const wchar_
 
 // Call the function specified via SetFallbackMethod() to turn ambiguous (width = 3) into narrow/wide.
 // Caches the results in _fallbackCache.
-__declspec(noinline) uint8_t CodepointWidthDetector::_checkFallbackViaCache(const char32_t codepoint) noexcept
+__declspec(noinline) int CodepointWidthDetector::_checkFallbackViaCache(const char32_t codepoint) noexcept
 try
 {
     // Ambiguous glyphs are considered narrow by default. See microsoft/terminal#2066 for more info.
@@ -1011,7 +1013,7 @@ try
         len = 2;
     }
 
-    const uint8_t width = _pfnFallbackMethod({ &buf[0], len }) ? 2 : 1;
+    const int width = _pfnFallbackMethod({ &buf[0], len }) ? 2 : 1;
     _fallbackCache.insert_or_assign(codepoint, width);
     return width;
 }

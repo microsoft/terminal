@@ -6,9 +6,6 @@
 
 #include "../types/inc/CodepointWidthDetector.hpp"
 
-// Due to the Feature_Graphemes::IsEnabled() feature flagging, some code may be disabled.
-#pragma warning(disable : 4702) // unreachable code
-
 // FYI at the time of writing you may have to generate this table in cmd with
 //   go run CodepointWidthDetectorTests_gen.go > temp.txt
 // because PowerShell garbles Unicode text between piped commands.
@@ -1235,11 +1232,6 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(GraphemeBreakTest)
     {
-        if constexpr (!Feature_Graphemes::IsEnabled())
-        {
-            return;
-        }
-
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
         WEX::TestExecution::SetVerifyOutput verifyOutputScope{ WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures };
 
@@ -1267,20 +1259,26 @@ class CodepointWidthDetectorTests
             }
 
             actual.clear();
-            for (size_t beg = 0; beg < text.size();)
+            for (GraphemeState state;;)
             {
-                const auto end = cwd.GraphemeNext(text, beg, nullptr);
-                actual.emplace_back(til::clamp_slice_abs(text, beg, end));
-                beg = end;
+                const auto ok = cwd.GraphemeNext(state, text);
+                actual.emplace_back(state.beg, state.len);
+                if (!ok)
+                {
+                    break;
+                }
             }
             VERIFY_ARE_EQUAL(expected, actual, test.comment);
 
             actual.clear();
-            for (size_t end = text.size(); end > 0;)
+            for (GraphemeState state;;)
             {
-                const auto beg = cwd.GraphemePrev(text, end, nullptr);
-                actual.emplace_back(til::clamp_slice_abs(text, beg, end));
-                end = beg;
+                const auto ok = cwd.GraphemePrev(state, text);
+                actual.emplace_back(state.beg, state.len);
+                if (!ok)
+                {
+                    break;
+                }
             }
             std::reverse(actual.begin(), actual.end());
             VERIFY_ARE_EQUAL(expected, actual, test.comment);
@@ -1289,11 +1287,6 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(BasicGraphemes)
     {
-        if constexpr (!Feature_Graphemes::IsEnabled())
-        {
-            return;
-        }
-
         static constexpr std::wstring_view text{ L"a\u0363e\u0364\u0364i\u0365" };
 
         auto& cwd = CodepointWidthDetector::Singleton();
@@ -1303,13 +1296,15 @@ class CodepointWidthDetectorTests
         std::vector<size_t> actualAdvances;
         std::vector<int> actualWidths;
 
-        for (size_t beg = 0; beg < text.size();)
+        for (GraphemeState state;;)
         {
-            int width;
-            const auto end = cwd.GraphemeNext(text, beg, &width);
-            actualAdvances.emplace_back(end - beg);
-            actualWidths.emplace_back(width);
-            beg = end;
+            const auto ok = cwd.GraphemeNext(state, text);
+            actualAdvances.emplace_back(state.len);
+            actualWidths.emplace_back(state.width);
+            if (!ok)
+            {
+                break;
+            }
         }
 
         VERIFY_ARE_EQUAL(expectedAdvances, actualAdvances);
@@ -1318,13 +1313,15 @@ class CodepointWidthDetectorTests
         actualAdvances.clear();
         actualWidths.clear();
 
-        for (size_t end = text.size(); end > 0;)
+        for (GraphemeState state;;)
         {
-            int width;
-            const auto beg = cwd.GraphemePrev(text, end, &width);
-            actualAdvances.emplace_back(end - beg);
-            actualWidths.emplace_back(width);
-            end = beg;
+            const auto ok = cwd.GraphemePrev(state, text);
+            actualAdvances.emplace_back(state.len);
+            actualWidths.emplace_back(state.width);
+            if (!ok)
+            {
+                break;
+            }
         }
 
         std::reverse(actualAdvances.begin(), actualAdvances.end());
@@ -1336,18 +1333,37 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(DevanagariConjunctLinker)
     {
-        if constexpr (!Feature_Graphemes::IsEnabled())
-        {
-            return;
-        }
-
         static constexpr std::wstring_view text{ L"\u0915\u094D\u094D\u0924" };
 
         auto& cwd = CodepointWidthDetector::Singleton();
 
-        int width;
-        const auto end = cwd.GraphemeNext(text, 0, &width);
-        VERIFY_ARE_EQUAL(4u, end);
-        VERIFY_ARE_EQUAL(2, width);
+        GraphemeState state;
+        cwd.GraphemeNext(state, text);
+        VERIFY_ARE_EQUAL(4u, state.len);
+        VERIFY_ARE_EQUAL(2, state.width);
+    }
+
+    TEST_METHOD(ChunkedText)
+    {
+        static constexpr std::wstring_view text{ L"\u0915\u094D\u094D\u0924" };
+
+        auto& cwd = CodepointWidthDetector::Singleton();
+        bool ok = false;
+        GraphemeState state;
+
+        ok = cwd.GraphemeNext(state, L"\u2620");
+        VERIFY_IS_FALSE(ok);
+        VERIFY_ARE_EQUAL(1u, state.len);
+        VERIFY_ARE_EQUAL(1, state.width);
+
+        ok = cwd.GraphemeNext(state, L"\uFE0F");
+        VERIFY_IS_FALSE(ok);
+        VERIFY_ARE_EQUAL(1u, state.len);
+        VERIFY_ARE_EQUAL(2, state.width);
+
+        ok = cwd.GraphemeNext(state, L"a");
+        VERIFY_IS_TRUE(ok);
+        VERIFY_ARE_EQUAL(0u, state.len);
+        VERIFY_ARE_EQUAL(2, state.width);
     }
 };

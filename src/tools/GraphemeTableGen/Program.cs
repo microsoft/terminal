@@ -184,17 +184,17 @@ foreach (var stage in trie.Stages)
 buf.Append($"    return s{trie.Stages.Count - 1};\n");
 buf.Append("}\n");
 
-buf.Append("constexpr uint8_t ucdGraphemeJoins(const uint8_t state, const uint8_t lead, const uint8_t trail) noexcept\n");
+buf.Append("constexpr int ucdGraphemeJoins(const int state, const int lead, const int trail) noexcept\n");
 buf.Append("{\n");
 buf.Append("    const auto l = lead & 15;\n");
 buf.Append("    const auto t = trail & 15;\n");
 buf.Append($"    return (s_joinRules[state][l] >> (t * {BitOperations.PopCount(Ω)})) & {Ω};\n");
 buf.Append("}\n");
-buf.Append("constexpr bool ucdGraphemeDone(const uint8_t state) noexcept\n");
+buf.Append("constexpr bool ucdGraphemeDone(const int state) noexcept\n");
 buf.Append("{\n");
 buf.Append($"    return state == {Ω};\n");
 buf.Append("}\n");
-buf.Append("constexpr uint8_t ucdToCharacterWidth(const uint8_t val) noexcept\n");
+buf.Append("constexpr int ucdToCharacterWidth(const int val) noexcept\n");
 buf.Append("{\n");
 buf.Append("    return val >> 6;\n");
 buf.Append("}\n");
