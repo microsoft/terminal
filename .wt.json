@@ -3,7 +3,7 @@
     [
         {
             "command": { "action": "sendInput", "input": "bx\r" },
-            "name": "Build projectttttttttttttttttt",
+            "name": "Build project",
             "description": "Build the project in the CWD"
         },
         {
