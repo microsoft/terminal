@@ -119,7 +119,6 @@ namespace Microsoft.Terminal.Settings.Model
         Tasks = 0x1,
         CommandHistory = 0x2,
         DirectoryHistory = 0x4,
-        Local = 0x8,
         All = 0xffffffff,
     };
 

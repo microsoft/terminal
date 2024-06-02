@@ -1371,7 +1371,7 @@ namespace winrt::TerminalApp::implementation
         // their settings file. Ask the ActionMap for those.
         if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
         {
-            const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSnippets(currentCommandline, currentWorkingDirectory);
+            const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(currentCommandline, currentWorkingDirectory);
             for (const auto& t : tasks)
             {
                 commandsCollection.push_back(t);
@@ -1390,28 +1390,6 @@ namespace winrt::TerminalApp::implementation
                 commandsCollection.push_back(t);
             }
         }
-
-        // if (WI_IsFlagSet(source, SuggestionsSource::Local) &&
-        //     context != nullptr)
-        // {
-        //     // TODO! this is wack. CurrentWorkingDirectory should be it's own
-        //     // property, or a property of ControlCore.DirectoryHistory() or
-        //     // something. I only have 5 minutes to pch tho so garbage will do
-        //     auto cwd = context.CurrentWorkingDirectory();// strongControl.CommandHistory().CurrentWorkingDirectory();
-        //     if (!cwd.empty())
-        //     {
-        //         co_await winrt::resume_background();
-        //         auto localTasksFileContents = CascadiaSettings::ReadFile(cwd + L"\\.wt.json");
-        //         if (!localTasksFileContents.empty())
-        //         {
-        //             const auto localCommands = Command::ParseLocalCommands(localTasksFileContents);
-        //             for (const auto& t : localCommands)
-        //             {
-        //                 commandsCollection.push_back(t);
-        //             }
-        //         }
-        //     }
-        // }
 
         co_await wil::resume_foreground(Dispatcher());
 
