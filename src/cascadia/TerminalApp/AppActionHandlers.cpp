@@ -1388,7 +1388,7 @@ namespace winrt::TerminalApp::implementation
                 //       requires context from the control)
                 // then get that here.
                 const bool shouldGetContext = realArgs.UseCommandline() ||
-                                              WI_IsFlagSet(source, SuggestionsSource::CommandHistory);
+                                              WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::QuickFixes);
                 if (shouldGetContext)
                 {
                     if (const auto& control{ _GetActiveControl() })
@@ -1421,7 +1421,19 @@ namespace winrt::TerminalApp::implementation
                 if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
                     context != nullptr)
                 {
-                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
+                    // \ue81c --> History icon
+                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false, hstring{ L"\ue81c" });
+                    for (const auto& t : recentCommands)
+                    {
+                        commandsCollection.push_back(t);
+                    }
+                }
+
+                if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
+                    context != nullptr)
+                {
+                    // \ue74c --> OEM icon
+                    const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });
                     for (const auto& t : recentCommands)
                     {
                         commandsCollection.push_back(t);

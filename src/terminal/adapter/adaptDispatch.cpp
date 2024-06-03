@@ -3997,6 +3997,54 @@ bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - Performs a Windows Terminal action
+// - Currently, the actions we support are:
+//   * CmdNotFound: A protocol for passing commands that the shell couldn't resolve
+//     to the terminal. The command is then shared with WinGet to see if it can
+//     find a package that provides that command, which is then displayed to the
+//     user.
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the CmdNotFound action, otherwise false.
+bool AdaptDispatch::DoWTAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually to make sure this action happens at the right time.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"CmdNotFound")
+    {
+        // The structure of the message is as follows:
+        // `e]9001;
+        // 0:     CmdNotFound;
+        // 1:     $($cmdNotFound.missingCmd);
+        if (parts.size() >= 2)
+        {
+            std::wstring_view missingCmd = til::at(parts, 1);
+            _api.SearchMissingCommand(missingCmd);
+        }
+
+        return true;
+    }
+    return false;
+}
+
+// Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is
 //   transmitted in sixel format via the returned StringHandler function.

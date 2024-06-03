@@ -13,6 +13,7 @@
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>
+//#include <winrt/Microsoft.Management.Deployment.h>
 
 #include "EventArgs.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -23,6 +24,7 @@
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
+//using namespace winrt::Microsoft::Management::Deployment;
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
@@ -127,6 +129,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
         _terminal->CompletionsChangedCallback(pfnCompletionsChanged);
+
+        auto pfnSearchMissingCommand = [this](auto&& PH1) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1)); };
+        _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
+
+        auto pfnClearQuickFix = [this] { _terminalClearQuickFix(); };
+        _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
@@ -1627,6 +1635,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
     }
 
+    void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand)
+    {
+        SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }));
+    }
+
+    void ControlCore::_terminalClearQuickFix()
+    {
+        ClearQuickFix.raise(*this, nullptr);
+    }
+
     bool ControlCore::HasSelection() const
     {
         const auto lock = _terminal->LockForReading();
@@ -2295,9 +2313,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             commands.pop_back();
         }
 
+
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(trimmedCurrentCommand);
+        // TODO CARLOS: should we delete this after a new command is run? Or delete it after a suggestion is used? Or just after the next winget suggestion (current impl)?
+        //              No clue which we should do. Thoughts?
+        context->QuickFixes(_cachedQuickFixes);
         return *context;
+    }
+
+    void ControlCore::UpdateQuickFixes(const Windows::Foundation::Collections::IVector<hstring>& quickFixes)
+    {
+        _cachedQuickFixes = quickFixes;
     }
 
     Core::Scheme ControlCore::ColorScheme() const noexcept
