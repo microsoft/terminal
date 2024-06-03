@@ -76,6 +76,7 @@
     X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI)                                                                                     \
     X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
+    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \

@@ -545,7 +545,17 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ALTERNATE_SCROLL = DECPrivateMode(1007),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
+        GCM_GraphemeClusterMode = DECPrivateMode(2027),
         W32IM_Win32InputMode = DECPrivateMode(9001),
+    };
+
+    enum ModeResponses : VTInt
+    {
+        DECRPM_Unsupported = 0,
+        DECRPM_Enabled = 1,
+        DECRPM_Disabled = 2,
+        DECRPM_PermanentlyEnabled = 3,
+        DECRPM_PermanentlyDisabled = 4,
     };
 
     enum CharacterSets : uint64_t

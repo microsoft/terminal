@@ -18,6 +18,7 @@
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
+#include "../../types/inc/CodepointWidthDetector.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
@@ -71,6 +72,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
+        static const auto textMeasurementInit = [&]() {
+            TextMeasurementMode mode = TextMeasurementMode::Graphemes;
+            switch (settings.TextMeasurement())
+            {
+            case TextMeasurement::Wcswidth:
+                mode = TextMeasurementMode::Wcswidth;
+                break;
+            case TextMeasurement::Console:
+                mode = TextMeasurementMode::Console;
+                break;
+            default:
+                break;
+            }
+            CodepointWidthDetector::Singleton().Reset(mode);
+            return true;
+        }();
+
         _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         const auto lock = _terminal->LockForWriting();
