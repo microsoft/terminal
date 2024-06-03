@@ -136,9 +136,10 @@ Author(s):
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
 
-#define MTSM_THEME_SETTINGS(X)                                                             \
-    X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr) \
-    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr) \
+#define MTSM_THEME_SETTINGS(X)                                                                   \
+    X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr)       \
+    X(winrt::Microsoft::Terminal::Settings::Model::SettingsTheme, Settings, "settings", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr)       \
     X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr)
 
 #define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
@@ -147,6 +148,9 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
     X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
     X(bool, UseMica, "useMica", false)
+
+#define MTSM_THEME_SETTINGS_SETTINGS(X) \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "theme", winrt::Windows::UI::Xaml::ElementTheme::Default)
 
 #define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
