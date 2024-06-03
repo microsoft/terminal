@@ -50,15 +50,31 @@ int WindowThread::RunMessagePump()
 
 void WindowThread::_pumpRemainingXamlMessages()
 {
-    MSG msg = {};
-    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-    {
-        ::DispatchMessageW(&msg);
-    }
 }
 
 void WindowThread::RundownForExit()
 {
+    // First of all, closing DesktopWindowXamlSource does not actually deinitialize DXamlCore.
+    // Instead it calls WindowsXamlManager::EnqueueClose which, as the name indicates,
+    // asynchronously deinitializes everything. This is why we have _pumpRemainingXamlMessages.
+    //
+    // Now, the funny thing is that DXamlCore::GetCurrent() can return nullptr. XAML knows it can return nullptr,
+    // because XAML is entirely built around it being nullable. But XAML never ever checks if it is.
+    // So what happens if we have a pending drag on a TabView item while also a pending deinitialization of DXamlCore?
+    // It's a crash! Fun! GH#15689
+    //
+    // This happens because we're told the TabView was rearranged and think the last tab is gone.
+    // As a response we close the window. But in reality, the underlying UIElement.StartDragAsync hasn't
+    // asynchronously completed yet. Once it does, it'll call DXamlCore::GetCurrent() which now is nullptr.
+    // To fix this we simply pump all remaining messages before causing the EnqueueClose (via _host->Close()).
+    while (MsgWaitForMultipleObjects(0, nullptr, FALSE, 1000, QS_ALLINPUT) == WAIT_OBJECT_0)
+    {
+        for (MSG msg; PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE);)
+        {
+            DispatchMessageW(&msg);
+        }
+    }
+
     if (_host)
     {
         _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
@@ -72,15 +88,11 @@ void WindowThread::RundownForExit()
         _warmWindow->Close();
     }
 
-    // !! LOAD BEARING !!
-    //
-    // Make sure to finish pumping all the messages for our thread here. We
-    // may think we're all done, but we're not quite. XAML needs more time
-    // to pump the remaining events through, even at the point we're
-    // exiting. So do that now. If you don't, then the last tab to close
-    // will never actually destruct the last tab / TermControl / ControlCore
-    // / renderer.
-    _pumpRemainingXamlMessages();
+    // See the first paragraph in the big comment at the start of this method.
+    for (MSG msg; PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE);)
+    {
+        DispatchMessageW(&msg);
+    }
 }
 
 // Method Description:
