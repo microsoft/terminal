@@ -4764,6 +4764,8 @@ namespace winrt::TerminalApp::implementation
         const auto realCursorPos{ controlTransform.TransformPoint({ cursorPos.X, cursorPos.Y }) }; // == controlTransform + cursorPos
         const Windows::Foundation::Size windowDimensions{ gsl::narrow_cast<float>(ActualWidth()), gsl::narrow_cast<float>(ActualHeight()) };
 
+        sxnUi.FontHeight(characterSize.Height);
+
         sxnUi.Open(mode,
                    commandsCollection,
                    filterText,

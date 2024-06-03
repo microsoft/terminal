@@ -50,12 +50,16 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<winrt::TerminalApp::SuggestionsControl, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
         til::typed_event<Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> PreviewAction;
 
+        double FontHeight();
+        void FontHeight(double height);
+
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ControlName, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParentCommandName, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParsedCommandLineText, PropertyChanged.raise);
+        // WINRT_OBSERVABLE_PROPERTY(double, FontHeight, PropertyChanged.raise, 12.0);
 
     private:
         struct winrt_object_hash

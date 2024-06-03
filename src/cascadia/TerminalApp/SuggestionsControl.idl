@@ -28,6 +28,7 @@ namespace TerminalApp
         String SearchBoxPlaceholderText { get; };
         String ControlName { get; };
         String ParentCommandName { get; };
+        Double FontHeight{ get; set; };
 
         Windows.UI.Xaml.FrameworkElement SelectedItem { get; };
 
