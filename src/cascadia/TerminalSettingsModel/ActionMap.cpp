@@ -836,6 +836,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
 
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
+
             const auto inputString{ inArgs ? inArgs.Input() : L"" };
             auto args = winrt::make_self<SendInputArgs>(
                 winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),

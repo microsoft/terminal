@@ -51,6 +51,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Size GridUnitSize();
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
+
         til::typed_event<> ConnectionStateChanged;
         til::typed_event<IPaneContent> CloseRequested;
         til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;

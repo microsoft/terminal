@@ -126,6 +126,9 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Split pane</value>
   </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Open snippets pane</value>
+  </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portable)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
@@ -729,5 +732,9 @@
   </data>
   <data name="SaveActionNamePrefix" xml:space="preserve">
     <value>Save Task</value>
+  </data>
+  <data name="OpenTasksPaneCommandKey" xml:space="preserve">
+    <value>Open tasks pane</value>
+    <comment>This will open a pane with a list of the users's saved commands in it</comment>
   </data>
 </root>

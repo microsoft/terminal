@@ -1521,4 +1521,5 @@ namespace winrt::TerminalApp::implementation
         _ShowAboutDialog();
         args.Handled(true);
     }
+
 }

@@ -23,6 +23,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
+#include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "Utils.h"
 
@@ -453,10 +454,10 @@ namespace winrt::TerminalApp::implementation
     // - command - command to dispatch
     // Return Value:
     // - <none>
-    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command)
     {
         const auto& actionAndArgs = command.ActionAndArgs();
-        _actionDispatch->DoAction(actionAndArgs);
+        _actionDispatch->DoAction(sender, actionAndArgs);
     }
 
     // Method Description:
@@ -3251,6 +3252,15 @@ namespace winrt::TerminalApp::implementation
         else if (paneType == L"settings")
         {
             content = _makeSettingsContent();
+        }
+        else if (paneType == L"snippets")
+        {
+            const auto& tasksContent{ winrt::make_self<SnippetsPaneContent>() };
+            tasksContent->UpdateSettings(_settings);
+            tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+            tasksContent->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+
+            content = *tasksContent;
         }
 
         assert(content);
