@@ -17,7 +17,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 
-static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
+static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
@@ -158,7 +158,7 @@ void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTa
 {
     // we want to do the keybindings map after the actions map so that we overwrite any leftover keybindings
     // that might have existed in the first pass, in case the user did a partial update from legacy to modern
-    static constexpr std::array bindingsKeys{ ActionsKey, LegacyKeybindingsKey };
+    static constexpr std::array bindingsKeys{ ActionsKey, KeybindingsKey };
     for (const auto& jsonKey : bindingsKeys)
     {
         if (auto bindings{ json[JsonKey(jsonKey)] })
@@ -262,14 +262,14 @@ Json::Value GlobalAppSettings::ToJson()
 #undef GLOBAL_SETTINGS_TO_JSON
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
-    json[JsonKey(LegacyKeybindingsKey)] = _actionMap->KeyBindingsToJson();
+    json[JsonKey(KeybindingsKey)] = _actionMap->KeyBindingsToJson();
 
     return json;
 }
 
-bool GlobalAppSettings::FixUpsAppliedDuringLoad()
+bool GlobalAppSettings::FixupsAppliedDuringLoad()
 {
-    return _actionMap->FixUpsAppliedDuringLoad();
+    return _actionMap->FixupsAppliedDuringLoad();
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept

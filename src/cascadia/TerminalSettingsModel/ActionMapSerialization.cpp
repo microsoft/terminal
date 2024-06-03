@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     // there are keys in this command block meaning this is the legacy style -
                     // inform the loader that fixups are needed
-                    _fixUpsAppliedDuringLoad = true;
+                    _fixupsAppliedDuringLoad = true;
                 }
 
                 if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)) && origin == OriginTag::User && !jsonBlock.isMember(JsonKey(IDKey)))
@@ -92,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // for non-nested non-iterable commands,
                     // if there's no ID in the command block we will generate one for the user -
                     // inform the loader that the ID needs to be written into the json
-                    _fixUpsAppliedDuringLoad = true;
+                    _fixupsAppliedDuringLoad = true;
                 }
             }
             else if (keys)
@@ -145,17 +145,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::Value keybindingsList{ Json::ValueType::arrayValue };
 
-        auto toJson = [&keybindingsList](const KeyChord kc, const winrt::hstring cmdID) {
-            Json::Value keyIDPair{ Json::ValueType::objectValue };
-            JsonUtils::SetValueForKey(keyIDPair, KeysKey, kc);
-            JsonUtils::SetValueForKey(keyIDPair, IDKey, cmdID);
-            keybindingsList.append(keyIDPair);
-        };
-
         // Serialize all standard keybinding objects in the current layer
         for (const auto& [keys, cmdID] : _KeyMap)
         {
-            toJson(keys, cmdID);
+            Json::Value keyIDPair{ Json::ValueType::objectValue };
+            JsonUtils::SetValueForKey(keyIDPair, KeysKey, keys);
+            JsonUtils::SetValueForKey(keyIDPair, IDKey, cmdID);
+            keybindingsList.append(keyIDPair);
         }
 
         return keybindingsList;

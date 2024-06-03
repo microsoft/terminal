@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // queries
         Model::Command GetActionByKeyChord(const Control::KeyChord& keys) const;
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
-        Control::KeyChord GetKeyBindingForAction(winrt::hstring cmdID);
+        Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID);
 
         // population
         void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);
@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings = true);
         Json::Value ToJson() const;
         Json::Value KeyBindingsToJson() const;
-        bool FixUpsAppliedDuringLoad() const;
+        bool FixupsAppliedDuringLoad() const;
 
         // modification
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSendInput(winrt::hstring currentCommandline);
 
     private:
-        Model::Command _GetActionByID(const winrt::hstring actionID) const;
+        Model::Command _GetActionByID(const winrt::hstring& actionID) const;
         std::optional<winrt::hstring> _GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
@@ -109,7 +109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
         std::vector<Model::Command> _IterableCommands;
 
-        bool _fixUpsAppliedDuringLoad;
+        bool _fixupsAppliedDuringLoad{ false };
 
         // _KeyMap is the map of key chords -> action IDs defined in this layer
         // _ActionMap is the map of action IDs -> commands defined in this layer
