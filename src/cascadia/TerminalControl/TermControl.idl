@@ -148,7 +148,7 @@ namespace Microsoft.Terminal.Control
         Double CalculateQuickFixButtonCollapsedWidth { get; };
 
         void ShowContextMenu();
-        void ShowQuickFixMenu();
+        void RefreshQuickFixMenu();
         void ClearQuickFix();
 
         void Detach();

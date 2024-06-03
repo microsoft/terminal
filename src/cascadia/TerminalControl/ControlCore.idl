@@ -156,6 +156,7 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
         CommandHistoryContext CommandHistory();
+        Boolean QuickFixesAvailable { get; };
 
         void AdjustOpacity(Single Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);

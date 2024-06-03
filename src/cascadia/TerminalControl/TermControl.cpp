@@ -338,16 +338,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         });
-
-        if (Feature_QuickFix::IsEnabled())
-        {
-            auto quickFixBtn{ QuickFixButton() };
-            quickFixBtn.PointerEntered({ get_weak(), &TermControl::QuickFixButton_PointerEntered });
-            quickFixBtn.PointerExited({ get_weak(), &TermControl::QuickFixButton_PointerExited });
-        }
     }
 
-    void TermControl::QuickFixButton_PointerEntered(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
+    void TermControl::_QuickFixButton_PointerEntered(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
     {
         if (!_IsClosing() && _quickFixButtonCollapsible)
         {
@@ -355,7 +348,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void TermControl::QuickFixButton_PointerExited(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
+    void TermControl::_QuickFixButton_PointerExited(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
     {
         if (!_IsClosing() && _quickFixButtonCollapsible)
         {
@@ -838,11 +831,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // update. If we enabled scrollbar marks, then great, when we handle
         // that message, we'll redraw them.
 
-        if (Feature_QuickFix::IsEnabled())
-        {
-            // update the position of the quick fix menu (in case we changed the padding)
-            ShowQuickFixMenu();
-        }
+        // update the position of the quick fix menu (in case we changed the padding)
+        RefreshQuickFixMenu();
     }
 
     // Method Description:
@@ -2349,7 +2339,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
 
-        ShowQuickFixMenu();
+        RefreshQuickFixMenu();
     }
 
     hstring TermControl::Title()
@@ -3527,13 +3517,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
 
-        if (Feature_QuickFix::IsEnabled())
-        {
-            auto quickFixBtn = QuickFixButton();
-            quickFixBtn.Height(args.Height() / dpiScale);
-            QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
-            ShowQuickFixMenu();
-        }
+        auto quickFixBtn = QuickFixButton();
+        quickFixBtn.Height(args.Height() / dpiScale);
+        QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
+        RefreshQuickFixMenu();
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3831,9 +3818,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return GetPadding().Left / 3.0;
     }
 
-    void TermControl::ShowQuickFixMenu()
+    void TermControl::RefreshQuickFixMenu()
     {
-        if (!_quickFixesAvailable)
+        if (!_core.QuickFixesAvailable())
         {
             QuickFixButton().Visibility(Visibility::Collapsed);
             return;
@@ -3867,14 +3854,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)
     {
-        _quickFixesAvailable = true;
         SearchMissingCommand.raise(*this, args);
     }
 
     void TermControl::_clearQuickFix(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
-        _quickFixesAvailable = false;
-        ShowQuickFixMenu();
+        RefreshQuickFixMenu();
     }
 
     void TermControl::ClearQuickFix()

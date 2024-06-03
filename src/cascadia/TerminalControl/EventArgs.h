@@ -217,9 +217,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     public:
         SearchMissingCommandEventArgs(const winrt::hstring& missingCommand) :
-            _MissingCommand(missingCommand) {}
+            MissingCommand(missingCommand) {}
 
-        WINRT_PROPERTY(winrt::hstring, MissingCommand);
+        til::property<winrt::hstring> MissingCommand;
     };
 }
 

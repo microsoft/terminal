@@ -13,7 +13,6 @@
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>
-//#include <winrt/Microsoft.Management.Deployment.h>
 
 #include "EventArgs.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -23,7 +22,6 @@
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
-//using namespace winrt::Microsoft::Management::Deployment;
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
@@ -2302,6 +2300,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //              No clue which we should do. Thoughts?
         context->QuickFixes(_cachedQuickFixes);
         return *context;
+    }
+
+    bool ControlCore::QuickFixesAvailable() const noexcept
+    {
+        return _cachedQuickFixes && _cachedQuickFixes.Size() > 0;
     }
 
     void ControlCore::UpdateQuickFixes(const Windows::Foundation::Collections::IVector<hstring>& quickFixes)

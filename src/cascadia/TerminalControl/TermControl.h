@@ -181,7 +181,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void RawWriteString(const winrt::hstring& text);
 
         void ShowContextMenu();
-        void ShowQuickFixMenu();
+        void RefreshQuickFixMenu();
         void ClearQuickFix();
 
         void Detach();
@@ -340,8 +340,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _MouseWheelHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _ScrollbarChangeHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs& e);
 
-        void QuickFixButton_PointerEntered(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
-        void QuickFixButton_PointerExited(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _QuickFixButton_PointerEntered(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _QuickFixButton_PointerExited(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
 
         void _GotFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void _LostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);

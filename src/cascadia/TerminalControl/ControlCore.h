@@ -242,6 +242,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
+        bool QuickFixesAvailable() const noexcept;
         void UpdateQuickFixes(const Windows::Foundation::Collections::IVector<hstring>& quickFixes);
 
         void AdjustOpacity(const float opacity, const bool relative);

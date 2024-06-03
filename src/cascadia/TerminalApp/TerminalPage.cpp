@@ -2934,11 +2934,6 @@ namespace winrt::TerminalApp::implementation
     {
         assert(!Dispatcher().HasThreadAccess());
 
-        if (!Feature_QuickFix::IsEnabled())
-        {
-            co_return;
-        }
-
         std::vector<hstring> suggestions;
         suggestions.reserve(1);
         suggestions.emplace_back(fmt::format(L"winget install {}", args.MissingCommand()));
@@ -2951,7 +2946,7 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
         term.UpdateWinGetSuggestions(single_threaded_vector<hstring>(std::move(suggestions)));
-        term.ShowQuickFixMenu();
+        term.RefreshQuickFixMenu();
     }
 
     // Method Description:

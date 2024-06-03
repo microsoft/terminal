@@ -174,23 +174,6 @@
     </ItemGroup>
   </Target>
 
-  <!-- We need to include some additional files in the package for things like WinGet's Command Not Found -->
-  <Target Name="IncludeAdditionalFilesInPackage">
-    <PropertyGroup>
-      <WinGetAdditionalPackageFileRoot>$(SolutionDir)\src\cascadia\TerminalControl</WinGetAdditionalPackageFileRoot>
-    </PropertyGroup>
-    <ItemGroup>
-      <WinGetAdditionalPackageFile Include="$(WinGetAdditionalPackageFileRoot)\Microsoft.Management.Deployment.winmd">
-        <PackagePath>Microsoft.Management.Deployment.winmd</PackagePath>
-      </WinGetAdditionalPackageFile>
-    </ItemGroup>
-    <ItemGroup>
-      <AppxPackagePayload Include="%(WinGetAdditionalPackageFile.Identity))">
-        <TargetPath>%(WinGetAdditionalPackageFile.PackagePath)</TargetPath>
-      </AppxPackagePayload>
-    </ItemGroup>
-  </Target>
-
   <!-- This is required to get the package dependency in the AppXManifest. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
