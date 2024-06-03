@@ -61,10 +61,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // queries
         Model::Command GetActionByKeyChord(const Control::KeyChord& keys) const;
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
-        Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID) const;
+        Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID);
 
         // population
-        void AddAction(const Model::Command& cmd);
+        void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);
 
         // JSON
         static com_ptr<ActionMap> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap);
 
         void _TryUpdateActionMap(const Model::Command& cmd);
-        void _TryUpdateKeyChord(const Model::Command& cmd);
+        void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
@@ -110,8 +110,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Model::Command> _IterableCommands;
 
         bool _fixupsAppliedDuringLoad{ false };
-
-        void _AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings);
 
         // _KeyMap is the map of key chords -> action IDs defined in this layer
         // _ActionMap is the map of action IDs -> commands defined in this layer
