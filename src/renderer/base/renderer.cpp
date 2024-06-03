@@ -121,96 +121,14 @@ IRenderData* Renderer::GetRenderData() const noexcept
         // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
         _CheckViewportAndScroll();
 
-        if (_currentCursorOptions)
-        {
-            const auto& buffer = _pData->GetTextBuffer();
-            const auto view = buffer.GetSize();
-            const auto coord = _currentCursorOptions->coordCursor;
+        _invalidateCurrentCursor(); // Invalidate the previous cursor position.
+        _invalidateOldComposition();
 
-            // If we had previously drawn a composition at the previous cursor position
-            // we need to invalidate the entire line because who knows what changed.
-            // (It's possible to figure that out, but not worth the effort right now.)
-            if (_compositionCache)
-            {
-                til::rect rect{ 0, coord.y, til::CoordTypeMax, coord.y + 1 };
-                if (view.TrimToViewport(&rect))
-                {
-                    FOREACH_ENGINE(pEngine)
-                    {
-                        LOG_IF_FAILED(pEngine->Invalidate(&rect));
-                    }
-                }
-            }
-            else
-            {
-                const auto lineRendition = buffer.GetLineRendition(coord.y);
-                const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
-
-                til::rect rect{ coord.x, coord.y, coord.x + cursorWidth, coord.y + 1 };
-                rect = BufferToScreenLine(rect, lineRendition);
-
-                if (view.TrimToViewport(&rect))
-                {
-                    FOREACH_ENGINE(pEngine)
-                    {
-                        LOG_IF_FAILED(pEngine->InvalidateCursor(&rect));
-                    }
-                }
-            }
-        }
-
-        _currentCursorOptions = _GetCursorInfo();
+        _updateCursorInfo();
         _compositionCache.reset();
 
-        // Invalidate the line that the active TSF composition is on,
-        // so that _PaintBufferOutput() actually gets a chance to draw it.
-        if (!_pData->activeComposition.text.empty())
-        {
-            const auto viewport = _pData->GetViewport();
-            const auto coordCursor = _pData->GetCursorPosition();
-
-            til::rect line{ 0, coordCursor.y, til::CoordTypeMax, coordCursor.y + 1 };
-            if (viewport.TrimToViewport(&line))
-            {
-                viewport.ConvertToOrigin(&line);
-
-                FOREACH_ENGINE(pEngine)
-                {
-                    LOG_IF_FAILED(pEngine->Invalidate(&line));
-                }
-
-                auto& buffer = _pData->GetTextBuffer();
-                auto& scratch = buffer.GetScratchpadRow();
-
-                std::wstring_view text{ _pData->activeComposition.text };
-                RowWriteState state{
-                    .columnLimit = buffer.GetRowByOffset(line.top).GetReadableColumnCount(),
-                };
-
-                state.text = text.substr(0, _pData->activeComposition.cursorPos);
-                scratch.ReplaceText(state);
-                const auto cursorOffset = state.columnEnd;
-
-                state.text = text.substr(_pData->activeComposition.cursorPos);
-                state.columnBegin = state.columnEnd;
-                scratch.ReplaceText(state);
-
-                // Ideally the text is inserted at the position of the cursor (`coordCursor`),
-                // but if we got more text than fits into the remaining space until the end of the line,
-                // then we'll insert the text aligned to the end of the line.
-                const auto remaining = state.columnLimit - state.columnEnd;
-                const auto beg = std::clamp(coordCursor.x, 0, remaining);
-
-                const auto baseAttribute = buffer.GetRowByOffset(coordCursor.y).GetAttrByColumn(coordCursor.x);
-                _compositionCache.emplace(til::point{ beg, coordCursor.y }, baseAttribute);
-
-                // Fake-move the cursor to where it needs to be in the active composition.
-                if (_currentCursorOptions)
-                {
-                    _currentCursorOptions->coordCursor.x = std::min(beg + cursorOffset, line.right - 1);
-                }
-            }
-        }
+        _invalidateCurrentCursor(); // Invalidate the new cursor position.
+        _prepareNewComposition();
 
         FOREACH_ENGINE(pEngine)
         {
@@ -510,6 +428,24 @@ bool Renderer::_CheckViewportAndScroll()
     }
 
     _ScrollPreviousSelection(coordDelta);
+
+    // The cursor may have moved out of or into the viewport. Update the .inViewport property.
+    {
+        const auto view = ScreenToBufferLine(srNewViewport, _currentCursorOptions.lineRendition);
+        auto coordCursor = _currentCursorOptions.coordCursor;
+
+        // `coordCursor` was stored in viewport-relative while `view` is in absolute coordinates.
+        // --> Turn it back into the absolute coordinates with the help of the old viewport.
+        coordCursor.y += srOldViewport.top;
+
+        // Note that we allow the X coordinate to be outside the left border by 1 position,
+        // because the cursor could still be visible if the focused character is double width.
+        const auto xInRange = coordCursor.x >= view.left - 1 && coordCursor.x <= view.right;
+        const auto yInRange = coordCursor.y >= view.top && coordCursor.y <= view.bottom;
+
+        _currentCursorOptions.inViewport = xInRange && yInRange;
+    }
+
     return true;
 }
 
@@ -1188,58 +1124,153 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // - <none>
 // Return Value:
 // - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
-[[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
+void Renderer::_updateCursorInfo()
 {
-    if (_pData->IsCursorVisible())
+    // Get cursor position in buffer
+    auto coordCursor = _pData->GetCursorPosition();
+
+    // GH#3166: Only draw the cursor if it's actually in the viewport. It
+    // might be on the line that's in that partially visible row at the
+    // bottom of the viewport, the space that's not quite a full line in
+    // height. Since we don't draw that text, we shouldn't draw the cursor
+    // there either.
+
+    // The cursor is never rendered as double height, so we don't care about
+    // the exact line rendition - only whether it's double width or not.
+    const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.y);
+    const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
+
+    // We need to convert the screen coordinates of the viewport to an
+    // equivalent range of buffer cells, taking line rendition into account.
+    const auto viewport = _pData->GetViewport().ToInclusive();
+    const auto view = ScreenToBufferLine(viewport, lineRendition);
+
+    // Note that we allow the X coordinate to be outside the left border by 1 position,
+    // because the cursor could still be visible if the focused character is double width.
+    const auto xInRange = coordCursor.x >= view.left - 1 && coordCursor.x <= view.right;
+    const auto yInRange = coordCursor.y >= view.top && coordCursor.y <= view.bottom;
+
+    // Adjust cursor Y offset to viewport.
+    // The viewport X offset is saved in the options and handled with a transform.
+    coordCursor.y -= view.top;
+
+    const auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
+    const auto useColor = cursorColor != INVALID_COLOR;
+
+    _currentCursorOptions.coordCursor = coordCursor;
+    _currentCursorOptions.viewportLeft = viewport.left;
+    _currentCursorOptions.lineRendition = lineRendition;
+    _currentCursorOptions.ulCursorHeightPercent = _pData->GetCursorHeight();
+    _currentCursorOptions.cursorPixelWidth = _pData->GetCursorPixelWidth();
+    _currentCursorOptions.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
+    _currentCursorOptions.cursorType = _pData->GetCursorStyle();
+    _currentCursorOptions.fUseColor = useColor;
+    _currentCursorOptions.cursorColor = cursorColor;
+    _currentCursorOptions.isVisible = _pData->IsCursorVisible();
+    _currentCursorOptions.isOn = _currentCursorOptions.isVisible && _pData->IsCursorOn();
+    _currentCursorOptions.inViewport = xInRange && yInRange;
+}
+
+void Renderer::_invalidateCurrentCursor() const
+{
+    if (!_currentCursorOptions.inViewport || !_currentCursorOptions.isOn)
     {
-        // Get cursor position in buffer
-        auto coordCursor = _pData->GetCursorPosition();
+        return;
+    }
 
-        // GH#3166: Only draw the cursor if it's actually in the viewport. It
-        // might be on the line that's in that partially visible row at the
-        // bottom of the viewport, the space that's not quite a full line in
-        // height. Since we don't draw that text, we shouldn't draw the cursor
-        // there either.
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto view = buffer.GetSize();
+    const auto coord = _currentCursorOptions.coordCursor;
 
-        // The cursor is never rendered as double height, so we don't care about
-        // the exact line rendition - only whether it's double width or not.
-        const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.y);
-        const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
+    const auto lineRendition = _currentCursorOptions.lineRendition;
+    const auto cursorWidth = _currentCursorOptions.fIsDoubleWidth ? 2 : 1;
 
-        // We need to convert the screen coordinates of the viewport to an
-        // equivalent range of buffer cells, taking line rendition into account.
-        const auto view = ScreenToBufferLine(_pData->GetViewport().ToInclusive(), lineRendition);
+    til::rect rect{ coord.x, coord.y, coord.x + cursorWidth, coord.y + 1 };
+    rect = BufferToScreenLine(rect, lineRendition);
 
-        // Note that we allow the X coordinate to be outside the left border by 1 position,
-        // because the cursor could still be visible if the focused character is double width.
-        const auto xInRange = coordCursor.x >= view.left - 1 && coordCursor.x <= view.right;
-        const auto yInRange = coordCursor.y >= view.top && coordCursor.y <= view.bottom;
-        if (xInRange && yInRange)
+    if (view.TrimToViewport(&rect))
+    {
+        FOREACH_ENGINE(pEngine)
         {
-            // Adjust cursor Y offset to viewport.
-            // The viewport X offset is saved in the options and handled with a transform.
-            coordCursor.y -= view.top;
-
-            auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
-            auto useColor = cursorColor != INVALID_COLOR;
-
-            // Build up the cursor parameters including position, color, and drawing options
-            CursorOptions options;
-            options.coordCursor = coordCursor;
-            options.viewportLeft = _pData->GetViewport().Left();
-            options.lineRendition = lineRendition;
-            options.ulCursorHeightPercent = _pData->GetCursorHeight();
-            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
-            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-            options.cursorType = _pData->GetCursorStyle();
-            options.fUseColor = useColor;
-            options.cursorColor = cursorColor;
-            options.isOn = _pData->IsCursorOn();
-
-            return { options };
+            LOG_IF_FAILED(pEngine->InvalidateCursor(&rect));
         }
     }
-    return std::nullopt;
+}
+
+// If we had previously drawn a composition at the previous cursor position
+// we need to invalidate the entire line because who knows what changed.
+// (It's possible to figure that out, but not worth the effort right now.)
+void Renderer::_invalidateOldComposition() const
+{
+    if (!_compositionCache || !_currentCursorOptions.inViewport)
+    {
+        return;
+    }
+
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto view = buffer.GetSize();
+    const auto coord = _currentCursorOptions.coordCursor;
+
+    til::rect rect{ 0, coord.y, til::CoordTypeMax, coord.y + 1 };
+    if (view.TrimToViewport(&rect))
+    {
+        FOREACH_ENGINE(pEngine)
+        {
+            LOG_IF_FAILED(pEngine->Invalidate(&rect));
+        }
+    }
+}
+
+// Invalidate the line that the active TSF composition is on,
+// so that _PaintBufferOutput() actually gets a chance to draw it.
+void Renderer::_prepareNewComposition()
+{
+    if (_pData->activeComposition.text.empty())
+    {
+        return;
+    }
+
+    const auto viewport = _pData->GetViewport();
+    const auto coordCursor = _pData->GetCursorPosition();
+
+    til::rect line{ 0, coordCursor.y, til::CoordTypeMax, coordCursor.y + 1 };
+    if (viewport.TrimToViewport(&line))
+    {
+        viewport.ConvertToOrigin(&line);
+
+        FOREACH_ENGINE(pEngine)
+        {
+            LOG_IF_FAILED(pEngine->Invalidate(&line));
+        }
+
+        auto& buffer = _pData->GetTextBuffer();
+        auto& scratch = buffer.GetScratchpadRow();
+
+        std::wstring_view text{ _pData->activeComposition.text };
+        RowWriteState state{
+            .columnLimit = buffer.GetRowByOffset(line.top).GetReadableColumnCount(),
+        };
+
+        state.text = text.substr(0, _pData->activeComposition.cursorPos);
+        scratch.ReplaceText(state);
+        const auto cursorOffset = state.columnEnd;
+
+        state.text = text.substr(_pData->activeComposition.cursorPos);
+        state.columnBegin = state.columnEnd;
+        scratch.ReplaceText(state);
+
+        // Ideally the text is inserted at the position of the cursor (`coordCursor`),
+        // but if we got more text than fits into the remaining space until the end of the line,
+        // then we'll insert the text aligned to the end of the line.
+        const auto remaining = state.columnLimit - state.columnEnd;
+        const auto beg = std::clamp(coordCursor.x, 0, remaining);
+
+        const auto baseAttribute = buffer.GetRowByOffset(coordCursor.y).GetAttrByColumn(coordCursor.x);
+        _compositionCache.emplace(til::point{ beg, coordCursor.y }, baseAttribute);
+
+        // Fake-move the cursor to where it needs to be in the active composition.
+        _currentCursorOptions.coordCursor.x = std::min(beg + cursorOffset, line.right - 1);
+    }
 }
 
 // Routine Description:
@@ -1250,9 +1281,9 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    if (_currentCursorOptions)
+    if (_currentCursorOptions.inViewport && _currentCursorOptions.isVisible)
     {
-        LOG_IF_FAILED(pEngine->PaintCursor(*_currentCursorOptions));
+        LOG_IF_FAILED(pEngine->PaintCursor(_currentCursorOptions));
     }
 }
 
@@ -1385,10 +1416,7 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
             rc += delta;
         }
 
-        if (_currentCursorOptions)
-        {
-            _currentCursorOptions->coordCursor += delta;
-        }
+        _currentCursorOptions.coordCursor += delta;
     }
 }
 

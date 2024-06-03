@@ -88,25 +88,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
 
-        auto pfnCopyToClipboard = std::bind(&ControlCore::_terminalCopyToClipboard, this, std::placeholders::_1);
+        auto pfnCopyToClipboard = [this](auto&& PH1) { _terminalCopyToClipboard(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
-        auto pfnWarningBell = std::bind(&ControlCore::_terminalWarningBell, this);
+        auto pfnWarningBell = [this] { _terminalWarningBell(); };
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
-        auto pfnTitleChanged = std::bind(&ControlCore::_terminalTitleChanged, this, std::placeholders::_1);
+        auto pfnTitleChanged = [this](auto&& PH1) { _terminalTitleChanged(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
-        auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        auto pfnScrollPositionChanged = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalScrollPositionChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
+        auto pfnTerminalTaskbarProgressChanged = [this] { _terminalTaskbarProgressChanged(); };
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
-        auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
+        auto pfnShowWindowChanged = [this](auto&& PH1) { _terminalShowWindowChanged(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
-        auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        auto pfnPlayMidiNote = [this](auto&& PH1, auto&& PH2, auto&& PH3) { _terminalPlayMidiNote(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); };
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
         auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
@@ -169,7 +169,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::chrono::milliseconds{ 100 },
             [weakTerminal = std::weak_ptr{ _terminal }, weakThis = get_weak(), dispatcher = _dispatcher]() {
                 dispatcher.TryEnqueue(DispatcherQueuePriority::Normal, [weakThis]() {
-                    if (const auto self = weakThis.get(); !self->_IsClosing())
+                    if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
                         self->OutputIdle.raise(*self, nullptr);
                     }
@@ -187,7 +187,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher,
             std::chrono::milliseconds{ 8 },
             [weakThis = get_weak()](const auto& update) {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
                     core->ScrollPositionChanged.raise(*core, update);
                 }
@@ -967,26 +967,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_renderEngine)
         {
-            std::unordered_map<std::wstring_view, uint32_t> featureMap;
-            if (const auto fontFeatures = _settings->FontFeatures())
-            {
-                featureMap.reserve(fontFeatures.Size());
-
-                for (const auto& [tag, param] : fontFeatures)
+            static constexpr auto cloneMap = [](const IFontFeatureMap& map) {
+                std::unordered_map<std::wstring_view, float> clone;
+                if (map)
                 {
-                    featureMap.emplace(tag, param);
+                    clone.reserve(map.Size());
+                    for (const auto& [tag, param] : map)
+                    {
+                        clone.emplace(tag, param);
+                    }
                 }
-            }
-            std::unordered_map<std::wstring_view, float> axesMap;
-            if (const auto fontAxes = _settings->FontAxes())
-            {
-                axesMap.reserve(fontAxes.Size());
+                return clone;
+            };
 
-                for (const auto& [axis, value] : fontAxes)
-                {
-                    axesMap.emplace(axis, value);
-                }
-            }
+            const auto fontFeatures = _settings->FontFeatures();
+            const auto fontAxes = _settings->FontAxes();
+            const auto featureMap = cloneMap(fontFeatures);
+            const auto axesMap = cloneMap(fontAxes);
 
             // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
             //      actually fail. We need a way to gracefully fallback.
@@ -1672,30 +1669,44 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
     // - caseSensitive: boolean that represents if the current search is case sensitive
+    // - resetOnly: If true, only Reset() will be called, if anything. FindNext() will never be called.
     // Return Value:
     // - <none>
-    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool reset)
+    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool regularExpression, const bool resetOnly)
     {
         const auto lock = _terminal->LockForWriting();
+        SearchFlag flags{};
+        WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !caseSensitive);
+        WI_SetFlagIf(flags, SearchFlag::RegularExpression, regularExpression);
+        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), text, flags);
 
-        bool searchInvalidated = false;
-        std::vector<til::point_span> oldResults;
-        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive, &oldResults))
+        if (searchInvalidated || !resetOnly)
         {
-            searchInvalidated = true;
+            std::vector<til::point_span> oldResults;
 
-            _cachedSearchResultRows = {};
-            if (SnapSearchResultToSelection())
+            if (searchInvalidated)
             {
-                _searcher.MoveToCurrentSelection();
-                SnapSearchResultToSelection(false);
+                oldResults = _searcher.ExtractResults();
+                _searcher.Reset(*_terminal.get(), text, flags, !goForward);
+
+                if (SnapSearchResultToSelection())
+                {
+                    _searcher.MoveToCurrentSelection();
+                    SnapSearchResultToSelection(false);
+                }
+
+                _terminal->SetSearchHighlights(_searcher.Results());
+            }
+            else
+            {
+                _searcher.FindNext(!goForward);
             }
 
-            _terminal->SetSearchHighlights(_searcher.Results());
-        }
-        else if (!reset)
-        {
-            _searcher.FindNext();
+            if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
+            {
+                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
+            }
+            _renderer->TriggerSearchHighlight(oldResults);
         }
 
         int32_t totalMatches = 0;
@@ -1704,39 +1715,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             totalMatches = gsl::narrow<int32_t>(_searcher.Results().size());
             currentMatch = gsl::narrow<int32_t>(idx);
-            _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
         }
-
-        _renderer->TriggerSearchHighlight(oldResults);
 
         return {
             .TotalMatches = totalMatches,
             .CurrentMatch = currentMatch,
             .SearchInvalidated = searchInvalidated,
+            .SearchRegexInvalid = !_searcher.IsOk(),
         };
     }
 
-    Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
+    const std::vector<til::point_span>& ControlCore::SearchResultRows() const noexcept
     {
-        if (!_cachedSearchResultRows)
-        {
-            auto results = std::vector<int32_t>();
-            auto lastRow = til::CoordTypeMin;
-
-            for (const auto& match : _searcher.Results())
-            {
-                const auto row{ match.start.y };
-                if (row != lastRow)
-                {
-                    results.push_back(row);
-                    lastRow = row;
-                }
-            }
-
-            _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
-        }
-
-        return _cachedSearchResultRows;
+        return _searcher.Results();
     }
 
     void ControlCore::ClearSearch()
@@ -1746,7 +1737,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->SetSearchHighlightFocused({});
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
-        _cachedSearchResultRows = {};
     }
 
     // Method Description:
@@ -1819,12 +1809,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // * prints "  [Restored <date> <time>]  <spaces until end of line>  "
             // * resets the color ("\x1b[m")
             // * newlines
-            // * clears the screen ("\x1b[2J")
-            // The last step is necessary because we launch ConPTY without PSEUDOCONSOLE_INHERIT_CURSOR by default.
-            // This will cause ConPTY to emit a \x1b[2J sequence on startup to ensure it and the terminal are in-sync.
-            // If we didn't do a \x1b[2J ourselves as well, the user would briefly see the last state of the terminal,
-            // before it's quickly scrolled away once ConPTY has finished starting up, which looks weird.
-            message = fmt::format(FMT_COMPILE(L"\x1b[100;37m  [{} {} {}]\x1b[K\x1b[m\r\n\x1b[2J"), msg, date, time);
+            message = fmt::format(FMT_COMPILE(L"\x1b[100;37m  [{} {} {}]\x1b[K\x1b[m\r\n"), msg, date, time);
         }
 
         wchar_t buffer[32 * 1024];
@@ -1862,6 +1847,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             _terminal->Write(message);
+
+            // Show 3 lines of scrollback to the user, so they know it's there. Otherwise, in particular with the well
+            // hidden touch scrollbars in WinUI 2 and later, there's no indication that there's something to scroll up to.
+            //
+            // We only show 3 lines because ConPTY doesn't know about our restored buffer contents initially,
+            // and so ReadConsole calls will return whitespace.
+            //
+            // We also avoid using actual newlines or similar here, because if we ever change our text buffer implementation
+            // to actually track the written contents, we don't want this to be part of the next buffer snapshot.
+            const auto cursorPosition = _terminal->GetCursorPosition();
+            const auto y = std::max(0, cursorPosition.y - 4);
+            _terminal->SetViewportPosition({ 0, y });
         }
     }
 
@@ -2027,93 +2024,98 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
         {
-            // If we're handling a single left click, without shift pressed, and
-            // outside mouse mode, AND the user has RepositionCursorWithMouse turned
-            // on, let's try to move the cursor.
-            //
-            // We'll only move the cursor if the user has clicked after the last
-            // mark, if there is one. That means the user also needs to set up
-            // shell integration to enable this feature.
-            //
-            // As noted in GH #8573, there's plenty of edge cases with this
-            // approach, but it's good enough to bring value to 90% of use cases.
-            const auto cursorPos{ _terminal->GetCursorPosition() };
+            _repositionCursorWithMouse(terminalPosition);
+        }
+        _updateSelectionUI();
+    }
 
-            // Does the current buffer line have a mark on it?
-            const auto& marks{ _terminal->GetMarkExtents() };
-            if (!marks.empty())
+    void ControlCore::_repositionCursorWithMouse(const til::point terminalPosition)
+    {
+        // If we're handling a single left click, without shift pressed, and
+        // outside mouse mode, AND the user has RepositionCursorWithMouse turned
+        // on, let's try to move the cursor.
+        //
+        // We'll only move the cursor if the user has clicked after the last
+        // mark, if there is one. That means the user also needs to set up
+        // shell integration to enable this feature.
+        //
+        // As noted in GH #8573, there's plenty of edge cases with this
+        // approach, but it's good enough to bring value to 90% of use cases.
+        const auto cursorPos{ _terminal->GetCursorPosition() };
+
+        // Does the current buffer line have a mark on it?
+        const auto& marks{ _terminal->GetMarkExtents() };
+        if (!marks.empty())
+        {
+            const auto& last{ marks.back() };
+            const auto [start, end] = last.GetExtent();
+            const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+            auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+            bufferSize.IncrementInBounds(lastNonSpace, true);
+
+            // If the user clicked off to the right side of the prompt, we
+            // want to send keystrokes to the last character in the prompt +1.
+            //
+            // We don't want to send too many here. In CMD, if the user's
+            // last command is longer than what they've currently typed, and
+            // they press right arrow at the end of the prompt, COOKED_READ
+            // will fill in characters from the previous command.
+            //
+            // By only sending keypresses to the end of the command + 1, we
+            // should leave the cursor at the very end of the prompt,
+            // without adding any characters from a previous command.
+
+            // terminalPosition is viewport-relative.
+            const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
+            if (bufferPos.y > lastNonSpace.y)
             {
-                const auto& last{ marks.back() };
-                const auto [start, end] = last.GetExtent();
-                const auto bufferSize = _terminal->GetTextBuffer().GetSize();
-                auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
-                bufferSize.IncrementInBounds(lastNonSpace, true);
+                // Clicked under the prompt. Bail.
+                return;
+            }
 
-                // If the user clicked off to the right side of the prompt, we
-                // want to send keystrokes to the last character in the prompt +1.
-                //
-                // We don't want to send too many here. In CMD, if the user's
-                // last command is longer than what they've currently typed, and
-                // they press right arrow at the end of the prompt, COOKED_READ
-                // will fill in characters from the previous command.
-                //
-                // By only sending keypresses to the end of the command + 1, we
-                // should leave the cursor at the very end of the prompt,
-                // without adding any characters from a previous command.
+            // Limit the click to 1 past the last character on the last line.
+            const auto clampedClick = std::min(bufferPos, lastNonSpace);
 
-                // terminalPosition is viewport-relative.
-                const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
-                if (bufferPos.y > lastNonSpace.y)
+            if (clampedClick >= last.end)
+            {
+                // Get the distance between the cursor and the click, in cells.
+
+                // First, make sure to iterate from the first point to the
+                // second. The user may have clicked _earlier_ in the
+                // buffer!
+                auto goRight = clampedClick > cursorPos;
+                const auto startPoint = goRight ? cursorPos : clampedClick;
+                const auto endPoint = goRight ? clampedClick : cursorPos;
+
+                const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
+                const WORD key = goRight ? VK_RIGHT : VK_LEFT;
+
+                std::wstring buffer;
+                const auto append = [&](TerminalInput::OutputType&& out) {
+                    if (out)
+                    {
+                        buffer.append(std::move(*out));
+                    }
+                };
+
+                // Send an up and a down once per cell. This won't
+                // accurately handle wide characters, or continuation
+                // prompts, or cases where a single escape character in the
+                // command (e.g. ^[) takes up two cells.
+                for (size_t i = 0u; i < delta; i++)
                 {
-                    // Clicked under the prompt. Bail.
-                    return;
+                    append(_terminal->SendKeyEvent(key, 0, {}, true));
+                    append(_terminal->SendKeyEvent(key, 0, {}, false));
                 }
 
-                // Limit the click to 1 past the last character on the last line.
-                const auto clampedClick = std::min(bufferPos, lastNonSpace);
-
-                if (clampedClick >= end)
                 {
-                    // Get the distance between the cursor and the click, in cells.
-
-                    // First, make sure to iterate from the first point to the
-                    // second. The user may have clicked _earlier_ in the
-                    // buffer!
-                    auto goRight = clampedClick > cursorPos;
-                    const auto startPoint = goRight ? cursorPos : clampedClick;
-                    const auto endPoint = goRight ? clampedClick : cursorPos;
-
-                    const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
-                    const WORD key = goRight ? VK_RIGHT : VK_LEFT;
-
-                    std::wstring buffer;
-                    const auto append = [&](TerminalInput::OutputType&& out) {
-                        if (out)
-                        {
-                            buffer.append(std::move(*out));
-                        }
-                    };
-
-                    // Send an up and a down once per cell. This won't
-                    // accurately handle wide characters, or continuation
-                    // prompts, or cases where a single escape character in the
-                    // command (e.g. ^[) takes up two cells.
-                    for (size_t i = 0u; i < delta; i++)
-                    {
-                        append(_terminal->SendKeyEvent(key, 0, {}, true));
-                        append(_terminal->SendKeyEvent(key, 0, {}, false));
-                    }
-
-                    {
-                        // Sending input requires that we're unlocked, because
-                        // writing the input pipe may block indefinitely.
-                        const auto suspension = _terminal->SuspendLock();
-                        _sendInputToConnection(buffer);
-                    }
+                    // Sending input requires that we're unlocked, because
+                    // writing the input pipe may block indefinitely.
+                    const auto suspension = _terminal->SuspendLock();
+                    _sendInputToConnection(buffer);
                 }
             }
         }
-        _updateSelectionUI();
     }
 
     // Method Description:
@@ -2262,24 +2264,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::vector<winrt::hstring> commands;
         const auto bufferCommands{ textBuffer.Commands() };
-        for (const auto& commandInBuffer : bufferCommands)
-        {
-            const auto strEnd = commandInBuffer.find_last_not_of(UNICODE_SPACE);
+
+        auto trimToHstring = [](const auto& s) -> winrt::hstring {
+            const auto strEnd = s.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
-                const auto trimmed = commandInBuffer.substr(0, strEnd + 1);
+                const auto trimmed = s.substr(0, strEnd + 1);
+                return winrt::hstring{ trimmed };
+            }
+            return winrt::hstring{ L"" };
+        };
 
-                commands.push_back(winrt::hstring{ trimmed });
+        const auto currentCommand = _terminal->CurrentCommand();
+        const auto trimmedCurrentCommand = trimToHstring(currentCommand);
+
+        for (const auto& commandInBuffer : bufferCommands)
+        {
+            if (const auto hstr{ trimToHstring(commandInBuffer) };
+                (!hstr.empty() && hstr != trimmedCurrentCommand))
+            {
+                commands.push_back(hstr);
             }
         }
 
-        auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
-        context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
+        // If the very last thing in the list of recent commands, is exactly the
+        // same as the current command, then let's not include it in the
+        // history. It's literally the thing the user has typed, RIGHT now.
+        if (!commands.empty() && commands.back() == trimmedCurrentCommand)
+        {
+            commands.pop_back();
+        }
 
+
+        auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
+        context->CurrentCommandline(trimmedCurrentCommand);
         // TODO CARLOS: should we delete this after a new command is run? Or delete it after a suggestion is used? Or just after the next winget suggestion (current impl)?
         //              No clue which we should do. Thoughts?
         context->QuickFixes(_cachedQuickFixes);
-
         return *context;
     }
 
@@ -2647,12 +2668,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         CompletionsChanged.raise(*this, *args);
     }
+
+    // Select the region of text between [s.start, s.end), in buffer space
     void ControlCore::_selectSpan(til::point_span s)
     {
+        // s.end is an _exclusive_ point. We need an inclusive one. But
+        // decrement in bounds wants an inclusive one. If you pass an exclusive
+        // one, then it might assert at you for being out of bounds. So we also
+        // take care of the case that the end point is outside the viewport
+        // manually.
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-        bufferSize.DecrementInBounds(s.end);
+        til::point inclusiveEnd = s.end;
+        if (s.end.x == bufferSize.Width())
+        {
+            inclusiveEnd = til::point{ std::max(0, s.end.x - 1), s.end.y };
+        }
+        else
+        {
+            bufferSize.DecrementInBounds(inclusiveEnd);
+        }
 
-        _terminal->SelectNewRegion(s.start, s.end);
+        _terminal->SelectNewRegion(s.start, inclusiveEnd);
         _renderer->TriggerSelection();
     }
 

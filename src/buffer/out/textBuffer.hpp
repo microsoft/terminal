@@ -58,6 +58,7 @@ filling in the last row, and updating the screen.
 #include "../buffer/out/textBufferTextIterator.hpp"
 
 struct URegularExpression;
+enum class SearchFlag : unsigned int;
 
 namespace Microsoft::Console::Render
 {
@@ -196,7 +197,7 @@ public:
 
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
 
-    std::wstring GetPlainText(const til::point& start, const til::point& end) const;
+    std::wstring GetPlainText(til::point start, til::point end) const;
 
     struct CopyRequest
     {
@@ -293,8 +294,8 @@ public:
 
     static void Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const Microsoft::Console::Types::Viewport* lastCharacterViewport = nullptr, PositionInformation* positionInfo = nullptr);
 
-    std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
-    std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
+    std::optional<std::vector<til::point_span>> SearchText(const std::wstring_view& needle, SearchFlag flags) const;
+    std::optional<std::vector<til::point_span>> SearchText(const std::wstring_view& needle, SearchFlag flags, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
     // Mark handling
     std::vector<ScrollMark> GetMarkRows() const;

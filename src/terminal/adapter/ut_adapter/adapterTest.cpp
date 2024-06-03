@@ -81,14 +81,10 @@ public:
         return *_stateMachine;
     }
 
-    TextBuffer& GetTextBuffer() override
+    BufferState GetBufferAndViewport() override
     {
-        return *_textBuffer.get();
-    }
-
-    til::rect GetViewport() const override
-    {
-        return { _viewport.left, _viewport.top, _viewport.right, _viewport.bottom };
+        const auto viewport = til::rect{ _viewport.left, _viewport.top, _viewport.right, _viewport.bottom };
+        return { *_textBuffer.get(), viewport, true };
     }
 
     void SetViewportPosition(const til::point /*position*/) override
@@ -1575,12 +1571,21 @@ public:
         coordCursorExpected.x++;
         coordCursorExpected.y++;
 
-        // Until we support paging (GH#13892) the reported page number should always be 1.
-        const auto pageExpected = 1;
+        // By default, the initial page number should be 1.
+        auto pageExpected = 1;
 
         VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExtendedCursorPositionReport, {}));
 
         wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        // Now test with the page number set to 3.
+        pageExpected = 3;
+        _pDispatch->PagePositionAbsolute(pageExpected);
+
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExtendedCursorPositionReport, {}));
+
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
         _testGetSet->ValidateInputEvent(pwszBuffer);
     }
@@ -1744,6 +1749,42 @@ public:
         _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
+    }
+
+    TEST_METHOD(RequestDisplayedExtentTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify DECRQDE response in home position");
+        _testGetSet->PrepData();
+        _testGetSet->_viewport.left = 0;
+        _testGetSet->_viewport.right = 80;
+        _testGetSet->_viewport.top = 0;
+        _testGetSet->_viewport.bottom = 24;
+        VERIFY_IS_TRUE(_pDispatch->RequestDisplayedExtent());
+        _testGetSet->ValidateInputEvent(L"\x1b[24;80;1;1;1\"w");
+
+        Log::Comment(L"Test 2: Verify DECRQDE response when panned horizontally");
+        _testGetSet->_viewport.left += 5;
+        _testGetSet->_viewport.right += 5;
+        VERIFY_IS_TRUE(_pDispatch->RequestDisplayedExtent());
+        _testGetSet->ValidateInputEvent(L"\x1b[24;80;6;1;1\"w");
+
+        Log::Comment(L"Test 3: Verify DECRQDE response on page 3");
+        _pDispatch->PagePositionAbsolute(3);
+        VERIFY_IS_TRUE(_pDispatch->RequestDisplayedExtent());
+        _testGetSet->ValidateInputEvent(L"\x1b[24;80;6;1;3\"w");
+
+        Log::Comment(L"Test 3: Verify DECRQDE response when active page not visible");
+        _pDispatch->ResetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+        _pDispatch->PagePositionAbsolute(1);
+        VERIFY_IS_TRUE(_pDispatch->RequestDisplayedExtent());
+        _testGetSet->ValidateInputEvent(L"\x1b[24;80;6;1;3\"w");
+
+        Log::Comment(L"Test 4: Verify DECRQDE response when page 1 visible again");
+        _pDispatch->SetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+        VERIFY_IS_TRUE(_pDispatch->RequestDisplayedExtent());
+        _testGetSet->ValidateInputEvent(L"\x1b[24;80;6;1;1\"w");
     }
 
     TEST_METHOD(RequestTerminalParametersTests)
@@ -3263,7 +3304,7 @@ public:
         setMacroText(63, L"Macro 63");
 
         const auto getBufferOutput = [&]() {
-            const auto& textBuffer = _testGetSet->GetTextBuffer();
+            const auto& textBuffer = _testGetSet->GetBufferAndViewport().buffer;
             const auto cursorPos = textBuffer.GetCursor().GetPosition();
             return textBuffer.GetRowByOffset(cursorPos.y).GetText().substr(0, cursorPos.x);
         };
@@ -3314,7 +3355,8 @@ public:
     {
         _testGetSet->PrepData();
         _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
-        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", _testGetSet->GetViewport().height(), _testGetSet->GetTextBuffer().GetSize().Width());
+        const auto [textBuffer, viewport, _] = _testGetSet->GetBufferAndViewport();
+        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", viewport.height(), textBuffer.GetSize().Width());
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
     }
 
@@ -3343,6 +3385,89 @@ public:
         _testGetSet->_expectedMenuJson = LR"({ "foo": "what;ever", "bar": 2 })";
         _testGetSet->_expectedReplaceLength = 20;
         VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;30;{ "foo": "what;ever", "bar": 2 })"));
+    }
+
+    TEST_METHOD(PageMovementTests)
+    {
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        auto& pages = _pDispatch->_pages;
+        const auto startPos = pages.ActivePage().Cursor().GetPosition();
+        const auto homePos = til::point{ 0, pages.ActivePage().Top() };
+
+        // Testing PPA (page position absolute)
+        VERIFY_ARE_EQUAL(1, pages.ActivePage().Number(), L"Initial page is 1");
+        _pDispatch->PagePositionAbsolute(3);
+        VERIFY_ARE_EQUAL(3, pages.ActivePage().Number(), L"PPA 3 moves to page 3");
+        _pDispatch->PagePositionAbsolute(VTParameter{});
+        VERIFY_ARE_EQUAL(1, pages.ActivePage().Number(), L"PPA with omitted page moves to 1");
+        _pDispatch->PagePositionAbsolute(9999);
+        VERIFY_ARE_EQUAL(6, pages.ActivePage().Number(), L"PPA is clamped at page 6");
+        VERIFY_ARE_EQUAL(startPos, pages.ActivePage().Cursor().GetPosition(), L"Cursor position never changes");
+
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _pDispatch->PagePositionAbsolute(1); // Reset to page 1
+
+        // Testing PPR (page position relative)
+        VERIFY_ARE_EQUAL(1, pages.ActivePage().Number(), L"Initial page is 1");
+        _pDispatch->PagePositionRelative(2);
+        VERIFY_ARE_EQUAL(3, pages.ActivePage().Number(), L"PPR 2 moves forward 2 pages");
+        _pDispatch->PagePositionRelative(VTParameter{});
+        VERIFY_ARE_EQUAL(4, pages.ActivePage().Number(), L"PPR with omitted count moves forward 1");
+        _pDispatch->PagePositionRelative(9999);
+        VERIFY_ARE_EQUAL(6, pages.ActivePage().Number(), L"PPR is clamped at page 6");
+        VERIFY_ARE_EQUAL(startPos, pages.ActivePage().Cursor().GetPosition(), L"Cursor position never changes");
+
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+
+        // Testing PPB (page position back)
+        VERIFY_ARE_EQUAL(6, pages.ActivePage().Number(), L"Initial page is 6");
+        _pDispatch->PagePositionBack(2);
+        VERIFY_ARE_EQUAL(4, pages.ActivePage().Number(), L"PPB 2 moves back 2 pages");
+        _pDispatch->PagePositionBack(VTParameter{});
+        VERIFY_ARE_EQUAL(3, pages.ActivePage().Number(), L"PPB with omitted count moves back 1");
+        _pDispatch->PagePositionBack(9999);
+        VERIFY_ARE_EQUAL(1, pages.ActivePage().Number(), L"PPB is clamped at page 1");
+        VERIFY_ARE_EQUAL(startPos, pages.ActivePage().Cursor().GetPosition(), L"Cursor position never changes");
+
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+
+        // Testing NP (next page)
+        VERIFY_ARE_EQUAL(1, pages.ActivePage().Number(), L"Initial page is 1");
+        _pDispatch->NextPage(2);
+        VERIFY_ARE_EQUAL(3, pages.ActivePage().Number(), L"NP 2 moves forward 2 pages");
+        _pDispatch->NextPage(VTParameter{});
+        VERIFY_ARE_EQUAL(4, pages.ActivePage().Number(), L"NP with omitted count moves forward 1");
+        _pDispatch->NextPage(9999);
+        VERIFY_ARE_EQUAL(6, pages.ActivePage().Number(), L"NP is clamped at page 6");
+        VERIFY_ARE_EQUAL(homePos, pages.ActivePage().Cursor().GetPosition(), L"Cursor position is reset to home");
+
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+
+        // Testing PP (preceding page)
+        VERIFY_ARE_EQUAL(6, pages.ActivePage().Number(), L"Initial page is 6");
+        _pDispatch->PrecedingPage(2);
+        VERIFY_ARE_EQUAL(4, pages.ActivePage().Number(), L"PP 2 moves back 2 pages");
+        _pDispatch->PrecedingPage(VTParameter{});
+        VERIFY_ARE_EQUAL(3, pages.ActivePage().Number(), L"PP with omitted count moves back 1");
+        _pDispatch->PrecedingPage(9999);
+        VERIFY_ARE_EQUAL(1, pages.ActivePage().Number(), L"PP is clamped at page 1");
+        VERIFY_ARE_EQUAL(homePos, pages.ActivePage().Cursor().GetPosition(), L"Cursor position is reset to home");
+
+        // Testing DECPCCM (page cursor coupling mode)
+        _pDispatch->SetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(2, pages.ActivePage().Number());
+        VERIFY_ARE_EQUAL(2, pages.VisiblePage().Number(), L"Visible page should follow active if DECPCCM set");
+        _pDispatch->ResetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+        _pDispatch->PagePositionAbsolute(4);
+        VERIFY_ARE_EQUAL(4, pages.ActivePage().Number());
+        VERIFY_ARE_EQUAL(2, pages.VisiblePage().Number(), L"Visible page should not change if DECPCCM reset");
+        _pDispatch->SetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+        VERIFY_ARE_EQUAL(4, pages.ActivePage().Number());
+        VERIFY_ARE_EQUAL(4, pages.VisiblePage().Number(), L"Active page should become visible when DECPCCM set");
+
+        // Reset to page 1
+        _pDispatch->PagePositionAbsolute(1);
     }
 
 private:

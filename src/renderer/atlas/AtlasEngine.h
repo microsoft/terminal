@@ -78,7 +78,7 @@ namespace Microsoft::Console::Render::Atlas
         void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
         void SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept;
         [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
 
     private:
         // AtlasEngine.cpp
@@ -96,7 +96,7 @@ namespace Microsoft::Console::Render::Atlas
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
-        [[nodiscard]] HRESULT _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
+        [[nodiscard]] HRESULT _updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
         void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr);
         [[nodiscard]] bool _updateWithNearbyFontCollection() noexcept;
 
@@ -126,18 +126,6 @@ namespace Microsoft::Console::Render::Atlas
 
         std::unique_ptr<IBackend> _b;
         RenderingPayload _p;
-
-        // _p.s->font->builtinGlyphs is the setting which decides whether we should map box drawing glyphs to
-        // our own builtin versions. There's just one problem: BackendD2D doesn't have this functionality.
-        // But since AtlasEngine shapes the text before it's handed to the backends, it would need to know
-        // whether BackendD2D is in use, before BackendD2D even exists. These two flags solve the issue
-        // by triggering a complete, immediate redraw whenever the backend type changes.
-        //
-        // The proper solution is to move text shaping into the backends.
-        // Someone just needs to write a generic "TextBuffer to DWRITE_GLYPH_RUN" function.
-        bool _hackIsBackendD2D = false;
-        bool _hackWantsBuiltinGlyphs = true;
-        bool _hackTriggerRedrawAll = false;
 
         struct ApiState
         {

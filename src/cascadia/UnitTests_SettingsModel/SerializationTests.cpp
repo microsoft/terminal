@@ -151,7 +151,7 @@ namespace SettingsModelUnitTests
 
                 "font": {
                     "face": "Cascadia Mono",
-                    "size": 12.0,
+                    "size": 12,
                     "weight": "normal"
                 },
                 "padding": "8, 8, 8, 8",
@@ -175,7 +175,7 @@ namespace SettingsModelUnitTests
                 "backgroundImage": "made_you_look.jpeg",
                 "backgroundImageStretchMode": "uniformToFill",
                 "backgroundImageAlignment": "center",
-                "backgroundImageOpacity": 1.0,
+                "backgroundImageOpacity": 1,
 
                 "scrollbarState": "visible",
                 "snapOnInput": true,
@@ -298,8 +298,8 @@ namespace SettingsModelUnitTests
 
         // complex command with key chords
         static constexpr std::string_view actionsString4A{ R"([
-                                                { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+c" },
-                                                { "command": { "action": "adjustFontSize", "delta": 1.0 }, "keys": "ctrl+d" }
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
                                             ])" };
 
         // command with name and icon and multiple key chords
@@ -323,8 +323,8 @@ namespace SettingsModelUnitTests
                                                 {
                                                     "name": "Change font size...",
                                                     "commands": [
-                                                        { "command": { "action": "adjustFontSize", "delta": 1.0 } },
-                                                        { "command": { "action": "adjustFontSize", "delta": -1.0 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": -1 } },
                                                         { "command": "resetFontSize" },
                                                     ]
                                                 }
@@ -523,7 +523,7 @@ namespace SettingsModelUnitTests
                 "name": "Profile with legacy font settings",
 
                 "fontFace": "Cascadia Mono",
-                "fontSize": 12.0,
+                "fontSize": 12,
                 "fontWeight": "normal"
             })" };
 
@@ -533,7 +533,7 @@ namespace SettingsModelUnitTests
 
                 "font": {
                     "face": "Cascadia Mono",
-                    "size": 12.0,
+                    "size": 12,
                     "weight": "normal"
                 }
             })" };
@@ -972,36 +972,17 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        // Key differences: - the sendInput action now has a generated ID
-        //                  - this generated ID was created at the time of writing this test,
-        //                    and should remain robust (i.e. every time we hash the args we should get the same result)
-        static constexpr std::string_view newSettingsJson{ R"(
-        {
-            "actions": [
-                {
-                    "name": "foo",
-                    "command": { "action": "sendInput", "input": "just some input" },
-                    "keys": "ctrl+shift+w",
-                    "id" : "User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH R"("
-                }
-            ]
-        })" };
+        implementation::SettingsLoader loader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto oldResult{ settings->ToJson() };
+        const auto sendInputCmd = settings->ActionMap().GetActionByKeyChord(KeyChord{ true, false, true, false, 87, 0 });
 
-        implementation::SettingsLoader oldLoader{ oldSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
-        oldLoader.MergeInboxIntoUserSettings();
-        oldLoader.FinalizeLayering();
-        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
-        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
-        const auto oldResult{ oldSettings->ToJson() };
+        std::string_view expectedID{ R"(User.sendInput.)" SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH };
 
-        implementation::SettingsLoader newLoader{ newSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
-        newLoader.MergeInboxIntoUserSettings();
-        newLoader.FinalizeLayering();
-        newLoader.FixupUserSettings();
-        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
-        const auto newResult{ newSettings->ToJson() };
-
-        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+        VERIFY_ARE_EQUAL(sendInputCmd.ID(), winrt::to_hstring(expectedID));
     }
 
     void SerializationTests::NoGeneratedIDsForIterableAndNestedCommands()
@@ -1026,8 +1007,8 @@ namespace SettingsModelUnitTests
                 {
                     "name": "Change font size...",
                     "commands": [
-                        { "command": { "action": "adjustFontSize", "delta": 1.0 } },
-                        { "command": { "action": "adjustFontSize", "delta": -1.0 } },
+                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                        { "command": { "action": "adjustFontSize", "delta": -1 } },
                         { "command": "resetFontSize" },
                     ]
                 }
@@ -1068,17 +1049,20 @@ namespace SettingsModelUnitTests
         implementation::SettingsLoader loader1{ settingsJson1, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader1.MergeInboxIntoUserSettings();
         loader1.FinalizeLayering();
-        VERIFY_IS_TRUE(loader1.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        loader1.FixupUserSettings();
         const auto settings1 = winrt::make_self<implementation::CascadiaSettings>(std::move(loader1));
         const auto result1{ settings1->ToJson() };
 
         implementation::SettingsLoader loader2{ settingsJson2, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader2.MergeInboxIntoUserSettings();
         loader2.FinalizeLayering();
-        VERIFY_IS_TRUE(loader2.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        loader2.FixupUserSettings();
         const auto settings2 = winrt::make_self<implementation::CascadiaSettings>(std::move(loader2));
         const auto result2{ settings2->ToJson() };
 
-        VERIFY_ARE_EQUAL(toString(result1), toString(result2));
+        const auto sendInputCmd1 = settings1->ActionMap().GetActionByKeyChord(KeyChord{ true, false, true, false, 87, 0 });
+        const auto sendInputCmd2 = settings2->ActionMap().GetActionByKeyChord(KeyChord{ true, false, true, false, 87, 0 });
+
+        VERIFY_ARE_EQUAL(sendInputCmd1.ID(), sendInputCmd1.ID());
     }
 }

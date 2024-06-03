@@ -248,7 +248,7 @@ private:
 
     std::optional<uint32_t> _id;
     std::weak_ptr<Pane> _parentChildPath{};
-
+    bool _closed{ false };
     bool _lastActive{ false };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
@@ -313,6 +313,8 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
+
+    void _borderTappedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

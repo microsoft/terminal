@@ -51,12 +51,12 @@ steps:
     git config --local core.autocrlf true
   displayName: Prepare git submission environment
 
-- task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@1
+- task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@3
   displayName: 'Touchdown Build - 7105, PRODEXT'
   inputs:
     teamId: 7105
-    authId: '$(TouchdownApplicationID)'
-    authKey: '$(TouchdownApplicationKey)'
+    TDBuildServiceConnection: $(TouchdownServiceConnection)
+    authType: SubjectNameIssuer
     resourceFilePath: |
      **\en-US\*.resw
      Terminal.Internal\PDPs\Stable\PDPs\en-us\PDP.xml

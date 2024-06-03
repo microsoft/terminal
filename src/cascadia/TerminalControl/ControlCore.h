@@ -220,12 +220,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool reset);
+        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool regularExpression, bool reset);
+        const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
         void SnapSearchResultToSelection(bool snap) noexcept;
         bool SnapSearchResultToSelection() const noexcept;
-
-        Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -410,6 +409,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _focusChanged(bool focused);
 
         void _selectSpan(til::point_span s);
+        void _repositionCursorWithMouse(const til::point terminalPosition);
 
         void _contextMenuSelectMark(
             const til::point& pos,

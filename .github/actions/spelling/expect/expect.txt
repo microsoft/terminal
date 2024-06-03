@@ -245,6 +245,7 @@ CONKBD
 conlibk
 conmsgl
 CONNECTINFO
+connyection
 CONOUT
 conprops
 conpropsp
@@ -405,6 +406,7 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+DECPCCM
 DECPCTERM
 DECPS
 DECRARA
@@ -413,6 +415,7 @@ DECREQTPARM
 DECRLM
 DECRPM
 DECRQCRA
+DECRQDE
 DECRQM
 DECRQPSR
 DECRQSS
@@ -606,6 +609,7 @@ FILTERONPASTE
 FINDCASE
 FINDDLG
 FINDDOWN
+FINDREGEX
 FINDSTRINGEXACT
 FINDUP
 FIter
@@ -1420,6 +1424,8 @@ PUCHAR
 pvar
 pwch
 PWDDMCONSOLECONTEXT
+Pwease
+pweview
 pws
 pwstr
 pwsz
@@ -1898,6 +1904,7 @@ UVWXY
 UVWXYZ
 uwa
 uwp
+uwu
 uxtheme
 Vanara
 vararg
@@ -1971,6 +1978,7 @@ wdm
 webpage
 websites
 wekyb
+wewoad
 wex
 wextest
 wextestclass
@@ -2118,6 +2126,7 @@ XIn
 XManifest
 XMath
 xorg
+XPan
 XResource
 xsi
 xstyler
@@ -2137,6 +2146,7 @@ YCast
 YCENTER
 YCount
 YLimit
+YPan
 YSubstantial
 YVIRTUALSCREEN
 YWalk
