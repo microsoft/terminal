@@ -1104,13 +1104,13 @@ namespace winrt::TerminalApp::implementation
         _searchBox().Select(filter.size(), 0);
     }
 
-    double SuggestionsControl::FontHeight()
-    {
-        return winrt::unbox_value_or<double>(Resources().Lookup(winrt::box_value(L"ListFontSize")), 12.0);
-    }
-    void SuggestionsControl::FontHeight(double height)
-    {
-        Resources().Insert(winrt::box_value(L"ListFontSize"), winrt::box_value(height));
-    }
+    // double SuggestionsControl::FontHeight()
+    // {
+    //     return winrt::unbox_value_or<double>(Resources().Lookup(winrt::box_value(L"ListFontSize")), 12.0);
+    // }
+    // void SuggestionsControl::FontHeight(double height)
+    // {
+    //     Resources().Insert(winrt::box_value(L"ListFontSize"), winrt::box_value(height));
+    // }
 
 }
