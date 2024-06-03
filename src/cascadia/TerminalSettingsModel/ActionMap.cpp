@@ -235,7 +235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_NameMapCache)
         {
-            if (!_CumulativeActionMapCache)
+            if (_CumulativeActionMapCache.empty())
             {
                 _RefreshKeyBindingCaches();
             }
@@ -373,17 +373,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ActionMap::_RefreshKeyBindingCaches()
     {
+        _CumulativeKeyMapCache.clear();
+        _CumulativeActionMapCache.clear();
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
-        std::unordered_map<KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> accumulatedKeybindingsMap;
-        std::unordered_map<winrt::hstring, Model::Command> accumulatedActionsMap;
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyActionMap;
 
-        _PopulateCumulativeKeyMap(accumulatedKeybindingsMap);
-        _PopulateCumulativeActionMap(accumulatedActionsMap);
+        _PopulateCumulativeKeyMap(_CumulativeKeyMapCache);
+        _PopulateCumulativeActionMap(_CumulativeActionMapCache);
 
-        for (const auto& [keys, cmdID] : accumulatedKeybindingsMap)
+        for (const auto& [keys, cmdID] : _CumulativeKeyMapCache)
         {
-            if (const auto idCmdPair = accumulatedActionsMap.find(cmdID); idCmdPair != accumulatedActionsMap.end())
+            if (const auto idCmdPair = _CumulativeActionMapCache.find(cmdID); idCmdPair != _CumulativeActionMapCache.end())
             {
                 resolvedKeyActionMap.emplace(keys, idCmdPair->second);
 
@@ -396,8 +396,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        _CumulativeKeyMapCache = single_threaded_map(std::move(accumulatedKeybindingsMap));
-        _CumulativeActionMapCache = single_threaded_map(std::move(accumulatedActionsMap));
         _ResolvedKeyActionMapCache = single_threaded_map(std::move(resolvedKeyActionMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
     }
@@ -451,10 +449,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // invalidate caches
+        _CumulativeKeyMapCache.clear();
+        _CumulativeActionMapCache.clear();
         _NameMapCache = nullptr;
         _GlobalHotkeysCache = nullptr;
-        _CumulativeKeyMapCache = nullptr;
-        _CumulativeActionMapCache = nullptr;
         _ResolvedKeyActionMapCache = nullptr;
 
         // Handle nested commands

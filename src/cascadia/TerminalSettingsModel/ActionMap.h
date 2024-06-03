@@ -118,9 +118,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<winrt::hstring, Model::Command> _ActionMap;
 
         // _CumulativeKeyMapCache is the map of key chords -> action IDs defined in all layers, with child layers overriding parent layers
-        Windows::Foundation::Collections::IMap<Control::KeyChord, winrt::hstring> _CumulativeKeyMapCache{ nullptr };
+        std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> _CumulativeKeyMapCache;
         // _CumulativeActionMapCache is the map of action IDs -> commands defined in all layers, with child layers overriding parent layers
-        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _CumulativeActionMapCache{ nullptr };
+        std::unordered_map<winrt::hstring, Model::Command> _CumulativeActionMapCache;
 
         // _ResolvedKeyActionMapCache is the map of key chords -> commands defined in all layers, with child layers overriding parent layers
         // This is effectively a combination of _CumulativeKeyMapCache and _CumulativeActionMapCache and its purpose is so that
