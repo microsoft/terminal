@@ -4185,6 +4185,66 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::fire_and_forget TerminalPage::ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord)
+    {
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_actionSavedToast == nullptr)
+            {
+                if (auto tip{ page->FindName(L"ActionSavedToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_actionSavedToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+            _UpdateTeachingTipTheme(ActionSavedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+            SavedActionName(name);
+            SavedActionKeyChord(keyChord);
+            SavedActionCommandLine(input);
+
+            if (page->_actionSavedToast != nullptr)
+            {
+                page->_actionSavedToast->Open();
+            }
+        }
+    }
+
+    winrt::fire_and_forget TerminalPage::ActionSaveFailed(winrt::hstring message)
+    {
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_actionSaveFailedToast == nullptr)
+            {
+                if (auto tip{ page->FindName(L"ActionSaveFailedToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_actionSaveFailedToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+            _UpdateTeachingTipTheme(ActionSaveFailedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+            ActionSaveFailedMessage().Text(message);
+
+            if (page->_actionSaveFailedToast != nullptr)
+            {
+                page->_actionSaveFailedToast->Open();
+            }
+        }
+    }
+
     // Method Description:
     // - Called when an attempt to rename the window has failed. This will open
     //   the toast displaying a message to the user that the attempt to rename

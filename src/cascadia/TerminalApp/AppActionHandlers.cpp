@@ -1264,6 +1264,54 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (Feature_SaveTask::IsEnabled())
+        {
+            if (args)
+            {
+                if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
+                {
+                    if (realArgs.Commandline().empty())
+                    {
+                        if (const auto termControl{ _GetActiveControl() })
+                        {
+                            if (termControl.HasSelection())
+                            {
+                                const auto selections{ termControl.SelectedText(true) };
+                                const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                                realArgs.Commandline(selection);
+                            }
+                        }
+                    }
+
+                    try
+                    {
+                        winrt::Microsoft::Terminal::Control::KeyChord keyChord = nullptr;
+                        if (!realArgs.KeyChord().empty())
+                        {
+                            keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                        }
+                        _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
+                        _settings.WriteSettingsToDisk();
+                        ActionSaved(realArgs.Commandline(), realArgs.Name(), realArgs.KeyChord());
+                    }
+                    catch (const winrt::hresult_error& ex)
+                    {
+                        auto code = ex.code();
+                        auto message = ex.message();
+                        ActionSaveFailed(message);
+                        args.Handled(true);
+                        return;
+                    }
+
+                    args.Handled(true);
+                }
+            }
+        }
+    }
+
     void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {

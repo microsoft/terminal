@@ -755,6 +755,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         AddAction(*cmd, keys);
     }
 
+    void ActionMap::AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys)
+    {
+        auto newAction = winrt::make<ActionAndArgs>();
+        newAction.Action(ShortcutAction::SendInput);
+        auto sendInputArgs = winrt::make<SendInputArgs>(input);
+        newAction.Args(sendInputArgs);
+        auto cmd{ make_self<Command>() };
+        cmd->ActionAndArgs(newAction);
+        if (!name.empty())
+        {
+            cmd->Name(name);
+        }
+        cmd->GenerateID();
+        AddAction(*cmd, keys);
+    }
+
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
     static bool _compareSchemeNames(const ColorScheme& lhs, const ColorScheme& rhs)
     {
