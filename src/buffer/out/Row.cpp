@@ -641,34 +641,34 @@ catch (...)
     //
     // We can infer the "end" from the amount of columns we're given (colLimit - colBeg),
     // because ASCII is always 1 column wide per character.
-    auto len = std::min<size_t>(chars.size(), colLimit - colEnd);
+    auto it = chars.begin();
+    const auto end = it + std::min<size_t>(chars.size(), colLimit - colBeg);
     size_t ch = chBeg;
-    size_t off = 0;
 
-    for (; off < len; ++off)
+    while (it != end)
     {
-        if (chars[off] >= 0x80) [[unlikely]]
+        if (*it >= 0x80) [[unlikely]]
         {
-            _replaceTextUnicode(ch, off);
+            _replaceTextUnicode(ch, it);
             return;
         }
 
         til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(ch);
         ++colEnd;
         ++ch;
+        ++it;
     }
 
     colEndDirty = colEnd;
     charsConsumed = ch - chBeg;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, size_t off) noexcept
+[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
-    const auto len = chars.size();
 
     // Check if the new text joins with the existing contents of the row to form a single grapheme cluster.
-    if (off == 0)
+    if (it == chars.begin())
     {
         auto colPrev = colBeg;
         while (colPrev > 0 && row._uncheckedIsTrailer(--colPrev))
@@ -706,7 +706,7 @@ catch (...)
             }
 
             ch += state.len;
-            off += state.len;
+            it += state.len;
         }
     }
     else
@@ -716,35 +716,38 @@ catch (...)
         // and let MeasureNext() find the next proper grapheme boundary.
         --colEnd;
         --ch;
-        --off;
+        --it;
     }
 
-    GraphemeState state{ .beg = chars.data() + off };
-
-    while (off < len)
+    if (const auto end = chars.end(); it != end)
     {
-        cwd.GraphemeNext(state, chars);
+        GraphemeState state{ .beg = &*it };
 
-        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + state.width);
-        if (colEndNew > colLimit)
+        do
         {
-            colEndDirty = colLimit;
-            charsConsumed = ch - chBeg;
-            return;
-        }
+            cwd.GraphemeNext(state, chars);
 
-        // Fill our char-offset buffer with 1 entry containing the mapping from the
-        // current column (colEnd) to the start of the glyph in the string (ch)...
-        til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
-        // ...followed by 0-N entries containing an indication that the
-        // columns are just a wide-glyph extension of the preceding one.
-        while (colEnd < colEndNew)
-        {
-            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
-        }
+            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + state.width);
+            if (colEndNew > colLimit)
+            {
+                colEndDirty = colLimit;
+                charsConsumed = ch - chBeg;
+                return;
+            }
 
-        ch += state.len;
-        off += state.len;
+            // Fill our char-offset buffer with 1 entry containing the mapping from the
+            // current column (colEnd) to the start of the glyph in the string (ch)...
+            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
+            // ...followed by 0-N entries containing an indication that the
+            // columns are just a wide-glyph extension of the preceding one.
+            while (colEnd < colEndNew)
+            {
+                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
+            }
+
+            ch += state.len;
+            it += state.len;
+        } while (it != end);
     }
 
     colEndDirty = colEnd;
