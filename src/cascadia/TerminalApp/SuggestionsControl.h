@@ -90,6 +90,7 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
         std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem, winrt_object_hash>, winrt_object_hash> _listViewItemsCache;
         Windows::UI::Xaml::DataTemplate _listItemTemplate;
+        double _fontHeight{ 12.0 };
 
         void _switchToMode();
         void _setDirection(TerminalApp::SuggestionsDirection direction);

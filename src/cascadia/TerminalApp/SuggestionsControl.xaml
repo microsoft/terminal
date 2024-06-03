@@ -25,14 +25,16 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
+            <!-- <Style TargetType="ListViewItem" x:Key="Foo">
+                <Setter Property="FontSize" Value="{x:Bind FontHeight, Mode=OneWay}" />
+            </Style>-->
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
                 <ListViewItem MinHeight="0"
                               Padding="16,6,12,6"
                               HorizontalContentAlignment="Stretch"
                               AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"
-                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                              FontSize="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=FontSize}" />
+                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}" />
             </DataTemplate>
 
             <DataTemplate x:Key="GeneralItemTemplate"
@@ -199,7 +201,6 @@
                       CanReorderItems="False"
                       ChoosingItemContainer="_choosingItemContainer"
                       ContainerContentChanging="_containerContentChanging"
-                      FontSize="{x:Bind FontHeight}"
                       IsItemClickEnabled="True"
                       ItemClick="_listItemClicked"
                       ItemsSource="{x:Bind FilteredActions}"

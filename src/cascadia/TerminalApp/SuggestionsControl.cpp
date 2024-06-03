@@ -996,6 +996,22 @@ namespace winrt::TerminalApp::implementation
                 args.ItemContainer(listViewItem);
             }
         }
+
+        // Incredibly bodgy:
+        //
+        // Now that we've found the right ListViewItem, set the font size on it,
+        // to match the size of the control. This might change over the life of
+        // the window.
+        // * we can't use a Style in the resources to set this (it only gets evaluated once)
+        // * we can't bind from the DataTemplate to the parent UserControl's properties
+        //
+        // But this method (_choosingItemContainer) is called on each and every
+        // ListViewItem every time we're opened.
+        if (const auto item{ args.ItemContainer().try_as<ListViewItem>() })
+        {
+            item.FontSize(_FontHeight);
+        }
+
         args.IsContainerPrepared(true);
     }
     // Method Description:
@@ -1106,11 +1122,17 @@ namespace winrt::TerminalApp::implementation
 
     // double SuggestionsControl::FontHeight()
     // {
-    //     return winrt::unbox_value_or<double>(Resources().Lookup(winrt::box_value(L"ListFontSize")), 12.0);
+    //     return _fontHeight;
+    //     // return winrt::unbox_value_or<double>(Resources().Lookup(winrt::box_value(L"ListFontSize")), 12.0);
     // }
     // void SuggestionsControl::FontHeight(double height)
     // {
-    //     Resources().Insert(winrt::box_value(L"ListFontSize"), winrt::box_value(height));
+    //     // Resources().Insert(winrt::box_value(L"ListFontSize"), winrt::box_value(height));
+    //     for (const auto& container : _filteredActionsView().Items())
+    //     {
+    //         auto item{container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>()};
+    //         item.FontSize(height);
+    //     }
     // }
 
 }
