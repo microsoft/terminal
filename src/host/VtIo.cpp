@@ -150,9 +150,7 @@ VtIo::VtIo() :
 
         if (IsValidHandle(_hOutput.get()))
         {
-            auto initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                            gci.GetWindowSize().width,
-                                                            gci.GetWindowSize().height);
+            auto initialViewport = Viewport::FromDimensions({ 0, 0 }, gci.GetWindowSize());
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:

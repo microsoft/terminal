@@ -321,7 +321,7 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
     const auto oldViewport = screenInfo.GetVirtualViewport();
-    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), { sColumns, sRows });
     // Always resize the width of the console
     csbiex.dwSize.X = gsl::narrow_cast<short>(sColumns);
     // Only set the screen buffer's height if it's currently less than
