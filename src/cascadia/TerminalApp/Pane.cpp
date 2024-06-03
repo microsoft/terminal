@@ -27,10 +27,10 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-Pane::Pane(const IPaneContent& content, const bool lastFocused) :
-    _content{ content },
+Pane::Pane(IPaneContent content, const bool lastFocused) :
     _lastActive{ lastFocused }
 {
+    _setPaneContent(std::move(content));
     _root.Children().Append(_borderFirst);
 
     const auto& control{ _content.GetRoot() };
@@ -985,17 +985,7 @@ void Pane::_ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectab
 // - <none>
 void Pane::Close()
 {
-    // Pane has two events, CloseRequested and Closed. CloseRequested is raised by the content asking to be closed,
-    // but also by the window who owns the tab when it's closing. The event is then caught by the TerminalTab which
-    // calls Close() which then raises the Closed event. Now, if this is the last pane in the window, this will result
-    // in the window raising CloseRequested again which leads to infinite recursion, so we need to guard against that.
-    // Ideally we would have just a single event in the future.
-    if (_closed)
-    {
-        return;
-    }
-
-    _closed = true;
+    _setPaneContent(nullptr);
     // Fire our Closed event to tell our parent that we should be removed.
     Closed.raise(nullptr, nullptr);
 }
@@ -1007,7 +997,7 @@ void Pane::Shutdown()
 {
     if (_IsLeaf())
     {
-        _content.Close();
+        _setPaneContent(nullptr);
     }
     else
     {
@@ -1411,7 +1401,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _borders = _GetCommonBorders();
 
         // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
-        _content = remainingChild->_content;
+        _setPaneContent(std::move(remainingChild->_content));
         _id = remainingChild->Id();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
@@ -1714,6 +1704,25 @@ void Pane::_SetupChildCloseHandlers()
     _secondClosedToken = _secondChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
         _CloseChildRoutine(false);
     });
+}
+
+void Pane::_setPaneContent(IPaneContent content)
+{
+    // The IPaneContent::Close() implementation may be buggy and raise the CloseRequested event again.
+    // To avoid this we unbind the event handlers before calling Close().
+    _closeRequestedRevoker.revoke();
+
+    if (_content)
+    {
+        _content.Close();
+    }
+
+    _content = std::move(content);
+
+    if (_content)
+    {
+        _closeRequestedRevoker = _content.CloseRequested(winrt::auto_revoke, [this](auto&&, auto&&) { Close(); });
+    }
 }
 
 // Method Description:
@@ -2266,8 +2275,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     else
     {
         //   Move our control, guid, isDefTermSession into the first one.
-        _firstChild = std::make_shared<Pane>(_content);
-        _content = nullptr;
+        _firstChild = std::make_shared<Pane>(std::move(_content));
+        _setPaneContent(nullptr);
         _firstChild->_broadcastEnabled = _broadcastEnabled;
     }
 
@@ -2460,6 +2469,11 @@ bool Pane::_HasChild(const std::shared_ptr<Pane> child)
     return WalkTree([&](const auto& p) {
         return p->_firstChild == child || p->_secondChild == child;
     });
+}
+
+winrt::TerminalApp::TerminalPaneContent Pane::_getTerminalContent() const
+{
+    return _IsLeaf() ? _content.try_as<winrt::TerminalApp::TerminalPaneContent>() : nullptr;
 }
 
 // Method Description:
