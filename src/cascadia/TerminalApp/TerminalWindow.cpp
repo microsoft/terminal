@@ -263,7 +263,7 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::Quit()
+    void TerminalWindow::PersistState()
     {
         if (_root)
         {
@@ -562,9 +562,21 @@ namespace winrt::TerminalApp::implementation
     {
         winrt::Windows::Foundation::Size proposedSize{};
 
+        // In focus mode, we don't want to include our own tab row in the size
+        // of the window that we hand back. So we account for passing
+        // --focusMode on the commandline here, and the mode in the settings.
+        // Below, we'll also account for if focus mode was persisted into the
+        // session for restoration.
+        bool focusMode = _appArgs.GetLaunchMode().value_or(_settings.GlobalSettings().LaunchMode()) == LaunchMode::FocusMode;
+
         const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (const auto layout = LoadPersistedLayout())
         {
+            if (layout.LaunchMode())
+            {
+                focusMode = layout.LaunchMode().Value() == LaunchMode::FocusMode;
+            }
+
             if (layout.InitialSize())
             {
                 proposedSize = layout.InitialSize().Value();
@@ -602,7 +614,7 @@ namespace winrt::TerminalApp::implementation
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
-        if (_settings.GlobalSettings().ShowTabsInTitlebar())
+        if (_settings.GlobalSettings().ShowTabsInTitlebar() && !focusMode)
         {
             // In the past, we used to actually instantiate a TitlebarControl
             // and use Measure() to determine the DesiredSize of the control, to
@@ -620,7 +632,7 @@ namespace winrt::TerminalApp::implementation
             static constexpr auto titlebarHeight = 40;
             proposedSize.Height += (titlebarHeight)*scale;
         }
-        else if (_settings.GlobalSettings().AlwaysShowTabs())
+        else if (_settings.GlobalSettings().AlwaysShowTabs() && !focusMode)
         {
             // Same comment as above, but with a TabRowControl.
             //
@@ -1238,7 +1250,7 @@ namespace winrt::TerminalApp::implementation
                 // Create the equivalent NewTab action.
                 const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
                                                                        Settings::Model::NewTabArgs(firstAction.Args() ?
-                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().ContentArgs() :
                                                                                                        nullptr) };
                 args.SetAt(0, newAction);
             }

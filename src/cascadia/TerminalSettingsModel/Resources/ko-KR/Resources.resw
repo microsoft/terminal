@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>색 구성표 선택...</value>
+    <value>색 구성표 선택</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>새 탭...</value>
+    <value>새 탭</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>분할 창...</value>
+    <value>분할 창</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>터미널(이식 가능)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>탭 색 설정... </value>
+    <value>탭 색 설정</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>붙여넣기</value>
@@ -347,7 +347,7 @@
     <value>탭 제목 재설정</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>탭 이름 바꾸기...</value>
+    <value>탭 제목 이름 바꾸기</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>창 크기 조정</value>
@@ -450,10 +450,10 @@
     <value>토글 명령 팔레트</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>최근 명령...</value>
+    <value>최근 명령</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>제안 열기...</value>
+    <value>제안 사항 열기</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>명령줄 모드에서 명령 팔레트 설정/해제</value>
@@ -505,7 +505,7 @@
     <value>디버거로 나누기</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>설정 열기...</value>
+    <value>설정 열기</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>"{0}"(으)로 창 이름 바꾸기</value>
@@ -566,7 +566,7 @@
     <value>터미널 종료</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>배경 불투명도 설정...</value>
+    <value>배경 불투명도 설정</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>배경 불투명도를 {0}% 증가</value>

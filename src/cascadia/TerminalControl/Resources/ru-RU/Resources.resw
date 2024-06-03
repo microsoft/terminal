@@ -296,4 +296,8 @@
     <value>Выбрать вывод</value>
     <comment>The tooltip for a button for selecting all of a command's output</comment>
   </data>
+  <data name="SessionRestoreMessage" xml:space="preserve">
+    <value>Восстановлено</value>
+    <comment>"Restored" as in "This content was restored"</comment>
+  </data>
 </root>

@@ -53,7 +53,6 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
@@ -127,13 +126,13 @@ namespace Microsoft.Terminal.Control
         String ReadEntireBuffer();
         CommandHistoryContext CommandHistory();
 
-        void AdjustOpacity(Double Opacity, Boolean relative);
+        void AdjustOpacity(Single Opacity, Boolean relative);
 
         // You'd think this should just be "Opacity", but UIElement already
         // defines an "Opacity", which we're actually not setting at all. We're
         // not overriding or changing _that_ value. Callers that want the
         // opacity set by the settings should call this instead.
-        Double BackgroundOpacity { get; };
+        Single BackgroundOpacity { get; };
 
         CursorDisplayState CursorVisibility;
 

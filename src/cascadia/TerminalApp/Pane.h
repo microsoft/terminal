@@ -106,10 +106,11 @@ public:
         uint32_t panesCreated;
     };
     BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, winrt::TerminalApp::BuildStartupKind kind);
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(winrt::TerminalApp::BuildStartupKind kind) const;
+    winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetTerminalArgsForPane(winrt::TerminalApp::BuildStartupKind kind) const;
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const winrt::TerminalApp::TerminalSettingsCache& cache);
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction, float amount = .05f);
+
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
                                             const std::vector<uint32_t>& mruPanes);
@@ -249,7 +250,7 @@ private:
 
     std::optional<uint32_t> _id;
     std::weak_ptr<Pane> _parentChildPath{};
-
+    bool _closed{ false };
     bool _lastActive{ false };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
@@ -327,6 +328,8 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
+
+    void _borderTappedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

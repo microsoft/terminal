@@ -187,7 +187,7 @@
     <value>多個窗格</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
-    <value>關閉...</value>
+    <value>關閉</value>
   </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>關閉右側的索引標籤</value>
@@ -202,19 +202,19 @@
     <value>關閉窗格</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>分割 Tab</value>
+    <value>分割索引標籤</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>分割窗格</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
-    <value>Web 搜尋</value>
+    <value>網頁搜尋</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>色彩...</value>
+    <value>變更索引標籤色彩</value>
   </data>
   <data name="TabColorCustomButton.Content" xml:space="preserve">
-    <value>自訂...​​</value>
+    <value>自訂</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>重設</value>
@@ -468,7 +468,7 @@
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
-    <value>原始程式碼</value>
+    <value>原始碼</value>
     <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
@@ -480,11 +480,11 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>隱私權原則</value>
+    <value>隱私權政策</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
-    <value>第三方聲明</value>
+    <value>第三方注意事項</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
   <data name="QuitDialog.CloseButtonText" xml:space="preserve">
@@ -827,7 +827,7 @@
     <value>關閉此索引標籤</value>
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
-    <value>空白...</value>
+    <value>清空</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
     <value>關閉窗格</value>

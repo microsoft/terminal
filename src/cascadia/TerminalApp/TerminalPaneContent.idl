@@ -10,8 +10,6 @@ namespace TerminalApp
     {
         Microsoft.Terminal.Control.TermControl GetTermControl();
 
-        void UpdateTerminalSettings(TerminalSettingsCache cache);
-
         void MarkAsDefterm();
 
         Microsoft.Terminal.Settings.Model.Profile GetProfile();

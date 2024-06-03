@@ -13,6 +13,7 @@ namespace Microsoft::Console::Render::Atlas
     struct BackendD3D : IBackend
     {
         BackendD3D(const RenderingPayload& p);
+        ~BackendD3D() override;
 
         void ReleaseResources() noexcept override;
         void Render(RenderingPayload& payload) override;
@@ -248,7 +249,8 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11SamplerState> _customShaderSamplerState;
         wil::com_ptr<ID3D11Texture2D> _customShaderTexture;
         wil::com_ptr<ID3D11ShaderResourceView> _customShaderTextureView;
-        std::chrono::steady_clock::time_point _customShaderStartTime;
+        u64 _customShaderPerfTickMod = 0;
+        f32 _customShaderSecsPerPerfTick = 0;
 
         wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;
         wil::com_ptr<ID3D11ShaderResourceView> _backgroundBitmapView;

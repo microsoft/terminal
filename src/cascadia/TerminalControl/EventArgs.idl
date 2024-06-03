@@ -24,14 +24,6 @@ namespace Microsoft.Terminal.Control
         Int32 Height { get; };
     }
 
-    runtimeclass CopyToClipboardEventArgs
-    {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-        Windows.Foundation.IReference<CopyFormat> Formats { get; };
-    }
-
     runtimeclass ContextMenuRequestedEventArgs
     {
         Windows.Foundation.Point Position { get; };
@@ -83,15 +75,14 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass TransparencyChangedEventArgs
     {
-        Double Opacity { get; };
+        Single Opacity { get; };
     }
 
-    runtimeclass FoundResultsArgs
+    enum SearchState
     {
-        Boolean FoundMatch { get; };
-        Int32 TotalMatches { get; };
-        Int32 CurrentMatch { get; };
-    }
+        Inactive = 0,
+        Active = 1,
+    };
 
     runtimeclass ShowWindowArgs
     {

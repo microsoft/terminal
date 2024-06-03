@@ -5,7 +5,6 @@
 
 #include "FontSizeChangedArgs.g.h"
 #include "TitleChangedEventArgs.g.h"
-#include "CopyToClipboardEventArgs.g.h"
 #include "ContextMenuRequestedEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
@@ -13,7 +12,6 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
-#include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
 #include "CompletionsChangedEventArgs.g.h"
@@ -45,33 +43,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _Title(title) {}
 
         WINRT_PROPERTY(hstring, Title);
-    };
-
-    struct CopyToClipboardEventArgs : public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
-    {
-    public:
-        CopyToClipboardEventArgs(hstring text) :
-            _text(text),
-            _html(),
-            _rtf(),
-            _formats(static_cast<CopyFormat>(0)) {}
-
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<CopyFormat> formats) :
-            _text(text),
-            _html(html),
-            _rtf(rtf),
-            _formats(formats) {}
-
-        hstring Text() { return _text; };
-        hstring Html() { return _html; };
-        hstring Rtf() { return _rtf; };
-        Windows::Foundation::IReference<CopyFormat> Formats() { return _formats; };
-
-    private:
-        hstring _text;
-        hstring _html;
-        hstring _rtf;
-        Windows::Foundation::IReference<CopyFormat> _formats;
     };
 
     struct ContextMenuRequestedEventArgs : public ContextMenuRequestedEventArgsT<ContextMenuRequestedEventArgs>
@@ -161,25 +132,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct TransparencyChangedEventArgs : public TransparencyChangedEventArgsT<TransparencyChangedEventArgs>
     {
     public:
-        TransparencyChangedEventArgs(const double opacity) :
+        TransparencyChangedEventArgs(const float opacity) :
             _Opacity(opacity)
         {
         }
 
-        WINRT_PROPERTY(double, Opacity);
-    };
-
-    struct FoundResultsArgs : public FoundResultsArgsT<FoundResultsArgs>
-    {
-    public:
-        FoundResultsArgs(const bool foundMatch) :
-            _FoundMatch(foundMatch)
-        {
-        }
-
-        WINRT_PROPERTY(bool, FoundMatch);
-        WINRT_PROPERTY(int32_t, TotalMatches);
-        WINRT_PROPERTY(int32_t, CurrentMatch);
+        WINRT_PROPERTY(float, Opacity);
     };
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>

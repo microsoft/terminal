@@ -91,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Detach();
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
-        void ApplyAppearance(const bool& focused);
+        void ApplyAppearance(const bool focused);
         Control::IControlSettings Settings();
         Control::IControlAppearance FocusedAppearance() const;
         Control::IControlAppearance UnfocusedAppearance() const;
@@ -100,6 +100,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
+        ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
         uint64_t SwapChainHandle() const;
         void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
@@ -113,13 +114,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::Foundation::Size FontSizeInDips() const;
 
         winrt::Windows::Foundation::Size FontSize() const noexcept;
-        winrt::hstring FontFaceName() const noexcept;
         uint16_t FontWeight() const noexcept;
 
         til::color ForegroundColor() const;
         til::color BackgroundColor() const;
 
-        void SendInput(const winrt::hstring& wstr);
+        void SendInput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
@@ -136,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void LostFocus();
 
         void ToggleShaderEffects();
-        void AdjustOpacity(const double adjustment);
+        void AdjustOpacity(const float adjustment);
         void ResumeRendering();
 
         void SetHoveredCell(Core::Point terminalPosition);
@@ -219,10 +219,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool regularExpression, bool reset);
+        const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
-
-        Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
+        void SnapSearchResultToSelection(bool snap) noexcept;
+        bool SnapSearchResultToSelection() const noexcept;
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -241,9 +242,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
 
-        static bool IsVintageOpacityAvailable() noexcept;
-
-        void AdjustOpacity(const double opacity, const bool relative);
+        void AdjustOpacity(const float opacity, const bool relative);
 
         void WindowVisibilityChanged(const bool showOrHide);
 
@@ -258,21 +257,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
 
-        RUNTIME_SETTING(double, Opacity, _settings->Opacity());
-        RUNTIME_SETTING(double, FocusedOpacity, FocusedAppearance().Opacity());
+        RUNTIME_SETTING(float, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         til::typed_event<IInspectable, Control::FontSizeChangedArgs> FontSizeChanged;
 
-        til::typed_event<IInspectable, Control::CopyToClipboardEventArgs> CopyToClipboard;
         til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
         til::typed_event<> WarningBell;
         til::typed_event<> TabColorChanged;
         til::typed_event<> BackgroundColorChanged;
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
-        til::typed_event<> CursorPositionChanged;
         til::typed_event<> TaskbarProgressChanged;
         til::typed_event<> ConnectionStateChanged;
         til::typed_event<> HoveredHyperlinkChanged;
@@ -281,8 +278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::RendererWarningArgs> RendererWarning;
         til::typed_event<IInspectable, Control::NoticeEventArgs> RaiseNotice;
         til::typed_event<IInspectable, Control::TransparencyChangedEventArgs> TransparencyChanged;
-        til::typed_event<> ReceivedOutput;
-        til::typed_event<IInspectable, Control::FoundResultsArgs> FoundMatch;
+        til::typed_event<> OutputIdle;
         til::typed_event<IInspectable, Control::ShowWindowArgs> ShowWindowChanged;
         til::typed_event<IInspectable, Control::UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
@@ -297,8 +293,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         struct SharedState
         {
-            std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
-            std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
+            std::unique_ptr<til::debounced_func_trailing<>> outputIdle;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 
@@ -322,12 +317,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Search _searcher;
+        bool _snapSearchResultToSelection;
 
         winrt::handle _lastSwapChainHandle{ nullptr };
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
-        winrt::hstring _actualFontFaceName;
         bool _builtinGlyphs = true;
         bool _colorGlyphs = true;
         CSSLengthPercentage _cellWidth;
@@ -357,8 +352,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _contextMenuBufferPosition{ 0, 0 };
 
-        Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ nullptr };
-
         void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
@@ -371,13 +364,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
-        void _terminalCopyToClipboard(std::wstring_view wstr);
+        void _terminalCopyToClipboard(wil::zwstring_view wstr);
         void _terminalWarningBell();
         void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalScrollPositionChanged(const int viewTop,
                                             const int viewHeight,
                                             const int bufferSize);
-        void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
         void _terminalPlayMidiNote(const int noteNumber,
@@ -402,19 +394,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
-        void _setOpacity(const double opacity, const bool focused = true);
+        void _setOpacity(const float opacity, const bool focused = true);
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
 
         void _selectSpan(til::point_span s);
+        void _repositionCursorWithMouse(const til::point terminalPosition);
 
         void _contextMenuSelectMark(
             const til::point& pos,
-            bool (*filter)(const ::ScrollMark&),
-            til::point_span (*getSpan)(const ::ScrollMark&));
+            bool (*filter)(const ::MarkExtents&),
+            til::point_span (*getSpan)(const ::MarkExtents&));
 
-        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::MarkExtents&));
 
         inline bool _IsClosing() const noexcept
         {

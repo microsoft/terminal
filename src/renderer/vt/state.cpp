@@ -37,7 +37,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _pool(til::pmr::get_default_resource()),
     _invalidMap(initialViewport.Dimensions(), false, &_pool),
     _scrollDelta(0, 0),
-    _quickReturn(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
     _resized(false),
@@ -158,6 +157,7 @@ void VtEngine::_flushImpl() noexcept
     {
         const auto fSuccess = WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
+        _startOfFrameBufferIndex = 0;
         if (!fSuccess)
         {
             LOG_LAST_ERROR();

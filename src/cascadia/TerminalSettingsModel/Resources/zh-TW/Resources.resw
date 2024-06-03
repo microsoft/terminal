@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>選取彩色配置...</value>
+    <value>選取彩色配置</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>新增索引標籤...</value>
+    <value>新索引標籤</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>分割窗格...</value>
+    <value>分割窗格</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>終端機 (可攜式)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>設定索引標籤色彩...</value>
+    <value>設定索引標籤色彩</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>貼上</value>
@@ -347,7 +347,7 @@
     <value>重設索引標籤標題</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>將索引標籤重新命名...</value>
+    <value>重新命名索引標籤標題</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>調整頁面大小</value>
@@ -441,7 +441,7 @@
     <value>切換到最後一個索引標籤</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>搜尋索引標籤...</value>
+    <value>搜尋索引標籤</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>啟用 [最上層顯示] 模式</value>
@@ -450,10 +450,10 @@
     <value>切換命令選擇區</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>最近使用的命令...</value>
+    <value>最近使用的命令</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>開啟建議...</value>
+    <value>開啟建議</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>在命令列模式中切換命令選擇區</value>
@@ -505,7 +505,7 @@
     <value>在偵錯工具中中斷</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>開啟設定...</value>
+    <value>開啟設定</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>將視窗重新命名為「{0}」</value>
@@ -515,7 +515,7 @@
     <value>重設視窗名稱</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>重新命名視窗...</value>
+    <value>重新命名視窗</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>顯示終端機目前的工作目錄</value>
@@ -566,7 +566,7 @@
     <value>結束 [終端機]</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>設定背景不透明度...</value>
+    <value>設定背景不透明度</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>增加背景不透明度為 {0}%</value>

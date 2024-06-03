@@ -21,6 +21,7 @@ namespace winrt
 }
 
 static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view IDKey{ "id" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
@@ -39,7 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
-        command->_Origin = OriginTag::User;
+        command->_Origin = _Origin;
+        command->_ID = _ID;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         command->_keyMappings = _keyMappings;
         command->_iconPath = _iconPath;
@@ -112,6 +114,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // we have no name
             return {};
         }
+    }
+
+    hstring Command::ID() const noexcept
+    {
+        return hstring{ _ID };
+    }
+
+    bool Command::GenerateID()
+    {
+        if (_ActionAndArgs)
+        {
+            auto actionAndArgsImpl{ winrt::get_self<implementation::ActionAndArgs>(_ActionAndArgs) };
+            if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
+            {
+                _ID = generatedID;
+                _IDWasGenerated = true;
+                return true;
+            }
+        }
+        return false;
     }
 
     void Command::Name(const hstring& value)
@@ -264,6 +286,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto result = winrt::make_self<Command>();
         result->_Origin = origin;
+        JsonUtils::GetValueForKey(json, IDKey, result->_ID);
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
@@ -423,6 +446,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Json::Value cmdJson{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+            if (!_ID.empty() && !_IDWasGenerated)
+            {
+                JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
+            }
 
             if (_ActionAndArgs)
             {
@@ -443,6 +470,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // First iteration also writes icon and name
                     JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
                     JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+                    if (!_ID.empty())
+                    {
+                        JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
+                    }
                 }
 
                 if (_ActionAndArgs)
@@ -659,7 +690,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto data = winrt::to_string(json);
 
         std::string errs;
-        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
         Json::Value root;
         if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
         {

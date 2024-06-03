@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render
     class RenderEngineBase : public IRenderEngine
     {
     public:
+        [[nodiscard]] HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
 
         [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;
@@ -34,7 +35,7 @@ namespace Microsoft::Console::Render
                                              const til::size cellSize,
                                              const size_t centeringHint) noexcept override;
 
-        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
+        [[nodiscard]] HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept override;
 
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,

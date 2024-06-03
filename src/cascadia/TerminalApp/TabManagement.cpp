@@ -62,30 +62,33 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
+    HRESULT TerminalPage::_OpenNewTab(const INewContentArgs& newContentArgs)
     try
     {
-        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-        // GH#11114: GetProfileForArgs can return null if the index is higher
-        // than the number of available profiles.
-        if (!profile)
+        if (const auto& newTerminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            return S_FALSE;
-        }
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            // GH#11114: GetProfileForArgs can return null if the index is higher
+            // than the number of available profiles.
+            if (!profile)
+            {
+                return S_FALSE;
+            }
+            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        // Try to handle auto-elevation
-        if (_maybeElevate(newTerminalArgs, settings, profile))
-        {
-            return S_OK;
+            // Try to handle auto-elevation
+            if (_maybeElevate(newTerminalArgs, settings, profile))
+            {
+                return S_OK;
+            }
+            // We can't go in the other direction (elevated->unelevated)
+            // unfortunately. This seems to be due to Centennial quirks. It works
+            // unpackaged, but not packaged.
         }
-        // We can't go in the other direction (elevated->unelevated)
-        // unfortunately. This seems to be due to Centennial quirks. It works
-        // unpackaged, but not packaged.
-        //
+
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr));
+        _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
         return S_OK;
     }
     CATCH_RETURN();
@@ -133,26 +136,7 @@ namespace winrt::TerminalApp::implementation
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it. The Title change will be propagated upwards through the tab's
         // PropertyChanged event handler.
-        newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                // Possibly update the icon of the tab.
-                page->_UpdateTabIcon(*tab);
-
-                page->_updateThemeColors();
-
-                // Update the taskbar progress as well. We'll raise our own
-                // SetTaskbarProgress event here, to get tell the hosting
-                // application to re-query this value from us.
-                page->SetTaskbarProgress.raise(*page, nullptr);
-
-                auto profile = tab->GetFocusedProfile();
-                page->_UpdateBackground(profile);
-            }
-        });
+        newTabImpl->ActivePaneChanged({ get_weak(), &TerminalPage::_activePaneChanged });
 
         // The RaiseVisualBell event has been bubbled up to here from the pane,
         // the next part of the chain is bubbling up to app logic, which will
@@ -736,7 +720,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
-            pane->WalkTree([](auto p) {
+            pane->WalkTree([](const auto& p) {
                 if (const auto control{ p->GetTerminalControl() })
                 {
                     if (control.ReadOnly())
@@ -878,7 +862,10 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        CommandPalette().Visibility(Visibility::Collapsed);
+        if (const auto p = CommandPaletteElement())
+        {
+            p.Visibility(Visibility::Collapsed);
+        }
         _UpdateTabView();
     }
 

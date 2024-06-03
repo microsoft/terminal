@@ -3,14 +3,12 @@
 
 #pragma once
 
-#include "TermControl.g.h"
-#include "XamlLights.h"
-#include "EventArgs.h"
-#include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/uia/UiaRenderer.hpp"
-#include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "../buffer/out/search.h"
 #include "SearchBoxControl.h"
+#include "TermControl.g.h"
+#include "../../buffer/out/search.h"
+#include "../../cascadia/TerminalCore/Terminal.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
+#include "../../tsf/Handle.h"
 
 #include "ControlInteractivity.h"
 #include "ControlSettings.h"
@@ -22,6 +20,30 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    struct TermControl;
+
+    struct TsfDataProvider : ::Microsoft::Console::TSF::IDataProvider
+    {
+        explicit TsfDataProvider(TermControl* termControl) noexcept;
+        virtual ~TsfDataProvider() = default;
+
+        STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj) noexcept override;
+        ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+        ULONG STDMETHODCALLTYPE Release() noexcept override;
+
+        HWND GetHwnd() override;
+        RECT GetViewport() override;
+        RECT GetCursorPosition() override;
+        void HandleOutput(std::wstring_view text) override;
+        ::Microsoft::Console::Render::Renderer* GetRenderer() override;
+
+    private:
+        ControlCore* _getCore() const noexcept;
+
+        TermControl* _termControl = nullptr;
+        HWND _hwnd = nullptr;
+    };
+
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(Control::ControlInteractivity content);
@@ -78,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool BracketedPasteEnabled() const noexcept;
 
-        double BackgroundOpacity() const;
+        float BackgroundOpacity() const;
 
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
@@ -149,7 +171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
 
-        void AdjustOpacity(const double opacity, const bool relative);
+        void AdjustOpacity(const float opacity, const bool relative);
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
@@ -184,7 +206,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
         // the core ever gets detached & reattached to another window.
-        BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable);
@@ -202,6 +223,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
+        friend struct TsfDataProvider;
 
         // NOTE: _uiaEngine must be ordered before _core.
         //
@@ -214,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::TermControlAutomationPeer _automationPeer{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
         Control::ControlCore _core{ nullptr };
-
+        TsfDataProvider _tsfDataProvider{ this };
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
         bool _closing{ false };
@@ -297,6 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Reattach
         };
         bool _InitializeTerminal(const InitializeReason reason);
+        winrt::fire_and_forget _restoreInBackground();
         void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -329,7 +352,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _TerminalTabColorChanged(const std::optional<til::color> color);
 
         void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
-        winrt::fire_and_forget _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
 
         bool _CapturePointer(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         bool _ReleasePointerCapture(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
@@ -349,15 +371,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
-        void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
-
-        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
+        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-
-        // TSFInputControl Handlers
-        void _CompositionCompleted(winrt::hstring text);
-        void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
-        void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
+        void _refreshSearch();
+        void _handleSearchResults(SearchResults results);
 
         void _hoveredHyperlinkChanged(const IInspectable& sender, const IInspectable& args);
         winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
@@ -366,7 +384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
-        winrt::fire_and_forget _coreFoundMatch(const IInspectable& sender, Control::FoundResultsArgs args);
+        void _coreOutputIdle(const IInspectable& sender, const IInspectable& args);
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
@@ -388,17 +406,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
             Control::ControlCore::WarningBell_revoker WarningBell;
-            Control::ControlCore::CursorPositionChanged_revoker CursorPositionChanged;
             Control::ControlCore::RendererEnteredErrorState_revoker RendererEnteredErrorState;
             Control::ControlCore::BackgroundColorChanged_revoker BackgroundColorChanged;
             Control::ControlCore::FontSizeChanged_revoker FontSizeChanged;
             Control::ControlCore::TransparencyChanged_revoker TransparencyChanged;
             Control::ControlCore::RaiseNotice_revoker RaiseNotice;
             Control::ControlCore::HoveredHyperlinkChanged_revoker HoveredHyperlinkChanged;
-            Control::ControlCore::FoundMatch_revoker FoundMatch;
+            Control::ControlCore::OutputIdle_revoker OutputIdle;
             Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
             Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
-            Control::ControlCore::CopyToClipboard_revoker CopyToClipboard;
             Control::ControlCore::TitleChanged_revoker TitleChanged;
             Control::ControlCore::TabColorChanged_revoker TabColorChanged;
             Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;

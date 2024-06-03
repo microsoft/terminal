@@ -1453,9 +1453,9 @@ public:
         return true;
     }
 
-    bool SetClipboard(std::wstring_view content) noexcept override
+    bool SetClipboard(wil::zwstring_view content) noexcept override
     {
-        _copyContent = { content.begin(), content.end() };
+        _copyContent = content;
         return true;
     }
 

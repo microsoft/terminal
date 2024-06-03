@@ -296,4 +296,8 @@ Instale a fonte ausente ou escolha outra.</value>
     <value>Selecionar saída</value>
     <comment>The tooltip for a button for selecting all of a command's output</comment>
   </data>
+  <data name="SessionRestoreMessage" xml:space="preserve">
+    <value>Restaurado</value>
+    <comment>"Restored" as in "This content was restored"</comment>
+  </data>
 </root>

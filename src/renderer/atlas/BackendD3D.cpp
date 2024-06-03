@@ -47,6 +47,20 @@ using namespace Microsoft::Console::Render::Atlas;
 static constexpr D2D1_MATRIX_3X2_F identityTransform{ .m11 = 1, .m22 = 1 };
 static constexpr D2D1_COLOR_F whiteColor{ 1, 1, 1, 1 };
 
+static u64 queryPerfFreq() noexcept
+{
+    LARGE_INTEGER li;
+    QueryPerformanceFrequency(&li);
+    return std::bit_cast<u64>(li.QuadPart);
+}
+
+static u64 queryPerfCount() noexcept
+{
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return std::bit_cast<u64>(li.QuadPart);
+}
+
 BackendD3D::BackendD3D(const RenderingPayload& p)
 {
     THROW_IF_FAILED(p.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _vertexShader.addressof()));
@@ -170,6 +184,18 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
 #endif
 }
 
+#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
+BackendD3D::~BackendD3D()
+{
+    // In case an exception is thrown for some reason between BeginDraw() and EndDraw()
+    // we still technically need to call EndDraw() before releasing any resources.
+    if (_d2dBeganDrawing)
+    {
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
+        LOG_IF_FAILED(_d2dRenderTarget->EndDraw());
+    }
+}
+
 void BackendD3D::ReleaseResources() noexcept
 {
     _renderTargetView.reset();
@@ -269,20 +295,20 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     // baseline of curlyline is at the middle of singly underline. When there's
     // limited space to draw a curlyline, we apply a limit on the peak height.
     {
-        const auto cellHeight = static_cast<f32>(font.cellSize.y);
-        const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
-        const auto duBottom = static_cast<f32>(font.doubleUnderline[1].position);
-        const auto duHeight = static_cast<f32>(font.doubleUnderline[0].height);
+        const int cellHeight = font.cellSize.y;
+        const int duTop = font.doubleUnderline[0].position;
+        const int duBottom = font.doubleUnderline[1].position;
+        const int duHeight = font.doubleUnderline[0].height;
 
         // This gives it the same position and height as our double-underline. There's no particular reason for that, apart from
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
-        // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom.
-        const auto height = std::max(3.0f, duBottom + duHeight - duTop);
-        const auto top = std::min(duTop, floorf(cellHeight - height - duHeight));
+        // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
+        const auto height = std::max(3, duBottom + duHeight - duTop);
+        const auto position = std::min(duTop, cellHeight - height - duHeight);
 
         _curlyLineHalfHeight = height * 0.5f;
-        _curlyUnderline.position = gsl::narrow_cast<u16>(lrintf(top));
-        _curlyUnderline.height = gsl::narrow_cast<u16>(lrintf(height));
+        _curlyUnderline.position = gsl::narrow_cast<u16>(position);
+        _curlyUnderline.height = gsl::narrow_cast<u16>(height);
     }
 
     DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
@@ -485,7 +511,14 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             THROW_IF_FAILED(p.device->CreateSamplerState(&desc, _customShaderSamplerState.put()));
         }
 
-        _customShaderStartTime = std::chrono::steady_clock::now();
+        // Since floats are imprecise we need to constrain the time value into a range that can be accurately represented.
+        // Assuming a monitor refresh rate of 1000 Hz, we can still easily represent 1000 seconds accurately (roughly 16 minutes).
+        // 10000 seconds would already result in a 50% error. So to avoid this, we use queryPerfCount() modulo _customShaderPerfTickMod.
+        // The use of a power of 10 is intentional, because shaders are often periodic and this makes any decimal multiplier up to 3 fractional
+        // digits not break the periodicity. For instance, with a wraparound of 1000 seconds sin(1.234*x) is still perfectly periodic.
+        const auto freq = queryPerfFreq();
+        _customShaderPerfTickMod = freq * 1000;
+        _customShaderSecsPerPerfTick = 1.0f / freq;
     }
 }
 
@@ -1221,7 +1254,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     DWRITE_RENDERING_MODE renderingMode{};
     DWRITE_GRID_FIT_MODE gridFitMode{};
     THROW_IF_FAILED(fontFaceEntry.fontFace->GetRecommendedRenderingMode(
-        /* fontEmSize       */ fontEmSize,
+        /* fontEmSize       */ glyphRun.fontEmSize,
         /* dpiX             */ 1, // fontEmSize is already in pixel
         /* dpiY             */ 1, // fontEmSize is already in pixel
         /* transform        */ nullptr,
@@ -1271,6 +1304,39 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     // Allocate a buffer of `width * height` bytes.
     THROW_IF_FAILED(glyphRunAnalysis->CreateAlphaTexture(DWRITE_TEXTURE_ALIASED_1x1, &textureBounds, buffer.data(), buffer.size()));
     // The buffer now contains a grayscale alpha mask.
+#endif
+
+    // This code finds the local font file path. Useful for debugging as it
+    // gets you the font.ttf <> glyphIndex pair to uniquely identify glyphs.
+#if 0
+    std::vector<std::wstring> paths;
+
+    UINT32 numberOfFiles;
+    THROW_IF_FAILED(fontFaceEntry.fontFace->GetFiles(&numberOfFiles, nullptr));
+    wil::com_ptr<IDWriteFontFile> fontFiles[8];
+    THROW_IF_FAILED(fontFaceEntry.fontFace->GetFiles(&numberOfFiles, fontFiles[0].addressof()));
+
+    for (UINT32 i = 0; i < numberOfFiles; ++i)
+    {
+        wil::com_ptr<IDWriteFontFileLoader> loader;
+        THROW_IF_FAILED(fontFiles[i]->GetLoader(loader.addressof()));
+
+        void const* fontFileReferenceKey;
+        UINT32 fontFileReferenceKeySize;
+        THROW_IF_FAILED(fontFiles[i]->GetReferenceKey(&fontFileReferenceKey, &fontFileReferenceKeySize));
+
+        if (const auto localLoader = loader.try_query<IDWriteLocalFontFileLoader>())
+        {
+            UINT32 filePathLength;
+            THROW_IF_FAILED(localLoader->GetFilePathLengthFromKey(fontFileReferenceKey, fontFileReferenceKeySize, &filePathLength));
+
+            filePathLength++;
+            std::wstring filePath(filePathLength, L'\0');
+            THROW_IF_FAILED(localLoader->GetFilePathFromKey(fontFileReferenceKey, fontFileReferenceKeySize, filePath.data(), filePathLength));
+
+            paths.emplace_back(std::move(filePath));
+        }
+    }
 #endif
 
     const int scale = row.lineRendition != LineRendition::SingleWidth;
@@ -1443,7 +1509,19 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
     }
     else
     {
-        BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), r, glyphIndex);
+        // This code works in tandem with SHADING_TYPE_TEXT_BUILTIN_GLYPH in our pixel shader.
+        // Unless someone removed it, it should have a lengthy comment visually explaining
+        // what each of the 3 RGB components do. The short version is:
+        //   R: stretch the checkerboard pattern (Shape_Filled050) horizontally
+        //   G: invert the pixels
+        //   B: overrides the above and fills it
+        static constexpr D2D1_COLOR_F shadeColorMap[] = {
+            { 1, 0, 0, 1 }, // Shape_Filled025
+            { 0, 0, 0, 1 }, // Shape_Filled050
+            { 1, 1, 0, 1 }, // Shape_Filled075
+            { 1, 1, 1, 1 }, // Shape_Filled100
+        };
+        BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), shadeColorMap, r, glyphIndex);
         shadingType = ShadingType::TextBuiltinGlyph;
     }
 
@@ -1470,7 +1548,7 @@ BackendD3D::ShadingType BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p
     const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
     const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
     const auto softFontIndex = glyphIndex - 0xEF20u;
-    const auto data = til::clamp_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
+    const auto data = til::safe_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
 
     // This happens if someone wrote a U+EF2x character (by accident), but we don't even have soft fonts enabled yet.
     if (data.empty() || data.size() != height)
@@ -2111,8 +2189,12 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {
     {
+        // See the comment in _recreateCustomShader() which initializes the two members below and explains what they do.
+        const auto now = queryPerfCount();
+        const auto time = static_cast<int>(now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
+
         const CustomConstBuffer data{
-            .time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count(),
+            .time = time,
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
             .resolution = {
                 static_cast<f32>(_viewportCellCount.x * p.s->font->cellSize.x),

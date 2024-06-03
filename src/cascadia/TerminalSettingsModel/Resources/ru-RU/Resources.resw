@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Выбрать цветовую схему...</value>
+    <value>Выбрать цветовую схему</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>Новая вкладка...</value>
+    <value>Новая вкладка</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Разделить область...</value>
+    <value>Разделить область</value>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Терминал (переносной)</value>
@@ -325,7 +325,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Задать цвет вкладки…</value>
+    <value>Задать цвет вкладки</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Вставить</value>
@@ -347,7 +347,7 @@
     <value>Сбросить заголовок вкладки</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Переименовать заголовок вкладки...</value>
+    <value>Переименовать заголовок вкладки</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Изменить размер области</value>
@@ -441,7 +441,7 @@
     <value>Переключиться на последнюю вкладку</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Поиск вкладки...</value>
+    <value>Поиск вкладки</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Режим "поверх других окон"</value>
@@ -450,10 +450,10 @@
     <value>Показать или скрыть палитру команд</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Недавние команды...</value>
+    <value>Последние команды</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Открыть предложения...</value>
+    <value>Открыть предложения</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Включить или отключить палитру команд в режиме командной строки</value>
@@ -505,7 +505,7 @@
     <value>Перейти в отладчик</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Открыть настройки...</value>
+    <value>Открыть параметры</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Переименовать окно в "{0}"</value>
@@ -515,7 +515,7 @@
     <value>Сбросить имя окна</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Переименовать окно...</value>
+    <value>Переименовать окно</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Отобразить текущий рабочий каталог Терминала</value>
@@ -566,7 +566,7 @@
     <value>Выйти из терминала</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Установить непрозрачность фона...</value>
+    <value>Установить непрозрачность фона</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Увеличить непрозрачность фона на {0}%</value>
