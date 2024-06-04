@@ -371,8 +371,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
-        void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
-        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
+        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _refreshSearch();
         void _handleSearchResults(SearchResults results);

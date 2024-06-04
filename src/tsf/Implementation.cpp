@@ -436,7 +436,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
     std::wstring finalizedString;
     std::wstring activeComposition;
     til::small_vector<Render::CompositionRange, 2> activeCompositionRanges;
-    bool firstRange = true;
+    bool activeCompositionEncountered = false;
 
     const GUID* guids[] = { &GUID_PROP_COMPOSING, &GUID_PROP_ATTRIBUTE };
     wil::com_ptr<ITfReadOnlyProperty> props;
@@ -500,7 +500,9 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 ULONG len = bufCap;
                 THROW_IF_FAILED(range->GetText(ec, TF_TF_MOVESTART, buf, len, &len));
 
-                if (!composing && firstRange)
+                // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
+                // In other words, don't put text that's in the middle between two active compositions into the finalized string.
+                if (!composing && !activeCompositionEncountered)
                 {
                     finalizedString.append(buf, len);
                 }
@@ -520,7 +522,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
             const auto attr = _textAttributeFromAtom(atom);
             activeCompositionRanges.emplace_back(totalLen, attr);
 
-            firstRange = false;
+            activeCompositionEncountered |= composing;
         }
     }
 

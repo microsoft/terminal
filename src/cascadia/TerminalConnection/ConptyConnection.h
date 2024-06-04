@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          const HANDLE hRef,
                          const HANDLE hServerProcess,
                          const HANDLE hClientProcess,
-                         TERMINAL_STARTUP_INFO startupInfo);
+                         const TERMINAL_STARTUP_INFO& startupInfo);
 
         ConptyConnection() noexcept = default;
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
