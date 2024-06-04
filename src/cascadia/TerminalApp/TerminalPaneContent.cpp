@@ -78,8 +78,6 @@ namespace winrt::TerminalApp::implementation
             _bellPlayer = nullptr;
             _bellPlayerCreated = false;
         }
-
-        CloseRequested.raise(*this, nullptr);
     }
 
     winrt::hstring TerminalPaneContent::Icon() const
@@ -239,19 +237,20 @@ namespace winrt::TerminalApp::implementation
 
         if (_profile)
         {
-            if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
-            {
-                // For 'automatic', we only care about the connection state if we were launched by Terminal
-                // Since we were launched via defterm, ignore the connection state (i.e. we treat the
-                // close on exit mode as 'always', see GH #13325 for discussion)
-                Close();
-            }
-
             const auto mode = _profile.CloseOnExit();
-            if ((mode == CloseOnExitMode::Always) ||
-                ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
+
+            if (
+                // This one is obvious: If the user asked for "always" we do just that.
+                (mode == CloseOnExitMode::Always) ||
+                // Otherwise, and unless the user asked for the opposite of "always",
+                // close the pane when the connection closed gracefully (not failed).
+                (mode != CloseOnExitMode::Never && newConnectionState == ConnectionState::Closed) ||
+                // However, defterm handoff can result in Windows Terminal randomly opening which may be annoying,
+                // so by default we should at least always close the pane, even if the command failed.
+                // See GH #13325 for discussion.
+                (mode == CloseOnExitMode::Automatic && _isDefTermSession))
             {
-                Close();
+                CloseRequested.raise(nullptr, nullptr);
             }
         }
     }
@@ -331,7 +330,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                              const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
-        Close();
+        CloseRequested.raise(nullptr, nullptr);
     }
 
     void TerminalPaneContent::_restartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,

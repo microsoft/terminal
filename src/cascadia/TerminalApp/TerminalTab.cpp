@@ -947,26 +947,6 @@ namespace winrt::TerminalApp::implementation
         auto dispatcher = TabViewItem().Dispatcher();
         ContentEventTokens events{};
 
-        events.CloseRequested = content.CloseRequested(
-            winrt::auto_revoke,
-            [this](auto&& sender, auto&&) {
-                if (const auto content{ sender.try_as<TerminalApp::IPaneContent>() })
-                {
-                    // Calling Close() while walking the tree is not safe, because Close() mutates the tree.
-                    const auto pane = _rootPane->_FindPane([&](const auto& p) -> std::shared_ptr<Pane> {
-                        if (p->GetContent() == content)
-                        {
-                            return p;
-                        }
-                        return {};
-                    });
-                    if (pane)
-                    {
-                        pane->Close();
-                    }
-                }
-            });
-
         events.TitleChanged = content.TitleChanged(
             winrt::auto_revoke,
             [dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
