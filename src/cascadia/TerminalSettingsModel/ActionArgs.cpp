@@ -33,7 +33,7 @@
 #include "ScrollToMarkArgs.g.cpp"
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
-#include "SaveTaskArgs.g.cpp"
+#include "SaveSnippetArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
@@ -948,13 +948,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    winrt::hstring SaveTaskArgs::GenerateName() const
+    winrt::hstring SaveSnippetArgs::GenerateName() const
     {
-        if (Feature_SaveTask::IsEnabled())
+        if (Feature_SaveSnippet::IsEnabled())
         {
             std::wstringstream ss;
 
-            ss << RS_(L"SaveActionNamePrefix").c_str() << L" commandline: " << Commandline().c_str();
+            ss << RS_(L"SaveSnippetNamePrefix").c_str() << L" commandline: " << Commandline().c_str();
 
             if (!Name().empty())
             {

@@ -354,10 +354,10 @@ namespace Microsoft.Terminal.Settings.Model
         FindMatchDirection Direction { get; };
     };
 
-    [default_interface] runtimeclass SaveTaskArgs : IActionArgs
+    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs
     {
-        SaveTaskArgs();
-        SaveTaskArgs(String Name, String Commandline, String KeyChord);
+        SaveSnippetArgs();
+        SaveSnippetArgs(String Name, String Commandline, String KeyChord);
         String Name;
         String Commandline;
         String KeyChord;

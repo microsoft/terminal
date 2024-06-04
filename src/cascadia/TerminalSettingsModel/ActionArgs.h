@@ -34,7 +34,7 @@
 #include "ScrollToMarkArgs.g.h"
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
-#include "SaveTaskArgs.g.h"
+#include "SaveSnippetArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 #include "SuggestionsArgs.g.h"
 #include "FindMatchArgs.g.h"
@@ -826,7 +826,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
-    ACTION_ARGS_STRUCT(SaveTaskArgs, SAVE_TASK_ARGS);
+    ACTION_ARGS_STRUCT(SaveSnippetArgs, SAVE_TASK_ARGS);
 
     ACTION_ARGS_STRUCT(SuggestionsArgs, SUGGESTIONS_ARGS);
 
@@ -949,7 +949,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseTabArgs);
     BASIC_FACTORY(MoveTabArgs);
     BASIC_FACTORY(OpenSettingsArgs);
-    BASIC_FACTORY(SaveTaskArgs);
+    BASIC_FACTORY(SaveSnippetArgs);
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
     BASIC_FACTORY(FocusPaneArgs);

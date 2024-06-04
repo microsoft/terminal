@@ -1264,17 +1264,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSaveSnippet(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if constexpr (!Feature_SaveTask::IsEnabled())
+        if constexpr (!Feature_SaveSnippet::IsEnabled())
         {
             return;
         }
 
         if (args)
         {
-            if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveSnippetArgs>())
             {
                 if (realArgs.Commandline().empty())
                 {

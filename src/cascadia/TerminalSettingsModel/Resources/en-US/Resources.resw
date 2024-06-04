@@ -727,7 +727,7 @@
     <value>Open about dialog</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
   </data>
-  <data name="SaveActionNamePrefix" xml:space="preserve">
-    <value>Save Task</value>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Save Snippet</value>
   </data>
 </root>

@@ -156,8 +156,8 @@
     </feature>
 
     <feature>
-        <name>Feature_SaveTask</name>
-        <description>Save Input</description>
+        <name>Feature_SaveSnippet</name>
+        <description>Save Snippet</description>
         <id>9971</id>
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>

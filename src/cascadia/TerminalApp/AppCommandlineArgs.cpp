@@ -209,7 +209,7 @@ void AppCommandlineArgs::_buildParser()
     _buildMovePaneParser();
     _buildSwapPaneParser();
     _buildFocusPaneParser();
-    _buildSaveParser();
+    _buildSaveSnippetParser();
 }
 
 // Method Description:
@@ -538,12 +538,12 @@ void AppCommandlineArgs::_buildFocusPaneParser()
     setupSubcommand(_focusPaneShort);
 }
 
-void AppCommandlineArgs::_buildSaveParser()
+void AppCommandlineArgs::_buildSaveSnippetParser()
 {
-    _saveCommand = _app.add_subcommand("x-save", RS_A(L"SaveActionDesc"));
+    _saveCommand = _app.add_subcommand("x-save-snippet", RS_A(L"SaveSnippetDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        subcommand->add_option("--name,-n", _saveInputName, RS_A(L"SaveActionArgDesc"));
+        subcommand->add_option("--name,-n", _saveInputName, RS_A(L"SaveSnippetArgDesc"));
         subcommand->add_option("--keychord,-k", _keyChordOption, RS_A(L"KeyChordArgDesc"));
         subcommand->add_option("command,", _commandline, RS_A(L"CmdCommandArgDesc"));
         subcommand->positionals_at_end(true);
@@ -554,11 +554,11 @@ void AppCommandlineArgs::_buildSaveParser()
         // command was parsed.
         subcommand->callback([&, this]() {
             // Build the action from the values we've parsed on the commandline.
-            ActionAndArgs saveAction{};
-            saveAction.Action(ShortcutAction::SaveTask);
+            ActionAndArgs saveSnippet{};
+            saveSnippet.Action(ShortcutAction::SaveSnippet);
             // First, parse out the commandline in the same way that
             // _getNewTerminalArgs does it
-            SaveTaskArgs args{};
+            SaveSnippetArgs args{};
 
             if (!_commandline.empty())
             {
@@ -596,8 +596,8 @@ void AppCommandlineArgs::_buildSaveParser()
                 args.Name(hString);
             }
 
-            saveAction.Args(args);
-            _startupActions.push_back(saveAction);
+            saveSnippet.Args(args);
+            _startupActions.push_back(saveSnippet);
         });
     };
 

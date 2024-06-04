@@ -144,7 +144,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
-    void _buildSaveParser();
+    void _buildSaveSnippetParser();
     void _buildNewTabParser();
     void _buildSplitPaneParser();
     void _buildFocusTabParser();
