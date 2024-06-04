@@ -20,14 +20,6 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view IDKey{ "id" };
-static constexpr std::string_view IconKey{ "icon" };
-static constexpr std::string_view ActionKey{ "command" };
-static constexpr std::string_view IterateOnKey{ "iterateOn" };
-static constexpr std::string_view CommandsKey{ "commands" };
-static constexpr std::string_view KeysKey{ "keys" };
-
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
 static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
@@ -121,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hstring{ _ID };
     }
 
-    bool Command::GenerateID()
+    void Command::GenerateID()
     {
         if (_ActionAndArgs)
         {
@@ -130,10 +122,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 _ID = generatedID;
                 _IDWasGenerated = true;
-                return true;
             }
         }
-        return false;
+    }
+
+    bool Command::IDWasGenerated()
+    {
+        return _IDWasGenerated;
     }
 
     void Command::Name(const hstring& value)
@@ -423,14 +418,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Function Description:
-    // - Serialize the Command into an array of json actions
+    // - Serialize the Command into a json value
     // Arguments:
     // - <none>
     // Return Value:
-    // - an array of serialized actions
+    // - a serialized command
     Json::Value Command::ToJson() const
     {
-        Json::Value cmdList{ Json::ValueType::arrayValue };
+        Json::Value cmdJson{ Json::ValueType::objectValue };
 
         if (_nestedCommand || _IterateOn != ExpandCommandType::None)
         {
@@ -438,15 +433,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // For these, we can trust _originalJson to be correct.
             // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
             //   until we expand the command.
-            cmdList.append(_originalJson);
+            cmdJson = _originalJson;
         }
-        else if (_keyMappings.empty())
+        else
         {
-            // only write out one command
-            Json::Value cmdJson{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-            if (!_ID.empty() && !_IDWasGenerated)
+            if (!_ID.empty())
             {
                 JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
             }
@@ -455,38 +448,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
             }
-
-            cmdList.append(cmdJson);
-        }
-        else
-        {
-            // we'll write out one command per key mapping
-            for (auto keys{ _keyMappings.begin() }; keys != _keyMappings.end(); ++keys)
-            {
-                Json::Value cmdJson{ Json::ValueType::objectValue };
-
-                if (keys == _keyMappings.begin())
-                {
-                    // First iteration also writes icon and name
-                    JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
-                    JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-                    if (!_ID.empty())
-                    {
-                        JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
-                    }
-                }
-
-                if (_ActionAndArgs)
-                {
-                    cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
-                }
-
-                JsonUtils::SetValueForKey(cmdJson, KeysKey, *keys);
-                cmdList.append(cmdJson);
-            }
         }
 
-        return cmdList;
+        return cmdJson;
     }
 
     // Function Description:
