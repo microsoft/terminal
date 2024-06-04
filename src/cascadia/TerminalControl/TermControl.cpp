@@ -522,7 +522,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+            if (_searchBox && _searchBox->IsOpen())
             {
                 const auto core = winrt::get_self<ControlCore>(_core);
                 const auto& searchMatches = core->SearchResultRows();
@@ -567,6 +567,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
+                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
@@ -583,13 +584,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // This is called when a Find Next/Previous Match action is triggered.
     void TermControl::SearchMatch(const bool goForward)
     {
         if (_IsClosing())
         {
             return;
         }
-        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
+        if (!_searchBox || !_searchBox->IsOpen())
         {
             CreateSearchBoxControl();
         }
@@ -631,7 +633,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - The handler for the "search criteria changed" event. Clears selection and initiates a new search.
+    // - The handler for the "search criteria changed" event. Initiates a new search.
     // Arguments:
     // - text: the text to search
     // - goForward: indicates whether the search should be performed forward (if set to true) or backward
@@ -645,7 +647,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
         {
-            _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
+            // We only want to update the search results based on the new text. Set
+            // `resetOnly` to true so we don't accidentally update the current match index.
+            const auto result = _core.Search(text, goForward, caseSensitive, regularExpression, true);
+            _handleSearchResults(result);
         }
     }
 
@@ -662,6 +667,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _searchBox->Close();
         _core.ClearSearch();
+
+        // Clear search highlights scroll marks (by triggering an update after closing the search box)
+        if (_showMarksInScrollbar)
+        {
+            const auto scrollBar = ScrollBar();
+            ScrollBarUpdate update{
+                .newValue = scrollBar.Value(),
+                .newMaximum = scrollBar.Maximum(),
+                .newMinimum = scrollBar.Minimum(),
+                .newViewportSize = scrollBar.ViewportSize(),
+            };
+            _updateScrollBar->Run(update);
+        }
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
@@ -3646,7 +3664,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_refreshSearch()
     {
-        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
+        if (!_searchBox || !_searchBox->IsOpen())
         {
             return;
         }
@@ -3670,7 +3688,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
+        // Only show status when we have a search term
+        if (_searchBox->Text().empty())
+        {
+            _searchBox->ClearStatus();
+        }
+        else
+        {
+            _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
+        }
 
         if (results.SearchInvalidated)
         {
