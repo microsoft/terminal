@@ -1870,7 +1870,7 @@ unk
 unknwn
 UNORM
 unparseable
-unregistering
+Unregistering
 untextured
 UPDATEDISPLAY
 UPDOWN

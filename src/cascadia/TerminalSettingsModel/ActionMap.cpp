@@ -236,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_NameMapCache)
         {
-            if (_CumulativeActionMapCache.empty())
+            if (_CumulativeIDToActionMapCache.empty())
             {
                 _RefreshKeyBindingCaches();
             }
@@ -295,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nameMap: the nameMap we're populating, this maps the name (hstring) of a command to the command itself
     void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
-        for (const auto& [_, cmd] : _CumulativeActionMapCache)
+        for (const auto& [_, cmd] : _CumulativeIDToActionMapCache)
         {
             const auto& name{ cmd.Name() };
             if (!name.empty())
@@ -315,22 +315,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Recursively populate keyBindingsMap with ours and our parents' key -> id pairs
+    // - Recursively populate keyToActionMap with ours and our parents' key -> id pairs
+    // - Recursively populate actionToKeyMap with ours and our parents' id -> key pairs
     // - This is a bottom-up approach
-    // - Keybindings of the parents are overridden by the children
-    void ActionMap::_PopulateCumulativeKeyMap(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyBindingsMap)
+    // - Child's pairs override parents' pairs
+    void ActionMap::_PopulateCumulativeKeyMaps(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyToActionMap, std::unordered_map<winrt::hstring, Control::KeyChord>& actionToKeyMap)
     {
         for (const auto& [keys, cmdID] : _KeyMap)
         {
-            if (!keyBindingsMap.contains(keys))
+            if (!keyToActionMap.contains(keys))
             {
-                keyBindingsMap.emplace(keys, cmdID);
+                keyToActionMap.emplace(keys, cmdID);
+            }
+            if (!actionToKeyMap.contains(cmdID))
+            {
+                actionToKeyMap.emplace(cmdID, keys);
             }
         }
 
         for (const auto& parent : _parents)
         {
-            parent->_PopulateCumulativeKeyMap(keyBindingsMap);
+            parent->_PopulateCumulativeKeyMaps(keyToActionMap, actionToKeyMap);
         }
     }
 
@@ -365,28 +370,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
-        if (!_ResolvedKeyActionMapCache)
+        if (!_ResolvedKeyToActionMapCache)
         {
             _RefreshKeyBindingCaches();
         }
-        return _ResolvedKeyActionMapCache.GetView();
+        return _ResolvedKeyToActionMapCache.GetView();
     }
 
     void ActionMap::_RefreshKeyBindingCaches()
     {
-        _CumulativeKeyMapCache.clear();
-        _CumulativeActionMapCache.clear();
+        _CumulativeKeyToActionMapCache.clear();
+        _CumulativeIDToActionMapCache.clear();
+        _CumulativeActionToKeyMapCache.clear();
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
-        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyActionMap;
+        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyToActionMap;
 
-        _PopulateCumulativeKeyMap(_CumulativeKeyMapCache);
-        _PopulateCumulativeActionMap(_CumulativeActionMapCache);
+        _PopulateCumulativeKeyMaps(_CumulativeKeyToActionMapCache, _CumulativeActionToKeyMapCache);
+        _PopulateCumulativeActionMap(_CumulativeIDToActionMapCache);
 
-        for (const auto& [keys, cmdID] : _CumulativeKeyMapCache)
+        for (const auto& [keys, cmdID] : _CumulativeKeyToActionMapCache)
         {
-            if (const auto idCmdPair = _CumulativeActionMapCache.find(cmdID); idCmdPair != _CumulativeActionMapCache.end())
+            if (const auto idCmdPair = _CumulativeIDToActionMapCache.find(cmdID); idCmdPair != _CumulativeIDToActionMapCache.end())
             {
-                resolvedKeyActionMap.emplace(keys, idCmdPair->second);
+                resolvedKeyToActionMap.emplace(keys, idCmdPair->second);
 
                 // Only populate GlobalHotkeys with actions whose
                 // ShortcutAction is GlobalSummon or QuakeMode
@@ -397,7 +403,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        _ResolvedKeyActionMapCache = single_threaded_map(std::move(resolvedKeyActionMap));
+        _ResolvedKeyToActionMapCache = single_threaded_map(std::move(resolvedKeyToActionMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
     }
 
@@ -450,11 +456,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // invalidate caches
-        _CumulativeKeyMapCache.clear();
-        _CumulativeActionMapCache.clear();
+        _CumulativeKeyToActionMapCache.clear();
+        _CumulativeIDToActionMapCache.clear();
+        _CumulativeActionToKeyMapCache.clear();
         _NameMapCache = nullptr;
         _GlobalHotkeysCache = nullptr;
-        _ResolvedKeyActionMapCache = nullptr;
+        _ResolvedKeyToActionMapCache = nullptr;
 
         // Handle nested commands
         const auto cmdImpl{ get_self<Command>(cmd) };
@@ -656,21 +663,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullptr if the action is not bound to a key chord
     Control::KeyChord ActionMap::GetKeyBindingForAction(const winrt::hstring& cmdID)
     {
-        if (!_ResolvedKeyActionMapCache)
+        if (!_ResolvedKeyToActionMapCache)
         {
             _RefreshKeyBindingCaches();
         }
 
-        // I dislike that we have to do an O(n) lookup every time we want to get the keybinding for an action -
-        // an alternative is having the key->action map be a bi-map (would require a dependency), or store another map that is just
-        // the reverse direction (action->key) which would be mean storing the same data twice but getting faster lookup
-        for (const auto [key, action] : _ResolvedKeyActionMapCache)
+        if (_CumulativeActionToKeyMapCache.contains(cmdID))
         {
-            if (action.ID() == cmdID)
-            {
-                // if there are multiple keys bound to this action, we will just return the first one we find
-                return key;
-            }
+            return _CumulativeActionToKeyMapCache.at(cmdID);
         }
 
         // This key binding does not exist
