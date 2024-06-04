@@ -59,7 +59,7 @@ public:
         return true;
     };
 
-    bool ActionPassThroughString(const std::wstring_view string) override
+    bool ActionPassThroughString(const std::wstring_view string, const bool /*flush*/) override
     {
         passedThrough += string;
         return true;

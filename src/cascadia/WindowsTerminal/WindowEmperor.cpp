@@ -348,6 +348,14 @@ void WindowEmperor::_becomeMonarch()
 
     _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
     _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
+
+    // If a previous session of Windows Terminal stored buffer_*.txt files, then we need to clean all those up on exit
+    // that aren't needed anymore, even if the user disabled the ShouldUsePersistedLayout() setting in the meantime.
+    {
+        const auto state = ApplicationState::SharedInstance();
+        const auto layouts = state.PersistedWindowLayouts();
+        _requiresPersistenceCleanupOnExit = layouts && layouts.Size() > 0;
+    }
 }
 
 // sender and args are always nullptr
@@ -486,7 +494,7 @@ void WindowEmperor::_finalizeSessionPersistence() const
     // Ensure to write the state.json before we TerminateProcess()
     state.Flush();
 
-    if (!_app.Logic().ShouldUsePersistedLayout())
+    if (!_requiresPersistenceCleanupOnExit)
     {
         return;
     }

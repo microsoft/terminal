@@ -51,6 +51,8 @@ class TerminalCoreUnitTests::TerminalBufferTests final
 
     TEST_METHOD(TestGetReverseTab);
 
+    TEST_METHOD(TestURLPatternDetection);
+
     TEST_METHOD_SETUP(MethodSetup)
     {
         // STEP 1: Set up the Terminal
@@ -593,4 +595,35 @@ void TerminalBufferTests::TestGetReverseTab()
                          coordCursorResult,
                          L"Cursor adjusted to last item in the sample list from position beyond end.");
     }
+}
+
+void TerminalBufferTests::TestURLPatternDetection()
+{
+    using namespace std::string_view_literals;
+
+    constexpr auto BeforeStr = L"<Before>"sv;
+    constexpr auto UrlStr = L"https://www.contoso.com"sv;
+    constexpr auto AfterStr = L"<After>"sv;
+    constexpr auto urlStartX = BeforeStr.size();
+    constexpr auto urlEndX = BeforeStr.size() + UrlStr.size() - 1;
+
+    auto& termSm = *term->_stateMachine;
+    termSm.ProcessString(fmt::format(FMT_COMPILE(L"{}{}{}"), BeforeStr, UrlStr, AfterStr));
+    term->UpdatePatternsUnderLock();
+
+    std::wstring result;
+
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlStartX - 1, 0 });
+    VERIFY_IS_TRUE(result.empty(), L"URL is not detected before the actual URL.");
+
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlStartX, 0 });
+    VERIFY_IS_TRUE(!result.empty(), L"A URL is detected at the start position.");
+    VERIFY_ARE_EQUAL(result, UrlStr, L"Detected URL matches the given URL.");
+
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlEndX, 0 });
+    VERIFY_IS_TRUE(!result.empty(), L"A URL is detected at the end position.");
+    VERIFY_ARE_EQUAL(result, UrlStr, L"Detected URL matches the given URL.");
+
+    result = term->GetHyperlinkAtBufferPosition(til::point{ urlEndX + 1, 0 });
+    VERIFY_IS_TRUE(result.empty(), L"URL is not detected after the actual URL.");
 }

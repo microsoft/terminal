@@ -6,6 +6,7 @@
 #include "ActionMap.h"
 #include "Command.h"
 #include "AllShortcutActions.h"
+#include <LibraryResources.h>
 
 #include "ActionMap.g.cpp"
 
@@ -66,18 +67,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::_FinalizeInheritance()
     {
         // first, gather the inbox actions from the relevant parent
-        std::unordered_map<InternalActionID, Model::Command> InboxActions;
+        std::unordered_map<InternalActionID, Model::Command> inboxActions;
         winrt::com_ptr<implementation::ActionMap> foundParent{ nullptr };
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
-            for (const auto [_, cmd] : parent->_ActionMap)
+            const auto parentMap = parent->_ActionMap;
+            if (parentMap.begin() != parentMap.end() && parentMap.begin()->second.Origin() == OriginTag::InBox)
             {
-                if (cmd.Origin() != OriginTag::InBox)
-                {
-                    // only one parent contains all the inbox actions and that parent contains only inbox actions,
-                    // so if we found a non-inbox action we can just skip to the next parent
-                    break;
-                }
+                // only one parent contains all the inbox actions and that parent contains only inbox actions,
+                // so if we found an inbox action we know this is the parent we are looking for
                 foundParent = parent;
                 break;
             }
@@ -85,53 +83,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (foundParent)
         {
-            for (const auto [_, cmd] : foundParent->_ActionMap)
+            for (const auto& [_, cmd] : foundParent->_ActionMap)
             {
-                InboxActions.emplace(Hash(cmd.ActionAndArgs()), cmd);
+                inboxActions.emplace(Hash(cmd.ActionAndArgs()), cmd);
             }
         }
+
+        std::unordered_map<KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> keysToReassign;
 
         // now, look through our _ActionMap for commands that
         // - had an ID generated for them
         // - do not have a name/icon path
         // - have a hash that matches a command in the inbox actions
-        std::unordered_set<winrt::hstring> IdsToRemove;
-        for (const auto [userID, userCmd] : _ActionMap)
-        {
-            const auto userCmdImpl{ get_self<Command>(userCmd) };
-
-            // Note we don't need to explicitly check for the origin tag here since we only generate IDs for user actions,
-            // so if we ID was generated it means this is a user action
-            if (userCmdImpl->IdWasGenerated() && !userCmdImpl->HasName() && userCmd.IconPath().empty())
+        std::erase_if(_ActionMap, [&](const auto& pair) {
+            const auto userCmdImpl{ get_self<Command>(pair.second) };
+            if (userCmdImpl->IDWasGenerated() && !userCmdImpl->HasName() && userCmdImpl->IconPath().empty())
             {
-                const auto userActionHash = Hash(userCmd.ActionAndArgs());
-                if (const auto inboxCmd = InboxActions.find(userActionHash); inboxCmd != InboxActions.end())
+                const auto userActionHash = Hash(userCmdImpl->ActionAndArgs());
+                if (const auto inboxCmd = inboxActions.find(userActionHash); inboxCmd != inboxActions.end())
                 {
-                    for (auto [key, cmdID] : _KeyMap)
+                    for (const auto& [key, cmdID] : _KeyMap)
                     {
                         // for any of our keys that point to the user action, point them to the inbox action instead
-                        if (cmdID == userID)
+                        if (cmdID == pair.first)
                         {
-                            _KeyMap.insert_or_assign(key, inboxCmd->second.ID());
+                            keysToReassign.insert_or_assign(key, inboxCmd->second.ID());
                         }
                     }
 
-                    // add this ID to our set of IDs to remove
-                    IdsToRemove.insert(userID);
+                    // remove this pair
+                    return true;
                 }
             }
-        }
+            return false;
+        });
 
-        // now, remove the commands with the IDs we found
-        for (const auto id : IdsToRemove)
+        for (const auto [key, cmdID] : keysToReassign)
         {
-            _ActionMap.erase(id);
+            _KeyMap.insert_or_assign(key, cmdID);
         }
     }
 
-    bool ActionMap::FixUpsAppliedDuringLoad() const
+    bool ActionMap::FixupsAppliedDuringLoad() const
     {
-        return _fixUpsAppliedDuringLoad;
+        return _fixupsAppliedDuringLoad;
     }
 
     // Method Description:
@@ -141,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - actionID: the internal ID associated with a Command
     // Return Value:
     // - The command if it exists in this layer, otherwise nullptr
-    Model::Command ActionMap::_GetActionByID(const winrt::hstring actionID) const
+    Model::Command ActionMap::_GetActionByID(const winrt::hstring& actionID) const
     {
         // Check current layer
         const auto actionMapPair{ _ActionMap.find(actionID) };
@@ -155,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return cmd;
         }
 
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
             if (const auto inheritedCmd = parent->_GetActionByID(actionID))
             {
@@ -211,9 +206,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // Only populate AvailableActions with actions that haven't been visited already.
             const auto actionID = Hash(cmd.ActionAndArgs());
-            if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+            if (!visitedActionIDs.contains(actionID))
             {
-                const auto& name{ cmd.Name() };
+                const auto name{ cmd.Name() };
                 if (!name.empty())
                 {
                     // Update AvailableActions.
@@ -241,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_NameMapCache)
         {
-            if (!_CumulativeActionMapCache)
+            if (_CumulativeIDToActionMapCache.empty())
             {
                 _RefreshKeyBindingCaches();
             }
@@ -300,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nameMap: the nameMap we're populating, this maps the name (hstring) of a command to the command itself
     void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
-        for (const auto& [_, cmd] : _CumulativeActionMapCache)
+        for (const auto& [_, cmd] : _CumulativeIDToActionMapCache)
         {
             const auto& name{ cmd.Name() };
             if (!name.empty())
@@ -308,7 +303,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // there might be a collision here, where there could be 2 different commands with the same name
                 // in this case, prioritize the user's action
                 // TODO GH #17166: we should no longer use Command.Name to identify commands anywhere
-                if (nameMap.find(name) == nameMap.end() || cmd.Origin() == OriginTag::User)
+                if (!nameMap.contains(name) || cmd.Origin() == OriginTag::User)
                 {
                     // either a command with this name does not exist, or this is a user-defined command with a name
                     // in either case, update the name map with the command (if this is a user-defined command with
@@ -320,38 +315,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Recursively populate keyBindingsMap with ours and our parents' key -> id pairs
-    // - This is a bottom-up approach, ensuring that the keybindings of the parents are overridden by the children
-    void ActionMap::_PopulateCumulativeKeyMap(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyBindingsMap)
+    // - Recursively populate keyToActionMap with ours and our parents' key -> id pairs
+    // - Recursively populate actionToKeyMap with ours and our parents' id -> key pairs
+    // - This is a bottom-up approach
+    // - Child's pairs override parents' pairs
+    void ActionMap::_PopulateCumulativeKeyMaps(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyToActionMap, std::unordered_map<winrt::hstring, Control::KeyChord>& actionToKeyMap)
     {
         for (const auto& [keys, cmdID] : _KeyMap)
         {
-            if (keyBindingsMap.find(keys) == keyBindingsMap.end())
+            if (!keyToActionMap.contains(keys))
             {
-                keyBindingsMap.emplace(keys, cmdID);
+                keyToActionMap.emplace(keys, cmdID);
+            }
+            if (!actionToKeyMap.contains(cmdID))
+            {
+                actionToKeyMap.emplace(cmdID, keys);
             }
         }
 
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
-            parent->_PopulateCumulativeKeyMap(keyBindingsMap);
+            parent->_PopulateCumulativeKeyMaps(keyToActionMap, actionToKeyMap);
         }
     }
 
     // Method Description:
     // - Recursively populate actionMap with ours and our parents' id -> command pairs
-    // - This is a bottom-up approach, ensuring that the actions of the parents are overridden by the children
+    // - This is a bottom-up approach
+    // - Actions of the parents are overridden by the children
     void ActionMap::_PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap)
     {
         for (const auto& [cmdID, cmd] : _ActionMap)
         {
-            if (actionMap.find(cmdID) == actionMap.end())
+            if (!actionMap.contains(cmdID))
             {
                 actionMap.emplace(cmdID, cmd);
             }
         }
 
-        for (const auto parent : _parents)
+        for (const auto& parent : _parents)
         {
             parent->_PopulateCumulativeActionMap(actionMap);
         }
@@ -368,28 +370,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
-        if (!_ResolvedKeyActionMapCache)
+        if (!_ResolvedKeyToActionMapCache)
         {
             _RefreshKeyBindingCaches();
         }
-        return _ResolvedKeyActionMapCache.GetView();
+        return _ResolvedKeyToActionMapCache.GetView();
     }
 
     void ActionMap::_RefreshKeyBindingCaches()
     {
+        _CumulativeKeyToActionMapCache.clear();
+        _CumulativeIDToActionMapCache.clear();
+        _CumulativeActionToKeyMapCache.clear();
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
-        std::unordered_map<KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> accumulatedKeybindingsMap;
-        std::unordered_map<winrt::hstring, Model::Command> accumulatedActionsMap;
-        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyActionMap;
+        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyToActionMap;
 
-        _PopulateCumulativeKeyMap(accumulatedKeybindingsMap);
-        _PopulateCumulativeActionMap(accumulatedActionsMap);
+        _PopulateCumulativeKeyMaps(_CumulativeKeyToActionMapCache, _CumulativeActionToKeyMapCache);
+        _PopulateCumulativeActionMap(_CumulativeIDToActionMapCache);
 
-        for (const auto [keys, cmdID] : accumulatedKeybindingsMap)
+        for (const auto& [keys, cmdID] : _CumulativeKeyToActionMapCache)
         {
-            if (const auto idCmdPair = accumulatedActionsMap.find(cmdID); idCmdPair != accumulatedActionsMap.end())
+            if (const auto idCmdPair = _CumulativeIDToActionMapCache.find(cmdID); idCmdPair != _CumulativeIDToActionMapCache.end())
             {
-                resolvedKeyActionMap.emplace(keys, idCmdPair->second);
+                resolvedKeyToActionMap.emplace(keys, idCmdPair->second);
 
                 // Only populate GlobalHotkeys with actions whose
                 // ShortcutAction is GlobalSummon or QuakeMode
@@ -400,9 +403,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        _CumulativeKeyMapCache = single_threaded_map(std::move(accumulatedKeybindingsMap));
-        _CumulativeActionMapCache = single_threaded_map(std::move(accumulatedActionsMap));
-        _ResolvedKeyActionMapCache = single_threaded_map(std::move(resolvedKeyActionMap));
+        _ResolvedKeyToActionMapCache = single_threaded_map(std::move(resolvedKeyToActionMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
     }
 
@@ -455,11 +456,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // invalidate caches
+        _CumulativeKeyToActionMapCache.clear();
+        _CumulativeIDToActionMapCache.clear();
+        _CumulativeActionToKeyMapCache.clear();
         _NameMapCache = nullptr;
         _GlobalHotkeysCache = nullptr;
-        _CumulativeKeyMapCache = nullptr;
-        _CumulativeActionMapCache = nullptr;
-        _ResolvedKeyActionMapCache = nullptr;
+        _ResolvedKeyToActionMapCache = nullptr;
 
         // Handle nested commands
         const auto cmdImpl{ get_self<Command>(cmd) };
@@ -506,7 +508,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
 
             // only add to the _ActionMap if there is an ID
-            if (auto cmdID = cmd.ID(); !cmdID.empty() && cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
+            if (auto cmdID = cmd.ID(); !cmdID.empty())
             {
                 // in the legacy scenario, a user might have several of the same action but only one of them has defined an icon or a name
                 // eg. { "command": "paste", "name": "myPaste", "keys":"ctrl+a" }
@@ -521,7 +523,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // if so, we check if there already exists a command with that generated ID, and if there is we port over any name/icon there might be
                 // (this may cause us to overwrite in scenarios where the user has an existing command that has the same generated ID but
                 //  performs a different action or has different args, but that falls under "play stupid games")
-                if (cmdImpl->IdWasGenerated())
+                if (cmdImpl->IDWasGenerated())
                 {
                     if (const auto foundCmd{ _GetActionByID(cmdID) })
                     {
@@ -562,14 +564,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // i.e. they provided an ID for a null command (which they really shouldn't, there's no purpose)
         // in this case, we do _not_ want to use the id they provided, we want to use an empty id
         // (empty id in the _KeyMap indicates the keychord was explicitly unbound)
-        if (cmd.ActionAndArgs().Action() == ShortcutAction::Invalid)
-        {
-            _KeyMap.insert_or_assign(keys, L"");
-        }
-        else
-        {
-            _KeyMap.insert_or_assign(keys, cmd.ID());
-        }
+        const auto action = cmd.ActionAndArgs().Action();
+        const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
+        _KeyMap.insert_or_assign(keys, id);
     }
 
     // Method Description:
@@ -617,15 +614,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (const auto keyIDPair = _KeyMap.find(keys); keyIDPair != _KeyMap.end())
         {
-            if (const auto cmdID = keyIDPair->second; !cmdID.empty())
-            {
-                return cmdID;
-            }
-            else
-            {
-                // the keychord is defined in this layer, but points to an empty string - explicitly unbound
-                return L"";
-            }
+            // the keychord is defined in this layer, return the ID
+            return keyIDPair->second;
         }
 
         // search through our parents
@@ -637,7 +627,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        // we did not find the keychord anywhere, its not bound and not explicity unbound either
+        // we did not find the keychord anywhere, it's not bound and not explicitly unbound either
         return std::nullopt;
     }
 
@@ -654,7 +644,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (const auto actionIDOptional = _GetActionIdByKeyChordInternal(keys))
         {
-            if (!(*actionIDOptional).empty())
+            if (!actionIDOptional->empty())
             {
                 // there is an ID associated with these keys, find the command
                 if (const auto foundCmd = _GetActionByID(*actionIDOptional))
@@ -662,10 +652,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     return foundCmd;
                 }
             }
-            {
-                // the ID is an empty string, these keys are explicitly unbound
-                return nullptr;
-            }
+            // the ID is an empty string, these keys are explicitly unbound
+            return nullptr;
         }
 
         return std::nullopt;
@@ -678,23 +666,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the key chord that executes the given action
     // - nullptr if the action is not bound to a key chord
-    Control::KeyChord ActionMap::GetKeyBindingForAction(winrt::hstring cmdID)
+    Control::KeyChord ActionMap::GetKeyBindingForAction(const winrt::hstring& cmdID)
     {
-        if (!_ResolvedKeyActionMapCache)
+        if (!_ResolvedKeyToActionMapCache)
         {
             _RefreshKeyBindingCaches();
         }
 
-        // I dislike that we have to do an O(n) lookup every time we want to get the keybinding for an action -
-        // an alternative is having the key->action map be a bi-map (would require a dependency), or store another map that is just
-        // the reverse direction (action->key) which would be mean storing the same data twice but getting faster lookup
-        for (const auto [key, action] : _ResolvedKeyActionMapCache)
+        if (_CumulativeActionToKeyMapCache.contains(cmdID))
         {
-            if (action.ID() == cmdID)
-            {
-                // if there are multiple keys bound to this action, we will just return the first one we find
-                return key;
-            }
+            return _CumulativeActionToKeyMapCache.at(cmdID);
         }
 
         // This key binding does not exist
@@ -837,16 +818,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
 
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
-
+            const auto inputString{ inArgs ? inArgs.Input() : L"" };
             auto args = winrt::make_self<SendInputArgs>(
                 winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
                                             L"",
                                             numBackspaces,
-                                            (std::wstring_view)(inArgs ? inArgs.Input() : L"")) });
+                                            inputString) });
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto copy = cmdImpl->Copy();
             copy->ActionAndArgs(actionAndArgs);
+
+            if (!copy->HasName())
+            {
+                // Here, we want to manually generate a send input name, but
+                // without visualizing space and backspace
+                //
+                // This is exactly the body of SendInputArgs::GenerateName, but
+                // with visualize_nonspace_control_codes instead of
+                // visualize_control_codes, to make filtering in the suggestions
+                // UI easier.
+
+                const auto escapedInput = til::visualize_nonspace_control_codes(std::wstring{ inputString });
+                const auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+                copy->Name(winrt::hstring{ name });
+            }
 
             return *copy;
         };

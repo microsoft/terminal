@@ -522,6 +522,10 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     // Case 2 - Step 2: get the auto-detected hyperlink
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
+        // GetPlainText works with inclusive coordinates, but interval's stop
+        // point is (horizontally) exclusive, so let's just update it.
+        result->stop.x--;
+
         return _activeBuffer().GetPlainText(result->start, result->stop);
     }
     return {};
@@ -1559,7 +1563,7 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 
                 if (!textView.empty())
                 {
-                    const auto hits = textBuffer.SearchText(textView, true);
+                    const auto hits = textBuffer.SearchText(textView, SearchFlag::CaseInsensitive).value_or(std::vector<til::point_span>{});
                     for (const auto& s : hits)
                     {
                         colorSelection(s.start, s.end, attr);

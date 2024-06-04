@@ -276,9 +276,10 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 //      string of characters given.
 // Arguments:
 // - string - string to dispatch.
+// - flush - not applicable to the input state machine.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
+bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string, const bool /*flush*/)
 {
     if (_pDispatch->IsVtInputEnabled())
     {

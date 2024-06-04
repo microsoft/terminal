@@ -248,7 +248,7 @@ private:
 
     std::optional<uint32_t> _id;
     std::weak_ptr<Pane> _parentChildPath{};
-
+    bool _closed{ false };
     bool _lastActive{ false };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };

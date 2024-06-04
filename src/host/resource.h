@@ -49,5 +49,6 @@ Author(s):
 #define ID_CONSOLE_FINDCASE     602
 #define ID_CONSOLE_FINDUP       603
 #define ID_CONSOLE_FINDDOWN     604
+#define ID_CONSOLE_FINDREGEX    605
 
 // clang-format on

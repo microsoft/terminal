@@ -950,14 +950,14 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
-        _setCommands();
+        _populateCommands();
     }
 
-    void CommandPalette::_setCommands()
+    void CommandPalette::_populateCommands()
     {
+        _allCommands.Clear();
         if (_actionMap)
         {
-            _allCommands.Clear();
             const auto expandedCommands{ _actionMap.ExpandedCommands() };
             for (const auto& action : expandedCommands)
             {
@@ -1185,7 +1185,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto action = nameAndCommand.Value();
             // nested commands cannot have keys bound to them, so just pass in the command and no keys
-            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, L"") };
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
             auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
             _currentNestedCommands.Append(nestedFilteredCommand);
         }

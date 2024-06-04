@@ -80,7 +80,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _lastFilterTextWasEmpty{ true };
 
-        void _setCommands();
+        void _populateCommands();
 
         void _filterTextChanged(const Windows::Foundation::IInspectable& sender,
                                 const Windows::UI::Xaml::RoutedEventArgs& args);
