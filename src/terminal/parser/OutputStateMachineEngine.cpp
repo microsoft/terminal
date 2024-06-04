@@ -180,14 +180,15 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 //      we don't know what to do with it)
 // Arguments:
 // - string - string to dispatch.
+// - flush - set to true if the string should be flushed immediately.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
+bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string, const bool flush)
 {
     auto success = true;
     if (_pTtyConnection != nullptr)
     {
-        const auto hr = _pTtyConnection->WriteTerminalW(string);
+        const auto hr = _pTtyConnection->WriteTerminalW(string, flush);
         LOG_IF_FAILED(hr);
         success = SUCCEEDED(hr);
     }
@@ -555,6 +556,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::SD_ScrollDown:
         success = _dispatch->ScrollDown(parameters.at(0));
         break;
+    case CsiActionCodes::NP_NextPage:
+        success = _dispatch->NextPage(parameters.at(0));
+        break;
+    case CsiActionCodes::PP_PrecedingPage:
+        success = _dispatch->PrecedingPage(parameters.at(0));
+        break;
     case CsiActionCodes::ANSISYSRC_CursorRestore:
         success = _dispatch->CursorRestoreState();
         break;
@@ -600,6 +607,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         }
         success = true;
         break;
+    case CsiActionCodes::PPA_PagePositionAbsolute:
+        success = _dispatch->PagePositionAbsolute(parameters.at(0));
+        break;
+    case CsiActionCodes::PPR_PagePositionRelative:
+        success = _dispatch->PagePositionRelative(parameters.at(0));
+        break;
+    case CsiActionCodes::PPB_PagePositionBack:
+        success = _dispatch->PagePositionBack(parameters.at(0));
+        break;
     case CsiActionCodes::DECSCUSR_SetCursorStyle:
         success = _dispatch->SetCursorStyle(parameters.at(0));
         break;
@@ -608,6 +624,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
         success = _dispatch->SetCharacterProtectionAttribute(parameters);
+        break;
+    case CsiActionCodes::DECRQDE_RequestDisplayedExtent:
+        success = _dispatch->RequestDisplayedExtent();
         break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:

@@ -12,6 +12,7 @@
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             MinWidth="256"
              AllowFocusOnInteraction="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
              IsTabStop="True"
@@ -203,7 +204,8 @@
                       ItemClick="_listItemClicked"
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
-                      SelectionMode="Single" />
+                      SelectionMode="Single"
+                      Style="{StaticResource NoAnimationsPlease}" />
 
         </Grid>
 

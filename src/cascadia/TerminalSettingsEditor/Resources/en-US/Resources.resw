@@ -895,6 +895,9 @@
     <value>Font face</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>You can use multiple fonts by separating them with an ASCII comma.</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Font size</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font. This feature only works when GPU Acceleration is available.</value>
+    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font. This feature is unavailable when using Direct2D as the Graphics API.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

@@ -37,7 +37,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      the pipe.
 [[nodiscard]] HRESULT XtermEngine::StartPaint() noexcept
 {
-    RETURN_IF_FAILED(VtEngine::StartPaint());
+    const auto hr = VtEngine::StartPaint();
+    if (hr != S_OK)
+    {
+        // If _noFlushOnEnd was set, and we didn't return early, it would usually
+        // have been reset in the EndPaint call. But since that's not going to
+        // happen now, we need to reset it here, otherwise we may mistakenly skip
+        // the flush on the next frame.
+        if (!_noFlushOnEnd)
+        {
+            _Flush();
+        }
+        _noFlushOnEnd = false;
+        return hr;
+    }
 
     _trace.TraceLastText(_lastText);
 
@@ -67,29 +80,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         RETURN_IF_FAILED(_ClearScreen());
         _clearedAllThisFrame = true;
         _firstPaint = false;
-    }
-    else
-    {
-        std::span<const til::rect> dirty;
-        RETURN_IF_FAILED(GetDirtyArea(dirty));
-
-        // If we have 0 or 1 dirty pieces in the area, set as appropriate.
-        auto dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromExclusive(til::at(dirty, 0));
-
-        // If there's more than 1, union them all up with the 1 we already have.
-        for (size_t i = 1; i < dirty.size(); ++i)
-        {
-            dirtyView = Viewport::Union(dirtyView, Viewport::FromExclusive(til::at(dirty, i)));
-        }
-    }
-
-    if (!_quickReturn)
-    {
-        if (_WillWriteSingleChar())
-        {
-            // Don't re-enable the cursor.
-            _quickReturn = true;
-        }
     }
 
     return S_OK;
@@ -242,7 +232,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     auto hr = S_OK;
     const auto originalPos = _lastText;
     _trace.TraceMoveCursor(_lastText, coord);
-    auto performedSoftWrap = false;
     if (coord.x != _lastText.x || coord.y != _lastText.y)
     {
         if (coord.x == 0 && coord.y == 0)
@@ -268,7 +257,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             if (previousLineWrapped)
             {
-                performedSoftWrap = true;
                 _trace.TraceWrapped();
                 hr = S_OK;
             }
@@ -520,9 +508,10 @@ CATCH_RETURN();
 //      proper utf-8 string, depending on our mode.
 // Arguments:
 // - wstr - wstring of text to be written
+// - flush - set to true if the string should be flushed immediately
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr) noexcept
+[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr, const bool flush) noexcept
 {
     RETURN_IF_FAILED(_fUseAsciiOnly ?
                          VtEngine::_WriteTerminalAscii(wstr) :
@@ -535,8 +524,11 @@ CATCH_RETURN();
     // cause flickering (where we've buffered some state but not the whole
     // "frame" as specified by the app). We'll just immediately buffer this
     // sequence, and flush it when the render thread comes around to paint the
-    // frame normally.
-
+    // frame normally, unless a flush has been explicitly requested.
+    if (flush)
+    {
+        _flushImpl();
+    }
     return S_OK;
 }
 

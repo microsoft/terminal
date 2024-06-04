@@ -99,7 +99,7 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<TerminalApp::TerminalPaneContent> RestartTerminalRequested;
 
-        til::event<winrt::delegate<>> ActivePaneChanged;
+        til::typed_event<TerminalApp::TerminalTab, IInspectable> ActivePaneChanged;
         til::event<winrt::delegate<>> TabRaiseVisualBell;
         til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
 
