@@ -599,7 +599,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
 
-    Model::Command ActionMap::GetActionById(const winrt::hstring& cmdID) const
+    Model::Command ActionMap::GetActionByID(const winrt::hstring& cmdID) const
     {
         return _GetActionByID(cmdID);
     }

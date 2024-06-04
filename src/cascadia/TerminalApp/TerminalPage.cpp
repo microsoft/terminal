@@ -1008,7 +1008,7 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto actionEntry = entry.as<ActionEntry>();
                 const auto actionId = actionEntry.ActionId();
-                if (_settings.ActionMap().GetActionById(actionId))
+                if (_settings.ActionMap().GetActionByID(actionId))
                 {
                     auto actionItem = _CreateNewTabFlyoutAction(actionId);
                     items.push_back(actionItem);
@@ -1112,7 +1112,7 @@ namespace winrt::TerminalApp::implementation
     WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutAction(const winrt::hstring& actionId)
     {
         auto actionMenuItem = WUX::Controls::MenuFlyoutItem{};
-        const auto action{ _settings.ActionMap().GetActionById(actionId) };
+        const auto action{ _settings.ActionMap().GetActionByID(actionId) };
         const auto actionKeyChord{ _settings.ActionMap().GetKeyBindingForAction(actionId) };
 
         if (actionKeyChord)
@@ -1120,8 +1120,7 @@ namespace winrt::TerminalApp::implementation
             _SetAcceleratorForMenuItem(actionMenuItem, actionKeyChord);
         }
 
-        const auto actionName = action.Name();
-        actionMenuItem.Text(actionName);
+        actionMenuItem.Text(action.Name());
 
         // If there's an icon set for this action, set it as the icon for
         // this flyout item

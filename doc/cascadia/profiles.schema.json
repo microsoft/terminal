@@ -795,7 +795,7 @@
               "type": "string",
               "const": "action"
             },
-            "profile": {
+            "id": {
               "type": "string",
               "default": "",
               "description": "The ID of the action to show in this entry"
