@@ -797,6 +797,13 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
 void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const u16 v)
 {
+#if defined(_M_X64) || defined(_M_IX86)
+    static const auto faultyMacTypeVersion = _checkMacTypeVersion(p);
+#else
+    // The affected versions of MacType are unavailable on ARM.
+    static constexpr auto faultyMacTypeVersion = false;
+#endif
+
     _d2dRenderTarget.reset();
     _d2dRenderTarget4.reset();
     _glyphAtlas.reset();
@@ -842,9 +849,13 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
         _d2dRenderTarget4->GetDevice(device.addressof());
 
         device->SetMaximumTextureMemory(0);
-        if (const auto device4 = device.try_query<ID2D1Device4>())
+
+        if (!faultyMacTypeVersion)
         {
-            device4->SetMaximumColorGlyphCacheMemory(0);
+            if (const auto device4 = device.try_query<ID2D1Device4>())
+            {
+                device4->SetMaximumColorGlyphCacheMemory(0);
+            }
         }
     }
 
@@ -857,6 +868,61 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
     p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
     _rectPackerData = Buffer<stbrp_node>{ u };
+}
+
+// MacType is a popular 3rd party system to give the font rendering on Windows a softer look.
+// It's particularly popular in China. Unfortunately, it hooks ID2D1Device4 incorrectly:
+//   https://github.com/snowie2000/mactype/pull/938
+// This results in crashes. Not a lot of them, but enough to constantly show up.
+// The issue was fixed in the MacType v1.2023.5.31 release, the only one in 2023.
+bool BackendD3D::_checkMacTypeVersion(const RenderingPayload& p) noexcept
+{
+#ifdef _WIN64
+    static constexpr auto name = L"MacType64.Core.dll";
+#else
+    static constexpr auto name = L"MacType.Core.dll";
+#endif
+
+    wil::unique_hmodule handle;
+    if (!GetModuleHandleExW(0, name, handle.addressof()))
+    {
+        return false;
+    }
+
+    const auto resource = FindResourceW(handle.get(), MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
+    if (!resource)
+    {
+        return false;
+    }
+
+    const auto dataHandle = LoadResource(handle.get(), resource);
+    if (!dataHandle)
+    {
+        return false;
+    }
+
+    const auto data = LockResource(dataHandle);
+    if (!data)
+    {
+        return false;
+    }
+
+    VS_FIXEDFILEINFO* info;
+    UINT varLen = 0;
+    if (!VerQueryValueW(data, L"\\", reinterpret_cast<void**>(&info), &varLen))
+    {
+        return false;
+    }
+
+    const DWORD v1_2023 = MAKELONG(2023, 1);
+    const auto bad = info->dwFileVersionMS < v1_2023;
+
+    if (bad && p.warningCallback)
+    {
+        p.warningCallback(ATLAS_ENGINE_ERROR_MAC_TYPE, {});
+    }
+
+    return bad;
 }
 
 BackendD3D::QuadInstance& BackendD3D::_getLastQuad() noexcept
