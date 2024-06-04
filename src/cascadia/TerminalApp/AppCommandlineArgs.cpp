@@ -553,11 +553,11 @@ void AppCommandlineArgs::_buildSaveParser()
         // that `this` will still be safe - this function just lets us know this
         // command was parsed.
         subcommand->callback([&, this]() {
-            // Build the NewTab action from the values we've parsed on the commandline.
+            // Build the action from the values we've parsed on the commandline.
             ActionAndArgs saveAction{};
             saveAction.Action(ShortcutAction::SaveTask);
-            // _getNewTerminalArgs MUST be called before parsing any other options,
-            // as it might clear those options while finding the commandline
+            // First, parse out the commandline in the same way that
+            // _getNewTerminalArgs does it
             SaveTaskArgs args{};
 
             if (!_commandline.empty())
