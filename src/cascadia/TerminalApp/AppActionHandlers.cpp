@@ -1289,6 +1289,12 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
 
+                if (realArgs.Commandline().empty())
+                {
+                    ActionSaveFailed(L"CommandLine is Required");
+                    return;
+                }
+
                 try
                 {
                     winrt::Microsoft::Terminal::Control::KeyChord keyChord = nullptr;
