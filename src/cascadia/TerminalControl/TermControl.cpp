@@ -3521,7 +3521,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
         quickFixBtn.Height(args.Height() / dpiScale);
-        QuickFixIcon().FontSize(static_cast<double>(args.Width()/dpiScale));
+        QuickFixIcon().FontSize(static_cast<double>(args.Width() / dpiScale));
         RefreshQuickFixMenu();
     }
 
