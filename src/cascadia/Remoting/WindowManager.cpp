@@ -138,6 +138,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // commandline in an existing window, or a new one, but either way,
                 // this process doesn't need to make a new window.
 
+                AllowSetForegroundWindow(static_cast<DWORD>(_monarch.GetPID()));
                 return winrt::make<ProposeCommandlineResult>(false);
             }
             // Otherwise, we'll try to handle this ourselves.
