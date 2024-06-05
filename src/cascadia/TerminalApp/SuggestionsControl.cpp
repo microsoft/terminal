@@ -106,9 +106,10 @@ namespace winrt::TerminalApp::implementation
             // stays "attached" to the cursor.
             if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
             {
-                auto m = this->Margin();
-                m.Top = (_anchor.Y - ActualHeight());
-                this->Margin(m);
+                // auto m = this->Margin();
+                // m.Top = (_anchor.Y - ActualHeight());
+                // this->Margin(m);
+                this->_recalculateTopMargin();
             }
         });
 
@@ -314,6 +315,7 @@ namespace winrt::TerminalApp::implementation
                     // DescriptionTip().IsOpen(false);
                     _descriptionsView().Visibility(Visibility::Collapsed);
                     _descriptionsBackdrop().Visibility(Visibility::Collapsed);
+                    _recalculateTopMargin();
                 }
             }
         }
@@ -1138,8 +1140,10 @@ namespace winrt::TerminalApp::implementation
     {
         auto currentMargin = Margin();
 
-        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
-        const til::size descriptionSize{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() };
+        til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        const til::size descriptionSize = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
+                                              til::size{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() } :
+                                              til::size{ 0, 0 };
 
         // Now, position vertically.
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
@@ -1157,7 +1161,28 @@ namespace winrt::TerminalApp::implementation
 
             // Position at the cursor. The suggestions UI itself will maintain
             // its own offset such that it's always above its origin
-            currentMargin.Top = (_anchor.Y - actualSize.height /*+ descriptionSize.height*/);
+
+            // baseline: seemingly cuts into the list. Like the height isn't accounted for at all.
+            // currentMargin.Top = (_anchor.Y - actualSize.height /*+ descriptionSize.height*/);
+
+            // Definitely not: jupms around randomly.
+            // currentMargin.Top = (_anchor.Y - actualSize.height - descriptionSize.height);
+
+            // untested
+            // currentMargin.Top = (_anchor.Y - actualSize.height + descriptionSize.height);
+
+            til::size backdropSize{ til::math::rounding, _backdrop().ActualWidth(), _backdrop().ActualHeight() };
+
+            const auto actualHeight = actualSize.height;
+            actualHeight;
+            const auto backdropHeight = backdropSize.height;
+            backdropHeight;
+            const auto descriptionHeight = descriptionSize.height;
+            descriptionHeight;
+            // const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight);
+            const auto marginTop = (_anchor.Y - actualHeight - descriptionHeight);
+
+            currentMargin.Top = marginTop;
         }
         Margin(currentMargin);
     }
@@ -1213,7 +1238,8 @@ namespace winrt::TerminalApp::implementation
         {
             // Position at the cursor. The suggestions UI itself will maintain
             // its own offset such that it's always above its origin
-            newMargin.Top = (_anchor.Y - actualSize.height /* - descriptionSize.height*/);
+            // NO newMargin.Top = (_anchor.Y - actualSize.height /* - descriptionSize.height*/);
+            newMargin.Top = (_anchor.Y - actualSize.height - descriptionSize.height);
         }
         Margin(newMargin);
 
