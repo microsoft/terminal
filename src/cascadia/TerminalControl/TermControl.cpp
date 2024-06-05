@@ -3521,7 +3521,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
         quickFixBtn.Height(args.Height() / dpiScale);
-        QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
+        QuickFixIcon().FontSize(std::max(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
         RefreshQuickFixMenu();
     }
 
@@ -3810,18 +3810,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _showContextMenuAt(_toControlOrigin(cursorPos));
     }
 
-    double TermControl::CalculateQuickFixButtonWidth()
+    double TermControl::QuickFixButtonWidth()
     {
+        const auto leftPadding = GetPadding().Left;
         if (_quickFixButtonCollapsible)
         {
-            return gsl::narrow_cast<double>(CharacterDimensions().Width);
+            const auto cellWidth = CharacterDimensions().Width;
+            if (leftPadding == 0)
+            {
+                return cellWidth;
+            }
+            return leftPadding + (cellWidth / 2.0);
         }
-        return GetPadding().Left;
+        return leftPadding;
     }
 
-    double TermControl::CalculateQuickFixButtonCollapsedWidth()
+    double TermControl::QuickFixButtonCollapsedWidth()
     {
-        return std::max(4.0, GetPadding().Left / 3.0);
+        return std::max(CharacterDimensions().Width * 2.0 / 3.0, GetPadding().Left);
     }
 
     void TermControl::RefreshQuickFixMenu()
@@ -3836,7 +3842,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If the gutter is narrow, display the collapsed version
         const auto& termPadding = GetPadding();
 
+        // Make sure to update _quickFixButtonCollapsible and QuickFix button widths BEFORE updating the VisualState
         _quickFixButtonCollapsible = termPadding.Left < CharacterDimensions().Width;
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"QuickFixButtonWidth" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"QuickFixButtonCollapsedWidth" });
         VisualStateManager::GoToState(*this, !_quickFixButtonCollapsible ? StateNormal : StateCollapsed, false);
 
         const auto rd = get_self<ControlCore>(_core)->GetRenderData();
