@@ -37,6 +37,7 @@ TIL_FAST_MATH_BEGIN
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
 // Initializing large arrays can be very costly compared to how cheap some of these functions are.
 #define ALLOW_UNINITIALIZED_BEGIN _Pragma("warning(push)") _Pragma("warning(disable : 26494)")
