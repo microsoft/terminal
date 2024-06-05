@@ -230,8 +230,6 @@
                               VerticalScrollBarVisibility="Visible"
                               VerticalScrollMode="Enabled"
                               Visibility="Visible">
-                    <!-- <TextBlock Text="Foo bar bax"
-                           TextWrapping="WrapWholeWords" />-->
                     <TextBlock x:Name="_descriptionComment"
                                IsTextSelectionEnabled="True"
                                TextWrapping="WrapWholeWords" />

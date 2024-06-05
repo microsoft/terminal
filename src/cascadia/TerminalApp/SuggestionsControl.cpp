@@ -290,12 +290,15 @@ namespace winrt::TerminalApp::implementation
 
                 const auto description{ cmd.Description() };
 
-                if (SelectedItem())
-                    SelectedItem().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+                if (const auto& selected{ SelectedItem() })
+                {
+                    selected.SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+                }
 
                 if (!description.empty())
                 {
-                    // If it's already open, then just re-target it and update the content immediately.
+                    // If it's already open, then just re-target it and update
+                    // the content immediately.
                     if (_descriptionsView().Visibility() == Visibility::Visible)
                     {
                         _openTooltip(cmd);
@@ -306,13 +309,11 @@ namespace winrt::TerminalApp::implementation
                         co_await winrt::resume_after(200ms);
                         co_await wil::resume_foreground(Dispatcher());
                         _openTooltip(cmd);
-                        // DescriptionTip().IsOpen(true);
                     }
                 }
                 else
                 {
                     // If there's no description, then just close the tooltip.
-                    // DescriptionTip().IsOpen(false);
                     _descriptionsView().Visibility(Visibility::Collapsed);
                     _descriptionsBackdrop().Visibility(Visibility::Collapsed);
                     _recalculateTopMargin();
@@ -324,65 +325,51 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget SuggestionsControl::_openTooltip(Command cmd)
     {
         const auto description{ cmd.Description() };
-
-        if (!description.empty())
+        if (description.empty())
         {
-            // DescriptionTip().Target(SelectedItem());
-            // DescriptionTip().Title(cmd.Name());
-            {
-                // The Title
-                _descriptionTitle().Inlines().Clear();
-                Documents::Run titleRun;
-                titleRun.Text(cmd.Name());
-                _descriptionTitle().Inlines().Append(titleRun);
-            }
-
-            // TODO! NOT REALLY TRUE ANYMORE
-            // If you try to put a newline in the Subtitle, it'll _immediately
-            // close the tooltip_. Instead, we'll need to build up the text as a
-            // series of runs, and put them in the content.
-
-            _descriptionComment().Inlines().Clear();
-
-            // First, replace all "\r\n" with "\n"
-            std::wstring filtered = description.c_str();
-
-            // replace all "\r\n" with "\n" in `filtered`
-            std::wstring::size_type pos = 0;
-            while ((pos = filtered.find(L"\r\n", pos)) != std::wstring::npos)
-            {
-                filtered.erase(pos, 1);
-            }
-
-            // Split the filtered description on '\n`
-            const auto lines = ::Microsoft::Console::Utils::SplitString(filtered.c_str(), L'\n');
-            // For each line, build a Run + LineBreak, and add them to the text
-            // block
-            for (const auto& line : lines)
-            {
-                if (line.empty())
-                {
-                    continue;
-                }
-                Documents::Run textRun;
-                textRun.Text(winrt::hstring{ line });
-                _descriptionComment().Inlines().Append(textRun);
-                _descriptionComment().Inlines().Append(Documents::LineBreak{});
-            }
-
-            // // TODO! These were all feigned attempts to allow us to focus the content of the teachingtip.
-
-            // // We may want to keep IsTextSelectionEnabled in the XAML.
-            // //
-            // // I also have no idea if the FullDescriptionProperty thing worked at all.
-            // _toolTipContent().AllowFocusOnInteraction(true);
-            // _toolTipContent().IsTextSelectionEnabled(true);
-            // DescriptionTip().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
-
-            _descriptionsView().Visibility(Visibility::Visible);
-            _descriptionsBackdrop().Visibility(Visibility::Visible);
-            _recalculateTopMargin();
+            co_return;
         }
+
+        // Build the contents of the "tooltip" based on the description
+        //
+        // First, the title. This is just the name of the command.
+        _descriptionTitle().Inlines().Clear();
+        Documents::Run titleRun;
+        titleRun.Text(cmd.Name());
+        _descriptionTitle().Inlines().Append(titleRun);
+
+        // Now fill up the "subtitle" part of the "tooltip" with the actual
+        // description itself.
+        _descriptionComment().Inlines().Clear();
+
+        // First, replace all "\r\n" with "\n"
+        std::wstring filtered = description.c_str();
+        std::wstring::size_type pos = 0;
+        while ((pos = filtered.find(L"\r\n", pos)) != std::wstring::npos)
+        {
+            filtered.erase(pos, 1);
+        }
+
+        // Split the filtered description on '\n`
+        const auto lines = ::Microsoft::Console::Utils::SplitString(filtered.c_str(), L'\n');
+        // build a Run + LineBreak, and add them to the text block
+        for (const auto& line : lines)
+        {
+            if (line.empty())
+            {
+                continue;
+            }
+            Documents::Run textRun;
+            textRun.Text(winrt::hstring{ line });
+            _descriptionComment().Inlines().Append(textRun);
+            _descriptionComment().Inlines().Append(Documents::LineBreak{});
+        }
+
+        // Now, make ourselves visible.
+        _descriptionsView().Visibility(Visibility::Visible);
+        _descriptionsBackdrop().Visibility(Visibility::Visible);
+        // and update the padding to account for our new contents.
+        _recalculateTopMargin();
         co_return;
     }
 
@@ -1125,36 +1112,27 @@ namespace winrt::TerminalApp::implementation
     {
         _direction = direction;
 
-        auto backdrop = _backdrop();
-        auto descriptionsBackdrop = _descriptionsBackdrop();
-        // _listAndDescriptionStack().Children().Clear();
-        auto kids{ _listAndDescriptionStack().Children() };
+        // We need to move either the list of suggestions, or the tooltip, to
+        // the top of the stack panel (depending on the layout).
+        auto controlToMoveToTop = nullptr;
 
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             Controls::Grid::SetRow(_searchBox(), 0);
-
-            // _listAndDescriptionStack().Children().Append(backdrop);
-            // _listAndDescriptionStack().Children().Append(descriptionsBackdrop);
-
-            uint32_t index;
-            if (kids.IndexOf(backdrop, index))
-            {
-                kids.Move(index, 0);
-            }
+            controlToMoveToTop = _backdrop();
         }
         else // BottomUp
         {
             Controls::Grid::SetRow(_searchBox(), 4);
+            controlToMoveToTop = _descriptionsBackdrop();
+        }
 
-            uint32_t index;
-            if (kids.IndexOf(descriptionsBackdrop, index))
-            {
-                kids.Move(index, 0);
-            }
-
-            // _listAndDescriptionStack().Children().Append(descriptionsBackdrop);
-            // _listAndDescriptionStack().Children().Append(backdrop);
+        assert(controlToMoveToTop);
+        const auto& children{ _listAndDescriptionStack().Children() };
+        uint32_t index;
+        if (children.IndexOf(controlToMoveToTop, index))
+        {
+            children.Move(index, 0);
         }
     }
 
@@ -1162,14 +1140,13 @@ namespace winrt::TerminalApp::implementation
     {
         auto currentMargin = Margin();
 
-        til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
-        const til::size descriptionSize = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
-                                              til::size{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() + 12.0 } :
-                                              til::size{ 0, 0 };
+        // Call Measure() on the descriptions backdrop, so that it gets it's new
+        // DesiredSize for this new description text.
+        //
+        // If you forget this, then we _probably_ weren't laid out since
+        // updating that text, and the ActualHeight will be the _last_
+        // description's height.
         _descriptionsBackdrop().Measure(actualSize.to_winrt_size());
-        const til::size descriptionDesiredSize = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
-                                                     til::size{ til::math::rounding, _descriptionsBackdrop().DesiredSize().Width, _descriptionsBackdrop().DesiredSize().Height } :
-                                                     til::size{ 0, 0 };
 
         // Now, position vertically.
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
@@ -1177,39 +1154,19 @@ namespace winrt::TerminalApp::implementation
             // The control should open right below the cursor, with the list
             // extending below. This is easy, we can just use the cursor as the
             // origin (more or less)
-            currentMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
+            currentMargin.Top = (_anchor.Y);
         }
         else
         {
             // Bottom Up.
 
-            // TODO! This is all wrong. It just jumps around randomly.
+            // This is wackier, because we need to calculate the offset upwards
+            // from our anchor. So we need to get the size of our elements:
+            const auto backdropHeight = _backdrop().ActualHeight();
+            const auto descriptionDesiredHeight = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
+                                                      _descriptionsBackdrop().DesiredSize().Height :
+                                                      0;
 
-            // Position at the cursor. The suggestions UI itself will maintain
-            // its own offset such that it's always above its origin
-
-            // baseline: seemingly cuts into the list. Like the height isn't accounted for at all.
-            // currentMargin.Top = (_anchor.Y - actualSize.height /*+ descriptionSize.height*/);
-
-            // Definitely not: jupms around randomly.
-            // currentMargin.Top = (_anchor.Y - actualSize.height - descriptionSize.height);
-
-            // untested
-            // currentMargin.Top = (_anchor.Y - actualSize.height + descriptionSize.height);
-
-            til::size backdropSize{ til::math::rounding, _backdrop().ActualWidth(), _backdrop().ActualHeight() };
-
-            const auto actualHeight = actualSize.height;
-            actualHeight;
-            const auto backdropHeight = backdropSize.height;
-            backdropHeight;
-            const auto descriptionHeight = descriptionSize.height;
-            descriptionHeight;
-            const auto descriptionDesiredHeight = descriptionDesiredSize.height;
-            descriptionDesiredHeight;
-            //const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight);
-            // const auto marginTop = (_anchor.Y - actualHeight - descriptionHeight);
-            // const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight);
             const auto marginTop = (_anchor.Y - backdropHeight - descriptionDesiredHeight);
 
             currentMargin.Top = marginTop;
@@ -1254,24 +1211,11 @@ namespace winrt::TerminalApp::implementation
         const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
         const auto clampedX = std::clamp(proposedX, 0, maxX);
 
-        // Create a thickness for the new margins
+        // Create a thickness for the new margins. This will set the left, then
+        // we'll go update the top.
         auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
-        // // Now, position vertically.
-        // if (_direction == TerminalApp::SuggestionsDirection::TopDown)
-        // {
-        //     // The control should open right below the cursor, with the list
-        //     // extending below. This is easy, we can just use the cursor as the
-        //     // origin (more or less)
-        //     newMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
-        // }
-        // else
-        // {
-        //     // Position at the cursor. The suggestions UI itself will maintain
-        //     // its own offset such that it's always above its origin
-        //     // NO newMargin.Top = (_anchor.Y - actualSize.height /* - descriptionSize.height*/);
-        //     newMargin.Top = (_anchor.Y - actualSize.height - descriptionSize.height);
-        // }
         Margin(newMargin);
+
         _recalculateTopMargin();
 
         _searchBox().Text(filter);
@@ -1289,5 +1233,4 @@ namespace winrt::TerminalApp::implementation
         // selection starting at the end of the string.
         _searchBox().Select(filter.size(), 0);
     }
-
 }
