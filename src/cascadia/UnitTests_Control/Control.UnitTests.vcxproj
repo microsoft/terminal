@@ -9,47 +9,41 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
-
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
-
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="MockControlSettings.h" />
     <ClInclude Include="MockConnection.h" />
   </ItemGroup>
-
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ControlCoreTests.cpp" />
     <ClCompile Include="ControlInteractivityTests.cpp" />
+    <ClCompile Include="FzfTests.cpp">
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-
     <ProjectReference Include="$(OpenConsoleDir)src\buffer\out\lib\bufferout.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\uia\lib\uia.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
-
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalControl\TerminalControlLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
-
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
@@ -59,13 +53,11 @@
     </Reference>
   </ItemGroup>
   <!-- ========================= Globals ======================== -->
-
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalControl\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -80,17 +72,13 @@
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
-
   <PropertyGroup>
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
   </PropertyGroup>
-
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
 </Project>

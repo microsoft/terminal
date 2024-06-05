@@ -388,12 +388,12 @@ static int16_t bonus_for(char_class prev_class, char_class class) {
   return 0;
 }
 
-static int16_t ubonus_at(ufzf_string_t *input, size_t idx) {
+static int16_t ubonus_at(UText *input, size_t idx) {
     if (idx == 0) {
         return BonusBoundary;
     }
-    return bonus_for(UText_class_of(utext_char32At(input->data, idx - 1)),
-                     UText_class_of(utext_char32At(input->data, idx)));
+    return bonus_for(UText_class_of(utext_char32At(input, idx - 1)),
+                     UText_class_of(utext_char32At(input, idx)));
 }
 
 /* TODO(conni2461): maybe just not do this */
@@ -409,10 +409,10 @@ static UChar32 unormalize_rune(UChar32 r) {
     return r;
 }
 
-static int32_t utry_skip(ufzf_string_t *input, bool case_sensitive, UChar32 b,
+static int32_t utry_skip(UText *input, bool case_sensitive, UChar32 b,
                         int32_t from) {
     UTextSlice slice;
-    u_text_slice_init(&slice, input->data, from, (int32_t)input->size);
+    u_text_slice_init(&slice, input, from, (int32_t)utext_nativeLength(input));
     int32_t idx = uindex_byte(&slice, b);
     if (idx == 0) {
         return from;
@@ -449,7 +449,7 @@ static bool uis_ascii(const UText *runes, size_t size) {
     return true;
 }
 
-static int32_t uascii_fuzzy_index(ufzf_string_t *input, UText *pattern,
+static int32_t uascii_fuzzy_index(UText *input, UText *pattern,
                                  size_t size, bool case_sensitive) {
     if (!uis_ascii(pattern, size)) {
         return -1;
@@ -472,9 +472,9 @@ static int32_t uascii_fuzzy_index(ufzf_string_t *input, UText *pattern,
 }
 
 static int32_t ucalculate_score(bool case_sensitive, bool normalize,
-                               ufzf_string_t *text, ufzf_string_t *pattern,
+                               UText *text, UText *pattern,
                                size_t sidx, size_t eidx, fzf_position_t *pos) {
-    const size_t M = pattern->size;
+    const size_t M = utext_nativeLength(pattern);
 
     size_t pidx = 0;
     int32_t score = 0;
@@ -485,10 +485,10 @@ static int32_t ucalculate_score(bool case_sensitive, bool normalize,
     resize_pos(pos, M, M);
     int32_t prev_class = UCharNonWord;
     if (sidx > 0) {
-        prev_class = UText_class_of(utext_char32At(text->data, sidx - 1));
+        prev_class = UText_class_of(utext_char32At(text, sidx - 1));
     }
     for (size_t idx = sidx; idx < eidx; idx++) {
-        UChar32 c = utext_char32At(text->data, idx);
+        UChar32 c = utext_char32At(text, idx);
         int32_t class = UText_class_of(c);
         if (!case_sensitive) {
             /* TODO(conni2461): He does some unicode stuff here, investigate */
@@ -497,7 +497,7 @@ static int32_t ucalculate_score(bool case_sensitive, bool normalize,
         if (normalize) {
             c = unormalize_rune(c);
         }
-        if (c == utext_char32At(pattern->data, pidx)) {
+        if (c == utext_char32At(pattern, pidx)) {
             append_pos(pos, idx);
             score += ScoreMatch;
             int16_t bonus = bonus_for(prev_class, class);
@@ -532,15 +532,15 @@ static int32_t ucalculate_score(bool case_sensitive, bool normalize,
     return score;
 }
 
-fzf_result_t ufzf_fuzzy_match_v1(bool case_sensitive, bool normalize, ufzf_string_t* text, ufzf_string_t* pattern, fzf_position_t* pos, fzf_slab_t* slab)
+fzf_result_t ufzf_fuzzy_match_v1(bool case_sensitive, bool normalize, UText* text, UText* pattern, fzf_position_t* pos, fzf_slab_t* slab)
 {
-  const size_t M = pattern->size;
-  const size_t N = text->size;
+  const size_t M = utext_nativeLength(pattern);
+  const size_t N = utext_nativeLength(text);
   if (M == 0)
   {
     return (fzf_result_t){ 0, 0, 0 };
   }
-  if (uascii_fuzzy_index(text, pattern->data, M, case_sensitive) < 0)
+  if (uascii_fuzzy_index(text, pattern, M, case_sensitive) < 0)
   {
     return (fzf_result_t){ -1, -1, 0 };
   }
@@ -550,7 +550,7 @@ fzf_result_t ufzf_fuzzy_match_v1(bool case_sensitive, bool normalize, ufzf_strin
   int32_t eidx = -1;
   for (size_t idx = 0; idx < N; idx++)
   {
-    UChar32 c = utext_char32At(text->data, idx);
+    UChar32 c = utext_char32At(text, idx);
     /* TODO(conni2461): Common pattern maybe a macro would be good here */
     if (!case_sensitive)
     {
@@ -561,7 +561,7 @@ fzf_result_t ufzf_fuzzy_match_v1(bool case_sensitive, bool normalize, ufzf_strin
     {
       c = unormalize_rune(c);
     }
-    if (c == utext_char32At(pattern->data, pidx))
+    if (c == utext_char32At(pattern, pidx))
     {
       if (sidx < 0)
       {
@@ -582,13 +582,13 @@ fzf_result_t ufzf_fuzzy_match_v1(bool case_sensitive, bool normalize, ufzf_strin
     pidx--;
     for (size_t idx = end - 1; idx >= start; idx--)
     {
-      UChar32 c = utext_char32At(text->data, idx);
+      UChar32 c = utext_char32At(text, idx);
       if (!case_sensitive)
       {
         /* TODO(conni2461): He does some unicode stuff here, investigate */
         c = u_tolower(c);
       }
-      if (c == utext_char32At(pattern->data, pidx))
+      if (c == utext_char32At(pattern, pidx))
       {
         pidx--;
         if (pidx < 0)
@@ -606,10 +606,10 @@ fzf_result_t ufzf_fuzzy_match_v1(bool case_sensitive, bool normalize, ufzf_strin
 }
 
 fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
-                                ufzf_string_t *text, ufzf_string_t *pattern,
-                                fzf_position_t *pos, fzf_slab_t *slab) {
-    const size_t M = pattern->size;
-    const size_t N = text->size;
+    UText *text, UText *pattern,
+    fzf_position_t *pos, fzf_slab_t *slab) {
+    const size_t M = utext_nativeLength(pattern);
+    const size_t N = utext_nativeLength(text);
     if (M == 0) {
         return (fzf_result_t){0, 0, 0};
     }
@@ -620,7 +620,7 @@ fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
 
     size_t idx;
     {
-        int32_t tmp_idx = uascii_fuzzy_index(text, pattern->data, M, case_sensitive);
+        int32_t tmp_idx = uascii_fuzzy_index(text, pattern, M, case_sensitive);
         if (tmp_idx < 0) {
             return (fzf_result_t){-1, -1, 0};
         }
@@ -644,14 +644,14 @@ fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
     size_t pidx = 0;
     size_t last_idx = 0;
 
-    UChar32 pchar0 = utext_char32At(pattern->data, 0);
-    UChar32 pchar = utext_char32At(pattern->data, 0);
+    UChar32 pchar0 = utext_char32At(pattern, 0);
+    UChar32 pchar = utext_char32At(pattern, 0);
     int16_t prev_h0 = 0;
     int32_t prev_class = UCharNonWord;
     bool in_gap = false;
 
     UTextSlice t_sub;
-    u_text_slice_init(&t_sub, text->data, (int32_t)idx, (int32_t)text->size);
+    u_text_slice_init(&t_sub, text, (int32_t)idx, (int32_t)utext_nativeLength(text));
     i16_slice_t h0_sub =
             slice_i16_right(slice_i16(h0.data, idx, h0.size).data, t_sub.size);
     i16_slice_t c0_sub =
@@ -662,6 +662,9 @@ fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
     for (size_t off = 0; off < t_sub.size; off++) {
         char_class class;
         UChar32 c = utextSlice_charAt(&t_sub, off);
+        if (c == U_SENTINEL) {
+            return (fzf_result_t){ 0, 0, 0 };
+        }
         class = UText_class_of_ascii(c);
         if (!case_sensitive && class == UCharUpper) {
             /* TODO(conni2461): unicode support */
@@ -678,7 +681,7 @@ fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
             if (pidx < M) {
                 f.data[pidx] = (int32_t)(idx + off);
                 pidx++;
-                pchar = utext_char32At(pattern->data, min64u(pidx, M - 1));
+                pchar = utext_char32At(pattern, min64u(pidx, M - 1));
             }
             last_idx = idx + off;
         }
@@ -741,16 +744,19 @@ fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
     i32_slice_t f_sub = slice_i32(f.data, 1, f.size);
     UTextSlice p_subTmp;
     UTextSlice p_sub;
-    u_text_slice_init(&p_subTmp, pattern->data, 1, (int32_t)M);
+    u_text_slice_init(&p_subTmp, pattern, 1, (int32_t)M);
     u_text_slice_right(&p_sub, &p_subTmp, (int32_t)f_sub.size);
     for (size_t off = 0; off < f_sub.size; off++) {
         size_t f = (size_t)f_sub.data[off];
         pchar = utextSlice_charAt(&p_sub, off);
+        if (pchar == U_SENTINEL) {
+            return (fzf_result_t){ 0, 0, 0 };
+        }
         pidx = off + 1;
         size_t row = pidx * width;
         in_gap = false;
         UTextSlice t_sub2;
-        u_text_slice_init(&t_sub2, text->data, (int32_t)f, (int32_t)last_idx + 1);
+        u_text_slice_init(&t_sub2, text, (int32_t)f, (int32_t)last_idx + 1);
         t_sub = t_sub2;
         b_sub = slice_i16_right(slice_i16(bo.data, (int32_t)f, bo.size).data, (int32_t)t_sub.size);
         i16_slice_t c_sub = slice_i16_right(
@@ -766,6 +772,9 @@ fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
         h_left.data[0] = 0;
         for (size_t j = 0; j < t_sub.size; j++) {
             UChar32 ch = utextSlice_charAt(&t_sub, j);
+            if (ch == U_SENTINEL) {
+                return (fzf_result_t){ 0, 0, 0 };
+            }
 
             char_class class = UText_class_of_ascii(ch);
             if (!case_sensitive && class == UCharUpper)
@@ -856,10 +865,10 @@ fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
 }
 
 fzf_result_t ufzf_exact_match_naive(bool case_sensitive, bool normalize,
-                                   ufzf_string_t *text, ufzf_string_t *pattern,
+                                   UText *text, UText *pattern,
                                    fzf_position_t *pos, fzf_slab_t *slab) {
-    const size_t M = pattern->size;
-    const size_t N = text->size;
+    const size_t M = utext_nativeLength(pattern);
+    const size_t N = utext_nativeLength(text);
 
     if (M == 0) {
         return (fzf_result_t){0, 0, 0};
@@ -867,7 +876,7 @@ fzf_result_t ufzf_exact_match_naive(bool case_sensitive, bool normalize,
     if (N < M) {
         return (fzf_result_t){-1, -1, 0};
     }
-    if (uascii_fuzzy_index(text, pattern->data, M, case_sensitive) < 0) {
+    if (uascii_fuzzy_index(text, pattern, M, case_sensitive) < 0) {
         return (fzf_result_t){-1, -1, 0};
     }
 
@@ -876,7 +885,7 @@ fzf_result_t ufzf_exact_match_naive(bool case_sensitive, bool normalize,
     int16_t bonus = 0;
     int16_t best_bonus = -1;
     for (size_t idx = 0; idx < N; idx++) {
-        UChar32 c = utext_char32At(text->data, idx);
+        UChar32 c = utext_char32At(text, idx);
         if (!case_sensitive) {
             /* TODO(conni2461): He does some unicode stuff here, investigate */
             c = u_tolower(c);
@@ -884,7 +893,7 @@ fzf_result_t ufzf_exact_match_naive(bool case_sensitive, bool normalize,
         if (normalize) {
             c = unormalize_rune(c);
         }
-        if (c == utext_char32At(pattern->data, pidx))
+        if (c == utext_char32At(pattern, pidx))
         {
             if (pidx == 0) {
                 bonus = ubonus_at(text, idx);
@@ -921,29 +930,29 @@ fzf_result_t ufzf_exact_match_naive(bool case_sensitive, bool normalize,
 }
 
 fzf_result_t ufzf_prefix_match(bool case_sensitive, bool normalize,
-                              ufzf_string_t *text, ufzf_string_t *pattern,
+                              UText *text, UText *pattern,
                               fzf_position_t *pos, fzf_slab_t *slab) {
-    const size_t M = pattern->size;
+    const size_t M = utext_nativeLength(pattern);
     if (M == 0) {
         return (fzf_result_t){0, 0, 0};
     }
     size_t trimmed_len = 0;
     /* TODO(conni2461): i feel this is wrong */
-    if (!u_isWhitespace(utext_char32At(pattern->data, 0))) {
-        trimmed_len = uleading_whitespaces(text->data);
+    if (!u_isWhitespace(utext_char32At(pattern, 0))) {
+        trimmed_len = uleading_whitespaces(text);
     }
-    if (text->size - trimmed_len < M) {
+    if (utext_nativeLength(text) - trimmed_len < M) {
         return (fzf_result_t){-1, -1, 0};
     }
     for (size_t i = 0; i < M; i++) {
-        UChar32 c = utext_char32At(text->data, trimmed_len + i);
+        UChar32 c = utext_char32At(text, trimmed_len + i);
         if (!case_sensitive) {
             c = u_tolower(c);
         }
         if (normalize) {
             c = unormalize_rune(c);
         }
-        if (c != utext_char32At(pattern->data, i)) {
+        if (c != utext_char32At(pattern, i)) {
             return (fzf_result_t){-1, -1, 0};
         }
     }
@@ -956,13 +965,13 @@ fzf_result_t ufzf_prefix_match(bool case_sensitive, bool normalize,
 }
 
 fzf_result_t ufzf_suffix_match(bool case_sensitive, bool normalize,
-                              ufzf_string_t *text, ufzf_string_t *pattern,
+                              UText *text, UText *pattern,
                               fzf_position_t *pos, fzf_slab_t *slab) {
-    size_t trimmed_len = text->size;
-    const size_t M = pattern->size;
+    size_t trimmed_len = utext_nativeLength(text);
+    const size_t M = utext_nativeLength(pattern);
     /* TODO(conni2461): i think this is wrong */
-    if (M == 0 || !u_isWhitespace(utext_char32At(pattern->data, M - 1))) {
-        trimmed_len -= utrailing_whitespaces(text->data);
+    if (M == 0 || !u_isWhitespace(utext_char32At(pattern, M - 1))) {
+        trimmed_len -= utrailing_whitespaces(text);
     }
     if (M == 0) {
         return (fzf_result_t){(int32_t)trimmed_len, (int32_t)trimmed_len, 0};
@@ -973,14 +982,14 @@ fzf_result_t ufzf_suffix_match(bool case_sensitive, bool normalize,
     }
 
     for (size_t idx = 0; idx < M; idx++) {
-        UChar32 c = utext_char32At(text->data, idx + diff);
+        UChar32 c = utext_char32At(text, idx + diff);
         if (!case_sensitive) {
             c = u_tolower(c);
         }
         if (normalize) {
             c = unormalize_rune(c);
         }
-        if (c != utext_char32At(pattern->data, idx)) {
+        if (c != utext_char32At(pattern, idx)) {
             return (fzf_result_t){-1, -1, 0};
         }
     }
@@ -993,17 +1002,17 @@ fzf_result_t ufzf_suffix_match(bool case_sensitive, bool normalize,
 }
 
 fzf_result_t ufzf_equal_match(bool case_sensitive, bool normalize,
-                             ufzf_string_t *text, ufzf_string_t *pattern,
+                             UText *text, UText *pattern,
                              fzf_position_t *pos, fzf_slab_t *slab) {
-    const size_t M = pattern->size;
+    const size_t M = utext_nativeLength(pattern);
     if (M == 0) {
         return (fzf_result_t){-1, -1, 0};
     }
 
-    size_t trimmed_len = uleading_whitespaces(text->data);
-    size_t trimmed_end_len = utrailing_whitespaces(text->data);
+    size_t trimmed_len = uleading_whitespaces(text);
+    size_t trimmed_end_len = utrailing_whitespaces(text);
 
-    if ((text->size - trimmed_len - trimmed_end_len) != M) {
+    if ((utext_nativeLength(text) - trimmed_len - trimmed_end_len) != M) {
         return (fzf_result_t){-1, -1, 0};
     }
 
@@ -1011,8 +1020,8 @@ fzf_result_t ufzf_equal_match(bool case_sensitive, bool normalize,
     if (normalize) {
         // TODO(conni2461): to rune
         for (size_t idx = 0; idx < M; idx++) {
-            UChar32 pchar = utext_char32At(pattern->data, idx);
-            UChar32 c = utext_char32At(text->data, trimmed_len + idx);
+            UChar32 pchar = utext_char32At(pattern, idx);
+            UChar32 c = utext_char32At(text, trimmed_len + idx);
             if (!case_sensitive) {
                 c = u_tolower(c);
             }
@@ -1024,8 +1033,8 @@ fzf_result_t ufzf_equal_match(bool case_sensitive, bool normalize,
     } else {
         // TODO(conni2461): to rune
         for (size_t idx = 0; idx < M; idx++) {
-            UChar32 pchar = utext_char32At(pattern->data, idx);
-            UChar32 c = utext_char32At(text->data, trimmed_len + idx);
+            UChar32 pchar = utext_char32At(pattern, idx);
+            UChar32 c = utext_char32At(text, trimmed_len + idx);
             if (!case_sensitive) {
                 c = u_tolower(c);
             }
@@ -1072,7 +1081,7 @@ static void uappend_pattern(ufzf_pattern_t *pattern, ufzf_term_set_t *value) {
 
 #define UCALL_ALG(term, normalize, input, pos, slab)                           \
   term->fn((term)->case_sensitive, normalize, &(input),                        \
-           (ufzf_string_t *)(term)->text, pos, slab)
+           (UText *)(term)->text, pos, slab)
 
 UChar* ustrtok_r(UChar* src, const UChar delim, UChar** context, size_t length)
 {
@@ -1233,15 +1242,11 @@ ufzf_pattern_t *ufzf_parse_pattern(fzf_case_types case_mode, bool normalize,
                 set->size = 0;
             }
             UErrorCode status = U_ZERO_ERROR;
-            UText* utextPattern = utext_openUChars(NULL, og_str, u_strlen(og_str), &status);
             UText* utextText = utext_openUChars(NULL, text, u_strlen(text), &status);
-            ufzf_string_t* text_ptr = (ufzf_string_t*)malloc(sizeof(ufzf_string_t));
-            text_ptr->data = utextText;
-            text_ptr->size = len;
             uappend_set(set, (ufzf_term_t){.fn = fn,
                     .inv = inv,
-                    .ptr = utextPattern,
-                    .text = text_ptr,
+                    .ptr = utextText,
+                    .text = utextText,
                     .case_sensitive = case_sensitive});
             switch_set = true;
         } else {
@@ -1303,7 +1308,7 @@ int32_t ufzf_get_score(UText *text, ufzf_pattern_t *pattern,
         return 1;
     }
 
-    ufzf_string_t input = {.data = text, .size = utext_nativeLength(text)};
+    UText input = *text;
     if (pattern->only_inv) {
         int final = 0;
         for (size_t i = 0; i < pattern->size; i++) {
@@ -1357,7 +1362,7 @@ fzf_position_t *ufzf_get_positions(UText *text, ufzf_pattern_t *pattern,
         return NULL;
     }
 
-    ufzf_string_t input = {.data = text, .size = utext_nativeLength(text)};
+    UText input = *text;
     fzf_position_t *all_pos = fzf_pos_array(0);
     for (size_t i = 0; i < pattern->size; i++) {
         ufzf_term_set_t *term_set = pattern->ptr[i];

@@ -46,18 +46,13 @@ typedef struct {
   size_t size_32;
 } fzf_slab_config_t;
 
-typedef struct {
-    UText *data;
-    size_t size;
-} ufzf_string_t;
-
 typedef struct
 {
     const UChar* data;
     size_t size;
 } ufzf_charString_t;
 
-typedef fzf_result_t (*ufzf_algo_t)(bool, bool, ufzf_string_t *, ufzf_string_t *,
+typedef fzf_result_t (*ufzf_algo_t)(bool, bool, UText *, UText *,
                                    fzf_position_t *, fzf_slab_t *);
 
 typedef enum { CaseSmart = 0, CaseIgnore, CaseRespect } fzf_case_types;
@@ -84,16 +79,16 @@ typedef struct {
 } ufzf_pattern_t;
 
 fzf_result_t ufzf_fuzzy_match_v2(bool case_sensitive, bool normalize,
-                                ufzf_string_t *text, ufzf_string_t *pattern,
+                                UText *text, UText *pattern,
                                 fzf_position_t *pos, fzf_slab_t *slab);
 fzf_result_t ufzf_exact_match_naive(bool case_sensitive, bool normalize,
-                                   ufzf_string_t *text, ufzf_string_t *pattern,
+                                   UText *text, UText *pattern,
                                    fzf_position_t *pos, fzf_slab_t *slab);
 fzf_result_t ufzf_prefix_match(bool case_sensitive, bool normalize,
-                              ufzf_string_t *text, ufzf_string_t *pattern,
+                              UText *text, UText *pattern,
                               fzf_position_t *pos, fzf_slab_t *slab);
 fzf_result_t ufzf_suffix_match(bool case_sensitive, bool normalize,
-                              ufzf_string_t *text, ufzf_string_t *pattern,
+                              UText *text, UText *pattern,
                               fzf_position_t *pos, fzf_slab_t *slab);
 /* interface */
 ufzf_pattern_t *ufzf_parse_pattern(fzf_case_types case_mode, bool normalize,
