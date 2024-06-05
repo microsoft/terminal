@@ -103,24 +103,9 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="6*" />
-            <ColumnDefinition Width="2*" />
-        </Grid.ColumnDefinitions>
-
-        <Grid.RowDefinitions>
-            <RowDefinition Height="2*" />
-            <RowDefinition Height="7*" />
-            <RowDefinition Height="2*" />
-        </Grid.RowDefinitions>
-
+    <StackPanel x:Name="_listAndDescriptionStack"
+                Orientation="Vertical">
         <Grid x:Name="_backdrop"
-              Grid.Row="1"
-              Grid.RowSpan="1"
-              Grid.Column="0"
-              Grid.ColumnSpan="3"
               MinWidth="300"
               MaxWidth="300"
               MaxHeight="300"
@@ -211,14 +196,10 @@
 
 
         </Grid>
-        <!-- <Border Height="1" Grid.Row="1" /> -->
+
         <Grid x:Name="_descriptionsBackdrop"
-              Grid.Row="0"
-              Grid.RowSpan="1"
-              Grid.Column="0"
-              Grid.ColumnSpan="3"
               MaxWidth="300"
-              Margin="0,6,0,0"
+              Margin="0,6,0,6"
               Padding="0,4,0,0"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"
@@ -259,5 +240,5 @@
 
         </Grid>
 
-    </Grid>
+    </StackPanel>
 </UserControl>

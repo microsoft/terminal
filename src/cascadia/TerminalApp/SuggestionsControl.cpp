@@ -1124,15 +1124,37 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_setDirection(TerminalApp::SuggestionsDirection direction)
     {
         _direction = direction;
+
+        auto backdrop = _backdrop();
+        auto descriptionsBackdrop = _descriptionsBackdrop();
+        // _listAndDescriptionStack().Children().Clear();
+        auto kids{ _listAndDescriptionStack().Children() };
+
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             Controls::Grid::SetRow(_searchBox(), 0);
-            Controls::Grid::SetRow(_descriptionsBackdrop(), 2);
+
+            // _listAndDescriptionStack().Children().Append(backdrop);
+            // _listAndDescriptionStack().Children().Append(descriptionsBackdrop);
+
+            uint32_t index;
+            if (kids.IndexOf(backdrop, index))
+            {
+                kids.Move(index, 0);
+            }
         }
         else // BottomUp
         {
             Controls::Grid::SetRow(_searchBox(), 4);
-            Controls::Grid::SetRow(_descriptionsBackdrop(), 0);
+
+            uint32_t index;
+            if (kids.IndexOf(descriptionsBackdrop, index))
+            {
+                kids.Move(index, 0);
+            }
+
+            // _listAndDescriptionStack().Children().Append(descriptionsBackdrop);
+            // _listAndDescriptionStack().Children().Append(backdrop);
         }
     }
 
@@ -1179,8 +1201,9 @@ namespace winrt::TerminalApp::implementation
             backdropHeight;
             const auto descriptionHeight = descriptionSize.height;
             descriptionHeight;
-            // const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight);
-            const auto marginTop = (_anchor.Y - actualHeight - descriptionHeight);
+            //const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight);
+            // const auto marginTop = (_anchor.Y - actualHeight - descriptionHeight);
+            const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight - 12);
 
             currentMargin.Top = marginTop;
         }
