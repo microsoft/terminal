@@ -219,7 +219,7 @@ Please either install the missing font or choose another one.</value>
   </data>
   <data name="RendererErrorMacType" xml:space="preserve">
     <value>Your version of MacType is incompatible with this application. Please update to version 2023.5.31 or later.</value>
-    <comment>{Locked="2023.5.31"}</comment>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
   </data>
   <data name="RendererErrorOther" xml:space="preserve">
     <value>Renderer encountered an unexpected error: {0:#010x} {1}</value>
