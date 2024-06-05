@@ -263,8 +263,8 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
-                                                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    void SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
+                                                     const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
@@ -294,19 +294,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (!description.empty())
                 {
-                    // If it's already open, then just re-target it and update
-                    // the content immediately.
-                    if (_descriptionsView().Visibility() == Visibility::Visible)
-                    {
-                        _openTooltip(cmd);
-                    }
-                    else
-                    {
-                        // Otherwise, wait a bit before opening it.
-                        co_await winrt::resume_after(200ms);
-                        co_await wil::resume_foreground(Dispatcher());
-                        _openTooltip(cmd);
-                    }
+                    _openTooltip(cmd);
                 }
                 else
                 {
@@ -325,6 +313,15 @@ namespace winrt::TerminalApp::implementation
         if (description.empty())
         {
             co_return;
+        }
+
+        // If it's already open, then just re-target it and update
+        // the content immediately. Otherwise:
+        // wait a bit before opening it.
+        if (_descriptionsView().Visibility() != Visibility::Visible)
+        {
+            co_await winrt::resume_after(200ms);
+            co_await wil::resume_foreground(Dispatcher());
         }
 
         // Build the contents of the "tooltip" based on the description
@@ -1111,7 +1108,7 @@ namespace winrt::TerminalApp::implementation
 
         // We need to move either the list of suggestions, or the tooltip, to
         // the top of the stack panel (depending on the layout).
-        auto controlToMoveToTop = nullptr;
+        Grid controlToMoveToTop = nullptr;
 
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
@@ -1136,13 +1133,13 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_recalculateTopMargin()
     {
         auto currentMargin = Margin();
-
         // Call Measure() on the descriptions backdrop, so that it gets it's new
         // DesiredSize for this new description text.
         //
         // If you forget this, then we _probably_ weren't laid out since
         // updating that text, and the ActualHeight will be the _last_
         // description's height.
+        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
         _descriptionsBackdrop().Measure(actualSize.to_winrt_size());
 
         // Now, position vertically.
