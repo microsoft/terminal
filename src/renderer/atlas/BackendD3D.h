@@ -204,6 +204,7 @@ namespace Microsoft::Console::Render::Atlas
         void _d2dEndDrawing();
         ATLAS_ATTR_COLD void _resetGlyphAtlas(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _resizeGlyphAtlas(const RenderingPayload& p, u16 u, u16 v);
+        static bool _checkMacTypeVersion(const RenderingPayload& p);
         QuadInstance& _getLastQuad() noexcept;
         QuadInstance& _appendQuad();
         ATLAS_ATTR_COLD void _bumpInstancesSize();

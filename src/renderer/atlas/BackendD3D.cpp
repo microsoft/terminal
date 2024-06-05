@@ -37,6 +37,7 @@ TIL_FAST_MATH_BEGIN
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
 // Initializing large arrays can be very costly compared to how cheap some of these functions are.
 #define ALLOW_UNINITIALIZED_BEGIN _Pragma("warning(push)") _Pragma("warning(disable : 26494)")
@@ -797,6 +798,13 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
 void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const u16 v)
 {
+#if defined(_M_X64) || defined(_M_IX86)
+    static const auto faultyMacTypeVersion = _checkMacTypeVersion(p);
+#else
+    // The affected versions of MacType are unavailable on ARM.
+    static constexpr auto faultyMacTypeVersion = false;
+#endif
+
     _d2dRenderTarget.reset();
     _d2dRenderTarget4.reset();
     _glyphAtlas.reset();
@@ -842,9 +850,13 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
         _d2dRenderTarget4->GetDevice(device.addressof());
 
         device->SetMaximumTextureMemory(0);
-        if (const auto device4 = device.try_query<ID2D1Device4>())
+
+        if (!faultyMacTypeVersion)
         {
-            device4->SetMaximumColorGlyphCacheMemory(0);
+            if (const auto device4 = device.try_query<ID2D1Device4>())
+            {
+                device4->SetMaximumColorGlyphCacheMemory(0);
+            }
         }
     }
 
@@ -857,6 +869,62 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
     p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
     _rectPackerData = Buffer<stbrp_node>{ u };
+}
+
+// MacType is a popular 3rd party system to give the font rendering on Windows a softer look.
+// It's particularly popular in China. Unfortunately, it hooks ID2D1Device4 incorrectly:
+//   https://github.com/snowie2000/mactype/pull/938
+// This results in crashes. Not a lot of them, but enough to constantly show up.
+// The issue was fixed in the MacType v1.2023.5.31 release, the only one in 2023.
+//
+// Please feel free to remove this check in a few years.
+bool BackendD3D::_checkMacTypeVersion(const RenderingPayload& p)
+{
+#ifdef _WIN64
+    static constexpr auto name = L"MacType64.Core.dll";
+#else
+    static constexpr auto name = L"MacType.Core.dll";
+#endif
+
+    wil::unique_hmodule handle;
+    if (!GetModuleHandleExW(0, name, handle.addressof()))
+    {
+        return false;
+    }
+
+    const auto resource = FindResourceW(handle.get(), MAKEINTRESOURCE(VS_VERSION_INFO), RT_VERSION);
+    if (!resource)
+    {
+        return false;
+    }
+
+    const auto dataHandle = LoadResource(handle.get(), resource);
+    if (!dataHandle)
+    {
+        return false;
+    }
+
+    const auto data = LockResource(dataHandle);
+    if (!data)
+    {
+        return false;
+    }
+
+    VS_FIXEDFILEINFO* info;
+    UINT varLen = 0;
+    if (!VerQueryValueW(data, L"\\", reinterpret_cast<void**>(&info), &varLen))
+    {
+        return false;
+    }
+
+    const auto faulty = info->dwFileVersionMS < (1 << 16 | 2023);
+
+    if (faulty && p.warningCallback)
+    {
+        p.warningCallback(ATLAS_ENGINE_ERROR_MAC_TYPE, {});
+    }
+
+    return faulty;
 }
 
 BackendD3D::QuadInstance& BackendD3D::_getLastQuad() noexcept
