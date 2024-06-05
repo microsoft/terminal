@@ -106,9 +106,6 @@ namespace winrt::TerminalApp::implementation
             // stays "attached" to the cursor.
             if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
             {
-                // auto m = this->Margin();
-                // m.Top = (_anchor.Y - ActualHeight());
-                // this->Margin(m);
                 this->_recalculateTopMargin();
             }
         });
