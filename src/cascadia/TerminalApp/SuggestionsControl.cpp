@@ -8,6 +8,7 @@
 #include <LibraryResources.h>
 
 #include "SuggestionsControl.g.cpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -18,6 +19,8 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+using namespace std::chrono_literals;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -262,8 +265,8 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
-                                                     const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    winrt::fire_and_forget SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
+                                                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
@@ -281,9 +284,104 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
-                PreviewAction.raise(*this, actionPaletteItem.Command());
+                const auto& cmd = actionPaletteItem.Command();
+                PreviewAction.raise(*this, cmd);
+
+                const auto description{ cmd.Description() };
+
+                if (SelectedItem())
+                    SelectedItem().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+
+                if (!description.empty())
+                {
+                    // If it's already open, then just re-target it and update the content immediately.
+                    if (_descriptionsView().Visibility() == Visibility::Visible)
+                    {
+                        _openTooltip(cmd);
+                    }
+                    else
+                    {
+                        // Otherwise, wait a bit before opening it.
+                        co_await winrt::resume_after(200ms);
+                        co_await wil::resume_foreground(Dispatcher());
+                        _openTooltip(cmd);
+                        // DescriptionTip().IsOpen(true);
+                    }
+                }
+                else
+                {
+                    // If there's no description, then just close the tooltip.
+                    // DescriptionTip().IsOpen(false);
+                    _descriptionsView().Visibility(Visibility::Collapsed);
+                    _descriptionsBackdrop().Visibility(Visibility::Collapsed);
+                }
             }
         }
+    }
+
+    winrt::fire_and_forget SuggestionsControl::_openTooltip(Command cmd)
+    {
+        const auto description{ cmd.Description() };
+
+        if (!description.empty())
+        {
+            // DescriptionTip().Target(SelectedItem());
+            // DescriptionTip().Title(cmd.Name());
+            {
+                // The Title
+                _descriptionTitle().Inlines().Clear();
+                Documents::Run titleRun;
+                titleRun.Text(cmd.Name());
+                _descriptionTitle().Inlines().Append(titleRun);
+            }
+
+            // TODO! NOT REALLY TRUE ANYMORE
+            // If you try to put a newline in the Subtitle, it'll _immediately
+            // close the tooltip_. Instead, we'll need to build up the text as a
+            // series of runs, and put them in the content.
+
+            _descriptionComment().Inlines().Clear();
+
+            // First, replace all "\r\n" with "\n"
+            std::wstring filtered = description.c_str();
+
+            // replace all "\r\n" with "\n" in `filtered`
+            std::wstring::size_type pos = 0;
+            while ((pos = filtered.find(L"\r\n", pos)) != std::wstring::npos)
+            {
+                filtered.erase(pos, 1);
+            }
+
+            // Split the filtered description on '\n`
+            const auto lines = ::Microsoft::Console::Utils::SplitString(filtered.c_str(), L'\n');
+            // For each line, build a Run + LineBreak, and add them to the text
+            // block
+            for (const auto& line : lines)
+            {
+                if (line.empty())
+                {
+                    continue;
+                }
+                Documents::Run textRun;
+                textRun.Text(winrt::hstring{ line });
+                _descriptionComment().Inlines().Append(textRun);
+                _descriptionComment().Inlines().Append(Documents::LineBreak{});
+            }
+
+            // // TODO! These were all feigned attempts to allow us to focus the content of the teachingtip.
+
+            // // We may want to keep IsTextSelectionEnabled in the XAML.
+            // //
+            // // I also have no idea if the FullDescriptionProperty thing worked at all.
+            // _toolTipContent().AllowFocusOnInteraction(true);
+            // _toolTipContent().IsTextSelectionEnabled(true);
+            // DescriptionTip().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+
+            _descriptionsView().Visibility(Visibility::Visible);
+            _descriptionsBackdrop().Visibility(Visibility::Visible);
+            _recalculateTopMargin();
+        }
+        co_return;
     }
 
     void SuggestionsControl::_previewKeyDownHandler(const IInspectable& /*sender*/,
@@ -1027,11 +1125,41 @@ namespace winrt::TerminalApp::implementation
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             Controls::Grid::SetRow(_searchBox(), 0);
+            Controls::Grid::SetRow(_descriptionsBackdrop(), 2);
         }
         else // BottomUp
         {
             Controls::Grid::SetRow(_searchBox(), 4);
+            Controls::Grid::SetRow(_descriptionsBackdrop(), 0);
         }
+    }
+
+    void SuggestionsControl::_recalculateTopMargin()
+    {
+        auto currentMargin = Margin();
+
+        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        const til::size descriptionSize{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() };
+
+        // Now, position vertically.
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+        {
+            // The control should open right below the cursor, with the list
+            // extending below. This is easy, we can just use the cursor as the
+            // origin (more or less)
+            currentMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
+        }
+        else
+        {
+            // Bottom Up.
+
+            // TODO! This is all wrong. It just jumps around randomly.
+
+            // Position at the cursor. The suggestions UI itself will maintain
+            // its own offset such that it's always above its origin
+            currentMargin.Top = (_anchor.Y - actualSize.height /*+ descriptionSize.height*/);
+        }
+        Margin(currentMargin);
     }
 
     void SuggestionsControl::Open(TerminalApp::SuggestionsMode mode,
@@ -1052,6 +1180,7 @@ namespace winrt::TerminalApp::implementation
         _space = space;
 
         const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        const til::size descriptionSize{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() };
         // Is there space in the window below the cursor to open the menu downwards?
         const bool canOpenDownwards = (_anchor.Y + characterHeight + actualSize.height) < space.Height;
         _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
@@ -1078,13 +1207,13 @@ namespace winrt::TerminalApp::implementation
             // The control should open right below the cursor, with the list
             // extending below. This is easy, we can just use the cursor as the
             // origin (more or less)
-            newMargin.Top = (_anchor.Y);
+            newMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
         }
         else
         {
             // Position at the cursor. The suggestions UI itself will maintain
             // its own offset such that it's always above its origin
-            newMargin.Top = (_anchor.Y - actualSize.height);
+            newMargin.Top = (_anchor.Y - actualSize.height /* - descriptionSize.height*/);
         }
         Margin(newMargin);
 
