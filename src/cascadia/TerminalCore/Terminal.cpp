@@ -506,6 +506,10 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
         result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
         if (result.has_value())
         {
+            // GetPlainText and _ConvertToBufferCell work with inclusive coordinates, but interval's
+            // stop point is (horizontally) exclusive, so let's just update it.
+            result->stop.x--;
+
             result->start = _ConvertToBufferCell(result->start);
             result->stop = _ConvertToBufferCell(result->stop);
         }
@@ -531,10 +535,6 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     // Case 2 - Step 2: get the auto-detected hyperlink
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
-        // GetPlainText works with inclusive coordinates, but interval's stop
-        // point is (horizontally) exclusive, so let's just update it.
-        result->stop.x--;
-
         return _activeBuffer().GetPlainText(result->start, result->stop);
     }
     return {};
