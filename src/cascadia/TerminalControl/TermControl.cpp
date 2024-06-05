@@ -1016,6 +1016,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
             }
+            else if (ATLAS_ENGINE_ERROR_MAC_TYPE == hr)
+            {
+                message = RS_(L"RendererErrorMacType");
+            }
             else
             {
                 // HRESULT is a signed 32-bit integer which would result in a hex output like "-0x7766FFF4",
