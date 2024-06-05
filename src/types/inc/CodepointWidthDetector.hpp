@@ -36,8 +36,8 @@ struct GraphemeState
     // You know these two belong together because the first call returned false.
     // The total width is not 1+2 but rather just 2.
     const wchar_t* beg = nullptr;
-    size_t len = 0;
-    // width will always be either 1 or 2.
+    int len = 0;
+    // width will always be between 0 or 2.
     int width = 0;
 
     // If GraphemeNext/Prev return false (= reached the end of the string), they'll fill these struct
@@ -45,7 +45,6 @@ struct GraphemeState
     // _state is stored ~flipped, so that we can differentiate between it being unset (0) and it being set to 0 (~0 = 255).
     int _state = 0;
     int _last = 0;
-    int _totalWidth = 0;
 };
 
 struct CodepointWidthDetector

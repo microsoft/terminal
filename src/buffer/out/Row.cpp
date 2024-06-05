@@ -687,7 +687,8 @@ catch (...)
             colBegDirty = colPrev;
             colEnd = colPrev;
 
-            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + state.width);
+            const auto width = std::max(1, state.width);
+            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
             if (colEndNew > colLimit)
             {
                 colEndDirty = colLimit;
@@ -727,7 +728,8 @@ catch (...)
         {
             cwd.GraphemeNext(state, chars);
 
-            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + state.width);
+            const auto width = std::max(1, state.width);
+            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
             if (colEndNew > colLimit)
             {
                 colEndDirty = colLimit;

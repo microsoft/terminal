@@ -3,18 +3,16 @@
 
 #include "pch.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
+#include "AppLogic.g.cpp"
+#include "FindTargetWindowResult.g.cpp"
+#include "SettingsLoadEventArgs.h"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
 #include <wil/token_helpers.h>
 
-#include "SettingsLoadEventArgs.h"
-#include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../../types/inc/utils.hpp"
-#include "../inc/WindowingBehavior.h"
-
-#include "AppLogic.g.cpp"
-#include "FindTargetWindowResult.g.cpp"
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -433,6 +431,13 @@ namespace winrt::TerminalApp::implementation
                 SettingsChanged.raise(*this, *ev);
                 return;
             }
+        }
+
+        if (initialLoad)
+        {
+            // Register for directory change notification.
+            _RegisterSettingsChange();
+            return;
         }
 
         // Here, we successfully reloaded the settings, and created a new

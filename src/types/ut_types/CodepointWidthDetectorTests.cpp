@@ -1331,39 +1331,92 @@ class CodepointWidthDetectorTests
         VERIFY_ARE_EQUAL(expectedWidths, actualWidths);
     }
 
-    TEST_METHOD(DevanagariConjunctLinker)
-    {
-        static constexpr std::wstring_view text{ L"\u0915\u094D\u094D\u0924" };
-
-        auto& cwd = CodepointWidthDetector::Singleton();
-
-        GraphemeState state;
-        cwd.GraphemeNext(state, text);
-        VERIFY_ARE_EQUAL(4u, state.len);
-        VERIFY_ARE_EQUAL(2, state.width);
-    }
-
     TEST_METHOD(ChunkedText)
     {
-        static constexpr std::wstring_view text{ L"\u0915\u094D\u094D\u0924" };
+        struct Test
+        {
+            TextMeasurementMode mode;
+            std::vector<int> advancesNext;
+            std::vector<int> widthsNext;
+            std::vector<int> advancesPrev;
+            std::vector<int> widthsPrev;
+        };
+        const std::array tests{
+            Test{
+                .mode = TextMeasurementMode::Graphemes,
+                .advancesNext = { 3, 3, 0, 1 },
+                .widthsNext = { 2, 2, 2, 1 },
+                .advancesPrev = { 1, 0, 3, 3 },
+                .widthsPrev = { 1, 1, 2, 2 },
 
-        auto& cwd = CodepointWidthDetector::Singleton();
-        bool ok = false;
+            },
+            Test{
+                .mode = TextMeasurementMode::Wcswidth,
+                .advancesNext = { 3, 1, 2, 0, 1 },
+                .widthsNext = { 1, 1, 2, 2, 1 },
+                .advancesPrev = { 1, 0, 2, 1, 3 },
+                .widthsPrev = { 1, 1, 2, 0, 1 },
+            },
+            Test{
+                .mode = TextMeasurementMode::Console,
+                .advancesNext = { 2, 1, 0, 1, 2, 0, 1 },
+                .widthsNext = { 1, 0, 0, 0, 2, 2, 1 },
+                .advancesPrev = { 1, 0, 2, 1, 0, 1, 2 },
+                .widthsPrev = { 1, 1, 2, 0, 0, 0, 1 },
+            },
+        };
+
+        // That's a fully qualified rainbow flag followed by a single "a" character.
+        static constexpr std::array chunks{
+            std::wstring_view{ L"\U0001F3F3\uFE0F" },
+            std::wstring_view{ L"\u200D\U0001F308" },
+            std::wstring_view{ L"a" },
+        };
+
+        CodepointWidthDetector cwd;
         GraphemeState state;
+        std::vector<int> actualAdvances;
+        std::vector<int> actualWidths;
 
-        ok = cwd.GraphemeNext(state, L"\u2620");
-        VERIFY_IS_FALSE(ok);
-        VERIFY_ARE_EQUAL(1u, state.len);
-        VERIFY_ARE_EQUAL(1, state.width);
+        for (const auto& test : tests)
+        {
+            cwd.Reset(test.mode);
 
-        ok = cwd.GraphemeNext(state, L"\uFE0F");
-        VERIFY_IS_FALSE(ok);
-        VERIFY_ARE_EQUAL(1u, state.len);
-        VERIFY_ARE_EQUAL(2, state.width);
+            state = {};
+            actualAdvances.clear();
+            actualWidths.clear();
 
-        ok = cwd.GraphemeNext(state, L"a");
-        VERIFY_IS_TRUE(ok);
-        VERIFY_ARE_EQUAL(0u, state.len);
-        VERIFY_ARE_EQUAL(2, state.width);
+            for (int i = 0; i < 3; i++)
+            {
+                bool ok;
+                do
+                {
+                    ok = cwd.GraphemeNext(state, chunks[i]);
+                    actualAdvances.emplace_back(state.len);
+                    actualWidths.emplace_back(state.width);
+                } while (ok);
+            }
+
+            VERIFY_ARE_EQUAL(test.advancesNext, actualAdvances);
+            VERIFY_ARE_EQUAL(test.widthsNext, actualWidths);
+
+            state = {};
+            actualAdvances.clear();
+            actualWidths.clear();
+
+            for (int i = 2; i >= 0; i--)
+            {
+                bool ok;
+                do
+                {
+                    ok = cwd.GraphemePrev(state, chunks[i]);
+                    actualAdvances.emplace_back(state.len);
+                    actualWidths.emplace_back(state.width);
+                } while (ok);
+            }
+
+            VERIFY_ARE_EQUAL(test.advancesPrev, actualAdvances);
+            VERIFY_ARE_EQUAL(test.widthsPrev, actualWidths);
+        }
     }
 };
