@@ -1164,8 +1164,12 @@ namespace winrt::TerminalApp::implementation
 
         til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
         const til::size descriptionSize = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
-                                              til::size{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() } :
+                                              til::size{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() + 12.0 } :
                                               til::size{ 0, 0 };
+        _descriptionsBackdrop().Measure(actualSize.to_winrt_size());
+        const til::size descriptionDesiredSize = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
+                                                     til::size{ til::math::rounding, _descriptionsBackdrop().DesiredSize().Width, _descriptionsBackdrop().DesiredSize().Height + 12.0f } :
+                                                     til::size{ 0, 0 };
 
         // Now, position vertically.
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
@@ -1201,9 +1205,12 @@ namespace winrt::TerminalApp::implementation
             backdropHeight;
             const auto descriptionHeight = descriptionSize.height;
             descriptionHeight;
+            const auto descriptionDesiredHeight = descriptionDesiredSize.height;
+            descriptionDesiredHeight;
             //const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight);
             // const auto marginTop = (_anchor.Y - actualHeight - descriptionHeight);
-            const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight - 12);
+            // const auto marginTop = (_anchor.Y - backdropHeight - descriptionHeight);
+            const auto marginTop = (_anchor.Y - backdropHeight - descriptionDesiredHeight);
 
             currentMargin.Top = marginTop;
         }
