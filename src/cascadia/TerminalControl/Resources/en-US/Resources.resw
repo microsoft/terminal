@@ -318,4 +318,11 @@ Please either install the missing font or choose another one.</value>
     <value>invalid</value>
     <comment>This brief message is displayed when a regular expression is invalid.</comment>
   </data>
+  <data name="QuickFixAvailable" xml:space="preserve">
+    <value>Quick fix available</value>
+    <comment>"Quick fix" is referencing the same feature as "QuickFixButton.ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="QuickFixMenu.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Quick fix</value>
+  </data>
 </root>

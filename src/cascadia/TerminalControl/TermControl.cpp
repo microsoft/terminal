@@ -3855,6 +3855,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
         Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y - termPadding.Top);
         quickFixBtn.Visibility(Visibility::Visible);
+
+        if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        {
+            automationPeer.RaiseNotificationEvent(
+                AutomationNotificationKind::ItemAdded,
+                AutomationNotificationProcessing::ImportantMostRecent,
+                RS_(L"QuickFixAvailable"),
+                L"QuickFixAvailableAnnouncement" /* unique name for this group of notifications */);
+        }
     }
 
     void TermControl::_bubbleSearchMissingCommand(const IInspectable& /*sender*/, const Control::SearchMissingCommandEventArgs& args)

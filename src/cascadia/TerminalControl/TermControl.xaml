@@ -1301,7 +1301,8 @@
                                           Glyph="&#xEA80;" />
                             </Button.Content>
                             <Button.Flyout>
-                                <MenuFlyout x:Name="QuickFixMenu" />
+                                <MenuFlyout x:Name="QuickFixMenu"
+                                            x:Uid="QuickFixMenu" />
                             </Button.Flyout>
                         </Button>
                     </Canvas>
