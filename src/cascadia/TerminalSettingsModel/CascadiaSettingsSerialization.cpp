@@ -461,6 +461,7 @@ bool SettingsLoader::FixupUserSettings()
     };
 
     auto fixedUp = userSettings.fixupsAppliedDuringLoad;
+    fixedUp = userSettings.globals->FixupsAppliedDuringLoad() || fixedUp;
 
     fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
@@ -503,10 +504,6 @@ bool SettingsLoader::FixupUserSettings()
         userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
         fixedUp = true;
     }
-
-    // we need to generate an ID for a command in the user settings if it doesn't already have one
-    auto actionMap{ winrt::get_self<ActionMap>(userSettings.globals->ActionMap()) };
-    actionMap->GenerateIDsForActions();
 
     return fixedUp;
 }

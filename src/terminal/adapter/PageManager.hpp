@@ -33,6 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
         til::CoordType BufferHeight() const noexcept;
         til::CoordType XPanOffset() const noexcept;
         til::CoordType YPanOffset() const noexcept;
+        void MoveViewportDown() noexcept;
 
     private:
         TextBuffer& _buffer;

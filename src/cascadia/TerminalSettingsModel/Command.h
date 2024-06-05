@@ -31,6 +31,14 @@ namespace SettingsModelUnitTests
     class CommandTests;
 };
 
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view IDKey{ "id" };
+static constexpr std::string_view IconKey{ "icon" };
+static constexpr std::string_view ActionKey{ "command" };
+static constexpr std::string_view IterateOnKey{ "iterateOn" };
+static constexpr std::string_view CommandsKey{ "commands" };
+static constexpr std::string_view KeysKey{ "keys" };
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct Command : CommandT<Command>
@@ -62,7 +70,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void Name(const hstring& name);
 
         hstring ID() const noexcept;
-        bool GenerateID();
+        void GenerateID();
+        bool IDWasGenerated();
 
         Control::KeyChord Keys() const noexcept;
         hstring KeyChordText() const noexcept;

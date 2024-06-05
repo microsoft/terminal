@@ -824,7 +824,7 @@ namespace winrt::TerminalApp::implementation
             newTabFlyout.Items().Append(settingsItem);
 
             auto actionMap = _settings.ActionMap();
-            const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
+            const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenSettingsUI") };
             if (settingsKeyChord)
             {
                 _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
@@ -846,7 +846,7 @@ namespace winrt::TerminalApp::implementation
             commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
             newTabFlyout.Items().Append(commandPaletteFlyout);
 
-            const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+            const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.ToggleCommandPalette") };
             if (commandPaletteKeyChord)
             {
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
@@ -1021,7 +1021,8 @@ namespace winrt::TerminalApp::implementation
         // NewTab(ProfileIndex=N) action
         NewTerminalArgs newTerminalArgs{ profileIndex };
         NewTabArgs newTabArgs{ newTerminalArgs };
-        auto profileKeyChord{ _settings.ActionMap().GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+        const auto id = fmt::format(FMT_COMPILE(L"Terminal.OpenNewTabProfile{}"), profileIndex);
+        const auto profileKeyChord{ _settings.ActionMap().GetKeyBindingForAction(id) };
 
         // make sure we find one to display
         if (profileKeyChord)

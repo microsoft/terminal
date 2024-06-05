@@ -74,14 +74,14 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 
 void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 {
-    const auto page = _pages.ActivePage();
+    auto page = _pages.ActivePage();
     auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     auto cursorPosition = cursor.GetPosition();
     const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
     const auto& attributes = page.Attributes();
 
-    const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
+    auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
 
     auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
@@ -108,7 +108,14 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // different position from where the EOL was marked.
             if (delayedCursorPosition == cursorPosition)
             {
-                _DoLineFeed(page, true, true);
+                if (_DoLineFeed(page, true, true))
+                {
+                    // If the line feed caused the viewport to move down, we
+                    // need to adjust the page viewport and margins to match.
+                    page.MoveViewportDown();
+                    std::tie(topMargin, bottomMargin) = _GetVerticalMargins(page, true);
+                }
+
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
                 lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
@@ -2540,14 +2547,15 @@ bool AdaptDispatch::CarriageReturn()
 // - withReturn - Set to true if a carriage return should be performed as well.
 // - wrapForced - Set to true is the line feed was the result of the line wrapping.
 // Return Value:
-// - <none>
-void AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
+// - True if the viewport panned down. False if not.
+bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
 {
     auto& textBuffer = page.Buffer();
     const auto pageWidth = page.Width();
     const auto bufferHeight = page.BufferHeight();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(pageWidth);
+    auto viewportMoved = false;
 
     auto& cursor = page.Cursor();
     const auto currentPosition = cursor.GetPosition();
@@ -2590,6 +2598,7 @@ void AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         // the end of the buffer.
         _api.SetViewportPosition({ page.XPanOffset(), page.Top() + 1 });
         newPosition.y++;
+        viewportMoved = true;
 
         // And if the bottom margin didn't cover the full page, we copy the
         // lower part of the page down so it remains static. But for a full
@@ -2629,6 +2638,7 @@ void AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
 
     cursor.SetPosition(newPosition);
     _ApplyCursorMovementFlags(cursor);
+    return viewportMoved;
 }
 
 // Routine Description:
