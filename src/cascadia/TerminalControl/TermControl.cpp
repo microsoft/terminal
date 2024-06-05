@@ -227,7 +227,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
-        _revokers.ClearQuickFix = _core.ClearQuickFix(winrt::auto_revoke, { get_weak(), &TermControl::_clearQuickFix });
+        _revokers.RefreshQuickFixUI = _core.RefreshQuickFixUI(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            RefreshQuickFixMenu();
+        });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -3517,7 +3519,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
 
-        auto quickFixBtn = QuickFixButton();
+        auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
         quickFixBtn.Height(args.Height() / dpiScale);
         QuickFixIcon().FontSize(std::min(static_cast<double>(args.Width() / dpiScale), GetPadding().Left));
         RefreshQuickFixMenu();
@@ -3810,23 +3812,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     double TermControl::CalculateQuickFixButtonWidth()
     {
+        if (_quickFixButtonCollapsible)
+        {
+            return gsl::narrow_cast<double>(CharacterDimensions().Width);
+        }
         return GetPadding().Left;
     }
 
     double TermControl::CalculateQuickFixButtonCollapsedWidth()
     {
-        return GetPadding().Left / 3.0;
+        return std::max(4.0, GetPadding().Left / 3.0);
     }
 
     void TermControl::RefreshQuickFixMenu()
     {
+        auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
         if (!_core.QuickFixesAvailable())
         {
-            QuickFixButton().Visibility(Visibility::Collapsed);
+            quickFixBtn.Visibility(Visibility::Collapsed);
             return;
         }
-
-        auto quickFixBtn{ QuickFixButton() };
 
         // If the gutter is narrow, display the collapsed version
         const auto& termPadding = GetPadding();
@@ -3848,7 +3853,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // draw the button in the gutter
         const auto& cursorPosInDips = CursorPositionInDips();
         Controls::Canvas::SetLeft(quickFixBtn, -termPadding.Left);
-        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y);
+        Controls::Canvas::SetTop(quickFixBtn, cursorPosInDips.Y - termPadding.Top);
         quickFixBtn.Visibility(Visibility::Visible);
     }
 
@@ -3857,14 +3862,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchMissingCommand.raise(*this, args);
     }
 
-    void TermControl::_clearQuickFix(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        RefreshQuickFixMenu();
-    }
-
     void TermControl::ClearQuickFix()
     {
-        _clearQuickFix(nullptr, nullptr);
+        _core.ClearQuickFix();
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,

@@ -70,7 +70,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::property<winrt::hstring> CurrentCommandline;
         til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> QuickFixes;
 
-        CommandHistoryContext(std::vector<winrt::hstring>&& history)
+        CommandHistoryContext(std::vector<winrt::hstring>&& history) :
+            QuickFixes(winrt::single_threaded_vector<winrt::hstring>())
         {
             History(winrt::single_threaded_vector<winrt::hstring>(std::move(history)));
         }
@@ -153,6 +154,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Close();
         void PersistToPath(const wchar_t* path) const;
         void RestoreFromPath(const wchar_t* path) const;
+
+        void ClearQuickFix();
 
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;
@@ -287,7 +290,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
         til::typed_event<IInspectable, Control::CompletionsChangedEventArgs> CompletionsChanged;
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
-        til::typed_event<> ClearQuickFix;
+        til::typed_event<> RefreshQuickFixUI;
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
@@ -384,7 +387,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
         void _terminalSearchMissingCommand(std::wstring_view missingCommand);
-        void _terminalClearQuickFix();
 
         winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 

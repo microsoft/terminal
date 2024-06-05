@@ -1286,12 +1286,13 @@
                                 Padding="0"
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="Center"
+                                x:Load="False"
                                 AllowFocusOnInteraction="False"
                                 CornerRadius="0,5,5,0"
-                                Style="{StaticResource AccentButtonStyle}"
-                                Visibility="Collapsed"
                                 PointerEntered="_QuickFixButton_PointerEntered"
-                                PointerExited="_QuickFixButton_PointerExited">
+                                PointerExited="_QuickFixButton_PointerExited"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Visibility="Collapsed">
                             <Button.Content>
                                 <FontIcon x:Name="QuickFixIcon"
                                           HorizontalAlignment="Center"

@@ -1382,7 +1382,8 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
-                    context != nullptr)
+                    context != nullptr &&
+                    context.QuickFixes() != nullptr)
                 {
                     // \ue74c --> OEM icon
                     const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });

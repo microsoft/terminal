@@ -4000,7 +4000,7 @@ bool AdaptDispatch::DoWTAction(const std::wstring_view string)
         // 1:     $($cmdNotFound.missingCmd);
         if (parts.size() >= 2)
         {
-            std::wstring_view missingCmd = til::at(parts, 1);
+            const std::wstring_view missingCmd = til::at(parts, 1);
             _api.SearchMissingCommand(missingCmd);
         }
 

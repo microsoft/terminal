@@ -113,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnSearchMissingCommand = [this](auto&& PH1) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
 
-        auto pfnClearQuickFix = [this] { _terminalClearQuickFix(); };
+        auto pfnClearQuickFix = [this] { ClearQuickFix(); };
         _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
@@ -1620,9 +1620,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }));
     }
 
-    void ControlCore::_terminalClearQuickFix()
+    void ControlCore::ClearQuickFix()
     {
-        ClearQuickFix.raise(*this, nullptr);
+        _cachedQuickFixes = nullptr;
+        RefreshQuickFixUI.raise(*this, nullptr);
     }
 
     bool ControlCore::HasSelection() const
@@ -2293,11 +2294,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             commands.pop_back();
         }
 
-
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(trimmedCurrentCommand);
-        // TODO CARLOS: should we delete this after a new command is run? Or delete it after a suggestion is used? Or just after the next winget suggestion (current impl)?
-        //              No clue which we should do. Thoughts?
         context->QuickFixes(_cachedQuickFixes);
         return *context;
     }

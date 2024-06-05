@@ -406,7 +406,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _showContextMenuAt(const til::point& controlRelativePos);
 
         void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
-        void _clearQuickFix(const IInspectable& sender, const IInspectable& args);
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
@@ -438,7 +437,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
-            Control::ControlCore::ClearQuickFix_revoker ClearQuickFix;
+            Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
