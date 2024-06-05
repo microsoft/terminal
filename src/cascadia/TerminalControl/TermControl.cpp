@@ -600,7 +600,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                               const bool caseSensitive,
                               const bool regularExpression)
     {
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
+        if (_searchBox && _searchBox->IsOpen())
+        {
+            _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
+        }
     }
 
     // Method Description:
