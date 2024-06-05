@@ -1168,7 +1168,7 @@ namespace winrt::TerminalApp::implementation
                                               til::size{ 0, 0 };
         _descriptionsBackdrop().Measure(actualSize.to_winrt_size());
         const til::size descriptionDesiredSize = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
-                                                     til::size{ til::math::rounding, _descriptionsBackdrop().DesiredSize().Width, _descriptionsBackdrop().DesiredSize().Height + 12.0f } :
+                                                     til::size{ til::math::rounding, _descriptionsBackdrop().DesiredSize().Width, _descriptionsBackdrop().DesiredSize().Height } :
                                                      til::size{ 0, 0 };
 
         // Now, position vertically.
