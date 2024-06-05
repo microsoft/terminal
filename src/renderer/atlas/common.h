@@ -53,6 +53,8 @@ namespace Microsoft::Console::Render::Atlas
     // My best effort of replicating __attribute__((cold)) from gcc/clang.
 #define ATLAS_ATTR_COLD __declspec(noinline)
 
+#define ATLAS_ENGINE_ERROR_MAC_TYPE MAKE_HRESULT(SEVERITY_SUCCESS, FACILITY_ITF, 'MT')
+
     template<typename T>
     struct vec2
     {
