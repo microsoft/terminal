@@ -616,7 +616,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const bool caseSensitive,
                                      const bool regularExpression)
     {
-        if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+        if (_searchBox && _searchBox->IsOpen())
         {
             // We only want to update the search results based on the new text. Set
             // `resetOnly` to true so we don't accidentally update the current match index.
