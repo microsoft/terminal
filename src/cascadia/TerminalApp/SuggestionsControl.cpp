@@ -1256,22 +1256,23 @@ namespace winrt::TerminalApp::implementation
 
         // Create a thickness for the new margins
         auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
-        // Now, position vertically.
-        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
-        {
-            // The control should open right below the cursor, with the list
-            // extending below. This is easy, we can just use the cursor as the
-            // origin (more or less)
-            newMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
-        }
-        else
-        {
-            // Position at the cursor. The suggestions UI itself will maintain
-            // its own offset such that it's always above its origin
-            // NO newMargin.Top = (_anchor.Y - actualSize.height /* - descriptionSize.height*/);
-            newMargin.Top = (_anchor.Y - actualSize.height - descriptionSize.height);
-        }
+        // // Now, position vertically.
+        // if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+        // {
+        //     // The control should open right below the cursor, with the list
+        //     // extending below. This is easy, we can just use the cursor as the
+        //     // origin (more or less)
+        //     newMargin.Top = (_anchor.Y /* - descriptionSize.height*/);
+        // }
+        // else
+        // {
+        //     // Position at the cursor. The suggestions UI itself will maintain
+        //     // its own offset such that it's always above its origin
+        //     // NO newMargin.Top = (_anchor.Y - actualSize.height /* - descriptionSize.height*/);
+        //     newMargin.Top = (_anchor.Y - actualSize.height - descriptionSize.height);
+        // }
         Margin(newMargin);
+        _recalculateTopMargin();
 
         _searchBox().Text(filter);
 
