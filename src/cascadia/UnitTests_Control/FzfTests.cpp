@@ -65,6 +65,13 @@ namespace fzfUnitTests
         TEST_METHOD(FuzzyMatchV2_UnicodeCase1);
         TEST_METHOD(FuzzyMatchV2_UnicodeCase2);
         TEST_METHOD(FuzzyMatchV2_UnicodeCase3);
+        TEST_METHOD(FuzzyMatchV2_UnicodeCase_Russian);
+        TEST_METHOD(FuzzyMatchV2_UnicodeCase_Spanish);
+        TEST_METHOD(FuzzyMatchV2_UnicodeCase_Czech);
+        TEST_METHOD(FuzzyMatchV2_UnicodeCase_Greek);
+        TEST_METHOD(FuzzyMatchV2_UnicodeCase_Japanese);
+        TEST_METHOD(FuzzyMatchV2_UnicodeCase_Vietnamese);
+        TEST_METHOD(FuzzyMatchV2_UnicodeCase_MixedLanguages);
         TEST_METHOD(PrefixMatch_Case1);
         TEST_METHOD(PrefixMatch_Case2);
         TEST_METHOD(PrefixMatch_Case3);
@@ -319,6 +326,41 @@ namespace fzfUnitTests
     void FzfTests::FuzzyMatchV2_UnicodeCase3()
     {
         ScoreInputTest(L"\U0001F600\u01C5\u00CF", CaseRespect, L"\U0001F600\u01C5 D\u00CFnco", 92, { 5, 2, 1, 0 });
+    }
+    // \u0045\u0073\u0070\u0061\u00f1\u006f\u006c (Español)
+    void FzfTests::FuzzyMatchV2_UnicodeCase_Spanish()
+    {
+        ScoreInputTest(L"\u0045\u0073\u0070\u0061\u00f1\u006f\u006c", CaseRespect, L"Spanish \u0045\u0073\u0070\u0061\u00f1\u006f\u006c", 176, {14, 13, 12, 11, 10, 9, 8 });
+    }
+    // \u0440\u0443\u0441\u0441\u043a\u0438\u0439 (русский)
+    void FzfTests::FuzzyMatchV2_UnicodeCase_Russian()
+    {
+        ScoreInputTest(L"\u0440\u0443\u0441\u0441\u043a\u0438\u0439", CaseRespect, L"Russian \u0440\u0443\u0441\u0441\u043a\u0438\u0439", 176, {14, 13, 12, 11, 10, 9, 8 });
+    }
+    // Unicode characters: \u010d\u0065\u0161\u0074\u0069\u006e\u0061 (čeština)
+    void FzfTests::FuzzyMatchV2_UnicodeCase_Czech()
+    {
+        ScoreInputTest(L"\u010d\u0065\u0161\u0074\u0069\u006e\u0061", CaseRespect, L"Czech \u010d\u0065\u0161\u0074\u0069\u006e\u0061", 176, {12, 11, 10, 9, 8, 7, 6 });
+    }
+    // Unicode characters: \u03b5\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac (ελληνικά)
+    void FzfTests::FuzzyMatchV2_UnicodeCase_Greek()
+    {
+        ScoreInputTest(L"\u03b5\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac", CaseRespect, L"Greek \u03b5\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac", 200, {13, 12, 11, 10, 9, 8, 7, 6 });
+    }
+    // Unicode characters: \u65e5\u672c\u8a9e (日本語)
+    void FzfTests::FuzzyMatchV2_UnicodeCase_Japanese()
+    {
+        ScoreInputTest(L"\u65e5\u672c\u8a9e", CaseRespect, L"Japanese \u65e5\u672c\u8a9e", 80, { 11, 10, 9 });
+    }
+    // Unicode characters: \u0054\u0069\u1ec3\u006e\u0067 \u0056\u0069\u1ec7\u0074 (Tiểng Việt)
+    void FzfTests::FuzzyMatchV2_UnicodeCase_Vietnamese()
+    {
+        ScoreInputTest(L"\u0054\u0069\u1ec3\u006e\u0067 \u0056\u0069\u1ec7\u0074", CaseRespect, L"Vietnamese \u0054\u0069\u1ec3\u006e\u0067 \u0056\u0069\u1ec7\u0074", 232, { 15, 14, 13, 12, 11, 20, 19, 18, 17});
+    }
+    // Unicode characters: \u05e9\u05dc\u05d5\u05dd \u043f\u0440\u0438\u0432\u0435\u0442 \u0068\u0065\u006c\u006c\u006f (שלום привет hello)
+    void FzfTests::FuzzyMatchV2_UnicodeCase_MixedLanguages()
+    {
+        ScoreInputTest(L"\u05e9\u05dc\u05d5\u05dd \u043f\u0440\u0438\u0432\u0435\u0442 \u0068\u0065\u006c\u006c\u006f", CaseRespect, L"Mixed \u05e9\u05dc\u05d5\u05dd \u043f\u0440\u0438\u0432\u0435\u0442 \u0068\u0065\u006c\u006c\u006f", 384, { 9, 8, 7, 6, 16, 15, 14, 13, 12, 11, 22, 21, 20, 19, 18  });
     }
     void FzfTests::PrefixMatch_Case1()
     {
