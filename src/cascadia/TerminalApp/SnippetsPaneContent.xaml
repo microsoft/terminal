@@ -174,7 +174,7 @@
                                                       Text="{x:Bind HighlightedName, Mode=OneWay}" />
                         <TextBlock Grid.Row="1"
                                    Grid.Column="1"
-                                   Margin="12,0,0,6"
+                                   Margin="12,0,12,6"
                                    FontFamily="Cascadia Mono, Consolas"
                                    IsTextSelectionEnabled="True"
                                    Style="{ThemeResource BodyTextBlockStyle}"
