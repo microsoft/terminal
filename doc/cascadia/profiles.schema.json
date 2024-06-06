@@ -629,7 +629,8 @@
         "folder",
         "separator",
         "remainingProfiles",
-        "matchProfiles"
+        "matchProfiles",
+        "action"
       ]
     },
     "NewTabMenuEntry": {
@@ -776,6 +777,28 @@
               "type": "string",
               "default": "",
               "description": "The command line of the profiles to match"
+            }
+          }
+        }
+      ]
+    },
+    "ActionEntry": {
+      "description": "An action in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "action"
+            },
+            "id": {
+              "type": "string",
+              "default": "",
+              "description": "The ID of the action to show in this entry"
             }
           }
         }
@@ -2054,6 +2077,9 @@
           },
           {
             "$ref": "#/$defs/RemainingProfilesEntry"
+          },
+          {
+            "$ref": "#/$defs/ActionEntry"
           }
         ]
       }

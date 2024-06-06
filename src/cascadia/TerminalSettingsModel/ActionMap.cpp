@@ -596,6 +596,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
 
+    Model::Command ActionMap::GetActionByID(const winrt::hstring& cmdID) const
+    {
+        return _GetActionByID(cmdID);
+    }
+
     // Method Description:
     // - Retrieves the assigned command ID with the given key chord.
     // - Can return nullopt to differentiate explicit unbinding vs lack of binding.
