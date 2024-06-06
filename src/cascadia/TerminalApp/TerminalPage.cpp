@@ -127,6 +127,14 @@ namespace winrt::TerminalApp::implementation
             p.SetActionMap(_settings.ActionMap());
         }
 
+        if (_extensionPalette)
+        {
+            // the extension palette had been loaded with the previous settings
+            // reload it with the new settings
+            _extensionPalette = nullptr;
+            _loadQueryExtension();
+        }
+
         if (needRefreshUI)
         {
             _RefreshUIForSettingsReload();
@@ -5219,7 +5227,7 @@ namespace winrt::TerminalApp::implementation
                 appPrivate->PrepareForAIChat();
             }
         }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(_settings.AIEndpoint(), _settings.AIKey());
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {
@@ -5260,9 +5268,7 @@ namespace winrt::TerminalApp::implementation
                 _extensionPalette.ActiveCommandline(L"");
             }
         });
-        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
-            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
-        });
+
         ExtensionPresenter().Content(_extensionPalette);
     }
 }

@@ -27,9 +27,12 @@ const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    ExtensionPalette::ExtensionPalette()
+    ExtensionPalette::ExtensionPalette(winrt::hstring endpoint, winrt::hstring key)
     {
         InitializeComponent();
+
+        AIKeyAndEndpoint(endpoint, key);
+        _llmProvider = Extension::AzureLLMProvider{ endpoint, key };
 
         _clearAndInitializeMessages(nullptr, nullptr);
         ControlName(RS_(L"ControlName"));
@@ -52,9 +55,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
             _setFocusAndPlaceholderTextHelper();
 
-            // For the purposes of data collection, request the API key/endpoint *now*
-            _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
-
             TraceLoggingWrite(
                 g_hQueryExtensionProvider,
                 "QueryPaletteOpened",
@@ -73,9 +73,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 Bindings->Update();
 
                 _setFocusAndPlaceholderTextHelper();
-
-                // For the purposes of data collection, request the API key/endpoint *now*
-                _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
                 TraceLoggingWrite(
                     g_hQueryExtensionProvider,
@@ -122,9 +119,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             TraceLoggingDescription("Event emitted when the user makes a query"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        // request the latest LLM key and endpoint
-        _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
         // Use a flag for whether the response the user receives is an error message
         // we pass this flag to _splitResponseAndAddToChatHelper so it can send the relevant telemetry event

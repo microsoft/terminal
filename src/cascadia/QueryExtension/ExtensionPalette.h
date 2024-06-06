@@ -7,11 +7,13 @@
 #include "ChatMessage.g.h"
 #include "GroupedChatMessages.g.h"
 
+#include "AzureLLMProvider.h"
+
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>
     {
-        ExtensionPalette();
+        ExtensionPalette(winrt::hstring endpoint, winrt::hstring key);
 
         // We don't use the winrt_property macro here because we just need the setter
         void AIKeyAndEndpoint(const winrt::hstring& endpoint, const winrt::hstring& key);
@@ -27,7 +29,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         WINRT_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::IconElement, ResolvedIcon, _PropertyChangedHandlers, nullptr);
 
         TYPED_EVENT(ActiveControlInfoRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
-        TYPED_EVENT(AIKeyAndEndpointRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(InputSuggestionRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
 
     private:
@@ -39,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::hstring _AIEndpoint;
         winrt::hstring _AIKey;
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
+        ILLMProvider _llmProvider{ nullptr };
 
         // chat history storage
         Windows::Foundation::Collections::IObservableVector<GroupedChatMessages> _messages{ nullptr };

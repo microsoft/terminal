@@ -21,9 +21,7 @@ namespace Microsoft.Terminal.Query.Extension
 
     [default_interface] runtimeclass ExtensionPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        ExtensionPalette();
-
-        void AIKeyAndEndpoint(String endpoint, String key);
+        ExtensionPalette(String endpoint, String key);
 
         String ControlName { get; };
         String QueryBoxPlaceholderText { get; };
@@ -36,7 +34,6 @@ namespace Microsoft.Terminal.Query.Extension
         Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
 
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
-        event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> AIKeyAndEndpointRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
     }
 }
