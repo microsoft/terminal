@@ -123,7 +123,6 @@ namespace winrt::TerminalApp::implementation
         // to happen before the Settings UI is reloaded and tries to re-read those values.
         if (const auto p = CommandPaletteElement())
         {
-            p.SetCommands(_settings.GlobalSettings().ActionMap().ExpandedCommands());
             p.SetActionMap(_settings.ActionMap());
         }
 
@@ -1828,7 +1827,6 @@ namespace winrt::TerminalApp::implementation
     {
         const auto p = FindName(L"CommandPaletteElement").as<CommandPalette>();
 
-        p.SetCommands(_settings.GlobalSettings().ActionMap().ExpandedCommands());
         p.SetActionMap(_settings.ActionMap());
 
         // When the visibility of the command palette changes to "collapsed",
