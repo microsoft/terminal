@@ -1,7 +1,7 @@
 ---
 author: Mike Griese
 created on: 2022-08-22
-last updated: 2024-05-24
+last updated: 2024-06-06
 issue id: 1595
 ---
 
@@ -11,12 +11,12 @@ issue id: 1595
 
 The command line is a highly powerful tool. However, its power is dependent on
 the user's knowledge of the specific commands, flags and parameters needed to
-perform tasks from the command-line. For simple everyday commands, this might not
-be so hard. For longer commands, or ones used less frequently, there's quite a
-bit of mental overhead trying to recall the exact syntax. For teams, it might be
-helpful to share these tasks with everyone on the project. The Terminal can be a
-avenue by which complicated tasks can be remembered, shared, discovered and
-recalled by the user simply thinking **"what do I want to do"**, rather than
+perform tasks from the command-line. For simple everyday commands, this might
+not be so hard. For longer commands, or ones used less frequently, there's quite
+a bit of mental overhead trying to recall the exact syntax. For teams, it might
+be helpful to share these tasks with everyone on the project. The Terminal can
+be an avenue by which complicated tasks can be remembered, shared, discovered,
+and recalled by the user simply thinking **"what do I want to do"**, rather than
 "how do I do it".
 
 ## Background
@@ -70,13 +70,12 @@ B | ✅ Done   | Fragment apps can provide tasks to a users settings
 C | 🚶 Walk   | The user can save commands straight to their settings with a `wt` command
 D | 🚶 Walk   | Users can have different tasks enabled for different profiles(/shells?)
 E | 🚶 Walk   | The Terminal displays a Snippets Pane for easy browsing of relevant snippets
-F | 🚶 Walk   | Users should be able to save snippets directly from the commandline
-G | 🏃‍♂️ Run    | The terminal can automatically look for command fragments in the tree of the CWD
-H | 🏃‍♂️ Run    | Snippets with multiple lines can be sent only conditionally on the success of the previous command (with shell integration)
-I | ✅ Done   | Snippets can be filtered by text the user has already typed
-J | 🚀 Sprint | Snippets can have prompt-able sections of input
-K | 🚀 Sprint | Community tasks are hosted in a public GH repo
-L | 🚀 Sprint | A simple UX (either web or in Terminal) is exposed for interacting with public GH repo of tasks
+F | 🏃‍♂️ Run    | The terminal can automatically look for command fragments in the tree of the CWD
+G | 🏃‍♂️ Run    | Snippets with multiple lines can be sent only conditionally on the success of the previous command (with shell integration)
+H | ✅ Done   | Snippets can be filtered by text the user has already typed
+I | 🚀 Sprint | Snippets can have prompt-able sections of input
+J | 🚀 Sprint | Community tasks are hosted in a public GH repo
+K | 🚀 Sprint | A simple UX (either web or in Terminal) is exposed for interacting with public GH repo of tasks
 
 ### Elevator Pitch
 
@@ -124,7 +123,7 @@ We'll want to also augment `sendInput` to add support for `input` as an array of
 strings, not only a single string value. When the input is a list of strings,
 then the terminal can send each string, separated by the <kbd>enter</kbd> key.
 We can also add a `waitForSuccess` parameter to `sendInput` (with a default
-value of `false`). If that's set to `true`, and shell integration is enabled,
+value of `false`). If that's set to `true`, **and shell integration is enabled**,
 then the Terminal will wait to send each command until the previous command
 exits.
 
@@ -196,9 +195,9 @@ parameter. This then implies that each string should be sent in sequence, with
 },
 ```
 
-This is slightly more maintainable. But now, a user could set
-`"waitForSuccess": true`, and if any part of the script fails, then the rest of
-it won't be sent to the shell.
+This is slightly more maintainable. Assuming the user also has shell integration
+enabled, they could also set `"waitForSuccess": true`, and if any part of the
+script fails, then the rest of it won't be sent to the shell[[1](#footnote-1)].
 
 #### Fragment actions
 
@@ -255,9 +254,9 @@ refresh that list as the user changes directories.
   the actions living in an entirely separate map of CWD->actions, the
   keybindings in the main map won't be able to easily get to them. See also
   [Security considerations](#security) for more.
-* If the Snippets pane or Suggestions UI is opened with `local` suggestions as a
-  source, then we'll just append the appropriate list of suggestions for the
-  active control's CWD.
+* If the Snippets pane or Suggestions UI is opened with `snippets` as a source,
+  then we'll just append the appropriate list of suggestions for the active
+  control's CWD.
   * We don't need to have the control raise an event when the CWD changes - we
     can lazy-load these actions when a UI element that requires it is first
     invoked.
@@ -290,6 +289,40 @@ The exact syntax as follows:
 
 This will be powered by a `saveSnippet` action behind the scenes. After running
 this command, a toast will be presented to the user to indicate success/failure.
+The schema for this action is as follows:
+
+```json
+"SaveSnippetAction": {
+  "description": "Arguments corresponding to a saveSnippet Action",
+  "allOf": [
+    { "$ref": "#/$defs/ShortcutAction" },
+    {
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "const": "saveSnippet" },
+        "commandline": {
+          "type": "string",
+          "default": "",
+          "description": "The commandline to save as a snippet. This will be turned into the `input` of a `sendInput` action. Escape codes like \\x1b must be written as \\u001b."
+        },
+        "name": {
+          "type": "string",
+          "default": "",
+          "description": "A name to give the newly created action. If omitted, the action will use an automatically generated one."
+        },
+        "description": {
+          "type": "string",
+          "default": "",
+          "description": "A description to give the newly created action."
+        }
+      }
+    }
+  ],
+  "required": [
+    "commandline"
+  ]
+},
+```
 
 #### `save` subcommand
 
@@ -307,9 +340,10 @@ This will immediately write the Terminal settings file.
 
 If the `save` subcommand is ran without any other subcommands, the Terminal will
 imply the `-w 0` arguments, to attempt to send this action to the current
-Terminal window. (unless of course, `-w` was manually provided on the
-commandline). When run with other subcommands, then the action will just be ran
-in the same window as all the other subcommands.
+Terminal window (unless of course, `-w` was manually provided on the
+commandline). This is done to avoid a new terminal window popping up, just to
+inform the user a command was saved. When run with other subcommands, then the
+action will just be ran in the same window as all the other subcommands.
 
 > [!NOTE] In other team discussions, we've considered initially merging this
 > subcommand as `x-save`, where `x-` implies "experimental". We may want to use
@@ -321,22 +355,25 @@ For the most part, we'll be using the [Suggestions UI] to display tasks to the
 user. This is a text cursor-relative UI surface that can quickly display actions
 to the user, in the context of what they're working on.
 
-The following are some examples from VsCode, Warp. These are meant to be
+The following are some examples from VsCode and Warp. These are meant to be
 illustrative of what these menus already look like in the wild:
 
-![](img/vscode-tasks-000.gif)
+![VS Code demo of tasks](img/vscode-tasks-000.gif)
 
-![](img/warp-workflows-000.gif)
+![Warp demo of workflows](img/warp-workflows-000.gif)
 
 A prototype of saving a command directly to the user's settings, then invoking
 it via the suggestions UI
 
-![](img/save-command.gif)
+![Example of using `wt save foo bar --baz` to save the command, then invoke the saved command via the suggestions UI](img/save-command.gif)
 
 A prototype of reading tasks from the CWD
 
-![](img/tasks-from-cwd.gif)
+![navigate into a folder with a .wt.json file, view that it's populated, then invoke a snippet from that file using the suggestions UI](img/tasks-from-cwd.gif)
 
+The initial version of the snippets pane:
+
+![snippets-pane](https://github.com/microsoft/terminal/assets/18356694/f4aee6f8-dbaa-4a70-a2ac-98244eb0e4f1)
 
 ## Tenets
 
@@ -400,9 +437,6 @@ Something like `wt save ping 8.8.8.8 > foo.txt` isn't going to work the way
 users want. The shell is gonna get the first crack at parsing that commandline,
 and is going to try and redirect the _output of `wt`_ to `foo.txt`.
 
-If we've got a `.wt.json` in a given directory, should we be dynamically
-adding/removing other settings too? Profiles?
-
 ## Implementation Plan
 
 ### 🐣 Crawl
@@ -412,6 +446,7 @@ adding/removing other settings too? Profiles?
     non-localized names in the command palette
   - It won't be a TeachingTip, since those are an unmitigated disaster. But we
     can just fake it with another text box.
+  - A prototype can be found in [#17376]
 * [X] [#1595] Add the Suggestions UI, with support for `tasks`
 * [x] Fragments can add **actions** to a user's settings
 
@@ -461,6 +496,7 @@ their own workflows.
   * `--profile`: save to this profile???? Not sure if this is actually possible.
     Maybe with the `WT_SESSION_ID` env var to figure out which profile is in use
     for the pane with that ID
+    * This would probably require per-profile actions, which are woefully unspec'd
 * Longer workflows might be better exposed as notebooks. We've already got a
   mind to support [markdown in a notebook-like
   experience](https://github.com/microsoft/terminal/issues/16495) in the
@@ -470,9 +506,13 @@ their own workflows.
   example, see
   [`clone_all_repos_in_org.yaml`](https://github.com/warpdotdev/workflows/blob/main/specs/git/clone_all_repos_in_org.yaml).
   We may want to straight up just seamlessly support that syntax as well.
-  Converting them to WT-compatible json is fairly trivial [[1](#footnote-1)].
-  Furthermore, the commands are all licensed under Apache 2.0, which means they
-  can be easily consumed by other OSS projects and shared with other developers.
+  * Converting them to WT-compatible json is fairly trivial [[2](#footnote-2)].
+    * We may want to consider supporting YAML like this for `wt import`, ala [#10083]
+    * Similarly, we could import the YAML in the settings UI in a fashion similar
+      to how we import color schemes:
+  * Furthermore, the commands are all licensed under Apache 2.0, which means they
+    can be easily consumed by other OSS projects and shared with other developers.
+
   This leads us to the next future consideration:
 * Discoverability will be important. Perhaps the actions page could have a
   toggle to immediately filter to "snippets"? Which then also displays some text
@@ -490,14 +530,31 @@ various tools. Stored publicly on a GitHub repo (a la the winget-pkgs repo).
 Users can submit Snippets with descriptions of what the Snippet does. The
 Terminal can plug into that repo automatically and fetch the latest community
 commands, immediately giving the user access to a wide berth of common
-Snippets. That could easily be done as another suggestion source (in the same
-vein as `local` is.)
+Snippets. That could easily be done as another suggestion source.
+
+#### Profiles in `.wt.json`
+
+If we've got a `.wt.json` in a given directory, should we be dynamically
+adding/removing other settings too? Wouldn't profiles also make sense? Take for
+example, the Terminal repo. We've got a PowerShell build environment and a CMD
+one. What if we could drop two profiles in the `.wt.json` file, with the
+`commandline`'s set up to call those scripts as needed?
+
+However, what does that even mean? We wouldn't know that file exists till we see
+it the first time. Maybe there's room to integrate that with Dev Home ala
+[microsoft/devhome/3005]. Though, that probably makes the most sense as a winget
+DSC to create a fragment profile instead.
 
 ## Resources
 
 ### Footnotes
 
-<a name="footnote-1"></a>[1]: For your consideration, I made a python script
+<a name="footnote-1"></a>[1]: Shell integration would be a strict requirement
+for that parameter to work as intended. Without also enabling shell integration,
+then the Terminal would only send the first line of the script, then wait
+forever for a `FTCS_COMMAND_FINISHED`.
+
+<a name="footnote-2"></a>[2]:  For your consideration, I made a python script
 that will take the Warp workflow YAML and convert it into json that the Terminal
 can load. Go checkout [`dump_workflows.py`](./dump-workflows.py) to see it. It's
 super straightforward.
@@ -524,3 +581,8 @@ super straightforward.
 [#16513]: https://github.com/microsoft/terminal/pull/16513
 [#12861]: https://github.com/microsoft/terminal/issues/12861
 [#16495]: https://github.com/microsoft/terminal/issues/16495
+[#17376]: https://github.com/microsoft/terminal/pull/17376
+[#10083]: https://github.com/microsoft/terminal/issues/10083
+[#8639]: https://github.com/microsoft/terminal/issues/8639
+
+[microsoft/devhome/3005]: https://github.com/microsoft/devhome/issues/3005
