@@ -1586,6 +1586,7 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 
 void Terminal::PreviewText(std::wstring_view input)
 {
+    // Our suggestion text is default-on-default, in italics.
     static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
 
     auto lock = LockForWriting();
@@ -1597,44 +1598,37 @@ void Terminal::PreviewText(std::wstring_view input)
         return;
     }
 
-    // HACK trim off leading DEL chars.
+    // When we're previewing suggestions, they might be preceeded with DEL
+    // characters to backspace off the old command.
+    //
+    // But also, in the case of something like pwsh, there might be MORE "ghost"
+    // text in the buffer _after_ the commandline.
+    //
+    // We need to trim off the leading DELs, then pad out the rest of the line
+    // to cover any other ghost text.
     std::wstring_view view{ input };
+    // Where do the DELs end?
     const auto strBegin = view.find_first_not_of(L"\x7f");
-
-    // // What we actually want to display is the text that would remain after
-    // // accounting for the leading backspaces. So trim off the leading
-    // // backspaces, AND and equal number of "real" characters.
-    // if (strBegin != std::wstring::npos)
-    // {
-    //     view = view.substr(strBegin * 2);
-    // }
-
-    // snippetPreview.text = view;
-    // // // Hack, part the second: Pad the remaining text with spaces.
-    // // const auto originalLen = input.size();
-    // // const auto unpaddedLen = snippetPreview.text.size();
-    // // if (unpaddedLen < originalLen)
-    // // {
-    // //     snippetPreview.text.insert(snippetPreview.text.size(), originalLen + unpaddedLen, L' ');
-    // // }
+    if (strBegin != std::wstring::npos)
     {
-        // Attempt 2
-        const auto bufferWidth = _GetMutableViewport().Width();
-        const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
-        const auto expectedLenTillEnd = strBegin + (bufferWidth - cursorX);
-        if (strBegin != std::wstring::npos)
-        {
-            view = view.substr(strBegin);
-        }
-        snippetPreview.text = view;
-        const auto originalSize{ snippetPreview.text.size() };
-        if (expectedLenTillEnd > originalSize)
-        {
-            snippetPreview.text.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
-        }
+        // Trim them off.
+        view = view.substr(strBegin);
     }
+    // How many spaces do we need, so that the preview exactly covers the entire
+    // prompt, all the way to the end of the viewport?
+    const auto bufferWidth = _GetMutableViewport().Width();
+    const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
+    const auto expectedLenTillEnd = strBegin + (bufferWidth - cursorX);
+    std::wstring preview{ view };
+    const auto originalSize{ preview.size() };
+    if (expectedLenTillEnd > originalSize)
+    {
+        // pad it out
+        preview.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
+    }
+    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+    // Build our composition data
     const auto len = snippetPreview.text.size();
-    // snippetPreview.attributes[0] = Microsoft::Console::Render::CompositionRange{ len, TextAttribute{} };
     snippetPreview.attributes.clear();
     snippetPreview.attributes.emplace_back(len, previewAttrs);
     snippetPreview.cursorPos = len;
