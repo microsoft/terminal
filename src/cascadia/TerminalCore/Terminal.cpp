@@ -1589,27 +1589,50 @@ void Terminal::PreviewText(std::wstring_view input)
     static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
 
     auto lock = LockForWriting();
+    if (input.empty())
+    {
+        snippetPreview.text = L"";
+        snippetPreview.attributes.clear();
+        _activeBuffer().NotifyPaintFrame();
+        return;
+    }
 
     // HACK trim off leading DEL chars.
     std::wstring_view view{ input };
     const auto strBegin = view.find_first_not_of(L"\x7f");
 
-    // What we actually want to display is the text that would remain after
-    // accounting for the leading backspaces. So trim off the leading
-    // backspaces, AND and equal number of "real" characters.
-    if (strBegin != std::wstring::npos)
-    {
-        view = view.substr(strBegin * 2);
-    }
-
-    snippetPreview.text = view;
-    // // Hack, part the second: Pad the remaining text with spaces.
-    // const auto originalLen = input.size();
-    // const auto unpaddedLen = snippetPreview.text.size();
-    // if (unpaddedLen < originalLen)
+    // // What we actually want to display is the text that would remain after
+    // // accounting for the leading backspaces. So trim off the leading
+    // // backspaces, AND and equal number of "real" characters.
+    // if (strBegin != std::wstring::npos)
     // {
-    //     snippetPreview.text.insert(snippetPreview.text.size(), originalLen + unpaddedLen, L' ');
+    //     view = view.substr(strBegin * 2);
     // }
+
+    // snippetPreview.text = view;
+    // // // Hack, part the second: Pad the remaining text with spaces.
+    // // const auto originalLen = input.size();
+    // // const auto unpaddedLen = snippetPreview.text.size();
+    // // if (unpaddedLen < originalLen)
+    // // {
+    // //     snippetPreview.text.insert(snippetPreview.text.size(), originalLen + unpaddedLen, L' ');
+    // // }
+    {
+        // Attempt 2
+        const auto bufferWidth = _GetMutableViewport().Width();
+        const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
+        const auto expectedLenTillEnd = strBegin + (bufferWidth - cursorX);
+        if (strBegin != std::wstring::npos)
+        {
+            view = view.substr(strBegin);
+        }
+        snippetPreview.text = view;
+        const auto originalSize{ snippetPreview.text.size() };
+        if (expectedLenTillEnd > originalSize)
+        {
+            snippetPreview.text.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
+        }
+    }
     const auto len = snippetPreview.text.size();
     // snippetPreview.attributes[0] = Microsoft::Console::Render::CompositionRange{ len, TextAttribute{} };
     snippetPreview.attributes.clear();
