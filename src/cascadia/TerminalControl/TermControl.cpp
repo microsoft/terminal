@@ -731,6 +731,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
+        // Dismiss any previewed input.
+        PreviewInput(L"");
+
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
         if (StringSent)
         {
@@ -3659,6 +3662,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::OwningHwnd()
     {
         return _core.OwningHwnd();
+    }
+
+    void TermControl::PreviewInput(const winrt::hstring& text)
+    {
+        get_self<ControlCore>(_core)->PreviewInput(text);
     }
 
     void TermControl::AddMark(const Control::ScrollMark& mark)

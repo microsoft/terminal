@@ -772,14 +772,14 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 scratch.CopyFrom(r);
                 rowBackup = &scratch;
 
-                std::wstring_view text{ _pData->activeComposition.text };
+                std::wstring_view text{ _pData->GetActiveComposition().text };
                 RowWriteState state{
                     .columnLimit = r.GetReadableColumnCount(),
                     .columnEnd = _compositionCache->absoluteOrigin.x,
                 };
 
                 size_t off = 0;
-                for (const auto& range : _pData->activeComposition.attributes)
+                for (const auto& range : _pData->GetActiveComposition().attributes)
                 {
                     const auto len = range.len;
                     auto attr = range.attr;
@@ -1225,7 +1225,7 @@ void Renderer::_invalidateOldComposition() const
 // so that _PaintBufferOutput() actually gets a chance to draw it.
 void Renderer::_prepareNewComposition()
 {
-    if (_pData->activeComposition.text.empty())
+    if (_pData->GetActiveComposition().text.empty())
     {
         return;
     }
@@ -1246,16 +1246,16 @@ void Renderer::_prepareNewComposition()
         auto& buffer = _pData->GetTextBuffer();
         auto& scratch = buffer.GetScratchpadRow();
 
-        std::wstring_view text{ _pData->activeComposition.text };
+        std::wstring_view text{ _pData->GetActiveComposition().text };
         RowWriteState state{
             .columnLimit = buffer.GetRowByOffset(line.top).GetReadableColumnCount(),
         };
 
-        state.text = text.substr(0, _pData->activeComposition.cursorPos);
+        state.text = text.substr(0, _pData->GetActiveComposition().cursorPos);
         scratch.ReplaceText(state);
         const auto cursorOffset = state.columnEnd;
 
-        state.text = text.substr(_pData->activeComposition.cursorPos);
+        state.text = text.substr(_pData->GetActiveComposition().cursorPos);
         state.columnBegin = state.columnEnd;
         scratch.ReplaceText(state);
 

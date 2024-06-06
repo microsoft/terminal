@@ -1584,6 +1584,40 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
     return absoluteCursorPosition - viewport.Origin();
 }
 
+void Terminal::PreviewText(std::wstring_view input)
+{
+    static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
+
+    auto lock = LockForWriting();
+
+    // HACK trim off leading DEL chars.
+    std::wstring_view view{ input };
+    const auto strBegin = view.find_first_not_of(L"\x7f");
+
+    // What we actually want to display is the text that would remain after
+    // accounting for the leading backspaces. So trim off the leading
+    // backspaces, AND and equal number of "real" characters.
+    if (strBegin != std::wstring::npos)
+    {
+        view = view.substr(strBegin * 2);
+    }
+
+    snippetPreview.text = view;
+    // // Hack, part the second: Pad the remaining text with spaces.
+    // const auto originalLen = input.size();
+    // const auto unpaddedLen = snippetPreview.text.size();
+    // if (unpaddedLen < originalLen)
+    // {
+    //     snippetPreview.text.insert(snippetPreview.text.size(), originalLen + unpaddedLen, L' ');
+    // }
+    const auto len = snippetPreview.text.size();
+    // snippetPreview.attributes[0] = Microsoft::Console::Render::CompositionRange{ len, TextAttribute{} };
+    snippetPreview.attributes.clear();
+    snippetPreview.attributes.emplace_back(len, previewAttrs);
+    snippetPreview.cursorPos = len;
+    _activeBuffer().NotifyPaintFrame();
+}
+
 // These functions are used by TerminalInput, which must build in conhost
 // against OneCore compatible signatures. See the definitions in
 // VtApiRedirection.hpp (which we cannot include cross-project.)
