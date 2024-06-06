@@ -432,7 +432,11 @@ bool Renderer::_CheckViewportAndScroll()
     // The cursor may have moved out of or into the viewport. Update the .inViewport property.
     {
         const auto view = ScreenToBufferLine(srNewViewport, _currentCursorOptions.lineRendition);
-        const auto coordCursor = _currentCursorOptions.coordCursor;
+        auto coordCursor = _currentCursorOptions.coordCursor;
+
+        // `coordCursor` was stored in viewport-relative while `view` is in absolute coordinates.
+        // --> Turn it back into the absolute coordinates with the help of the old viewport.
+        coordCursor.y += srOldViewport.top;
 
         // Note that we allow the X coordinate to be outside the left border by 1 position,
         // because the cursor could still be visible if the focused character is double width.

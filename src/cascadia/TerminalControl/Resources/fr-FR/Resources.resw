@@ -300,4 +300,16 @@ Installez la police manquante ou choisissez-en une autre.</value>
     <value>Restaurée</value>
     <comment>"Restored" as in "This content was restored"</comment>
   </data>
+  <data name="SearchBox_RegularExpression.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Expression régulière</value>
+    <comment>The tooltip text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Recherche d’expressions régulières</value>
+    <comment>The accessibility description text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchRegexInvalid" xml:space="preserve">
+    <value>incorrect</value>
+    <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
 </root>

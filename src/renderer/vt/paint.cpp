@@ -224,6 +224,15 @@ using namespace Microsoft::Console::Types;
 {
     _trace.TracePaintCursor(options.coordCursor);
 
+    // GH#17270: If the wrappedRow field is set, and the target cursor position
+    // is at the start of the next row, it's expected that any subsequent output
+    // would already be written to that location, so the _MoveCursor method may
+    // decide it doesn't need to do anything. In this case, though, we're not
+    // writing anything else, so the cursor will end up in the wrong location at
+    // the end of the frame. Clearing the wrappedRow field fixes that.
+    _wrappedRow = std::nullopt;
+    _trace.TraceClearWrapped();
+
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
 

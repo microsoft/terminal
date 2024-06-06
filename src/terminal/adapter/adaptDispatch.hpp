@@ -249,7 +249,7 @@ namespace Microsoft::Console::VirtualTerminal
                                              const VTInt rightMargin,
                                              const bool homeCursor = false);
 
-        void _DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced);
+        bool _DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced);
 
         void _DeviceStatusReport(const wchar_t* parameters) const;
         void _CursorPositionReport(const bool extendedReport);

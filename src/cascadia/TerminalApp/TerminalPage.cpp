@@ -827,7 +827,7 @@ namespace winrt::TerminalApp::implementation
             newTabFlyout.Items().Append(settingsItem);
 
             auto actionMap = _settings.ActionMap();
-            const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
+            const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenSettingsUI") };
             if (settingsKeyChord)
             {
                 _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
@@ -849,7 +849,7 @@ namespace winrt::TerminalApp::implementation
             commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
             newTabFlyout.Items().Append(commandPaletteFlyout);
 
-            const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+            const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.ToggleCommandPalette") };
             if (commandPaletteKeyChord)
             {
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
@@ -1024,7 +1024,8 @@ namespace winrt::TerminalApp::implementation
         // NewTab(ProfileIndex=N) action
         NewTerminalArgs newTerminalArgs{ profileIndex };
         NewTabArgs newTabArgs{ newTerminalArgs };
-        auto profileKeyChord{ _settings.ActionMap().GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+        const auto id = fmt::format(FMT_COMPILE(L"Terminal.OpenNewTabProfile{}"), profileIndex);
+        const auto profileKeyChord{ _settings.ActionMap().GetKeyBindingForAction(id) };
 
         // make sure we find one to display
         if (profileKeyChord)
@@ -2238,6 +2239,29 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // When the tab's active pane changes, we'll want to lookup a new icon
+    // for it. The Title change will be propagated upwards through the tab's
+    // PropertyChanged event handler.
+    void TerminalPage::_activePaneChanged(winrt::TerminalApp::TerminalTab sender,
+                                          Windows::Foundation::IInspectable args)
+    {
+        if (const auto tab{ _GetTerminalTabImpl(sender) })
+        {
+            // Possibly update the icon of the tab.
+            _UpdateTabIcon(*tab);
+
+            _updateThemeColors();
+
+            // Update the taskbar progress as well. We'll raise our own
+            // SetTaskbarProgress event here, to get tell the hosting
+            // application to re-query this value from us.
+            SetTaskbarProgress.raise(*this, nullptr);
+
+            auto profile = tab->GetFocusedProfile();
+            _UpdateBackground(profile);
+        }
+    }
+
     uint32_t TerminalPage::NumberOfTabs() const
     {
         return _tabs.Size();
@@ -2995,15 +3019,6 @@ namespace winrt::TerminalApp::implementation
 
         const auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
         const TermControl control{ content };
-
-        if (const auto id = settings.DefaultSettings().SessionId(); id != winrt::guid{})
-        {
-            const auto settingsDir = CascadiaSettings::SettingsDirectory();
-            const auto idStr = Utils::GuidToPlainString(id);
-            const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
-            control.RestoreFromPath(path);
-        }
-
         return _SetupControl(control);
     }
 
@@ -3103,7 +3118,10 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), false);
+        const auto sessionId = controlSettings.DefaultSettings().SessionId();
+        const auto hasSessionId = sessionId != winrt::guid{};
+
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), hasSessionId);
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
@@ -3124,6 +3142,14 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
+
+        if (hasSessionId)
+        {
+            const auto settingsDir = CascadiaSettings::SettingsDirectory();
+            const auto idStr = Utils::GuidToPlainString(sessionId);
+            const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
+            control.RestoreFromPath(path);
+        }
 
         auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
 
@@ -3820,7 +3846,7 @@ namespace winrt::TerminalApp::implementation
             // recipe for disaster. We won't ever open up a tab in this window.
             newTerminalArgs.Elevate(false);
             const auto newPane = _MakePane(newTerminalArgs, nullptr, connection);
-            newPane->WalkTree([](auto pane) {
+            newPane->WalkTree([](const auto& pane) {
                 pane->FinalizeConfigurationGivenDefault();
             });
             _CreateNewTabFromPane(newPane);
