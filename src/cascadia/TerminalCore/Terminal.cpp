@@ -1598,7 +1598,7 @@ void Terminal::PreviewText(std::wstring_view input)
         return;
     }
 
-    // When we're previewing suggestions, they might be preceeded with DEL
+    // When we're previewing suggestions, they might be preceded with DEL
     // characters to backspace off the old command.
     //
     // But also, in the case of something like pwsh, there might be MORE "ghost"
