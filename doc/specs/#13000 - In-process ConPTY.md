@@ -549,7 +549,7 @@ interface IConsoleServerCallback : IUnknown {
     HRESULT ReleaseBuffer([in] void* buffer);
 
     // This switches between different console alt buffers. Switching to a buffer should change the content that's
-    // being drawn, similar to the xterm alt buffer, however unlike it doing so DOES NOT reset any per-buffer state.
+    // being shown, similar to the xterm alt buffer, however unlike it doing so DOES NOT reset any per-buffer state.
     // All it does is to basically swap out the underlying, active text buffer of the terminal.
     //
     // If `buffer` is NULL it's a request to switch back to the main buffer.
@@ -574,8 +574,8 @@ interface IConsoleServerCallback : IUnknown {
     // It's recommended that this function is lightweight as it may be called relatively often.
     const CONSRV_INFO* GetInfo();
 
-    // When this method is called you're asked to apply any non-null member of the given CONSRV_INFO_CHANGE
-    // struct to the terminal. For instance a non-null `.cursorPosition` is identical to calling `SetCursorPosition`,
+    // When this method is called you're asked to apply any non-null member of the given CONSRV_INFO_CHANGE struct
+    // to the active buffer. For instance a non-null `.cursorPosition` is identical to calling `SetCursorPosition`,
     // a non-null `.bufferSize` is a request to resize the terminal, and so on.
     HRESULT SetInfo([in] const CONSRV_INFO_CHANGE* info);
 
@@ -585,8 +585,8 @@ interface IConsoleServerCallback : IUnknown {
     //   printf("\x1b[%d;%dC", pos.y + 1, pos.x + 1);
     HRESULT SetCursorPosition([in] CONSRV_POINT_I32 pos);
 
-    // The Console API's supports 4 gridline attributes which cannot be translated to VT.
-    // This function is necessary in order to support this. If you don't plan to support those gridlines,
+    // The Console API supports 4 gridline attributes which cannot be translated to VT.
+    // This function is necessary to represent those. If you don't plan to support the gridlines,
     // you can translate the attributes to VT with the following code or some equivalent:
     //   static const uint8_t lut[] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97 };
     //   const auto fg = lut[attributes & 0xf];
@@ -597,7 +597,7 @@ interface IConsoleServerCallback : IUnknown {
     // default colors in Windows Console applications, and so you may choose to translate attributes like that as:
     //   printf("\x1b[39;49");
     //
-    // You may also choose to support COMMON_LVB_REVERSE_VIDEO, which translates to
+    // You may also choose to support COMMON_LVB_REVERSE_VIDEO, which translates to:
     //   printf("\x1b[7m");
     HRESULT SetCurrentAttributes([in] UINT16 attributes);
 
@@ -607,7 +607,10 @@ interface IConsoleServerCallback : IUnknown {
     // However, it may still read cells that have never been written to (for instance below the current viewport!).
     // Such reads should not fail. Simply fill the `infos` array with whitespaces and a default attribute of your chosing,
     // but `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED` is recommended (no other bits set).
-    // NOTE that this does not account for any line renditions (DECDWL, DECDHL). The same applies here.
+    //
+    // NOTE that this API should ignore any line renditions (DECDWL, DECDHL), margins (DECSLRM, ...), etc.
+    // Reading outside of the "valid" range for a given row should behave exactly like reading below the viewport,
+    // as described in the previous paragraph.
     HRESULT ReadBuffer([in] CONSRV_POINT_I32 pos, [in] INT32 count, [out, length_is(count)] CONSRV_CHAR_INFO* infos);
 
     // These two functions are used to layout text for the internal "GNU Readline"-like implementation.
