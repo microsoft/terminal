@@ -342,7 +342,7 @@ Design goals:
   If a complex Console API call can be expressed as a series of simpler ones, and if no other performance expectations exist, it should be expressed via the simpler ones.
 * Works even if only partially implemented<br>
   Example: `CreateConsoleScreenBuffer` is seldomly used, but its existence adds significant complexity to the callback API design and potential implementations.
-  A terminal should either be able to return `E_NOTIMPL` and we provide a fallback, or we provide guidance for how reasonable fallbacks can be implented (e.g. by using the xterm alt buffer in this example).
+  A terminal should either be able to return `E_NOTIMPL` and we provide a fallback, or we provide guidance for how reasonable fallbacks can be implemented (e.g. by using the xterm alt buffer in this example).
 
 > [!IMPORTANT]
 > The following API design is a rough draft just to convey the general idea.
@@ -549,7 +549,7 @@ interface IConsoleServerCallback : IUnknown {
     HRESULT ReleaseBuffer([in] void* buffer);
 
     // This switches between different console alt buffers. Switching to a buffer should change the content that's
-    // beeing drawn, siliar to the xterm alt buffer, however unlike it doing so DOES NOT reset any per-buffer state.
+    // being drawn, similar to the xterm alt buffer, however unlike it doing so DOES NOT reset any per-buffer state.
     // All it does is to basically swap out the underlying, active text buffer of the terminal.
     //
     // If `buffer` is NULL it's a request to switch back to the main buffer.
