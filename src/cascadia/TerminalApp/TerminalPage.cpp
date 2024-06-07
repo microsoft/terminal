@@ -924,7 +924,7 @@ namespace winrt::TerminalApp::implementation
             AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
             newTabFlyout.Items().Append(AIChatFlyout);
 
-            const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleAIChat) };
+            const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(L"Terminal.OpenTerminalChat") };
             if (AIChatKeyChord)
             {
                 _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
