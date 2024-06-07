@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {
+        void _FinalizeInheritance() override;
+
         // views
         Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
@@ -58,20 +60,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // queries
         Model::Command GetActionByKeyChord(const Control::KeyChord& keys) const;
+        Model::Command GetActionByID(const winrt::hstring& cmdID) const;
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
-        Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action) const;
-        Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action, const IActionArgs& actionArgs) const;
+        Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID);
 
         // population
-        void AddAction(const Model::Command& cmd);
+        void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);
 
         // JSON
         static com_ptr<ActionMap> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
         std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json, const OriginTag origin, const bool withKeybindings = true);
         Json::Value ToJson() const;
+        Json::Value KeyBindingsToJson() const;
+        bool FixupsAppliedDuringLoad() const;
 
         // modification
-        bool GenerateIDsForActions();
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
         void DeleteKeyBinding(const Control::KeyChord& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
@@ -83,46 +86,52 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSendInput(winrt::hstring currentCommandline);
 
     private:
-        std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
+        Model::Command _GetActionByID(const winrt::hstring& actionID) const;
+        std::optional<winrt::hstring> _GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
         void _RefreshKeyBindingCaches();
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
-        void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
-        std::vector<Model::Command> _GetCumulativeActions() const noexcept;
 
-        void _TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
-        void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
-        void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
+        void _PopulateCumulativeKeyMaps(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyToActionMap, std::unordered_map<winrt::hstring, Control::KeyChord>& actionToKeyMap);
+        void _PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap);
 
-        void _recursiveUpdateCommandKeybindingLabels();
+        void _TryUpdateActionMap(const Model::Command& cmd);
+        void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
-        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
 
         Windows::Foundation::Collections::IVector<Model::Command> _ExpandedCommandsCache{ nullptr };
 
         std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
         std::vector<Model::Command> _IterableCommands;
-        std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
-        std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 
-        // Masking Actions:
-        // These are actions that were introduced in an ancestor,
-        //   but were edited (or unbound) in the current layer.
-        // _ActionMap shows a Command with keys that were added in this layer,
-        //   whereas _MaskingActions provides a view that encompasses all of
-        //   the valid associated key chords.
-        // Maintaining this map allows us to return a valid Command
-        //   in GetKeyBindingForAction.
-        // Additionally, these commands to not need to be serialized,
-        //   whereas those in _ActionMap do. These actions provide more data
-        //   than is necessary to be serialized.
-        std::unordered_map<InternalActionID, Model::Command> _MaskingActions;
+        bool _fixupsAppliedDuringLoad{ false };
+
+        // _KeyMap is the map of key chords -> action IDs defined in this layer
+        // _ActionMap is the map of action IDs -> commands defined in this layer
+        // These maps are the ones that we deserialize into when parsing the user json and vice-versa
+        std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> _KeyMap;
+        std::unordered_map<winrt::hstring, Model::Command> _ActionMap;
+
+        // _CumulativeKeyMapCache is the map of key chords -> action IDs defined in all layers, with child layers overriding parent layers
+        std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> _CumulativeKeyToActionMapCache;
+        // _CumulativeActionMapCache is the map of action IDs -> commands defined in all layers, with child layers overriding parent layers
+        std::unordered_map<winrt::hstring, Model::Command> _CumulativeIDToActionMapCache;
+        // _CumulativeActionKeyMapCache stores the same data as _CumulativeKeyMapCache, but in the other direction (actionID -> keyChord)
+        // This is so we have O(1) lookup time when we want to get the keybinding for a specific action
+        // Note that an action could have multiple keybindings, the one we store in this map is one of the user's ones if present,
+        // otherwise the default one
+        std::unordered_map<winrt::hstring, Control::KeyChord> _CumulativeActionToKeyMapCache;
+
+        // _ResolvedKeyActionMapCache is the map of key chords -> commands defined in all layers, with child layers overriding parent layers
+        // This is effectively a combination of _CumulativeKeyMapCache and _CumulativeActionMapCache and its purpose is so that
+        // we can give the SUI a view of the key chords and the commands they map to
+        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyToActionMapCache{ nullptr };
 
         friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class SettingsModelUnitTests::DeserializationTests;
