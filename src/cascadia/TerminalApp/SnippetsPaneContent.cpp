@@ -117,6 +117,7 @@ namespace winrt::TerminalApp::implementation
                 // By using the last active control as the sender here, the
                 // action dispatch will send this to the active control,
                 // thinking that it is the control that requested this event.
+                strongControl.Focus(winrt::WUX::FocusState::Programmatic);
                 DispatchCommandRequested.raise(strongControl, taskVM->Command());
             }
         }
