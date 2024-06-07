@@ -139,26 +139,25 @@ flowchart LR
 ```
 
 To extend on the [tl;dr](#tldr):
-* ConPTY runs out-of-process, outside the hosting terminal, which leads to an unsolvable issue: The buffer contents between ConPTY and the terminal can go out of sync.
+* ConPTY runs outside the hosting terminal which leads to an unsolvable issue: The buffer contents between ConPTY and the terminal can go out of sync.
   * The terminal and ConPTY may implement escape sequences differently.
   * ...may implement text processing differently.
   * ...may implement text reflow (resize) differently.
   * Resizing the terminal and ConPTY is asynchronous and there may be concurrent text output.
   * ...and it may uncover text from the scrollback, which ConPTY doesn't know about.
-* Since ConPTY communicates with the hosting terminal exclusively via escape sequences, it fails to cover some Console API methods that cannot be represented via VT sequences.
+* Some Console API methods cannot be represented via escape sequences and so ConPTY cannot produce them either.
   The most basic example of this is the lack of LVB gridlines.
-* The existing ConPTY API can be built on top of the above suggested new architecture. In other words, we get a significant simplification and productivity uplift with no loss in features.
-* As the prototype that ConPTY initially was it has fulfilled our needs a thousand times over, but as it's layered on top of conhost it has resulted in software decay.
-  The layer boundary with existing conhost code has slowly blurred over the years which has negatively affected many places, resulting in debugging and maintenance being difficult.
+* The above suggested new architecture represents a significant simplification with no loss in features.
+* ConPTY has fulfilled our needs a thousand times over, but as it's layered on top of conhost it has resulted in software decay.
+  The layer boundary has blurred over the years resulting in debugging and maintenance difficulties.
   Lastly, its performance is insufficient and has been subject to much debate.
-  It's on us now to finally pay our debt and make ConPTY its own proper, composable component that both conhost and Windows Terminal can be built on top of.
+  It's on us now to pay our debt and clean up the architecture so that ConPTY, conhost, and Windows Terminal can be built on top of it.
 
 Considerations:
-* A named `MUTEX` can theoretically be used to solve parts of the out-of-sync issue, because it could be used to ensure a synchronous buffer reflow.
-  However, this requires the shared lock to be acquired every time input is processed, on top of the regular console lock, which raises ABBA deadlock concerns, in particular since it requires cross-process communication while the lock is held.
+* A named `MUTEX` can theoretically solve parts of the out-of-sync issue, because it could be used to synchronize buffer reflow.
+  However, this requires the lock to be acquired on every API call, on top of the regular console lock, which raises ABBA deadlock concerns.
   Making this setup not just hopefully but also provably robust, is likely to be very difficult.
   It also doesn't solve any of the other listed problems.
-  Running ConPTY in-process on the other hand appears to be a trivial change in comparison.
 
 ## Goal 1: Remove VtEngine
 
@@ -236,22 +235,20 @@ flowchart TD
 
 The idea is that we can translate Console API calls directly to VT at least as well as the current VtEngine setup can.
 For instance, a call to `SetConsoleCursorPosition` clearly translates directly to a `CUP` escape sequence.
-But even complex calls like `WriteConsoleOutputAttribute` which have no VT equivalent can be implemented this way by first applying the changes to our local text buffer and then serializing the affected range back to VT.
-Since the Console API is fairly limited (only 16 colors, etc.), the serialization code will often be equally simple.
-That's also how VtEngine currently works, but instead of doing it asynchronously in the renderer thread, we'll do it synchronously right during the Console API call.
+Effectively, instead of translating output asynchronously in the renderer thread, we'll do it synchronously right during the Console API call.
 
-Apart from the Console API, the "cooked read" implementation, which handles our builtin "readline"-like text editor, will need to receive some larger changes.
-Currently it shows popups on top of the existing content and uses `ReadConsoleOutput` and `WriteConsoleOutput` to backup and restore the affected rectangle.
-This results in exactly the same issues that were previously outlined where our text buffer implementation may be different than that of the hosting terminal.
-Furthermore its current popup implementation directly interfaces with the backing text buffer and its translation relies on the existence of VtEngine.
-In order to solve this issue, the popups should be rewritten to use escape sequences so that they can be directly passed to the hosting terminal.
+Apart from the Console APIs, the "cooked read" implementation, which handles our builtin "readline"-like text editor, will need to receive some larger changes as well.
+Its popups use `ReadConsoleOutput` and `WriteConsoleOutput` to backup and restore the affected rectangle.
+It also directly interfaces with the backing text buffer and its translation to VT relies on the existence of VtEngine.
+This results in all of the same issues that were previously outlined.
+In order to solve this, the popups need to be rewritten to use escape sequences so that they can be directly passed to the hosting terminal.
 They should also always be below the current prompt line so that we don't need to perform a potentially lossy backup/restore operation.
 
 The `--vtmode xterm-ascii` switch exists for the telnet client as it only supports ASCII as per RFC854 section "THE NVT PRINTER AND KEYBOARD".
 However, telnet is the only user of this flag and it's trivial to do there (for instance by stripping high codepoints in `WriteOutputToClient` in `telnet/console.cpp`), so there's no reason for us to keep this logic in the new code.
 
 This change will result in a significant reduction in complexity of our architecture.
-VT input from the shell or other clients will be given 1:1 to the hosting terminal, which will once and for all resolve our ordering and buffering issues.
+VT input from the shell or other clients will be given 1:1 to the hosting terminal, which will resolve our ordering and buffering issues.
 
 ## Goal 2: Move Console API implementations to Server
 
@@ -329,20 +326,32 @@ flowchart TD
 
 ### Discussion
 
-This goal is somewhat difficult to visualize, but the basic idea is that instead of having 3 arrows going in and out of the Server component, we got exactly 1.
-This makes the console server and its VT translation a proper, reusable component, which we need so that we can solve the out-of-sync issues and to support all Console APIs.
+The basic idea is that instead of having 3 arrows going in and out of the Server component, we got exactly 1.
+This makes the console server and its VT translation a reusable component, which we need so that we can solve the out-of-sync issues by integrating it into Windows Terminal.
 To make the Server API convenient to use, the interface needs to be narrowed down to as few methods as possible. This interface is currently called `IApiRoutines`.
 
 ### API Design
 
+Design goals:
+* Low overhead<br>
+  The API should never be the reason why the terminal is slow.
+  Among others, the design includes both UTF8 and UTF16 functions, as both encodings are common on Windows and the server component should not make assumptions which one the terminal prefers.
+* Easy to use<br>
+  The Console API is unfortunately quite powerful.
+  In order to make implementing the callback interface still reasonably easy, the API should have as few methods as are needed.
+  If a complex Console API call can be expressed as a series of simpler ones, and if no other performance expectations exist, it should be expressed via the simpler ones.
+* Works even if only partially implemented<br>
+  Example: `CreateConsoleScreenBuffer` is seldomly used, but its existence adds significant complexity to the callback API design and potential implementations.
+  A terminal should either be able to return `E_NOTIMPL` and we provide a fallback, or we provide guidance for how reasonable fallbacks can be implented (e.g. by using the xterm alt buffer in this example).
+
 > [!IMPORTANT]
-> The following API design is a rough draft to convey the idea. It does not represent a complete, finished design. This document will be updated once work on the API begins and the actual requirements become clearer.
+> The following API design is a rough draft just to convey the general idea.
+> It does not represent a complete, finished design.
+> This document will be updated once work on the API begins and the actual API requirements become clearer.
 
 ```cs
 // The Console API is built around a freely addressable frame buffer. It allows you to
-// address any part of the buffer, even those outside of what's considered the "viewport".
-// Consequentially, ConPTY supports this and all `CONSRV_POINT_I32`s are relative to this buffer.
-// The VT viewport may be any vertical section of that console buffer. For instance:
+// address any part of the buffer, even those outside of what's considered the "viewport":
 //
 //                       ┌──────────────────┐
 //                       │y=-3              │
@@ -359,8 +368,8 @@ To make the Server API convenient to use, the interface needs to be narrowed dow
 //                    ╰  └──────────────────┘
 //
 // The good news is that nothing prevents you from giving the Console Buffer the exact
-// same size as the VT Viewport and for modern terminals doing so is recommended. That way, `CONSRV_POINT_I32`
-// instances are all viewport-relative and content below/above the viewport is never addressed:
+// same size as the VT Viewport and for modern terminals doing so is recommended.
+// That way, coordinates are viewport-relative and content below/above the viewport is never addressed:
 //
 //                       ┌──────────────────┐    ╮
 //                       │y=-3              │    │
@@ -373,9 +382,7 @@ To make the Server API convenient to use, the interface needs to be narrowed dow
 //                    ╰  └──────────────────┘  ╯
 //
 // Coordinates are 0-indexed. Note that while INT32 coordinates are used by this API, coordinates below
-// 0 and above 65535 are generally invalid, as the Console ABI currently uses unsigned 16-Bit integers.
-//
-// You should always perform input validation and return E_INVALIDARG for invalid coordinates.
+// 0 and above 65535 are generally invalid as the Console ABI currently uses unsigned 16-Bit integers.
 
 struct CONSRV_POINT_I32 {
     INT32 x;
@@ -390,7 +397,7 @@ struct CONSRV_POINT_F32 {
 // These flags are also defined via Windows.h.
 #if 0
 // These flags are equivalent to the classic 4-bit indexed colors in VT via SGR.
-// However, the order of blue and red bits are swapped. You can use the following C code to switch back and forth between
+// However, the position of the blue and red bits are swapped.
 #define FOREGROUND_BLUE            0x0001 // Text color contains blue.
 #define FOREGROUND_GREEN           0x0002 // Text color contains green.
 #define FOREGROUND_RED             0x0004 // Text color contains red.
@@ -503,6 +510,8 @@ struct CONSRV_INFO_CHANGE {
 };
 
 interface IConsoleServer : IUnknown {
+    // TODO: This interface is incomplete. Among others, a way to launch new application into the server is missing.
+
     // ConPTY manages stdin as a ring buffer for you. When the terminal has focus, you simply need to write your input.
     // Keyboard input MUST be written via `WriteInputRecords`. The other 2 functions DO NOT parse any VT sequences.
     // They're instead meant either for VT responses (DECRPM, etc.) and for dumping plain text (clipboard, etc.).
@@ -519,16 +528,17 @@ interface IConsoleServerCallback : IUnknown {
     //
     // Lock() will always be called before any of the functions below are called.
     // Lock() and Unlock() do not need to support recursive locking.
+    // Any other calls between Lock() and Unlock() should be treated as an atomic operation.
     //
-    // It is recommended to use a fair lock instead of OS primitives like SRWLOCK. These callback functions may called
-    // significantly more often than your text renderer, etc., runs. An unfair lock will result in thread starvation.
+    // It is recommended to use a fair lock instead of OS primitives like SRWLOCK. These callback functions may be
+    // much more often than your text renderer, etc., runs. An unfair lock will result in thread starvation.
     HRESULT Lock();
     HRESULT Unlock();
 
     // If called, you're requested to create a new console alt buffer. The Console API supports having
-    // multiple concurrent such buffers. They're not the same as the xterm alt buffer however (CSI ? 1049 h):
+    // multiple concurrent such buffers. They're not the same as the xterm alt buffer, however (CSI ? 1049 h):
     // They can be resized to be larger than the current viewport and switching between such buffers DOES NOT
-    // clear them nor does it reset any other state.
+    // clear them nor does it reset any other per-buffer state.
     //
     // If you have trouble adding support for multiple console alt buffers, consider using the xterm alt buffer
     // (CSI ? 1049 h) for the first buffer that gets created, and return E_OUTOFMEMORY for any further buffers.
@@ -538,28 +548,30 @@ interface IConsoleServerCallback : IUnknown {
     // to be called after ActivateBuffer() was used to switch to another buffer (or the main buffer).
     HRESULT ReleaseBuffer([in] void* buffer);
 
-    // This switches between different console alt buffers. Doing so DOES NOT clear any state or buffers.
+    // This switches between different console alt buffers. Switching to a buffer should change the content that's
+    // beeing drawn, siliar to the xterm alt buffer, however unlike it doing so DOES NOT reset any per-buffer state.
+    // All it does is to basically swap out the underlying, active text buffer of the terminal.
     //
     // If `buffer` is NULL it's a request to switch back to the main buffer.
     //
-    // Switching between buffers should ideally be fast. It may switch back and forth between buffers between
-    // the Lock() and Unlock() calls, just to end up activating the same buffer that it started with.
-    // The `temporary` parameter will be set to `TRUE` in that case.
+    // `temporary` is a hint. If it's `true` it indicates that the previous buffer will soon be activated again.
+    // In other words, on Unlock() the buffer was active during Lock() will be active again.
+    // It's recommended that temporary switches are lightweight as they may occur relatively often.
     HRESULT ActivateBuffer([in] void* buffer, [in] boolean temporary);
 
     //
     // Any functions past this point operate on the currently active buffer.
     //
 
-    // This function gets a snapshot of the terminal state.
+    // This function gets a snapshot of the terminal and buffer state.
     //
     // You must ensure that the returned pointer stays valid until the next GetInfo() or Unlock() call,
     //   or until the currently active buffer is released.
     // You don't need to return a new instance on each call. ConPTY will only use the last returned pointer.
-    // You don't need to keep the CONSRV_INFO struct constantly up to date, but you're allowed to.
+    // You don't need to keep the CONSRV_INFO struct constantly up to date, but you're allowed to do so.
     //   For instance, it's valid to change the `.cursorPosition` when SetCursorPosition() is called.
     //
-    // It's recommended that this function is fast as it will be called relatively often.
+    // It's recommended that this function is lightweight as it may be called relatively often.
     const CONSRV_INFO* GetInfo();
 
     // When this method is called you're asked to apply any non-null member of the given CONSRV_INFO_CHANGE
@@ -667,6 +679,8 @@ The list shows how each Console API function is implemented in terms of the abov
     Gets information from server's internal `SCREEN_INFORMATION` class (which represents the `HANDLE`).
   * `SetConsoleScreenBufferInfoEx`:
     Sets information on server's internal `SCREEN_INFORMATION` class.
+  * `CreateConsoleScreenBuffer`:
+    `CreateBuffer`
   * `SetConsoleActiveScreenBuffer`:
     `ActivateBuffer` + `SetInfo`
   * `SetConsoleScreenBufferSize`:
@@ -817,7 +831,7 @@ At this point we should also see if we can find early adopters of the API in oth
 
 ## Stretch Goal 4: Ship Server in Windows
 
-The final goal we should aim for is to ship this new API with Windows.
-Not to actually, necessarily do it, but rather because it represents a potentially achievable "aim for the stars" goal.
-It would make sense to do it, because `conhost.exe` will be based on this API and if we extract it out into its own DLL anyone can use it, while not costing us any significant disk usage.
-It also ensures that we continue to maintain a clear separation of concerns between the server component and the rest of the system.
+The console server on Windows has been an internal ABI for the longest time.
+As we have started shipping ConPTY bundled with conhost/OpenConsole to other projects, the internal ABI has become a public one.
+While we have no intention of ever breaking forward compatability of the console server with future Windows versions, it would be reassuring if the ABI long-term became internal once more.
+This will allow us complete freedom over its design, even in the decades to come, and allow us to fully shim any 3rd party applications on Windows if a ABI change were to ever happen.
