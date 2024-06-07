@@ -6,6 +6,7 @@
 #include "ExtensionPalette.g.h"
 #include "ChatMessage.g.h"
 #include "GroupedChatMessages.g.h"
+#include "TerminalContext.g.h"
 
 #include "AzureLLMProvider.h"
 
@@ -16,7 +17,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         ExtensionPalette(winrt::hstring endpoint, winrt::hstring key);
 
         // We don't use the winrt_property macro here because we just need the setter
-        void AIKeyAndEndpoint(const winrt::hstring& endpoint, const winrt::hstring& key);
         void IconPath(const winrt::hstring& iconPath);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -36,22 +36,21 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 
-        // info/methods for the http requests
+        // we don't use the endpoint and key directly, we just store them for telemetry purposes
+        // (_llmProvider is the one that actually uses the key/endpoint for http requests)
         winrt::hstring _AIEndpoint;
         winrt::hstring _AIKey;
-        winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
+
         ILLMProvider _llmProvider{ nullptr };
 
         // chat history storage
         Windows::Foundation::Collections::IObservableVector<GroupedChatMessages> _messages{ nullptr };
-        winrt::Windows::Data::Json::JsonArray _jsonMessages;
 
         winrt::fire_and_forget _getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime);
 
         winrt::hstring _getCurrentLocalTimeHelper();
         void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError);
         void _setFocusAndPlaceholderTextHelper();
-        bool _verifyModelIsValidHelper(const Windows::Data::Json::JsonObject jsonResponse);
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _listItemClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
@@ -151,6 +150,16 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool _isQuery;
         Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _messages;
     };
+
+    struct TerminalContext : TerminalContextT<TerminalContext>
+    {
+        TerminalContext(winrt::hstring activeCommandline) :
+            _activeCommandline{ activeCommandline } {}
+        winrt::hstring ActiveCommandline() { return _activeCommandline; };
+
+    private:
+        winrt::hstring _activeCommandline;
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
@@ -158,4 +167,5 @@ namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
     BASIC_FACTORY(ExtensionPalette);
     BASIC_FACTORY(ChatMessage);
     BASIC_FACTORY(GroupedChatMessages);
+    BASIC_FACTORY(TerminalContext);
 }

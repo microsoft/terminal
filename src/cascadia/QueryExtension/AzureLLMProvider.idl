@@ -7,8 +7,11 @@ namespace Microsoft.Terminal.Query.Extension
 {
     [default_interface] runtimeclass AzureLLMProvider : ILLMProvider
     {
-        AzureLLMProvider(String endpt, String key);
+        AzureLLMProvider(String endpoint, String key);
+    }
 
-        String Thing();
+    [default_interface] runtimeclass AzureResponse : IResponse
+    {
+        AzureResponse(String message, Boolean isError);
     }
 }

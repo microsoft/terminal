@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "ILLMProvider.idl";
+
 namespace Microsoft.Terminal.Query.Extension
 {
     [default_interface] runtimeclass ChatMessage
@@ -35,5 +37,10 @@ namespace Microsoft.Terminal.Query.Extension
 
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
+    }
+
+    [default_interface] runtimeclass TerminalContext : IContext
+    {
+        TerminalContext(String activeCommandline);
     }
 }

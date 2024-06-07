@@ -5,6 +5,21 @@ namespace Microsoft.Terminal.Query.Extension
 {
     interface ILLMProvider
     {
-        void Initialize();
+        void ClearMessageHistory();
+        void SetSystemPrompt(String systemPrompt);
+        void SetContext(IContext context);
+
+        Windows.Foundation.IAsyncOperation<IResponse> GetResponseAsync(String userPrompt);
     }
+
+    interface IResponse
+    {
+        String Message { get; };
+        Boolean IsError { get; };
+    };
+
+    interface IContext
+    {
+        String ActiveCommandline { get; };
+    };
 }
