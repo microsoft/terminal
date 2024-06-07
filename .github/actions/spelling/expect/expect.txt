@@ -406,6 +406,7 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+DECPCCM
 DECPCTERM
 DECPS
 DECRARA
@@ -414,6 +415,7 @@ DECREQTPARM
 DECRLM
 DECRPM
 DECRQCRA
+DECRQDE
 DECRQM
 DECRQPSR
 DECRQSS
@@ -607,6 +609,7 @@ FILTERONPASTE
 FINDCASE
 FINDDLG
 FINDDOWN
+FINDREGEX
 FINDSTRINGEXACT
 FINDUP
 FIter
@@ -819,6 +822,7 @@ idllib
 IDOK
 IDR
 idth
+IDTo
 IDXGI
 IEnd
 IEnum
@@ -1867,7 +1871,7 @@ unk
 unknwn
 UNORM
 unparseable
-unregistering
+Unregistering
 untextured
 UPDATEDISPLAY
 UPDOWN
@@ -2123,6 +2127,7 @@ XIn
 XManifest
 XMath
 xorg
+XPan
 XResource
 xsi
 xstyler
@@ -2142,6 +2147,7 @@ YCast
 YCENTER
 YCount
 YLimit
+YPan
 YSubstantial
 YVIRTUALSCREEN
 YWalk

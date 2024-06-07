@@ -10,7 +10,7 @@
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
-static constexpr std::string_view ActionIdKey{ "actionId" };
+static constexpr std::string_view ActionIdKey{ "id" };
 
 ActionEntry::ActionEntry() noexcept :
     ActionEntryT<ActionEntry, NewTabMenuEntry>(NewTabMenuEntryType::Action)

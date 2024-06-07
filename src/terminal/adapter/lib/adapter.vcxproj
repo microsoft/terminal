@@ -15,6 +15,7 @@
     <ClCompile Include="..\FontBuffer.cpp" />
     <ClCompile Include="..\InteractDispatch.cpp" />
     <ClCompile Include="..\MacroBuffer.cpp" />
+    <ClCompile Include="..\PageManager.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
     <ClCompile Include="..\terminalOutput.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -29,6 +30,7 @@
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\ITerminalApi.hpp" />
     <ClInclude Include="..\MacroBuffer.hpp" />
+    <ClInclude Include="..\PageManager.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\terminalOutput.hpp" />
     <ClInclude Include="..\ITermDispatch.hpp" />

@@ -135,8 +135,6 @@ inline constexpr f32 Pos_Lut[][2] = {
     /* Pos_11_12       */ { 11.0f / 12.0f, 0.0f },
 };
 
-static constexpr char32_t BoxDrawing_FirstChar = 0x2500;
-static constexpr u32 BoxDrawing_CharCount = 0xA0;
 static constexpr Instruction BoxDrawing[BoxDrawing_CharCount][InstructionsPerGlyph] = {
     // U+2500 ─ BOX DRAWINGS LIGHT HORIZONTAL
     {
@@ -964,8 +962,6 @@ static constexpr Instruction BoxDrawing[BoxDrawing_CharCount][InstructionsPerGly
     },
 };
 
-static constexpr char32_t Powerline_FirstChar = 0xE0B0;
-static constexpr u32 Powerline_CharCount = 0x10;
 static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph] = {
     // U+E0B0 Right triangle solid
     {
@@ -1071,7 +1067,20 @@ static const Instruction* GetInstructions(char32_t codepoint) noexcept
     return nullptr;
 }
 
-void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_RECT_F& rect, char32_t codepoint)
+i32 BuiltinGlyphs::GetBitmapCellIndex(char32_t codepoint) noexcept
+{
+    if (BoxDrawing_IsMapped(codepoint))
+    {
+        return codepoint - BoxDrawing_FirstChar;
+    }
+    if (Powerline_IsMapped(codepoint))
+    {
+        return codepoint - Powerline_FirstChar + BoxDrawing_CharCount;
+    }
+    return -1;
+}
+
+void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_COLOR_F (&shadeColorMap)[4], const D2D1_RECT_F& rect, char32_t codepoint)
 {
     renderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
     const auto restoreD2D = wil::scope_exit([&]() {
@@ -1122,15 +1131,18 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         const auto lineOffsetX = isHollowRect || isLineX ? lineWidthHalf : 0.0f;
         const auto lineOffsetY = isHollowRect || isLineY ? lineWidthHalf : 0.0f;
 
-        begX = roundf(begX - lineOffsetX) + lineOffsetX;
-        begY = roundf(begY - lineOffsetY) + lineOffsetY;
-        endX = roundf(endX + lineOffsetX) - lineOffsetX;
-        endY = roundf(endY + lineOffsetY) - lineOffsetY;
-
-        const auto begXabs = begX + rectX;
-        const auto begYabs = begY + rectY;
-        const auto endXabs = endX + rectX;
-        const auto endYabs = endY + rectY;
+        // Direct2D draws strokes centered on the path. In order to make them pixel-perfect we need to round the
+        // coordinates to whole pixels, but offset by half the stroke width (= the radius of the stroke).
+        //
+        // All floats up to this point will be highly "consistent" between different `rect`s of identical size and
+        // different shapes, because the above calculations work with only a small set of constant floats.
+        // However, the addition of a potentially fractional begX/Y with a highly variable `rect` position is different.
+        // Rounding beg/endX/Y first ensures that we continue to get a consistent behavior between calls.
+        // This is particularly noticeable at smaller font sizes, where the line width is just a pixel or two.
+        const auto begXabs = rectX + roundf(begX - lineOffsetX) + lineOffsetX;
+        const auto begYabs = rectY + roundf(begY - lineOffsetY) + lineOffsetY;
+        const auto endXabs = rectX + roundf(endX + lineOffsetX) - lineOffsetX;
+        const auto endYabs = rectY + roundf(endY + lineOffsetY) - lineOffsetY;
 
         switch (shape)
         {
@@ -1139,21 +1151,8 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         case Shape_Filled075:
         case Shape_Filled100:
         {
-            // This code works in tandem with SHADING_TYPE_TEXT_BUILTIN_GLYPH in our pixel shader.
-            // Unless someone removed it, it should have a lengthy comment visually explaining
-            // what each of the 3 RGB components do. The short version is:
-            //   R: stretch the checkerboard pattern (Shape_Filled050) horizontally
-            //   G: invert the pixels
-            //   B: overrides the above and fills it
-            static constexpr D2D1_COLOR_F colors[] = {
-                { 1, 0, 0, 1 }, // Shape_Filled025
-                { 0, 0, 0, 1 }, // Shape_Filled050
-                { 1, 1, 0, 1 }, // Shape_Filled075
-                { 1, 1, 1, 1 }, // Shape_Filled100
-            };
-
             const auto brushColor = brush->GetColor();
-            brush->SetColor(&colors[shape]);
+            brush->SetColor(&shadeColorMap[shape]);
 
             const D2D1_RECT_F r{ begXabs, begYabs, endXabs, endYabs };
             renderTarget->FillRectangle(&r, brush);
@@ -1183,13 +1182,13 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         }
         case Shape_FilledEllipsis:
         {
-            const D2D1_ELLIPSE e{ { begXabs, begYabs }, endX, endY };
+            const D2D1_ELLIPSE e{ { rectX + begX, rectY + begY }, endX, endY };
             renderTarget->FillEllipse(&e, brush);
             break;
         }
         case Shape_EmptyEllipsis:
         {
-            const D2D1_ELLIPSE e{ { begXabs, begYabs }, endX, endY };
+            const D2D1_ELLIPSE e{ { rectX + begX, rectY + begY }, endX, endY };
             renderTarget->DrawEllipse(&e, brush, lineWidth, nullptr);
             break;
         }

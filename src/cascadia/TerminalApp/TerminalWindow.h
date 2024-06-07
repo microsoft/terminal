@@ -73,7 +73,7 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        void Quit();
+        void PersistState();
 
         winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 

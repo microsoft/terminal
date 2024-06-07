@@ -895,6 +895,9 @@
     <value>字体</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>通过使用 ASCII 逗号分隔多个字体，可以使用这些字体。</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>字号</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>启用后，终端将为块元素和制表符绘制自定义标志符号，而不是使用字体。仅当 GPU 加速可用时，此功能才有效。</value>
+    <value>启用后，终端会使用自定义字形来绘制块元素和框线绘图字符，而不是使用字体。使用 Direct2D 作为图形 API 时，此功能不可用。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

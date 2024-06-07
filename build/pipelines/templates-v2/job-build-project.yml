@@ -242,18 +242,14 @@ jobs:
 
     # Code-sign everything we just put together.
     # We run the signing in Terminal.BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
-    - task: EsrpCodeSigning@5
-      displayName: Submit Signing Request
-      inputs:
-        ConnectedServiceName: ${{ parameters.signingIdentity.serviceName }}
-        AppRegistrationClientId: ${{ parameters.signingIdentity.appId }}
-        AppRegistrationTenantId: ${{ parameters.signingIdentity.tenantId }}
-        AuthAKVName: ${{ parameters.signingIdentity.akvName }}
-        AuthCertName: ${{ parameters.signingIdentity.authCertName }}
-        AuthSignCertName: ${{ parameters.signingIdentity.signCertName }}
-        FolderPath: '$(Terminal.BinDir)'
-        signType: batchSigning
-        batchSignPolicyFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
+    - template: steps-esrp-signing.yml
+      parameters:
+        displayName: Submit Signing Request
+        signingIdentity: ${{ parameters.signingIdentity }}
+        inputs:
+          FolderPath: '$(Terminal.BinDir)'
+          signType: batchSigning
+          batchSignPolicyFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
 
     # We only need to re-pack the MSIX if we actually signed, so this can stay in the codeSign conditional
     - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:

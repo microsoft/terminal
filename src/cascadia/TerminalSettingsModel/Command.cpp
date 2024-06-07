@@ -120,14 +120,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
             {
                 _ID = generatedID;
-                _IdWasGenerated = true;
+                _IDWasGenerated = true;
             }
         }
     }
 
-    bool Command::IdWasGenerated()
+    bool Command::IDWasGenerated()
     {
-        return _IdWasGenerated;
+        return _IDWasGenerated;
     }
 
     void Command::Name(const hstring& value)
@@ -568,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto data = winrt::to_string(json);
 
         std::string errs;
-        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
         Json::Value root;
         if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
         {
