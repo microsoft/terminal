@@ -2282,6 +2282,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return *context;
     }
 
+    winrt::hstring ControlCore::CurrentWorkingDirectory() const
+    {
+        return winrt::hstring{ _terminal->GetWorkingDirectory() };
+    }
+
     Core::Scheme ControlCore::ColorScheme() const noexcept
     {
         Core::Scheme s;

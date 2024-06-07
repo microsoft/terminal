@@ -805,10 +805,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _ExpandedCommandsCache;
     }
 
-    IVector<Model::Command> _filterToSendInput(IMapView<hstring, Model::Command> nameMap,
-                                               winrt::hstring currentCommandline)
+#pragma region Snippets
+    std::vector<Model::Command> _filterToSnippets(IMapView<hstring, Model::Command> nameMap,
+                                                  winrt::hstring currentCommandline,
+                                                  const std::vector<Model::Command>& localCommands)
     {
-        auto results = winrt::single_threaded_vector<Model::Command>();
+        std::vector<Model::Command> results{};
 
         const auto numBackspaces = currentCommandline.size();
         // Helper to clone a sendInput command into a new Command, with the
@@ -847,21 +849,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         };
 
-        // iterate over all the commands in all our actions...
-        for (auto&& [name, command] : nameMap)
-        {
+        // Helper to copy this command into a snippet-styled command, and any
+        // nested commands
+        const auto addCommand = [&](auto& command) {
             // If this is not a nested command, and it's a sendInput command...
             if (!command.HasNestedCommands() &&
                 command.ActionAndArgs().Action() == ShortcutAction::SendInput)
             {
                 // copy it into the results.
-                results.Append(createInputAction(command));
+                results.push_back(createInputAction(command));
             }
             // If this is nested...
             else if (command.HasNestedCommands())
             {
                 // Look for any sendInput commands nested underneath us
-                auto innerResults = _filterToSendInput(command.NestedCommands(), currentCommandline);
+                std::vector<Model::Command> empty{};
+                auto innerResults = winrt::single_threaded_vector<Model::Command>(std::move(_filterToSnippets(command.NestedCommands(), currentCommandline, empty)));
 
                 if (innerResults.Size() > 0)
                 {
@@ -874,17 +877,98 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     auto copy = cmdImpl->Copy();
                     copy->NestedCommands(innerResults.GetView());
 
-                    results.Append(*copy);
+                    results.push_back(*copy);
                 }
             }
+        };
+
+        // iterate over all the commands in all our actions...
+        for (auto&& [name, command] : nameMap)
+        {
+            addCommand(command);
+        }
+        // ... and all the local commands passed in here
+        for (const auto& command : localCommands)
+        {
+            addCommand(command);
         }
 
         return results;
     }
 
-    IVector<Model::Command> ActionMap::FilterToSendInput(
-        winrt::hstring currentCommandline)
+    // Update ActionMap's cache of actions for this directory. We'll look for a
+    // .wt.json in this directory. If it exists, we'll read it, parse it's JSON,
+    // then take all the sendInput actions in it and store them in our
+    // _cwdLocalSnippetsCache
+    winrt::Windows::Foundation::IAsyncAction ActionMap::_updateLocalSnippetCache(winrt::hstring currentWorkingDirectory)
     {
-        return _filterToSendInput(NameMap(), currentCommandline);
+        // Don't do I/O on the main thread, duh
+        co_await winrt::resume_background();
+
+        // This returns an empty string if we fail to load the file.
+        auto localTasksFileContents = CascadiaSettings::ReadFile(currentWorkingDirectory + L"\\.wt.json");
+        if (!localTasksFileContents.empty())
+        {
+            auto data = winrt::to_string(localTasksFileContents);
+            std::string errs;
+            static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+            Json::Value root;
+            if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+            {
+                // In the real settings parser, we'd throw here:
+                // throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+                //
+                // That seems overly agressive for something that we don't
+                // really own. Instead, just bail out.
+                co_return;
+            }
+
+            auto result = std::vector<Model::Command>();
+            if (auto actions{ root[JsonKey("actions")] })
+            {
+                std::vector<SettingsLoadWarnings> warnings;
+                for (const auto& json : actions)
+                {
+                    auto parsed = Command::FromJson(json, warnings, OriginTag::Generated);
+                    // Skip over things that aren't snippets
+                    if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
+                    {
+                        continue;
+                    }
+
+                    result.push_back(*parsed);
+                }
+            }
+
+            _cwdLocalSnippetsCache.insert_or_assign(currentWorkingDirectory, result);
+        }
+
+        // Now at the bottom, we've either found a file successfully parsed it,
+        // and updated the _cwdLocalSnippetsCache. Or we failed at some point,
+        // and then it doesn't really matter.
+        co_return;
     }
+
+    winrt::Windows::Foundation::IAsyncOperation<IVector<Model::Command>> ActionMap::FilterToSnippets(
+        winrt::hstring currentCommandline,
+        winrt::hstring currentWorkingDirectory)
+    {
+        // Check if there are any cached commands in this directory.
+        // If there aren't, then we'll try to look for any commands in this
+        // dir's .wt.json
+        auto cachedCwdCommands = _cwdLocalSnippetsCache.find(currentWorkingDirectory);
+        if (cachedCwdCommands == _cwdLocalSnippetsCache.end())
+        {
+            // Here, we haven't cached this path yet
+            co_await _updateLocalSnippetCache(currentWorkingDirectory);
+            cachedCwdCommands = _cwdLocalSnippetsCache.find(currentWorkingDirectory);
+        }
+
+        auto cachedCommands = cachedCwdCommands != _cwdLocalSnippetsCache.end() ?
+                                  cachedCwdCommands->second :
+                                  std::vector<Model::Command>{};
+
+        co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCommands));
+    }
+#pragma endregion
 }

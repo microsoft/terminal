@@ -1330,64 +1330,75 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
             {
-                const auto source = realArgs.Source();
-                std::vector<Command> commandsCollection;
-                Control::CommandHistoryContext context{ nullptr };
-                winrt::hstring currentCommandline = L"";
+                _doHandleSuggestions(realArgs);
 
-                // If the user wanted to use the current commandline to filter results,
-                //    OR they wanted command history (or some other source that
-                //       requires context from the control)
-                // then get that here.
-                const bool shouldGetContext = realArgs.UseCommandline() ||
-                                              WI_IsFlagSet(source, SuggestionsSource::CommandHistory);
-                if (shouldGetContext)
-                {
-                    if (const auto& control{ _GetActiveControl() })
-                    {
-                        context = control.CommandHistory();
-                        if (context)
-                        {
-                            currentCommandline = context.CurrentCommandline();
-                        }
-                    }
-                }
-
-                // Aggregate all the commands from the different sources that
-                // the user selected.
-
-                // Tasks are all the sendInput commands the user has saved in
-                // their settings file. Ask the ActionMap for those.
-                if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
-                {
-                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
-                    for (const auto& t : tasks)
-                    {
-                        commandsCollection.push_back(t);
-                    }
-                }
-
-                // Command History comes from the commands in the buffer,
-                // assuming the user has enabled shell integration. Get those
-                // from the active control.
-                if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
-                    context != nullptr)
-                {
-                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
-                    for (const auto& t : recentCommands)
-                    {
-                        commandsCollection.push_back(t);
-                    }
-                }
-
-                // Open the palette with all these commands in it.
-                _OpenSuggestions(_GetActiveControl(),
-                                 winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
-                                 SuggestionsMode::Palette,
-                                 currentCommandline);
                 args.Handled(true);
             }
         }
+    }
+
+    winrt::fire_and_forget TerminalPage::_doHandleSuggestions(SuggestionsArgs realArgs)
+    {
+        const auto source = realArgs.Source();
+        std::vector<Command> commandsCollection;
+        Control::CommandHistoryContext context{ nullptr };
+        winrt::hstring currentCommandline = L"";
+        winrt::hstring currentWorkingDirectory = L"";
+
+        // If the user wanted to use the current commandline to filter results,
+        //    OR they wanted command history (or some other source that
+        //       requires context from the control)
+        // then get that here.
+        const bool shouldGetContext = realArgs.UseCommandline() ||
+                                      WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory);
+        if (const auto& control{ _GetActiveControl() })
+        {
+            currentWorkingDirectory = control.CurrentWorkingDirectory();
+
+            if (shouldGetContext)
+            {
+                context = control.CommandHistory();
+                if (context)
+                {
+                    currentCommandline = context.CurrentCommandline();
+                }
+            }
+        }
+
+        // Aggregate all the commands from the different sources that
+        // the user selected.
+
+        // Tasks are all the sendInput commands the user has saved in
+        // their settings file. Ask the ActionMap for those.
+        if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+        {
+            const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(currentCommandline, currentWorkingDirectory);
+            for (const auto& t : tasks)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        // Command History comes from the commands in the buffer,
+        // assuming the user has enabled shell integration. Get those
+        // from the active control.
+        if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
+            context != nullptr)
+        {
+            const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
+            for (const auto& t : recentCommands)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
+        co_await wil::resume_foreground(Dispatcher());
+
+        // Open the palette with all these commands in it.
+        _OpenSuggestions(_GetActiveControl(),
+                         winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
+                         SuggestionsMode::Palette,
+                         currentCommandline);
     }
 
     void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,
