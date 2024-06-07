@@ -300,4 +300,16 @@
     <value>已還原</value>
     <comment>"Restored" as in "This content was restored"</comment>
   </data>
+  <data name="SearchBox_RegularExpression.ToolTipService.ToolTip" xml:space="preserve">
+    <value>規則運算式</value>
+    <comment>The tooltip text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>規則運算式搜尋</value>
+    <comment>The accessibility description text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchRegexInvalid" xml:space="preserve">
+    <value>無效</value>
+    <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
 </root>

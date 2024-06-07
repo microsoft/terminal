@@ -1143,6 +1143,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         case DWRITE_E_NOFONT:
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };
             break;
+        case ATLAS_ENGINE_ERROR_MAC_TYPE:
+            message = RS_(L"RendererErrorMacType");
+            break;
         default:
         {
             wchar_t buf[512];
