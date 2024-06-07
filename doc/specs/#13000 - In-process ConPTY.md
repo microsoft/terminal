@@ -147,10 +147,10 @@ To extend on the [tl;dr](#tldr):
   * ...and it may uncover text from the scrollback, which ConPTY doesn't know about.
 * Since ConPTY communicates with the hosting terminal exclusively via escape sequences, it fails to cover some Console API methods that cannot be represented via VT sequences.
   The most basic example of this is the lack of LVB gridlines.
-* As the prototype that ConPTY initially was it has fulfilled our needs a thousand times over, but it being just a layer on top of conhost has resulted in software decay.
-  Today, ConPTY's architecture is difficult to maintain and debug.
-  The layer boundary with existing conhost code has slowly blurred over the years which has negatively affected many places.
-  Lastly, its performance is poor and subject to much debate.
+* The existing ConPTY API can be built on top of the above suggested new architecture. In other words, we get a significant simplification and productivity uplift with no loss in features.
+* As the prototype that ConPTY initially was it has fulfilled our needs a thousand times over, but as it's layered on top of conhost it has resulted in software decay.
+  The layer boundary with existing conhost code has slowly blurred over the years which has negatively affected many places, resulting in debugging and maintenance being difficult.
+  Lastly, its performance is insufficient and has been subject to much debate.
   It's on us now to finally pay our debt and make ConPTY its own proper, composable component that both conhost and Windows Terminal can be built on top of.
 
 Considerations:
@@ -237,10 +237,10 @@ flowchart TD
 The idea is that we can translate Console API calls directly to VT at least as well as the current VtEngine setup can.
 For instance, a call to `SetConsoleCursorPosition` clearly translates directly to a `CUP` escape sequence.
 But even complex calls like `WriteConsoleOutputAttribute` which have no VT equivalent can be implemented this way by first applying the changes to our local text buffer and then serializing the affected range back to VT.
-Since the Console API is extremely limited (only 16 colors, etc.), the serialization code will similarly be extremely simple.
+Since the Console API is fairly limited (only 16 colors, etc.), the serialization code will often be equally simple.
 That's also how VtEngine currently works, but instead of doing it asynchronously in the renderer thread, we'll do it synchronously right during the Console API call.
 
-Apart from the Console API, the "cooked read" implementation, which handles our builtin "readline"-like text editor, will need to receive significant changes.
+Apart from the Console API, the "cooked read" implementation, which handles our builtin "readline"-like text editor, will need to receive some larger changes.
 Currently it shows popups on top of the existing content and uses `ReadConsoleOutput` and `WriteConsoleOutput` to backup and restore the affected rectangle.
 This results in exactly the same issues that were previously outlined where our text buffer implementation may be different than that of the hosting terminal.
 Furthermore its current popup implementation directly interfaces with the backing text buffer and its translation relies on the existence of VtEngine.
