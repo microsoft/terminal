@@ -5273,7 +5273,15 @@ namespace winrt::TerminalApp::implementation
                 appPrivate->PrepareForAIChat();
             }
         }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(_settings.AIEndpoint(), _settings.AIKey());
+
+        winrt::Microsoft::Terminal::Query::Extension::ILLMProvider llmProvider{ nullptr };
+        // since we only support one type of llmProvider for now, just instantiate that one (the AzureLLMProvider)
+        // in the future, we would need to query the settings here for which LLMProvider to use
+        if (!_settings.AIEndpoint().empty() && !_settings.AIKey().empty())
+        {
+            llmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(_settings.AIEndpoint(), _settings.AIKey());
+        }
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(llmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {

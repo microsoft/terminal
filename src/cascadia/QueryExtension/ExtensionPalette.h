@@ -7,6 +7,7 @@
 #include "ChatMessage.g.h"
 #include "GroupedChatMessages.g.h"
 #include "TerminalContext.g.h"
+#include "SystemResponse.g.h"
 
 #include "AzureLLMProvider.h"
 
@@ -14,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>
     {
-        ExtensionPalette(winrt::hstring endpoint, winrt::hstring key);
+        ExtensionPalette(Extension::ILLMProvider llmProvider);
 
         // We don't use the winrt_property macro here because we just need the setter
         void IconPath(const winrt::hstring& iconPath);
@@ -35,11 +36,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         friend struct ExtensionPaletteT<ExtensionPalette>; // for Xaml to bind events
 
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
-
-        // we don't use the endpoint and key directly, we just store them for telemetry purposes
-        // (_llmProvider is the one that actually uses the key/endpoint for http requests)
-        winrt::hstring _AIEndpoint;
-        winrt::hstring _AIKey;
 
         ILLMProvider _llmProvider{ nullptr };
 
@@ -160,6 +156,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     private:
         winrt::hstring _activeCommandline;
     };
+
+    struct SystemResponse : SystemResponseT<SystemResponse>
+    {
+        SystemResponse(winrt::hstring message, bool isError) :
+            _message{ message },
+            _isError{ isError } {}
+        winrt::hstring Message() { return _message; };
+        bool IsError() { return _isError; };
+
+    private:
+        winrt::hstring _message;
+        bool _isError;
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
@@ -168,4 +177,5 @@ namespace winrt::Microsoft::Terminal::Query::Extension::factory_implementation
     BASIC_FACTORY(ChatMessage);
     BASIC_FACTORY(GroupedChatMessages);
     BASIC_FACTORY(TerminalContext);
+    BASIC_FACTORY(SystemResponse);
 }

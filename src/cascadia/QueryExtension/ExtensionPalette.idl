@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Query.Extension
 
     [default_interface] runtimeclass ExtensionPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        ExtensionPalette(String endpoint, String key);
+        ExtensionPalette(ILLMProvider llmProvider);
 
         String ControlName { get; };
         String QueryBoxPlaceholderText { get; };
@@ -42,5 +42,10 @@ namespace Microsoft.Terminal.Query.Extension
     [default_interface] runtimeclass TerminalContext : IContext
     {
         TerminalContext(String activeCommandline);
+    }
+
+    [default_interface] runtimeclass SystemResponse : IResponse
+    {
+        SystemResponse(String message, Boolean isError);
     }
 }

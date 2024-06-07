@@ -62,12 +62,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool isError{ true };
         hstring message{};
 
-        // If the AI key and endpoint is still empty, tell the user to fill them out in settings
-        if (_AIKey.empty() || _AIEndpoint.empty())
-        {
-            message = RS_(L"CouldNotFindKeyErrorMessage");
-        }
-        else if (!std::regex_search(_AIEndpoint.c_str(), azureOpenAIEndpointRegex))
+        // If the AI endpoint is not an azure open AI endpoint, return an error message
+        if (!std::regex_search(_AIEndpoint.c_str(), azureOpenAIEndpointRegex))
         {
             message = RS_(L"InvalidEndpointMessage");
         }
