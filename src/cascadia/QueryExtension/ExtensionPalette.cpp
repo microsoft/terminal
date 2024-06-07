@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         if (_llmProvider)
         {
-            result = _llmProvider.GetResponseAsync(promptCopy).get();   
+            result = _llmProvider.GetResponseAsync(promptCopy).get();
         }
         else
         {
@@ -222,7 +222,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Now that we have the context, make sure the llmProvider knows it too
         if (_llmProvider)
         {
-            _llmProvider.SetContext(winrt::make<TerminalContext>(_ActiveCommandline));   
+            _llmProvider.SetContext(winrt::make<TerminalContext>(_ActiveCommandline));
         }
 
         // Give the palette focus
