@@ -631,8 +631,8 @@ interface IConsoleServerCallback : IUnknown {
     // while `maxClusters = inf` and `maxColumns = window width` can be used to layout text within the window.
     //
     // You don't need to handle escape characters. These functions will never be called with any present.
-    // For robustness against bugs it's however recommended to handle them anyway. If you have no preference
-    // for how to measure them, assign them a width of 1 column.
+    // For robustness against bugs it's however recommended to handle them anyway, in whatever way you wish.
+    // If you have no preference, it's recommended to treat them as zero-width characters.
     HRESULT MeasureTextForward([in] CONSRV_UTF16_STRING text, [in] DWORD maxClusters, [in] DWORD maxColumns, [in, out] DWORD* position, [out] DWORD* columns);
     HRESULT MeasureTextBackward([in] CONSRV_UTF16_STRING text, [in] DWORD maxClusters, [in] DWORD maxColumns, [in, out] DWORD* position, [out] DWORD* columns);
 
