@@ -29,7 +29,7 @@ const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    ExtensionPalette::ExtensionPalette(Extension::ILLMProvider llmProvider) :
+    ExtensionPalette::ExtensionPalette(const Extension::ILLMProvider llmProvider) :
         _llmProvider{ llmProvider }
     {
         InitializeComponent();

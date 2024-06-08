@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>
     {
-        ExtensionPalette(Extension::ILLMProvider llmProvider);
+        ExtensionPalette(const Extension::ILLMProvider llmProvider);
 
         // We don't use the winrt_property macro here because we just need the setter
         void IconPath(const winrt::hstring& iconPath);
@@ -149,7 +149,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct TerminalContext : TerminalContextT<TerminalContext>
     {
-        TerminalContext(winrt::hstring activeCommandline) :
+        TerminalContext(const winrt::hstring& activeCommandline) :
             _activeCommandline{ activeCommandline } {}
         winrt::hstring ActiveCommandline() { return _activeCommandline; };
 
@@ -159,7 +159,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct SystemResponse : SystemResponseT<SystemResponse>
     {
-        SystemResponse(winrt::hstring message, bool isError) :
+        SystemResponse(const winrt::hstring& message, const bool isError) :
             _message{ message },
             _isError{ isError } {}
         winrt::hstring Message() { return _message; };

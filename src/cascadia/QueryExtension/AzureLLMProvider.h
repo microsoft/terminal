@@ -10,11 +10,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct AzureLLMProvider : AzureLLMProviderT<AzureLLMProvider>
     {
-        AzureLLMProvider(winrt::hstring endpoint, winrt::hstring key);
+        AzureLLMProvider(const winrt::hstring& endpoint, const winrt::hstring& key);
 
         void ClearMessageHistory();
         void SetSystemPrompt(const winrt::hstring& systemPrompt);
-        void SetContext(Extension::IContext context);
+        void SetContext(const Extension::IContext context);
 
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
 
@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     struct AzureResponse : AzureResponseT<AzureResponse>
     {
-        AzureResponse(winrt::hstring message, bool isError) :
+        AzureResponse(const winrt::hstring& message, const bool isError) :
             _message{ message },
             _isError{ isError } {}
         winrt::hstring Message() { return _message; };

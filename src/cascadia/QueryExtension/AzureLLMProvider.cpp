@@ -26,7 +26,7 @@ const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    AzureLLMProvider::AzureLLMProvider(winrt::hstring endpoint, winrt::hstring key)
+    AzureLLMProvider::AzureLLMProvider(const winrt::hstring& endpoint, const winrt::hstring& key)
     {
         _AIEndpoint = endpoint;
         _AIKey = key;
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _jsonMessages.Append(systemMessageObject);
     }
 
-    void AzureLLMProvider::SetContext(Extension::IContext context)
+    void AzureLLMProvider::SetContext(const Extension::IContext context)
     {
         _context = context;
     }
