@@ -496,7 +496,7 @@ their own workflows.
   * `--profile`: save to this profile???? Not sure if this is actually possible.
     Maybe with the `WT_SESSION_ID` env var to figure out which profile is in use
     for the pane with that ID
-    * This would probably require per-profile actions, which are woefully unspec'd
+    * This would probably require per-profile actions, which are woefully under specified
 * Longer workflows might be better exposed as notebooks. We've already got a
   mind to support [markdown in a notebook-like
   experience](https://github.com/microsoft/terminal/issues/16495) in the
@@ -542,7 +542,7 @@ one. What if we could drop two profiles in the `.wt.json` file, with the
 
 However, what does that even mean? We wouldn't know that file exists till we see
 it the first time. Maybe there's room to integrate that with Dev Home ala
-[microsoft/devhome/3005]. Though, that probably makes the most sense as a winget
+[microsoft/DevHome/3005]. Though, that probably makes the most sense as a winget
 DSC to create a fragment profile instead.
 
 ## Resources
@@ -585,4 +585,4 @@ super straightforward.
 [#10083]: https://github.com/microsoft/terminal/issues/10083
 [#8639]: https://github.com/microsoft/terminal/issues/8639
 
-[microsoft/devhome/3005]: https://github.com/microsoft/devhome/issues/3005
+[microsoft/DevHome/3005]: https://github.com/microsoft/DevHome/issues/3005
