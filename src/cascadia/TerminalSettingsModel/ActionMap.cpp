@@ -902,7 +902,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // _cwdLocalSnippetsCache
     winrt::Windows::Foundation::IAsyncAction ActionMap::_updateLocalSnippetCache(winrt::hstring currentWorkingDirectory)
     {
-        // Don't do I/O on the main thread, duh
+        // Don't do I/O on the main thread
         co_await winrt::resume_background();
 
         // This returns an empty string if we fail to load the file.
@@ -918,7 +918,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // In the real settings parser, we'd throw here:
                 // throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
                 //
-                // That seems overly agressive for something that we don't
+                // That seems overly aggressive for something that we don't
                 // really own. Instead, just bail out.
                 co_return;
             }
