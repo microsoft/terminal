@@ -589,7 +589,7 @@ namespace winrt::TerminalApp::implementation
                         automationPeer.RaiseNotificationEvent(
                             Automation::Peers::AutomationNotificationKind::ItemAdded,
                             Automation::Peers::AutomationNotificationProcessing::MostRecent,
-                            paletteItem.Name() + L" " + paletteItem.KeyChordText(),
+                            paletteItem.Name(),
                             L"SuggestionsControlSelectedItemChanged" /* unique name for this notification category */);
                     }
                 }
@@ -832,17 +832,13 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void SuggestionsControl::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
-    {
-        _actionMap = actionMap;
-    }
-
     void SuggestionsControl::SetCommands(const Collections::IVector<Command>& actions)
     {
         _allCommands.Clear();
         for (const auto& action : actions)
         {
-            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            // key chords aren't relevant in the suggestions control, so make the palette item with just the command and no keys
+            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
             auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
             _allCommands.Append(filteredCommand);
         }
@@ -996,7 +992,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
         {
             const auto action = nameAndCommand.Value();
-            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
             auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
             _currentNestedCommands.Append(nestedFilteredCommand);
         }

@@ -31,7 +31,6 @@
                               MinHeight="0"
                               Padding="16,0,12,0"
                               HorizontalContentAlignment="Stretch"
-                              AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"
                               AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
                               FontSize="12" />
             </DataTemplate>

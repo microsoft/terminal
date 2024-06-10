@@ -24,7 +24,6 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
 
         void SetCommands(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& actions);
-        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
