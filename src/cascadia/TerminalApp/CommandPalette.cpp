@@ -950,21 +950,27 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
+        _populateCommands();
     }
 
-    void CommandPalette::SetCommands(const Collections::IVector<Command>& actions)
+    void CommandPalette::_populateCommands()
     {
         _allCommands.Clear();
-        for (const auto& action : actions)
+        if (_actionMap)
         {
-            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-            auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
-            _allCommands.Append(filteredCommand);
-        }
+            const auto expandedCommands{ _actionMap.ExpandedCommands() };
+            for (const auto& action : expandedCommands)
+            {
+                const auto keyChordText{ KeyChordSerialization::ToString(_actionMap.GetKeyBindingForAction(action.ID())) };
+                auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, keyChordText) };
+                auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
+                _allCommands.Append(filteredCommand);
+            }
 
-        if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
-        {
-            _updateFilteredActions();
+            if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
+            {
+                _updateFilteredActions();
+            }
         }
     }
 
@@ -1178,7 +1184,8 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
         {
             const auto action = nameAndCommand.Value();
-            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            // nested commands cannot have keys bound to them, so just pass in the command and no keys
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
             auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
             _currentNestedCommands.Append(nestedFilteredCommand);
         }
