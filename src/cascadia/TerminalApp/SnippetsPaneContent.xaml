@@ -183,38 +183,6 @@
                 </mux:TreeViewItem>
             </DataTemplate>
 
-            <DataTemplate x:Key="NestedItemTemplate"
-                          x:DataType="local:FilteredTask">
-                <mux:TreeViewItem x:Name="rootItem"
-                                  ItemsSource="{x:Bind Children}"
-                                  Visibility="{x:Bind Visibility, Mode=OneWay}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <ContentPresenter Grid.Column="0">
-                            <IconSourceElement Width="16"
-                                               Height="16"
-                                               IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Item.Icon), Mode=OneTime}"
-                                               Visibility="Collapsed" />
-                        </ContentPresenter>
-
-                        <local:HighlightedTextControl Grid.Column="1"
-                                                      HorizontalAlignment="Left"
-                                                      Text="{x:Bind HighlightedName, Mode=OneWay}" />
-                    </Grid>
-                </mux:TreeViewItem>
-            </DataTemplate>
-
-            <local:SnippetsItemTemplateSelector x:Key="SnippetsItemTemplateSelector"
-                                                GeneralItemTemplate="{StaticResource TaskItemTemplate}"
-                                                NestedItemTemplate="{StaticResource NestedItemTemplate}" />
-
             <ResourceDictionary.ThemeDictionaries>
                 <!--  same as in MainPage, this is SolidBackgroundFillColorTertiary  -->
                 <ResourceDictionary x:Key="Dark">
@@ -277,11 +245,8 @@
                       AllowFocusOnInteraction="True"
                       CanDragItems="False"
                       CanReorderItems="False"
-                      ItemContainerStyleSelector="{StaticResource SnippetsItemTemplateSelector}"
+                      ItemTemplate="{StaticResource TaskItemTemplate}"
                       Visibility="{x:Bind HasSnippets, Mode=OneWay}" />
-
-        <!--  ChoosingItemContainer="_choosingItemContainer"  -->
-        <!--  ContainerContentChanging="_containerContentChanging"  -->
     </Grid>
 
 </UserControl>
