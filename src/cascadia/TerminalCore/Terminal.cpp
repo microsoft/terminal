@@ -1640,34 +1640,12 @@ void Terminal::PreviewText(std::wstring_view input)
     {
         // Let's do something fun.
 
-        // static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
-        //     return til::color{
-        //         base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
-        //         base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
-        //         base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
-        //     };
-        // };
-
-        // // Helper for converting a hue [0, 1) to an RGB value.
-        // // Credit to https://www.chilliant.com/rgb2hsv.html
-        // static const auto hueToRGB = [&](const float H) -> til::color {
-        //     float R = abs(H * 6 - 3) - 1;
-        //     float G = 2 - abs(H * 6 - 2);
-        //     float B = 2 - abs(H * 6 - 4);
-        //     return saturateAndToColor(R, G, B);
-        // };
-
         // Use the actual text length for the number of steps, not including the
         // trailing spaces.
-        auto steps = originalSize;
-        float increment = 1.0f / steps;
-        float currentHue = 0.0f;
+        const float increment = 1.0f / originalSize;
         for (auto i = 0; i < snippetPreview.text.size(); i++)
         {
-            auto h = currentHue;
-            currentHue += increment;
-
-            const auto color = til::color::from_hue(h);
+            const auto color = til::color::from_hue(increment * i);
             TextAttribute curr = previewAttrs;
             curr.SetForeground(color);
             snippetPreview.attributes.emplace_back(1, curr);
