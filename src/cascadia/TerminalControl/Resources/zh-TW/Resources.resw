@@ -213,6 +213,10 @@
     <value>轉譯器發生意外的錯誤：{0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>您的 MacType 版本與此應用程式不相容。請更新至 2023.5.31 版或更新版本。</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>已啟用唯讀模式。</value>
   </data>

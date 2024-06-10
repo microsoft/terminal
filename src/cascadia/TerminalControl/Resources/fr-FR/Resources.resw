@@ -213,6 +213,10 @@ Installez la police manquante ou choisissez-en une autre.</value>
     <value>Le convertisseur a rencontré une erreur inattendue : {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Votre version de MacType est incompatible avec cette application. Veuillez mettre à jour la version 2023.5.31 ou une version ultérieure.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Le mode lecture seule est activé.</value>
   </data>

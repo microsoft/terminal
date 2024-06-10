@@ -213,6 +213,10 @@ Instale la fuente que falta o elija otra.</value>
     <value>El representador encontró un error inesperado: {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Su versión de MacType no es compatible con esta aplicación. Actualice a la versión 2023.5.31 o posterior.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>El modo de solo lectura está habilitado.</value>
   </data>

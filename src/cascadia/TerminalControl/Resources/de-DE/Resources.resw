@@ -213,6 +213,10 @@ Installieren Sie entweder die fehlende Schriftart, oder wählen Sie eine andere 
     <value>Unerwarteter Fehler beim Renderer: {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Ihre Version von MacType ist mit dieser Anwendung nicht kompatibel. Bitte aktualisieren Sie auf Version 2023.5.31 oder höher.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Der schreibgeschützte Modus ist aktiviert.</value>
   </data>

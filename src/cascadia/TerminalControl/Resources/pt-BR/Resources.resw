@@ -213,6 +213,10 @@ Instale a fonte ausente ou escolha outra.</value>
     <value>O renderizador encontrou um erro inesperado: {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Sua versão do MacType é incompatível com este aplicativo. Atualize para a versão 2023.5.31 ou posterior.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>O modo somente leitura está habilitado.</value>
   </data>

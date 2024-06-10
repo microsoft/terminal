@@ -213,6 +213,10 @@
     <value>レンダラーで予期しないエラーが発生しました: {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>お使いのバージョンの MacType は、このアプリケーションと互換性がありません。バージョン 2023.5.31 以降に更新してください。</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>読み取り専用モードが有効になっています。</value>
   </data>

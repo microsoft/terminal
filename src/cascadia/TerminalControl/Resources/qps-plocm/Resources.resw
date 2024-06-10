@@ -213,6 +213,10 @@
     <value>Řєŉδέгęř зйĉóűňтëř℮δ âη ûⁿėхрєĉţēð ℮ѓґоŗ: {0} !!! !!! !!! !!! !</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Ύοϋг νέяšîǿŋ бƒ MacType їš ìⁿçомрāţΐвŀè шιťћ тĥĩѕ ªрφℓíċąţіōņ. Рĺэаşέ űφđаτє τő νзřѕíбŉ 2023.5.31 бŗ ℓâţëґ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Гėāδ-σπļỳ mőðê īŝ ėńäвļεδ. !!! !!! !</value>
   </data>

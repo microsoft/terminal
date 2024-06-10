@@ -213,6 +213,10 @@
     <value>렌더러에서 예기치 않은 오류가 발생했습니다. {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>MacType 버전이 이 애플리케이션과 호환되지 않습니다. 버전 2023.5.31 이상으로 업데이트하세요.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>읽기 전용 모드가 사용 설정됩니다.</value>
   </data>

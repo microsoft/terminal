@@ -213,6 +213,10 @@ Installare il tipo di carattere mancante o sceglierne un altro.</value>
     <value>Il renderer ha rilevato un errore imprevisto: {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>La versione di MacType è incompatibile con questa applicazione. Aggiornare alla versione 2023.5.31 o successiva.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>La modalità di sola lettura è abilitata.</value>
   </data>

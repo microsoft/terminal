@@ -213,6 +213,10 @@
     <value>Произошла непредвиденная ошибка обработчика: {0}</value>
     <comment>{0} is an error code.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Эта версия MacType несовместима с этим приложением. Обновите версию до 2023.5.31 или более поздней.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Включен режим только для чтения.</value>
   </data>
