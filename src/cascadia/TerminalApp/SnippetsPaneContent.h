@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         void SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control);
+        bool HasSnippets() const;
 
         til::typed_event<> ConnectionStateChanged;
         til::typed_event<IPaneContent> CloseRequested;
@@ -43,6 +44,8 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IPaneContent> FocusRequested;
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
+
+        til::property_changed_event PropertyChanged;
 
     private:
         friend struct SnippetsPaneContentT<SnippetsPaneContent>; // for Xaml to bind events

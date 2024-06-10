@@ -222,19 +222,31 @@
                    Margin="4"
                    FontSize="24" />
 
+        <TextBlock Grid.Row="1"
+                   Margin="8,16,8,8"
+                   FontSize="18"
+                   TextWrapping="WrapWholeWords"
+                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(HasSnippets), Mode=OneWay}">
+            <Run x:Uid="SnippetsPaneNoneFoundHeader" />
+            <LineBreak />
+            <Run x:Uid="SnippetsPaneNoneFoundDetails" />
+        </TextBlock>
+
         <TextBox x:Name="_filterBox"
                  x:Uid="SnippetsFilterBox"
                  Grid.Row="1"
                  Margin="8,0,8,8"
                  AllowFocusOnInteraction="True"
-                 TextChanged="_filterTextChanged" />
+                 TextChanged="_filterTextChanged"
+                 Visibility="{x:Bind HasSnippets, Mode=OneWay}" />
 
         <mux:TreeView x:Name="_treeView"
                       Grid.Row="2"
                       AllowFocusOnInteraction="True"
                       CanDragItems="False"
                       CanReorderItems="False"
-                      ItemTemplate="{StaticResource TaskItemTemplate}" />
+                      ItemTemplate="{StaticResource TaskItemTemplate}"
+                      Visibility="{x:Bind HasSnippets, Mode=OneWay}" />
     </Grid>
 
 </UserControl>

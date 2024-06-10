@@ -26,12 +26,11 @@ namespace TerminalApp
         Windows.UI.Xaml.Visibility Visibility { get; };
     }
 
-    [default_interface] runtimeclass SnippetsPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent
+    [default_interface] runtimeclass SnippetsPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         SnippetsPaneContent();
         void SetLastActiveControl(Microsoft.Terminal.Control.TermControl control);
-
+        Boolean HasSnippets { get; };
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
-
     }
 }

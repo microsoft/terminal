@@ -60,6 +60,13 @@ namespace winrt::TerminalApp::implementation
         _treeView().ItemsSource(_allTasks);
 
         _updateFilteredCommands();
+
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"HasSnippets" });
+    }
+
+    bool SnippetsPaneContent::HasSnippets() const
+    {
+        return _allTasks.Size() != 0;
     }
 
     void SnippetsPaneContent::_filterTextChanged(const IInspectable& /*sender*/,
