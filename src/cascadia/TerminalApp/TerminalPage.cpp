@@ -624,9 +624,12 @@ namespace winrt::TerminalApp::implementation
             // GH#6586: now that we're done processing all startup commands,
             // focus the active control. This will work as expected for both
             // commandline invocations and for `wt` action invocations.
-            if (const auto control = _GetActiveControl())
+            if (const auto& terminalTab{ _GetFocusedTabImpl() })
             {
-                control.Focus(FocusState::Programmatic);
+                if (const auto& content{ terminalTab->GetActiveContent() })
+                {
+                    content.Focus(FocusState::Programmatic);
+                }
             }
         }
         if (initial)
@@ -2397,16 +2400,16 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UnZoomIfNeeded();
-        auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
+        auto [original, newGuy] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
         // the control here instead.
         if (_startupState == StartupState::Initialized)
         {
-            if (const auto control = _GetActiveControl())
+            if (const auto& content{ newGuy->GetContent() })
             {
-                control.Focus(FocusState::Programmatic);
+                content.Focus(FocusState::Programmatic);
             }
         }
     }

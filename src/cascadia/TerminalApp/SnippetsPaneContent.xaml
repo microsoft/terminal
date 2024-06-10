@@ -12,7 +12,6 @@
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
-             AllowFocusOnInteraction="True"
              IsTabStop="True"
              TabNavigation="Cycle"
              mc:Ignorable="d">
@@ -207,7 +206,10 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Background="{ThemeResource PageBackground}">
+    <!--  Don't allow the user to focus the root pane, but do allow individual controls to be focused  -->
+
+    <Grid AllowFocusOnInteraction="False"
+          Background="{ThemeResource PageBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -224,10 +226,12 @@
                  x:Uid="SnippetsFilterBox"
                  Grid.Row="1"
                  Margin="8,0,8,8"
+                 AllowFocusOnInteraction="True"
                  TextChanged="_filterTextChanged" />
 
         <mux:TreeView x:Name="_treeView"
                       Grid.Row="2"
+                      AllowFocusOnInteraction="True"
                       CanDragItems="False"
                       CanReorderItems="False"
                       ItemTemplate="{StaticResource TaskItemTemplate}" />

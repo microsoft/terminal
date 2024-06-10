@@ -525,7 +525,7 @@ namespace winrt::TerminalApp::implementation
     // - pane: The new pane to add to the tree of panes; note that this pane
     //         could itself be a parent pane/the root node of a tree of panes
     // Return Value:
-    // - <none>
+    // - a pair of (the Pane that now holds the original content, the new Pane in the tree)
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> TerminalTab::SplitPane(SplitDirection splitType,
                                                                                    const float splitSize,
                                                                                    std::shared_ptr<Pane> pane)

@@ -78,8 +78,7 @@ namespace winrt::TerminalApp::implementation
     }
     void SnippetsPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
     {
-        reason;
-        // _box.Focus(reason);
+        _filterBox().Focus(reason);
     }
     void SnippetsPaneContent::Close()
     {
