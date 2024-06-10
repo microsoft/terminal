@@ -95,8 +95,12 @@
                                   Visibility="{x:Bind Visibility, Mode=OneWay}">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" /> 
+                            <!--  Name  -->
+                            <RowDefinition Height="*" /> 
+                            <!--  Input  -->
+                            <RowDefinition Height="0" /> 
+                            <!--  Input gets put here when we're a nested command, to hide it  -->
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -171,7 +175,13 @@
                         <local:HighlightedTextControl Grid.Column="1"
                                                       HorizontalAlignment="Left"
                                                       Text="{x:Bind HighlightedName, Mode=OneWay}" />
-                        <TextBlock Grid.Row="1"
+
+                        <!--
+                            BODGY: I can't choose different templates if this item is nested or not.
+                            (See https://github.com/microsoft/microsoft-ui-xaml/issues/2121)
+                            But what I can do, is yeet the text into a 0-height row to hide it.
+                        -->
+                        <TextBlock Grid.Row="{x:Bind Row, Mode=OneWay}"
                                    Grid.Column="1"
                                    Margin="12,0,12,6"
                                    FontFamily="Cascadia Mono, Consolas"

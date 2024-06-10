@@ -111,6 +111,8 @@ namespace winrt::TerminalApp::implementation
         bool HasChildren() { return _children.Size() > 0; }
         winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
 
+        int32_t Row() { return HasChildren() ? 2 : 1; } // See the BODGY comment in the .XAML for explanation
+
         // Used to control if this item is visible in the TreeView. Turns out,
         // TreeView is in fact sane enough to remove items entirely if they're
         // Collapsed.
