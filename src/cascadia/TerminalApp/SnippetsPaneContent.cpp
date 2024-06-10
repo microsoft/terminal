@@ -5,6 +5,7 @@
 #include "SnippetsPaneContent.h"
 #include "SnippetsPaneContent.g.cpp"
 #include "FilteredTask.g.cpp"
+#include "Utils.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -22,10 +23,6 @@ namespace winrt::TerminalApp::implementation
     SnippetsPaneContent::SnippetsPaneContent()
     {
         InitializeComponent();
-
-        // auto res = Windows::UI::Xaml::Application::Current().Resources();
-        auto bg = Resources().Lookup(winrt::box_value(L"PageBackground"));
-        Background(bg.try_as<WUX::Media::Brush>());
     }
 
     void SnippetsPaneContent::_updateFilteredCommands()
@@ -103,9 +100,13 @@ namespace winrt::TerminalApp::implementation
         return winrt::hstring{ glyph };
     }
 
-    winrt::Windows::UI::Xaml::Media::Brush SnippetsPaneContent::BackgroundBrush()
+    winrt::WUX::Media::Brush SnippetsPaneContent::BackgroundBrush()
     {
-        return Background();
+        static const auto key = winrt::box_value(L"UnfocusedBorderBrush");
+        return ThemeLookup(WUX::Application::Current().Resources(),
+                           _settings.GlobalSettings().CurrentTheme().RequestedTheme(),
+                           key)
+            .try_as<winrt::WUX::Media::Brush>();
     }
 
     void SnippetsPaneContent::SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control)
