@@ -95,7 +95,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
-    _rainbowSuggesions = settings.RainbowSuggestions();
+    _rainbowSuggestions = settings.RainbowSuggestions();
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -1636,7 +1636,7 @@ void Terminal::PreviewText(std::wstring_view input)
     const auto len = snippetPreview.text.size();
     snippetPreview.attributes.clear();
 
-    if (_rainbowSuggesions)
+    if (_rainbowSuggestions)
     {
         // Let's do something fun.
 
