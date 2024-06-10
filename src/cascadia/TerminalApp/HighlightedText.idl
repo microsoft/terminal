@@ -16,7 +16,7 @@ namespace TerminalApp
     {
         HighlightedText();
         HighlightedText(Windows.Foundation.Collections.IObservableVector<HighlightedTextSegment> segments);
-
+        Int32 Weight { get; };
         Windows.Foundation.Collections.IObservableVector<HighlightedTextSegment> Segments;
     }
 }

@@ -37,14 +37,14 @@ namespace winrt::TerminalApp::implementation
         _Item = item;
         _Filter = L"";
         _Weight = 0;
-        _HighlightedName = _computeHighlightedName();
+        _HighlightedName = _computeHighlighted(_Item.Name());
 
         // Recompute the highlighted name if the item name changes
         _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
             {
-                filteredCommand->HighlightedName(filteredCommand->_computeHighlightedName());
+                filteredCommand->HighlightedName(filteredCommand->_computeHighlighted(filteredCommand->_Item.Name()));
                 filteredCommand->Weight(filteredCommand->_computeWeight());
             }
         });
@@ -57,9 +57,14 @@ namespace winrt::TerminalApp::implementation
         if (filter != _Filter)
         {
             Filter(filter);
-            HighlightedName(_computeHighlightedName());
+            HighlightedName(_computeHighlighted(_Item.Name()));
             Weight(_computeWeight());
         }
+    }
+
+    winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlighted(winrt::hstring input)
+    {
+        return ComputeHighlighted(input, _Filter);
     }
 
     // Method Description:
@@ -81,15 +86,15 @@ namespace winrt::TerminalApp::implementation
     //
     // Return Value:
     // - The HighlightedText object initialized with the segments computed according to the algorithm above.
-    winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName()
+    winrt::TerminalApp::HighlightedText FilteredCommand::ComputeHighlighted(winrt::hstring input, winrt::hstring filter)
     {
         const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
-        auto commandName = _Item.Name();
+        auto commandName = input;
         auto isProcessingMatchedSegment = false;
         uint32_t nextOffsetToReport = 0;
         uint32_t currentOffset = 0;
 
-        for (const auto searchChar : _Filter)
+        for (const auto searchChar : filter)
         {
             const WCHAR searchCharAsString[] = { searchChar, L'\0' };
             while (true)
@@ -202,30 +207,7 @@ namespace winrt::TerminalApp::implementation
     // - the relative weight of this match
     int FilteredCommand::_computeWeight()
     {
-        auto result = 0;
-        auto isNextSegmentWordBeginning = true;
-
-        for (const auto& segment : _HighlightedName.Segments())
-        {
-            const auto& segmentText = segment.TextSegment();
-            const auto segmentSize = segmentText.size();
-
-            if (segment.IsHighlighted())
-            {
-                // Give extra point for each consecutive match
-                result += (segmentSize <= 1) ? segmentSize : 1 + 2 * (segmentSize - 1);
-
-                // Give extra point if this segment is at the beginning of a word
-                if (isNextSegmentWordBeginning)
-                {
-                    result++;
-                }
-            }
-
-            isNextSegmentWordBeginning = segmentSize > 0 && segmentText[segmentSize - 1] == L' ';
-        }
-
-        return result;
+        return _HighlightedName.Weight();
     }
 
     // Function Description:

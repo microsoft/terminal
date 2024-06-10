@@ -19,9 +19,10 @@ namespace winrt::TerminalApp::implementation
         FilteredCommand() = default;
         FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        virtual void UpdateFilter(const winrt::hstring& filter);
+        void UpdateFilter(const winrt::hstring& filter);
 
         static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
+        static winrt::TerminalApp::HighlightedText ComputeHighlighted(winrt::hstring input, winrt::hstring filter);
 
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::PaletteItem, Item, PropertyChanged.raise, nullptr);
@@ -29,13 +30,12 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(int, Weight, PropertyChanged.raise);
 
-    protected:
-        void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
-
     private:
-        winrt::TerminalApp::HighlightedText _computeHighlightedName();
-        int _computeWeight();
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;
+
+        void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
+        winrt::TerminalApp::HighlightedText _computeHighlighted(winrt::hstring input);
+        int _computeWeight();
 
         friend class TerminalAppLocalTests::FilteredCommandTests;
     };

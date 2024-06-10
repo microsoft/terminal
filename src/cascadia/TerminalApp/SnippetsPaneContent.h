@@ -80,6 +80,8 @@ namespace winrt::TerminalApp::implementation
         void UpdateFilter(const winrt::hstring& filter)
         {
             _filteredCommand->UpdateFilter(filter);
+            HighlightedInput(FilteredCommand::ComputeHighlighted(Input(), filter));
+
             for (const auto& c : _children)
             {
                 auto impl = winrt::get_self<implementation::FilteredTask>(c);
@@ -116,25 +118,34 @@ namespace winrt::TerminalApp::implementation
         // Collapsed.
         winrt::Windows::UI::Xaml::Visibility Visibility()
         {
+            const auto ourWeight = _weight();
             // Is there no filter, or do we match it?
-            if (_filteredCommand->Filter().empty() || _filteredCommand->Weight() > 0)
+            if (_filteredCommand->Filter().empty() || ourWeight > 0)
             {
                 return winrt::Windows::UI::Xaml::Visibility::Visible;
             }
             // If we don't match, maybe one of our children does
-            auto totalWeight = _filteredCommand->Weight();
+            auto totalWeight = ourWeight;
             for (const auto& c : _children)
             {
                 auto impl = winrt::get_self<implementation::FilteredTask>(c);
-                totalWeight += impl->_filteredCommand->Weight();
+                totalWeight += impl->_weight();
             }
 
             return totalWeight > 0 ? winrt::Windows::UI::Xaml::Visibility::Visible : winrt::Windows::UI::Xaml::Visibility::Collapsed;
         };
 
         til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedInput, PropertyChanged.raise);
+
+        // protected:
 
     private:
+        int _weight()
+        {
+            return _filteredCommand->Weight() + _HighlightedInput.Weight();
+        }
+
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
         winrt::com_ptr<winrt::TerminalApp::implementation::FilteredCommand> _filteredCommand{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _children{ nullptr };
