@@ -217,6 +217,10 @@
     <value>Цйǻьľė ŧò ƒіņð τнė ƒσℓľоŵíпğ ƒŏптš: {0}. Рĺёąšė èìťђėг ïŋŝţăĺℓ тħēm ôѓ ςђоōѕз ðįƒƒеřęŉţ ƒóπţś. !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
     <comment>{Locked="{0}"} This is a warning dialog shown when the user selects a font that isn't installed.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Ύοϋг νέяšîǿŋ бƒ MacType їš ìⁿçомрāţΐвŀè шιťћ тĥĩѕ ªрφℓíċąţіōņ. Рĺэаşέ űφđаτє τő νзřѕíбŉ 2023.5.31 бŗ ℓâţëґ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="RendererErrorOther" xml:space="preserve">
     <value>Гêŉďěѓēŗ эήçομήťєřĕď åń µŋέхρэсťèð ęґяöя: {0:#010×} {1} !!! !!! !!! !!! !!! !</value>
     <comment>{Locked="{0:#010x}","{1}"} {0:#010x} is a placeholder for a Windows error code (e.g. 0x88985002). {1} is the corresponding message.</comment>
