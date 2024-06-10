@@ -33,4 +33,11 @@ namespace TerminalApp
         Boolean HasSnippets { get; };
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
     }
+
+    [default_interface] runtimeclass SnippetsItemTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        SnippetsItemTemplateSelector();
+        Windows.UI.Xaml.DataTemplate GeneralItemTemplate;
+        Windows.UI.Xaml.DataTemplate NestedItemTemplate;
+    }
 }

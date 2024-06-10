@@ -4,6 +4,7 @@
 #pragma once
 #include "SnippetsPaneContent.g.h"
 #include "FilteredTask.g.h"
+#include "SnippetsItemTemplateSelector.g.h"
 #include "FilteredCommand.h"
 #include "ActionPaletteItem.h"
 #include <LibraryResources.h>
@@ -58,6 +59,11 @@ namespace winrt::TerminalApp::implementation
         void _filterTextChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         void _updateFilteredCommands();
+
+        // void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
+        // void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
+        // winrt::TerminalApp::SnippetsItemTemplateSelector _itemTemplateSelector{ nullptr };
+        // std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem, winrt_object_hash>, winrt_object_hash> _listViewItemsCache;
     };
 
     struct FilteredTask : FilteredTaskT<FilteredTask, TerminalApp::implementation::FilteredCommand>
@@ -135,9 +141,21 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _children{ nullptr };
     };
+
+    struct SnippetsItemTemplateSelector : SnippetsItemTemplateSelectorT<SnippetsItemTemplateSelector>
+    {
+        SnippetsItemTemplateSelector() = default;
+
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
+
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> NestedItemTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> GeneralItemTemplate;
+    };
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(SnippetsPaneContent);
+    BASIC_FACTORY(SnippetsItemTemplateSelector);
 }
