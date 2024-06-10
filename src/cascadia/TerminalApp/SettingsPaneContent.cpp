@@ -47,7 +47,6 @@ namespace winrt::TerminalApp::implementation
     }
     void SettingsPaneContent::Close()
     {
-        CloseRequested.raise(*this, nullptr);
     }
 
     INewContentArgs SettingsPaneContent::GetNewTerminalArgs(const BuildStartupKind /*kind*/) const

@@ -1997,7 +1997,6 @@ namespace SettingsModelUnitTests
             // Verify NameMap returns correct value
             const auto& cmd{ nameMap.TryLookup(L"bar") };
             VERIFY_IS_NOT_NULL(cmd);
-            VERIFY_IS_NULL(cmd.Keys());
             VERIFY_ARE_EQUAL(L"bar", cmd.Name());
         }
         {

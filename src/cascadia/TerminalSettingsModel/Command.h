@@ -48,8 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings,
-                                                const OriginTag origin,
-                                                const bool parseKeys = true);
+                                                const OriginTag origin);
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                    Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
@@ -73,12 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void GenerateID();
         bool IDWasGenerated();
 
-        Control::KeyChord Keys() const noexcept;
-        hstring KeyChordText() const noexcept;
-        std::vector<Control::KeyChord> KeyMappings() const noexcept;
-        void RegisterKey(const Control::KeyChord& keys);
-        void EraseKey(const Control::KeyChord& keys);
-
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
 
@@ -94,7 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
-        std::vector<Control::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
         std::wstring _ID;
         bool _IDWasGenerated{ false };
