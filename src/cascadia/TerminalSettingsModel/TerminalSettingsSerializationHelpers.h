@@ -510,6 +510,14 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSourc
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsNesting)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "enabled", ValueType::Enabled },
+        pair_type{ "disabled", ValueType::Disabled },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
 {
     JSON_MAPPINGS(3) = {

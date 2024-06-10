@@ -122,6 +122,12 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff,
     };
 
+    enum SuggestionsNesting
+    {
+        Disabled,
+        Enabled,
+    };
+
     interface INewContentArgs {
         String Type { get; };
         Boolean Equals(INewContentArgs other);
@@ -343,8 +349,9 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass SuggestionsArgs : IActionArgs
     {
         SuggestionsArgs();
-        SuggestionsArgs(SuggestionsSource source, Boolean useCommandline);
+        SuggestionsArgs(SuggestionsSource source, SuggestionsNesting nesting, Boolean useCommandline);
         SuggestionsSource Source { get; };
+        SuggestionsNesting Nesting { get; };
         Boolean UseCommandline { get; };
     };
 

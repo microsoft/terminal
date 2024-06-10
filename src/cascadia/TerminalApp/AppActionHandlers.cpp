@@ -1360,7 +1360,7 @@ namespace winrt::TerminalApp::implementation
                 // their settings file. Ask the ActionMap for those.
                 if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
                 {
-                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
+                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline, realArgs.Nesting());
                     for (const auto& t : tasks)
                     {
                         commandsCollection.push_back(t);

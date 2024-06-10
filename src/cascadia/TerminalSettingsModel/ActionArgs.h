@@ -216,8 +216,9 @@ protected:                                                                  \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SUGGESTIONS_ARGS(X)                                                 \
-    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks) \
+#define SUGGESTIONS_ARGS(X)                                                       \
+    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks)       \
+    X(SuggestionsNesting, Nesting, "nesting", false, SuggestionsNesting::Enabled) \
     X(bool, UseCommandline, "useCommandline", false, false)
 
 ////////////////////////////////////////////////////////////////////////////////

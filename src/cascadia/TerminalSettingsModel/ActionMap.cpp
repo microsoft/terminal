@@ -806,7 +806,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     IVector<Model::Command> _filterToSendInput(IMapView<hstring, Model::Command> nameMap,
-                                               winrt::hstring currentCommandline)
+                                               winrt::hstring currentCommandline,
+                                               Model::SuggestionsNesting nesting)
     {
         auto results = winrt::single_threaded_vector<Model::Command>();
 
@@ -861,20 +862,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             else if (command.HasNestedCommands())
             {
                 // Look for any sendInput commands nested underneath us
-                auto innerResults = _filterToSendInput(command.NestedCommands(), currentCommandline);
+                auto innerResults = _filterToSendInput(command.NestedCommands(), currentCommandline, nesting);
 
                 if (innerResults.Size() > 0)
                 {
                     // This command did have at least one sendInput under it
+                    if (nesting == Model::SuggestionsNesting::Enabled)
+                    {
+                        // Create a new Command, which is a copy of this Command,
+                        // which only has SendInputs in it
+                        winrt::com_ptr<implementation::Command> cmdImpl;
+                        cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
+                        auto copy = cmdImpl->Copy();
+                        copy->NestedCommands(innerResults.GetView());
 
-                    // Create a new Command, which is a copy of this Command,
-                    // which only has SendInputs in it
-                    winrt::com_ptr<implementation::Command> cmdImpl;
-                    cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
-                    auto copy = cmdImpl->Copy();
-                    copy->NestedCommands(innerResults.GetView());
-
-                    results.Append(*copy);
+                        results.Append(*copy);
+                    }
+                    else if (nesting == Model::SuggestionsNesting::Disabled)
+                    {
+                        // Just add all the nested commands directly to the list we're going to return
+                        for (const auto& nested : innerResults)
+                        {
+                            results.Append(nested);
+                        }
+                    }
                 }
             }
         }
@@ -883,8 +894,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     IVector<Model::Command> ActionMap::FilterToSendInput(
-        winrt::hstring currentCommandline)
+        winrt::hstring currentCommandline,
+        Model::SuggestionsNesting nesting)
     {
-        return _filterToSendInput(NameMap(), currentCommandline);
+        return _filterToSendInput(NameMap(), currentCommandline, nesting);
     }
 }

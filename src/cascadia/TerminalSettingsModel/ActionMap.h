@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
-        winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSendInput(winrt::hstring currentCommandline);
+        winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSendInput(winrt::hstring currentCommandline, Model::SuggestionsNesting nesting);
 
     private:
         Model::Command _GetActionByID(const winrt::hstring& actionID) const;
