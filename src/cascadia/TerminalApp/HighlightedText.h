@@ -22,6 +22,7 @@ namespace winrt::TerminalApp::implementation
     {
         HighlightedText() = default;
         HighlightedText(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>& segments);
+        int32_t Weight() const;
 
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>, Segments, PropertyChanged.raise);

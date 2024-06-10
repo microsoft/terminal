@@ -31,10 +31,10 @@ namespace winrt::TerminalApp::implementation
 
     protected:
         void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
+        winrt::TerminalApp::HighlightedText _computeHighlighted(winrt::hstring input);
+        virtual int _computeWeight();
 
     private:
-        winrt::TerminalApp::HighlightedText _computeHighlightedName();
-        int _computeWeight();
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;
 
         friend class TerminalAppLocalTests::FilteredCommandTests;

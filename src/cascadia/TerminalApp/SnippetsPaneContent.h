@@ -84,6 +84,8 @@ namespace winrt::TerminalApp::implementation
         void UpdateFilter(const winrt::hstring& filter) override
         {
             TerminalApp::implementation::FilteredCommand::UpdateFilter(filter);
+            HighlightedInput(_computeHighlighted(Input()));
+
             for (const auto& c : _children)
             {
                 c.UpdateFilter(filter);
@@ -132,6 +134,14 @@ namespace winrt::TerminalApp::implementation
 
             return totalWeight > 0 ? winrt::Windows::UI::Xaml::Visibility::Visible : winrt::Windows::UI::Xaml::Visibility::Collapsed;
         };
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedInput, PropertyChanged.raise);
+
+    protected:
+        int _computeWeight() override
+        {
+            return _HighlightedName.Weight() + _HighlightedInput.Weight();
+        }
 
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };

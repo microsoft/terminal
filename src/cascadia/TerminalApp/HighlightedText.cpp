@@ -28,4 +28,32 @@ namespace winrt::TerminalApp::implementation
         _Segments(segments)
     {
     }
+
+    int HighlightedText::Weight() const
+    {
+        auto result = 0;
+        auto isNextSegmentWordBeginning = true;
+
+        for (const auto& segment : _Segments)
+        {
+            const auto& segmentText = segment.TextSegment();
+            const auto segmentSize = segmentText.size();
+
+            if (segment.IsHighlighted())
+            {
+                // Give extra point for each consecutive match
+                result += (segmentSize <= 1) ? segmentSize : 1 + 2 * (segmentSize - 1);
+
+                // Give extra point if this segment is at the beginning of a word
+                if (isNextSegmentWordBeginning)
+                {
+                    result++;
+                }
+            }
+
+            isNextSegmentWordBeginning = segmentSize > 0 && segmentText[segmentSize - 1] == L' ';
+        }
+
+        return result;
+    }
 }
