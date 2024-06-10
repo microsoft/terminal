@@ -146,6 +146,25 @@
                         </Setter>
                     </Style>
 
+                    <!--
+                        Remove all item animations from the suggestions UI and command
+                        palette. They're entirely too slow to let that UI be usable.
+                    -->
+                    <Style x:Key="NoAnimationsPlease"
+                           TargetType="ListView">
+                        <Setter Property="ItemContainerTransitions">
+                            <Setter.Value>
+                                <TransitionCollection>
+                                    <!--  (deleted transitions are left for reference for what we removed)  -->
+                                    <ContentThemeTransition />
+                                    <!--<AddDeleteThemeTransition/>-->
+                                    <!--<ReorderThemeTransition/>-->
+                                    <!--<EntranceThemeTransition IsStaggeringEnabled="False"/>-->
+                                </TransitionCollection>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!--  Define resources for Dark mode here  -->

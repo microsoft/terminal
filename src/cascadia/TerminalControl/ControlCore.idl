@@ -54,6 +54,7 @@ namespace Microsoft.Terminal.Control
         Int32 TotalMatches;
         Int32 CurrentMatch;
         Boolean SearchInvalidated;
+        Boolean SearchRegexInvalid;
     };
 
     [default_interface] runtimeclass SelectionColor
@@ -134,7 +135,7 @@ namespace Microsoft.Terminal.Control
         void ResumeRendering();
         void BlinkAttributeTick();
 
-        SearchResults Search(String text, Boolean goForward, Boolean caseSensitive, Boolean reset);
+        SearchResults Search(String text, Boolean goForward, Boolean caseSensitive, Boolean regularExpression, Boolean reset);
         void ClearSearch();
         Boolean SnapSearchResultToSelection;
 

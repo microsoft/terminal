@@ -421,13 +421,13 @@
     <value>Apri nuova scheda</value>
   </data>
   <data name="NewPaneRun.Text" xml:space="preserve">
-    <value>ALT + clic per dividere la finestra corrente</value>
+    <value>ALT+CLIC per dividere la finestra corrente</value>
   </data>
   <data name="NewWindowRun.Text" xml:space="preserve">
-    <value>MAIUSC+clic per aprire una nuova finestra</value>
+    <value>MAIUSC+CLIC per aprire una nuova finestra</value>
   </data>
   <data name="ElevatedRun.Text" xml:space="preserve">
-    <value>CTRL+Clic per aprire come amministratore</value>
+    <value>CTRL+CLIC per aprire come amministratore</value>
   </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Chiudi</value>

@@ -609,6 +609,7 @@ FILTERONPASTE
 FINDCASE
 FINDDLG
 FINDDOWN
+FINDREGEX
 FINDSTRINGEXACT
 FINDUP
 FIter
@@ -821,6 +822,7 @@ idllib
 IDOK
 IDR
 idth
+IDTo
 IDXGI
 IEnd
 IEnum
@@ -1869,7 +1871,7 @@ unk
 unknwn
 UNORM
 unparseable
-unregistering
+Unregistering
 untextured
 UPDATEDISPLAY
 UPDOWN
