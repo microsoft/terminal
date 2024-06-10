@@ -28,6 +28,9 @@
     <ClInclude Include="SeparatorEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ActionEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="FolderEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
@@ -183,6 +186,9 @@
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="SeparatorEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ActionEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="FolderEntry.cpp">

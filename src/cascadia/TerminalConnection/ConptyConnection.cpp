@@ -431,12 +431,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         try
         {
             // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
-            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(exitText);
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(RS_(L"CtrlDToClose"));
-            TerminalOutput.raise(L"\r\n");
+            const auto msg1 = fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status));
+            const auto msg2 = RS_(L"CtrlDToClose");
+            const auto msg = fmt::format(FMT_COMPILE(L"\r\n{}\r\n{}\r\n"), msg1, msg2);
+            TerminalOutput.raise(msg);
         }
         CATCH_LOG();
     }
