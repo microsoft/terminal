@@ -95,6 +95,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
+    _rainbowSuggesions = settings.RainbowSuggestions();
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -1586,7 +1587,7 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 
 void Terminal::PreviewText(std::wstring_view input)
 {
-    // Our suggestion text is default-on-default, in italics.
+    // Our default suggestion text is default-on-default, in italics.
     static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
 
     auto lock = LockForWriting();
@@ -1626,11 +1627,59 @@ void Terminal::PreviewText(std::wstring_view input)
         // pad it out
         preview.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
     }
-    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+
     // Build our composition data
+    // The text is just the trimmed command, with the spaces at the end.
+    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+
+    // The attributes depend on the $profile:experimental.rainbowSuggestions setting:.
     const auto len = snippetPreview.text.size();
     snippetPreview.attributes.clear();
-    snippetPreview.attributes.emplace_back(len, previewAttrs);
+
+    if (_rainbowSuggesions)
+    {
+        // Let's do something fun.
+
+        // static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
+        //     return til::color{
+        //         base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
+        //         base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
+        //         base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
+        //     };
+        // };
+
+        // // Helper for converting a hue [0, 1) to an RGB value.
+        // // Credit to https://www.chilliant.com/rgb2hsv.html
+        // static const auto hueToRGB = [&](const float H) -> til::color {
+        //     float R = abs(H * 6 - 3) - 1;
+        //     float G = 2 - abs(H * 6 - 2);
+        //     float B = 2 - abs(H * 6 - 4);
+        //     return saturateAndToColor(R, G, B);
+        // };
+
+        // Use the actual text length for the number of steps, not including the
+        // trailing spaces.
+        auto steps = originalSize;
+        float increment = 1.0f / steps;
+        float currentHue = 0.0f;
+        for (auto i = 0; i < snippetPreview.text.size(); i++)
+        {
+            auto h = currentHue;
+            currentHue += increment;
+
+            const auto color = til::color::from_hue(h);
+            TextAttribute curr = previewAttrs;
+            curr.SetForeground(color);
+            snippetPreview.attributes.emplace_back(1, curr);
+        }
+    }
+    else
+    {
+        // Default:
+        // Use the default attribute we defined above.
+        snippetPreview.attributes.emplace_back(len, previewAttrs);
+    }
+
     snippetPreview.cursorPos = len;
     _activeBuffer().NotifyPaintFrame();
 }

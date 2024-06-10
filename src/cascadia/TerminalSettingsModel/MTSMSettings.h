@@ -96,7 +96,8 @@ Author(s):
     X(bool, AutoMarkPrompts, "autoMarkPrompts", false)                                                                                                         \
     X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
-    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
+    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)
 
 // Intentionally omitted Profile settings:
 // * Name
