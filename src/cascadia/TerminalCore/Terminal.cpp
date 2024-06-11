@@ -1607,20 +1607,19 @@ void Terminal::PreviewText(std::wstring_view input)
     //
     // We need to trim off the leading DELs, then pad out the rest of the line
     // to cover any other ghost text.
-    std::wstring_view view{ input };
     // Where do the DELs end?
-    const auto strBegin = view.find_first_not_of(L"\x7f");
+    const auto strBegin = input.find_first_not_of(L"\x7f");
     if (strBegin != std::wstring::npos)
     {
         // Trim them off.
-        view = view.substr(strBegin);
+        input = input.substr(strBegin);
     }
     // How many spaces do we need, so that the preview exactly covers the entire
     // prompt, all the way to the end of the viewport?
     const auto bufferWidth = _GetMutableViewport().Width();
     const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
-    const auto expectedLenTillEnd = strBegin + (bufferWidth - cursorX);
-    std::wstring preview{ view };
+    const auto expectedLenTillEnd = strBegin + (static_cast<size_t>(bufferWidth) - static_cast<size_t>(cursorX));
+    std::wstring preview{ input };
     const auto originalSize{ preview.size() };
     if (expectedLenTillEnd > originalSize)
     {

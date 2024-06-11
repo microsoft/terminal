@@ -153,7 +153,7 @@ namespace winrt::TerminalApp::implementation
             {
                 _restorePreviewFuncs.emplace_back([=]() {
                     // On dismiss:
-                    control.PreviewInput(L"");
+                    control.PreviewInput(hstring{});
                 });
             }
         });
