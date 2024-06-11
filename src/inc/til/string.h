@@ -24,7 +24,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
         return str;
     }
-
     // The same as the above, but it doesn't visualize BS nor SPC.
     _TIL_INLINEPREFIX std::wstring visualize_nonspace_control_codes(std::wstring str) noexcept
     {

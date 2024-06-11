@@ -128,6 +128,7 @@
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
     <value>Open snippets pane</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portable)</value>
@@ -729,9 +730,5 @@
   <data name="OpenAboutCommandKey" xml:space="preserve">
     <value>Open about dialog</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
-  </data>
-  <data name="OpenTasksPaneCommandKey" xml:space="preserve">
-    <value>Open tasks pane</value>
-    <comment>This will open a pane with a list of the users's saved commands in it</comment>
   </data>
 </root>

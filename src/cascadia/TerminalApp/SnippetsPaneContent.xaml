@@ -95,11 +95,11 @@
                                   Visibility="{x:Bind Visibility, Mode=OneWay}">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" /> 
+                            <RowDefinition Height="*" />
                             <!--  Name  -->
-                            <RowDefinition Height="*" /> 
+                            <RowDefinition Height="*" />
                             <!--  Input  -->
-                            <RowDefinition Height="0" /> 
+                            <RowDefinition Height="0" />
                             <!--  Input gets put here when we're a nested command, to hide it  -->
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
@@ -234,7 +234,6 @@
 
         <TextBlock Grid.Row="1"
                    Margin="8,16,8,8"
-                   FontSize="18"
                    TextWrapping="WrapWholeWords"
                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(HasSnippets), Mode=OneWay}">
             <Run x:Uid="SnippetsPaneNoneFoundHeader" />

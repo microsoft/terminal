@@ -1225,7 +1225,7 @@ namespace winrt::TerminalApp::implementation
         ActivePaneChanged.raise(*this, nullptr);
 
         // If the new active pane is a terminal, tell other interested panes
-        // what then new active pane is.
+        // what the new active pane is.
         const auto content{ pane->GetContent() };
         if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
         {
