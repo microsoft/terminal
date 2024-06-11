@@ -355,7 +355,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-            JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
+            if (!_Description.empty())
+            {
+                JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
+            }
             if (!_ID.empty())
             {
                 JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);

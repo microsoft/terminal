@@ -307,21 +307,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget SuggestionsControl::_openTooltip(Command cmd)
+    void SuggestionsControl::_openTooltip(Command cmd)
     {
         const auto description{ cmd.Description() };
         if (description.empty())
         {
-            co_return;
-        }
-
-        // If it's already open, then just re-target it and update
-        // the content immediately. Otherwise:
-        // wait a bit before opening it.
-        if (_descriptionsView().Visibility() != Visibility::Visible)
-        {
-            co_await winrt::resume_after(200ms);
-            co_await wil::resume_foreground(Dispatcher());
+            return;
         }
 
         // Build the contents of the "tooltip" based on the description
@@ -334,29 +325,27 @@ namespace winrt::TerminalApp::implementation
 
         // Now fill up the "subtitle" part of the "tooltip" with the actual
         // description itself.
-        _descriptionComment().Inlines().Clear();
-
-        // First, replace all "\r\n" with "\n"
-        std::wstring filtered = description.c_str();
-        std::wstring::size_type pos = 0;
-        while ((pos = filtered.find(L"\r\n", pos)) != std::wstring::npos)
-        {
-            filtered.erase(pos, 1);
-        }
+        const auto& inlines{ _descriptionComment().Inlines() };
+        inlines.Clear();
 
         // Split the filtered description on '\n`
-        const auto lines = ::Microsoft::Console::Utils::SplitString(filtered.c_str(), L'\n');
+        const auto lines = ::Microsoft::Console::Utils::SplitString(description, L'\n');
         // build a Run + LineBreak, and add them to the text block
         for (const auto& line : lines)
         {
-            if (line.empty())
+            // Trim off any `\r`'s in the string. Pwsh completions will
+            // frequently have these embedded.
+            std::wstring trimmed{ line };
+            trimmed.erase(std::remove(trimmed.begin(), trimmed.end(), L'\r'), trimmed.end());
+            if (trimmed.empty())
             {
                 continue;
             }
+
             Documents::Run textRun;
-            textRun.Text(winrt::hstring{ line });
-            _descriptionComment().Inlines().Append(textRun);
-            _descriptionComment().Inlines().Append(Documents::LineBreak{});
+            textRun.Text(trimmed);
+            inlines.Append(textRun);
+            inlines.Append(Documents::LineBreak{});
         }
 
         // Now, make ourselves visible.
@@ -364,7 +353,7 @@ namespace winrt::TerminalApp::implementation
         _descriptionsBackdrop().Visibility(Visibility::Visible);
         // and update the padding to account for our new contents.
         _recalculateTopMargin();
-        co_return;
+        return;
     }
 
     void SuggestionsControl::_previewKeyDownHandler(const IInspectable& /*sender*/,
@@ -1135,8 +1124,10 @@ namespace winrt::TerminalApp::implementation
         // If you forget this, then we _probably_ weren't laid out since
         // updating that text, and the ActualHeight will be the _last_
         // description's height.
-        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
-        _descriptionsBackdrop().Measure(actualSize.to_winrt_size());
+        _descriptionsBackdrop().Measure({
+            static_cast<float>(ActualWidth()),
+            static_cast<float>(ActualHeight()),
+        });
 
         // Now, position vertically.
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
