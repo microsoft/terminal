@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
+    {
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/Nicoshev/rapidhash",
+          "commitHash": "168b4bc916e2f6913780904d1422c62fd0b3d8b2"
+        }
+      }
+    }
+  ],
+  "Version": 1
+}

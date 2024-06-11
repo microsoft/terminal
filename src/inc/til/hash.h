@@ -23,6 +23,10 @@
 #error "Unsupported architecture for til::hash"
 #endif
 
+#if !defined(TIL_HASH_32BIT)
+#include "rapidhash.h"
+#endif
+
 namespace til
 {
     template<typename T>
@@ -49,7 +53,11 @@ namespace til
 
         hasher& write(const void* data, size_t len) noexcept
         {
-            _hash = _wyhash(data, len, _hash);
+#if defined(TIL_HASH_32BIT)
+            _hash = _wyhash32(data, len, _hash);
+#else
+            _hash = rapidhash_withSeed(data, len, _hash);
+#endif
             return *this;
         }
 
@@ -81,7 +89,7 @@ namespace til
             *b = static_cast<uint32_t>(c >> 32);
         }
 
-        static uint32_t _wyhash(const void* data, uint32_t len, uint32_t seed) noexcept
+        static uint32_t _wyhash32(const void* data, uint32_t len, uint32_t seed) noexcept
         {
             auto p = static_cast<const uint8_t*>(data);
             auto i = len;
@@ -109,101 +117,13 @@ namespace til
             return seed ^ see1;
         }
 
-#else // defined(TIL_HASH_32BIT)
-
-        static uint64_t _wyr3(const uint8_t* p, size_t k) noexcept
-        {
-            return (static_cast<uint64_t>(p[0]) << 16) | (static_cast<uint64_t>(p[k >> 1]) << 8) | p[k - 1];
-        }
-
-        static uint64_t _wyr4(const uint8_t* p) noexcept
-        {
-            uint32_t v;
-            memcpy(&v, p, 4);
-            return v;
-        }
-
-        static uint64_t _wyr8(const uint8_t* p) noexcept
-        {
-            uint64_t v;
-            memcpy(&v, p, 8);
-            return v;
-        }
-
-        static uint64_t _wymix(uint64_t lhs, uint64_t rhs) noexcept
-        {
-#if defined(TIL_HASH_X64)
-            uint64_t hi;
-            uint64_t lo = _umul128(lhs, rhs, &hi);
-#elif defined(TIL_HASH_ARM64)
-            const uint64_t lo = lhs * rhs;
-            const uint64_t hi = __umulh(lhs, rhs);
-#endif
-            return lo ^ hi;
-        }
-
-        static uint64_t _wyhash(const void* data, uint64_t len, uint64_t seed) noexcept
-        {
-            static constexpr auto s0 = UINT64_C(0xa0761d6478bd642f);
-            static constexpr auto s1 = UINT64_C(0xe7037ed1a0b428db);
-            static constexpr auto s2 = UINT64_C(0x8ebc6af09c88c6e3);
-            static constexpr auto s3 = UINT64_C(0x589965cc75374cc3);
-
-            auto p = static_cast<const uint8_t*>(data);
-            seed ^= s0;
-            uint64_t a;
-            uint64_t b;
-
-            if (len <= 16)
-            {
-                if (len >= 4)
-                {
-                    a = (_wyr4(p) << 32) | _wyr4(p + ((len >> 3) << 2));
-                    b = (_wyr4(p + len - 4) << 32) | _wyr4(p + len - 4 - ((len >> 3) << 2));
-                }
-                else if (len > 0)
-                {
-                    a = _wyr3(p, len);
-                    b = 0;
-                }
-                else
-                {
-                    a = b = 0;
-                }
-            }
-            else
-            {
-                auto i = len;
-                if (i > 48)
-                {
-                    auto seed1 = seed;
-                    auto seed2 = seed;
-                    do
-                    {
-                        seed = _wymix(_wyr8(p) ^ s1, _wyr8(p + 8) ^ seed);
-                        seed1 = _wymix(_wyr8(p + 16) ^ s2, _wyr8(p + 24) ^ seed1);
-                        seed2 = _wymix(_wyr8(p + 32) ^ s3, _wyr8(p + 40) ^ seed2);
-                        p += 48;
-                        i -= 48;
-                    } while (i > 48);
-                    seed ^= seed1 ^ seed2;
-                }
-                while (i > 16)
-                {
-                    seed = _wymix(_wyr8(p) ^ s1, _wyr8(p + 8) ^ seed);
-                    i -= 16;
-                    p += 16;
-                }
-                a = _wyr8(p + i - 16);
-                b = _wyr8(p + i - 8);
-            }
-
-            return _wymix(s1 ^ len, _wymix(a ^ s1, b ^ seed));
-        }
-
 #endif // defined(TIL_HASH_32BIT)
 
+#if defined(TIL_HASH_32BIT)
         size_t _hash = 0;
+#else
+        size_t _hash = RAPID_SEED;
+#endif
     };
 
     namespace details
