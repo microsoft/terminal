@@ -8,6 +8,7 @@
 #include "Utils.h"
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
@@ -83,6 +84,15 @@ namespace winrt::TerminalApp::implementation
     void SnippetsPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
     {
         _filterBox().Focus(reason);
+
+        if (auto automationPeer{ WUX::Automation::Peers::FrameworkElementAutomationPeer::FromElement(_filterBox()) })
+        {
+            automationPeer.RaiseNotificationEvent(
+                WUX::Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                WUX::Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent, // CurrentThenMostRecent,
+                RS_(L"SnippetPaneAnnouncement"),
+                L"SnippetPaneFocused" /* unique ID for this notification */);
+        }
     }
     void SnippetsPaneContent::Close()
     {
@@ -114,19 +124,81 @@ namespace winrt::TerminalApp::implementation
         _control = control;
     }
 
+    void SnippetsPaneContent::_runCommand(const Microsoft::Terminal::Settings::Model::Command& command)
+    {
+        if (const auto& strongControl{ _control.get() })
+        {
+            // By using the last active control as the sender here, the
+            // action dispatch will send this to the active control,
+            // thinking that it is the control that requested this event.
+            strongControl.Focus(winrt::WUX::FocusState::Programmatic);
+            DispatchCommandRequested.raise(strongControl, command);
+        }
+    }
+
     void SnippetsPaneContent::_runCommandButtonClicked(const Windows::Foundation::IInspectable& sender,
                                                        const Windows::UI::Xaml::RoutedEventArgs&)
     {
         if (const auto& taskVM{ sender.try_as<WUX::Controls::Button>().DataContext().try_as<FilteredTask>() })
         {
-            if (const auto& strongControl{ _control.get() })
+            _runCommand(taskVM->Command());
+        }
+    }
+
+    // Called when one of the items in the list is tapped, or enter/space is
+    // pressed on it while focused. Notably, this isn't the Tapped event - it
+    // isn't called when the user clicks the dropdown arrow (that does usually
+    // also trigger a Tapped).
+    //
+    // We'll use this to toggle the expanded state of nested items, sinde the
+    // tree view arrow is so little
+    void SnippetsPaneContent::_treeItemInvokedHandler(const IInspectable& /*sender*/,
+                                                      const MUX::Controls::TreeViewItemInvokedEventArgs& e)
+    {
+        // The InvokedItem here is the item in the data collection that was
+        // bound itself.
+        if (const auto& taskVM{ e.InvokedItem().try_as<FilteredTask>() })
+        {
+            if (taskVM->HasChildren())
             {
-                // By using the last active control as the sender here, the
-                // action dispatch will send this to the active control,
-                // thinking that it is the control that requested this event.
-                strongControl.Focus(winrt::WUX::FocusState::Programmatic);
-                DispatchCommandRequested.raise(strongControl, taskVM->Command());
+                // We then need to find the actual TreeViewItem for that
+                // FilteredTask.
+                if (const auto& item{ _treeView().ContainerFromItem(*taskVM).try_as<MUX::Controls::TreeViewItem>() })
+                {
+                    item.IsExpanded(!item.IsExpanded());
+                }
             }
+        }
+    }
+
+    // Raised on individual TreeViewItems. We'll use this event to send the
+    // input on an Enter/Space keypress, when a leaf item is selected.
+    void SnippetsPaneContent::_treeItemKeyUpHandler(const IInspectable& sender,
+                                                    const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        const auto& item{ sender.try_as<MUX::Controls::TreeViewItem>() };
+        if (!item)
+        {
+            return;
+        }
+        const auto& taskVM{ item.DataContext().try_as<FilteredTask>() };
+        if (!taskVM || taskVM->HasChildren())
+        {
+            return;
+        }
+
+        const auto& key = e.OriginalKey();
+        if (key == VirtualKey::Enter || key == VirtualKey::Space)
+        {
+            if (const auto& button = e.OriginalSource().try_as<WUX::Controls::Button>())
+            {
+                // Let the button handle the Enter key so an eventually attached click handler will be called
+                e.Handled(false);
+                return;
+            }
+
+            _runCommand(taskVM->Command());
+            e.Handled(true);
         }
     }
 

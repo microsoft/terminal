@@ -94,6 +94,7 @@
                 <mux:TreeViewItem x:Name="rootItem"
                                   AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
                                   ItemsSource="{x:Bind Children}"
+                                  KeyUp="_treeItemKeyUpHandler"
                                   Visibility="{x:Bind Visibility, Mode=OneWay}">
                     <Grid AutomationProperties.AccessibilityView="Raw">
                         <Grid.RowDefinitions>
@@ -253,6 +254,7 @@
                       AllowFocusOnInteraction="True"
                       CanDragItems="False"
                       CanReorderItems="False"
+                      ItemInvoked="_treeItemInvokedHandler"
                       ItemTemplate="{StaticResource TaskItemTemplate}"
                       Visibility="{x:Bind HasSnippets, Mode=OneWay}" />
     </Grid>

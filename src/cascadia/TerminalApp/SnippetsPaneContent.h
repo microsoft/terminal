@@ -58,6 +58,9 @@ namespace winrt::TerminalApp::implementation
         void _filterTextChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         void _updateFilteredCommands();
+        void _treeItemInvokedHandler(const Windows::Foundation::IInspectable& sender, const Microsoft::UI::Xaml::Controls::TreeViewItemInvokedEventArgs& e);
+        void _treeItemKeyUpHandler(const IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void _runCommand(const Microsoft::Terminal::Settings::Model::Command& command);
     };
 
     struct FilteredTask : FilteredTaskT<FilteredTask, TerminalApp::implementation::FilteredCommand>
