@@ -1172,10 +1172,9 @@ namespace winrt::TerminalApp::implementation
         _anchor = anchor;
         _space = space;
 
-        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
-        const til::size descriptionSize{ til::math::rounding, _descriptionsBackdrop().ActualWidth(), _descriptionsBackdrop().ActualHeight() };
+        // const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
         // Is there space in the window below the cursor to open the menu downwards?
-        const bool canOpenDownwards = (_anchor.Y + characterHeight + actualSize.height) < space.Height;
+        const bool canOpenDownwards = (_anchor.Y + characterHeight + ActualHeight()) < space.Height;
         _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
                                          TerminalApp::SuggestionsDirection::BottomUp);
         // Set the anchor below by a character height
@@ -1189,7 +1188,7 @@ namespace winrt::TerminalApp::implementation
         const auto proposedX = gsl::narrow_cast<int>(_anchor.X - 40);
         // If the control is too wide to fit in the window, clamp it fit inside
         // the window.
-        const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
+        const auto maxX = gsl::narrow_cast<int>(space.Width - ActualWidth());
         const auto clampedX = std::clamp(proposedX, 0, maxX);
 
         // Create a thickness for the new margins. This will set the left, then
