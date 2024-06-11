@@ -8,7 +8,7 @@
 using namespace Microsoft::Console;
 using namespace std::string_view_literals;
 
-static constexpr std::array<til::color, 256> campbellColorTable{
+static constexpr std::array<til::color, 16> campbellColorTable{
     til::color{ 0x0C, 0x0C, 0x0C },
     til::color{ 0xC5, 0x0F, 0x1F },
     til::color{ 0x13, 0xA1, 0x0E },
