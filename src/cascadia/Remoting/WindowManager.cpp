@@ -130,6 +130,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // We connected to a monarch instance, not us though. This won't hit
             // in isolated mode.
 
+            LOG_IF_FAILED(CoAllowSetForegroundWindow(winrt::get_unknown(_monarch), nullptr));
+
             // Send the commandline over to the monarch process
             if (_proposeToMonarch(args))
             {

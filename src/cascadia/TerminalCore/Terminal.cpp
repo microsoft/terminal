@@ -1594,6 +1594,7 @@ void Terminal::PreviewText(std::wstring_view input)
     if (input.empty())
     {
         snippetPreview.text = L"";
+        snippetPreview.cursorPos = 0;
         snippetPreview.attributes.clear();
         _activeBuffer().NotifyPaintFrame();
         return;
