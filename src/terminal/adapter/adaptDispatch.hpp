@@ -36,7 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
         using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
     public:
-        AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
+        AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept;
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
