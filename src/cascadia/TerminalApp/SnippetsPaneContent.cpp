@@ -150,7 +150,7 @@ namespace winrt::TerminalApp::implementation
     // isn't called when the user clicks the dropdown arrow (that does usually
     // also trigger a Tapped).
     //
-    // We'll use this to toggle the expanded state of nested items, sinde the
+    // We'll use this to toggle the expanded state of nested items, since the
     // tree view arrow is so little
     void SnippetsPaneContent::_treeItemInvokedHandler(const IInspectable& /*sender*/,
                                                       const MUX::Controls::TreeViewItemInvokedEventArgs& e)
