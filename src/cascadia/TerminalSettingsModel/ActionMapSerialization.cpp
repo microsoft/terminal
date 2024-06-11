@@ -59,32 +59,52 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // and we can call Command::FromJson on it (Command::FromJson can handle parsing both legacy or modern)
 
             // if there is no "command" field, then it is a modern style keys block
-            if (jsonBlock.isMember(JsonKey(CommandsKey)) || jsonBlock.isMember(JsonKey(ActionKey)))
+
+            // if there are keys, extract them first
+            Control::KeyChord keys{ nullptr };
+            if (withKeybindings && jsonBlock.isMember(JsonKey(KeysKey)))
             {
-                AddAction(*Command::FromJson(jsonBlock, warnings, origin, withKeybindings));
-
-                // for non-nested non-iterable commands,
-                // check if this is a legacy-style command block so we can inform the loader that fixups are needed
-                if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)))
+                const auto keysJson{ jsonBlock[JsonKey(KeysKey)] };
+                if (keysJson.isArray() && keysJson.size() > 1)
                 {
-                    if (jsonBlock.isMember(JsonKey(KeysKey)))
-                    {
-                        // there are keys in this command block - it's the legacy style
-                        _fixupsAppliedDuringLoad = true;
-                    }
-
-                    if (origin == OriginTag::User && !jsonBlock.isMember(JsonKey(IDKey)))
-                    {
-                        // there's no ID in this command block - we will generate one for the user
-                        // inform the loader that the ID needs to be written into the json
-                        _fixupsAppliedDuringLoad = true;
-                    }
+                    warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
+                }
+                else
+                {
+                    JsonUtils::GetValueForKey(jsonBlock, KeysKey, keys);
                 }
             }
-            else
+
+            // Now check if this is a command block
+            if (jsonBlock.isMember(JsonKey(CommandsKey)) || jsonBlock.isMember(JsonKey(ActionKey)))
+            {
+                AddAction(*Command::FromJson(jsonBlock, warnings, origin), keys);
+
+                if (jsonBlock.isMember(JsonKey(KeysKey)))
+                {
+                    // there are keys in this command block meaning this is the legacy style -
+                    // inform the loader that fixups are needed
+                    _fixupsAppliedDuringLoad = true;
+                }
+
+                if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)) && origin == OriginTag::User && !jsonBlock.isMember(JsonKey(IDKey)))
+                {
+                    // for non-nested non-iterable commands,
+                    // if there's no ID in the command block we will generate one for the user -
+                    // inform the loader that the ID needs to be written into the json
+                    _fixupsAppliedDuringLoad = true;
+                }
+            }
+            else if (keys)
             {
                 // this is not a command block, so it is a keybinding block
-                _AddKeyBindingHelper(jsonBlock, warnings);
+
+                // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
+                winrt::hstring idJson;
+                JsonUtils::GetValueForKey(jsonBlock, IDKey, idJson);
+
+                // any existing keybinding with the same keychord in this layer will get overwritten
+                _KeyMap.insert_or_assign(keys, idJson);
             }
         }
 
@@ -135,55 +155,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return keybindingsList;
-    }
-
-    void ActionMap::_AddKeyBindingHelper(const Json::Value& json, std::vector<SettingsLoadWarnings>& warnings)
-    {
-        // There should always be a "keys" field
-        // - If there is also an "id" field - we add the pair to our _KeyMap
-        // - If there is no "id" field - this is an explicit unbinding, still add it to the _KeyMap,
-        //   when this key chord is queried for we will know it is an explicit unbinding
-        const auto keysJson{ json[JsonKey(KeysKey)] };
-        if (keysJson.isArray() && keysJson.size() > 1)
-        {
-            warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
-            return;
-        }
-
-        Control::KeyChord keys{ nullptr };
-        winrt::hstring idJson;
-        if (!JsonUtils::GetValueForKey(json, KeysKey, keys))
-        {
-            return;
-        }
-
-        // if these keys are already bound to some command,
-        // we need to update that command to erase these keys as we are about to overwrite them
-        if (const auto foundCommand = _GetActionByKeyChordInternal(keys); foundCommand && *foundCommand)
-        {
-            const auto foundCommandImpl{ get_self<implementation::Command>(*foundCommand) };
-            foundCommandImpl->EraseKey(keys);
-        }
-
-        // if the "id" field doesn't exist in the json, then idJson will be an empty string which is fine
-        JsonUtils::GetValueForKey(json, IDKey, idJson);
-
-        // any existing keybinding with the same keychord in this layer will get overwritten
-        _KeyMap.insert_or_assign(keys, idJson);
-
-        // make sure the command registers these keys
-        if (!idJson.empty())
-        {
-            // TODO GH#17160
-            // if the command with this id is only going to appear later during settings load
-            // then this will return null, meaning that the command created later on will not register this keybinding
-            // the keybinding will still work fine within the app, its just that the Command object itself won't know about this key mapping
-            // we are going to move away from Command needing to know its key mappings in a followup, so this shouldn't matter for very long
-            if (const auto cmd = _GetActionByID(idJson))
-            {
-                cmd.RegisterKey(keys);
-            }
-        }
-        return;
     }
 }
