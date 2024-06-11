@@ -909,6 +909,9 @@
   <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Input this command</value>
   </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Input this command</value>
+  </data>
   <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
     <value>No snippets found in your settings.</value>
     <comment>Text shown to user when no snippets are found in their settings</comment>

@@ -66,7 +66,7 @@ namespace winrt::TerminalApp::implementation
 
         FilteredTask(const winrt::Microsoft::Terminal::Settings::Model::Command& command)
         {
-            _constructFilteredCommand(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command));
+            _constructFilteredCommand(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command, L""));
             _command = command;
 
             // The Children() method must always return a non-null vector

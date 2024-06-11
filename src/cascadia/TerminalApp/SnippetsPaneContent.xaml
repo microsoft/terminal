@@ -12,6 +12,7 @@
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             AutomationProperties.AccessibilityView="Raw"
              IsTabStop="True"
              TabNavigation="Cycle"
              mc:Ignorable="d">
@@ -91,9 +92,10 @@
             <DataTemplate x:Key="TaskItemTemplate"
                           x:DataType="local:FilteredTask">
                 <mux:TreeViewItem x:Name="rootItem"
+                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
                                   ItemsSource="{x:Bind Children}"
                                   Visibility="{x:Bind Visibility, Mode=OneWay}">
-                    <Grid>
+                    <Grid AutomationProperties.AccessibilityView="Raw">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
                             <!--  Name  -->
@@ -107,12 +109,6 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <ContentPresenter Grid.Column="0">
-                            <IconSourceElement Width="16"
-                                               Height="16"
-                                               IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Item.Icon), Mode=OneTime}"
-                                               Visibility="Collapsed" />
-                        </ContentPresenter>
 
                         <Button x:Uid="SnippetPlayButton"
                                 Grid.Row="0"
@@ -174,18 +170,19 @@
 
                         <local:HighlightedTextControl Grid.Column="1"
                                                       HorizontalAlignment="Left"
+                                                      IsTabStop="False"
                                                       Text="{x:Bind HighlightedName, Mode=OneWay}" />
 
                         <!--
                             BODGY: I can't choose different templates if this item is nested or not.
                             (See https://github.com/microsoft/microsoft-ui-xaml/issues/2121)
-                            But what I can do, is yeet the text into a 0-height row to hide it.
+                            But what I can do, is toss the text into a 0-height row to hide it.
                         -->
                         <TextBlock Grid.Row="{x:Bind Row, Mode=OneWay}"
                                    Grid.Column="1"
                                    Margin="12,0,12,6"
                                    FontFamily="Cascadia Mono, Consolas"
-                                   IsTextSelectionEnabled="True"
+                                   IsTextSelectionEnabled="False"
                                    Style="{ThemeResource BodyTextBlockStyle}"
                                    Text="{x:Bind Input}"
                                    Visibility="{Binding ElementName=rootItem, Path=IsSelected}" />
@@ -219,7 +216,9 @@
     <!--  Don't allow the user to focus the root pane, but do allow individual controls to be focused  -->
 
     <Grid AllowFocusOnInteraction="False"
-          Background="{ThemeResource PageBackground}">
+          AutomationProperties.AccessibilityView="Raw"
+          Background="{ThemeResource PageBackground}"
+          TabFocusNavigation="Cycle">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
