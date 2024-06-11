@@ -12,7 +12,8 @@ namespace Microsoft.Terminal.Settings.Model
         Separator,
         Folder,
         RemainingProfiles,
-        MatchProfiles
+        MatchProfiles,
+        Action
     };
 
     [default_interface] unsealed runtimeclass NewTabMenuEntry
@@ -32,6 +33,13 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile Profile;
         Int32 ProfileIndex;
+    }
+
+    [default_interface] runtimeclass ActionEntry : NewTabMenuEntry
+    {
+        ActionEntry();
+
+        String ActionId;
     }
 
     enum FolderEntryInlining
