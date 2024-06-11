@@ -732,7 +732,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
         // Dismiss any previewed input.
-        PreviewInput(L"");
+        PreviewInput(hstring{});
 
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
         if (StringSent)
@@ -3678,7 +3678,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 automationPeer.RaiseNotificationEvent(
                     AutomationNotificationKind::ItemAdded,
                     AutomationNotificationProcessing::All,
-                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PreviewTextAnnouncement") }, text.c_str()) },
+                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PreviewTextAnnouncement") }, text) },
                     L"PreviewTextAnnouncement" /* unique name for this group of notifications */);
             }
         }
