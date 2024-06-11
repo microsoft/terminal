@@ -5279,7 +5279,8 @@ namespace winrt::TerminalApp::implementation
         // in the future, we would need to query the settings here for which LLMProvider to use
         if (!_settings.AIEndpoint().empty() && !_settings.AIKey().empty())
         {
-            llmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(_settings.AIEndpoint(), _settings.AIKey());
+            //llmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(_settings.AIEndpoint(), _settings.AIKey());
+            llmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider(_settings.AIEndpoint());
         }
         _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(llmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
