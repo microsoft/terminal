@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ILLMProvider.idl";
+
+namespace Microsoft.Terminal.Query.Extension
+{
+    [default_interface] runtimeclass OpenAILLMProvider : ILLMProvider
+    {
+        OpenAILLMProvider(String key);
+    }
+
+    [default_interface] runtimeclass OpenAIResponse : IResponse
+    {
+        OpenAIResponse(String message, Boolean isError);
+    }
+}
