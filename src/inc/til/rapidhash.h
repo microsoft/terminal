@@ -33,6 +33,12 @@
  *   - rapidhash source repository: https://github.com/Nicoshev/rapidhash
  */
 
+#ifdef __cplusplus
+#define RAPIDHASH_NOEXCEPT noexcept
+#else
+#define RAPIDHASH_NOEXCEPT 
+#endif
+
 /*
  *  Includes.
  */
@@ -124,7 +130,7 @@ static const uint64_t rapid_secret[3] = {0x2d358dccaa6c78a5ull, 0x8bb84b93962eac
  *  Xors and overwrites A contents with C's low 64 bits.
  *  Xors and overwrites B contents with C's high 64 bits.
  */
-static inline void rapid_mum(uint64_t *A, uint64_t *B){
+static inline void rapid_mum(uint64_t *A, uint64_t *B) RAPIDHASH_NOEXCEPT {
 #if defined(__SIZEOF_INT128__)
   __uint128_t r=*A; r*=*B; 
   #ifdef RAPIDHASH_PROTECTED
@@ -175,14 +181,14 @@ static inline void rapid_mum(uint64_t *A, uint64_t *B){
  *  Calculates 128-bit C = A * B.
  *  Returns 64-bit xor between high and low 64 bits of C.
  */
-static inline uint64_t rapid_mix(uint64_t A, uint64_t B){ rapid_mum(&A,&B); return A^B; }
+static inline uint64_t rapid_mix(uint64_t A, uint64_t B) RAPIDHASH_NOEXCEPT { rapid_mum(&A,&B); return A^B; }
 
 /*
  *  Read functions.
  */
 #ifdef RAPIDHASH_LITTLE_ENDIAN
-static inline uint64_t rapid_read64(const uint8_t *p) { uint64_t v; memcpy(&v, p, 8); return v;}
-static inline uint64_t rapid_read32(const uint8_t *p) { uint32_t v; memcpy(&v, p, 4); return v;}
+static inline uint64_t rapid_read64(const uint8_t *p) RAPIDHASH_NOEXCEPT { uint64_t v; memcpy(&v, p, 8); return v;}
+static inline uint64_t rapid_read32(const uint8_t *p) RAPIDHASH_NOEXCEPT { uint32_t v; memcpy(&v, p, 4); return v;}
 #elif defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
 static inline uint64_t rapid_read64(const uint8_t *p) { uint64_t v; memcpy(&v, p, 8); return __builtin_bswap64(v);}
 static inline uint64_t rapid_read32(const uint8_t *p) { uint32_t v; memcpy(&v, p, 4); return __builtin_bswap32(v);}
@@ -211,7 +217,7 @@ static inline uint64_t rapid_read32(const uint8_t *p) {
  *  
  *  Returns a 64-bit value contaning all three bytes read. 
  */
-static inline uint64_t rapid_readSmall(const uint8_t *p, size_t k) { return (((uint64_t)p[0])<<56)|(((uint64_t)p[k>>1])<<32)|p[k-1];}
+static inline uint64_t rapid_readSmall(const uint8_t* p, size_t k) RAPIDHASH_NOEXCEPT { return ((static_cast<uint64_t>(p[0])) << 56) | ((static_cast<uint64_t>(p[k >> 1])) << 32) | p[k - 1]; }
 
 /*
  *  rapidhash main function.
@@ -223,8 +229,8 @@ static inline uint64_t rapid_readSmall(const uint8_t *p, size_t k) { return (((u
  *
  *  Returns a 64-bit hash.
  */
-static inline uint64_t rapidhash_internal(const void *key, size_t len, uint64_t seed, const uint64_t* secret){
-  const uint8_t *p=(const uint8_t *)key; seed^=rapid_mix(seed^secret[0],secret[1])^len;  uint64_t  a,  b;
+static inline uint64_t rapidhash_internal(const void *key, size_t len, uint64_t seed, const uint64_t* secret) RAPIDHASH_NOEXCEPT {
+  const uint8_t *p=static_cast<const uint8_t *>(key); seed^=rapid_mix(seed^secret[0],secret[1])^len;  uint64_t  a,  b;
   if(_likely_(len<=16)){
     if(_likely_(len>=4)){ 
       const uint8_t * plast = p + len - 4;
@@ -286,8 +292,8 @@ static inline uint64_t rapidhash_internal(const void *key, size_t len, uint64_t 
  *
  *  Returns a 64-bit hash.
  */
-static inline uint64_t rapidhash_withSeed(const void *key, size_t len, uint64_t seed) {
-  return rapidhash_internal(key, len, seed, rapid_secret);
+static inline uint64_t rapidhash_withSeed(const void *key, size_t len, uint64_t seed) RAPIDHASH_NOEXCEPT {
+  return rapidhash_internal(key, len, seed, static_cast<const uint64_t *>(rapid_secret));
 }
 
 /*
@@ -300,6 +306,6 @@ static inline uint64_t rapidhash_withSeed(const void *key, size_t len, uint64_t 
  *
  *  Returns a 64-bit hash.
  */
-static inline uint64_t rapidhash(const void *key, size_t len) {
+static inline uint64_t rapidhash(const void* key, size_t len) RAPIDHASH_NOEXCEPT {
   return rapidhash_withSeed(key, len, RAPID_SEED);
 }
