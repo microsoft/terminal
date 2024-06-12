@@ -1584,6 +1584,57 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
     return absoluteCursorPosition - viewport.Origin();
 }
 
+void Terminal::PreviewText(std::wstring_view input)
+{
+    // Our suggestion text is default-on-default, in italics.
+    static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
+
+    auto lock = LockForWriting();
+    if (input.empty())
+    {
+        snippetPreview.text = L"";
+        snippetPreview.cursorPos = 0;
+        snippetPreview.attributes.clear();
+        _activeBuffer().NotifyPaintFrame();
+        return;
+    }
+
+    // When we're previewing suggestions, they might be preceded with DEL
+    // characters to backspace off the old command.
+    //
+    // But also, in the case of something like pwsh, there might be MORE "ghost"
+    // text in the buffer _after_ the commandline.
+    //
+    // We need to trim off the leading DELs, then pad out the rest of the line
+    // to cover any other ghost text.
+    // Where do the DELs end?
+    const auto strBegin = input.find_first_not_of(L"\x7f");
+    if (strBegin != std::wstring::npos)
+    {
+        // Trim them off.
+        input = input.substr(strBegin);
+    }
+    // How many spaces do we need, so that the preview exactly covers the entire
+    // prompt, all the way to the end of the viewport?
+    const auto bufferWidth = _GetMutableViewport().Width();
+    const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
+    const auto expectedLenTillEnd = strBegin + (static_cast<size_t>(bufferWidth) - static_cast<size_t>(cursorX));
+    std::wstring preview{ input };
+    const auto originalSize{ preview.size() };
+    if (expectedLenTillEnd > originalSize)
+    {
+        // pad it out
+        preview.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
+    }
+    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+    // Build our composition data
+    const auto len = snippetPreview.text.size();
+    snippetPreview.attributes.clear();
+    snippetPreview.attributes.emplace_back(len, previewAttrs);
+    snippetPreview.cursorPos = len;
+    _activeBuffer().NotifyPaintFrame();
+}
+
 // These functions are used by TerminalInput, which must build in conhost
 // against OneCore compatible signatures. See the definitions in
 // VtApiRedirection.hpp (which we cannot include cross-project.)
