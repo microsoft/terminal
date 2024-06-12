@@ -21,13 +21,13 @@ using namespace winrt::Microsoft::Terminal::Control;
 #if defined(_M_IX86)
 #define SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH "56911147"
 #else
-#define SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH "A020D2"
+#define SEND_INPUT_ARCH_SPECIFIC_ACTION_HASH "96E19A0C"
 #endif
 
 #if defined(_M_IX86)
 #define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "35488AA6"
 #else
-#define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "58D1971"
+#define SEND_INPUT2_ARCH_SPECIFIC_ACTION_HASH "F40ECD1A"
 #endif
 
 namespace SettingsModelUnitTests
