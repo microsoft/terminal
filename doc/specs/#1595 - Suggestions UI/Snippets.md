@@ -439,7 +439,7 @@ local snippet's ID which you DO have bound to a key.
 When we first load the snippets from the `.wt.json` file, we'll want to also ask
 them if they trust that folder. This is similar to the way that VsCode et. al.
 If they accept, then we'll add that folder to a list of trusted folders (and
-store permenantly in `state.json`). If they don't, then we'll just ignore that
+store permanently in `state.json`). If they don't, then we'll just ignore that
 file. To make things easier for the user, we can also add a checkbox to "trust
 the parent folder" in the dialog (again, similar to VsCode).
 
@@ -517,7 +517,7 @@ their own workflows.
     Maybe with the `WT_SESSION_ID` env var to figure out which profile is in use
     for the pane with that ID
     * This would probably require per-profile actions, which are woefully under specified
-  * `--local`/`--parent`/`--settings` was well recieved in team discussion -
+  * `--local`/`--parent`/`--settings` was well received in team discussion -
     maybe we should just do them now.
 * Longer workflows might be better exposed as notebooks. We've already got a
   mind to support [markdown in a notebook-like
