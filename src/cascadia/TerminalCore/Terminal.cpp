@@ -1643,7 +1643,7 @@ void Terminal::PreviewText(std::wstring_view input)
         // Use the actual text length for the number of steps, not including the
         // trailing spaces.
         const float increment = 1.0f / originalSize;
-        for (auto i = 0; i < originalSize; i++)
+        for (auto i = 0u; i < originalSize; i++)
         {
             const auto color = til::color::from_hue(increment * i);
             TextAttribute curr = previewAttrs;
