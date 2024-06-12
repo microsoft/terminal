@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
 
         FilteredTask(const winrt::Microsoft::Terminal::Settings::Model::Command& command)
         {
-            _constructFilteredCommand(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command, L""));
+            _constructFilteredCommand(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command, winrt::hstring{}));
             _command = command;
 
             // The Children() method must always return a non-null vector
@@ -107,7 +107,7 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             }
-            return L"";
+            return winrt::hstring{};
         };
 
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> Children() { return _children; }

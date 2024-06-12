@@ -12,9 +12,7 @@
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
-             AutomationProperties.AccessibilityView="Raw"
-             IsTabStop="True"
-             TabNavigation="Cycle"
+             AutomationProperties.LocalizedControlType="pane"
              mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -92,8 +90,9 @@
             <DataTemplate x:Key="TaskItemTemplate"
                           x:DataType="local:FilteredTask">
                 <mux:TreeViewItem x:Name="rootItem"
+                                  AutomationProperties.HelpText="{x:Bind Input, Mode=OneWay}"
                                   AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                                  ItemsSource="{x:Bind Children}"
+                                  ItemsSource="{x:Bind Children, Mode=OneWay}"
                                   KeyUp="_treeItemKeyUpHandler"
                                   Visibility="{x:Bind Visibility, Mode=OneWay}">
                     <Grid AutomationProperties.AccessibilityView="Raw">
@@ -215,7 +214,7 @@
     </UserControl.Resources>
 
     <!--  Don't allow the user to focus the root pane, but do allow individual controls to be focused  -->
-
+    <!--  TabFocusNavigation="Cycle" is load-bearing: otherwise, tab focus disappears to nowhere off the play button  -->
     <Grid AllowFocusOnInteraction="False"
           AutomationProperties.AccessibilityView="Raw"
           Background="{ThemeResource PageBackground}"

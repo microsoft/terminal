@@ -24,6 +24,8 @@ namespace winrt::TerminalApp::implementation
     SnippetsPaneContent::SnippetsPaneContent()
     {
         InitializeComponent();
+
+        WUX::Automation::AutomationProperties::SetName(*this, RS_(L"SnippetPaneTitle/Text"));
     }
 
     void SnippetsPaneContent::_updateFilteredCommands()
@@ -48,7 +50,7 @@ namespace winrt::TerminalApp::implementation
         // has typed, then relies on the suggestions UI to _also_ filter with that
         // string.
 
-        const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(L""); // IVector<Model::Command>
+        const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(winrt::hstring{}); // IVector<Model::Command>
         _allTasks = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
         for (const auto& t : tasks)
         {
@@ -79,20 +81,11 @@ namespace winrt::TerminalApp::implementation
     }
     winrt::Windows::Foundation::Size SnippetsPaneContent::MinimumSize()
     {
-        return { 1, 1 };
+        return { 200, 200 };
     }
     void SnippetsPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
     {
         _filterBox().Focus(reason);
-
-        if (auto automationPeer{ WUX::Automation::Peers::FrameworkElementAutomationPeer::FromElement(_filterBox()) })
-        {
-            automationPeer.RaiseNotificationEvent(
-                WUX::Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                WUX::Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent, // CurrentThenMostRecent,
-                RS_(L"SnippetPaneAnnouncement"),
-                L"SnippetPaneFocused" /* unique ID for this notification */);
-        }
     }
     void SnippetsPaneContent::Close()
     {

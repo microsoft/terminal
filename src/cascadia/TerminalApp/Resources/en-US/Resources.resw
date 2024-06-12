@@ -902,10 +902,6 @@
     <value>Snippets</value>
     <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
   </data>
-  <data name="SnippetPaneAnnouncement" xml:space="preserve">
-    <value>Snippets pane</value>
-    <comment>Announced to screen readers when the user focuses the snippets pane</comment>
-  </data>
   <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
     <value>Filter snippets...</value>
     <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>

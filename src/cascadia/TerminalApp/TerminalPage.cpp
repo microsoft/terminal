@@ -3280,6 +3280,10 @@ namespace winrt::TerminalApp::implementation
             tasksContent->UpdateSettings(_settings);
             tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
             tasksContent->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+            if (const auto& termControl{ _GetActiveControl() })
+            {
+                tasksContent->SetLastActiveControl(termControl);
+            }
 
             content = *tasksContent;
         }
