@@ -94,6 +94,7 @@ Powerline
 powerline
 ptys
 pwshw
+quickfix
 qof
 qps
 quarternary
