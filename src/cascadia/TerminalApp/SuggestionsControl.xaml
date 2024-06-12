@@ -102,23 +102,10 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="6*" />
-            <ColumnDefinition Width="2*" />
-        </Grid.ColumnDefinitions>
-
-        <Grid.RowDefinitions>
-            <RowDefinition Height="8*" />
-            <RowDefinition Height="2*" />
-        </Grid.RowDefinitions>
-
+    <StackPanel x:Name="_listAndDescriptionStack"
+                Orientation="Vertical">
         <Grid x:Name="_backdrop"
-              Grid.Row="0"
-              Grid.RowSpan="2"
-              Grid.Column="0"
-              Grid.ColumnSpan="3"
+              MinWidth="300"
               MaxWidth="300"
               MaxHeight="300"
               Margin="0"
@@ -134,16 +121,16 @@
               Translation="0,0,32">
 
             <Grid.RowDefinitions>
+                <!--  0: Top-down _searchBox  -->
                 <RowDefinition Height="Auto" />
-                <!--  Top-down _searchBox  -->
+                <!--  1: Top-down ParentCommandName  -->
                 <RowDefinition Height="Auto" />
-                <!--  Top-down ParentCommandName  -->
+                <!--  2: Top-down UNUSED????????  -->
                 <RowDefinition Height="Auto" />
-                <!--  Top-down UNUSED????????  -->
+                <!--  3: _filteredActionsView  -->
                 <RowDefinition Height="*" />
-                <!--  _filteredActionsView  -->
+                <!--  4: bottom-up _searchBox  -->
                 <RowDefinition Height="Auto" />
-                <!--  bottom-up _searchBox  -->
             </Grid.RowDefinitions>
 
             <TextBox x:Name="_searchBox"
@@ -206,8 +193,49 @@
                       SelectionMode="Single"
                       Style="{StaticResource NoAnimationsPlease}" />
 
+
         </Grid>
 
+        <Grid x:Name="_descriptionsBackdrop"
+              MaxWidth="300"
+              Margin="0,6,0,6"
+              Padding="0,4,0,0"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              Background="{ThemeResource FlyoutPresenterBackground}"
+              BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
+              BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
+              CornerRadius="{ThemeResource OverlayCornerRadius}"
+              PointerPressed="_backdropPointerPressed"
+              Shadow="{StaticResource SharedShadow}"
+              Translation="0,0,32">
 
-    </Grid>
+            <Grid.RowDefinitions>
+                <!--  0: descriptions view  -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel x:Name="_descriptionsView"
+                        Grid.Row="0"
+                        Margin="8,0,8,8"
+                        Orientation="Vertical"
+                        Visibility="Collapsed">
+                <TextBlock x:Name="_descriptionTitle"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           IsTextSelectionEnabled="True"
+                           TextWrapping="WrapWholeWords" />
+                <ScrollViewer MaxHeight="64"
+                              VerticalScrollBarVisibility="Visible"
+                              VerticalScrollMode="Enabled"
+                              Visibility="Visible">
+                    <TextBlock x:Name="_descriptionComment"
+                               IsTextSelectionEnabled="True"
+                               TextWrapping="WrapWholeWords" />
+                </ScrollViewer>
+            </StackPanel>
+
+        </Grid>
+
+    </StackPanel>
 </UserControl>
