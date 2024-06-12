@@ -177,6 +177,7 @@ changelists
 charinfo
 CHARSETINFO
 chh
+CHPE
 chshdng
 CHT
 CLASSSTRING
@@ -268,6 +269,7 @@ CONSOLEWINDOWOWNER
 consrv
 constexprable
 constness
+contaning
 contentfiles
 conterm
 contsf
@@ -857,6 +859,7 @@ INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
 Interner
+intrin
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1254,6 +1257,7 @@ OUTOFCONTEXT
 Outptr
 outstr
 OVERLAPPEDWINDOW
+Overwritres
 OWNDC
 owneralias
 OWNERDRAWFIXED
@@ -1336,6 +1340,7 @@ pipestr
 pixelheight
 PIXELSLIST
 PJOBOBJECT
+plast
 platforming
 playsound
 ploc
@@ -1440,6 +1445,8 @@ Qxxxxxxxxxxxxxxx
 qzmp
 RAII
 RALT
+RAPIDHASH
+rapidhash
 rasterbar
 rasterfont
 rasterization
@@ -1690,6 +1697,7 @@ STDAPI
 stdc
 stdcpp
 STDEXT
+stdint
 STDMETHODCALLTYPE
 STDMETHODIMP
 STGM
@@ -2127,6 +2135,7 @@ XIn
 XManifest
 XMath
 xorg
+Xors
 XPan
 XResource
 xsi
