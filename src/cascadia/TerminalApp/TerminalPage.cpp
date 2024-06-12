@@ -2934,9 +2934,14 @@ namespace winrt::TerminalApp::implementation
     {
         assert(!Dispatcher().HasThreadAccess());
 
+        if (!Feature_QuickFix::IsEnabled())
+        {
+            co_return;
+        }
+
         std::vector<hstring> suggestions;
         suggestions.reserve(1);
-        suggestions.emplace_back(fmt::format(L"winget install {}", args.MissingCommand()));
+        suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install {}"), args.MissingCommand()));
 
         co_await wil::resume_foreground(Dispatcher());
 
@@ -4895,23 +4900,6 @@ namespace winrt::TerminalApp::implementation
             };
         };
 
-        auto makeItem = [&menu, &makeCallback](const winrt::hstring& label,
-                                               const winrt::hstring& icon,
-                                               const winrt::hstring& suggestion) {
-            MenuFlyoutItem item{};
-
-            if (!icon.empty())
-            {
-                auto iconElement = UI::IconPathConverter::IconWUX(icon);
-                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
-                item.Icon(iconElement);
-            }
-
-            item.Text(label);
-            item.Click(makeCallback(suggestion));
-            menu.Items().Append(item);
-        };
-
         // Wire up each item to the action that should be performed. By actually
         // connecting these to actions, we ensure the implementation is
         // consistent. This also leaves room for customizing this menu with
@@ -4921,7 +4909,15 @@ namespace winrt::TerminalApp::implementation
         const auto quickFixes = control.CommandHistory().QuickFixes();
         for (const auto& qf : quickFixes)
         {
-            makeItem(qf, L"\ue74c", qf);
+            MenuFlyoutItem item{};
+
+            auto iconElement = UI::IconPathConverter::IconWUX(L"\ue74c");
+            Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+            item.Icon(iconElement);
+
+            item.Text(qf);
+            item.Click(makeCallback(qf));
+            menu.Items().Append(item);
         }
     }
 

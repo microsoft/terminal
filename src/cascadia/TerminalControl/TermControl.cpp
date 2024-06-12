@@ -3502,7 +3502,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // scale the selection markers to be the size of a cell
         const auto dpiScale = SwapChainPanel().CompositionScaleX();
-        auto scaleMarker = [args, &dpiScale](const Windows::UI::Xaml::Shapes::Path& shape) {
+        auto scaleMarker = [&args, &dpiScale](const Windows::UI::Xaml::Shapes::Path& shape) {
             // The selection markers were designed to be 5x14 in size,
             // so use those dimensions below for the scaling
             const auto scaleX = args.Width() / 5.0 / dpiScale;
@@ -3519,10 +3519,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
 
-        auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
-        quickFixBtn.Height(args.Height() / dpiScale);
-        QuickFixIcon().FontSize(static_cast<double>(args.Width() / dpiScale));
-        RefreshQuickFixMenu();
+        if (Feature_QuickFix::IsEnabled())
+        {
+            auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
+            quickFixBtn.Height(args.Height() / dpiScale);
+            QuickFixIcon().FontSize(static_cast<double>(args.Width() / dpiScale));
+            RefreshQuickFixMenu();
+        }
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3832,6 +3835,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::RefreshQuickFixMenu()
     {
+        if (!Feature_QuickFix::IsEnabled())
+        {
+            return;
+        }
+
         auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
         if (!_core.QuickFixesAvailable())
         {
