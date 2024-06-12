@@ -2790,7 +2790,7 @@ void TextBuffer::Serialize(const wchar_t* destination) const
             // In other words, we can only skip \x1b[K = Erase in Line, if both the first/last attribute are the default attribute.
             static constexpr TextAttribute defaultAttr;
             const auto trimTrailingWhitespaces = it == last && lastCharX < newX;
-            const auto clearToEndOfLine = trimTrailingWhitespaces && beg->value != defaultAttr || beg->value != defaultAttr;
+            const auto clearToEndOfLine = trimTrailingWhitespaces && (beg->value != defaultAttr || last->value != defaultAttr);
 
             if (trimTrailingWhitespaces)
             {

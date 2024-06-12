@@ -2921,4 +2921,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _clickedOnMark(_contextMenuBufferPosition,
                               [](const ::MarkExtents& m) -> bool { return !m.HasOutput(); });
     }
+
+    void ControlCore::PreviewInput(std::wstring_view input)
+    {
+        _terminal->PreviewText(input);
+    }
+
 }

@@ -250,6 +250,7 @@ public:
     const size_t GetTaskbarProgress() const noexcept;
 
     void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
+    void PreviewText(std::wstring_view input);
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

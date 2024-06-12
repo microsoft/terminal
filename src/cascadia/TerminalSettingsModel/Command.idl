@@ -37,10 +37,10 @@ namespace Microsoft.Terminal.Settings.Model
 
         String Name { get; };
         String ID { get; };
+
+        String Description { get; };
+
         ActionAndArgs ActionAndArgs { get; };
-        Microsoft.Terminal.Control.KeyChord Keys { get; };
-        void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);
-        String KeyChordText { get; };
 
         String IconPath;
 

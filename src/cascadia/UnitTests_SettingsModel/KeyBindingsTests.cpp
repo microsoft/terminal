@@ -157,17 +157,17 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::HashDeduplication()
     {
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"), OriginTag::User);
         VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
     }
 
     void KeyBindingsTests::HashContentArgs()
     {
-        Log::Comment(L"These are two actions with different content args. They should have different hashes for their terminal args.");
+        Log::Comment(L"These are two actions with different content args. They should have different generated IDs for their terminal args.");
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"), OriginTag::None);
-        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"), OriginTag::None);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab",            } , "keys": ["ctrl+c"]       } ])"), OriginTag::User);
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": { "action": "newTab", "index": 0 } , "keys": ["ctrl+shift+c"] } ])"), OriginTag::User);
         VERIFY_ARE_EQUAL(2u, actionMap->_ActionMap.size());
 
         KeyChord ctrlC{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
@@ -271,32 +271,32 @@ namespace SettingsModelUnitTests
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings0Json, OriginTag::None);
+        actionMap->LayerJson(bindings0Json, OriginTag::User);
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings1Json, OriginTag::None);
+        actionMap->LayerJson(bindings1Json, OriginTag::User);
         VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
 
-        actionMap->LayerJson(bindings2Json, OriginTag::None);
+        actionMap->LayerJson(bindings2Json, OriginTag::User);
         VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
     }
 
     void KeyBindingsTests::TestArbitraryArgs()
     {
         const std::string bindings0String{ R"([
-            { "command": "copy", "keys": ["ctrl+c"] },
-            { "command": { "action": "copy", "singleLine": false }, "keys": ["ctrl+shift+c"] },
-            { "command": { "action": "copy", "singleLine": true }, "keys": ["alt+shift+c"] },
+            { "command": "copy", "id": "Test.CopyNoArgs", "keys": ["ctrl+c"] },
+            { "command": { "action": "copy", "singleLine": false }, "id": "Test.CopyMultiline", "keys": ["ctrl+shift+c"] },
+            { "command": { "action": "copy", "singleLine": true }, "id": "Test.CopySingleline", "keys": ["alt+shift+c"] },
 
-            { "command": "newTab", "keys": ["ctrl+t"] },
-            { "command": { "action": "newTab", "index": 0 }, "keys": ["ctrl+shift+t"] },
-            { "command": { "action": "newTab", "index": 11 }, "keys": ["ctrl+shift+y"] },
+            { "command": "newTab", "id": "Test.NewTabNoArgs", "keys": ["ctrl+t"] },
+            { "command": { "action": "newTab", "index": 0 }, "id": "Test.NewTab0", "keys": ["ctrl+shift+t"] },
+            { "command": { "action": "newTab", "index": 11 }, "id": "Test.NewTab11", "keys": ["ctrl+shift+y"] },
 
-            { "command": { "action": "copy", "madeUpBool": true }, "keys": ["ctrl+b"] },
-            { "command": { "action": "copy" }, "keys": ["ctrl+shift+b"] },
+            { "command": { "action": "copy", "madeUpBool": true }, "id": "Test.CopyFakeArgs", "keys": ["ctrl+b"] },
+            { "command": { "action": "copy" }, "id": "Test.CopyNullArgs", "keys": ["ctrl+shift+b"] },
 
-            { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": ["ctrl+f"] },
-            { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": ["ctrl+g"] }
+            { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Test.EnlargeFont", "keys": ["ctrl+f"] },
+            { "command": { "action": "adjustFontSize", "delta": -1 }, "id": "Test.ReduceFont", "keys": ["ctrl+g"] }
 
         ])" };
 
@@ -428,10 +428,10 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestSplitPaneArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical" } },
-            { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal" } },
-            { "keys": ["ctrl+g"], "command": { "action": "splitPane" } },
-            { "keys": ["ctrl+h"], "command": { "action": "splitPane", "split": "auto" } }
+            { "keys": ["ctrl+d"], "id": "Test.SplitPaneVertical", "command": { "action": "splitPane", "split": "vertical" } },
+            { "keys": ["ctrl+e"], "id": "Test.SplitPaneHorizontal", "command": { "action": "splitPane", "split": "horizontal" } },
+            { "keys": ["ctrl+g"], "id": "Test.SplitPane", "command": { "action": "splitPane" } },
+            { "keys": ["ctrl+h"], "id": "Test.SplitPaneAuto", "command": { "action": "splitPane", "split": "auto" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -478,9 +478,9 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestSetTabColorArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["ctrl+c"], "command": { "action": "setTabColor", "color": null } },
-            { "keys": ["ctrl+d"], "command": { "action": "setTabColor", "color": "#123456" } },
-            { "keys": ["ctrl+f"], "command": "setTabColor" },
+            { "keys": ["ctrl+c"], "id": "Test.SetTabColorNull", "command": { "action": "setTabColor", "color": null } },
+            { "keys": ["ctrl+d"], "id": "Test.SetTabColor", "command": { "action": "setTabColor", "color": "#123456" } },
+            { "keys": ["ctrl+f"], "id": "Test.SetTabColorNoArgs", "command": "setTabColor" },
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -521,7 +521,7 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestStringOverload()
     {
         const std::string bindings0String{ R"([
-            { "command": "copy", "keys": "ctrl+c" }
+            { "command": "copy", "id": "Test.Copy", "keys": "ctrl+c" }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -543,12 +543,12 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestScrollArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["up"], "command": "scrollUp" },
-            { "keys": ["down"], "command": "scrollDown" },
-            { "keys": ["ctrl+up"], "command": { "action": "scrollUp" } },
-            { "keys": ["ctrl+down"], "command": { "action": "scrollDown" } },
-            { "keys": ["ctrl+shift+up"], "command": { "action": "scrollUp", "rowsToScroll": 10 } },
-            { "keys": ["ctrl+shift+down"], "command": { "action": "scrollDown", "rowsToScroll": 10 } }
+            { "keys": ["up"], "id": "Test.ScrollUp0", "command": "scrollUp" },
+            { "keys": ["down"], "id": "Test.ScrollDown0", "command": "scrollDown" },
+            { "keys": ["ctrl+up"], "id": "Test.ScrollUp1", "command": { "action": "scrollUp" } },
+            { "keys": ["ctrl+down"], "id": "Test.ScrollDown1", "command": { "action": "scrollDown" } },
+            { "keys": ["ctrl+shift+up"], "id": "Test.ScrollUp2", "command": { "action": "scrollUp", "rowsToScroll": 10 } },
+            { "keys": ["ctrl+shift+down"], "id": "Test.ScrollDown2", "command": { "action": "scrollDown", "rowsToScroll": 10 } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -620,8 +620,8 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestMoveTabArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["up"], "command": { "action": "moveTab", "direction": "forward" } },
-            { "keys": ["down"], "command": { "action": "moveTab", "direction": "backward" } }
+            { "keys": ["up"], "id": "Test.MoveTabUp", "command": { "action": "moveTab", "direction": "forward" } },
+            { "keys": ["down"], "id": "Test.MoveTabDown", "command": { "action": "moveTab", "direction": "backward" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -665,9 +665,9 @@ namespace SettingsModelUnitTests
     void KeyBindingsTests::TestToggleCommandPaletteArgs()
     {
         const std::string bindings0String{ R"([
-            { "keys": ["up"], "command": "commandPalette" },
-            { "keys": ["ctrl+up"], "command": { "action": "commandPalette", "launchMode" : "action" } },
-            { "keys": ["ctrl+shift+up"], "command": { "action": "commandPalette", "launchMode" : "commandLine" } }
+            { "keys": ["up"], "id": "Test.CmdPal", "command": "commandPalette" },
+            { "keys": ["ctrl+up"], "id": "Test.CmdPalActionMode", "command": { "action": "commandPalette", "launchMode" : "action" } },
+            { "keys": ["ctrl+shift+up"], "id": "Test.CmdPalLineMode", "command": { "action": "commandPalette", "launchMode" : "commandLine" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -712,10 +712,10 @@ namespace SettingsModelUnitTests
 
     void KeyBindingsTests::TestGetKeyBindingForAction()
     {
-        const std::string bindings0String{ R"([ { "command": "closeWindow", "keys": "ctrl+a" } ])" };
-        const std::string bindings1String{ R"([ { "command": { "action": "copy", "singleLine": true }, "keys": "ctrl+b" } ])" };
-        const std::string bindings2String{ R"([ { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+c" } ])" };
-        const std::string bindings3String{ R"([ { "command": "commandPalette", "keys": "ctrl+shift+p" } ])" };
+        const std::string bindings0String{ R"([ { "command": "closeWindow", "id": "Test.CloseWindow", "keys": "ctrl+a" } ])" };
+        const std::string bindings1String{ R"([ { "command": { "action": "copy", "singleLine": true }, "id": "Test.Copy", "keys": "ctrl+b" } ])" };
+        const std::string bindings2String{ R"([ { "command": { "action": "newTab", "index": 0 }, "id": "Test.NewTab", "keys": "ctrl+c" } ])" };
+        const std::string bindings3String{ R"([ { "command": "commandPalette", "id": "Test.CmdPal", "keys": "ctrl+shift+p" } ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
@@ -742,7 +742,7 @@ namespace SettingsModelUnitTests
             Log::Comment(L"simple command: no args");
             actionMap->LayerJson(bindings0Json, OriginTag::None);
             VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CloseWindow) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.CloseWindow") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control, static_cast<int32_t>('A'), 0 }, kbd);
         }
         {
@@ -750,10 +750,7 @@ namespace SettingsModelUnitTests
             actionMap->LayerJson(bindings1Json, OriginTag::None);
             VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
 
-            auto args{ winrt::make_self<implementation::CopyTextArgs>() };
-            args->SingleLine(true);
-
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CopyText, *args) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.Copy") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control, static_cast<int32_t>('B'), 0 }, kbd);
         }
         {
@@ -761,11 +758,7 @@ namespace SettingsModelUnitTests
             actionMap->LayerJson(bindings2Json, OriginTag::None);
             VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
 
-            auto newTerminalArgs{ winrt::make_self<implementation::NewTerminalArgs>() };
-            newTerminalArgs->ProfileIndex(0);
-            auto args{ winrt::make_self<implementation::NewTabArgs>(*newTerminalArgs) };
-
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::NewTab, *args) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.NewTab") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }, kbd);
         }
         {
@@ -773,7 +766,7 @@ namespace SettingsModelUnitTests
             actionMap->LayerJson(bindings3Json, OriginTag::None);
             VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
 
-            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+            const auto& kbd{ actionMap->GetKeyBindingForAction(L"Test.CmdPal") };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control | VirtualKeyModifiers::Shift, static_cast<int32_t>('P'), 0 }, kbd);
         }
     }
@@ -807,7 +800,7 @@ namespace SettingsModelUnitTests
 
     void KeyBindingsTests::KeybindingsWithoutVkey()
     {
-        const auto json = VerifyParseSucceeded(R"!([{"command": "quakeMode", "keys":"shift+sc(255)"}])!");
+        const auto json = VerifyParseSucceeded(R"!([{"command": "quakeMode", "id": "Test.NoVKey", "keys":"shift+sc(255)"}])!");
 
         const auto actionMap = winrt::make_self<implementation::ActionMap>();
         actionMap->LayerJson(json, OriginTag::None);
