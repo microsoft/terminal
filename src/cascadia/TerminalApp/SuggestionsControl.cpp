@@ -1172,7 +1172,6 @@ namespace winrt::TerminalApp::implementation
         _anchor = anchor;
         _space = space;
 
-        // const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
         // Is there space in the window below the cursor to open the menu downwards?
         const bool canOpenDownwards = (_anchor.Y + characterHeight + ActualHeight()) < space.Height;
         _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
@@ -1192,10 +1191,8 @@ namespace winrt::TerminalApp::implementation
         const auto clampedX = std::clamp(proposedX, 0, maxX);
 
         // Create a thickness for the new margins. This will set the left, then
-        // we'll go update the top.
-        auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
-        Margin(newMargin);
-
+        // we'll go update the top separately
+        Margin(Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0));
         _recalculateTopMargin();
 
         _searchBox().Text(filter);
