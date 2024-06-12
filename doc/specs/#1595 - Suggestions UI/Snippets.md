@@ -1,7 +1,7 @@
 ---
 author: Mike Griese
 created on: 2022-08-22
-last updated: 2024-06-06
+last updated: 2024-06-12
 issue id: 1595
 ---
 
@@ -229,21 +229,54 @@ suggestion sources.
 
 ### Per-Project Snippets (`.wt.json`)
 
-> [INFO!]
->
-> TODO!: Let's make sure to discuss the filename. It doesn't need to be
-> `.wt.json`. That seemed to match things like `.clang-format`, `.vsconfig`,
-> etc, but then also included the extension. However, node projects just use
-> `package.json` without the leading `.` for storing per-project commands.
-> Perhaps `.wt.json` is the worst of both? The best of both? `.wtconfig`?
-
 Users may also want to leave snippets in the root of their repo, for others to
 use as well. To support this, the Terminal will automatically look for a
 `.wt.json` file in any directories that are parents of the CWD of the shell, and
-load actions from that file as if it were a fragment extension as well. That
-will start with the `startingDirectory` for any new panes created. If the user
-has shell integration configured to tell the Terminal about the CWD, then we'll
-refresh that list as the user changes directories.
+load actions from that file as well. The syntax for this file will be a modified
+version of the standard settings schema. As an example:
+
+```json
+{
+    "$version": "1.0.0",
+    "snippets":
+    [
+        {
+            "input": "bx",
+            "name": "Build project",
+            "description": "Build the project in the CWD"
+        },
+        {
+            "input": "bcz",
+            "name": "Clean & build solution",
+            "icon": "\uE8e6",
+            "description": "Start over. Go get your coffee. "
+        },
+        {
+            "input": "nuget push -ApiKey az -source TerminalDependencies %userprofile%\\Downloads" ,
+            "name": "Upload package to nuget feed",
+            "icon": "\uE898",
+            "description": "Go download a .nupkg, put it in ~/Downloads, and use this to push to our private feed."
+        },
+    ]
+}
+```
+
+Instead of `actions`, the top-level list is `snippets`. These snippet objects
+are a simplification of the `Command` object. They have a `name`, `description`,
+and `icon` properties, just like a `Command`. However, instead of an arbitrary
+`action`, we will just have the `SendInput` action's args as properties directly
+in the object.
+
+Additionally, we'll also support a `$version` field, in case we ever want to
+make breaking changes to the schema. When this is missing, we'll just assume the
+version to be `1.0.0`, which is this originally proposed schema.
+
+By default, a `TermControl` is always initialized with the CWD set to the
+`startingDirectory` of a profile. So, even for users that don't have shell
+integration enabled, the Terminal will still be able to load snippets from the
+`.wt.json` in the profile's `startingDirectory`. If the user has shell
+integration configured to tell the Terminal about the CWD, then we'll refresh
+that list as the user changes directories.
 
 * In `Terminal.Settings.Model`, we will store a cached map of path->actions.
   * that if multiple panes are all in the same CWD, they don't need to
@@ -260,20 +293,24 @@ refresh that list as the user changes directories.
   * We don't need to have the control raise an event when the CWD changes - we
     can lazy-load these actions when a UI element that requires it is first
     invoked.
-* The Command Palette is trickier, since it binds directly to the action map.
-  We'd need to be able to freely modify that map at runtime, which might be
-  prohibitively annoying. <!-- * If we want these actions to show up in the
-  Command Palette, we'll need to:
-  * We'll stash these actions in the action map as they're loaded. (in
-    `Terminal.Settings.Model`)
-  * We'll need to be able to dynamically remove them at runtime from the map (in
-    `Terminal.Settings.Model`) -->
+* These snippets will not be included in the Command Palette.
 * If we find multiple `.wt.json` files in the ancestors of the CWD (e.g. for
   `c:\a\b\c\d\`, there's a `c:\a\.wt.json` and a `c:\a\b\c\.wt.json`), then
   we'll add each one separately to the map of paths->directories. When
   requesting the actual actions for `c:\a\b\c\d\`, we'll layer the ones from
   `c:\a\` before the ones from `c:\a\b\c`, so that deeper descendants take
   precedence.
+  * For example, `c:\a\.wt.json` has a snippet with `input: "foo", name:
+    "Build"`, and `c:\a\b\c\.wt.json` has a snippet with `input: "bar", name:
+    "Build"`. When the user is under `c:\a\b\c`, the Terminal will show `bar`
+    when the user selects the `Build` suggestion. Otherwise, if the user is
+    under `c:\a`, then the Terminal will show `foo`.
+* If we fail to parse the `.wt.json` file, then we'll ignore it. For parsing
+  errors, we'll want to display warnings to the user:
+  * If the user had opened the suggestions UI, we can display a Toast the first
+    time we fail to load it to show the error.
+  * In the snippets pane, we can have static text along the lines of "failed to
+    parse snippets found in `path/to/file`" at the top of the pane.
 
 ### Saving snippets from the commandline
 
@@ -282,51 +319,19 @@ _This has already been prototyped in [#16513]_
 Users should be able to save commands as snippets directly from the commandline.
 Consider: you've just run the command that worked the way you need it to. You
 shouldn't have to open the settings to then separately copy-paste the command in
-to save it. It should be as easy as <kbd>Up</kbd>, <kbd>Home</kbd>, `wt save `,
+to save it. It should be as easy as <kbd>Up</kbd>, <kbd>Home</kbd>, `wt x-save `,
 <kbd>Enter</kbd>.
 
-The exact syntax as follows:
+This will be powered by a `saveSnippet` action behind the scenes. However, we
+won't actually parse these actions from a user's settings file. They don't
+really make sense to have the action to save a snippet to the settings file, in
+the settings file already.
 
-This will be powered by a `saveSnippet` action behind the scenes. After running
-this command, a toast will be presented to the user to indicate success/failure.
-The schema for this action is as follows:
+The exact syntax of `x-save` is as follows:
 
-```json
-"SaveSnippetAction": {
-  "description": "Arguments corresponding to a saveSnippet Action",
-  "allOf": [
-    { "$ref": "#/$defs/ShortcutAction" },
-    {
-      "type": "object",
-      "properties": {
-        "action": { "type": "string", "const": "saveSnippet" },
-        "commandline": {
-          "type": "string",
-          "default": "",
-          "description": "The commandline to save as a snippet. This will be turned into the `input` of a `sendInput` action. Escape codes like \\x1b must be written as \\u001b."
-        },
-        "name": {
-          "type": "string",
-          "default": "",
-          "description": "A name to give the newly created action. If omitted, the action will use an automatically generated one."
-        },
-        "description": {
-          "type": "string",
-          "default": "",
-          "description": "A description to give the newly created action."
-        }
-      }
-    }
-  ],
-  "required": [
-    "commandline"
-  ]
-},
-```
+#### `x-save` subcommand
 
-#### `save` subcommand
-
-`save [--name,-n name][--description,-d description][-- commandline]`
+`x-save [--name,-n name][--description,-d description][-- commandline]`
 
 Saves a given commandline as a sendInput action to the Terminal settings file.
 This will immediately write the Terminal settings file.
@@ -345,9 +350,13 @@ commandline). This is done to avoid a new terminal window popping up, just to
 inform the user a command was saved. When run with other subcommands, then the
 action will just be ran in the same window as all the other subcommands.
 
-> [!NOTE] In other team discussions, we've considered initially merging this
-> subcommand as `x-save`, where `x-` implies "experimental". We may want to use
-> that to merge [#16513] while we wait for this spec to be approved.
+> [!NOTE]
+> In team discussions, we've decided to accept this for now as
+> experimental. We have some concerns about how effective we'll be at dealing
+> with all the weird edge cases of string escaping. For now, we'll keep this
+> subcommand as `x-save`, where `x-` implies "experimental".
+>
+> Perhaps once we add a dialog for saving these snippets, we can promote it out of experimental.
 
 ### UI/UX Design
 
@@ -427,6 +436,17 @@ similar). Any app can read your settings file, and it is again too easy for that
 malicious app to set it's own action `id` to the same as some other well-meaning
 local snippet's ID which you DO have bound to a key.
 
+When we first load the snippets from the `.wt.json` file, we'll want to also ask
+them if they trust that folder. This is similar to the way that VsCode et. al.
+If they accept, then we'll add that folder to a list of trusted folders (and
+store permenantly in `state.json`). If they don't, then we'll just ignore that
+file. To make things easier for the user, we can also add a checkbox to "trust
+the parent folder" in the dialog (again, similar to VsCode).
+
+We'll also want to engage our security partners to see if there's anything extra
+we'll need to do to ensure we're securely parsing random JSON files that we
+don't own.
+
 </td></tr>
 
 </table>
@@ -497,6 +517,8 @@ their own workflows.
     Maybe with the `WT_SESSION_ID` env var to figure out which profile is in use
     for the pane with that ID
     * This would probably require per-profile actions, which are woefully under specified
+  * `--local`/`--parent`/`--settings` was well recieved in team discussion -
+    maybe we should just do them now.
 * Longer workflows might be better exposed as notebooks. We've already got a
   mind to support [markdown in a notebook-like
   experience](https://github.com/microsoft/terminal/issues/16495) in the
@@ -512,14 +534,26 @@ their own workflows.
       to how we import color schemes:
   * Furthermore, the commands are all licensed under Apache 2.0, which means they
     can be easily consumed by other OSS projects and shared with other developers.
-
-  This leads us to the next future consideration:
+  * This leads us to the next future consideration:
 * Discoverability will be important. Perhaps the actions page could have a
   toggle to immediately filter to "snippets"? Which then also displays some text
   like "Tip: save snippets directly from the commandline with
   `wt save <the commandline>`".
 * We should easily be able to put "Save command as snippet" into the quick fix
   menu next to an individual prompt, when shell integration is enabled.
+* We should most definitely add a dialog for saving snippets directly in the Terminal.
+  * We'd have inputs for the commandline, name, description.
+  * Obviously, it'd be easy to have a "Add new" button (to open that dialog) on
+    the snippets pane.
+  * We could have `wt save` open that dialog pre-populated, rather than just
+    saving the command directly.
+  * We could even also find a way to pre-populate that dialog with the recent
+    commands (from shell integration)!
+* As a potential v2.0 of the snippets file schema, we may look to the
+  `.vscode/tasks.json` schema for inspiration. That file supports much more
+  complex task definitions. Notably, with the ability to prompt the user for
+  different inputs, for different parameter values. This is something that would
+  play well off of [#12927]
 
 #### Community Snippets
 
