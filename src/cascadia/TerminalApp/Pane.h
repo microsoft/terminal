@@ -62,7 +62,7 @@ struct PaneResources
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    Pane(const winrt::TerminalApp::IPaneContent& content,
+    Pane(winrt::TerminalApp::IPaneContent content,
          const bool lastFocused = false);
 
     Pane(std::shared_ptr<Pane> first,
@@ -248,13 +248,13 @@ private:
 
     std::optional<uint32_t> _id;
     std::weak_ptr<Pane> _parentChildPath{};
-
     bool _lastActive{ false };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
+    winrt::TerminalApp::IPaneContent::CloseRequested_revoker _closeRequestedRevoker;
 
     Borders _borders{ Borders::None };
 
@@ -264,11 +264,10 @@ private:
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
+    winrt::TerminalApp::IPaneContent _takePaneContent();
+    void _setPaneContent(winrt::TerminalApp::IPaneContent content);
     bool _HasChild(const std::shared_ptr<Pane> child);
-    winrt::TerminalApp::TerminalPaneContent _getTerminalContent() const
-    {
-        return _IsLeaf() ? _content.try_as<winrt::TerminalApp::TerminalPaneContent>() : nullptr;
-    }
+    winrt::TerminalApp::TerminalPaneContent _getTerminalContent() const;
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                    const float splitSize,

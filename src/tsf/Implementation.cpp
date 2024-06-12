@@ -144,9 +144,9 @@ void Implementation::Unfocus(IDataProvider* provider)
             renderData->UnlockConsole();
         });
 
-        if (!renderData->activeComposition.text.empty())
+        if (!renderData->tsfPreview.text.empty())
         {
-            auto& comp = renderData->activeComposition;
+            auto& comp = renderData->tsfPreview;
             comp.text.clear();
             comp.attributes.clear();
             renderer->NotifyPaintFrame();
@@ -570,7 +570,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 renderData->UnlockConsole();
             });
 
-            auto& comp = renderData->activeComposition;
+            auto& comp = renderData->tsfPreview;
             comp.text = std::move(activeComposition);
             comp.attributes = std::move(activeCompositionRanges);
             // The code block above that calculates the `cursorPos` will clamp it to a positive number.

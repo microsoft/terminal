@@ -93,6 +93,12 @@ til::CoordType Page::YPanOffset() const noexcept
     return 0; // Vertical panning is not yet supported
 }
 
+void Page::MoveViewportDown() noexcept
+{
+    _viewport.top++;
+    _viewport.bottom++;
+}
+
 PageManager::PageManager(ITerminalApi& api, Renderer& renderer) noexcept :
     _api{ api },
     _renderer{ renderer }

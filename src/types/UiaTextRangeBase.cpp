@@ -631,9 +631,9 @@ try
     // -> We need to turn [_beg,_end) into (_beg,_end).
     exclusiveBegin.x--;
 
-    if (_searcher.IsStale(*_pData, queryText, ignoreCase))
+    if (_searcher.IsStale(*_pData, queryText, ignoreCase ? SearchFlag::CaseInsensitive : SearchFlag::None))
     {
-        _searcher.Reset(*_pData, queryText, ignoreCase, searchBackward);
+        _searcher.Reset(*_pData, queryText, ignoreCase ? SearchFlag::CaseInsensitive : SearchFlag::None, searchBackward);
     }
     _searcher.MovePastPoint(searchBackward ? _end : exclusiveBegin);
 
