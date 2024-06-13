@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TextBoxKeyDown(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void Open(std::function<void()> callback);
         void Close();
+        bool IsOpen();
 
         winrt::hstring Text();
         bool GoForward();
