@@ -703,7 +703,7 @@ void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
     // bits in the sixel value. Although note that each of these sixel pixels
     // may cover more than one device pixel, depending on the aspect ratio.
     const auto targetOffset = _imageCursor.y * _imageMaxWidth + _imageCursor.x;
-    auto imageBufferPtr = std::next(_imageBuffer.begin(), targetOffset);
+    auto imageBufferPtr = std::next(_imageBuffer.data(), targetOffset);
     repeatCount = std::min(repeatCount, _imageMaxWidth - _imageCursor.x);
     for (auto i = 0; i < 6; i++)
     {

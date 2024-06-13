@@ -57,11 +57,11 @@ RGBQUAD* ImageSlice::MutablePixels(const til::CoordType columnBegin, const til::
             // across to the appropriate position in the new buffer.
             auto newPixelBuffer = std::vector<RGBQUAD>(bufferSize);
             const auto newOffset = (oldColumnBegin - _columnBegin) * _cellSize.width;
-            auto newIterator = newPixelBuffer.begin() + newOffset;
-            auto oldIterator = _pixelBuffer.begin();
+            auto newIterator = std::next(newPixelBuffer.data(), newOffset);
+            auto oldIterator = _pixelBuffer.data();
             for (auto i = 0; i < _cellSize.height; i++)
             {
-                std::copy_n(oldIterator, oldPixelWidth, newIterator);
+                std::memcpy(newIterator, oldIterator, oldPixelWidth * sizeof(RGBQUAD));
                 std::advance(oldIterator, oldPixelWidth);
                 std::advance(newIterator, _pixelWidth);
             }
@@ -223,10 +223,10 @@ bool ImageSlice::_eraseCells(const til::CoordType columnBegin, const til::CoordT
         {
             const auto eraseOffset = (eraseBegin - _columnBegin) * _cellSize.width;
             const auto eraseLength = (eraseEnd - eraseBegin) * _cellSize.width;
-            auto eraseIterator = _pixelBuffer.begin() + eraseOffset;
+            auto eraseIterator = std::next(_pixelBuffer.data(), eraseOffset);
             for (auto y = 0; y < _cellSize.height; y++)
             {
-                std::fill_n(eraseIterator, eraseLength, RGBQUAD{});
+                std::memset(eraseIterator, 0, eraseLength * sizeof(RGBQUAD));
                 std::advance(eraseIterator, _pixelWidth);
             }
         }
