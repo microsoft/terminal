@@ -1,7 +1,7 @@
 ---
 author: Mike Griese
 created on: 2022-08-22
-last updated: 2024-06-12
+last updated: 2024-06-13
 issue id: 1595
 ---
 
@@ -293,7 +293,21 @@ that list as the user changes directories.
   * We don't need to have the control raise an event when the CWD changes - we
     can lazy-load these actions when a UI element that requires it is first
     invoked.
-* These snippets will not be included in the Command Palette.
+* These _local_ snippets will not be included in the Command Palette.
+  (`sendInput` actions in the settings file and in fragments still will be,
+  however)
+  * The Command Palette is quite tightly bound to our own ActionMap settings
+    model, accumulated through complicated layering of defaults, fragments, and
+    user settings. It's not trivially mutable at runtime in the way that
+    context-sensitive snippets would require.
+  * The Suggestions UI and Snippets pane are both surfaces that are better
+    equipped to handle context-relevant actions, especially where the context is
+    a `TermControl`.
+  * The Suggestions UI and snippets pane will give us more flexibility in
+    customizing the experience specifically for snippets. Case in point - we'll
+    want to filter the suggestions UI based on both the `Name` _and_ the `Input`
+    of the send input command. Contrast that with the Command Palette which is
+    currently only capable of filtering based on names.
 * If we find multiple `.wt.json` files in the ancestors of the CWD (e.g. for
   `c:\a\b\c\d\`, there's a `c:\a\.wt.json` and a `c:\a\b\c\.wt.json`), then
   we'll add each one separately to the map of paths->directories. When
@@ -457,6 +471,10 @@ Something like `wt save ping 8.8.8.8 > foo.txt` isn't going to work the way
 users want. The shell is gonna get the first crack at parsing that commandline,
 and is going to try and redirect the _output of `wt`_ to `foo.txt`.
 
+Predictably, local snippets won't work over ssh or other remote connections.
+Terminal is only able to read files off the local filesystem. We'll at best be
+able to read snippets from the directory they `ssh`'d _from_ locally.
+
 ## Implementation Plan
 
 ### 🐣 Crawl
@@ -475,7 +493,7 @@ and is going to try and redirect the _output of `wt`_ to `foo.txt`.
   `startingDirectory` (regardless of shell integration being enabled)
 * [ ] [#5790] - profile specific actions
 * [ ] [#12857] Ability to save selected text as a `sendInput` action
-* [ ] [#12861] Re-evaluate showing some sort of "ghost text or other preview for snippets
+* [x] [#12861] Re-evaluate showing some sort of "ghost text or other preview for snippets
 
 ### 🏃‍♂️ Run
 * [ ] When the user `cd`s to a directory (with shell integration enabled), the
@@ -492,8 +510,8 @@ These are perhaps too vague to be included in the official spec, but they are le
 
 ### 🚀 Sprint
 
-* [ ] Fork of [#12927] - prompt-able sections can accept a command to dynamically populate options
-* [ ] Enlighten the suggestions UI to understand a yet undeclared syntax for snippets with prompt-able sections in them.
+* [ ] Fork of [#12927] - prompt-able sections can accept a command to
+  dynamically populate options, a la VsCode's tasks.json
 * [ ] Stand up a dedicated repo for `terminal-snippets`
   * [ ] Pull those down, or compile them in, or so -->
 
@@ -554,6 +572,14 @@ their own workflows.
   complex task definitions. Notably, with the ability to prompt the user for
   different inputs, for different parameter values. This is something that would
   play well off of [#12927]
+* We may want to consider a future property of snippets like `shell`, which
+  specifies which shells a snippet can be used with. We could then only filter
+  to the snippets that will work with the current shell. This is left for the
+  future because we don't have a reliable way of knowing what shell application
+  the user is currently running.
+* We may want to consider promoting `sendInput` actions to a top-level
+  `snippets` array in `settings.json` in the future. That might make sharing
+  them from one user's settings, to a `.wt.json`, and back, a little easier.
 
 #### Community Snippets
 
