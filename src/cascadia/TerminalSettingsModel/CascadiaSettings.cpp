@@ -27,6 +27,7 @@ using namespace Microsoft::Console;
 static constexpr std::wstring_view PasswordVaultResourceName = L"TerminalAI";
 static constexpr std::wstring_view PasswordVaultAIKey = L"TerminalAIKey";
 static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
+static constexpr std::wstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
 
 // Creating a child of a profile requires us to copy certain
 // required attributes. This method handles those attributes.
@@ -1139,6 +1140,47 @@ void CascadiaSettings::AIKey(const winrt::hstring& key) noexcept
     else
     {
         PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIKey, key };
+        vault.Add(newCredential);
+    }
+}
+
+winrt::hstring CascadiaSettings::OpenAIKey() noexcept
+{
+    PasswordVault vault;
+    PasswordCredential cred;
+    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
+    try
+    {
+        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultOpenAIKey);
+    }
+    catch (...)
+    {
+        return L"";
+    }
+    return cred.Password();
+}
+
+void CascadiaSettings::OpenAIKey(const winrt::hstring& key) noexcept
+{
+    PasswordVault vault;
+    if (key.empty())
+    {
+        // the user has entered an empty string, that indicates that we should clear the key
+        PasswordCredential cred;
+        try
+        {
+            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultOpenAIKey);
+        }
+        catch (...)
+        {
+            // there was nothing to remove, just return
+            return;
+        }
+        vault.Remove(cred);
+    }
+    else
+    {
+        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultOpenAIKey, key };
         vault.Add(newCredential);
     }
 }

@@ -17,11 +17,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<AISettingsViewModel>::PropertyChanged;
 
-        bool AreAIKeyAndEndpointSet();
-        winrt::hstring AIEndpoint();
-        void AIEndpoint(winrt::hstring endpoint);
-        winrt::hstring AIKey();
-        void AIKey(winrt::hstring key);
+        bool AreAzureOpenAIKeyAndEndpointSet();
+        winrt::hstring AzureOpenAIEndpoint();
+        void AzureOpenAIEndpoint(winrt::hstring endpoint);
+        winrt::hstring AzureOpenAIKey();
+        void AzureOpenAIKey(winrt::hstring key);
+
+        bool IsOpenAIKeySet();
+        winrt::hstring OpenAIKey();
+        void OpenAIKey(winrt::hstring key);
+
+        GETSET_BINDABLE_ENUM_SETTING(ActiveProvider, Model::LLMProvider, _Settings.GlobalSettings().ActiveProvider);
 
     private:
         Model::CascadiaSettings _Settings;

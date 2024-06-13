@@ -21,32 +21,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AISettingsViewModel::AISettingsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
+        INITIALIZE_BINDABLE_ENUM_SETTING(ActiveProvider, LLMProvider, Model::LLMProvider, L"Globals_LLMProvider", L"Content");
     }
 
-    bool AISettingsViewModel::AreAIKeyAndEndpointSet()
+    bool AISettingsViewModel::AreAzureOpenAIKeyAndEndpointSet()
     {
         return !_Settings.AIKey().empty() && !_Settings.AIEndpoint().empty();
     }
 
-    winrt::hstring AISettingsViewModel::AIEndpoint()
+    winrt::hstring AISettingsViewModel::AzureOpenAIEndpoint()
     {
         return _Settings.AIEndpoint();
     }
 
-    void AISettingsViewModel::AIEndpoint(winrt::hstring endpoint)
+    void AISettingsViewModel::AzureOpenAIEndpoint(winrt::hstring endpoint)
     {
         _Settings.AIEndpoint(endpoint);
-        _NotifyChanges(L"AreAIKeyAndEndpointSet");
+        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
     }
 
-    winrt::hstring AISettingsViewModel::AIKey()
+    winrt::hstring AISettingsViewModel::AzureOpenAIKey()
     {
         return _Settings.AIKey();
     }
 
-    void AISettingsViewModel::AIKey(winrt::hstring key)
+    void AISettingsViewModel::AzureOpenAIKey(winrt::hstring key)
     {
         _Settings.AIKey(key);
-        _NotifyChanges(L"AreAIKeyAndEndpointSet");
+        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
+    }
+
+    bool AISettingsViewModel::IsOpenAIKeySet()
+    {
+        return !_Settings.OpenAIKey().empty();
+    }
+
+    winrt::hstring AISettingsViewModel::OpenAIKey()
+    {
+        return _Settings.OpenAIKey();
+    }
+
+    void AISettingsViewModel::OpenAIKey(winrt::hstring key)
+    {
+        _Settings.OpenAIKey(key);
+        _NotifyChanges(L"IsOpenAIKeySet");
     }
 }

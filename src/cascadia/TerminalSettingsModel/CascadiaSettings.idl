@@ -57,6 +57,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         String AIEndpoint;
         String AIKey;
+        String OpenAIKey;
 
         void ExpandCommands();
     }
