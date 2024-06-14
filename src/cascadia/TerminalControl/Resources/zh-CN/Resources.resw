@@ -316,4 +316,8 @@
     <value>无效</value>
     <comment>This brief message is displayed when a regular expression is invalid.</comment>
   </data>
+  <data name="PreviewTextAnnouncement" xml:space="preserve">
+    <value>建议的输入: {0}</value>
+    <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
+  </data>
 </root>
