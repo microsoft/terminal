@@ -49,17 +49,17 @@ try
         siEx.StartupInfo.wShowWindow = SW_SHOWNORMAL;
 
         std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+        modulePath.replace_filename(runElevated ? ElevateShimExe : WindowsTerminalExe);
+
         std::wstring cmdline;
-        if (runElevated)
-        {
-            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-(-d %s)-", QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
-        }
-        else
-        {
-            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
-        }
+        cmdline.reserve(256); // The WindowsTerminal.exe path is ~110 characters long
+        cmdline.push_back(L'"');
+        cmdline.append(modulePath.native());
+        cmdline.append(LR"(" -d )");
+        QuoteAndEscapeCommandlineArg(pszName.get(), cmdline);
+
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
-            runElevated ? modulePath.replace_filename(ElevateShimExe).c_str() : nullptr, // if elevation requested pass the elevate-shim.exe as the application name
+            modulePath.c_str(),
             cmdline.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
@@ -132,12 +132,11 @@ HRESULT OpenTerminalHere::GetIcon(IShellItemArray* /*psiItemArray*/,
 try
 {
     std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-    modulePath.replace_filename(WindowsTerminalExe);
     // WindowsTerminal.exe,-101 will be the first icon group in WT
     // We're using WindowsTerminal here explicitly, and not wt (from GetWtExePath), because
     // WindowsTerminal is the only one built with the right icons.
-    const auto resource{ modulePath.wstring() + L",-101" };
-    return SHStrDupW(resource.c_str(), ppszIcon);
+    modulePath.replace_filename(L"WindowsTerminal.exe,-101");
+    return SHStrDupW(modulePath.c_str(), ppszIcon);
 }
 CATCH_RETURN();
 
