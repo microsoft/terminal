@@ -207,7 +207,7 @@ Please either install the missing font or choose another one.</value>
     <comment>{0} is a file name</comment>
   </data>
   <data name="PixelShaderCompileFailed" xml:space="preserve">
-    <value>Unable to compile the specified pixel shader.</value>
+    <value>Pixel shader failed to compile: {0}</value>
   </data>
   <data name="UnexpectedRendererError" xml:space="preserve">
     <value>Renderer encountered an unexpected error: {0}</value>

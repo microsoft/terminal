@@ -1154,7 +1154,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto hr = std::bit_cast<uint32_t>(args.Result());
         const auto parameter = args.Parameter();
         winrt::hstring message;
-
+        
         switch (hr)
         {
         case HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND):
@@ -1162,7 +1162,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, parameter) };
             break;
         case D2DERR_SHADER_COMPILE_FAILED:
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") },parameter) };
             break;
         case DWRITE_E_NOFONT:
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };

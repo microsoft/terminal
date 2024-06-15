@@ -452,14 +452,22 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             if (error)
             {
                 LOG_HR_MSG(hr, "%.*hs", static_cast<int>(error->GetBufferSize()), static_cast<char*>(error->GetBufferPointer()));
+                if (p.warningCallback)
+                {
+                    //to handle compile time errors
+                    const char* errorMessage = static_cast<char*>(error->GetBufferPointer());
+                    std::wstring errorMessageWString(errorMessage, errorMessage + strlen(errorMessage));
+                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, errorMessageWString);
+                }
             }
             else
             {
                 LOG_HR(hr);
-            }
-            if (p.warningCallback)
-            {
-                p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, p.s->misc->customPixelShaderPath);
+                if (p.warningCallback)
+                {
+                    //to handle errors such as file not found, path not found, access denied
+                    p.warningCallback(hr, p.s->misc->customPixelShaderPath);
+                }
             }
         }
 
