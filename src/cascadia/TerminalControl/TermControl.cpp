@@ -1175,7 +1175,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             wchar_t buf[512];
             const auto len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &buf[0], ARRAYSIZE(buf), nullptr);
             const std::wstring_view msg{ &buf[0], len };
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorOther") }, hr, msg) };
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorOther") }, hr, msg, parameter) };
             break;
         }
         }

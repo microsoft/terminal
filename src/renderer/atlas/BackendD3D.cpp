@@ -15,6 +15,7 @@
 #include "dwrite.h"
 #include "wic.h"
 #include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/convert.hpp"
 
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
 #include "colorbrewer.h"
@@ -451,18 +452,16 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
         {
             if (error)
             {
-                LOG_HR_MSG(hr, "%.*hs", static_cast<int>(error->GetBufferSize()), static_cast<char*>(error->GetBufferPointer()));
                 if (p.warningCallback)
                 {
                     //to handle compile time errors
-                    const char* errorMessage = static_cast<char*>(error->GetBufferPointer());
-                    std::wstring errorMessageWString(errorMessage, errorMessage + strlen(errorMessage));
-                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, errorMessageWString);
+                    const std::string_view errMsgStrView{ static_cast<const char*>(error->GetBufferPointer()), error->GetBufferSize() };
+                    const auto errMsgWstring = ConvertToW(CP_ACP, errMsgStrView);
+                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, errMsgWstring);
                 }
             }
             else
             {
-                LOG_HR(hr);
                 if (p.warningCallback)
                 {
                     //to handle errors such as file not found, path not found, access denied
