@@ -244,13 +244,6 @@ void SixelParser::_executeNextLine()
     _executeCarriageReturn();
     _imageLineCount++;
     _maybeFlushImageBuffer();
-    // When we move down a line, we're moving the distance of the current sixel
-    // height, but the segment height may have been larger than that, so the
-    // remaining segment height will be inherited by the next line.
-    _segmentHeight -= _sixelHeight;
-    // But even if there isn't anything left to inherit, the new segment height
-    // will be at least as large as the current sixel height.
-    _segmentHeight = std::max(_segmentHeight, _sixelHeight);
     _imageCursor.y += _sixelHeight;
     _availablePixelHeight -= _sixelHeight;
     _resizeImageBuffer(_sixelHeight);
@@ -260,9 +253,6 @@ void SixelParser::_executeMoveToHome()
 {
     _executeCarriageReturn();
     _maybeFlushImageBuffer();
-    // Since we're moving up to the top of the image, the new segment will now
-    // also include everything above the current cursor position.
-    _segmentHeight += _imageCursor.y;
     _imageCursor.y = 0;
     _availablePixelHeight = _textMargins.height() * _cellSize.height;
 }
@@ -295,6 +285,10 @@ bool SixelParser::_initTextBufferBoundaries()
         validOrigin = _textCursor.x >= leftMargin && _textCursor.x <= rightMargin && _textCursor.y <= bottomMargin;
     }
     _pendingTextScrollCount = 0;
+
+    // The pixel aspect ratio can't be so large that it would prevent a sixel
+    // row from fitting within the margin height, so we need to have a limit.
+    _maxPixelAspectRatio = _textMargins.height() * _cellSize.height / 6;
 
     // If the cursor is visible, we need to hide it while the sixel data is
     // being processed. It will be made visible again when we're done.
@@ -370,7 +364,7 @@ void SixelParser::_updateRasterAttributes(const VTParameters& rasterAttributes)
     {
         // The documentation suggests the aspect ratio is rounded to the nearest
         // integer, but on the original VT340 hardware it was rounded up.
-        _pixelAspectRatio = std::clamp(static_cast<int>(std::ceil(yAspect * 1.0 / xAspect)), 1, 100);
+        _pixelAspectRatio = std::clamp(static_cast<int>(std::ceil(yAspect * 1.0 / xAspect)), 1, _maxPixelAspectRatio);
         _sixelHeight = 6 * _pixelAspectRatio;
         // When the sixel height is changed multiple times in a row, the segment
         // height has to track the maximum of all the sixel heights used.
@@ -753,6 +747,11 @@ void SixelParser::_maybeFlushImageBuffer(const bool endOfSequence)
             _availablePixelHeight += _cellSize.height;
         }
     }
+
+    // Once we've calculated how much scrolling was necessary for the existing
+    // segment height, we don't need to track that any longer. The next segment
+    // will start with the active sixel height.
+    _segmentHeight = _sixelHeight;
 
     // This method is called after every newline (DECGNL), but we don't want to
     // render partial output for high speed image sequences like video, so we

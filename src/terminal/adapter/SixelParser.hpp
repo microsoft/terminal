@@ -82,6 +82,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _textCursorWasVisible;
         til::CoordType _availablePixelWidth;
         til::CoordType _availablePixelHeight;
+        til::CoordType _maxPixelAspectRatio;
         til::CoordType _pixelAspectRatio;
         til::CoordType _sixelHeight;
         til::CoordType _segmentHeight;
