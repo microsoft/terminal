@@ -24,7 +24,10 @@
 #endif
 
 #if !defined(TIL_HASH_32BIT)
-#include "rapidhash.h"
+#pragma warning(push)
+#pragma warning(disable : 4702) // unreachable code
+#include <rapidhash.h>
+#pragma warning(pop)
 #endif
 
 namespace til
@@ -56,7 +59,10 @@ namespace til
 #if defined(TIL_HASH_32BIT)
             _hash = _wyhash32(data, len, _hash);
 #else
+#pragma warning(push)
+#pragma warning(disable : 26447) // rapidhash_withSeed lacks noexcept qualifier
             _hash = rapidhash_withSeed(data, len, _hash);
+#pragma warning(pop)
 #endif
             return *this;
         }
