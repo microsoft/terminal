@@ -123,8 +123,8 @@ static const uint64_t rapid_secret[3] = { 0x2d358dccaa6c78a5ull, 0x8bb84b93962ea
  *  Calculates 128-bit C = *A * *B.
  *
  *  When RAPIDHASH_FAST is defined:
- *  Overwritres A contents with C's low 64 bits.
- *  Overwritres B contents with C's high 64 bits.
+ *  Overwrites A contents with C's low 64 bits.
+ *  Overwrites B contents with C's high 64 bits.
  *
  *  When RAPIDHASH_PROTECTED is defined:
  *  Xors and overwrites A contents with C's low 64 bits.
@@ -263,7 +263,7 @@ static inline uint64_t rapid_read32(const uint8_t* p)
  *  Always reads and combines 3 bytes from memory.
  *  Guarantees to read each buffer position at least once.
  *  
- *  Returns a 64-bit value contaning all three bytes read. 
+ *  Returns a 64-bit value containing all three bytes read. 
  */
 static inline uint64_t rapid_readSmall(const uint8_t* p, size_t k) RAPIDHASH_NOEXCEPT { return ((static_cast<uint64_t>(p[0])) << 56) | ((static_cast<uint64_t>(p[k >> 1])) << 32) | p[k - 1]; }
 

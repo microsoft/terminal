@@ -269,7 +269,6 @@ CONSOLEWINDOWOWNER
 consrv
 constexprable
 constness
-contaning
 contentfiles
 conterm
 contsf
@@ -1257,7 +1256,6 @@ OUTOFCONTEXT
 Outptr
 outstr
 OVERLAPPEDWINDOW
-Overwritres
 OWNDC
 owneralias
 OWNERDRAWFIXED
