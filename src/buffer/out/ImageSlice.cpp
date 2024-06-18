@@ -56,12 +56,16 @@ RGBQUAD* ImageSlice::MutablePixels(const til::CoordType columnBegin, const til::
             // If there is existing data in the buffer, we need to copy it
             // across to the appropriate position in the new buffer.
             auto newPixelBuffer = std::vector<RGBQUAD>(bufferSize);
-            const auto newOffset = (oldColumnBegin - _columnBegin) * _cellSize.width;
-            auto newIterator = std::next(newPixelBuffer.data(), newOffset);
+            const auto newPixelOffset = (oldColumnBegin - _columnBegin) * _cellSize.width;
+            auto newIterator = std::next(newPixelBuffer.data(), newPixelOffset);
             auto oldIterator = _pixelBuffer.data();
+            // Because widths are rounded up to multiples of 4, it's possible
+            // that the old width will extend past the right border of the new
+            // buffer, so the range that we copy must be clamped to fit.
+            const auto newPixelRange = std::min(oldPixelWidth, _pixelWidth - newPixelOffset);
             for (auto i = 0; i < _cellSize.height; i++)
             {
-                std::memcpy(newIterator, oldIterator, oldPixelWidth * sizeof(RGBQUAD));
+                std::memcpy(newIterator, oldIterator, newPixelRange * sizeof(RGBQUAD));
                 std::advance(oldIterator, oldPixelWidth);
                 std::advance(newIterator, _pixelWidth);
             }
