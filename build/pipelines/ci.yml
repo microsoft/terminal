@@ -100,10 +100,3 @@ stages:
               platform: ${{ platform }}
               # The tests might be run more than once; log one artifact per attempt.
               outputArtifactStem: -$(System.JobAttempt)
-
-  - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
-    - stage: CodeIndexer
-      displayName: GitHub CodeNav Indexer
-      dependsOn: []
-      jobs:
-        - template: ./templates-v2/job-index-github-codenav.yml
