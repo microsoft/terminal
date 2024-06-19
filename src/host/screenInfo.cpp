@@ -2461,8 +2461,10 @@ void SCREEN_INFORMATION::UpdateBottom()
 // - the virtual terminal viewport
 Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
 {
-    const auto newTop = _virtualBottom - _viewport.Height() + 1;
-    return Viewport::FromDimensions({ _viewport.Left(), newTop }, _viewport.Dimensions());
+    const auto viewportHeight = _viewport.Height();
+    const auto bufferWidth = _textBuffer->GetSize().Width();
+    const auto top = std::max(0, _virtualBottom - viewportHeight + 1);
+    return Viewport::FromExclusive({ 0, top, bufferWidth, top + viewportHeight });
 }
 
 // Method Description:
