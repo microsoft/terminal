@@ -188,7 +188,7 @@ public:
                                                                                   initialAttributes,
                                                                                   uiCursorSize,
                                                                                   true,
-                                                                                  *g.pRender);
+                                                                                  g.pRender);
             if (textBuffer.get() == nullptr)
             {
                 m_hrTextBufferInfo = E_OUTOFMEMORY;
