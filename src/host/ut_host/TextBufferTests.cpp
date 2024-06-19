@@ -1955,7 +1955,7 @@ void TextBufferTests::TestOverwriteChars()
     til::size bufferSize{ 10, 3 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, &_renderer };
     auto& row = buffer.GetMutableRowByOffset(0);
 
 // scientist emoji U+1F9D1 U+200D U+1F52C
@@ -2011,7 +2011,7 @@ void TextBufferTests::TestReplace()
     static constexpr til::size bufferSize{ 10, 3 };
     static constexpr UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, &_renderer };
 
 #define complex L"\U0001F41B"
 
@@ -2093,7 +2093,7 @@ void TextBufferTests::TestInsert()
     static constexpr TextAttribute attr1{ 0x11111111, 0x00000000 };
     static constexpr TextAttribute attr2{ 0x22222222, 0x00000000 };
     static constexpr TextAttribute attr3{ 0x33333333, 0x00000000 };
-    TextBuffer buffer{ bufferSize, attr1, cursorSize, false, _renderer };
+    TextBuffer buffer{ bufferSize, attr1, cursorSize, false, &_renderer };
 
     struct Test
     {
