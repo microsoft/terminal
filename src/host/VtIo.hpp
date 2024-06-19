@@ -20,6 +20,9 @@ namespace Microsoft::Console::VirtualTerminal
     class VtIo
     {
     public:
+        static void FormatAttributes(std::string& target, WORD attributes);
+        static void FormatAttributes(std::wstring& target, WORD attributes);
+
         VtIo();
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);

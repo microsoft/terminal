@@ -497,3 +497,45 @@ bool VtIo::IsResizeQuirkEnabled() const
     }
     return S_OK;
 }
+
+static size_t formatAttributes(char (&buffer)[16], WORD attributes) noexcept
+{
+    const uint8_t rv = WI_IsFlagSet(attributes, COMMON_LVB_REVERSE_VIDEO) ? 7 : 27;
+    uint8_t fg = 39;
+    uint8_t bg = 49;
+
+    // `attributes` of exactly `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED`
+    // are often used to indicate the default colors in Windows Console applications.
+    // Thus, we translate them to 39/49 (default foreground/background).
+    if ((attributes & (FG_ATTRS | BG_ATTRS)) != (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED))
+    {
+        // The Console API represents colors in BGR order, but VT represents them in RGB order.
+        // This LUT transposes them. This is for foreground colors. Add +10 to get the background ones.
+        static const uint8_t lut[] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97 };
+        fg = lut[attributes & 0xf];
+        bg = lut[(attributes >> 4) & 0xf] + 10;
+    }
+
+    return fmt::format_to(&buffer[0], FMT_COMPILE("\x1b[{};{};{}m"), rv, fg, bg) - &buffer[0];
+}
+
+void VtIo::FormatAttributes(std::string& target, WORD attributes)
+{
+    char buf[16];
+    const auto len = formatAttributes(buf, attributes);
+    target.append(buf, len);
+}
+
+void VtIo::FormatAttributes(std::wstring& target, WORD attributes)
+{
+    char buf[16];
+    const auto len = formatAttributes(buf, attributes);
+
+    wchar_t bufW[16];
+    for (size_t i = 0; i < len; i++)
+    {
+        bufW[i] = buf[i];
+    }
+
+    target.append(bufW, len);
+}
