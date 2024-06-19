@@ -1894,7 +1894,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto lock = _terminal->LockForWriting();
 
         auto& renderSettings = _terminal->GetRenderSettings();
-        renderSettings.ToggleBlinkRendition(*_renderer);
+        renderSettings.ToggleBlinkRendition(_renderer.get());
     }
 
     void ControlCore::BlinkCursor()
