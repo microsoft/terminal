@@ -206,6 +206,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             writer.Submit();
         }
 
+        screenInfo.SnapOnOutput();
         return;
     }
 
@@ -328,6 +329,8 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     {
         writer.Submit();
     }
+
+    screenInfo.SnapOnOutput();
 }
 
 // This is the main entrypoint for conhost to write VT to the buffer.
@@ -375,6 +378,8 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
         write(offset, std::wstring_view::npos);
         writer.Submit();
     }
+
+    screenInfo.SnapOnOutput();
 }
 
 // Erases all contents of the given screenInfo, including the current screen and scrollback.

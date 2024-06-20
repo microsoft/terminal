@@ -1669,39 +1669,85 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const til::point CursorPosition)
+static constexpr bool IsInputKey(WORD vkey)
 {
-    til::point WindowOrigin;
+    return vkey != VK_CONTROL &&
+           vkey != VK_LCONTROL &&
+           vkey != VK_RCONTROL &&
+           vkey != VK_MENU &&
+           vkey != VK_LMENU &&
+           vkey != VK_RMENU &&
+           vkey != VK_SHIFT &&
+           vkey != VK_LSHIFT &&
+           vkey != VK_RSHIFT &&
+           vkey != VK_LWIN &&
+           vkey != VK_RWIN &&
+           vkey != VK_SNAPSHOT;
+}
 
-    if (CursorPosition.x > _viewport.RightInclusive())
+void SCREEN_INFORMATION::MakeCursorVisible(til::point position)
+{
+    _makeLocationVisible(position, ViewportMovementMask::Vertical | ViewportMovementMask::Horizontal);
+}
+
+void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
+{
+    if (IsInputKey(vkey))
     {
-        WindowOrigin.x = CursorPosition.x - _viewport.RightInclusive();
+        _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), ViewportMovementMask::Vertical);
     }
-    else if (CursorPosition.x < _viewport.Left())
+}
+
+void SCREEN_INFORMATION::SnapOnOutput()
+{
+    _makeLocationVisible(_textBuffer->GetCursor().GetPosition(), ViewportMovementMask::HorizontalCenter);
+}
+
+void SCREEN_INFORMATION::_makeLocationVisible(til::point position, ViewportMovementMask movements)
+{
+    const auto viewportOrigin = _viewport.Origin();
+    const auto viewportSize = _viewport.Dimensions();
+    const auto bufferSize = _textBuffer->GetSize().Dimensions();
+    auto origin = viewportOrigin;
+
+    // Ensure the given position is in bounds.
+    position.x = std::clamp(position.x, 0, bufferSize.width - 1);
+    position.y = std::clamp(position.y, 0, bufferSize.height - 1);
+
+    if (WI_IsAnyFlagSet(movements, ViewportMovementMask::Vertical))
     {
-        WindowOrigin.x = CursorPosition.x - _viewport.Left();
-    }
-    else
-    {
-        WindowOrigin.x = 0;
+        origin.y = std::min(origin.y, position.y); // shift up if above
+        origin.y = std::max(origin.y, position.y - (viewportSize.height - 1)); // shift down if below
     }
 
-    if (CursorPosition.y > _viewport.BottomInclusive())
+    if (WI_IsAnyFlagSet(movements, ViewportMovementMask::Horizontal))
     {
-        WindowOrigin.y = CursorPosition.y - _viewport.BottomInclusive();
-    }
-    else if (CursorPosition.y < _viewport.Top())
-    {
-        WindowOrigin.y = CursorPosition.y - _viewport.Top();
-    }
-    else
-    {
-        WindowOrigin.y = 0;
+        origin.x = std::min(origin.x, position.x); // shift left if left
+        origin.x = std::max(origin.x, position.x - (viewportSize.width - 1)); // shift right if right
     }
 
-    if (WindowOrigin.x != 0 || WindowOrigin.y != 0)
+    if (WI_IsAnyFlagSet(movements, ViewportMovementMask::HorizontalCenter))
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, false));
+        // If the position is horizontally outside the viewport, snap the
+        // viewport to the nearest multiple of half the viewport width.
+        if (position.x < origin.x || position.x >= (origin.x + viewportSize.width))
+        {
+            const auto div = viewportSize.width / 2;
+            // We want our viewport to be centered around the position (= "half-width" offset).
+            // Since the origin is the left edge, we must subtract a half-width from the position.
+            origin.x = position.x - div;
+            // Round down to the nearest multiple of the viewport width.
+            // This also works if origin.x is negative, because the "modulo operator"
+            // is not a modulo operator, it's a remainder operator. The remainder of a
+            // negative number is negative and so origin.x cannot end up being less than 0.
+            origin.x -= origin.x % div;
+            origin.x = std::min(origin.x, bufferSize.width - viewportSize.width);
+        }
+    }
+
+    if (origin != viewportOrigin)
+    {
+        std::ignore = SetViewportOrigin(true, origin, false);
     }
 }
 

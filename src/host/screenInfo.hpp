@@ -47,6 +47,14 @@ Revision History:
 #include "../types/inc/Viewport.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
+enum class ViewportMovementMask
+{
+    Vertical = 0x1,
+    Horizontal = 0x2,
+    HorizontalCenter = 0x4,
+};
+DEFINE_ENUM_FLAG_OPERATORS(ViewportMovementMask);
+
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
@@ -71,6 +79,9 @@ public:
     void GetRequiredConsoleSizeInPixels(_Out_ til::size* const pRequiredSize) const;
 
     void MakeCurrentCursorVisible();
+    void MakeCursorVisible(til::point position);
+    void SnapOnInput(WORD vkey);
+    void SnapOnOutput();
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
@@ -184,8 +195,6 @@ public:
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
 
-    void MakeCursorVisible(const til::point CursorPosition);
-
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
 
@@ -235,6 +244,7 @@ private:
     void _CalculateViewportSize(const til::rect* const prcClientArea, _Out_ til::size* const pcoordSize);
     void _AdjustViewportSize(const til::rect* const prcClientNew, const til::rect* const prcClientOld, const til::size* const pcoordSize);
     void _InternalSetViewportSize(const til::size* pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
+    void _makeLocationVisible(til::point position, ViewportMovementMask movements);
 
     static void s_CalculateScrollbarVisibility(const til::rect* const prcClientArea,
                                                const til::size* const pcoordBufferSize,
