@@ -3013,7 +3013,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             };
             newRow.CopyTextFrom(state);
 
-            // If we're at the start of the old row, copy it's image content.
+            // If we're at the start of the old row, copy its image content.
             if (oldX == 0)
             {
                 ImageSlice::CopyRow(oldRow, newRow);
