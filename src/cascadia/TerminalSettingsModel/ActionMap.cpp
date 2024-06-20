@@ -108,9 +108,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         if (cmdID == pair.first)
                         {
                             keysToReassign.insert_or_assign(key, inboxCmd->second.ID());
-
-                            // register the keys with the inbox action
-                            inboxCmd->second.RegisterKey(key);
                         }
                     }
 
@@ -239,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_NameMapCache)
         {
-            if (!_CumulativeActionMapCache)
+            if (_CumulativeIDToActionMapCache.empty())
             {
                 _RefreshKeyBindingCaches();
             }
@@ -298,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nameMap: the nameMap we're populating, this maps the name (hstring) of a command to the command itself
     void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
-        for (const auto& [_, cmd] : _CumulativeActionMapCache)
+        for (const auto& [_, cmd] : _CumulativeIDToActionMapCache)
         {
             const auto& name{ cmd.Name() };
             if (!name.empty())
@@ -318,22 +315,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Recursively populate keyBindingsMap with ours and our parents' key -> id pairs
+    // - Recursively populate keyToActionMap with ours and our parents' key -> id pairs
+    // - Recursively populate actionToKeyMap with ours and our parents' id -> key pairs
     // - This is a bottom-up approach
-    // - Keybindings of the parents are overridden by the children
-    void ActionMap::_PopulateCumulativeKeyMap(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyBindingsMap)
+    // - Child's pairs override parents' pairs
+    void ActionMap::_PopulateCumulativeKeyMaps(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyToActionMap, std::unordered_map<winrt::hstring, Control::KeyChord>& actionToKeyMap)
     {
         for (const auto& [keys, cmdID] : _KeyMap)
         {
-            if (!keyBindingsMap.contains(keys))
+            if (!keyToActionMap.contains(keys))
             {
-                keyBindingsMap.emplace(keys, cmdID);
+                keyToActionMap.emplace(keys, cmdID);
+            }
+            if (!actionToKeyMap.contains(cmdID))
+            {
+                actionToKeyMap.emplace(cmdID, keys);
             }
         }
 
         for (const auto& parent : _parents)
         {
-            parent->_PopulateCumulativeKeyMap(keyBindingsMap);
+            parent->_PopulateCumulativeKeyMaps(keyToActionMap, actionToKeyMap);
         }
     }
 
@@ -368,28 +370,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
-        if (!_ResolvedKeyActionMapCache)
+        if (!_ResolvedKeyToActionMapCache)
         {
             _RefreshKeyBindingCaches();
         }
-        return _ResolvedKeyActionMapCache.GetView();
+        return _ResolvedKeyToActionMapCache.GetView();
     }
 
     void ActionMap::_RefreshKeyBindingCaches()
     {
+        _CumulativeKeyToActionMapCache.clear();
+        _CumulativeIDToActionMapCache.clear();
+        _CumulativeActionToKeyMapCache.clear();
         std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
-        std::unordered_map<KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> accumulatedKeybindingsMap;
-        std::unordered_map<winrt::hstring, Model::Command> accumulatedActionsMap;
-        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyActionMap;
+        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> resolvedKeyToActionMap;
 
-        _PopulateCumulativeKeyMap(accumulatedKeybindingsMap);
-        _PopulateCumulativeActionMap(accumulatedActionsMap);
+        _PopulateCumulativeKeyMaps(_CumulativeKeyToActionMapCache, _CumulativeActionToKeyMapCache);
+        _PopulateCumulativeActionMap(_CumulativeIDToActionMapCache);
 
-        for (const auto& [keys, cmdID] : accumulatedKeybindingsMap)
+        for (const auto& [keys, cmdID] : _CumulativeKeyToActionMapCache)
         {
-            if (const auto idCmdPair = accumulatedActionsMap.find(cmdID); idCmdPair != accumulatedActionsMap.end())
+            if (const auto idCmdPair = _CumulativeIDToActionMapCache.find(cmdID); idCmdPair != _CumulativeIDToActionMapCache.end())
             {
-                resolvedKeyActionMap.emplace(keys, idCmdPair->second);
+                resolvedKeyToActionMap.emplace(keys, idCmdPair->second);
 
                 // Only populate GlobalHotkeys with actions whose
                 // ShortcutAction is GlobalSummon or QuakeMode
@@ -400,9 +403,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        _CumulativeKeyMapCache = single_threaded_map(std::move(accumulatedKeybindingsMap));
-        _CumulativeActionMapCache = single_threaded_map(std::move(accumulatedActionsMap));
-        _ResolvedKeyActionMapCache = single_threaded_map(std::move(resolvedKeyActionMap));
+        _ResolvedKeyToActionMapCache = single_threaded_map(std::move(resolvedKeyToActionMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
     }
 
@@ -446,7 +447,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Adds a command to the ActionMap
     // Arguments:
     // - cmd: the command we're adding
-    void ActionMap::AddAction(const Model::Command& cmd)
+    void ActionMap::AddAction(const Model::Command& cmd, const Control::KeyChord& keys)
     {
         // _Never_ add null to the ActionMap
         if (!cmd)
@@ -455,11 +456,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // invalidate caches
+        _CumulativeKeyToActionMapCache.clear();
+        _CumulativeIDToActionMapCache.clear();
+        _CumulativeActionToKeyMapCache.clear();
         _NameMapCache = nullptr;
         _GlobalHotkeysCache = nullptr;
-        _CumulativeKeyMapCache = nullptr;
-        _CumulativeActionMapCache = nullptr;
-        _ResolvedKeyActionMapCache = nullptr;
+        _ResolvedKeyToActionMapCache = nullptr;
 
         // Handle nested commands
         const auto cmdImpl{ get_self<Command>(cmd) };
@@ -486,7 +488,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //  Add the new keybinding to the _KeyMap
 
         _TryUpdateActionMap(cmd);
-        _TryUpdateKeyChord(cmd);
+        _TryUpdateKeyChord(cmd, keys);
     }
 
     // Method Description:
@@ -545,26 +547,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Update our internal state with the key chord of the newly registered action
     // Arguments:
     // - cmd: the action we're trying to register
-    void ActionMap::_TryUpdateKeyChord(const Model::Command& cmd)
+    void ActionMap::_TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys)
     {
         // Example (this is a legacy case, where the keys are provided in the same block as the command):
         //   {                "command": "copy", "keys": "ctrl+c" } --> we are registering a new key chord
         //   { "name": "foo", "command": "copy" }                   --> no change to keys, exit early
-        const auto keys{ cmd.Keys() };
         if (!keys)
         {
             // the user is not trying to update the keys.
             return;
-        }
-
-        // Handle collisions
-        if (const auto foundCommand = _GetActionByKeyChordInternal(keys); foundCommand && *foundCommand)
-        {
-            // collision: the key chord is bound to some command, make sure that command erases
-            //            this key chord as we are about to overwrite it
-
-            const auto foundCommandImpl{ get_self<implementation::Command>(*foundCommand) };
-            foundCommandImpl->EraseKey(keys);
         }
 
         // Assign the new action in the _KeyMap
@@ -603,6 +594,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     Model::Command ActionMap::GetActionByKeyChord(const Control::KeyChord& keys) const
     {
         return _GetActionByKeyChordInternal(keys).value_or(nullptr);
+    }
+
+    Model::Command ActionMap::GetActionByID(const winrt::hstring& cmdID) const
+    {
+        return _GetActionByID(cmdID);
     }
 
     // Method Description:
@@ -670,12 +666,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the key chord that executes the given action
     // - nullptr if the action is not bound to a key chord
-    Control::KeyChord ActionMap::GetKeyBindingForAction(const winrt::hstring& cmdID) const
+    Control::KeyChord ActionMap::GetKeyBindingForAction(const winrt::hstring& cmdID)
     {
-        // Check our internal state.
-        if (const auto cmd{ _GetActionByID(cmdID) })
+        if (!_ResolvedKeyToActionMapCache)
         {
-            return cmd.Keys();
+            _RefreshKeyBindingCaches();
+        }
+
+        if (_CumulativeActionToKeyMapCache.contains(cmdID))
+        {
+            return _CumulativeActionToKeyMapCache.at(cmdID);
         }
 
         // This key binding does not exist
@@ -710,11 +710,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _KeyMap.insert_or_assign(newKeys, cmd.ID());
             _KeyMap.insert_or_assign(oldKeys, L"");
         }
-
-        // make sure to update the Command with these changes
-        const auto cmdImpl{ get_self<implementation::Command>(cmd) };
-        cmdImpl->EraseKey(oldKeys);
-        cmdImpl->RegisterKey(newKeys);
 
         return true;
     }
@@ -753,10 +748,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action)
     {
         auto cmd{ make_self<Command>() };
-        cmd->RegisterKey(keys);
         cmd->ActionAndArgs(action);
         cmd->GenerateID();
-        AddAction(*cmd);
+        AddAction(*cmd, keys);
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

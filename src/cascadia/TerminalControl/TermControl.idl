@@ -127,6 +127,7 @@ namespace Microsoft.Terminal.Control
         CommandHistoryContext CommandHistory();
 
         void AdjustOpacity(Single Opacity, Boolean relative);
+        void PreviewInput(String text);
 
         // You'd think this should just be "Opacity", but UIElement already
         // defines an "Opacity", which we're actually not setting at all. We're
