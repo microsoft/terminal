@@ -493,7 +493,7 @@ able to read snippets from the directory they `ssh`'d _from_ locally.
   `startingDirectory` (regardless of shell integration being enabled)
 * [ ] [#5790] - profile specific actions
 * [ ] [#12857] Ability to save selected text as a `sendInput` action
-* [x] [#12861] Re-evaluate showing some sort of "ghost text or other preview for snippets
+* [x] [#12861] Re-evaluate showing some sort of "ghost text" or other preview for snippets
 
 ### 🏃‍♂️ Run
 * [ ] When the user `cd`s to a directory (with shell integration enabled), the
