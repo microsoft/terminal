@@ -1542,7 +1542,7 @@ void TextBufferTests::ResizeTraditional()
     const til::size smallSize = { 5, 5 };
     const TextAttribute defaultAttr(0);
 
-    TextBuffer buffer(smallSize, defaultAttr, 12, false, _renderer);
+    TextBuffer buffer(smallSize, defaultAttr, 12, false, &_renderer);
 
     Log::Comment(L"Fill buffer with some data and do assorted resize operations.");
 
@@ -1638,7 +1638,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer
     const til::point pos{ 2, 1 };
@@ -1679,7 +1679,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer
     const til::point pos{ 2, 1 };
@@ -1714,7 +1714,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer in the bottom row
     const til::point pos{ 0, bufferSize.height - 1 };
@@ -1744,7 +1744,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer in the last column (-2 as the inserted character is 2 columns wide).
     const til::point pos{ bufferSize.width - 2, 0 };
@@ -1771,7 +1771,7 @@ void TextBufferTests::TestOverwriteChars()
     til::size bufferSize{ 10, 3 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, &_renderer };
     auto& row = buffer.GetMutableRowByOffset(0);
 
 // scientist emoji U+1F9D1 U+200D U+1F52C
@@ -1827,7 +1827,7 @@ void TextBufferTests::TestReplace()
     static constexpr til::size bufferSize{ 10, 3 };
     static constexpr UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, &_renderer };
 
 #define complex L"\U0001F41B"
 
@@ -1909,7 +1909,7 @@ void TextBufferTests::TestInsert()
     static constexpr TextAttribute attr1{ 0x11111111, 0x00000000 };
     static constexpr TextAttribute attr2{ 0x22222222, 0x00000000 };
     static constexpr TextAttribute attr3{ 0x33333333, 0x00000000 };
-    TextBuffer buffer{ bufferSize, attr1, cursorSize, false, _renderer };
+    TextBuffer buffer{ bufferSize, attr1, cursorSize, false, &_renderer };
 
     struct Test
     {
@@ -2048,7 +2048,7 @@ void TextBufferTests::GetWordBoundaries()
     til::size bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"word other",
@@ -2264,7 +2264,7 @@ void TextBufferTests::MoveByWord()
     til::size bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"word other",
@@ -2371,7 +2371,7 @@ void TextBufferTests::GetGlyphBoundaries()
     til::size bufferSize{ 10, 10 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // This is the burrito emoji: 🌯
     // It's encoded in UTF-16, as needed by the buffer.
@@ -2407,7 +2407,7 @@ void TextBufferTests::GetTextRects()
     til::size bufferSize{ 20, 50 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"0123456789",
@@ -2487,7 +2487,7 @@ void TextBufferTests::GetPlainText()
         til::size bufferSize{ 10, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
-        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
         // Setup: Write lines of text to the buffer
         const std::vector<std::wstring> bufferText = { L"12345",
@@ -2575,7 +2575,7 @@ void TextBufferTests::GetPlainText()
         til::size bufferSize{ 5, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
-        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
         // Setup: Write lines of text to the buffer
         const std::vector<std::wstring> bufferText = { L"1234567",
@@ -2704,7 +2704,7 @@ void TextBufferTests::HyperlinkTrim()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     static constexpr std::wstring_view url{ L"test.url" };
     static constexpr std::wstring_view otherUrl{ L"other.url" };
@@ -2750,7 +2750,7 @@ void TextBufferTests::NoHyperlinkTrim()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     static constexpr std::wstring_view url{ L"test.url" };
     static constexpr std::wstring_view customId{ L"CustomId" };
@@ -2902,7 +2902,7 @@ void TextBufferTests::ReflowPromptRegions()
 
     // After we resize, make sure to get the new textBuffers
     til::size newSize{ oldSize.Width() + dx, oldSize.Height() };
-    auto newBuffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, _renderer);
+    auto newBuffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, &_renderer);
     TextBuffer::Reflow(*tbi, *newBuffer);
 
     Log::Comment(L"========== Checking the host buffer state (after) ==========");
