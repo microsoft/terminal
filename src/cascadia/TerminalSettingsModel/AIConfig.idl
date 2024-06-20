@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "IInheritable.idl.h"
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum LLMProvider
+    {
+        AzureOpenAI,
+        OpenAI
+    };
+
+    [default_interface] runtimeclass AIConfig {
+        INHERITABLE_SETTING(LLMProvider, ActiveProvider);
+    }
+}
