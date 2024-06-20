@@ -1894,7 +1894,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto lock = _terminal->LockForWriting();
 
         auto& renderSettings = _terminal->GetRenderSettings();
-        renderSettings.ToggleBlinkRendition(*_renderer);
+        renderSettings.ToggleBlinkRendition(_renderer.get());
     }
 
     void ControlCore::BlinkCursor()
@@ -2893,4 +2893,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _clickedOnMark(_contextMenuBufferPosition,
                               [](const ::MarkExtents& m) -> bool { return !m.HasOutput(); });
     }
+
+    void ControlCore::PreviewInput(std::wstring_view input)
+    {
+        _terminal->PreviewText(input);
+    }
+
 }

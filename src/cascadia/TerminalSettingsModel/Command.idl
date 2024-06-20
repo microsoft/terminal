@@ -37,6 +37,9 @@ namespace Microsoft.Terminal.Settings.Model
 
         String Name { get; };
         String ID { get; };
+
+        String Description { get; };
+
         ActionAndArgs ActionAndArgs { get; };
 
         String IconPath;

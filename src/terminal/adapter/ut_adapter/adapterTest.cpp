@@ -250,7 +250,7 @@ public:
         _setTextAttributesResult = TRUE;
         _returnResponseResult = TRUE;
 
-        _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
+        _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, &_renderer);
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _viewport.top = 20;
@@ -406,7 +406,7 @@ public:
             _terminalInput = TerminalInput{};
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
-            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
+            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, &renderer, renderSettings, _terminalInput);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -2448,7 +2448,7 @@ public:
         Log::Comment(L"Starting test...");
 
         til::inclusive_rect srTestMargins;
-        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, &_testGetSet->_renderer);
         _testGetSet->_viewport.right = 8;
         _testGetSet->_viewport.bottom = 8;
         auto sScreenHeight = _testGetSet->_viewport.bottom - _testGetSet->_viewport.top;

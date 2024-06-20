@@ -316,4 +316,8 @@ Installez la police manquante ou choisissez-en une autre.</value>
     <value>incorrect</value>
     <comment>This brief message is displayed when a regular expression is invalid.</comment>
   </data>
+  <data name="PreviewTextAnnouncement" xml:space="preserve">
+    <value>Entrée suggérée : {0}</value>
+    <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
+  </data>
 </root>

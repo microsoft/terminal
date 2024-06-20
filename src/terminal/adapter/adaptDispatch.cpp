@@ -17,7 +17,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 static constexpr std::wstring_view whitespace{ L" " };
 
-AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept :
+AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept :
     _api{ api },
     _renderer{ renderer },
     _renderSettings{ renderSettings },
@@ -1947,7 +1947,10 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         {
             return false;
         }
-        _renderer.TriggerRedrawAll();
+        if (_renderer)
+        {
+            _renderer->TriggerRedrawAll();
+        }
         return true;
     case DispatchTypes::ModeParams::DECOM_OriginMode:
         _modes.set(Mode::Origin, enable);
@@ -3250,7 +3253,10 @@ bool AdaptDispatch::HardReset()
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
 
     // Clear the soft font in the renderer and delete the font buffer.
-    _renderer.UpdateSoftFont({}, {}, false);
+    if (_renderer)
+    {
+        _renderer->UpdateSoftFont({}, {}, false);
+    }
     _fontBuffer = nullptr;
 
     // Reset internal modes to their initial state
@@ -3530,18 +3536,20 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
         return false;
     }
 
-    // If we're updating the background color, we need to let the renderer
-    // know, since it may want to repaint the window background to match.
-    const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
-    const auto backgroundChanged = (tableIndex == backgroundIndex);
+    if (_renderer)
+    {
+        // If we're updating the background color, we need to let the renderer
+        // know, since it may want to repaint the window background to match.
+        const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+        const auto backgroundChanged = (tableIndex == backgroundIndex);
 
-    // Similarly for the frame color, the tab may need to be repainted.
-    const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
-    const auto frameChanged = (tableIndex == frameIndex);
+        // Similarly for the frame color, the tab may need to be repainted.
+        const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+        const auto frameChanged = (tableIndex == frameIndex);
 
-    // Update the screen colors if we're not a pty
-    // No need to force a redraw in pty mode.
-    _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
+        _renderer->TriggerRedrawAll(backgroundChanged, frameChanged);
+    }
+
     return true;
 }
 
@@ -3595,14 +3603,19 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     }
 
     // No need to force a redraw in pty mode.
-    const auto inPtyMode = _api.IsConsolePty();
-    if (!inPtyMode)
+    if (_api.IsConsolePty())
+    {
+        return false;
+    }
+
+    if (_renderer)
     {
         const auto backgroundChanged = item == DispatchTypes::ColorItem::NormalText;
         const auto frameChanged = item == DispatchTypes::ColorItem::WindowFrame;
-        _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
+        _renderer->TriggerRedrawAll(backgroundChanged, frameChanged);
     }
-    return !inPtyMode;
+
+    return true;
 }
 
 //Routine Description:
@@ -3798,11 +3811,11 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
     const auto isConPty = _api.IsConsolePty();
-    if (isConPty)
+    if (isConPty && _renderer)
     {
         // Flush the frame manually, to make sure marks end up on the right
         // line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3842,11 +3855,11 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
     const auto isConPty = _api.IsConsolePty();
-    if (isConPty)
+    if (isConPty && _renderer)
     {
         // Flush the frame manually, to make sure marks end up on the right
         // line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3933,10 +3946,10 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 {
     // This is not implemented in conhost.
-    if (_api.IsConsolePty())
+    if (_api.IsConsolePty() && _renderer)
     {
         // Flush the frame manually to make sure this action happens at the right time.
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
         return false;
     }
 
@@ -4099,10 +4112,13 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
             {
                 _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
             }
-            const auto bitPattern = _fontBuffer->GetBitPattern();
-            const auto cellSize = _fontBuffer->GetCellSize();
-            const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _renderer.UpdateSoftFont(bitPattern, cellSize, centeringHint);
+            if (_renderer)
+            {
+                const auto bitPattern = _fontBuffer->GetBitPattern();
+                const auto cellSize = _fontBuffer->GetCellSize();
+                const auto centeringHint = _fontBuffer->GetTextCenteringHint();
+                _renderer->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+            }
         }
         return true;
     };
@@ -4963,9 +4979,9 @@ bool AdaptDispatch::PlaySounds(const VTParameters parameters)
     // If we're a conpty, we return false so the command will be passed on
     // to the connected terminal. But we need to flush the current frame
     // first, otherwise the visual output will lag behind the sound.
-    if (_api.IsConsolePty())
+    if (_api.IsConsolePty() && _renderer)
     {
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
         return false;
     }
 
@@ -4999,7 +5015,11 @@ ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
 {
     // Before we pass through any more data, we need to flush the current frame
     // first, otherwise it can end up arriving out of sync.
-    _renderer.TriggerFlush(false);
+    if (_renderer)
+    {
+        _renderer->TriggerFlush(false);
+    }
+
     // Then we need to flush the sequence introducer and parameters that have
     // already been parsed by the state machine.
     auto& stateMachine = _api.GetStateMachine();

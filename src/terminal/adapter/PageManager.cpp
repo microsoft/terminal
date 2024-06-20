@@ -99,7 +99,7 @@ void Page::MoveViewportDown() noexcept
     _viewport.bottom++;
 }
 
-PageManager::PageManager(ITerminalApi& api, Renderer& renderer) noexcept :
+PageManager::PageManager(ITerminalApi& api, Renderer* renderer) noexcept :
     _api{ api },
     _renderer{ renderer }
 {
@@ -220,9 +220,9 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
     }
 
     _activePageNumber = newPageNumber;
-    if (redrawRequired)
+    if (redrawRequired && _renderer)
     {
-        _renderer.TriggerRedrawAll();
+        _renderer->TriggerRedrawAll();
     }
 }
 
