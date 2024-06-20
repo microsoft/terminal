@@ -1,26 +1,26 @@
 trigger:
   batch: true
-#  branches:
-#    include:
-#      - main
-#      - feature/*
-#      - gh-readonly-queue/*
-#  paths:
-#    exclude:
-#      - doc/*
-#      - samples/*
-#      - tools/*
+  branches:
+    include:
+      - main
+      - feature/*
+      - gh-readonly-queue/*
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
 
-#pr:
-#  branches:
-#    include:
-#      - main
-#      - feature/*
-#  paths:
-#    exclude:
-#      - doc/*
-#      - samples/*
-#      - tools/*
+pr:
+  branches:
+    include:
+      - main
+      - feature/*
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
 
 variables:
   - name: runCodesignValidationInjectionBG
