@@ -931,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font. This feature is unavailable when using Direct2D as the Graphics API.</value>
+    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
