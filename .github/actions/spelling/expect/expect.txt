@@ -738,6 +738,7 @@ HABCDEF
 Hackathon
 HALTCOND
 HANGEUL
+hardlinks
 hashalg
 HASSTRINGS
 hbitmap
@@ -1080,6 +1081,7 @@ MOUSEFIRST
 MOUSEHWHEEL
 MOVESTART
 msb
+msbuildcache
 msctf
 msctls
 msdata
@@ -1489,6 +1491,7 @@ reparented
 reparenting
 replatformed
 Replymessage
+reportfileaccesses
 repositorypath
 Requiresx
 rerasterize
@@ -2005,6 +2008,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windir
 windll
 WINDOWALPHA
 windowdpiapi
