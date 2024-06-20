@@ -7,7 +7,7 @@
 #include <til/unicode.h>
 
 #if ATLAS_DEBUG_SHOW_DIRTY
-#include "colorbrewer.h"
+#include <til/colorbrewer.h>
 #endif
 
 #if ATLAS_DEBUG_DUMP_RENDER_TARGET
@@ -911,7 +911,7 @@ void BackendD2D::_debugShowDirty(const RenderingPayload& p)
                 static_cast<f32>(rect.right),
                 static_cast<f32>(rect.bottom),
             };
-            const auto color = colorbrewer::pastel1[i] | 0x1f000000;
+            const auto color = til::colorbrewer::pastel1[i] | 0x1f000000;
             _fillRectangle(rectF, color);
         }
     }

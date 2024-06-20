@@ -17,7 +17,7 @@
 #include "../../types/inc/ColorFix.hpp"
 
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
-#include "colorbrewer.h"
+#include <til/colorbrewer.h>
 #endif
 
 TIL_FAST_MATH_BEGIN
@@ -2222,7 +2222,7 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
         if (rect.non_empty())
         {
             _appendQuad() = {
-                .shadingType = ShadingType::Selection,
+                .shadingType = static_cast<u16>(ShadingType::Selection),
                 .position = {
                     static_cast<i16>(rect.left),
                     static_cast<i16>(rect.top),
@@ -2231,7 +2231,7 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
                     static_cast<u16>(rect.right - rect.left),
                     static_cast<u16>(rect.bottom - rect.top),
                 },
-                .color = colorbrewer::pastel1[i] | 0x1f000000,
+                .color = til::colorbrewer::pastel1[i] | 0x1f000000,
             };
         }
     }

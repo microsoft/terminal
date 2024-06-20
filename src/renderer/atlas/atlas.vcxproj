@@ -32,7 +32,6 @@
     <ClInclude Include="BackendD2D.h" />
     <ClInclude Include="BackendD3D.h" />
     <ClInclude Include="BuiltinGlyphs.h" />
-    <ClInclude Include="colorbrewer.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="dwrite.h" />
     <ClInclude Include="DWriteTextAnalysis.h" />
