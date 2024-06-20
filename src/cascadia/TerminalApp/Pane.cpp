@@ -985,13 +985,8 @@ void Pane::_ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectab
 // - <none>
 void Pane::Close()
 {
-    if (!_content)
-    {
-        return;
-    }
-
-    // Fire our Closed event to tell our parent that we should be removed.
     _setPaneContent(nullptr);
+    // Fire our Closed event to tell our parent that we should be removed.
     Closed.raise(nullptr, nullptr);
 }
 
@@ -1435,7 +1430,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // Reattach the TermControl to our grid.
         _root.Children().Append(_borderFirst);
-        const auto control = _content ? _content.GetRoot() : nullptr;
+        const auto& control{ _content.GetRoot() };
         _borderFirst.Child(control);
 
         // Make sure to set our _splitState before focusing the control. If you
@@ -1455,10 +1450,7 @@ void Pane::_CloseChild(const bool closeFirst)
         // focus our control now. This should trigger our own GotFocus event.
         if (usedToFocusClosedChildsTerminal || _lastActive)
         {
-            if (_content)
-            {
-                _content.Focus(FocusState::Programmatic);
-            }
+            _content.Focus(FocusState::Programmatic);
 
             // See GH#7252
             // Manually fire off the GotFocus event. Typically, this is done
@@ -1719,7 +1711,7 @@ void Pane::_SetupChildCloseHandlers()
 IPaneContent Pane::_takePaneContent()
 {
     _closeRequestedRevoker.revoke();
-    return _content ? std::move(_content) : nullptr;
+    return _content;
 }
 
 // This method safely sets the content of the Pane. It'll ensure to revoke and
@@ -1731,13 +1723,12 @@ void Pane::_setPaneContent(IPaneContent content)
     // _takePaneContent() avoids this as it revokes the event handler.
     if (const auto c = _takePaneContent())
     {
-        c.Close();
+        _content.Close();
     }
-
-    _content = std::move(content);
 
     if (_content)
     {
+        _content = std::move(content);
         _closeRequestedRevoker = _content.CloseRequested(winrt::auto_revoke, [this](auto&&, auto&&) { Close(); });
     }
 }
@@ -2951,10 +2942,6 @@ void Pane::FinalizeConfigurationGivenDefault()
 // - Returns true if the pane or one of its descendants is read-only
 bool Pane::ContainsReadOnly() const
 {
-    if (!_content)
-    {
-        return false;
-    }
     return _IsLeaf() ? _content.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
@@ -2968,10 +2955,6 @@ bool Pane::ContainsReadOnly() const
 // - <none>
 void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
 {
-    if (!_content)
-    {
-        return;
-    }
     if (_IsLeaf())
     {
         auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_content.TaskbarState(),
