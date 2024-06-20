@@ -2453,7 +2453,7 @@ void SCREEN_INFORMATION::UpdateBottom()
 
 // Returns the section of the text buffer that would be visible on the screen
 // if the user didn't scroll away vertically. It's essentially the same as
-// GetVirtualBufferViewport() but includes the horizontal scroll offset.
+// GetVtPageArea() but includes the horizontal scroll offset and window width.
 Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
 {
     const auto newTop = _virtualBottom - _viewport.Height() + 1;
@@ -2461,7 +2461,7 @@ Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
 }
 
 // Returns the section of the text buffer that's addressable by VT sequences.
-Viewport SCREEN_INFORMATION::GetVirtualBufferViewport() const noexcept
+Viewport SCREEN_INFORMATION::GetVtPageArea() const noexcept
 {
     const auto viewportHeight = _viewport.Height();
     const auto bufferWidth = _textBuffer->GetSize().Width();

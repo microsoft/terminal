@@ -110,7 +110,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         absoluteCursorPos.y = gsl::narrow_cast<til::CoordType>(cols / w);
     }
 
-    _screenInfo.GetVirtualBufferViewport().ConvertToOrigin(&absoluteCursorPos);
+    _screenInfo.GetVtPageArea().ConvertToOrigin(&absoluteCursorPos);
     absoluteCursorPos.x = std::max(0, absoluteCursorPos.x);
     absoluteCursorPos.y = std::max(0, absoluteCursorPos.y);
 
@@ -259,7 +259,7 @@ bool COOKED_READ_DATA::PresentingPopup() const noexcept
 til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
 {
     const auto viewport = _screenInfo.GetViewport();
-    const auto virtualViewport = _screenInfo.GetVirtualBufferViewport();
+    const auto virtualViewport = _screenInfo.GetVtPageArea();
 
     static constexpr til::point min;
     const til::point max{ viewport.RightInclusive(), viewport.BottomInclusive() };
