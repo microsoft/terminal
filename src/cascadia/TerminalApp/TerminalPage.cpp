@@ -1256,24 +1256,18 @@ namespace winrt::TerminalApp::implementation
                                                                                         TerminalSettings settings,
                                                                                         const bool inheritCursor)
     {
-        // The only way to create string references to literals in WinRT is through std::optional. Fun!
-        static std::optional<winrt::param::hstring> textMeasurement;
-        static const auto textMeasurementInit = [&]() {
+        static const auto textMeasurement = [&]() -> std::wstring_view {
             switch (_settings.GlobalSettings().TextMeasurement())
             {
             case TextMeasurement::Graphemes:
-                textMeasurement.emplace(L"graphemes");
-                break;
+                return L"graphemes";
             case TextMeasurement::Wcswidth:
-                textMeasurement.emplace(L"wcswidth");
-                break;
+                return L"wcswidth";
             case TextMeasurement::Console:
-                textMeasurement.emplace(L"console");
-                break;
+                return L"console";
             default:
-                break;
+                return {};
             }
-            return true;
         }();
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
@@ -1347,9 +1341,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (textMeasurement)
+        if (!textMeasurement.empty())
         {
-            valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(*textMeasurement));
+            valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})
