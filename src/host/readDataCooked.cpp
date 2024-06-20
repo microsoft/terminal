@@ -110,7 +110,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         absoluteCursorPos.y = gsl::narrow_cast<til::CoordType>(cols / w);
     }
 
-    _screenInfo.GetVirtualViewport().ConvertToOrigin(&absoluteCursorPos);
+    _screenInfo.GetVirtualBufferViewport().ConvertToOrigin(&absoluteCursorPos);
     absoluteCursorPos.x = std::max(0, absoluteCursorPos.x);
     absoluteCursorPos.y = std::max(0, absoluteCursorPos.y);
 
@@ -259,7 +259,7 @@ bool COOKED_READ_DATA::PresentingPopup() const noexcept
 til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
 {
     const auto viewport = _screenInfo.GetViewport();
-    const auto virtualViewport = _screenInfo.GetVirtualViewport();
+    const auto virtualViewport = _screenInfo.GetVirtualBufferViewport();
 
     static constexpr til::point min;
     const til::point max{ viewport.RightInclusive(), viewport.BottomInclusive() };
@@ -777,7 +777,7 @@ void COOKED_READ_DATA::_redisplay()
         return;
     }
 
-    const auto size = _screenInfo.GetVirtualViewport().Dimensions();
+    const auto size = _screenInfo.GetBufferSize().Dimensions();
     auto originInViewportFinal = _originInViewport;
     til::point cursorPositionFinal;
     til::point pagerPromptEnd;
@@ -868,16 +868,11 @@ void COOKED_READ_DATA::_redisplay()
         {
             auto& popup = _popups.back();
 
-            // But it should not be right on the line where the prompt starts.
-            // That would look goofy otherwise, since there's where the text is supposed to go.
-            if (lines.empty())
-            {
-                lines.emplace_back();
-            }
-
             // Ensure that the popup is not considered part of the prompt line. That is, if someone double-clicks
             // to select the last word in the prompt, it should not select the first word in the popup.
-            lines.back().text.append(L"\r\n");
+            auto& lastLine = lines.back();
+            lastLine.text.append(L"\r\n");
+            lastLine.columns = size.width;
 
             switch (popup.kind)
             {
@@ -913,7 +908,7 @@ void COOKED_READ_DATA::_redisplay()
             // a line because otherwise it won't have any space to be visible.
             if (_bufferCursor == _buffer.size())
             {
-                lines.emplace_back(L" \b");
+                lines.emplace_back(L" \b", 0, 0, 0);
             }
         }
 
@@ -1383,7 +1378,7 @@ void COOKED_READ_DATA::_popupDrawPrompt(std::vector<Line>& lines, const til::siz
     const auto res = _layoutLine(line, str, 0, 0, size.width);
     line.append(L"\x1b[m");
 
-    lines.emplace_back(std::move(line), 0, res.column);
+    lines.emplace_back(std::move(line), 0, 0, res.column);
 }
 
 void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til::size size, Popup& popup) const
@@ -1467,7 +1462,6 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         if (res.offset < str.size())
         {
             line.push_back(L'…');
-            res.column++;
         }
 
         if (selected)
@@ -1476,7 +1470,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         }
 
         line.append(L"\r\n");
-        lines.emplace_back(std::move(line), 0, 0, res.column);
+        lines.emplace_back(std::move(line), 0, 0, size.width);
     }
 
     auto& lastLine = lines.back();
