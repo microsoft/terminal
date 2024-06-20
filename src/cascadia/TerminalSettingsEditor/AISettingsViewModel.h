@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring OpenAIKey();
         void OpenAIKey(winrt::hstring key);
 
-        GETSET_BINDABLE_ENUM_SETTING(ActiveProvider, Model::LLMProvider, _Settings.GlobalSettings().ActiveProvider);
+        GETSET_BINDABLE_ENUM_SETTING(ActiveProvider, Model::LLMProvider, _Settings.GlobalSettings().AIInfo().ActiveProvider);
 
     private:
         Model::CascadiaSettings _Settings;
