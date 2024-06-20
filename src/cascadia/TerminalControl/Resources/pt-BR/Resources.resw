@@ -217,6 +217,10 @@ Instale a fonte ausente ou escolha outra.</value>
     <value>Não é possível localizar as seguintes fontes: {0}. Instale-os ou escolha fontes diferentes.</value>
     <comment>{Locked="{0}"} This is a warning dialog shown when the user selects a font that isn't installed.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>Sua versão do MacType é incompatível com este aplicativo. Atualize para a versão 2023.5.31 ou posterior.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="RendererErrorOther" xml:space="preserve">
     <value>O renderizador encontrou um erro inesperado: {0:#010x} {1}</value>
     <comment>{Locked="{0:#010x}","{1}"} {0:#010x} is a placeholder for a Windows error code (e.g. 0x88985002). {1} is the corresponding message.</comment>
@@ -299,5 +303,21 @@ Instale a fonte ausente ou escolha outra.</value>
   <data name="SessionRestoreMessage" xml:space="preserve">
     <value>Restaurado</value>
     <comment>"Restored" as in "This content was restored"</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Expressão Regular</value>
+    <comment>The tooltip text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pesquisa de Expressão Regular</value>
+    <comment>The accessibility description text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchRegexInvalid" xml:space="preserve">
+    <value>inválido</value>
+    <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
+  <data name="PreviewTextAnnouncement" xml:space="preserve">
+    <value>Entrada sugerida: {0}</value>
+    <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
   </data>
 </root>

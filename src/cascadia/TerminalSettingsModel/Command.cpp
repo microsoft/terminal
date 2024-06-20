@@ -20,14 +20,6 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view IDKey{ "id" };
-static constexpr std::string_view IconKey{ "icon" };
-static constexpr std::string_view ActionKey{ "command" };
-static constexpr std::string_view IterateOnKey{ "iterateOn" };
-static constexpr std::string_view CommandsKey{ "commands" };
-static constexpr std::string_view KeysKey{ "keys" };
-
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
 static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
@@ -43,9 +35,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_Origin = _Origin;
         command->_ID = _ID;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
-        command->_keyMappings = _keyMappings;
         command->_iconPath = _iconPath;
         command->_IterateOn = _IterateOn;
+        command->_Description = _Description;
 
         command->_originalJson = _originalJson;
         command->_nestedCommand = _nestedCommand;
@@ -121,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hstring{ _ID };
     }
 
-    bool Command::GenerateID()
+    void Command::GenerateID()
     {
         if (_ActionAndArgs)
         {
@@ -130,10 +122,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 _ID = generatedID;
                 _IDWasGenerated = true;
-                return true;
             }
         }
-        return false;
+    }
+
+    bool Command::IDWasGenerated()
+    {
+        return _IDWasGenerated;
     }
 
     void Command::Name(const hstring& value)
@@ -142,70 +137,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _name = value;
         }
-    }
-
-    std::vector<Control::KeyChord> Command::KeyMappings() const noexcept
-    {
-        return _keyMappings;
-    }
-
-    // Function Description:
-    // - Add the key chord to the command's list of key mappings.
-    // - If the key chord was already registered, move it to the back
-    //   of the line, and dispatch a notification that Command::Keys changed.
-    // Arguments:
-    // - keys: the new key chord that we are registering this command to
-    // Return Value:
-    // - <none>
-    void Command::RegisterKey(const Control::KeyChord& keys)
-    {
-        if (!keys)
-        {
-            return;
-        }
-
-        // Remove the KeyChord and add it to the back of the line.
-        // This makes it so that the main key chord associated with this
-        // command is updated.
-        EraseKey(keys);
-        _keyMappings.push_back(keys);
-    }
-
-    // Function Description:
-    // - Remove the key chord from the command's list of key mappings.
-    // Arguments:
-    // - keys: the key chord that we are unregistering
-    // Return Value:
-    // - <none>
-    void Command::EraseKey(const Control::KeyChord& keys)
-    {
-        _keyMappings.erase(std::remove_if(_keyMappings.begin(), _keyMappings.end(), [&keys](const Control::KeyChord& iterKey) {
-                               return keys.Modifiers() == iterKey.Modifiers() && keys.Vkey() == iterKey.Vkey();
-                           }),
-                           _keyMappings.end());
-    }
-
-    // Function Description:
-    // - Keys is the Command's identifying KeyChord. The command may have multiple keys associated
-    //   with it, but we'll only ever display the most recently added one externally. To do this,
-    //   _keyMappings stores all of the associated key chords, but ensures that the last entry
-    //   is the most recently added one.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the primary key chord associated with this Command
-    Control::KeyChord Command::Keys() const noexcept
-    {
-        if (_keyMappings.empty())
-        {
-            return nullptr;
-        }
-        return _keyMappings.back();
-    }
-
-    hstring Command::KeyChordText() const noexcept
-    {
-        return KeyChordSerialization::ToString(Keys());
     }
 
     hstring Command::IconPath() const noexcept
@@ -281,8 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
                                               std::vector<SettingsLoadWarnings>& warnings,
-                                              const OriginTag origin,
-                                              const bool parseKeys)
+                                              const OriginTag origin)
     {
         auto result = winrt::make_self<Command>();
         result->_Origin = origin;
@@ -290,6 +220,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
 
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
@@ -337,26 +268,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // create an "invalid" ActionAndArgs
                 result->_ActionAndArgs = make<implementation::ActionAndArgs>();
-            }
-
-            if (parseKeys)
-            {
-                // GH#4239 - If the user provided more than one key
-                // chord to a "keys" array, warn the user here.
-                // TODO: GH#1334 - remove this check.
-                const auto keysJson{ json[JsonKey(KeysKey)] };
-                if (keysJson.isArray() && keysJson.size() > 1)
-                {
-                    warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
-                }
-                else
-                {
-                    Control::KeyChord keys{ nullptr };
-                    if (JsonUtils::GetValueForKey(json, KeysKey, keys))
-                    {
-                        result->RegisterKey(keys);
-                    }
-                }
             }
         }
 
@@ -423,14 +334,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Function Description:
-    // - Serialize the Command into an array of json actions
+    // - Serialize the Command into a json value
     // Arguments:
     // - <none>
     // Return Value:
-    // - an array of serialized actions
+    // - a serialized command
     Json::Value Command::ToJson() const
     {
-        Json::Value cmdList{ Json::ValueType::arrayValue };
+        Json::Value cmdJson{ Json::ValueType::objectValue };
 
         if (_nestedCommand || _IterateOn != ExpandCommandType::None)
         {
@@ -438,15 +349,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // For these, we can trust _originalJson to be correct.
             // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
             //   until we expand the command.
-            cmdList.append(_originalJson);
+            cmdJson = _originalJson;
         }
-        else if (_keyMappings.empty())
+        else
         {
-            // only write out one command
-            Json::Value cmdJson{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-            if (!_ID.empty() && !_IDWasGenerated)
+            if (!_Description.empty())
+            {
+                JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
+            }
+            if (!_ID.empty())
             {
                 JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
             }
@@ -455,38 +368,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
             }
-
-            cmdList.append(cmdJson);
-        }
-        else
-        {
-            // we'll write out one command per key mapping
-            for (auto keys{ _keyMappings.begin() }; keys != _keyMappings.end(); ++keys)
-            {
-                Json::Value cmdJson{ Json::ValueType::objectValue };
-
-                if (keys == _keyMappings.begin())
-                {
-                    // First iteration also writes icon and name
-                    JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
-                    JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-                    if (!_ID.empty())
-                    {
-                        JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
-                    }
-                }
-
-                if (_ActionAndArgs)
-                {
-                    cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
-                }
-
-                JsonUtils::SetValueForKey(cmdJson, KeysKey, *keys);
-                cmdList.append(cmdJson);
-            }
         }
 
-        return cmdList;
+        return cmdJson;
     }
 
     // Function Description:
@@ -702,8 +586,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto parseElement = [&](const auto& element) {
             winrt::hstring completionText;
             winrt::hstring listText;
+            winrt::hstring tooltipText;
             JsonUtils::GetValueForKey(element, "CompletionText", completionText);
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
+            JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
 
             auto args = winrt::make_self<SendInputArgs>(
                 winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
@@ -715,8 +601,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             auto c = winrt::make_self<Command>();
             c->_name = listText;
+            c->_Description = tooltipText;
             c->_ActionAndArgs = actionAndArgs;
-
             // Try to assign a sensible icon based on the result type. These are
             // roughly chosen to align with the icons in
             // https://github.com/PowerShell/PowerShellEditorServices/pull/1738

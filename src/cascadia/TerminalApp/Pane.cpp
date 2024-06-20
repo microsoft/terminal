@@ -27,10 +27,10 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-Pane::Pane(const IPaneContent& content, const bool lastFocused) :
-    _content{ content },
+Pane::Pane(IPaneContent content, const bool lastFocused) :
     _lastActive{ lastFocused }
 {
+    _setPaneContent(std::move(content));
     _root.Children().Append(_borderFirst);
 
     const auto& control{ _content.GetRoot() };
@@ -467,7 +467,7 @@ std::shared_ptr<Pane> Pane::NextPane(const std::shared_ptr<Pane> targetPane)
     std::shared_ptr<Pane> nextPane = nullptr;
     auto foundTarget = false;
 
-    auto foundNext = WalkTree([&](auto pane) {
+    auto foundNext = WalkTree([&](const auto& pane) {
         // If we are a parent pane we don't want to move to one of our children
         if (foundTarget && targetPane->_HasChild(pane))
         {
@@ -985,6 +985,7 @@ void Pane::_ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectab
 // - <none>
 void Pane::Close()
 {
+    _setPaneContent(nullptr);
     // Fire our Closed event to tell our parent that we should be removed.
     Closed.raise(nullptr, nullptr);
 }
@@ -996,7 +997,7 @@ void Pane::Shutdown()
 {
     if (_IsLeaf())
     {
-        _content.Close();
+        _setPaneContent(nullptr);
     }
     else
     {
@@ -1341,7 +1342,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         detached->_ApplySplitDefinitions();
 
         // Trigger the detached event on each child
-        detached->WalkTree([](auto pane) {
+        detached->WalkTree([](const auto& pane) {
             pane->Detached.raise(pane);
         });
 
@@ -1400,7 +1401,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _borders = _GetCommonBorders();
 
         // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
-        _content = remainingChild->_content;
+        _setPaneContent(remainingChild->_takePaneContent());
         _id = remainingChild->Id();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
@@ -1542,7 +1543,7 @@ void Pane::_CloseChild(const bool closeFirst)
         {
             // update our path to our first remaining leaf
             _parentChildPath = _firstChild;
-            _firstChild->WalkTree([](auto p) {
+            _firstChild->WalkTree([](const auto& p) {
                 if (p->_IsLeaf())
                 {
                     return true;
@@ -1703,6 +1704,35 @@ void Pane::_SetupChildCloseHandlers()
     _secondClosedToken = _secondChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
         _CloseChildRoutine(false);
     });
+}
+
+// With this method you take ownership of the control from this Pane.
+// Assign it to another Pane with _setPaneContent() or Close() it.
+IPaneContent Pane::_takePaneContent()
+{
+    _closeRequestedRevoker.revoke();
+    // we cannot return std::move(_content) because we don't want _content to be null,
+    // since _content gets accessed even after Close is called
+    return _content;
+}
+
+// This method safely sets the content of the Pane. It'll ensure to revoke and
+// assign event handlers, and to Close() the existing content if there's any.
+// The new content can be nullptr to remove any content.
+void Pane::_setPaneContent(IPaneContent content)
+{
+    // The IPaneContent::Close() implementation may be buggy and raise the CloseRequested event again.
+    // _takePaneContent() avoids this as it revokes the event handler.
+    if (_takePaneContent())
+    {
+        _content.Close();
+    }
+
+    if (content)
+    {
+        _content = std::move(content);
+        _closeRequestedRevoker = _content.CloseRequested(winrt::auto_revoke, [this](auto&&, auto&&) { Close(); });
+    }
 }
 
 // Method Description:
@@ -2255,8 +2285,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     else
     {
         //   Move our control, guid, isDefTermSession into the first one.
-        _firstChild = std::make_shared<Pane>(_content);
-        _content = nullptr;
+        _firstChild = std::make_shared<Pane>(_takePaneContent());
         _firstChild->_broadcastEnabled = _broadcastEnabled;
     }
 
@@ -2398,7 +2427,7 @@ void Pane::Id(uint32_t id) noexcept
 bool Pane::FocusPane(const uint32_t id)
 {
     // Always clear the parent child path if we are focusing a leaf
-    return WalkTree([=](auto p) {
+    return WalkTree([=](const auto& p) {
         p->_parentChildPath.reset();
         if (p->_id == id)
         {
@@ -2421,7 +2450,7 @@ bool Pane::FocusPane(const uint32_t id)
 // - true if focus was set
 bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 {
-    return WalkTree([&](auto p) {
+    return WalkTree([&](const auto& p) {
         if (p == pane)
         {
             p->_Focus();
@@ -2449,6 +2478,11 @@ bool Pane::_HasChild(const std::shared_ptr<Pane> child)
     return WalkTree([&](const auto& p) {
         return p->_firstChild == child || p->_secondChild == child;
     });
+}
+
+winrt::TerminalApp::TerminalPaneContent Pane::_getTerminalContent() const
+{
+    return _IsLeaf() ? _content.try_as<winrt::TerminalApp::TerminalPaneContent>() : nullptr;
 }
 
 // Method Description:

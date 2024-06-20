@@ -205,7 +205,7 @@
     <value>Dividir pestaña</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>Panel dividido</value>
+    <value>Dividir panel</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Búsqueda en la web</value>

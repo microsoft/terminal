@@ -629,7 +629,8 @@
         "folder",
         "separator",
         "remainingProfiles",
-        "matchProfiles"
+        "matchProfiles",
+        "action"
       ]
     },
     "NewTabMenuEntry": {
@@ -776,6 +777,28 @@
               "type": "string",
               "default": "",
               "description": "The command line of the profiles to match"
+            }
+          }
+        }
+      ]
+    },
+    "ActionEntry": {
+      "description": "An action in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "action"
+            },
+            "id": {
+              "type": "string",
+              "default": "",
+              "description": "The ID of the action to show in this entry"
             }
           }
         }
@@ -2054,11 +2077,14 @@
           },
           {
             "$ref": "#/$defs/RemainingProfilesEntry"
+          },
+          {
+            "$ref": "#/$defs/ActionEntry"
           }
         ]
       }
     },
-    "Keybinding": {
+    "FullCommand": {
       "additionalProperties": false,
       "properties": {
         "command": {
@@ -2186,21 +2212,6 @@
             }
           ]
         },
-        "keys": {
-          "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
-          "oneOf": [
-            {
-              "$ref": "#/$defs/KeyChordSegment"
-            },
-            {
-              "items": {
-                "$ref": "#/$defs/KeyChordSegment"
-              },
-              "minItems": 1,
-              "type": "array"
-            }
-          ]
-        },
         "icon": {
           "$ref": "#/$defs/Icon"
         },
@@ -2235,10 +2246,10 @@
             "type": "object",
             "properties": {
               "command": {
-                "$ref": "#/$defs/Keybinding/properties/command"
+                "$ref": "#/$defs/FullCommand/properties/command"
               },
               "name": {
-                "$ref": "#/$defs/Keybinding/properties/name"
+                "$ref": "#/$defs/FullCommand/properties/name"
               }
             }
           },
@@ -2256,6 +2267,44 @@
         {
           "required": [
             "command"
+          ]
+        }
+      ],
+      "type": "object"
+    },
+    "Keybinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "The ID of the command this keybinding should execute.",
+          "type": "string"
+        },
+        "keys": {
+          "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/KeyChordSegment"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/KeyChordSegment"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "keys",
+            "id"
+          ]
+        },
+        {
+          "required": [
+            "keys"
           ]
         }
       ],
@@ -2464,12 +2513,12 @@
         "actions": {
           "description": "Properties are specific to each custom action.",
           "items": {
-            "$ref": "#/$defs/Keybinding"
+            "$ref": "#/$defs/FullCommand"
           },
           "type": "array"
         },
         "keybindings": {
-          "description": "[deprecated] Use actions instead.",
+          "description": "A list of keychords bound to action IDs",
           "deprecated": true,
           "items": {
             "$ref": "#/$defs/Keybinding"

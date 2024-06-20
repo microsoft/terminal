@@ -79,6 +79,12 @@ namespace Microsoft::Console::Render
         // Ideally this would not be stored on an interface, however ideally IRenderData should not be an interface in the first place.
         // This is because we should have only 1 way how to represent render data across the codebase anyway, and it should
         // be by-value in a struct so that we can snapshot it and release the terminal lock as quickly as possible.
-        Composition activeComposition;
+        const Composition& GetActiveComposition() const noexcept
+        {
+            return !snippetPreview.text.empty() ? snippetPreview : tsfPreview;
+        }
+
+        Composition tsfPreview;
+        Composition snippetPreview;
     };
 }

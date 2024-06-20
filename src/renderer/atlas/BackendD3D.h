@@ -13,6 +13,7 @@ namespace Microsoft::Console::Render::Atlas
     struct BackendD3D : IBackend
     {
         BackendD3D(const RenderingPayload& p);
+        ~BackendD3D() override;
 
         void ReleaseResources() noexcept override;
         void Render(RenderingPayload& payload) override;
@@ -203,6 +204,7 @@ namespace Microsoft::Console::Render::Atlas
         void _d2dEndDrawing();
         ATLAS_ATTR_COLD void _resetGlyphAtlas(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _resizeGlyphAtlas(const RenderingPayload& p, u16 u, u16 v);
+        static bool _checkMacTypeVersion(const RenderingPayload& p);
         QuadInstance& _getLastQuad() noexcept;
         QuadInstance& _appendQuad();
         ATLAS_ATTR_COLD void _bumpInstancesSize();

@@ -94,17 +94,9 @@ class TextBufferTests
 
     TEST_METHOD(TestCopyProperties);
 
-    TEST_METHOD(TestInsertCharacter);
-
-    TEST_METHOD(TestIncrementCursor);
-
-    TEST_METHOD(TestNewlineCursor);
-
     void TestLastNonSpace(const til::CoordType cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
-
-    TEST_METHOD(TestSetWrapOnCurrentRow);
 
     TEST_METHOD(TestIncrementCircularBuffer);
 
@@ -145,7 +137,6 @@ class TextBufferTests
     TEST_METHOD(ResizeTraditionalHighUnicodeRowRemoval);
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
-    TEST_METHOD(TestBurrito);
     TEST_METHOD(TestOverwriteChars);
     TEST_METHOD(TestReplace);
     TEST_METHOD(TestInsert);
@@ -400,129 +391,6 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().GetDelay());
 }
 
-void TextBufferTests::TestInsertCharacter()
-{
-    auto& textBuffer = GetTbi();
-
-    // get starting cursor position
-    const auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // Get current row from the buffer
-    auto& Row = textBuffer.GetRowByOffset(coordCursorBefore.y);
-
-    // create some sample test data
-    const auto wch = L'Z';
-    const std::wstring_view wchTest(&wch, 1);
-    const auto dbcsAttribute = DbcsAttribute::Leading;
-    const auto wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
-    auto TestAttributes = TextAttribute(wAttrTest);
-
-    // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(Row.GlyphAt(coordCursorBefore.x), wchTest);
-    VERIFY_ARE_NOT_EQUAL(Row.DbcsAttrAt(coordCursorBefore.x), dbcsAttribute);
-
-    auto attr = Row.GetAttrByColumn(coordCursorBefore.x);
-
-    VERIFY_ARE_NOT_EQUAL(attr, TestAttributes);
-
-    // now apply the new data to the buffer
-    textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
-
-    // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(Row.GlyphAt(coordCursorBefore.x), wchTest);
-    VERIFY_ARE_EQUAL(Row.DbcsAttrAt(coordCursorBefore.x), dbcsAttribute);
-
-    attr = Row.GetAttrByColumn(coordCursorBefore.x);
-    VERIFY_ARE_EQUAL(attr, TestAttributes);
-
-    // ensure that the cursor moved to a new position (X or Y or both have changed)
-    VERIFY_IS_TRUE((coordCursorBefore.x != textBuffer.GetCursor().GetPosition().x) ||
-                   (coordCursorBefore.y != textBuffer.GetCursor().GetPosition().y));
-    // the proper advancement of the cursor (e.g. which position it goes to) is validated in other tests
-}
-
-void TextBufferTests::TestIncrementCursor()
-{
-    auto& textBuffer = GetTbi();
-
-    // only checking X increments here
-    // Y increments are covered in the NewlineCursor test
-
-    const auto sBufferWidth = textBuffer.GetSize().Width();
-
-    const auto sBufferHeight = textBuffer.GetSize().Height();
-    VERIFY_IS_TRUE(sBufferWidth > 1 && sBufferHeight > 1);
-
-    Log::Comment(L"Test normal case of moving once to the right within a single line");
-    textBuffer.GetCursor().SetXPosition(0);
-    textBuffer.GetCursor().SetYPosition(0);
-
-    auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    textBuffer.IncrementCursor();
-
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 1); // X should advance by 1
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y); // Y shouldn't have moved
-
-    Log::Comment(L"Test line wrap case where cursor is on the right edge of the line");
-    textBuffer.GetCursor().SetXPosition(sBufferWidth - 1);
-    textBuffer.GetCursor().SetYPosition(0);
-
-    coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    textBuffer.IncrementCursor();
-
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // position should be reset to the left edge when passing right edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y - 1, coordCursorBefore.y); // the cursor should be moved one row down from where it used to be
-}
-
-void TextBufferTests::TestNewlineCursor()
-{
-    auto& textBuffer = GetTbi();
-
-    const auto sBufferHeight = textBuffer.GetSize().Height();
-
-    const auto sBufferWidth = textBuffer.GetSize().Width();
-    // width and height are sufficiently large for upcoming math
-    VERIFY_IS_TRUE(sBufferWidth > 4 && sBufferHeight > 4);
-
-    Log::Comment(L"Verify standard row increment from somewhere in the buffer");
-
-    // set cursor X position to non zero, any position in buffer
-    textBuffer.GetCursor().SetXPosition(3);
-
-    // set cursor Y position to not-the-final row in the buffer
-    textBuffer.GetCursor().SetYPosition(3);
-
-    auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // perform operation
-    textBuffer.NewlineCursor();
-
-    // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // move to left edge of buffer
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y + 1); // move down one row
-
-    Log::Comment(L"Verify increment when already on last row of buffer");
-
-    // X position still doesn't matter
-    textBuffer.GetCursor().SetXPosition(3);
-
-    // Y position needs to be on the last row of the buffer
-    textBuffer.GetCursor().SetYPosition(sBufferHeight - 1);
-
-    coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // perform operation
-    textBuffer.NewlineCursor();
-
-    // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // move to left edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y); // cursor Y position should not have moved. stays on same logical final line of buffer
-
-    // This is okay because the backing circular buffer changes, not the logical screen position (final visible line of the buffer)
-}
-
 void TextBufferTests::TestLastNonSpace(const til::CoordType cursorPosY)
 {
     auto& textBuffer = GetTbi();
@@ -566,37 +434,6 @@ void TextBufferTests::TestGetLastNonSpaceCharacter()
 
     Log::Comment(L"Test with cursor way beyond last row of text");
     TestLastNonSpace(14);
-}
-
-void TextBufferTests::TestSetWrapOnCurrentRow()
-{
-    auto& textBuffer = GetTbi();
-
-    auto sCurrentRow = textBuffer.GetCursor().GetPosition().y;
-
-    auto& Row = textBuffer.GetMutableRowByOffset(sCurrentRow);
-
-    Log::Comment(L"Testing off to on");
-
-    // turn wrap status off first
-    Row.SetWrapForced(false);
-
-    // trigger wrap
-    textBuffer._SetWrapOnCurrentRow();
-
-    // ensure this row was flipped
-    VERIFY_IS_TRUE(Row.WasWrapForced());
-
-    Log::Comment(L"Testing on stays on");
-
-    // make sure wrap status is on
-    Row.SetWrapForced(true);
-
-    // trigger wrap
-    textBuffer._SetWrapOnCurrentRow();
-
-    // ensure row is still on
-    VERIFY_IS_TRUE(Row.WasWrapForced());
 }
 
 void TextBufferTests::TestIncrementCircularBuffer()
@@ -1927,27 +1764,6 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     til::size trimmedBufferSize{ bufferSize.width - 1, bufferSize.height };
 
     _buffer->ResizeTraditional(trimmedBufferSize);
-}
-
-void TextBufferTests::TestBurrito()
-{
-    til::size bufferSize{ 80, 9001 };
-    UINT cursorSize = 12;
-    TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
-
-    // This is the burrito emoji: 🌯
-    // It's encoded in UTF-16, as needed by the buffer.
-    const auto burrito = L"\xD83C\xDF2F";
-    OutputCellIterator burriter{ burrito };
-
-    auto afterFIter = _buffer->Write({ L"F" });
-    _buffer->IncrementCursor();
-
-    auto afterBurritoIter = _buffer->Write(burriter);
-    _buffer->IncrementCursor();
-    _buffer->IncrementCursor();
-    VERIFY_IS_FALSE(afterBurritoIter);
 }
 
 void TextBufferTests::TestOverwriteChars()

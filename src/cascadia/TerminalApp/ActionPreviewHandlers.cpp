@@ -50,6 +50,7 @@ namespace winrt::TerminalApp::implementation
         {
         case ShortcutAction::SetColorScheme:
         case ShortcutAction::AdjustOpacity:
+        case ShortcutAction::SendInput:
         {
             _RunRestorePreviews();
             break;
@@ -140,6 +141,24 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    void TerminalPage::_PreviewSendInput(const Settings::Model::SendInputArgs& args)
+    {
+        const auto backup = _restorePreviewFuncs.empty();
+
+        _ApplyToActiveControls([&](const auto& control) {
+            const auto& str{ args.Input() };
+            control.PreviewInput(str);
+
+            if (backup)
+            {
+                _restorePreviewFuncs.emplace_back([=]() {
+                    // On dismiss:
+                    control.PreviewInput(hstring{});
+                });
+            }
+        });
+    }
+
     void TerminalPage::_PreviewAction(const Settings::Model::ActionAndArgs& args)
     {
         switch (args.Action())
@@ -149,6 +168,9 @@ namespace winrt::TerminalApp::implementation
             break;
         case ShortcutAction::AdjustOpacity:
             _PreviewAdjustOpacity(args.Args().try_as<AdjustOpacityArgs>());
+            break;
+        case ShortcutAction::SendInput:
+            _PreviewSendInput(args.Args().try_as<SendInputArgs>());
             break;
         }
 

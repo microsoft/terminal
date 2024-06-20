@@ -432,7 +432,11 @@ bool Renderer::_CheckViewportAndScroll()
     // The cursor may have moved out of or into the viewport. Update the .inViewport property.
     {
         const auto view = ScreenToBufferLine(srNewViewport, _currentCursorOptions.lineRendition);
-        const auto coordCursor = _currentCursorOptions.coordCursor;
+        auto coordCursor = _currentCursorOptions.coordCursor;
+
+        // `coordCursor` was stored in viewport-relative while `view` is in absolute coordinates.
+        // --> Turn it back into the absolute coordinates with the help of the old viewport.
+        coordCursor.y += srOldViewport.top;
 
         // Note that we allow the X coordinate to be outside the left border by 1 position,
         // because the cursor could still be visible if the focused character is double width.
@@ -718,6 +722,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // relative to the entire buffer.
     const auto view = _pData->GetViewport();
     const auto compositionRow = _compositionCache ? _compositionCache->absoluteOrigin.y : -1;
+    const auto& activeComposition = _pData->GetActiveComposition();
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
@@ -749,7 +754,6 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
         // Retrieve the text buffer so we can read information out of it.
         auto& buffer = _pData->GetTextBuffer();
-
         // Now walk through each row of text that we need to redraw.
         for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
         {
@@ -768,14 +772,14 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 scratch.CopyFrom(r);
                 rowBackup = &scratch;
 
-                std::wstring_view text{ _pData->activeComposition.text };
+                std::wstring_view text{ activeComposition.text };
                 RowWriteState state{
                     .columnLimit = r.GetReadableColumnCount(),
                     .columnEnd = _compositionCache->absoluteOrigin.x,
                 };
 
                 size_t off = 0;
-                for (const auto& range : _pData->activeComposition.attributes)
+                for (const auto& range : activeComposition.attributes)
                 {
                     const auto len = range.len;
                     auto attr = range.attr;
@@ -1221,7 +1225,7 @@ void Renderer::_invalidateOldComposition() const
 // so that _PaintBufferOutput() actually gets a chance to draw it.
 void Renderer::_prepareNewComposition()
 {
-    if (_pData->activeComposition.text.empty())
+    if (_pData->GetActiveComposition().text.empty())
     {
         return;
     }
@@ -1241,17 +1245,18 @@ void Renderer::_prepareNewComposition()
 
         auto& buffer = _pData->GetTextBuffer();
         auto& scratch = buffer.GetScratchpadRow();
+        const auto& activeComposition = _pData->GetActiveComposition();
 
-        std::wstring_view text{ _pData->activeComposition.text };
+        std::wstring_view text{ activeComposition.text };
         RowWriteState state{
             .columnLimit = buffer.GetRowByOffset(line.top).GetReadableColumnCount(),
         };
 
-        state.text = text.substr(0, _pData->activeComposition.cursorPos);
+        state.text = text.substr(0, activeComposition.cursorPos);
         scratch.ReplaceText(state);
         const auto cursorOffset = state.columnEnd;
 
-        state.text = text.substr(_pData->activeComposition.cursorPos);
+        state.text = text.substr(activeComposition.cursorPos);
         state.columnBegin = state.columnEnd;
         scratch.ReplaceText(state);
 

@@ -895,6 +895,9 @@
     <value>Tipo de fuente</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>Puede usar varias fuentes separándolas con una coma ASCII.</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Tamaño de la fuente</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -928,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>Cuando está habilitado, el terminal dibuja glifos personalizados para los caracteres de dibujo de elementos de bloque y cuadros, en lugar de usar la fuente. Esta característica solo funciona cuando la aceleración de GPU está disponible.</value>
+    <value>Cuando está habilitado, el terminal dibuja glifos personalizados para los caracteres de dibujo de elementos de bloque y cuadros, en lugar de usar la fuente. Esta característica no está disponible cuando se usa Direct2D como API de gráficos.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
