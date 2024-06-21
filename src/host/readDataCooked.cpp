@@ -777,7 +777,7 @@ void COOKED_READ_DATA::_redisplay()
         return;
     }
 
-    const auto size = _screenInfo.GetBufferSize().Dimensions();
+    const auto size = _screenInfo.GetVtPageArea().Dimensions();
     auto originInViewportFinal = _originInViewport;
     til::point cursorPositionFinal;
     til::point pagerPromptEnd;
@@ -959,8 +959,9 @@ void COOKED_READ_DATA::_redisplay()
         _popupOpened = popupOpened;
     }
 
-    // Scroll the contents of the pager if needed, so we only need to write what actually changed.
-    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0)
+    // If we have so much text that it doesn't fit into the viewport (origin == {0,0}),
+    // then we can scroll the existing contents of the pager and only write what got newly uncovered.
+    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && _originInViewport == til::point{})
     {
         const auto deltaAbs = abs(delta);
         til::CoordType beg = 0;

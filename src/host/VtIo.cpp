@@ -511,7 +511,7 @@ static size_t formatAttributes(char (&buffer)[16], WORD attributes) noexcept
     {
         // The Console API represents colors in BGR order, but VT represents them in RGB order.
         // This LUT transposes them. This is for foreground colors. Add +10 to get the background ones.
-        static const uint8_t lut[] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97 };
+        static constexpr uint8_t lut[] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97 };
         fg = lut[attributes & 0xf];
         bg = lut[(attributes >> 4) & 0xf] + 10;
     }

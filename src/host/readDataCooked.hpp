@@ -169,6 +169,5 @@ private:
     til::CoordType _pagerContentHeight = 0;
 
     std::vector<Popup> _popups;
-    std::wstring _popupAttr;
     bool _popupOpened = false;
 };
