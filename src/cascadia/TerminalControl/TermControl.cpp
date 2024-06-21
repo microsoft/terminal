@@ -1177,15 +1177,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const std::wstring_view msg{ &buf[0], len };
             std::wstring resourceString = RS_(L"RendererErrorOther").c_str();
             //conditional message construction
+            std::wstring partialMessage = fmt::format(std::wstring_view{ resourceString }, hr, msg);
             if (!parameter.empty())
             {
-                resourceString += L" \"{2}\"";
-                message = winrt::hstring{ fmt::format(std::wstring_view{ resourceString }, hr, msg, parameter) };
+                fmt::format_to(std::back_inserter(partialMessage), LR"( "{0}")", parameter);
             }
-            else
-            {
-                message = winrt::hstring{ fmt::format(std::wstring_view{ resourceString }, hr, msg) };
-            }
+            message = winrt::hstring{ partialMessage };
             break;
         }
         }
