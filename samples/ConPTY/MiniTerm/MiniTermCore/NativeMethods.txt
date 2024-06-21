@@ -1,0 +1,6 @@
+CreatePseudoConsole
+CreatePipe
+GetStdHandle
+SetConsoleMode
+GetConsoleMode
+SetConsoleCtrlHandler
