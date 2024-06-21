@@ -1,30 +1,32 @@
 trigger:
   batch: true
-#  branches:
-#    include:
-#      - main
-#      - feature/*
-#      - gh-readonly-queue/*
-#  paths:
-#    exclude:
-#      - doc/*
-#      - samples/*
-#      - tools/*
+  branches:
+    include:
+      - main
+      - feature/*
+      - gh-readonly-queue/*
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
 
-#pr:
-#  branches:
-#    include:
-#      - main
-#      - feature/*
-#  paths:
-#    exclude:
-#      - doc/*
-#      - samples/*
-#      - tools/*
+pr:
+  branches:
+    include:
+      - main
+      - feature/*
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
 
 variables:
   - name: runCodesignValidationInjectionBG
     value: false
+  - name: EnablePipelineCache 
+    value: true
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
@@ -81,6 +83,8 @@ stages:
             buildConfigurations: [Release]
             buildEverything: true
             keepAllExpensiveBuildOutputs: false
+            ${{ if eq(variables['System.PullRequest.IsFork'], 'False') }}:
+              enableCaching: true
 
     - ${{ if eq(parameters.runTests, true) }}:
       - stage: Test_${{ platform }}
