@@ -223,7 +223,7 @@ Please either install the missing font or choose another one.</value>
     <comment>{Locked="2023.5.31","MacType"}</comment>
   </data>
   <data name="RendererErrorOther" xml:space="preserve">
-    <value>Renderer encountered an unexpected error: {0:#010x} {1} "{2}"</value>
+    <value>Renderer encountered an unexpected error: {0:#010x} {1}</value>
     <comment>{Locked="{0:#010x}","{1}"} {0:#010x} is a placeholder for a Windows error code (e.g. 0x88985002). {1} is the corresponding message. {2} is the filename.</comment>
   </data>
   <data name="TermControlReadOnly" xml:space="preserve">
