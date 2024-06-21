@@ -10,8 +10,13 @@
 
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace winrt::Windows::Security::Credentials;
 
 static constexpr std::string_view AIConfigKey{ "aiConfig" };
+static constexpr std::wstring_view PasswordVaultResourceName = L"TerminalAI";
+static constexpr std::wstring_view PasswordVaultAIKey = L"TerminalAIKey";
+static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
+static constexpr std::wstring_view PasswordVaultOpenAIKey = L"TerminalOpenAIKey";
 
 winrt::com_ptr<AIConfig> AIConfig::CopyAIConfig(const AIConfig* source)
 {
@@ -45,4 +50,156 @@ void AIConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(aiConfigJson, jsonKey, _##name);
     MTSM_AI_SETTINGS(AI_SETTINGS_LAYER_JSON)
 #undef AI_SETTINGS_LAYER_JSON
+}
+
+winrt::hstring AIConfig::AzureOpenAIEndpoint() noexcept
+{
+    PasswordVault vault;
+    PasswordCredential cred;
+    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
+    try
+    {
+        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIEndpoint);
+    }
+    catch (...)
+    {
+        return L"";
+    }
+    return cred.Password();
+}
+
+void AIConfig::AzureOpenAIEndpoint(const winrt::hstring& endpoint) noexcept
+{
+    PasswordVault vault;
+    if (endpoint.empty())
+    {
+        // an empty string indicates that we should clear the key
+        PasswordCredential cred;
+        try
+        {
+            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIEndpoint);
+        }
+        catch (...)
+        {
+            // there was nothing to remove, just return
+            return;
+        }
+        vault.Remove(cred);
+    }
+    else
+    {
+        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIEndpoint, endpoint };
+        vault.Add(newCredential);
+    }
+}
+
+winrt::hstring AIConfig::AzureOpenAIKey() noexcept
+{
+    PasswordVault vault;
+    PasswordCredential cred;
+    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
+    try
+    {
+        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIKey);
+    }
+    catch (...)
+    {
+        return L"";
+    }
+    return cred.Password();
+}
+
+void AIConfig::AzureOpenAIKey(const winrt::hstring& key) noexcept
+{
+    PasswordVault vault;
+    if (key.empty())
+    {
+        // the user has entered an empty string, that indicates that we should clear the key
+        PasswordCredential cred;
+        try
+        {
+            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIKey);
+        }
+        catch (...)
+        {
+            // there was nothing to remove, just return
+            return;
+        }
+        vault.Remove(cred);
+    }
+    else
+    {
+        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIKey, key };
+        vault.Add(newCredential);
+    }
+}
+
+winrt::hstring AIConfig::OpenAIKey() noexcept
+{
+    PasswordVault vault;
+    PasswordCredential cred;
+    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
+    try
+    {
+        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultOpenAIKey);
+    }
+    catch (...)
+    {
+        return L"";
+    }
+    return cred.Password();
+}
+
+void AIConfig::OpenAIKey(const winrt::hstring& key) noexcept
+{
+    PasswordVault vault;
+    if (key.empty())
+    {
+        // the user has entered an empty string, that indicates that we should clear the key
+        PasswordCredential cred;
+        try
+        {
+            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultOpenAIKey);
+        }
+        catch (...)
+        {
+            // there was nothing to remove, just return
+            return;
+        }
+        vault.Remove(cred);
+    }
+    else
+    {
+        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultOpenAIKey, key };
+        vault.Add(newCredential);
+    }
+}
+
+winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvider()
+{
+    const auto val{ _getActiveProviderImpl() };
+    if (val)
+    {
+        // an active provider was explicitly set, return that
+        return *val;
+    }
+    else if (!AzureOpenAIEndpoint().empty() && !AzureOpenAIKey().empty())
+    {
+        // no explicitly set provider but we have an azure open ai key and endpoint, use that
+        return LLMProvider::AzureOpenAI;
+    }
+    else if (!OpenAIKey().empty())
+    {
+        // no explicitly set provider but we have an open ai key, use that
+        return LLMProvider::OpenAI;
+    }
+    else
+    {
+        return LLMProvider{};
+    }
+}
+
+void AIConfig::ActiveProvider(const LLMProvider& provider)
+{
+    _ActiveProvider = provider;
 }

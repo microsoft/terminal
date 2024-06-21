@@ -17,8 +17,5 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean IsOpenAIKeySet { get; };
         String OpenAIKey;
-
-        IInspectable CurrentActiveProvider;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ActiveProviderList { get; };
     }
 }

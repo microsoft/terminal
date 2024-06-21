@@ -55,10 +55,6 @@ namespace Microsoft.Terminal.Settings.Model
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
 
-        String AIEndpoint;
-        String AIKey;
-        String OpenAIKey;
-
         void ExpandCommands();
     }
 }

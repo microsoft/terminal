@@ -33,9 +33,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
 
-#define AI_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::AIConfig, type, name, ##__VA_ARGS__)
-        MTSM_AI_SETTINGS(AI_SETTINGS_INITIALIZE)
-#undef AI_SETTINGS_INITIALIZE
+        // Key and endpoint storage
+        // These are not written to the json, they are stored in the Windows Security Storage Vault
+        winrt::hstring AzureOpenAIEndpoint() noexcept;
+        void AzureOpenAIEndpoint(const winrt::hstring& endpoint) noexcept;
+        winrt::hstring AzureOpenAIKey() noexcept;
+        void AzureOpenAIKey(const winrt::hstring& key) noexcept;
+        winrt::hstring OpenAIKey() noexcept;
+        void OpenAIKey(const winrt::hstring& key) noexcept;
+
+        // we cannot just use INHERITABLE_SETTING here because we try to be smart about what the ActiveProvider is
+        // i.e. even if there's no ActiveProvider explicitly set, if there's only the key stored for one of the providers
+        // then that is the active one
+        LLMProvider ActiveProvider();
+        void ActiveProvider(const LLMProvider& provider);
+        _BASE_INHERITABLE_SETTING(Model::AIConfig, std::optional<LLMProvider>, ActiveProvider);
     };
 }

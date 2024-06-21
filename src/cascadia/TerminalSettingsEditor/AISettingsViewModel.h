@@ -27,7 +27,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring OpenAIKey();
         void OpenAIKey(winrt::hstring key);
 
-        GETSET_BINDABLE_ENUM_SETTING(ActiveProvider, Model::LLMProvider, _Settings.GlobalSettings().AIInfo().ActiveProvider);
+        bool AzureOpenAIIsActive();
+        bool OpenAIIsActive();
 
     private:
         Model::CascadiaSettings _Settings;
