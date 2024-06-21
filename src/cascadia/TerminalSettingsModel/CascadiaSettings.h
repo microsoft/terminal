@@ -149,14 +149,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
-        // AI Settings
-        winrt::hstring AIEndpoint() noexcept;
-        void AIEndpoint(const winrt::hstring& endpoint) noexcept;
-        winrt::hstring AIKey() noexcept;
-        void AIKey(const winrt::hstring& key) noexcept;
-        winrt::hstring OpenAIKey() noexcept;
-        void OpenAIKey(const winrt::hstring& key) noexcept;
-
         void ExpandCommands();
 
     private:

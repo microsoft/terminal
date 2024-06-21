@@ -21,49 +21,58 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AISettingsViewModel::AISettingsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
-        INITIALIZE_BINDABLE_ENUM_SETTING(ActiveProvider, LLMProvider, Model::LLMProvider, L"Globals_LLMProvider", L"Content");
     }
 
     bool AISettingsViewModel::AreAzureOpenAIKeyAndEndpointSet()
     {
-        return !_Settings.AIKey().empty() && !_Settings.AIEndpoint().empty();
+        return !_Settings.GlobalSettings().AIInfo().AzureOpenAIKey().empty() && !_Settings.GlobalSettings().AIInfo().AzureOpenAIEndpoint().empty();
     }
 
     winrt::hstring AISettingsViewModel::AzureOpenAIEndpoint()
     {
-        return _Settings.AIEndpoint();
+        return _Settings.GlobalSettings().AIInfo().AzureOpenAIEndpoint();
     }
 
     void AISettingsViewModel::AzureOpenAIEndpoint(winrt::hstring endpoint)
     {
-        _Settings.AIEndpoint(endpoint);
+        _Settings.GlobalSettings().AIInfo().AzureOpenAIEndpoint(endpoint);
         _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
     }
 
     winrt::hstring AISettingsViewModel::AzureOpenAIKey()
     {
-        return _Settings.AIKey();
+        return _Settings.GlobalSettings().AIInfo().AzureOpenAIKey();
     }
 
     void AISettingsViewModel::AzureOpenAIKey(winrt::hstring key)
     {
-        _Settings.AIKey(key);
+        _Settings.GlobalSettings().AIInfo().AzureOpenAIKey(key);
         _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
     }
 
     bool AISettingsViewModel::IsOpenAIKeySet()
     {
-        return !_Settings.OpenAIKey().empty();
+        return !_Settings.GlobalSettings().AIInfo().OpenAIKey().empty();
     }
 
     winrt::hstring AISettingsViewModel::OpenAIKey()
     {
-        return _Settings.OpenAIKey();
+        return _Settings.GlobalSettings().AIInfo().OpenAIKey();
     }
 
     void AISettingsViewModel::OpenAIKey(winrt::hstring key)
     {
-        _Settings.OpenAIKey(key);
+        _Settings.GlobalSettings().AIInfo().OpenAIKey(key);
         _NotifyChanges(L"IsOpenAIKeySet");
+    }
+
+    bool AISettingsViewModel::AzureOpenAIIsActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::AzureOpenAI;
+    }
+
+    bool AISettingsViewModel::OpenAIIsActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::OpenAI;
     }
 }

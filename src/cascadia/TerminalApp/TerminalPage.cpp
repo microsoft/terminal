@@ -5275,12 +5275,15 @@ namespace winrt::TerminalApp::implementation
         }
 
         winrt::Microsoft::Terminal::Query::Extension::ILLMProvider llmProvider{ nullptr };
-        // since we only support one type of llmProvider for now, just instantiate that one (the AzureLLMProvider)
-        // in the future, we would need to query the settings here for which LLMProvider to use
-        if (!_settings.AIEndpoint().empty() && !_settings.AIKey().empty())
+        const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
+        // create the correct llm provider
+        if (settingsAIInfo.ActiveProvider() == LLMProvider::OpenAI)
         {
-            //llmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(_settings.AIEndpoint(), _settings.AIKey());
-            llmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider(_settings.OpenAIKey());
+            llmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider(settingsAIInfo.OpenAIKey());
+        }
+        else if (settingsAIInfo.ActiveProvider() == LLMProvider::AzureOpenAI)
+        {
+            llmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(settingsAIInfo.AzureOpenAIEndpoint(), settingsAIInfo.AzureOpenAIKey());
         }
         _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(llmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
