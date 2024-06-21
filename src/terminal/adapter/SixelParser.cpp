@@ -824,7 +824,7 @@ void SixelParser::_maybeFlushImageBuffer(const bool endOfSequence)
             // Trigger a redraw of the affected rows in the renderer.
             const auto topRowOffset = std::max(_imageOriginCell.y, 0);
             const auto dirtyView = Viewport::FromExclusive({ 0, topRowOffset, page.Width(), rowOffset });
-            _dispatcher._renderer.TriggerRedraw(dirtyView);
+            page.Buffer().TriggerRedraw(dirtyView);
 
             // If the start of the image is now above the top of the page, we
             // won't be making any further updates to that content, so we can
