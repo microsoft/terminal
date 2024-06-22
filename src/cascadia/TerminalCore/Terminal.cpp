@@ -1650,6 +1650,12 @@ void Terminal::PreviewText(std::wstring_view input)
             curr.SetForeground(color);
             snippetPreview.attributes.emplace_back(1, curr);
         }
+
+        if (originalSize < len)
+        {
+            TextAttribute curr;
+            snippetPreview.attributes.emplace_back(len - originalSize, curr);
+        }
     }
     else
     {
