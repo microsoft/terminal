@@ -32,9 +32,8 @@ size_t SixelParser::MaxColorsForLevel(const VTInt conformanceLevel) noexcept
 {
     switch (conformanceLevel)
     {
-    case 1: // Compatible with the monochrome VT125
-        return 2;
-    case 2: // Compatible with the 4-color VT240
+    case 1:
+    case 2: // Compatible with the 4-color VT125 and VT240
         return 4;
     case 3: // Compatible with the 16-color VT340
         return 16;
@@ -50,20 +49,11 @@ SixelParser::SixelParser(AdaptDispatch& dispatcher, const StateMachine& stateMac
     _cellSize{ CellSizeForLevel(conformanceLevel) },
     _maxColors{ MaxColorsForLevel(conformanceLevel) }
 {
-    if (_maxColors == 2)
-    {
-        // For monochrome support, we just initialize the first two color table
-        // entries with black and white.
-        til::at(_colorTable, 0) = til::color{ 0x00, 0x00, 0x00 };
-        til::at(_colorTable, 1) = til::color{ 0xCC, 0xCC, 0xCC };
-    }
-    else
-    {
-        // For everything else, we initialize the first 16 color entries with the
-        // VT340 palette, and use the XTerm extended colors for entries 17 to 255.
-        Microsoft::Console::Utils::InitializeVT340ColorTable(_colorTable);
-        Microsoft::Console::Utils::InitializeExtendedColorTable(_colorTable);
-    }
+    // We initialize the first 16 color entries with the VT340 palette, which is
+    // also compatible with the 4-color VT125 and VT240. The remaining entries
+    // are initialized with the XTerm extended colors.
+    Microsoft::Console::Utils::InitializeVT340ColorTable(_colorTable);
+    Microsoft::Console::Utils::InitializeExtendedColorTable(_colorTable);
 }
 
 void SixelParser::SoftReset()
@@ -511,8 +501,9 @@ void SixelParser::_defineColor(const VTParameters& colorParameters)
     const auto colorNumber = colorParameters.at(0).value_or(0) % _colorMap.size();
 
     // If there are additional parameters, then this command will also redefine
-    // the color palette associated with the selected color number.
-    if (colorParameters.size() > 1 && _maxColors > 2) [[unlikely]]
+    // the color palette associated with the selected color number. This is not
+    // supported on the VT125 though.
+    if (colorParameters.size() > 1 && _conformanceLevel > 1) [[unlikely]]
     {
         const auto model = DispatchTypes::ColorModel{ colorParameters.at(1) };
         const auto x = colorParameters.at(2).value_or(0);
