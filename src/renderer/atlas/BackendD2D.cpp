@@ -394,8 +394,14 @@ void BackendD2D::_prepareBuiltinGlyphRenderTarget(const RenderingPayload& p)
     THROW_IF_FAILED(target->GetBitmap(_builtinGlyphsBitmap.put()));
     _builtinGlyphsRenderTarget = target.query<ID2D1DeviceContext>();
     _builtinGlyphsBitmapCellCountU = cellCountU;
-    _builtinGlyphsRenderTargetActive = false;
     memset(&_builtinGlyphsReady[0], 0, sizeof(_builtinGlyphsReady));
+
+    _builtinGlyphsRenderTarget->BeginDraw();
+    _builtinGlyphsRenderTargetActive = true;
+
+    // The initial contents of the bitmap are undefined.
+    // -> We need to define them. :)
+    _builtinGlyphsRenderTarget->Clear();
 }
 
 D2D1_RECT_U BackendD2D::_prepareBuiltinGlyph(const RenderingPayload& p, char32_t ch, u32 off)
