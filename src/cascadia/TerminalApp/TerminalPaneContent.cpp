@@ -235,6 +235,18 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
+        // We try to read the setting from the command line arguments
+        if (const auto& settings{ _cache.TryLookup(_profile) })
+        {
+            const auto closeMode = settings.DefaultSettings().CloseOnExit();
+
+            // If the command line argument "keepOpen" is set to kepp the pane/tab/window open we stop further execution here.
+            if (closeMode == CloseOnExitMode::Never)
+            {
+                co_return;
+            }
+        }
+
         if (_profile)
         {
             const auto mode = _profile.CloseOnExit();
