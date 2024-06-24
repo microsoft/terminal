@@ -618,6 +618,11 @@
           "type": "boolean",
           "default": false,
           "description": "This will override the profile's `elevate` setting."
+        },
+        "keepOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "This will override the profile's `closeOnExit` setting to keep the tab/pane/window open."
         }
       },
       "type": "object"
