@@ -931,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>启用后，终端会使用自定义字形来绘制块元素和框线绘图字符，而不是使用字体。使用 Direct2D 作为图形 API 时，此功能不可用。</value>
+    <value>启用后，终端会使用自定义字形来绘制块元素和框线绘图字符，而不是使用字体。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
