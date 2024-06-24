@@ -717,6 +717,69 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(terminalArgs.ColorScheme().empty());
             VERIFY_ARE_EQUAL(expectedScheme, terminalArgs.ColorScheme());
         }
+        {
+            // Test for existing --KeepOpen parameter
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"-p", L"PowerShell", L"--KeepOpen" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            auto terminalArgs{ myArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_IS_TRUE(terminalArgs.KeepOpen());
+            VERIFY_ARE_EQUAL(terminalArgs.Profile(), "PowerShell");
+        }
+        {
+            // Test for existing -O parameter (Short form of --keepOpen)
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"-p", L"PowerShell", L"-o" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            auto terminalArgs{ myArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_IS_TRUE(terminalArgs.KeepOpen());
+            VERIFY_ARE_EQUAL(terminalArgs.Profile(), "PowerShell");
+        }
+        {
+            // Test for NOT existing --keepOpen parameter
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"-p", L"PowerShell" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            auto terminalArgs{ myArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_IS_FALSE(terminalArgs.KeepOpen());
+            VERIFY_ARE_EQUAL(terminalArgs.Profile(), "PowerShell");
+        }
     }
 
     void CommandlineTest::ParseSplitPaneIntoArgs()
@@ -1039,6 +1102,69 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NULL(terminalArgs.TabColor());
             VERIFY_IS_NULL(terminalArgs.ProfileIndex());
             VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", terminalArgs.Commandline());
+        }
+        {
+            // Test for existing --KeepOpen parameter
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--KeepOpen", L"powershell.exe", L"This is an arg with spaces" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            auto terminalArgs{ myArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_IS_TRUE(terminalArgs.KeepOpen());
+            VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", terminalArgs.Commandline());
+        }
+        {
+            // Test for existing -O parameter (Short form of --keepOpen)
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-O", L"powershell.exe", L"This is an arg with spaces" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            auto terminalArgs{ myArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_IS_TRUE(terminalArgs.KeepOpen());
+            VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", terminalArgs.Commandline());
+        }
+        {
+            // Test for NOT existing --keepOpen parameter
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"powershell.exe", L"This is an arg with spaces" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            auto terminalArgs{ myArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_NULL(terminalArgs.ProfileIndex());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_IS_FALSE(terminalArgs.KeepOpen());
             VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", terminalArgs.Commandline());
         }
     }
