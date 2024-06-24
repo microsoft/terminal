@@ -186,12 +186,9 @@ catch (...)
 static UBool U_CALLCONV utextAccess(UText* ut, int64_t nativeIndex, UBool forward) noexcept
 try
 {
-    if (nativeIndex < 0)
-    {
-        nativeIndex = 0;
-    }
-
     auto neededIndex = nativeIndex;
+    // This will make it simpler for us to search the row that contains the nativeIndex,
+    // because we'll now only need to check for `start<=index<limit` and nothing else.
     if (!forward)
     {
         neededIndex--;
@@ -199,10 +196,12 @@ try
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     const auto range = accessRowRange(ut);
-    auto start = ut->chunkNativeStart;
-    auto limit = ut->chunkNativeLimit;
+    const auto startOld = ut->chunkNativeStart;
+    const auto limitOld = ut->chunkNativeLimit;
+    auto start = startOld;
+    auto limit = limitOld;
 
-    if (neededIndex < start || neededIndex >= limit)
+    if (neededIndex < startOld || neededIndex >= limitOld)
     {
         auto y = accessCurrentRow(ut);
         std::wstring_view text;
@@ -215,8 +214,7 @@ try
                 --y;
                 if (y < range.begin)
                 {
-                    assert(false);
-                    return false;
+                    break;
                 }
 
                 const auto& row = textBuffer.GetRowByOffset(y);
@@ -235,8 +233,7 @@ try
                 ++y;
                 if (y >= range.end)
                 {
-                    assert(false);
-                    return false;
+                    break;
                 }
 
                 const auto& row = textBuffer.GetRowByOffset(y);
@@ -249,38 +246,50 @@ try
             } while (neededIndex >= limit);
         }
 
-        if (!wasWrapForced)
+        assert(start >= 0);
+        // If we have already calculated the total length we can also assert that the limit is in range.
+        assert(ut->p == nullptr || static_cast<size_t>(limit) <= accessLength(ut));
+
+        // Even if we went out-of-bounds, we still need to update the chunkContents to contain the first/last chunk.
+        if (limit != limitOld)
         {
-            const auto newSize = text.size() + 1;
-            const auto buffer = RefcountBuffer::EnsureCapacityForOverwrite(accessBuffer(ut), newSize);
+            if (!wasWrapForced)
+            {
+                const auto newSize = text.size() + 1;
+                const auto buffer = RefcountBuffer::EnsureCapacityForOverwrite(accessBuffer(ut), newSize);
 
-            memcpy(&buffer->data[0], text.data(), text.size() * sizeof(wchar_t));
-            til::at(buffer->data, text.size()) = L'\n';
+                memcpy(&buffer->data[0], text.data(), text.size() * sizeof(wchar_t));
+                til::at(buffer->data, text.size()) = L'\n';
 
-            text = { &buffer->data[0], newSize };
-            accessBuffer(ut) = buffer;
-        }
+                text = { &buffer->data[0], newSize };
+                accessBuffer(ut) = buffer;
+            }
 
-        accessCurrentRow(ut) = y;
-        ut->chunkNativeStart = start;
-        ut->chunkNativeLimit = limit;
-        ut->chunkLength = gsl::narrow_cast<int32_t>(text.size());
+            accessCurrentRow(ut) = y;
+            ut->chunkNativeStart = start;
+            ut->chunkNativeLimit = limit;
+            ut->chunkLength = gsl::narrow_cast<int32_t>(text.size());
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-        ut->chunkContents = reinterpret_cast<const char16_t*>(text.data());
-        ut->nativeIndexingLimit = ut->chunkLength;
+            ut->chunkContents = reinterpret_cast<const char16_t*>(text.data());
+            ut->nativeIndexingLimit = ut->chunkLength;
+        }
     }
 
-    auto offset = gsl::narrow_cast<int32_t>(nativeIndex - start);
-
+    // The ICU documentation is a little bit misleading. It states:
+    // > @param forward    [...] If true, start<=index<limit. If false, [...] start<index<=limit.
+    // but that's just for finding the target chunk. The chunkOffset is not actually constrained to that!
+    // std::clamp will perform a<=b<=c, which is what we want.
+    const auto clampedIndex = std::clamp(nativeIndex, start, limit);
+    auto offset = gsl::narrow_cast<int32_t>(clampedIndex - start);
     // Don't leave the offset on a trailing surrogate pair. See U16_SET_CP_START.
     // This assumes that the TextBuffer contains valid UTF-16 which may theoretically not be the case.
     if (offset > 0 && offset < ut->chunkLength && U16_IS_TRAIL(til::at(ut->chunkContents, offset)))
     {
         offset--;
     }
-
     ut->chunkOffset = offset;
-    return true;
+
+    return neededIndex >= start && neededIndex < limit;
 }
 catch (...)
 {

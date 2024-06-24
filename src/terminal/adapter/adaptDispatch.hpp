@@ -36,7 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
         using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
     public:
-        AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
+        AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept;
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
@@ -249,7 +249,7 @@ namespace Microsoft::Console::VirtualTerminal
                                              const VTInt rightMargin,
                                              const bool homeCursor = false);
 
-        void _DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced);
+        bool _DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced);
 
         void _DeviceStatusReport(const wchar_t* parameters) const;
         void _CursorPositionReport(const bool extendedReport);
@@ -286,7 +286,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _initDefaultTabStops = true;
 
         ITerminalApi& _api;
-        Renderer& _renderer;
+        Renderer* _renderer;
         RenderSettings& _renderSettings;
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;

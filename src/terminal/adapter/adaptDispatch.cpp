@@ -16,7 +16,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 static constexpr std::wstring_view whitespace{ L" " };
 
-AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
+AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept :
     _api{ api },
     _renderer{ renderer },
     _renderSettings{ renderSettings },
@@ -73,14 +73,14 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 
 void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 {
-    const auto page = _pages.ActivePage();
+    auto page = _pages.ActivePage();
     auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     auto cursorPosition = cursor.GetPosition();
     const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
     const auto& attributes = page.Attributes();
 
-    const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
+    auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
 
     auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
@@ -107,7 +107,14 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // different position from where the EOL was marked.
             if (delayedCursorPosition == cursorPosition)
             {
-                _DoLineFeed(page, true, true);
+                if (_DoLineFeed(page, true, true))
+                {
+                    // If the line feed caused the viewport to move down, we
+                    // need to adjust the page viewport and margins to match.
+                    page.MoveViewportDown();
+                    std::tie(topMargin, bottomMargin) = _GetVerticalMargins(page, true);
+                }
+
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
                 lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
@@ -1930,7 +1937,10 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         {
             return false;
         }
-        _renderer.TriggerRedrawAll();
+        if (_renderer)
+        {
+            _renderer->TriggerRedrawAll();
+        }
         return true;
     case DispatchTypes::ModeParams::DECOM_OriginMode:
         _modes.set(Mode::Origin, enable);
@@ -2505,14 +2515,15 @@ bool AdaptDispatch::CarriageReturn()
 // - withReturn - Set to true if a carriage return should be performed as well.
 // - wrapForced - Set to true is the line feed was the result of the line wrapping.
 // Return Value:
-// - <none>
-void AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
+// - True if the viewport panned down. False if not.
+bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
 {
     auto& textBuffer = page.Buffer();
     const auto pageWidth = page.Width();
     const auto bufferHeight = page.BufferHeight();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(pageWidth);
+    auto viewportMoved = false;
 
     auto& cursor = page.Cursor();
     const auto currentPosition = cursor.GetPosition();
@@ -2555,6 +2566,7 @@ void AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         // the end of the buffer.
         _api.SetViewportPosition({ page.XPanOffset(), page.Top() + 1 });
         newPosition.y++;
+        viewportMoved = true;
 
         // And if the bottom margin didn't cover the full page, we copy the
         // lower part of the page down so it remains static. But for a full
@@ -2594,6 +2606,7 @@ void AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
 
     cursor.SetPosition(newPosition);
     _ApplyCursorMovementFlags(cursor);
+    return viewportMoved;
 }
 
 // Routine Description:
@@ -3211,7 +3224,10 @@ bool AdaptDispatch::HardReset()
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
 
     // Clear the soft font in the renderer and delete the font buffer.
-    _renderer.UpdateSoftFont({}, {}, false);
+    if (_renderer)
+    {
+        _renderer->UpdateSoftFont({}, {}, false);
+    }
     _fontBuffer = nullptr;
 
     // Reset internal modes to their initial state
@@ -3491,18 +3507,20 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
         return false;
     }
 
-    // If we're updating the background color, we need to let the renderer
-    // know, since it may want to repaint the window background to match.
-    const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
-    const auto backgroundChanged = (tableIndex == backgroundIndex);
+    if (_renderer)
+    {
+        // If we're updating the background color, we need to let the renderer
+        // know, since it may want to repaint the window background to match.
+        const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+        const auto backgroundChanged = (tableIndex == backgroundIndex);
 
-    // Similarly for the frame color, the tab may need to be repainted.
-    const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
-    const auto frameChanged = (tableIndex == frameIndex);
+        // Similarly for the frame color, the tab may need to be repainted.
+        const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+        const auto frameChanged = (tableIndex == frameIndex);
 
-    // Update the screen colors if we're not a pty
-    // No need to force a redraw in pty mode.
-    _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
+        _renderer->TriggerRedrawAll(backgroundChanged, frameChanged);
+    }
+
     return true;
 }
 
@@ -3556,14 +3574,19 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     }
 
     // No need to force a redraw in pty mode.
-    const auto inPtyMode = _api.IsConsolePty();
-    if (!inPtyMode)
+    if (_api.IsConsolePty())
+    {
+        return false;
+    }
+
+    if (_renderer)
     {
         const auto backgroundChanged = item == DispatchTypes::ColorItem::NormalText;
         const auto frameChanged = item == DispatchTypes::ColorItem::WindowFrame;
-        _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
+        _renderer->TriggerRedrawAll(backgroundChanged, frameChanged);
     }
-    return !inPtyMode;
+
+    return true;
 }
 
 //Routine Description:
@@ -3759,11 +3782,11 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
     const auto isConPty = _api.IsConsolePty();
-    if (isConPty)
+    if (isConPty && _renderer)
     {
         // Flush the frame manually, to make sure marks end up on the right
         // line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3803,11 +3826,11 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
     const auto isConPty = _api.IsConsolePty();
-    if (isConPty)
+    if (isConPty && _renderer)
     {
         // Flush the frame manually, to make sure marks end up on the right
         // line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
     }
 
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
@@ -3894,10 +3917,10 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 {
     // This is not implemented in conhost.
-    if (_api.IsConsolePty())
+    if (_api.IsConsolePty() && _renderer)
     {
         // Flush the frame manually to make sure this action happens at the right time.
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
         return false;
     }
 
@@ -4038,10 +4061,13 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
             {
                 _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
             }
-            const auto bitPattern = _fontBuffer->GetBitPattern();
-            const auto cellSize = _fontBuffer->GetCellSize();
-            const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _renderer.UpdateSoftFont(bitPattern, cellSize, centeringHint);
+            if (_renderer)
+            {
+                const auto bitPattern = _fontBuffer->GetBitPattern();
+                const auto cellSize = _fontBuffer->GetCellSize();
+                const auto centeringHint = _fontBuffer->GetTextCenteringHint();
+                _renderer->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+            }
         }
         return true;
     };
@@ -4902,9 +4928,9 @@ bool AdaptDispatch::PlaySounds(const VTParameters parameters)
     // If we're a conpty, we return false so the command will be passed on
     // to the connected terminal. But we need to flush the current frame
     // first, otherwise the visual output will lag behind the sound.
-    if (_api.IsConsolePty())
+    if (_api.IsConsolePty() && _renderer)
     {
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
         return false;
     }
 
@@ -4938,7 +4964,11 @@ ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
 {
     // Before we pass through any more data, we need to flush the current frame
     // first, otherwise it can end up arriving out of sync.
-    _renderer.TriggerFlush(false);
+    if (_renderer)
+    {
+        _renderer->TriggerFlush(false);
+    }
+
     // Then we need to flush the sequence introducer and parameters that have
     // already been parsed by the state machine.
     auto& stateMachine = _api.GetStateMachine();
