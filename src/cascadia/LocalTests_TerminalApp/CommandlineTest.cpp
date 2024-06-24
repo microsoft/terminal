@@ -736,7 +736,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NULL(terminalArgs.ProfileIndex());
             VERIFY_IS_FALSE(terminalArgs.Profile().empty());
             VERIFY_IS_TRUE(terminalArgs.KeepOpen());
-            VERIFY_ARE_EQUAL(terminalArgs.Profile(), "PowerShell");
+            VERIFY_ARE_EQUAL(terminalArgs.Profile(), L"PowerShell");
         }
         {
             // Test for existing -O parameter (Short form of --keepOpen)
@@ -757,7 +757,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NULL(terminalArgs.ProfileIndex());
             VERIFY_IS_FALSE(terminalArgs.Profile().empty());
             VERIFY_IS_TRUE(terminalArgs.KeepOpen());
-            VERIFY_ARE_EQUAL(terminalArgs.Profile(), "PowerShell");
+            VERIFY_ARE_EQUAL(terminalArgs.Profile(), L"PowerShell");
         }
         {
             // Test for NOT existing --keepOpen parameter
@@ -778,7 +778,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NULL(terminalArgs.ProfileIndex());
             VERIFY_IS_FALSE(terminalArgs.Profile().empty());
             VERIFY_IS_FALSE(terminalArgs.KeepOpen());
-            VERIFY_ARE_EQUAL(terminalArgs.Profile(), "PowerShell");
+            VERIFY_ARE_EQUAL(terminalArgs.Profile(), L"PowerShell");
         }
     }
 
