@@ -240,7 +240,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto closeMode = settings.DefaultSettings().CloseOnExit();
 
-            // If the command line argument "keepOpen" is set to kepp the pane/tab/window open we stop further execution here.
+            // If the command line argument "keepOpen" is set to keep the pane/tab/window open we stop further execution here.
             if (closeMode == CloseOnExitMode::Never)
             {
                 co_return;
