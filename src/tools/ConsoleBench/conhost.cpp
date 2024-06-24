@@ -3,6 +3,7 @@
 
 #include <conmsgl1.h>
 #include <winternl.h>
+#include <wil/win32_helpers.h>
 
 #include "arena.h"
 
@@ -46,12 +47,27 @@ static void conhostCopyToStringBuffer(USHORT& length, auto& buffer, const wchar_
 
 ConhostHandle spawn_conhost(mem::Arena& arena, const wchar_t* path)
 {
+    const auto pathLen = wcslen(path);
+    const auto isDLL = pathLen > 4 && wcscmp(&path[pathLen - 4], L".dll") == 0;
+
     const auto scratch = mem::get_scratch_arena(arena);
-    const auto server = conhostCreateHandle(nullptr, L"\\Device\\ConDrv\\Server", true, false);
+    auto server = conhostCreateHandle(nullptr, L"\\Device\\ConDrv\\Server", true, false);
     auto reference = conhostCreateHandle(server.get(), L"\\Reference", false, true);
 
     {
-        const auto cmd = format(scratch.arena, LR"("%s" --server 0x%zx)", path, server.get());
+        const auto selfPath = scratch.arena.push_uninitialized<wchar_t>(64 * 1024);
+        GetModuleFileNameW(nullptr, selfPath, 64 * 1024);
+
+        std::wstring_view cmd;
+
+        if (isDLL)
+        {
+            cmd = format(scratch.arena, LR"("%s" host %zx "%s")", selfPath, server.get(), path);
+        }
+        else
+        {
+            cmd = format(scratch.arena, LR"("%s" --server 0x%zx)", path, server.get());
+        }
 
         uint8_t attrListBuffer[64];
 
@@ -152,6 +168,22 @@ ConhostHandle spawn_conhost(mem::Arena& arena, const wchar_t* path)
         .reference = std::move(reference),
         .connection = std::move(connection),
     };
+}
+
+// A continuation of spawn_conhost().
+void check_spawn_conhost_dll(int argc, const wchar_t* argv[])
+{
+    if (argc == 4 && wcscmp(argv[1], L"host") == 0)
+    {
+        const auto serverHandle = reinterpret_cast<HANDLE>(wcstoull(argv[2], nullptr, 16));
+        const auto path = argv[3];
+
+        using Entrypoint = NTSTATUS(NTAPI*)(HANDLE);
+        const auto h = THROW_LAST_ERROR_IF_NULL(LoadLibraryExW(path, nullptr, 0));
+        const auto f = THROW_LAST_ERROR_IF_NULL(reinterpret_cast<Entrypoint>(GetProcAddress(h, "ConsoleCreateIoThread")));
+        THROW_IF_NTSTATUS_FAILED(f(serverHandle));
+        ExitThread(S_OK);
+    }
 }
 
 HANDLE get_active_connection()

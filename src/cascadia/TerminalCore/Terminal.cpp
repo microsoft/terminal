@@ -47,9 +47,9 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
                                 Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
-    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
+    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
 
-    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, _terminalInput);
+    auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
