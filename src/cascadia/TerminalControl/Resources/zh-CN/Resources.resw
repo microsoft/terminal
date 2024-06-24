@@ -217,6 +217,10 @@
     <value>找不到以下字体： {0}。请安装它们或选择其他字体。</value>
     <comment>{Locked="{0}"} This is a warning dialog shown when the user selects a font that isn't installed.</comment>
   </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>你的 MacType 版本与此应用程序不兼容。请更新到版本 2023.5.31 或更高版本。</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
+  </data>
   <data name="RendererErrorOther" xml:space="preserve">
     <value>呈现器遇到错误： {0:#010x} {1}</value>
     <comment>{Locked="{0:#010x}","{1}"} {0:#010x} is a placeholder for a Windows error code (e.g. 0x88985002). {1} is the corresponding message.</comment>
@@ -299,5 +303,21 @@
   <data name="SessionRestoreMessage" xml:space="preserve">
     <value>已还原</value>
     <comment>"Restored" as in "This content was restored"</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.ToolTipService.ToolTip" xml:space="preserve">
+    <value>正则表达式</value>
+    <comment>The tooltip text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>正则表达式搜索</value>
+    <comment>The accessibility description text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchRegexInvalid" xml:space="preserve">
+    <value>无效</value>
+    <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
+  <data name="PreviewTextAnnouncement" xml:space="preserve">
+    <value>建议的输入: {0}</value>
+    <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
   </data>
 </root>

@@ -136,26 +136,7 @@ namespace winrt::TerminalApp::implementation
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it. The Title change will be propagated upwards through the tab's
         // PropertyChanged event handler.
-        newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                // Possibly update the icon of the tab.
-                page->_UpdateTabIcon(*tab);
-
-                page->_updateThemeColors();
-
-                // Update the taskbar progress as well. We'll raise our own
-                // SetTaskbarProgress event here, to get tell the hosting
-                // application to re-query this value from us.
-                page->SetTaskbarProgress.raise(*page, nullptr);
-
-                auto profile = tab->GetFocusedProfile();
-                page->_UpdateBackground(profile);
-            }
-        });
+        newTabImpl->ActivePaneChanged({ get_weak(), &TerminalPage::_activePaneChanged });
 
         // The RaiseVisualBell event has been bubbled up to here from the pane,
         // the next part of the chain is bubbling up to app logic, which will
@@ -739,7 +720,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
-            pane->WalkTree([](auto p) {
+            pane->WalkTree([](const auto& p) {
                 if (const auto control{ p->GetTerminalControl() })
                 {
                     if (control.ReadOnly())

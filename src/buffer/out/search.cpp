@@ -8,31 +8,26 @@
 
 using namespace Microsoft::Console::Types;
 
-bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive, std::vector<til::point_span>* prevResults)
+bool Search::IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags) const noexcept
+{
+    return _renderData != &renderData ||
+           _needle != needle ||
+           _flags != flags ||
+           _lastMutationId != renderData.GetTextBuffer().GetLastMutationId();
+}
+
+bool Search::Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags, bool reverse)
 {
     const auto& textBuffer = renderData.GetTextBuffer();
-    const auto lastMutationId = textBuffer.GetLastMutationId();
-
-    if (_renderData == &renderData &&
-        _needle == needle &&
-        _caseInsensitive == caseInsensitive &&
-        _lastMutationId == lastMutationId)
-    {
-        _step = reverse ? -1 : 1;
-        return false;
-    }
-
-    if (prevResults)
-    {
-        *prevResults = std::move(_results);
-    }
 
     _renderData = &renderData;
     _needle = needle;
-    _caseInsensitive = caseInsensitive;
-    _lastMutationId = lastMutationId;
+    _flags = flags;
+    _lastMutationId = textBuffer.GetLastMutationId();
 
-    _results = textBuffer.SearchText(needle, caseInsensitive);
+    auto result = textBuffer.SearchText(needle, _flags);
+    _ok = result.has_value();
+    _results = std::move(result).value_or(std::vector<til::point_span>{});
     _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
     _step = reverse ? -1 : 1;
     return true;
@@ -98,8 +93,9 @@ void Search::MovePastPoint(const til::point anchor) noexcept
     _index = (index + count) % count;
 }
 
-void Search::FindNext() noexcept
+void Search::FindNext(bool reverse) noexcept
 {
+    _step = reverse ? -1 : 1;
     if (const auto count{ gsl::narrow_cast<ptrdiff_t>(_results.size()) })
     {
         _index = (_index + _step + count) % count;
@@ -141,7 +137,17 @@ const std::vector<til::point_span>& Search::Results() const noexcept
     return _results;
 }
 
+std::vector<til::point_span>&& Search::ExtractResults() noexcept
+{
+    return std::move(_results);
+}
+
 ptrdiff_t Search::CurrentMatch() const noexcept
 {
     return _index;
+}
+
+bool Search::IsOk() const noexcept
+{
+    return _ok;
 }

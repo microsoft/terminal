@@ -44,6 +44,11 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selection, expected);
         }
 
+        TextBuffer& GetTextBuffer(Terminal& term)
+        {
+            return term.GetBufferAndViewport().buffer;
+        }
+
         TEST_METHOD(SelectUnit)
         {
             Terminal term{ Terminal::TestDummyMarker{} };
@@ -394,7 +399,7 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -417,7 +422,7 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -440,11 +445,11 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Insert wide glyph at position (7,11)
-            term.GetTextBuffer().GetCursor().SetPosition({ 7, 11 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 7, 11 });
             term.Write(burrito);
 
             // Simulate ALT + click at (x,y) = (5,8)
@@ -496,7 +501,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -540,7 +545,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"C:\\Terminal>";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate click at (x,y) = (15,10)
@@ -568,7 +573,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -597,7 +602,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (21,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (21,10)
@@ -685,7 +690,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Step 1: Create a selection on "doubleClickMe"

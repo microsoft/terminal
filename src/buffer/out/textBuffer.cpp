@@ -12,6 +12,7 @@
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
+#include "search.h"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -47,7 +48,7 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
-                       Microsoft::Console::Render::Renderer& renderer) :
+                       Microsoft::Console::Render::Renderer* renderer) :
     _renderer{ renderer },
     _currentAttributes{ defaultAttributes },
     // This way every TextBuffer will start with a ""unique"" _lastMutationId
@@ -370,38 +371,6 @@ TextBufferTextIterator TextBuffer::GetTextDataAt(const til::point at, const View
 TextBufferCellIterator TextBuffer::GetCellDataAt(const til::point at, const Viewport limit) const
 {
     return TextBufferCellIterator(*this, at, limit);
-}
-
-//Routine Description:
-// - Call before inserting a character into the buffer.
-// - This will ensure a consistent double byte state (KAttrs line) within the text buffer
-// - It will attempt to correct the buffer if we're inserting an unexpected double byte character type
-//   and it will pad out the buffer if we're going to split a double byte sequence across two rows.
-//Arguments:
-// - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
-//Return Value:
-// - true if we successfully prepared the buffer and moved the cursor
-// - false otherwise (out of memory)
-void TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
-{
-    // Now compensate if we don't have enough space for the upcoming double byte sequence
-    // We only need to compensate for leading bytes
-    if (dbcsAttribute == DbcsAttribute::Leading)
-    {
-        const auto cursorPosition = GetCursor().GetPosition();
-        const auto lineWidth = GetLineWidth(cursorPosition.y);
-
-        // If we're about to lead on the last column in the row, we need to add a padding space
-        if (cursorPosition.x == lineWidth - 1)
-        {
-            // set that we're wrapping for double byte reasons
-            auto& row = GetMutableRowByOffset(cursorPosition.y);
-            row.SetDoubleBytePadded(true);
-
-            // then move the cursor forward and onto the next row
-            IncrementCursor();
-        }
-    }
 }
 
 // Given the character offset `position` in the `chars` string, this function returns the starting position of the next grapheme.
@@ -740,144 +709,6 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 }
 
 //Routine Description:
-// - Inserts one codepoint into the buffer at the current cursor position and advances the cursor as appropriate.
-//Arguments:
-// - chars - The codepoint to insert
-// - dbcsAttribute - Double byte information associated with the codepoint
-// - bAttr - Color data associated with the character
-//Return Value:
-// - true if we successfully inserted the character
-// - false otherwise (out of memory)
-void TextBuffer::InsertCharacter(const std::wstring_view chars,
-                                 const DbcsAttribute dbcsAttribute,
-                                 const TextAttribute attr)
-{
-    // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
-    _PrepareForDoubleByteSequence(dbcsAttribute);
-
-    // Get the current cursor position
-    const auto iRow = GetCursor().GetPosition().y; // row stored as logical position, not array position
-    const auto iCol = GetCursor().GetPosition().x; // column logical and array positions are equal.
-
-    // Get the row associated with the given logical position
-    auto& Row = GetMutableRowByOffset(iRow);
-
-    // Store character and double byte data
-    switch (dbcsAttribute)
-    {
-    case DbcsAttribute::Leading:
-        Row.ReplaceCharacters(iCol, 2, chars);
-        break;
-    case DbcsAttribute::Trailing:
-        Row.ReplaceCharacters(iCol - 1, 2, chars);
-        break;
-    default:
-        Row.ReplaceCharacters(iCol, 1, chars);
-        break;
-    }
-
-    // Store color data
-    Row.SetAttrToEnd(iCol, attr);
-    IncrementCursor();
-}
-
-//Routine Description:
-// - Inserts one ucs2 codepoint into the buffer at the current cursor position and advances the cursor as appropriate.
-//Arguments:
-// - wch - The codepoint to insert
-// - dbcsAttribute - Double byte information associated with the codepoint
-// - bAttr - Color data associated with the character
-//Return Value:
-// - true if we successfully inserted the character
-// - false otherwise (out of memory)
-void TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr)
-{
-    InsertCharacter({ &wch, 1 }, dbcsAttribute, attr);
-}
-
-//Routine Description:
-// - Finds the current row in the buffer (as indicated by the cursor position)
-//   and specifies that we have forced a line wrap on that row
-//Arguments:
-// - <none> - Always sets to wrap
-//Return Value:
-// - <none>
-void TextBuffer::_SetWrapOnCurrentRow()
-{
-    _AdjustWrapOnCurrentRow(true);
-}
-
-//Routine Description:
-// - Finds the current row in the buffer (as indicated by the cursor position)
-//   and specifies whether or not it should have a line wrap flag.
-//Arguments:
-// - fSet - True if this row has a wrap. False otherwise.
-//Return Value:
-// - <none>
-void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
-{
-    // The vertical position of the cursor represents the current row we're manipulating.
-    const auto uiCurrentRowOffset = GetCursor().GetPosition().y;
-
-    // Set the wrap status as appropriate
-    GetMutableRowByOffset(uiCurrentRowOffset).SetWrapForced(fSet);
-}
-
-//Routine Description:
-// - Increments the cursor one position in the buffer as if text is being typed into the buffer.
-// - NOTE: Will introduce a wrap marker if we run off the end of the current row
-//Arguments:
-// - <none>
-//Return Value:
-// - true if we successfully moved the cursor.
-// - false otherwise (out of memory)
-void TextBuffer::IncrementCursor()
-{
-    // Cursor position is stored as logical array indices (starts at 0) for the window
-    // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
-    // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
-    const auto iFinalColumnIndex = GetLineWidth(GetCursor().GetPosition().y) - 1;
-
-    // Move the cursor one position to the right
-    GetCursor().IncrementXPosition(1);
-
-    // If we've passed the final valid column...
-    if (GetCursor().GetPosition().x > iFinalColumnIndex)
-    {
-        // Then mark that we've been forced to wrap
-        _SetWrapOnCurrentRow();
-
-        // Then move the cursor to a new line
-        NewlineCursor();
-    }
-}
-
-//Routine Description:
-// - Increments the cursor one line down in the buffer and to the beginning of the line
-//Arguments:
-// - <none>
-//Return Value:
-// - true if we successfully moved the cursor.
-void TextBuffer::NewlineCursor()
-{
-    const auto iFinalRowIndex = GetSize().BottomInclusive();
-
-    // Reset the cursor position to 0 and move down one line
-    GetCursor().SetXPosition(0);
-    GetCursor().IncrementYPosition(1);
-
-    // If we've passed the final valid row...
-    if (GetCursor().GetPosition().y > iFinalRowIndex)
-    {
-        // Stay on the final logical/offset row of the buffer.
-        GetCursor().SetYPosition(iFinalRowIndex);
-
-        // Instead increment the circular buffer to move us into the "oldest" row of the backing buffer
-        IncrementCircularBuffer();
-    }
-}
-
-//Routine Description:
 // - Increments the circular buffer by one. Circular buffer is represented by FirstRow variable.
 //Arguments:
 // - fillAttributes - the attributes with which the recycled row will be initialized.
@@ -887,9 +718,9 @@ void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    if (_isActiveBuffer)
+    if (_isActiveBuffer && _renderer)
     {
-        _renderer.TriggerFlush(true);
+        _renderer->TriggerFlush(true);
     }
 
     // Prune hyperlinks to delete obsolete references
@@ -951,38 +782,6 @@ til::point TextBuffer::GetLastNonSpaceCharacter(const Viewport* viewOptional) co
     coordEndOfText.x = std::max(coordEndOfText.x, 0);
 
     return coordEndOfText;
-}
-
-// Routine Description:
-// - Retrieves the position of the previous character relative to the current cursor position
-// Arguments:
-// - <none>
-// Return Value:
-// - Coordinate position in screen coordinates of the character just before the cursor.
-// - NOTE: Will return 0,0 if already in the top left corner
-til::point TextBuffer::_GetPreviousFromCursor() const
-{
-    auto coordPosition = GetCursor().GetPosition();
-
-    // If we're not at the left edge, simply move the cursor to the left by one
-    if (coordPosition.x > 0)
-    {
-        coordPosition.x--;
-    }
-    else
-    {
-        // Otherwise, only if we're not on the top row (e.g. we don't move anywhere in the top left corner. there is no previous)
-        if (coordPosition.y > 0)
-        {
-            // move the cursor up one line
-            coordPosition.y--;
-
-            // and to the right edge
-            coordPosition.x = GetLineWidth(coordPosition.y) - 1;
-        }
-    }
-
-    return coordPosition;
 }
 
 const til::CoordType TextBuffer::GetFirstRowIndex() const noexcept
@@ -1176,36 +975,40 @@ void TextBuffer::Reset() noexcept
     _initialAttributes = _currentAttributes;
 }
 
-void TextBuffer::ClearScrollback(const til::CoordType start, const til::CoordType height)
+// Arguments:
+// - newFirstRow: The current y-position of the viewport. We'll clear up until here.
+// - rowsToKeep: the number of rows to keep in the buffer.
+void TextBuffer::ClearScrollback(const til::CoordType newFirstRow, const til::CoordType rowsToKeep)
 {
-    if (start <= 0)
+    // We're already at the top? don't clear anything. There's no scrollback.
+    if (newFirstRow <= 0)
     {
         return;
     }
-
-    if (height <= 0)
+    // The new viewport should keep 0 rows? Then just reset everything.
+    if (rowsToKeep <= 0)
     {
         _decommit();
         return;
     }
 
+    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, std::max(0, newFirstRow - 1) });
+
     // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
     // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
-    // The start parameter is relative to the _firstRow. The trick to get the content to the absolute start
+    // The newFirstRow parameter is relative to the _firstRow. The trick to get the content to the absolute start
     // is to simply add _firstRow ourselves and then reset it to 0. This causes ScrollRows() to write into
     // the absolute start while reading from relative coordinates. This works because GetRowByOffset()
     // operates modulo the buffer height and so the possibly-too-large startAbsolute won't be an issue.
-    const auto startAbsolute = _firstRow + start;
+    const auto startAbsolute = _firstRow + newFirstRow;
     _firstRow = 0;
-    ScrollRows(startAbsolute, height, -startAbsolute);
+    ScrollRows(startAbsolute, rowsToKeep, -startAbsolute);
 
     const auto end = _estimateOffsetOfLastCommittedRow();
-    for (auto y = height; y <= end; ++y)
+    for (auto y = rowsToKeep; y <= end; ++y)
     {
         GetMutableRowByOffset(y).Reset(_initialAttributes);
     }
-
-    ClearMarksInRange(til::point{ 0, height }, til::point{ _width, _height });
 }
 
 // Routine Description:
@@ -1260,56 +1063,56 @@ bool TextBuffer::IsActiveBuffer() const noexcept
     return _isActiveBuffer;
 }
 
-Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
+Microsoft::Console::Render::Renderer* TextBuffer::GetRenderer() noexcept
 {
     return _renderer;
 }
 
 void TextBuffer::NotifyPaintFrame() noexcept
 {
-    if (_isActiveBuffer)
+    if (_isActiveBuffer && _renderer)
     {
-        _renderer.NotifyPaintFrame();
+        _renderer->NotifyPaintFrame();
     }
 }
 
 void TextBuffer::TriggerRedraw(const Viewport& viewport)
 {
-    if (_isActiveBuffer)
+    if (_isActiveBuffer && _renderer)
     {
-        _renderer.TriggerRedraw(viewport);
+        _renderer->TriggerRedraw(viewport);
     }
 }
 
 void TextBuffer::TriggerRedrawAll()
 {
-    if (_isActiveBuffer)
+    if (_isActiveBuffer && _renderer)
     {
-        _renderer.TriggerRedrawAll();
+        _renderer->TriggerRedrawAll();
     }
 }
 
 void TextBuffer::TriggerScroll()
 {
-    if (_isActiveBuffer)
+    if (_isActiveBuffer && _renderer)
     {
-        _renderer.TriggerScroll();
+        _renderer->TriggerScroll();
     }
 }
 
 void TextBuffer::TriggerScroll(const til::point delta)
 {
-    if (_isActiveBuffer)
+    if (_isActiveBuffer && _renderer)
     {
-        _renderer.TriggerScroll(&delta);
+        _renderer->TriggerScroll(&delta);
     }
 }
 
 void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 {
-    if (_isActiveBuffer)
+    if (_isActiveBuffer && _renderer)
     {
-        _renderer.TriggerNewTextNotification(newText);
+        _renderer->TriggerNewTextNotification(newText);
     }
 }
 
@@ -1440,10 +1243,23 @@ til::point TextBuffer::_GetWordStartForSelection(const til::point target, const 
     // expand left until we hit the left boundary or a different delimiter class
     while (result != bufferSize.Origin() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        //prevent selection wrapping on whitespace selection
-        if (isControlChar && result.x == bufferSize.Left())
+        if (result.x == bufferSize.Left())
         {
-            break;
+            // Prevent wrapping to the previous line if the selection begins on whitespace
+            if (isControlChar)
+            {
+                break;
+            }
+
+            if (result.y > 0)
+            {
+                // Prevent wrapping to the previous line if it was hard-wrapped (e.g. not forced by us to wrap)
+                const auto& priorRow = GetRowByOffset(result.y - 1);
+                if (!priorRow.WasWrapForced())
+                {
+                    break;
+                }
+            }
         }
         bufferSize.DecrementInBounds(result);
     }
@@ -1563,10 +1379,22 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
     // expand right until we hit the right boundary as a ControlChar or a different delimiter class
     while (result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        if (isControlChar && result.x == bufferSize.RightInclusive())
+        if (result.x == bufferSize.RightInclusive())
         {
-            break;
+            // Prevent wrapping to the next line if the selection begins on whitespace
+            if (isControlChar)
+            {
+                break;
+            }
+
+            // Prevent wrapping to the next line if this one was hard-wrapped (e.g. not forced by us to wrap)
+            const auto& row = GetRowByOffset(result.y);
+            if (!row.WasWrapForced())
+            {
+                break;
+            }
         }
+
         bufferSize.IncrementInBoundsCircular(result);
     }
 
@@ -1995,25 +1823,10 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
 // - end - where to end getting text
 // Return Value:
 // - Just the text.
-std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point& end) const
+std::wstring TextBuffer::GetPlainText(const til::point start, const til::point end) const
 {
-    std::wstring text;
-    auto spanLength = SpanLength(start, end);
-    text.reserve(spanLength);
-
-    auto it = GetCellDataAt(start);
-
-    for (; it && spanLength > 0; ++it, --spanLength)
-    {
-        const auto& cell = *it;
-        if (cell.DbcsAttr() != DbcsAttribute::Trailing)
-        {
-            const auto chars = cell.Chars();
-            text.append(chars);
-        }
-    }
-
-    return text;
+    const auto req = CopyRequest::FromConfig(*this, start, end, true, false, false, false);
+    return GetPlainText(req);
 }
 
 // Routine Description:
@@ -2549,6 +2362,7 @@ void TextBuffer::Serialize(const wchar_t* destination) const
     TextColor previousBg;
     TextColor previousUl;
     uint16_t previousHyperlinkId = 0;
+    bool delayedLineBreak = false;
 
     // This iterates through each row. The exit condition is at the end
     // of the for() loop so that we can properly handle file flushing.
@@ -2568,9 +2382,11 @@ void TextBuffer::Serialize(const wchar_t* destination) const
         }
 
         const auto& runs = row.Attributes().runs();
-        auto it = runs.begin();
+        const auto beg = runs.begin();
         const auto end = runs.end();
+        auto it = beg;
         const auto last = end - 1;
+        const auto lastCharX = row.MeasureRight();
         til::CoordType oldX = 0;
 
         for (; it != end; ++it)
@@ -2750,24 +2566,55 @@ void TextBuffer::Serialize(const wchar_t* destination) const
                 }
             }
 
-            auto newX = oldX + it->length;
-            // Trim whitespace with default attributes from the end of each line.
-            if (it == last && it->value == TextAttribute{})
+            // Initially, the buffer is initialized with the default attributes, but once it begins to scroll,
+            // newly scrolled in rows are initialized with the current attributes. This means we need to set
+            // the current attributes to those of the upcoming row before the row comes up. Or inversely:
+            // We let the row come up, let it set its attributes and only then print the newline.
+            if (delayedLineBreak)
             {
-                // This can result in oldX > newX, but that's okay because GetText()
-                // is robust against that and returns an empty string.
-                newX = row.MeasureRight();
+                buffer.append(L"\r\n");
+                delayedLineBreak = false;
+            }
+
+            auto newX = oldX + it->length;
+
+            // Since our text buffer doesn't store the original input text, the information over the amount of trailing
+            // whitespaces was lost. If we don't do anything here then a row that just says "Hello" would be serialized
+            // to "Hello                    ...". If the user restores the buffer dump with a different window size,
+            // this would result in some fairly ugly reflow. This code attempts to at least trim trailing whitespaces.
+            //
+            // As mentioned above for `delayedLineBreak`, rows are initialized with their first attribute, BUT
+            // only if the viewport has begun to scroll. Otherwise, they're initialized with the default attributes.
+            // In other words, we can only skip \x1b[K = Erase in Line, if both the first/last attribute are the default attribute.
+            static constexpr TextAttribute defaultAttr;
+            const auto trimTrailingWhitespaces = it == last && lastCharX < newX;
+            const auto clearToEndOfLine = trimTrailingWhitespaces && (beg->value != defaultAttr || last->value != defaultAttr);
+
+            if (trimTrailingWhitespaces)
+            {
+                newX = lastCharX;
             }
 
             buffer.append(row.GetText(oldX, newX));
+
+            if (clearToEndOfLine)
+            {
+                buffer.append(L"\x1b[K");
+            }
+
             oldX = newX;
         }
 
         const auto moreRowsRemaining = currentRow < lastRowWithText;
+        delayedLineBreak = !row.WasWrapForced();
 
-        if (!row.WasWrapForced() || !moreRowsRemaining)
+        if (!moreRowsRemaining)
         {
-            buffer.append(L"\r\n");
+            if (previousHyperlinkId)
+            {
+                buffer.append(L"\x1b]8;;\x1b\\");
+            }
+            buffer.append(L"\x1b[m\r\n");
         }
 
         if (buffer.size() >= writeThreshold || !moreRowsRemaining)
@@ -3136,14 +2983,15 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 
 // Searches through the entire (committed) text buffer for `needle` and returns the coordinates in absolute coordinates.
 // The end coordinates of the returned ranges are considered inclusive.
-std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& needle, bool caseInsensitive) const
+std::optional<std::vector<til::point_span>> TextBuffer::SearchText(const std::wstring_view& needle, SearchFlag flags) const
 {
-    return SearchText(needle, caseInsensitive, 0, til::CoordTypeMax);
+    return SearchText(needle, flags, 0, til::CoordTypeMax);
 }
 
 // Searches through the given rows [rowBeg,rowEnd) for `needle` and returns the coordinates in absolute coordinates.
 // While the end coordinates of the returned ranges are considered inclusive, the [rowBeg,rowEnd) range is half-open.
-std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const
+// Returns nullopt if the parameters were invalid (e.g. regex search was requested with an invalid regex)
+std::optional<std::vector<til::point_span>> TextBuffer::SearchText(const std::wstring_view& needle, SearchFlag flags, til::CoordType rowBeg, til::CoordType rowEnd) const
 {
     rowEnd = std::min(rowEnd, _estimateOffsetOfLastCommittedRow() + 1);
 
@@ -3157,11 +3005,25 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
 
     auto text = ICU::UTextFromTextBuffer(*this, rowBeg, rowEnd);
 
-    uint32_t flags = UREGEX_LITERAL;
-    WI_SetFlagIf(flags, UREGEX_CASE_INSENSITIVE, caseInsensitive);
+    uint32_t icuFlags{ 0 };
+    WI_SetFlagIf(icuFlags, UREGEX_CASE_INSENSITIVE, WI_IsFlagSet(flags, SearchFlag::CaseInsensitive));
+
+    if (WI_IsFlagSet(flags, SearchFlag::RegularExpression))
+    {
+        WI_SetFlag(icuFlags, UREGEX_MULTILINE);
+    }
+    else
+    {
+        WI_SetFlag(icuFlags, UREGEX_LITERAL);
+    }
 
     UErrorCode status = U_ZERO_ERROR;
-    const auto re = ICU::CreateRegex(needle, flags, &status);
+    const auto re = ICU::CreateRegex(needle, icuFlags, &status);
+    if (status > U_ZERO_ERROR)
+    {
+        return std::nullopt;
+    }
+
     uregex_setUText(re.get(), &text, &status);
 
     if (uregex_find(re.get(), -1, &status))

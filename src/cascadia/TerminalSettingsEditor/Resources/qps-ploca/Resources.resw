@@ -733,9 +733,15 @@
     <value>Ьřоẅşé... !!!</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Άδď ňėώ ƒόņţ α×ϊŝ !!! !!</value>
+  </data>
   <data name="Profile_AddNewFontAxis.Text" xml:space="preserve">
     <value>Λďð ňéẁ !!</value>
     <comment>Button label that adds a new font axis for the current font.</comment>
+  </data>
+  <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Аđδ ŉěω ƒóлт ƒ℮ãтцřе !!! !!!</value>
   </data>
   <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
     <value>Άðδ ⁿэщ !!</value>
@@ -889,6 +895,9 @@
     <value>₣øñŧ ƒдсέ !!!</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>Ýоύ ĉąи ύŝè мύŀŧΐρļĕ ƒőйτš ъý ѕéραгдŧĭŉğ ţнэm щїţђ áп ∆ŚČĨĨ çőмmа. !!! !!! !!! !!! !!! !!! !</value>
+  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>₣ŏňτ şίźε !!!</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -922,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>Ẅħĕň еņªъℓёð, тћз τēгмïπдℓ ðѓáшş çύšτом ģļўφħѕ ƒǿя ъĺôсĸ éℓêm℮ήŧ àñð ъο× ðгдωΐπĝ čћдŗąςŧέѓś ìπŝţėãđ ŏƒ ũŝіⁿğ ťћę ƒбηŧ. Ţћιş ƒзаτџŕè οŉĺŷ ωóгκŝ ẁĥéŋ ĢΡŬ Àςĉеŀèѓдτισñ ĩѕ ǻνãîļåвłę. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <value>Ẅħĕň еņªъℓёð, тћз τēгмïπдℓ ðѓáшş çύšτом ģļўφħѕ ƒǿя ъĺôсĸ éℓêm℮ήŧ àñð ъο× ðгдωΐπĝ čћдŗąςŧέѓś ìπŝţėãđ ŏƒ ũŝіⁿğ ťћę ƒбηŧ. Ţћιş ƒзаτџŕè ίš úπâνάίļǻвĺз ẅнέи μşιńĝ Ďΐґеčт2Ď άѕ тħë Ĝяãрнĩςŝ ÃРÌ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

@@ -40,6 +40,9 @@ namespace ControlUnitTests
 
         TEST_METHOD(TestSelectCommandSimple);
         TEST_METHOD(TestSelectOutputSimple);
+        TEST_METHOD(TestCommandContext);
+        TEST_METHOD(TestSelectOutputScrolling);
+        TEST_METHOD(TestSelectOutputExactWrap);
 
         TEST_METHOD(TestSimpleClickSelection);
 
@@ -496,6 +499,190 @@ namespace ControlUnitTests
         }
 
         VERIFY_IS_FALSE(core->HasSelection());
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 24, 0 }; // The character after the prompt
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+    void ControlCoreTests::TestCommandContext()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(L"Foo-bar");
+        conn->WriteInput(L"\x1b]133;C\x7");
+
+        conn->WriteInput(L"\r\n");
+        conn->WriteInput(L"This is some text     \r\n");
+        conn->WriteInput(L"with varying amounts  \r\n");
+        conn->WriteInput(L"of whitespace         \r\n");
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the command context");
+
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"Write 'Bar' to the command...");
+        conn->WriteInput(L"Bar");
+        {
+            auto historyContext{ core->CommandHistory() };
+            // Bar shouldn't be in the history, it should be the current command
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            VERIFY_ARE_EQUAL(L"Bar", historyContext.CurrentCommandline());
+        }
+
+        Log::Comment(L"then delete it");
+        conn->WriteInput(L"\b \b");
+        conn->WriteInput(L"\b \b");
+        conn->WriteInput(L"\b \b");
+        {
+            auto historyContext{ core->CommandHistory() };
+            VERIFY_ARE_EQUAL(1u, historyContext.History().Size());
+            // The current commandline is now empty
+            VERIFY_ARE_EQUAL(L"", historyContext.CurrentCommandline());
+        }
+    }
+
+    void ControlCoreTests::TestSelectOutputScrolling()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows"); // row 0
+        conn->WriteInput(L"Foo-bar"); // row 0
+        conn->WriteInput(L"\x1b]133;C\x7");
+
+        conn->WriteInput(L"\r\n");
+        conn->WriteInput(L"This is some text     \r\n"); // row 1
+        conn->WriteInput(L"with varying amounts  \r\n"); // row 2
+        conn->WriteInput(L"of whitespace         \r\n"); // row 3
+
+        _writePrompt(conn, L"C:\\Windows"); // row 4
+        conn->WriteInput(L"gci");
+        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(L"\r\n");
+
+        // enough to scroll
+        for (auto i = 0; i < 30; i++) // row 5-34
+        {
+            conn->WriteInput(L"-a--- 2/8/2024  9:47 README\r\n");
+        }
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 35 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        // The second mark is the first one we'll see
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 20, 4 }; // The character after the prompt
+            const til::point expectedEnd{ 26, 34 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 24, 0 }; // The character after the prompt
+            const til::point expectedEnd{ 21, 3 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+
+    void ControlCoreTests::TestSelectOutputExactWrap()
+    {
+        // Just like the TestSelectOutputScrolling test, but these lines will
+        // exactly wrap to the right edge of the buffer, to catch a edge case
+        // present in `ControlCore::_selectSpan`
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows"); // row 0
+        conn->WriteInput(L"Foo-bar"); // row 0
+        conn->WriteInput(L"\x1b]133;C\x7");
+
+        conn->WriteInput(L"\r\n");
+        conn->WriteInput(L"This is some text     \r\n"); // row 1
+        conn->WriteInput(L"with varying amounts  \r\n"); // row 2
+        conn->WriteInput(L"of whitespace         \r\n"); // row 3
+
+        _writePrompt(conn, L"C:\\Windows"); // row 4
+        conn->WriteInput(L"gci");
+        conn->WriteInput(L"\x1b]133;C\x7");
+        conn->WriteInput(L"\r\n");
+
+        // enough to scroll
+        for (auto i = 0; i < 30; i++) // row 5-35
+        {
+            conn->WriteInput(L"-a--- 2/8/2024  9:47 README.md\r\n");
+        }
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 35 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        // The second mark is the first one we'll see
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 20, 4 }; // The character after the prompt
+            const til::point expectedEnd{ 29, 34 }; // x = the end of the text
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
         core->SelectOutput(true);
         VERIFY_IS_TRUE(core->HasSelection());
         {

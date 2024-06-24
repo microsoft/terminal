@@ -248,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dispatcher,
             TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {
                     control->WarningBell.raise(*control, nullptr);
                 }
@@ -258,7 +258,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
-                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
                 {
                     control->_throttledUpdateScrollbar(update);
                 }
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _originalSelectedSecondaryElements.Append(e);
         }
         ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
                 const auto& menu{ control->ContextMenu() };
                 menu.PrimaryCommands().Clear();
@@ -317,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         });
         SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
                 const auto& menu{ control->SelectionContextMenu() };
                 menu.PrimaryCommands().Clear();
@@ -493,16 +493,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+            if (_searchBox && _searchBox->IsOpen())
             {
-                if (const auto searchMatches = _core.SearchResultRows())
-                {
-                    const til::color color{ _core.ForegroundColor() };
-                    const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(til::color);
+                const auto core = winrt::get_self<ControlCore>(_core);
+                const auto& searchMatches = core->SearchResultRows();
+                const auto color = core->ForegroundColor();
+                const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(til::color);
+                til::CoordType lastRow = til::CoordTypeMin;
 
-                    for (const auto row : searchMatches)
+                for (const auto& span : searchMatches)
+                {
+                    if (lastRow != span.start.y)
                     {
-                        const auto base = dataAt(row) + rightAlignedOffset;
+                        lastRow = span.start.y;
+                        const auto base = dataAt(lastRow) + rightAlignedOffset;
                         drawPip(base, color);
                     }
                 }
@@ -534,13 +538,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // but since code paths differ, extra work is required to ensure correctness.
                     if (!_core.HasMultiLineSelection())
                     {
+                        _core.SnapSearchResultToSelection(true);
                         const auto selectedLine{ _core.SelectedText(true) };
                         _searchBox->PopulateTextbox(selectedLine);
                     }
                 }
 
                 _searchBox->Open([weakThis = get_weak()]() {
-                    if (const auto self = weakThis.get(); !self->_IsClosing())
+                    if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
                         self->_searchBox->SetFocusOnTextbox();
                         self->_refreshSearch();
@@ -550,19 +555,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // This is called when a Find Next/Previous Match action is triggered.
     void TermControl::SearchMatch(const bool goForward)
     {
         if (_IsClosing())
         {
             return;
         }
-        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
+        if (!_searchBox || !_searchBox->IsOpen())
         {
             CreateSearchBoxControl();
         }
         else
         {
-            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), false));
+            _handleSearchResults(_core.Search(_searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false));
         }
     }
 
@@ -591,13 +597,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_Search(const winrt::hstring& text,
                               const bool goForward,
-                              const bool caseSensitive)
+                              const bool caseSensitive,
+                              const bool regularExpression)
     {
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, false));
+        if (_searchBox && _searchBox->IsOpen())
+        {
+            _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, false));
+        }
     }
 
     // Method Description:
-    // - The handler for the "search criteria changed" event. Clears selection and initiates a new search.
+    // - The handler for the "search criteria changed" event. Initiates a new search.
     // Arguments:
     // - text: the text to search
     // - goForward: indicates whether the search should be performed forward (if set to true) or backward
@@ -606,11 +616,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_SearchChanged(const winrt::hstring& text,
                                      const bool goForward,
-                                     const bool caseSensitive)
+                                     const bool caseSensitive,
+                                     const bool regularExpression)
     {
-        if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+        if (_searchBox && _searchBox->IsOpen())
         {
-            _handleSearchResults(_core.Search(text, goForward, caseSensitive, false));
+            // We only want to update the search results based on the new text. Set
+            // `resetOnly` to true so we don't accidentally update the current match index.
+            const auto result = _core.Search(text, goForward, caseSensitive, regularExpression, true);
+            _handleSearchResults(result);
         }
     }
 
@@ -627,6 +641,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _searchBox->Close();
         _core.ClearSearch();
+
+        // Clear search highlights scroll marks (by triggering an update after closing the search box)
+        if (_showMarksInScrollbar)
+        {
+            const auto scrollBar = ScrollBar();
+            ScrollBarUpdate update{
+                .newValue = scrollBar.Value(),
+                .newMaximum = scrollBar.Maximum(),
+                .newMinimum = scrollBar.Minimum(),
+                .newViewportSize = scrollBar.ViewportSize(),
+            };
+            _updateScrollBar->Run(update);
+        }
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
@@ -725,6 +752,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
+        // Dismiss any previewed input.
+        PreviewInput(hstring{});
+
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
         if (StringSent)
         {
@@ -1051,8 +1081,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // MSFT 33353327: We're purposefully not using _initializedTerminal to ensure we're fully initialized.
         // Doing so makes us return nullptr when XAML requests an automation peer.
         // Instead, we need to give XAML an automation peer, then fix it later.
-        if (!_IsClosing())
+        if (!_IsClosing() && !_detached)
         {
+            // It's unexpected that interactivity is null even when we're not closing or in detached state.
+            THROW_HR_IF_NULL(E_UNEXPECTED, _interactivity);
+
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
@@ -1116,7 +1149,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             co_return;
         }
 
-        const auto hr = args.Result();
+        // HRESULT is a signed 32-bit integer which would result in a hex output like "-0x7766FFF4",
+        // but canonically HRESULTs are displayed unsigned as "0x8899000C". See GH#11556.
+        const auto hr = std::bit_cast<uint32_t>(args.Result());
         const auto parameter = args.Parameter();
         winrt::hstring message;
 
@@ -1127,17 +1162,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, parameter) };
             break;
         case D2DERR_SHADER_COMPILE_FAILED:
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }, parameter) };
             break;
         case DWRITE_E_NOFONT:
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };
+            break;
+        case ATLAS_ENGINE_ERROR_MAC_TYPE:
+            message = RS_(L"RendererErrorMacType");
             break;
         default:
         {
             wchar_t buf[512];
             const auto len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &buf[0], ARRAYSIZE(buf), nullptr);
             const std::wstring_view msg{ &buf[0], len };
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorOther") }, hr, msg) };
+            std::wstring resourceString = RS_(L"RendererErrorOther").c_str();
+            //conditional message construction
+            std::wstring partialMessage = fmt::format(std::wstring_view{ resourceString }, hr, msg);
+            if (!parameter.empty())
+            {
+                fmt::format_to(std::back_inserter(partialMessage), LR"( "{0}")", parameter);
+            }
+            message = winrt::hstring{ partialMessage };
             break;
         }
         }
@@ -3584,7 +3629,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_refreshSearch()
     {
-        if (!_searchBox || _searchBox->Visibility() != Visibility::Visible)
+        if (!_searchBox || !_searchBox->IsOpen())
         {
             return;
         }
@@ -3597,7 +3642,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
-        _handleSearchResults(_core.Search(text, goForward, caseSensitive, true));
+        const auto regularExpression = _searchBox->RegularExpression();
+        _handleSearchResults(_core.Search(text, goForward, caseSensitive, regularExpression, true));
     }
 
     void TermControl::_handleSearchResults(SearchResults results)
@@ -3607,7 +3653,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch);
+        // Only show status when we have a search term
+        if (_searchBox->Text().empty())
+        {
+            _searchBox->ClearStatus();
+        }
+        else
+        {
+            _searchBox->SetStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
+        }
 
         if (results.SearchInvalidated)
         {
@@ -3647,6 +3701,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::OwningHwnd()
     {
         return _core.OwningHwnd();
+    }
+
+    void TermControl::PreviewInput(const winrt::hstring& text)
+    {
+        get_self<ControlCore>(_core)->PreviewInput(text);
+
+        if (!text.empty())
+        {
+            if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+            {
+                automationPeer.RaiseNotificationEvent(
+                    AutomationNotificationKind::ItemAdded,
+                    AutomationNotificationProcessing::All,
+                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PreviewTextAnnouncement") }, text) },
+                    L"PreviewTextAnnouncement" /* unique name for this group of notifications */);
+            }
+        }
     }
 
     void TermControl::AddMark(const Control::ScrollMark& mark)

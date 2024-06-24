@@ -30,6 +30,13 @@ extends:
     buildTerminal: true
     pgoBuildMode: Optimize
     codeSign: true
+    signingIdentity:
+      serviceName: $(SigningServiceName)
+      appId: $(SigningAppId)
+      tenantId: $(SigningTenantId)
+      akvName: $(SigningAKVName)
+      authCertName: $(SigningAuthCertName)
+      signCertName: $(SigningSignCertName)
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15

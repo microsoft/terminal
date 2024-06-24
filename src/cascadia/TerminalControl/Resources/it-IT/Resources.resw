@@ -176,7 +176,7 @@
     <value>Riprendi</value>
   </data>
   <data name="HowToOpenRun.Text" xml:space="preserve">
-    <value>CTRL+clic per aprire il collegamento</value>
+    <value>CTRL+CLIC per aprire il collegamento</value>
   </data>
   <data name="TermControl_NoMatch" xml:space="preserve">
     <value>Nessun risultato</value>
@@ -216,6 +216,10 @@ Installare il tipo di carattere mancante o sceglierne un altro.</value>
   <data name="RendererErrorFontNotFound" xml:space="preserve">
     <value>Impossibile trovare i tipi di carattere seguenti: {0}. Installarli o scegliere tipi di carattere diversi.</value>
     <comment>{Locked="{0}"} This is a warning dialog shown when the user selects a font that isn't installed.</comment>
+  </data>
+  <data name="RendererErrorMacType" xml:space="preserve">
+    <value>La versione di MacType è incompatibile con questa applicazione. Aggiornare alla versione 2023.5.31 o successiva.</value>
+    <comment>{Locked="2023.5.31","MacType"}</comment>
   </data>
   <data name="RendererErrorOther" xml:space="preserve">
     <value>Errore imprevisto del renderer: {0:#010x} {1}</value>
@@ -299,5 +303,21 @@ Installare il tipo di carattere mancante o sceglierne un altro.</value>
   <data name="SessionRestoreMessage" xml:space="preserve">
     <value>Ripristinato</value>
     <comment>"Restored" as in "This content was restored"</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Espressione regolare</value>
+    <comment>The tooltip text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchBox_RegularExpression.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ricerca di espressioni regolari</value>
+    <comment>The accessibility description text for the button on the search box control governing the use of "regular expressions" ("regex").</comment>
+  </data>
+  <data name="SearchRegexInvalid" xml:space="preserve">
+    <value>non valido</value>
+    <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
+  <data name="PreviewTextAnnouncement" xml:space="preserve">
+    <value>Input suggerito: {0}</value>
+    <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
   </data>
 </root>

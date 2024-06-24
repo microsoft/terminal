@@ -45,7 +45,6 @@ namespace winrt::TerminalApp::implementation
     }
     void ScratchpadContent::Close()
     {
-        CloseRequested.raise(*this, nullptr);
     }
 
     INewContentArgs ScratchpadContent::GetNewTerminalArgs(const BuildStartupKind /* kind */) const

@@ -245,6 +245,7 @@ CONKBD
 conlibk
 conmsgl
 CONNECTINFO
+connyection
 CONOUT
 conprops
 conpropsp
@@ -405,6 +406,7 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+DECPCCM
 DECPCTERM
 DECPS
 DECRARA
@@ -413,6 +415,7 @@ DECREQTPARM
 DECRLM
 DECRPM
 DECRQCRA
+DECRQDE
 DECRQM
 DECRQPSR
 DECRQSS
@@ -512,6 +515,7 @@ dsound
 DSSCL
 DSwap
 DTest
+DTo
 DTTERM
 dup'ed
 dvi
@@ -606,6 +610,7 @@ FILTERONPASTE
 FINDCASE
 FINDDLG
 FINDDOWN
+FINDREGEX
 FINDSTRINGEXACT
 FINDUP
 FIter
@@ -733,6 +738,7 @@ HABCDEF
 Hackathon
 HALTCOND
 HANGEUL
+hardlinks
 hashalg
 HASSTRINGS
 hbitmap
@@ -818,6 +824,7 @@ idllib
 IDOK
 IDR
 idth
+IDTo
 IDXGI
 IEnd
 IEnum
@@ -1074,6 +1081,7 @@ MOUSEFIRST
 MOUSEHWHEEL
 MOVESTART
 msb
+msbuildcache
 msctf
 msctls
 msdata
@@ -1420,6 +1428,8 @@ PUCHAR
 pvar
 pwch
 PWDDMCONSOLECONTEXT
+Pwease
+pweview
 pws
 pwstr
 pwsz
@@ -1481,6 +1491,7 @@ reparented
 reparenting
 replatformed
 Replymessage
+reportfileaccesses
 repositorypath
 Requiresx
 rerasterize
@@ -1864,7 +1875,7 @@ unk
 unknwn
 UNORM
 unparseable
-unregistering
+Unregistering
 untextured
 UPDATEDISPLAY
 UPDOWN
@@ -1898,6 +1909,7 @@ UVWXY
 UVWXYZ
 uwa
 uwp
+uwu
 uxtheme
 Vanara
 vararg
@@ -1971,6 +1983,7 @@ wdm
 webpage
 websites
 wekyb
+wewoad
 wex
 wextest
 wextestclass
@@ -1995,6 +2008,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windir
 windll
 WINDOWALPHA
 windowdpiapi
@@ -2118,6 +2132,7 @@ XIn
 XManifest
 XMath
 xorg
+XPan
 XResource
 xsi
 xstyler
@@ -2137,6 +2152,7 @@ YCast
 YCENTER
 YCount
 YLimit
+YPan
 YSubstantial
 YVIRTUALSCREEN
 YWalk

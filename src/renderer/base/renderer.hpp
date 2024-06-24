@@ -122,7 +122,10 @@ namespace Microsoft::Console::Render
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         bool _isInHoveredInterval(til::point coordTarget) const noexcept;
-        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
+        void _updateCursorInfo();
+        void _invalidateCurrentCursor() const;
+        void _invalidateOldComposition() const;
+        void _prepareNewComposition();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
         const RenderSettings& _renderSettings;
@@ -134,7 +137,7 @@ namespace Microsoft::Console::Render
         uint16_t _hyperlinkHoveredId = 0;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
-        std::optional<CursorOptions> _currentCursorOptions;
+        CursorOptions _currentCursorOptions;
         std::optional<CompositionCache> _compositionCache;
         std::vector<Cluster> _clusterBuffer;
         std::vector<til::rect> _previousSelection;

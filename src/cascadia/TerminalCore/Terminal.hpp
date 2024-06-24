@@ -131,8 +131,7 @@ public:
     // These methods are defined in TerminalApi.cpp
     void ReturnResponse(const std::wstring_view response) override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
-    TextBuffer& GetTextBuffer() noexcept override;
-    til::rect GetViewport() const noexcept override;
+    BufferState GetBufferAndViewport() noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
@@ -247,6 +246,7 @@ public:
     const size_t GetTaskbarProgress() const noexcept;
 
     void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
+    void PreviewText(std::wstring_view input);
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
