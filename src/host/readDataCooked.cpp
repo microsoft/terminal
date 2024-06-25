@@ -63,12 +63,16 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 
     const auto& textBuffer = _screenInfo.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
-    auto absoluteCursorPos = cursor.GetPosition();
+    auto cursorPos = cursor.GetPosition();
+
+    _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
+    cursorPos.x = std::max(0, cursorPos.x);
+    cursorPos.y = std::max(0, cursorPos.y);
+
+    _originInViewport = cursorPos;
 
     if (!initialData.empty())
     {
-        _replace(initialData);
-
         // The console API around `nInitialChars` in `CONSOLE_READCONSOLE_CONTROL` is pretty weird.
         // The way it works is that cmd.exe does a ReadConsole() with a `dwCtrlWakeupMask` that includes \t,
         // so when you press tab it can autocomplete the prompt based on the available file names.
@@ -80,7 +84,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         // characters like Ctrl+X as "^X" and WriteConsoleW() doesn't and so the column counts don't match.
         // Solving these issues is technically possible, but it's also quite difficult to do so correctly.
         //
-        // But unfortunately (or fortunately) the initial (from the 1990s up to 2023) looked something like that:
+        // But unfortunately (or fortunately) the initial implementation (from the 1990s up to 2023) looked something like that:
         //   cursor = cursor.GetPosition();
         //   cursor.x -= initialData.size();
         //   while (cursor.x < 0)
@@ -91,30 +95,90 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         //
         // In other words, it assumed that the number of code units in the initial data corresponds 1:1 to
         // the column count. This meant that the API never supported tabs for instance (nor wide glyphs).
-        // The new implementation still doesn't support tabs, but it does fix support for wide glyphs.
-        // That seemed like a good trade-off.
+        //
+        //
+        // The new implementation is a lot more complex to be a little more correct.
+        // It replicates part of the _redisplay() logic to layout the text at various
+        // starting positions until it finds one that matches the current cursor position.
 
-        // NOTE: You can't just "measure" the length of the string in columns either, because previously written
-        // wide glyphs might have resulted in padding whitespace in the text buffer (see ROW::WasDoubleBytePadded).
-        til::CoordType columns = 0;
-        textBuffer.FitTextIntoColumns(initialData, til::CoordTypeMax, columns);
+        const auto size = _screenInfo.GetVtPageArea().Dimensions();
 
-        const int64_t w = textBuffer.GetSize().Width();
-        const int64_t x = absoluteCursorPos.x;
-        const int64_t y = absoluteCursorPos.y;
+        // Guess the initial cursor position based on the string length, assuming that 1 char = 1 column.
+        const auto columnRemainder = gsl::narrow_cast<til::CoordType>((initialData.size() % size.width));
+        const auto bestGuessColumn = (cursorPos.x - columnRemainder + size.width) % size.width;
 
-        auto cols = y * w + x - columns;
-        cols = std::max<int64_t>(0, cols);
+        std::wstring line;
+        LayoutResult res;
+        til::CoordType bestDistance = til::CoordTypeMax;
+        til::CoordType bestColumnBegin = 0;
+        til::CoordType bestNewlineCount = 0;
 
-        absoluteCursorPos.x = gsl::narrow_cast<til::CoordType>(cols % w);
-        absoluteCursorPos.y = gsl::narrow_cast<til::CoordType>(cols / w);
+        line.reserve(size.width);
+
+        // Do a brute force search for the best starting position that ends at the current cursor position.
+        // The search is centered around `bestGuessColumn` with offsets 0, 1, -1, 2, -2, 3, -3, ...
+        for (til::CoordType i = 0, attempts = 2 * size.width; i <= attempts; i++)
+        {
+            // Hilarious bit-trickery that no one can read. But it works. Check it out in a debugger.
+            // The idea is to use bits 1:31 as the value and bit 0 as a trigger to bit-flip the value.
+            // A bit-flipped positive number is negative, but offset by 1, so we add 1. Fun!
+            const auto offset = ((i / 2) ^ ((i & 1) - 1)) + 1;
+            const auto columnBegin = bestGuessColumn + offset;
+
+            if (columnBegin < 0 || columnBegin >= size.width)
+            {
+                continue;
+            }
+
+            til::CoordType newlineCount = 0;
+            res.column = columnBegin;
+
+            for (size_t beg = 0; beg < initialData.size();)
+            {
+                line.clear();
+                res = _layoutLine(line, initialData, beg, res.column, size.width);
+                beg = res.offset;
+
+                if (res.column >= size.width)
+                {
+                    res.column = 0;
+                    newlineCount += 1;
+                }
+            }
+
+            const auto distance = abs(res.column - cursorPos.x);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestColumnBegin = columnBegin;
+                bestNewlineCount = newlineCount;
+            }
+            if (distance == 0)
+            {
+                break;
+            }
+        }
+
+        auto originInViewport = cursorPos;
+        originInViewport.x = bestColumnBegin;
+        originInViewport.y = originInViewport.y - bestNewlineCount;
+
+        if (originInViewport.y < 0)
+        {
+            originInViewport = {};
+        }
+
+        // We can't mark the buffer as dirty because this messes up the cursor position for cmd
+        // somehow when the prompt is longer than the viewport height. I haven't investigated
+        // why that happens, but it works decently well enough that it's not too important.
+        _buffer.assign(initialData);
+        _bufferDirtyBeg = _buffer.size();
+        _bufferCursor = _buffer.size();
+
+        _originInViewport = originInViewport;
+        _pagerPromptEnd = cursorPos;
+        _pagerHeight = std::min(size.height, bestNewlineCount + 1);
     }
-
-    _screenInfo.GetVtPageArea().ConvertToOrigin(&absoluteCursorPos);
-    absoluteCursorPos.x = std::max(0, absoluteCursorPos.x);
-    absoluteCursorPos.y = std::max(0, absoluteCursorPos.y);
-
-    _originInViewport = absoluteCursorPos;
 }
 
 // Routine Description:
@@ -384,7 +448,6 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
         // It is important that we don't actually print that character out though, as it's only for the calling application to see.
         // That's why we flush the contents before the insertion and then ensure that the _flushBuffer() call in Read() exits early.
         _replace(_bufferCursor, npos, nullptr, 0);
-        _dirty = true;
         _redisplay();
         _replace(_bufferCursor, 0, &wch, 1);
         _dirty = false;
@@ -736,6 +799,12 @@ void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* inp
     const auto size = _buffer.size();
     offset = std::min(offset, size);
     remove = std::min(remove, size - offset);
+
+    // Nothing to do. Avoid marking it as dirty.
+    if (remove == 0 && count == 0)
+    {
+        return;
+    }
 
     _buffer.replace(offset, remove, input, count);
     _bufferCursor = offset + count;
@@ -1095,7 +1164,7 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
 
     output.reserve(output.size() + columnLimit - column);
 
-    while (it != end)
+    while (it != end && column < columnLimit)
     {
         const auto nextControlChar = std::find_if(it, end, [](const auto& wch) { return wch < L' '; });
         if (it != nextControlChar)
@@ -1107,38 +1176,41 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
             output.append(text, 0, len);
             column += cols;
             it += len;
+        }
 
-            if (len < text.size() || it == end)
+        const auto nextPlainChar = std::find_if(it, end, [](const auto& wch) { return wch >= L' '; });
+        for (; it != nextPlainChar; ++it)
+        {
+            if (column >= columnLimit)
             {
                 break;
             }
-        }
 
-        const auto wch = *it;
-        wchar_t buf[8];
-        til::CoordType len = 0;
+            const auto wch = *it;
+            wchar_t buf[8];
+            til::CoordType len = 0;
 
-        if (wch == UNICODE_TAB)
-        {
-            const auto remaining = columnLimit - column;
-            len = std::min(8 - (column & 7), remaining);
-            std::fill_n(&buf[0], len, L' ');
-        }
-        else
-        {
-            buf[0] = L'^';
-            buf[1] = wch + L'@';
-            len = 2;
-        }
+            if (wch == UNICODE_TAB)
+            {
+                const auto remaining = columnLimit - column;
+                len = std::min(8 - (column & 7), remaining);
+                std::fill_n(&buf[0], len, L' ');
+            }
+            else
+            {
+                buf[0] = L'^';
+                buf[1] = wch + L'@';
+                len = 2;
+            }
 
-        if (column + len > columnLimit)
-        {
-            break;
-        }
+            if (column + len > columnLimit)
+            {
+                break;
+            }
 
-        output.append(buf, len);
-        column += len;
-        it++;
+            output.append(buf, len);
+            column += len;
+        }
     }
 
     const size_t offset = it - beg;
