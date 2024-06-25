@@ -738,7 +738,7 @@ void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* inp
     if (offset <= _bufferDirtyBeg)
     {
         const auto& textBuffer = _screenInfo.GetTextBuffer();
-        _bufferDirtyBeg = textBuffer.GraphemePrev(_buffer, offset);
+        _bufferDirtyBeg = textBuffer.GraphemePrev(_buffer, _bufferCursor);
     }
 }
 
@@ -843,14 +843,18 @@ void COOKED_READ_DATA::_redisplay()
         pagerPromptEnd = { res.column, gsl::narrow_cast<til::CoordType>(lines.size() - 1) };
 
         // If the content got a little shorter than it was before, we need to erase the tail end.
+        // If the last character on a line got removed, we'll skip this code because `remaining`
+        // will be negative, and instead we'll erase it later when we append "  \r" to the lines.
         // If entire lines got removed, then we'll fix this later when comparing against _pagerContentEnd.y.
         if (pagerPromptEnd.y <= _pagerPromptEnd.y)
         {
-            auto& line = lines.back();
             const auto endX = _pagerPromptEnd.y == pagerPromptEnd.y ? _pagerPromptEnd.x : size.width;
-            const auto remaining = endX - line.columns;
+            const auto remaining = endX - pagerPromptEnd.x;
+
             if (remaining > 0)
             {
+                auto& line = lines.back();
+
                 // CSI K may be expensive, so use spaces if we can.
                 if (remaining <= 8)
                 {
@@ -904,11 +908,15 @@ void COOKED_READ_DATA::_redisplay()
             cursorPositionFinal.x = 0;
             cursorPositionFinal.y++;
 
-            // If the cursor is at the end of the buffer however, we have to insert
-            // a line because otherwise it won't have any space to be visible.
+            // If the cursor is at the end of the buffer we must always show it after the last character.
+            // Since VT uses delayed EOL wrapping, we must write at least 1 more character to force the
+            // potential delayed line wrap at the end of the prompt, on the last line.
+            // This doubles as the code that erases the last character on the last line when backspacing.
+            // That's also why we append 2 spaces, because the last character may have been a ^E control
+            // character visualizer, which sneakily actually consists of 2 characters.
             if (_bufferCursor == _buffer.size())
             {
-                lines.emplace_back(L" \b", 0, 0, 0);
+                lines.emplace_back(L"  \r", 0, 0, 0);
             }
         }
 
@@ -1100,7 +1108,7 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
             }
         }
 
-        const auto wch = *it++;
+        const auto wch = *it;
         wchar_t buf[8];
         til::CoordType len = 0;
 
@@ -1117,11 +1125,14 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
             len = 2;
         }
 
-        if (column + len <= columnLimit)
+        if (column + len > columnLimit)
         {
-            column += len;
-            output.append(buf, len);
+            break;
         }
+
+        output.append(buf, len);
+        column += len;
+        it++;
     }
 
     const size_t offset = it - beg;
