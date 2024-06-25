@@ -1221,7 +1221,7 @@ outerLoopExit:
     }
 
     return {
-        .offset = size_t(it - beg),
+        .offset = static_cast<size_t>(it - beg),
         .column = column,
     };
 }
