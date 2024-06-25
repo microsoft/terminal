@@ -931,7 +931,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>有効にすると、ターミナルは、フォントを使用する代わりに、ブロック要素とボックス描画文字のカスタム グリフを描画します。グラフィックス API として Direct2D を使用している場合、この機能は使用できません。</value>
+    <value>有効にすると、ターミナルは、フォントを使用する代わりに、ブロック要素とボックス描画文字のカスタム グリフを描画します。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
