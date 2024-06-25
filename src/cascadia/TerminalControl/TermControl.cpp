@@ -1162,7 +1162,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, parameter) };
             break;
         case D2DERR_SHADER_COMPILE_FAILED:
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }, parameter) };
             break;
         case DWRITE_E_NOFONT:
             message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };
@@ -1175,7 +1175,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             wchar_t buf[512];
             const auto len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &buf[0], ARRAYSIZE(buf), nullptr);
             const std::wstring_view msg{ &buf[0], len };
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorOther") }, hr, msg) };
+            std::wstring resourceString = RS_(L"RendererErrorOther").c_str();
+            //conditional message construction
+            std::wstring partialMessage = fmt::format(std::wstring_view{ resourceString }, hr, msg);
+            if (!parameter.empty())
+            {
+                fmt::format_to(std::back_inserter(partialMessage), LR"( "{0}")", parameter);
+            }
+            message = winrt::hstring{ partialMessage };
             break;
         }
         }
