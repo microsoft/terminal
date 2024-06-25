@@ -605,6 +605,8 @@ constexpr int ucdToCharacterWidth(const int val) noexcept
 }
 // clang-format on
 
+// Decodes the next codepoint from the given UTF-16 string.
+// Returns the start of the next codepoint. Assumes `it < end`.
 [[msvc::forceinline]] constexpr const wchar_t* utf16NextOrFFFD(const wchar_t* it, const wchar_t* end, char32_t& out)
 {
     __assume(it != nullptr);
@@ -635,6 +637,8 @@ constexpr int ucdToCharacterWidth(const int val) noexcept
     return it;
 }
 
+// Decodes the preceding codepoint from the given UTF-16 string.
+// Returns the start of the preceding codepoint. Assumes `it > beg`.
 [[msvc::forceinline]] constexpr const wchar_t* utf16PrevOrFFFD(const wchar_t* it, const wchar_t* beg, char32_t& out)
 {
     __assume(it != nullptr);
@@ -665,6 +669,22 @@ constexpr int ucdToCharacterWidth(const int val) noexcept
     return it;
 }
 
+// Returns `reset` if `ptr` is outside the range [beg, end). Otherwise, it returns `ptr` unmodified.
+constexpr const wchar_t* resetIfOutOfRange(const wchar_t* beg, const wchar_t* end, const wchar_t* reset, const wchar_t* ptr)
+{
+    auto ret = ptr;
+    // This uses individual if-assignments to get the compiler to emit conditional moves.
+    if (ptr < beg)
+    {
+        ret = reset;
+    }
+    if (ptr > end)
+    {
+        ret = reset;
+    }
+    return ret;
+}
+
 static CodepointWidthDetector s_codepointWidthDetector;
 
 CodepointWidthDetector& CodepointWidthDetector::Singleton() noexcept
@@ -674,206 +694,249 @@ CodepointWidthDetector& CodepointWidthDetector::Singleton() noexcept
 
 bool CodepointWidthDetector::GraphemeNext(GraphemeState& s, const std::wstring_view& str) noexcept
 {
+    if (_mode == TextMeasurementMode::Graphemes)
+    {
+        return _graphemeNext(s, str);
+    }
+    if (_mode == TextMeasurementMode::Wcswidth)
+    {
+        return _graphemeNextWcswidth(s, str);
+    }
+    return _graphemeNextConsole(s, str);
+}
+
+bool CodepointWidthDetector::GraphemePrev(GraphemeState& s, const std::wstring_view& str) noexcept
+{
+    if (_mode == TextMeasurementMode::Graphemes)
+    {
+        return _graphemePrev(s, str);
+    }
+    if (_mode == TextMeasurementMode::Wcswidth)
+    {
+        return _graphemePrevWcswidth(s, str);
+    }
+    return _graphemePrevConsole(s, str);
+}
+
+// Parses the next grapheme cluster from the given string. The algorithm largely follows "UAX #29: Unicode Text Segmentation",
+// but takes some mild liberties. Returns false if the end of the string was reached. Updates `s` with the cluster.
+bool CodepointWidthDetector::_graphemeNext(GraphemeState& s, const std::wstring_view& str) const noexcept
+{
     const auto beg = str.data();
     const auto end = beg + str.size();
     auto clusterBeg = s.beg + s.len;
+    auto width = s.width;
+    auto state = s._state;
+    auto lead = s._last;
 
     // If it's a new string argument, we'll restart at the new string's beginning.
-    if (clusterBeg < beg || clusterBeg > end)
+    clusterBeg = resetIfOutOfRange(beg, end, beg, clusterBeg);
+
+    auto clusterEnd = clusterBeg;
+
+    // Skip if we're already at the end.
+    if (clusterEnd < end)
     {
-        clusterBeg = beg;
+        char32_t cp;
+
+        // If a previous parsing of a grapheme cluster got interrupted because we reached the end of the string,
+        // we'll have stored the parser state in `s._state` so that we can continue parsing within the new string.
+        // The problem is that a `state` of zero is also a valid state parameter for `ucdGraphemeJoins`.
+        // Thus, we're storing `s._state` bit-flipped so that we can differentiate between it being unset (0) and
+        // storing a previous state of 0 (0xffff...).
+        const auto gotState = state != 0;
+        state = ~state;
+        if (gotState)
+        {
+            goto fetchNext;
+        }
+
+        clusterEnd = utf16NextOrFFFD(clusterEnd, end, cp);
+        lead = ucdLookup(cp);
+        width = 0;
+        state = 0;
+
+        for (;;)
+        {
+            {
+                auto w = ucdToCharacterWidth(lead);
+                if (w == 3)
+                {
+                    w = _ambiguousWidth;
+                }
+
+                // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
+                // By convention, this turns them from being ambiguous width (= narrow) into wide ones.
+                // We achieve this here by explicitly giving this codepoint a wide width.
+                // Later down below we'll clamp width back to <= 2.
+                if (cp == 0xFE0F)
+                {
+                    w = 2;
+                }
+
+                width += w;
+            }
+
+            // If we're at the end of the string, we'll break out of the loop, but leave
+            // `state` and `lead` as-is, so that we can continue parsing in the next string.
+            if (clusterEnd >= end)
+            {
+                break;
+            }
+
+        fetchNext:
+            const auto clusterEndNext = utf16NextOrFFFD(clusterEnd, end, cp);
+            const auto trail = ucdLookup(cp);
+
+            state = ucdGraphemeJoins(state, lead, trail);
+            if (ucdGraphemeDone(state))
+            {
+                // We'll later do `state = ~state` which will result in `state == 0`.
+                state = ~0;
+                lead = 0;
+                break;
+            }
+
+            clusterEnd = clusterEndNext;
+            lead = trail;
+        }
+
+        state = ~state;
+        width = width > 2 ? 2 : width;
+
+        s.beg = clusterBeg;
+        s.len = static_cast<int>(clusterEnd - clusterBeg);
+        s.width = width;
+        s._state = state;
+        s._last = lead;
     }
+
+    return clusterEnd < end;
+}
+
+// Parses the preceding grapheme cluster from the given string. The algorithm largely follows "UAX #29: Unicode Text Segmentation",
+// but takes some mild liberties. Returns false if the end of the string was reached. Updates `s` with the cluster.
+// This code is identical to _graphemeNext() but with the order of operations reversed since we're iterating backwards.
+bool CodepointWidthDetector::_graphemePrev(GraphemeState& s, const std::wstring_view& str) const noexcept
+{
+    const auto beg = str.data();
+    const auto end = beg + str.size();
+    auto clusterEnd = s.beg;
+    auto width = s.width;
+    auto state = s._state;
+    auto trail = s._last;
+
+    // If it's a new string argument, we'll restart at the new string's beginning.
+    clusterEnd = resetIfOutOfRange(beg, end, end, clusterEnd);
+
+    auto clusterBeg = clusterEnd;
+
+    // Skip if we're already at the end.
+    if (clusterEnd > beg)
+    {
+        char32_t cp;
+
+        // If a previous parsing of a grapheme cluster got interrupted because we reached the end of the string,
+        // we'll have stored the parser state in `s._state` so that we can continue parsing within the new string.
+        // The problem is that a `state` of zero is also a valid state parameter for `ucdGraphemeJoins`.
+        // Thus, we're storing `s._state` bit-flipped so that we can differentiate between it being unset (0) and
+        // storing a previous state of 0 (0xffff...).
+        const auto gotState = state != 0;
+        state = ~state;
+        if (gotState)
+        {
+            goto fetchNext;
+        }
+
+        clusterBeg = utf16PrevOrFFFD(clusterBeg, beg, cp);
+        trail = ucdLookup(cp);
+        width = 0;
+        state = 0;
+
+        for (;;)
+        {
+            {
+                auto w = ucdToCharacterWidth(trail);
+                if (w == 3)
+                {
+                    w = _ambiguousWidth;
+                }
+
+                // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
+                // By convention, this turns them from being ambiguous width (= narrow) into wide ones.
+                // We achieve this here by explicitly giving this codepoint a wide width.
+                // Later down below we'll clamp width back to <= 2.
+                if (cp == 0xFE0F)
+                {
+                    w = 2;
+                }
+
+                width += w;
+            }
+
+            // If we're at the end of the string, we'll break out of the loop, but leave
+            // `state` and `lead` as-is, so that we can continue parsing in the next string.
+            if (clusterBeg <= beg)
+            {
+                break;
+            }
+
+        fetchNext:
+            const auto clusterBegNext = utf16PrevOrFFFD(clusterBeg, beg, cp);
+            const auto lead = ucdLookup(cp);
+
+            state = ucdGraphemeJoins(state, lead, trail);
+            if (ucdGraphemeDone(state))
+            {
+                // We'll later do `state = ~state` which will result in `state == 0`.
+                state = ~0;
+                trail = 0;
+                break;
+            }
+
+            clusterBeg = clusterBegNext;
+            trail = lead;
+        }
+
+        state = ~state;
+        width = width > 2 ? 2 : width;
+
+        s.beg = clusterBeg;
+        s.len = static_cast<int>(clusterEnd - clusterBeg);
+        s.width = width;
+        s._state = state;
+        s._last = trail;
+    }
+
+    return clusterBeg > beg;
+}
+
+// Implements a clustering algorithm that behaves similar to terminals and applications based on `wcswidth`.
+// Such terminals have no actual notion of graphemes or joining characters, but do know zero-width characters.
+// During cursor navigation they'll skip over such zero-width characters to reach the target column.
+// In effect this means, that a non-zero-width character gets clustered with any number of following zero-width characters.
+bool CodepointWidthDetector::_graphemeNextWcswidth(GraphemeState& s, const std::wstring_view& str) const noexcept
+{
+    const auto beg = str.data();
+    const auto end = beg + str.size();
+    auto clusterBeg = s.beg + s.len;
+    auto width = s.width;
+    auto state = s._state;
+
+    // If it's a new string argument, we'll restart at the new string's beginning.
+    clusterBeg = resetIfOutOfRange(beg, end, beg, clusterBeg);
 
     if (clusterBeg >= end)
     {
         return false;
     }
 
-    if (_mode != TextMeasurementMode::Graphemes)
-    {
-        return _graphemeNextWcswidth(s, end, clusterBeg);
-    }
-
     auto clusterEnd = clusterBeg;
-    int state = s._state;
-    int width = 0;
-    int lead;
-    char32_t cp;
 
-    // The _state is stored ~flipped, so that we can differentiate
-    // between it being unset (0) and it being set to 0 (~0 = 255).
-    if (state)
-    {
-        state = ~state;
-        lead = s._last;
-        width = s.width;
-        goto fetchNext;
-    }
-
-    clusterEnd = utf16NextOrFFFD(clusterEnd, end, cp);
-    lead = ucdLookup(cp);
-
-    for (;;)
-    {
-        {
-            auto w = ucdToCharacterWidth(lead);
-            if (w == 3)
-            {
-                w = _ambiguousWidth;
-            }
-
-            // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
-            // By convention, this turns them from being ambiguous width (= narrow) into wide ones.
-            // We achieve this here by explicitly giving this codepoint a wide width.
-            // Later down below we'll clamp width back to <= 2.
-            if (cp == 0xFE0F)
-            {
-                w = 2;
-            }
-
-            width += w;
-        }
-
-        if (clusterEnd >= end)
-        {
-            break;
-        }
-
-    fetchNext:
-        const auto clusterEndNext = utf16NextOrFFFD(clusterEnd, end, cp);
-        const auto trail = ucdLookup(cp);
-        state = ucdGraphemeJoins(state, lead, trail);
-
-        if (ucdGraphemeDone(state))
-        {
-            // We'll later do a `state = ~state` which will result in `state == 0`.
-            state = ~0;
-            lead = 0;
-            break;
-        }
-
-        clusterEnd = clusterEndNext;
-        lead = trail;
-    }
-
-    state = ~state;
-    width = width > 2 ? 2 : width;
-
-    s.beg = clusterBeg;
-    s.len = static_cast<int>(clusterEnd - clusterBeg);
-    s.width = width;
-    s._state = state;
-    s._last = lead;
-    return clusterEnd < end;
-}
-
-// This code is identical to GraphemeNext() but with the order of operations reversed since we're iterating backwards.
-bool CodepointWidthDetector::GraphemePrev(GraphemeState& s, const std::wstring_view& str) noexcept
-{
-    const auto beg = str.data();
-    const auto end = beg + str.size();
-    auto clusterEnd = s.beg;
-
-    // If it's a new string argument, we'll restart at the new string's end.
-    if (clusterEnd < beg || clusterEnd > end)
-    {
-        clusterEnd = end;
-    }
-
-    if (clusterEnd <= beg)
-    {
-        return false;
-    }
-
-    if (_mode != TextMeasurementMode::Graphemes)
-    {
-        return _graphemePrevWcswidth(s, beg, clusterEnd);
-    }
-
-    auto clusterBeg = clusterEnd;
-    int state = s._state;
-    int width = 0;
-    int trail;
-    char32_t cp;
-
-    // The _state is stored ~flipped, so that we can differentiate
-    // between it being unset (0) and it being set to 0 (~0 = 255).
-    if (state)
-    {
-        state = ~state;
-        trail = s._last;
-        width = s.width;
-        goto fetchNext;
-    }
-
-    clusterBeg = utf16PrevOrFFFD(clusterBeg, beg, cp);
-    trail = ucdLookup(cp);
-
-    for (;;)
-    {
-        {
-            auto w = ucdToCharacterWidth(trail);
-            if (w == 3)
-            {
-                w = _ambiguousWidth;
-            }
-
-            // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
-            // By convention, this turns them from being ambiguous width (= narrow) into wide ones.
-            // We achieve this here by explicitly giving this codepoint a wide width.
-            // Later down below we'll clamp width back to <= 2.
-            if (cp == 0xFE0F)
-            {
-                w = 2;
-            }
-
-            width += w;
-        }
-
-        if (clusterBeg <= beg)
-        {
-            break;
-        }
-
-    fetchNext:
-        const auto clusterBegNext = utf16PrevOrFFFD(clusterBeg, beg, cp);
-        const auto lead = ucdLookup(cp);
-        state = ucdGraphemeJoins(state, lead, trail);
-
-        if (ucdGraphemeDone(state))
-        {
-            // We'll later do a `state = ~state` which will result in `state == 0`.
-            state = ~0;
-            trail = 0;
-            break;
-        }
-
-        clusterBeg = clusterBegNext;
-        trail = lead;
-    }
-
-    state = ~state;
-    width = width > 2 ? 2 : width;
-
-    s.beg = clusterBeg;
-    s.len = static_cast<int>(clusterEnd - clusterBeg);
-    s.width = width;
-    s._state = state;
-    s._last = trail;
-    return clusterBeg > beg;
-}
-
-__declspec(noinline) bool CodepointWidthDetector::_graphemeNextWcswidth(GraphemeState& s, const wchar_t* end, const wchar_t* clusterBeg) noexcept
-{
-    if (_mode != TextMeasurementMode::Wcswidth)
-    {
-        return _graphemeNextConsole(s, end, clusterBeg);
-    }
-
-    auto clusterEnd = clusterBeg;
-    auto width = s.width;
-    auto state = s._state;
-
+    // Normally we could just append any zero-width characters to the current cluster,
+    // but theoretically we could have a zero-width character itself as the lead character.
+    // Because of that we don't use `s.width` to track the state but rather flag
+    // whether we've encountered our "lead" character in `s._state` (1 if we had one).
     if (state == 0)
     {
         width = 0;
@@ -914,19 +977,32 @@ __declspec(noinline) bool CodepointWidthDetector::_graphemeNextWcswidth(Grapheme
     return clusterEnd < end;
 }
 
-__declspec(noinline) bool CodepointWidthDetector::_graphemePrevWcswidth(GraphemeState& s, const wchar_t* beg, const wchar_t* clusterEnd) noexcept
+// Implements a clustering algorithm that behaves similar to terminals and applications based on `wcswidth`.
+// Such terminals have no actual notion of graphemes or joining characters, but do know zero-width characters.
+// During cursor navigation they'll skip over such zero-width characters to reach the target column.
+// In effect this means, that a non-zero-width character gets clustered with any number of following zero-width characters.
+bool CodepointWidthDetector::_graphemePrevWcswidth(GraphemeState& s, const std::wstring_view& str) const noexcept
 {
-    if (_mode != TextMeasurementMode::Wcswidth)
+    const auto beg = str.data();
+    const auto end = beg + str.size();
+    auto clusterEnd = s.beg;
+
+    // If it's a new string argument, we'll restart at the new string's beginning.
+    clusterEnd = resetIfOutOfRange(beg, end, end, clusterEnd);
+
+    if (clusterEnd <= beg)
     {
-        return _graphemePrevConsole(s, beg, clusterEnd);
+        return false;
     }
 
     auto clusterBeg = clusterEnd;
     auto width = s.width;
-    int state = 0;
+    int delayedCompletion = 0;
 
-    // Insert a `.len = 0` result if we previously returned false but had a complete cluster (`.width > 0`).
-    // This will indicate to the caller that the previous cluster was complete, just like how the grapheme algorithm works.
+    // In order to conform to the behavior of _graphemePrev(), we need to pretend as if we don't know
+    // whether the cluster is complete yet (with graphemes there may be prepended concatenation marks).
+    // As such, we flag `delayedCompletion` to true which gets stored as `s._state = 1` and return false.
+    // Then, when we get called again with the next input string, we'll finally return false with a `s.len` of 0.
     if (s._state == 0)
     {
         width = 0;
@@ -950,7 +1026,7 @@ __declspec(noinline) bool CodepointWidthDetector::_graphemePrevWcswidth(Grapheme
 
             if (hasWidth || atEnd)
             {
-                state = hasWidth && atEnd;
+                delayedCompletion = hasWidth && atEnd;
                 break;
             }
         }
@@ -959,18 +1035,34 @@ __declspec(noinline) bool CodepointWidthDetector::_graphemePrevWcswidth(Grapheme
     s.beg = clusterBeg;
     s.len = static_cast<int>(clusterEnd - clusterBeg);
     s.width = width;
-    s._state = state;
+    s._state = delayedCompletion;
     return clusterBeg > beg;
 }
 
-bool CodepointWidthDetector::_graphemeNextConsole(GraphemeState& s, const wchar_t* end, const wchar_t* clusterBeg) noexcept
+// Implements a clustering algorithm that behaves similar to the old conhost.
+// It even asks the text renderer how wide ambiguous width characters are instead of defaulting to 1 (or 2).
+bool CodepointWidthDetector::_graphemeNextConsole(GraphemeState& s, const std::wstring_view& str) noexcept
 {
+    const auto beg = str.data();
+    const auto end = beg + str.size();
+    auto clusterBeg = s.beg + s.len;
+
+    // If it's a new string argument, we'll restart at the new string's beginning.
+    clusterBeg = resetIfOutOfRange(beg, end, beg, clusterBeg);
+
+    if (clusterBeg >= end)
+    {
+        return false;
+    }
+
     auto clusterEnd = clusterBeg;
     auto width = s.width;
-    int state = 0;
+    int delayedCompletion = 0;
 
-    // Insert a `.len = 0` result if we previously returned false but had a complete cluster (`.width > 0`).
-    // This will indicate to the caller that the previous cluster was complete, just like how the grapheme algorithm works.
+    // In order to conform to the behavior of _graphemeNext(), we need to pretend as if we don't know
+    // whether the cluster is complete yet (with graphemes there may be nonspacing marks, etc.).
+    // As such, we flag `delayedCompletion` to true which gets stored as `s._state = 1` and return false.
+    // Then, when we get called again with the next input string, we'll finally return false with a `s.len` of 0.
     if (s._state == 0)
     {
         char32_t cp;
@@ -983,24 +1075,40 @@ bool CodepointWidthDetector::_graphemeNextConsole(GraphemeState& s, const wchar_
             width = _checkFallbackViaCache(cp);
         }
 
-        state = clusterEnd >= end;
+        delayedCompletion = clusterEnd >= end;
     }
 
     s.beg = clusterBeg;
     s.len = static_cast<int>(clusterEnd - clusterBeg);
     s.width = width;
-    s._state = state;
-    return state == 0;
+    s._state = delayedCompletion;
+    return delayedCompletion == 0;
 }
 
-bool CodepointWidthDetector::_graphemePrevConsole(GraphemeState& s, const wchar_t* beg, const wchar_t* clusterEnd) noexcept
+// Implements a clustering algorithm that behaves similar to the old conhost.
+// It even asks the text renderer how wide ambiguous width characters are instead of defaulting to 1 (or 2).
+bool CodepointWidthDetector::_graphemePrevConsole(GraphemeState& s, const std::wstring_view& str) noexcept
 {
+    const auto beg = str.data();
+    const auto end = beg + str.size();
+    auto clusterEnd = s.beg;
+
+    // If it's a new string argument, we'll restart at the new string's beginning.
+    clusterEnd = resetIfOutOfRange(beg, end, end, clusterEnd);
+
+    if (clusterEnd <= beg)
+    {
+        return false;
+    }
+
     auto clusterBeg = clusterEnd;
     auto width = s.width;
-    int state = 0;
+    int delayedCompletion = 0;
 
-    // Insert a `.len = 0` result if we previously returned false but had a complete cluster (`.width > 0`).
-    // This will indicate to the caller that the previous cluster was complete, just like how the grapheme algorithm works.
+    // In order to conform to the behavior of _graphemePrev(), we need to pretend as if we don't know
+    // whether the cluster is complete yet (with graphemes there may be prepended concatenation marks).
+    // As such, we flag `delayedCompletion` to true which gets stored as `s._state = 1` and return false.
+    // Then, when we get called again with the next input string, we'll finally return false with a `s.len` of 0.
     if (s._state == 0)
     {
         char32_t cp;
@@ -1013,19 +1121,19 @@ bool CodepointWidthDetector::_graphemePrevConsole(GraphemeState& s, const wchar_
             width = _checkFallbackViaCache(cp);
         }
 
-        state = clusterBeg <= beg;
+        delayedCompletion = clusterBeg <= beg;
     }
 
     s.beg = clusterBeg;
     s.len = static_cast<int>(clusterEnd - clusterBeg);
     s.width = width;
-    s._state = state;
-    return state == 0;
+    s._state = delayedCompletion;
+    return delayedCompletion == 0;
 }
 
 // Call the function specified via SetFallbackMethod() to turn ambiguous (width = 3) into narrow/wide.
 // Caches the results in _fallbackCache.
-__declspec(noinline) int CodepointWidthDetector::_checkFallbackViaCache(const char32_t codepoint) noexcept
+int CodepointWidthDetector::_checkFallbackViaCache(const char32_t codepoint) noexcept
 try
 {
     // Ambiguous glyphs are considered narrow by default. See microsoft/terminal#2066 for more info.

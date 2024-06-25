@@ -60,10 +60,12 @@ struct CodepointWidthDetector
     void Reset(TextMeasurementMode mode) noexcept;
 
 private:
-    __declspec(noinline) bool _graphemeNextWcswidth(GraphemeState& s, const wchar_t* end, const wchar_t* clusterBeg) noexcept;
-    __declspec(noinline) bool _graphemePrevWcswidth(GraphemeState& s, const wchar_t* beg, const wchar_t* clusterEnd) noexcept;
-    __declspec(noinline) bool _graphemeNextConsole(GraphemeState& s, const wchar_t* end, const wchar_t* clusterBeg) noexcept;
-    __declspec(noinline) bool _graphemePrevConsole(GraphemeState& s, const wchar_t* beg, const wchar_t* clusterEnd) noexcept;
+    bool _graphemeNext(GraphemeState& s, const std::wstring_view& str) const noexcept;
+    bool _graphemePrev(GraphemeState& s, const std::wstring_view& str) const noexcept;
+    bool _graphemeNextWcswidth(GraphemeState& s, const std::wstring_view& str) const noexcept;
+    bool _graphemePrevWcswidth(GraphemeState& s, const std::wstring_view& str) const noexcept;
+    bool _graphemeNextConsole(GraphemeState& s, const std::wstring_view& str) noexcept;
+    bool _graphemePrevConsole(GraphemeState& s, const std::wstring_view& str) noexcept;
     __declspec(noinline) int _checkFallbackViaCache(char32_t codepoint) noexcept;
 
     std::unordered_map<char32_t, int> _fallbackCache;
