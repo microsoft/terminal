@@ -186,6 +186,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+        // Helper for converting a hue [0, 1) to an RGB value.
+        // Credit to https://www.chilliant.com/rgb2hsv.html
+        static til::color from_hue(float hue)
+        {
+            const float R = abs(hue * 6 - 3) - 1;
+            const float G = 2 - abs(hue * 6 - 2);
+            const float B = 2 - abs(hue * 6 - 4);
+            return color{
+                base::saturated_cast<uint8_t>(255.f * std::clamp(R, 0.f, 1.f)),
+                base::saturated_cast<uint8_t>(255.f * std::clamp(G, 0.f, 1.f)),
+                base::saturated_cast<uint8_t>(255.f * std::clamp(B, 0.f, 1.f))
+            };
+        }
+
         constexpr bool operator==(const til::color& other) const
         {
             return abgr == other.abgr;
