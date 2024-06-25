@@ -236,8 +236,14 @@ void COOKED_READ_DATA::EraseBeforeResize() const
 // The counter-part to EraseBeforeResize().
 void COOKED_READ_DATA::RedrawAfterResize()
 {
+    // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
+    // They have all been erased with the CSI J above.
+    _pagerHeight = 0;
+
+    // Ensure that the entire buffer content is rewritten after the above CSI J.
     _bufferDirtyBeg = 0;
     _dirty = true;
+
     _redisplay();
 }
 
@@ -870,7 +876,7 @@ void COOKED_READ_DATA::_redisplay()
         // Render the popups, if there are any.
         if (!_popups.empty())
         {
-            auto& popup = _popups.back();
+            auto& popup = _popups.front();
 
             // Ensure that the popup is not considered part of the prompt line. That is, if someone double-clicks
             // to select the last word in the prompt, it should not select the first word in the popup.
@@ -881,13 +887,13 @@ void COOKED_READ_DATA::_redisplay()
             switch (popup.kind)
             {
             case PopupKind::CopyToChar:
-                _popupDrawPrompt(lines, size, ID_CONSOLE_MSGCMDLINEF2, {});
+                _popupDrawPrompt(lines, size.width, ID_CONSOLE_MSGCMDLINEF2, {}, {});
                 break;
             case PopupKind::CopyFromChar:
-                _popupDrawPrompt(lines, size, ID_CONSOLE_MSGCMDLINEF4, {});
+                _popupDrawPrompt(lines, size.width, ID_CONSOLE_MSGCMDLINEF4, {}, {});
                 break;
             case PopupKind::CommandNumber:
-                _popupDrawPrompt(lines, size, ID_CONSOLE_MSGCMDLINEF9, { popup.commandNumber.buffer.data(), CommandNumberMaxInputLength });
+                _popupDrawPrompt(lines, size.width, ID_CONSOLE_MSGCMDLINEF9, {}, { popup.commandNumber.buffer.data(), CommandNumberMaxInputLength });
                 break;
             case PopupKind::CommandList:
                 _popupDrawCommandList(lines, size, popup);
@@ -969,7 +975,7 @@ void COOKED_READ_DATA::_redisplay()
 
     // If we have so much text that it doesn't fit into the viewport (origin == {0,0}),
     // then we can scroll the existing contents of the pager and only write what got newly uncovered.
-    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && _originInViewport == til::point{})
+    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && _pagerHeight == size.height && pagerHeight == size.height)
     {
         const auto deltaAbs = abs(delta);
         til::CoordType beg = 0;
@@ -1053,7 +1059,7 @@ void COOKED_READ_DATA::_redisplay()
 
     // Clear any lines that we previously filled and are now empty.
     {
-        const auto pagerHeightPrevious = std::min(_pagerContentHeight, size.height);
+        const auto pagerHeightPrevious = std::min(_pagerHeight, size.height);
 
         if (pagerHeight < pagerHeightPrevious)
         {
@@ -1074,7 +1080,7 @@ void COOKED_READ_DATA::_redisplay()
     _originInViewport = originInViewportFinal;
     _pagerPromptEnd = pagerPromptEnd;
     _pagerContentTop = pagerContentTop;
-    _pagerContentHeight = lineCount;
+    _pagerHeight = pagerHeight;
     _bufferDirtyBeg = _buffer.size();
     _dirty = false;
 }
@@ -1379,15 +1385,17 @@ void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
     _dirty = true;
 }
 
-void COOKED_READ_DATA::_popupDrawPrompt(std::vector<Line>& lines, const til::size size, const UINT id, const std::wstring_view suffix) const
+void COOKED_READ_DATA::_popupDrawPrompt(std::vector<Line>& lines, const til::CoordType width, const UINT id, const std::wstring_view& prefix, const std::wstring_view& suffix) const
 {
-    auto str = _LoadString(id);
+    std::wstring str;
+    str.append(prefix);
+    _LoadString(id, str);
     str.append(suffix);
 
     std::wstring line;
     line.append(L"\x1b[K");
     _appendPopupAttr(line);
-    const auto res = _layoutLine(line, str, 0, 0, size.width);
+    const auto res = _layoutLine(line, str, 0, 0, width);
     line.append(L"\x1b[m");
 
     lines.emplace_back(std::move(line), 0, 0, res.column);
@@ -1402,8 +1410,13 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
     const auto indexWidth = gsl::narrow_cast<til::CoordType>(fmt::formatted_size(FMT_COMPILE(L"{}"), historySize));
 
     // The popup is half the height of the viewport, but at least 1 and at most 20 lines.
-    // Unless of course the history size is less than that.
-    const auto height = std::min(historySize, std::clamp(size.height / 2, 1, 20));
+    // Unless of course the history size is less than that. We also reserve 1 additional line
+    // of space in case the user presses F9 which will open the "Enter command number:" popup.
+    const auto height = std::min(historySize, std::min(size.height / 2 - 1, 20));
+    if (height < 1)
+    {
+        return;
+    }
 
     // cl.selected may be out of bounds after a page up/down, etc., so we need to clamp it.
     cl.selected = std::clamp(cl.selected, 0, historySize - 1);
@@ -1430,12 +1443,13 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
     const auto historyMax = historySize - 1;
     const auto trackPositionMax = height - 3;
     const auto trackPosition = historyMax <= 0 ? 0 : 1 + (trackPositionMax * cl.selected + historyMax / 2) / historyMax;
+    const auto stackedCommandNumberPopup = _popups.size() == 2 && _popups.back().kind == PopupKind::CommandNumber;
 
     for (til::CoordType off = 0; off < height; ++off)
     {
         const auto index = cl.top + off;
         const auto str = _history->GetNth(index);
-        const auto selected = index == cl.selected;
+        const auto selected = index == cl.selected && !stackedCommandNumberPopup;
 
         std::wstring line;
         line.append(L"\x1b[K");
@@ -1446,11 +1460,11 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         {
             if (off == 0)
             {
-                scrollbarChar = L'▲';
+                scrollbarChar = L'▴';
             }
             else if (off == height - 1)
             {
-                scrollbarChar = L'▼';
+                scrollbarChar = L'▾';
             }
             else
             {
@@ -1470,11 +1484,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
 
         fmt::format_to(std::back_inserter(line), FMT_COMPILE(L"{:{}}: "), index, indexWidth);
 
-        auto res = _layoutLine(line, str, 0, indexWidth + 4, size.width - 1);
-        if (res.offset < str.size())
-        {
-            line.push_back(L'…');
-        }
+        _layoutLine(line, str, 0, indexWidth + 4, size.width);
 
         if (selected)
         {
@@ -1485,6 +1495,15 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         lines.emplace_back(std::move(line), 0, 0, size.width);
     }
 
-    auto& lastLine = lines.back();
-    lastLine.text.erase(lastLine.text.size() - 2);
+    if (stackedCommandNumberPopup)
+    {
+        const std::wstring_view suffix{ _popups.back().commandNumber.buffer.data(), CommandNumberMaxInputLength };
+        _popupDrawPrompt(lines, size.width - 1, ID_CONSOLE_MSGCMDLINEF9, L"╰", suffix);
+    }
+    else
+    {
+        // Remove the \r\n we added to the last line, as we don't want to have an empty line at the end.
+        auto& lastLine = lines.back();
+        lastLine.text.erase(lastLine.text.size() - 2);
+    }
 }

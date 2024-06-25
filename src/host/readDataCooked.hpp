@@ -140,7 +140,7 @@ private:
     void _popupHandleCommandNumberInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleCommandListInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleInput(wchar_t wch, uint16_t vkey, DWORD keyState);
-    void _popupDrawPrompt(std::vector<Line>& lines, til::size size, UINT id, std::wstring_view suffix) const;
+    void _popupDrawPrompt(std::vector<Line>& lines, const til::CoordType width, UINT id, const std::wstring_view& prefix, const std::wstring_view& suffix) const;
     void _popupDrawCommandList(std::vector<Line>& lines, til::size size, Popup& popup) const;
 
     SCREEN_INFORMATION& _screenInfo;
@@ -165,8 +165,8 @@ private:
     til::point _pagerPromptEnd;
     // The scroll position of the pager.
     til::CoordType _pagerContentTop = 0;
-    // Contains the number of lines within the pager.
-    til::CoordType _pagerContentHeight = 0;
+    // Contains the viewport height for which it previously was drawn for.
+    til::CoordType _pagerHeight = 0;
 
     std::vector<Popup> _popups;
     bool _popupOpened = false;
