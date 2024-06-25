@@ -1183,7 +1183,7 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
         {
             if (column >= columnLimit)
             {
-                break;
+                goto outerLoopExit;
             }
 
             const auto wch = *it;
@@ -1205,7 +1205,7 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
 
             if (column + len > columnLimit)
             {
-                break;
+                goto outerLoopExit;
             }
 
             output.append(buf, len);
@@ -1213,16 +1213,15 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
         }
     }
 
-    const size_t offset = it - beg;
-
-    if (offset < input.size() && column < columnLimit)
+outerLoopExit:
+    if (it != end && column < columnLimit)
     {
-        column = columnLimit;
         output.append(columnLimit - column, L' ');
+        column = columnLimit;
     }
 
     return {
-        .offset = offset,
+        .offset = size_t(it - beg),
         .column = column,
     };
 }
