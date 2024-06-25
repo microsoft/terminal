@@ -1060,7 +1060,7 @@ bool CodepointWidthDetector::_graphemeNextConsole(GraphemeState& s, const std::w
     int delayedCompletion = 0;
 
     // In order to conform to the behavior of _graphemeNext(), we need to pretend as if we don't know
-    // whether the cluster is complete yet (with graphemes there may be nonspacing marks, etc.).
+    // whether the cluster is complete yet (with graphemes there may be combining marks, etc.).
     // As such, we flag `delayedCompletion` to true which gets stored as `s._state = 1` and return false.
     // Then, when we get called again with the next input string, we'll finally return false with a `s.len` of 0.
     if (s._state == 0)
