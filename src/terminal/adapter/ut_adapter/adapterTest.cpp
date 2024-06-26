@@ -2059,6 +2059,25 @@ public:
         _testGetSet->ValidateInputEvent(expectedResponse);
     }
 
+    TEST_METHOD(RequestPermanentModeTests)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{2027}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::DECPrivateMode(modeNumber);
+
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode)); // as a test to ensure that it stays permanently enabled (= 3)
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;3$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
     TEST_METHOD(RequestChecksumReportTests)
     {
         const auto requestChecksumReport = [this](const auto length) {
