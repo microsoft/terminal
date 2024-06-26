@@ -927,7 +927,7 @@ bool BackendD3D::_checkMacTypeVersion(const RenderingPayload& p)
 
     if (faulty && p.warningCallback)
     {
-        p.warningCallback(ATLAS_ENGINE_ERROR_MAC_TYPE, {});
+        p.warningCallback(ATLAS_ENGINE_ERROR_MAC_TYPE);
     }
 
     return faulty;
