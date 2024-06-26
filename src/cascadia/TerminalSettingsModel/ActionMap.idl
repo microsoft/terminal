@@ -22,7 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         IVector<Command> ExpandedCommands { get; };
 
-        IVector<Command> FilterToSendInput(String CurrentCommandline);
+        Windows.Foundation.IAsyncOperation<IVector<Command> > FilterToSnippets(String CurrentCommandline, String CurrentWorkingDirectory);
     };
 
     [default_interface] runtimeclass ActionMap : IActionMapView
