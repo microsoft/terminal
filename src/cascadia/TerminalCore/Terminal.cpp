@@ -95,6 +95,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
+    _rainbowSuggestions = settings.RainbowSuggestions();
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -1586,7 +1587,7 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 
 void Terminal::PreviewText(std::wstring_view input)
 {
-    // Our suggestion text is default-on-default, in italics.
+    // Our default suggestion text is default-on-default, in italics.
     static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
 
     auto lock = LockForWriting();
@@ -1626,11 +1627,43 @@ void Terminal::PreviewText(std::wstring_view input)
         // pad it out
         preview.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
     }
-    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+
     // Build our composition data
+    // The text is just the trimmed command, with the spaces at the end.
+    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+
+    // The attributes depend on the $profile:experimental.rainbowSuggestions setting:.
     const auto len = snippetPreview.text.size();
     snippetPreview.attributes.clear();
-    snippetPreview.attributes.emplace_back(len, previewAttrs);
+
+    if (_rainbowSuggestions)
+    {
+        // Let's do something fun.
+
+        // Use the actual text length for the number of steps, not including the
+        // trailing spaces.
+        const float increment = 1.0f / originalSize;
+        for (auto i = 0u; i < originalSize; i++)
+        {
+            const auto color = til::color::from_hue(increment * i);
+            TextAttribute curr = previewAttrs;
+            curr.SetForeground(color);
+            snippetPreview.attributes.emplace_back(1, curr);
+        }
+
+        if (originalSize < len)
+        {
+            TextAttribute curr;
+            snippetPreview.attributes.emplace_back(len - originalSize, curr);
+        }
+    }
+    else
+    {
+        // Default:
+        // Use the default attribute we defined above.
+        snippetPreview.attributes.emplace_back(len, previewAttrs);
+    }
+
     snippetPreview.cursorPos = len;
     _activeBuffer().NotifyPaintFrame();
 }
