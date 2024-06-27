@@ -67,9 +67,14 @@ steps:
     localizationTarget: true
 
 - pwsh: |-
-    Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
-    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
+    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw','PDP.xml' | ? FullName -Like '*en-US\*\*.*'
     $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+
+    # BODGY - Move PDPs into place until we can get them renamed on the backend.
+    New-Item -Type Directory -EA:Ignore LocOutput\build\StoreSubmission
+    Move-Item LocOutput\Terminal.Internal\PDPs\* LocOutput\build\StoreSubmission
+    Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
+
     & tar.exe -c -f LocOutputMunged.tar -C LocOutput .
     & tar.exe -x -v -f LocOutputMunged.tar
     rm LocOutputMunged.tar
@@ -80,6 +85,7 @@ steps:
 
 - pwsh: |-
     git add **/*.resw
+    git add build/StoreSubmission/**/*.xml
     git status
     git diff --quiet --cached --exit-code
     If ($LASTEXITCODE -Ne 0) {

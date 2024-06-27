@@ -97,6 +97,7 @@
 ^\Qsrc/tools/lnkd/lnkd.bat\E$
 ^\Qsrc/tools/pixels/pixels.bat\E$
 ^build/config/
+^build/StoreSubmission/
 ^consolegit2gitfilters\.json$
 ^dep/
 ^doc/reference/master-sequence-list\.csv$
