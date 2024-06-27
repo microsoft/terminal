@@ -2157,7 +2157,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_modes.test(Mode::AllowDECSLRM));
         break;
     case DispatchTypes::ModeParams::DECSDM_SixelDisplayMode:
-        enabled = _modes.test(Mode::SixelDisplay);
+        state = mapTemp(_modes.test(Mode::SixelDisplay));
         break;
     case DispatchTypes::ModeParams::DECECM_EraseColorMode:
         state = mapTemp(_modes.test(Mode::EraseColor));
