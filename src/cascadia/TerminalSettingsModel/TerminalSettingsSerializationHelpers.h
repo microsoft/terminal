@@ -771,3 +771,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
         pair_type{ "direct3d11", ValueType::Direct3D11 },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextMeasurement)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "graphemes", ValueType::Graphemes },
+        pair_type{ "wcswidth", ValueType::Wcswidth },
+        pair_type{ "console", ValueType::Console },
+    };
+};

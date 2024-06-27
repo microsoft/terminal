@@ -4,18 +4,11 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
-#include "TerminalPage.g.cpp"
-#include "RenameWindowRequestedArgs.g.cpp"
-#include "RequestMoveContentArgs.g.cpp"
-#include "RequestReceiveContentArgs.g.cpp"
-#include "LaunchPositionRequest.g.cpp"
 
-#include <filesystem>
-
-#include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
+#include <Utils.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -24,7 +17,12 @@
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
 #include "TabRowControl.h"
-#include "Utils.h"
+
+#include "TerminalPage.g.cpp"
+#include "RenameWindowRequestedArgs.g.cpp"
+#include "RequestMoveContentArgs.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -1327,6 +1325,20 @@ namespace winrt::TerminalApp::implementation
                                                                                         TerminalSettings settings,
                                                                                         const bool inheritCursor)
     {
+        static const auto textMeasurement = [&]() -> std::wstring_view {
+            switch (_settings.GlobalSettings().TextMeasurement())
+            {
+            case TextMeasurement::Graphemes:
+                return L"graphemes";
+            case TextMeasurement::Wcswidth:
+                return L"wcswidth";
+            case TextMeasurement::Console:
+                return L"console";
+            default:
+                return {};
+            }
+        }();
+
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
@@ -1396,6 +1408,11 @@ namespace winrt::TerminalApp::implementation
             {
                 valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
             }
+        }
+
+        if (!textMeasurement.empty())
+        {
+            valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})
