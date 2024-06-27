@@ -20,7 +20,6 @@ SOURCES = \
     HistoryTests.cpp \
     UtilsTests.cpp \
     ConsoleArgumentsTests.cpp \
-    CodepointWidthDetectorTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \
     TextBufferIteratorTests.cpp \
