@@ -70,7 +70,7 @@ steps:
     $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw','PDP.xml' | ? FullName -Like '*en-US\*\*.*'
     $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
 
-    # BODGY - Move PDPs into place until we can get them renamed on the backend.
+    # TEMPORARY - Move PDPs into place until we can get them renamed on the backend.
     New-Item -Type Directory -EA:Ignore LocOutput\build\StoreSubmission
     Move-Item LocOutput\Terminal.Internal\PDPs\* LocOutput\build\StoreSubmission
     Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
