@@ -674,7 +674,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
                                                        winrt::hstring currentCommandline,
                                                        bool directories,
-                                                       hstring iconPath)
+                                                       winrt::hstring iconPath)
     {
         std::wstring cdText = directories ? L"cd " : L"";
         auto result = std::vector<Model::Command>();
