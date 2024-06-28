@@ -88,5 +88,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void NotifyBufferRotation(const int delta) = 0;
 
         virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
+
+        virtual void SearchMissingCommand(const std::wstring_view command) = 0;
     };
 }

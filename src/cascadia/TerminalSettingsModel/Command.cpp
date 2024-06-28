@@ -673,7 +673,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   the command will be run as a directory change instead.
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
                                                        winrt::hstring currentCommandline,
-                                                       bool directories)
+                                                       bool directories,
+                                                       winrt::hstring iconPath)
     {
         std::wstring cdText = directories ? L"cd " : L"";
         auto result = std::vector<Model::Command>();
@@ -705,9 +706,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
             command->_name = winrt::hstring{ line };
-            command->_iconPath = directories ?
-                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
-                                     L"\ue81c"; // History icon
+            command->_iconPath = iconPath;
             result.push_back(*command);
             foundCommands[line] = true;
         }
