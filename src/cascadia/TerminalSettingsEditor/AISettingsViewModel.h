@@ -27,8 +27,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring OpenAIKey();
         void OpenAIKey(winrt::hstring key);
 
+        bool AreGithubCopilotTokensSet();
+        void GithubCopilotAuthToken(winrt::hstring authToken);
+        void GithubCopilotRefreshToken(winrt::hstring refreshToken);
+
         bool AzureOpenAIIsActive();
         bool OpenAIIsActive();
+        bool GithubCopilotIsActive();
 
     private:
         Model::CascadiaSettings _Settings;

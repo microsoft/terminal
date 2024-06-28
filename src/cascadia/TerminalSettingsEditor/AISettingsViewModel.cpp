@@ -66,6 +66,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"IsOpenAIKeySet");
     }
 
+    bool AISettingsViewModel::AreGithubCopilotTokensSet()
+    {
+        return !_Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken().empty() && !_Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken().empty();
+    }
+
+    void AISettingsViewModel::GithubCopilotAuthToken(winrt::hstring authToken)
+    {
+        _Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
+        _NotifyChanges(L"AreGithubCopilotTokensSet");
+    }
+
+    void AISettingsViewModel::GithubCopilotRefreshToken(winrt::hstring refreshToken)
+    {
+        _Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
+        _NotifyChanges(L"AreGithubCopilotTokensSet");
+    }
+
     bool AISettingsViewModel::AzureOpenAIIsActive()
     {
         return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::AzureOpenAI;
@@ -74,5 +91,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool AISettingsViewModel::OpenAIIsActive()
     {
         return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::OpenAI;
+    }
+
+    bool AISettingsViewModel::GithubCopilotIsActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::GithubCopilot;
     }
 }

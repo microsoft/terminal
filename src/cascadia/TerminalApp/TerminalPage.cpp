@@ -5285,6 +5285,10 @@ namespace winrt::TerminalApp::implementation
         {
             llmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(settingsAIInfo.AzureOpenAIEndpoint(), settingsAIInfo.AzureOpenAIKey());
         }
+        else if (settingsAIInfo.ActiveProvider() == LLMProvider::GithubCopilot)
+        {
+            llmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider(settingsAIInfo.GithubCopilotAuthToken(), settingsAIInfo.GithubCopilotRefreshToken());
+        }
         _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(llmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)

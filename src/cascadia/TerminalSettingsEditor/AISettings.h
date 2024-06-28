@@ -21,6 +21,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ClearOpenAIKey_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void StoreOpenAIKey_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
+        void ClearGithubCopilotTokens_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(Editor::AISettingsViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
     };

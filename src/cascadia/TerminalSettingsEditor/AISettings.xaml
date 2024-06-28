@@ -222,6 +222,55 @@
                         </Grid>
                     </StackPanel>
                 </local:SettingContainer>
+                <!--  Github Copilot  -->
+                <local:SettingContainer x:Uid="AISettings_GithubCopilot"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <StackPanel>
+                        <Grid Visibility="{x:Bind ViewModel.AreGithubCopilotTokensSet, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Uid="AISettings_GithubCopilotConfigured"
+                                       Grid.Column="0"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Click="ClearGithubCopilotTokens_Click"
+                                    Style="{StaticResource DeleteButtonStyle}">
+                                <TextBlock x:Uid="AISettings_ClearGithubCopilotTokens" />
+                            </Button>
+                        </Grid>
+                        <Grid RowSpacing="8"
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AreGithubCopilotTokensSet), Mode=OneWay}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0"
+                                        Padding="16"
+                                        CornerRadius="4"
+                                        Orientation="Horizontal"
+                                        Spacing="14">
+                                <StackPanel.Background>
+                                    <SolidColorBrush Opacity="0.7"
+                                                     Color="#404040" />
+                                </StackPanel.Background>
+                                <muxc:InfoBadge x:Name="GithubCopilotDescriptionInfoBadge"
+                                                VerticalAlignment="Top"
+                                                FontSize="16"
+                                                Style="{ThemeResource AttentionIconInfoBadgeStyle}">
+                                    <muxc:InfoBadge.IconSource>
+                                        <muxc:FontIconSource FontSize="16"
+                                                             Glyph="&#xE625;" />
+                                    </muxc:InfoBadge.IconSource>
+                                </muxc:InfoBadge>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </local:SettingContainer>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

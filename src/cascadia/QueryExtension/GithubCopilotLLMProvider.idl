@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ILLMProvider.idl";
+
+namespace Microsoft.Terminal.Query.Extension
+{
+    [default_interface] runtimeclass GithubCopilotLLMProvider : ILLMProvider
+    {
+        GithubCopilotLLMProvider(String endpoint, String key);
+    }
+
+    [default_interface] runtimeclass GithubCopilotResponse : IResponse
+    {
+        GithubCopilotResponse(String message, Boolean isError);
+    }
+}

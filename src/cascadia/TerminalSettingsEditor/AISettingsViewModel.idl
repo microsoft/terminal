@@ -17,5 +17,9 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean IsOpenAIKeySet { get; };
         String OpenAIKey;
+
+        Boolean AreGithubCopilotTokensSet { get; };
+        void GithubCopilotAuthToken(String authToken);
+        void GithubCopilotRefreshToken(String refreshToken);
     }
 }

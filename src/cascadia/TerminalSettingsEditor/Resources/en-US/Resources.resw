@@ -681,6 +681,18 @@
     <value>Learn More</value>
     <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
   </data>
+  <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
+    <value>Github Copilot</value>
+    <comment>Header for the text box that allows the user to configure access to Github Copilot.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotConfigured.Text" xml:space="preserve">
+    <value>Github Copilot is configured.</value>
+    <comment>Description for the Github Copilot setting when we have access already.</comment>
+  </data>
+  <data name="AISettings_ClearGithubCopilotTokens.Text" xml:space="preserve">
+    <value>Clear stored auth tokens</value>
+    <comment>Text on the button that allows the user to clear the stored tokens.</comment>
+  </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>

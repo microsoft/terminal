@@ -8,7 +8,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum LLMProvider
     {
         AzureOpenAI,
-        OpenAI
+        OpenAI,
+        GithubCopilot
     };
 
     [default_interface] runtimeclass AIConfig {
@@ -17,5 +18,7 @@ namespace Microsoft.Terminal.Settings.Model
         String AzureOpenAIEndpoint;
         String AzureOpenAIKey;
         String OpenAIKey;
+        String GithubCopilotAuthToken;
+        String GithubCopilotRefreshToken;
     }
 }
