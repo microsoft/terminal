@@ -342,6 +342,24 @@
     <value>啟用時，終端機將使用軟體點陣器 (WARP)。在幾乎所有情況下，此設定都應該保留停用。</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
+  <data name="Globals_TextMeasurement.Header" xml:space="preserve">
+    <value>文字測量模式</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+    <value>這會變更內送文字群組到儲存格的方式。[Grapheme 叢集] 選項是最新式且更正確的 Unicode 方法，而 “wcswidth” 是 UNIX 的常見方法，而 [Windows 控制台] 則會復寫它在 Windows 上運作的方式。變更此設定需要重新啟動Windows 終端機，且只適用於從其中啟動的應用程式。</value>
+  </data>
+  <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
+    <value>Grapheme 叢集</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
+    <value>wcswidth</value>
+    <comment>{Locked="wcswidth"}</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
+    <value>Windows 主控台</value>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>欄</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
