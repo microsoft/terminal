@@ -255,7 +255,7 @@ public:
         _setTextAttributesResult = TRUE;
         _returnResponseResult = TRUE;
 
-        _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
+        _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, &_renderer);
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _viewport.top = 20;
@@ -411,7 +411,7 @@ public:
             _terminalInput = TerminalInput{};
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
-            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
+            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, &renderer, renderSettings, _terminalInput);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -2064,6 +2064,25 @@ public:
         _testGetSet->ValidateInputEvent(expectedResponse);
     }
 
+    TEST_METHOD(RequestPermanentModeTests)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{2027}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::DECPrivateMode(modeNumber);
+
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode)); // as a test to ensure that it stays permanently enabled (= 3)
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;3$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
     TEST_METHOD(RequestChecksumReportTests)
     {
         const auto requestChecksumReport = [this](const auto length) {
@@ -2453,7 +2472,7 @@ public:
         Log::Comment(L"Starting test...");
 
         til::inclusive_rect srTestMargins;
-        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, &_testGetSet->_renderer);
         _testGetSet->_viewport.right = 8;
         _testGetSet->_viewport.bottom = 8;
         auto sScreenHeight = _testGetSet->_viewport.bottom - _testGetSet->_viewport.top;

@@ -137,12 +137,31 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
+
+    const wchar_t* textMeasurement;
+    switch (dwFlags & PSEUDOCONSOLE_GLYPH_WIDTH__MASK)
+    {
+    case PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES:
+        textMeasurement = L"--textMeasurement graphemes ";
+        break;
+    case PSEUDOCONSOLE_GLYPH_WIDTH_WCSWIDTH:
+        textMeasurement = L"--textMeasurement wcswidth ";
+        break;
+    case PSEUDOCONSOLE_GLYPH_WIDTH_CONSOLE:
+        textMeasurement = L"--textMeasurement console ";
+        break;
+    default:
+        textMeasurement = L"";
+        break;
+    }
+
     swprintf_s(cmd,
                MAX_PATH,
-               L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+               L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
                bResizeQuirk ? L"--resizeQuirk " : L"",
+               textMeasurement,
                size.X,
                size.Y,
                std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),

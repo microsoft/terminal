@@ -366,6 +366,7 @@ private:
     bool _suppressApplicationTitle = false;
     bool _trimBlockSelection = false;
     bool _autoMarkPrompts = false;
+    bool _rainbowSuggestions = false;
 
     size_t _taskbarState = 0;
     size_t _taskbarProgress = 0;

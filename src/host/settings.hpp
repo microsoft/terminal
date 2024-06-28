@@ -24,6 +24,13 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 #include "ConsoleArguments.hpp"
 #include "../renderer/inc/RenderSettings.hpp"
 
+enum class SettingsTextMeasurementMode : DWORD
+{
+    Graphemes,
+    Wcswidth,
+    Console,
+};
+
 class Settings
 {
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
@@ -171,6 +178,8 @@ public:
 
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
+    SettingsTextMeasurementMode GetTextMeasurementMode() const noexcept;
+    void SetTextMeasurementMode(SettingsTextMeasurementMode mode) noexcept;
     bool GetEnableBuiltinGlyphs() const noexcept;
 
 private:
@@ -213,6 +222,7 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
+    SettingsTextMeasurementMode _textMeasurement = SettingsTextMeasurementMode::Graphemes;
     bool _fUseDx;
     bool _fCopyColor;
     bool _fEnableBuiltinGlyphs = true;

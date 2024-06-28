@@ -36,7 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
         using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
     public:
-        AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept;
+        AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept;
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
@@ -288,7 +288,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _initDefaultTabStops = true;
 
         ITerminalApi& _api;
-        Renderer& _renderer;
+        Renderer* _renderer;
         RenderSettings& _renderSettings;
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;

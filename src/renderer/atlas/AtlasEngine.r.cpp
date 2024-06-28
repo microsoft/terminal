@@ -465,6 +465,7 @@ void AtlasEngine::_present()
         return;
     }
 
+#pragma warning(suppress : 4127) // conditional expression is constant
     if (!ATLAS_DEBUG_SHOW_DIRTY && !_p.s->target->disablePresent1 && memcmp(&dirtyRect, &fullRect, sizeof(RECT)) != 0)
     {
         params.DirtyRectsCount = 1;

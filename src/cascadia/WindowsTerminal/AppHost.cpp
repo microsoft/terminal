@@ -1128,25 +1128,6 @@ void AppHost::_stopFrameTimer()
 //   is called as the `_frameTimer` Tick callback, roughly 60 times per second.
 void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
 {
-    // First, a couple helper functions:
-    static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
-        return til::color{
-            base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
-            base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
-            base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
-        };
-    };
-
-    // Helper for converting a hue [0, 1) to an RGB value.
-    // Credit to https://www.chilliant.com/rgb2hsv.html
-    static const auto hueToRGB = [&](const float H) -> til::color {
-        float R = abs(H * 6 - 3) - 1;
-        float G = 2 - abs(H * 6 - 2);
-        float B = 2 - abs(H * 6 - 4);
-        return saturateAndToColor(R, G, B);
-    };
-
-    // Now, the main body of work.
     // - Convert the time delta between when we were started and now, to a hue. This will cycle us through all the colors.
     // - Convert that hue to an RGB value.
     // - Set the frame's color to that RGB color.
@@ -1154,7 +1135,7 @@ void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&,
     const std::chrono::duration<float> delta{ now - _started };
     const auto seconds = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
     float ignored;
-    const auto color = hueToRGB(modf(seconds, &ignored));
+    const auto color = til::color::from_hue(modf(seconds, &ignored));
 
     _frameColorHelper(_window->GetHandle(), color);
 }
