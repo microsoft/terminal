@@ -4013,7 +4013,7 @@ bool AdaptDispatch::DoWTAction(const std::wstring_view string)
     if (_api.IsConsolePty())
     {
         // Flush the frame manually to make sure this action happens at the right time.
-        _renderer.TriggerFlush(false);
+        _renderer->TriggerFlush(false);
         return false;
     }
 
