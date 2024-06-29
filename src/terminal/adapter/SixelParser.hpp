@@ -38,7 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         // NB: If we want to support more than 256 colors, we'll also need to
-        // change the IndexType to uint16_t, and use a bit field in IndexPixel
+        // change the IndexType to uint16_t, and use a bit field in IndexedPixel
         // to retain the 16-bit size.
         static constexpr size_t MAX_COLORS = 256;
         using IndexType = uint8_t;
@@ -97,7 +97,7 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr RGBQUAD _makeRGBQUAD(const COLORREF color) noexcept;
         void _updateTextColors();
 
-        std::array<size_t, MAX_COLORS> _colorMap = {};
+        std::array<IndexType, MAX_COLORS> _colorMap = {};
         std::array<bool, MAX_COLORS> _colorMapUsed = {};
         std::array<COLORREF, MAX_COLORS> _colorTable = {};
         const size_t _maxColors;

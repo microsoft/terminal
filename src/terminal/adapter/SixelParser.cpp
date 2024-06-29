@@ -457,7 +457,7 @@ void SixelParser::_initColorMap(const VTParameter backgroundColor)
     // mapping is just the color number modulo the color table size.
     for (size_t colorNumber = 0; colorNumber < _colorMap.size(); colorNumber++)
     {
-        _colorMap.at(colorNumber) = colorNumber % _maxColors;
+        _colorMap.at(colorNumber) = gsl::narrow_cast<IndexType>(colorNumber % _maxColors);
     }
 
     // The _colorMapUsed field keeps track of the color numbers that have been
@@ -524,7 +524,7 @@ void SixelParser::_defineColor(const VTParameters& colorParameters)
     // the color map. This is initially defined in _initColorMap above, but may
     // be altered when colors are set in the _defineColor method below.
     const auto colorIndex = _colorMap.at(colorNumber);
-    _foregroundPixel = { .colorIndex = gsl::narrow_cast<IndexType>(colorIndex) };
+    _foregroundPixel = { .colorIndex = colorIndex };
 }
 
 void SixelParser::_defineColor(const size_t colorNumber, const COLORREF color)
@@ -553,7 +553,7 @@ void SixelParser::_defineColor(const size_t colorNumber, const COLORREF color)
             // skip that and start with table entry 1, and only wrap back to 0
             // when all others had been used.
             const auto tableIndex = ++_colorsUsed % _maxColors;
-            til::at(_colorMap, colorNumber) = tableIndex;
+            til::at(_colorMap, colorNumber) = gsl::narrow_cast<IndexType>(tableIndex);
             til::at(_colorTable, tableIndex) = color;
             _colorTableChanged = true;
         }
@@ -565,24 +565,24 @@ void SixelParser::_defineColor(const size_t colorNumber, const COLORREF color)
             // but the VT340 just uses the default mapping assigned at the start
             // (i.e. the color number modulo the color table size).
             size_t tableIndex = 0;
-            int bestDiff = 99999;
+            int bestDiff = std::numeric_limits<int>::max();
             for (size_t i = 0; i < _maxColors; i++)
             {
                 const auto existingColor = til::at(_colorTable, i);
                 const auto diff = [](const auto c1, const auto c2) noexcept {
-                    return std::abs(static_cast<int>(c1) - static_cast<int>(c2));
+                    return static_cast<int>(c1) - static_cast<int>(c2);
                 };
                 const auto redDiff = diff(GetRValue(existingColor), GetRValue(color));
                 const auto greenDiff = diff(GetGValue(existingColor), GetGValue(color));
                 const auto blueDiff = diff(GetBValue(existingColor), GetBValue(color));
-                const auto totalDiff = redDiff + greenDiff + blueDiff;
+                const auto totalDiff = redDiff * redDiff + greenDiff * greenDiff + blueDiff * blueDiff;
                 if (totalDiff <= bestDiff)
                 {
                     bestDiff = totalDiff;
                     tableIndex = i;
                 }
             }
-            til::at(_colorMap, colorNumber) = tableIndex;
+            til::at(_colorMap, colorNumber) = gsl::narrow_cast<IndexType>(tableIndex);
         }
         til::at(_colorMapUsed, colorNumber) = true;
     }
