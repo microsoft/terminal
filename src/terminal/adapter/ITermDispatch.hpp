@@ -147,6 +147,8 @@ public:
 
     virtual bool DoVsCodeAction(const std::wstring_view string) = 0;
 
+    virtual bool DoWTAction(const std::wstring_view string) = 0;
+
     virtual StringHandler DefineSixelImage(const VTInt macroParameter,
                                            const DispatchTypes::SixelBackground backgroundSelect,
                                            const VTParameter backgroundColor) = 0; // SIXEL

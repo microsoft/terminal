@@ -140,6 +140,8 @@ public:
 
     bool DoVsCodeAction(const std::wstring_view /*string*/) override { return false; }
 
+    bool DoWTAction(const std::wstring_view /*string*/) override { return false; }
+
     StringHandler DefineSixelImage(const VTInt /*macroParameter*/,
                                    const DispatchTypes::SixelBackground /*backgroundSelect*/,
                                    const VTParameter /*backgroundColor*/) override { return nullptr; }; // SIXEL

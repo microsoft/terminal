@@ -218,6 +218,11 @@ public:
         VERIFY_ARE_EQUAL(_expectedReplaceLength, replaceLength);
     }
 
+    void SearchMissingCommand(const std::wstring_view /*command*/) override
+    {
+        Log::Comment(L"SearchMissingCommand MOCK called...");
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.
