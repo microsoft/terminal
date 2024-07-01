@@ -303,11 +303,11 @@ void COOKED_READ_DATA::RedrawAfterResize()
     // Get the new cursor position after the reflow. Just like how the COOKED_READ_DATA constructor did it.
     const auto& textBuffer = _screenInfo.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
-    auto absoluteCursorPos = cursor.GetPosition();
-    _screenInfo.GetVtPageArea().ConvertToOrigin(&absoluteCursorPos);
-    absoluteCursorPos.x = std::max(0, absoluteCursorPos.x);
-    absoluteCursorPos.y = std::max(0, absoluteCursorPos.y);
-    _originInViewport = absoluteCursorPos;
+    auto cursorPos = cursor.GetPosition();
+    _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
+    cursorPos.x = std::max(0, cursorPos.x);
+    cursorPos.y = std::max(0, cursorPos.y);
+    _originInViewport = cursorPos;
 
     // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
     // They have all been erased with the CSI J above.
@@ -925,6 +925,11 @@ void COOKED_READ_DATA::_redisplay()
         }
 
         pagerPromptEnd = { res.column, gsl::narrow_cast<til::CoordType>(lines.size() - 1) };
+        if (pagerPromptEnd.x >= size.width)
+        {
+            pagerPromptEnd.x = 0;
+            pagerPromptEnd.y++;
+        }
 
         // If the content got a little shorter than it was before, we need to erase the tail end.
         // If the last character on a line got removed, we'll skip this code because `remaining`
