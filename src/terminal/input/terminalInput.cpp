@@ -67,7 +67,7 @@ bool TerminalInput::GetInputMode(const Mode mode) const noexcept
 
 void TerminalInput::ResetInputModes() noexcept
 {
-    _inputMode = { Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
+    _inputMode = { Mode::Ansi, Mode::AutoRepeat, Mode::NumLock, Mode::AlternateScroll };
     _mouseInputState.lastPos = { -1, -1 };
     _mouseInputState.lastButton = 0;
     _initKeyboardMap();
@@ -211,23 +211,34 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         return _makeNoOutput();
     }
 
+    // NumLock mode is an XTerm extension that changes the behavior of keys on
+    // the numeric keypad, suppressing the effects of KeyPad mode when NumLock
+    // is on. This is for compatibility with Linux apps that have a tendency to
+    // set Keypad mode while not actually wanting the keys to change.
+    const auto numLockMode = _inputMode.test(Mode::NumLock) && WI_IsFlagSet(controlKeyState, NUMLOCK_ON);
+
     // The only enhanced key we care about is the Return key, because that
     // indicates that it's the key on the numeric keypad, which will transmit
-    // different escape sequences when the Keypad mode is enabled.
-    const auto enhancedReturnKey = WI_IsFlagSet(controlKeyState, ENHANCED_KEY) && virtualKeyCode == VK_RETURN;
+    // different escape sequences when the Keypad mode is enabled. But this
+    // doesn't apply when NumLock mode is active.
+    const auto enhancedReturnKey = WI_IsFlagSet(controlKeyState, ENHANCED_KEY) && virtualKeyCode == VK_RETURN && !numLockMode;
 
     // Using the control key state that we calculated above, combined with the
     // virtual key code, we've got a unique identifier for the key combination
-    // that we can lookup in our map of predefined key sequences.
-    auto keyCombo = virtualKeyCode;
-    WI_SetFlagIf(keyCombo, Ctrl, ctrlIsReallyPressed);
-    WI_SetFlagIf(keyCombo, Alt, altIsPressed);
-    WI_SetFlagIf(keyCombo, Shift, shiftIsPressed);
-    WI_SetFlagIf(keyCombo, Enhanced, enhancedReturnKey);
-    const auto keyMatch = _keyMap.find(keyCombo);
-    if (keyMatch != _keyMap.end())
+    // that we can lookup in our map of predefined key sequences. But this is
+    // bypassed for numeric keypad keys when NumLock mode is active.
+    if (!(virtualKeyCode >= VK_NUMPAD0 && virtualKeyCode <= VK_DIVIDE && numLockMode))
     {
-        return keyMatch->second;
+        auto keyCombo = virtualKeyCode;
+        WI_SetFlagIf(keyCombo, Ctrl, ctrlIsReallyPressed);
+        WI_SetFlagIf(keyCombo, Alt, altIsPressed);
+        WI_SetFlagIf(keyCombo, Shift, shiftIsPressed);
+        WI_SetFlagIf(keyCombo, Enhanced, enhancedReturnKey);
+        const auto keyMatch = _keyMap.find(keyCombo);
+        if (keyMatch != _keyMap.end())
+        {
+            return keyMatch->second;
+        }
     }
 
     // If it's not in the key map, we'll use the UnicodeChar, if provided,

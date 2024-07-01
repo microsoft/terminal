@@ -2034,6 +2034,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
         return !_PassThroughInputModes();
+    case DispatchTypes::ModeParams::XTERM_NumLockMode:
+        _terminalInput.SetInputMode(TerminalInput::Mode::NumLock, enable);
+        return true;
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         _SetAlternateScreenBufferMode(enable);
         return true;
@@ -2182,6 +2185,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
+        break;
+    case DispatchTypes::ModeParams::XTERM_NumLockMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::NumLock);
         break;
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         state = mapTemp(_usingAltBuffer);
