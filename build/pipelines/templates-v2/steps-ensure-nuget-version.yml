@@ -1,5 +1,5 @@
 steps:
 - task: NuGetToolInstaller@1
-  displayName: Use NuGet 6.6.1
+  displayName: Use NuGet 6.10.1
   inputs:
-    versionSpec: 6.6.1
+    versionSpec: 6.10.1
