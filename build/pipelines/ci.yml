@@ -55,10 +55,10 @@ stages:
         - template: ./templates-v2/job-build-project.yml
           parameters:
             pool:
-              ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-                name: SHINE-OSS-L
-              ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
                 name: SHINE-INT-L
+              ${{ else }}:
+                name: SHINE-OSS-L
             buildPlatforms: [x64]
             buildConfigurations: [AuditMode]
             buildEverything: true
@@ -78,10 +78,10 @@ stages:
         - template: ./templates-v2/job-build-project.yml
           parameters:
             pool:
-              ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-                name: SHINE-OSS-L
-              ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
                 name: SHINE-INT-L
+              ${{ else }}:
+                name: SHINE-OSS-L
             buildPlatforms:
               - ${{ platform }}
             buildConfigurations: [Release]
@@ -100,10 +100,3 @@ stages:
               platform: ${{ platform }}
               # The tests might be run more than once; log one artifact per attempt.
               outputArtifactStem: -$(System.JobAttempt)
-
-  - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
-    - stage: CodeIndexer
-      displayName: GitHub CodeNav Indexer
-      dependsOn: []
-      jobs:
-        - template: ./templates-v2/job-index-github-codenav.yml

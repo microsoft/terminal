@@ -4,18 +4,11 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
-#include "TerminalPage.g.cpp"
-#include "RenameWindowRequestedArgs.g.cpp"
-#include "RequestMoveContentArgs.g.cpp"
-#include "RequestReceiveContentArgs.g.cpp"
-#include "LaunchPositionRequest.g.cpp"
 
-#include <filesystem>
-
-#include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
+#include <Utils.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -25,7 +18,12 @@
 #include "ScratchpadContent.h"
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
-#include "Utils.h"
+
+#include "TerminalPage.g.cpp"
+#include "RenameWindowRequestedArgs.g.cpp"
+#include "RequestMoveContentArgs.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -1262,6 +1260,20 @@ namespace winrt::TerminalApp::implementation
                                                                                         TerminalSettings settings,
                                                                                         const bool inheritCursor)
     {
+        static const auto textMeasurement = [&]() -> std::wstring_view {
+            switch (_settings.GlobalSettings().TextMeasurement())
+            {
+            case TextMeasurement::Graphemes:
+                return L"graphemes";
+            case TextMeasurement::Wcswidth:
+                return L"wcswidth";
+            case TextMeasurement::Console:
+                return L"console";
+            default:
+                return {};
+            }
+        }();
+
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
@@ -1331,6 +1343,11 @@ namespace winrt::TerminalApp::implementation
             {
                 valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
             }
+        }
+
+        if (!textMeasurement.empty())
+        {
+            valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})
@@ -1722,6 +1739,8 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
+        term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
+
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
         {
@@ -1738,6 +1757,12 @@ namespace winrt::TerminalApp::implementation
             if (const auto& page{ weak.get() })
             {
                 page->_PopulateContextMenu(weakTerm.get(), sender.try_as<MUX::Controls::CommandBarFlyout>(), true);
+            }
+        });
+        term.QuickFixMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
+            if (const auto& page{ weak.get() })
+            {
+                page->_PopulateQuickFixMenu(weakTerm.get(), sender.try_as<Controls::MenuFlyout>());
             }
         });
     }
@@ -2970,6 +2995,30 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
         ShowWindowChanged.raise(*this, args);
+    }
+
+    winrt::fire_and_forget TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    {
+        assert(!Dispatcher().HasThreadAccess());
+
+        if (!Feature_QuickFix::IsEnabled())
+        {
+            co_return;
+        }
+
+        std::vector<hstring> suggestions;
+        suggestions.reserve(1);
+        suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install {}"), args.MissingCommand()));
+
+        co_await wil::resume_foreground(Dispatcher());
+
+        auto term = _GetActiveControl();
+        if (!term)
+        {
+            co_return;
+        }
+        term.UpdateWinGetSuggestions(single_threaded_vector<hstring>(std::move(suggestions)));
+        term.RefreshQuickFixMenu();
     }
 
     // Method Description:
@@ -4922,6 +4971,53 @@ namespace winrt::TerminalApp::implementation
         }
 
         makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
+    }
+
+    void TerminalPage::_PopulateQuickFixMenu(const TermControl& control,
+                                             const Controls::MenuFlyout& menu)
+    {
+        if (!control || !menu)
+        {
+            return;
+        }
+
+        // Helper lambda for dispatching a SendInput ActionAndArgs onto the
+        // ShortcutActionDispatch. Used below to wire up each menu entry to the
+        // respective action. Then clear the quick fix menu.
+        auto weak = get_weak();
+        auto makeCallback = [weak](const hstring& suggestion) {
+            return [weak, suggestion](auto&&, auto&&) {
+                if (auto page{ weak.get() })
+                {
+                    const auto actionAndArgs = ActionAndArgs{ ShortcutAction::SendInput, SendInputArgs{ hstring{ L"\u0003" } + suggestion } };
+                    page->_actionDispatch->DoAction(actionAndArgs);
+                    if (auto ctrl = page->_GetActiveControl())
+                    {
+                        ctrl.ClearQuickFix();
+                    }
+                }
+            };
+        };
+
+        // Wire up each item to the action that should be performed. By actually
+        // connecting these to actions, we ensure the implementation is
+        // consistent. This also leaves room for customizing this menu with
+        // actions in the future.
+
+        menu.Items().Clear();
+        const auto quickFixes = control.CommandHistory().QuickFixes();
+        for (const auto& qf : quickFixes)
+        {
+            MenuFlyoutItem item{};
+
+            auto iconElement = UI::IconPathConverter::IconWUX(L"\ue74c");
+            Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+            item.Icon(iconElement);
+
+            item.Text(qf);
+            item.Click(makeCallback(qf));
+            menu.Items().Append(item);
+        }
     }
 
     // Handler for our WindowProperties's PropertyChanged event. We'll use this

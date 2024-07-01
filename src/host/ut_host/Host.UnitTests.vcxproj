@@ -15,7 +15,6 @@
     <ClCompile Include="ApiRoutinesTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
-    <ClCompile Include="CodepointWidthDetectorTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />

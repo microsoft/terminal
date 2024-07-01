@@ -18,6 +18,7 @@
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
+#include "../../types/inc/CodepointWidthDetector.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
@@ -71,6 +72,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
+        static const auto textMeasurementInit = [&]() {
+            TextMeasurementMode mode = TextMeasurementMode::Graphemes;
+            switch (settings.TextMeasurement())
+            {
+            case TextMeasurement::Wcswidth:
+                mode = TextMeasurementMode::Wcswidth;
+                break;
+            case TextMeasurement::Console:
+                mode = TextMeasurementMode::Console;
+                break;
+            default:
+                break;
+            }
+            CodepointWidthDetector::Singleton().Reset(mode);
+            return true;
+        }();
+
         _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         const auto lock = _terminal->LockForWriting();
@@ -109,6 +127,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
         _terminal->CompletionsChangedCallback(pfnCompletionsChanged);
+
+        auto pfnSearchMissingCommand = [this](auto&& PH1) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1)); };
+        _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
+
+        auto pfnClearQuickFix = [this] { ClearQuickFix(); };
+        _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
@@ -1609,6 +1633,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
     }
 
+    void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand)
+    {
+        SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }));
+    }
+
+    void ControlCore::ClearQuickFix()
+    {
+        _cachedQuickFixes = nullptr;
+        RefreshQuickFixUI.raise(*this, nullptr);
+    }
+
     bool ControlCore::HasSelection() const
     {
         const auto lock = _terminal->LockForReading();
@@ -1894,7 +1929,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto lock = _terminal->LockForWriting();
 
         auto& renderSettings = _terminal->GetRenderSettings();
-        renderSettings.ToggleBlinkRendition(*_renderer);
+        renderSettings.ToggleBlinkRendition(_renderer.get());
     }
 
     void ControlCore::BlinkCursor()
@@ -2279,7 +2314,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(trimmedCurrentCommand);
+        context->QuickFixes(_cachedQuickFixes);
         return *context;
+    }
+
+    bool ControlCore::QuickFixesAvailable() const noexcept
+    {
+        return _cachedQuickFixes && _cachedQuickFixes.Size() > 0;
+    }
+
+    void ControlCore::UpdateQuickFixes(const Windows::Foundation::Collections::IVector<hstring>& quickFixes)
+    {
+        _cachedQuickFixes = quickFixes;
     }
 
     Core::Scheme ControlCore::ColorScheme() const noexcept

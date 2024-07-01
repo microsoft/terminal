@@ -130,6 +130,8 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         OutputCellIterator it(chars);
         const auto finished = screenInfo.Write(it, target);
         used = finished.GetInputDistance(it);
+        // If we've overwritten image content, it needs to be erased.
+        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), target, used);
     }
     CATCH_RETURN();
 
@@ -282,6 +284,9 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         const auto cellsModifiedCoord = done.GetInputDistance(it);
 
         cellsModified = cellsModifiedCoord;
+
+        // If we've overwritten image content, it needs to be erased.
+        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), startingCoordinate, cellsModified);
 
         // Notify accessibility
         if (screenInfo.HasAccessibilityEventing())
