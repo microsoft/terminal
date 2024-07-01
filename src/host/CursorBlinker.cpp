@@ -82,10 +82,9 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
     auto& cursor = buffer.GetCursor();
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    const auto inConpty{ gci.IsInVtIoMode() };
 
     // GH#2988: ConPTY can now be focused, but it doesn't need to do any of this work either.
-    if (inConpty || !WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    if (gci.GetVtIo(nullptr) || !WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }

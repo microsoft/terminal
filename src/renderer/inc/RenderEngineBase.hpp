@@ -48,8 +48,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
-        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
-
         void WaitUntilCanRender() noexcept override;
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept override;
 

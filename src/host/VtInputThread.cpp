@@ -129,7 +129,7 @@ void VtInputThread::_InputThread()
     while (DoReadInput())
     {
     }
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
+    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIoNoCheck()->CloseInput();
 }
 
 // Method Description:

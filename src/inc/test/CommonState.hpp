@@ -35,7 +35,7 @@ public:
     CommonState() :
         m_heap(GetProcessHeap()),
         m_hrTextBufferInfo(E_FAIL),
-        m_pFontInfo(nullptr),
+        m_pFontInfo{ L"Consolas", 0, 0, { 8, 12 }, 0 },
         m_backupTextBufferInfo(),
         m_readHandle(nullptr)
     {
@@ -63,15 +63,7 @@ public:
 
     void PrepareGlobalFont(const til::size coordFontSize = { 8, 12 })
     {
-        m_pFontInfo = new FontInfo(L"Consolas", 0, 0, coordFontSize, 0);
-    }
-
-    void CleanupGlobalFont()
-    {
-        if (m_pFontInfo != nullptr)
-        {
-            delete m_pFontInfo;
-        }
+        m_pFontInfo = { L"Consolas", 0, 0, coordFontSize, 0 };
     }
 
     void PrepareGlobalRenderer()
@@ -106,7 +98,7 @@ public:
         UINT uiCursorSize = 12;
 
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
-                                                           *m_pFontInfo,
+                                                           m_pFontInfo,
                                                            coordScreenBufferSize,
                                                            TextAttribute{},
                                                            TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
@@ -252,7 +244,7 @@ public:
 private:
     HANDLE m_heap;
     HRESULT m_hrTextBufferInfo;
-    FontInfo* m_pFontInfo;
+    FontInfo m_pFontInfo;
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
     std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;
 

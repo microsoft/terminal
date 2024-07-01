@@ -241,14 +241,7 @@ void Viewport::Clamp(til::point& pos) const
 // - Clamped viewport
 Viewport Viewport::Clamp(const Viewport& other) const noexcept
 {
-    auto clampMe = other.ToInclusive();
-
-    clampMe.left = std::clamp(clampMe.left, Left(), RightInclusive());
-    clampMe.right = std::clamp(clampMe.right, Left(), RightInclusive());
-    clampMe.top = std::clamp(clampMe.top, Top(), BottomInclusive());
-    clampMe.bottom = std::clamp(clampMe.bottom, Top(), BottomInclusive());
-
-    return Viewport::FromInclusive(clampMe);
+    return Viewport::FromExclusive(ToExclusive() & other.ToExclusive());
 }
 
 // Method Description:

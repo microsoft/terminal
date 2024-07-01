@@ -316,8 +316,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const til::inclusive_rect scrollRectGiven,
                   const std::optional<til::inclusive_rect> clipRectGiven,
                   const til::point destinationOriginGiven,
-                  const wchar_t fillCharGiven,
-                  const TextAttribute fillAttrsGiven)
+                  wchar_t fillCharGiven,
+                  TextAttribute fillAttrsGiven)
 {
     // ------ 1. PREP SOURCE ------
     // Set up the source viewport.
@@ -357,16 +357,17 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         return;
     }
 
-    // Determine the cell we will use to fill in any revealed/uncovered space.
-    // We generally use exactly what was given to us.
-    OutputCellIterator fillData(fillCharGiven, fillAttrsGiven);
-
     // However, if the character is null and we were given a null attribute (represented as legacy 0),
     // then we'll just fill with spaces and whatever the buffer's default colors are.
     if (fillCharGiven == UNICODE_NULL && fillAttrsGiven == TextAttribute{ 0 })
     {
-        fillData = OutputCellIterator(UNICODE_SPACE, screenInfo.GetAttributes());
+        fillCharGiven = UNICODE_SPACE;
+        fillAttrsGiven = screenInfo.GetAttributes();
     }
+
+    // Determine the cell we will use to fill in any revealed/uncovered space.
+    // We generally use exactly what was given to us.
+    OutputCellIterator fillData(fillCharGiven, fillAttrsGiven);
 
     // ------ 4. PREP TARGET ------
     // Now it's time to think about the target. We're only given the origin of the target
@@ -459,7 +460,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     // mode, then the cursor will remain off until they print text. This can
     // lead to alignment problems in the terminal, because we won't move the
     // terminal's cursor in this _exact_ scenario.
-    screenInfo.GetTextBuffer().GetCursor().SetIsOn(gci.IsInVtIoMode());
+    screenInfo.GetTextBuffer().GetCursor().SetIsOn(gci.GetVtIo(nullptr));
 
     // set font
     screenInfo.RefreshFontWithRenderer();

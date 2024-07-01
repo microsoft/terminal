@@ -5,6 +5,8 @@
 
 #include "IoDispatchers.h"
 
+#include <telemetry/ProjectTelemetry.h>
+
 #include "ApiSorter.h"
 
 #include "../host/conserv.h"

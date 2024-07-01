@@ -14,6 +14,7 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
+#include "VtIo.hpp"
 
 #include "../types/inc/convert.hpp"
 #include "../types/inc/GlyphWidth.hpp"
@@ -21,12 +22,26 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
-#pragma hdrstop
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::StateMachine;
-// Used by WriteCharsLegacy.
-#define IS_GLYPH_CHAR(wch) (((wch) >= L' ') && ((wch) != 0x007F))
+
+constexpr bool controlCharPredicate(wchar_t wch)
+{
+    return wch < L' ' || wch == 0x007F;
+}
+
+// This is a copy of the same function in stateMachine.cpp.
+// Returns true for C0 characters and C1 [single-character] CSI.
+constexpr bool isActionableFromGround(const wchar_t wch) noexcept
+{
+    // This is equivalent to:
+    //   return (wch <= 0x1f) || (wch >= 0x7f && wch <= 0x9f);
+    // It's written like this to get MSVC to emit optimal assembly for findActionableFromGround.
+    // It lacks the ability to turn boolean operators into binary operations and also happens
+    // to fail to optimize the printable-ASCII range check into a subtraction & comparison.
+    return (wch <= 0x1f) | (static_cast<wchar_t>(wch - 0x7f) <= 0x20);
+}
 
 // Routine Description:
 // - This routine updates the cursor position.  Its input is the non-special
@@ -109,11 +124,12 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
 }
 
 // As the name implies, this writes text without processing its control characters.
-void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, til::CoordType* psScrollY)
+static bool _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, til::CoordType* psScrollY)
 {
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
     const auto hasAccessibilityEventing = screenInfo.HasAccessibilityEventing();
     auto& textBuffer = screenInfo.GetTextBuffer();
+    bool wrapped = false;
 
     RowWriteState state{
         .text = text,
@@ -127,8 +143,9 @@ void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wst
         state.columnBegin = cursorPosition.x;
         textBuffer.Replace(cursorPosition.y, textBuffer.GetCurrentAttributes(), state);
         cursorPosition.x = state.columnEnd;
+        wrapped = wrapAtEOL && state.columnEnd >= state.columnLimit;
 
-        if (wrapAtEOL && state.columnEnd >= state.columnLimit)
+        if (wrapped)
         {
             textBuffer.SetWrapForced(cursorPosition.y, true);
         }
@@ -140,6 +157,8 @@ void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wst
 
         AdjustCursorPosition(screenInfo, cursorPosition, psScrollY);
     }
+
+    return wrapped;
 }
 
 // This routine writes a string to the screen while handling control characters.
@@ -156,12 +175,13 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     auto it = text.begin();
     const auto end = text.end();
 
-    // In VT mode, when you have a 120-column terminal you can write 120 columns without the cursor wrapping.
-    // Whenever the cursor is in that 120th column IsDelayedEOLWrap() will return true. I'm not sure why the VT parts
-    // of the code base store this as a boolean. It's also unclear why we handle this here. The intention is likely
-    // so that when we exit VT mode and receive a write a potentially stored delayed wrap would still be handled.
-    // The way this code does it however isn't correct since it handles it like the old console APIs would and
-    // so writing a newline while being delay wrapped will print 2 newlines.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto io = gci.GetVtIo(&screenInfo);
+    const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
+
+    // If we enter this if condition, then someone wrote text in VT mode and now switched to non-VT mode.
+    // Since the Console APIs don't support delayed EOL wrapping, we need to first put the cursor back
+    // to a position that the Console APIs expect (= not delayed).
     if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
     {
         auto pos = cursor.GetPosition();
@@ -179,43 +199,87 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     // If it's not set, we can just straight up give everything to WriteCharsLegacyUnprocessed.
     if (WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
-        _writeCharsLegacyUnprocessed(screenInfo, { it, end }, psScrollY);
-        it = end;
+        const auto lastCharWrapped = _writeCharsLegacyUnprocessed(screenInfo, text, psScrollY);
+
+        if (io)
+        {
+            // We're asked to produce VT output, but also to behave as if these control characters aren't control characters.
+            // So, to make it work, we simply replace all the control characters with whitespace.
+            //
+            // BODGY: The const_cast is ""safe"", because the backing memory of `text` comes from `_CONSOLE_API_MSG::_inputBuffer`.
+            // This allows us to replace the control characters without copying potentially Megabytes of data.
+            // Ideally the parameter simply wouldn't be a string_view (= const char), but oh well.
+            const auto begMut = const_cast<wchar_t*>(text.data());
+            const auto endMut = begMut + text.size();
+            std::replace_if(begMut, endMut, isActionableFromGround, L' ');
+
+            io->WriteUTF16(text);
+            if (lastCharWrapped)
+            {
+                io->WriteUTF8(" \b");
+            }
+        }
+
+        return;
     }
 
     while (it != end)
     {
-        const auto nextControlChar = std::find_if(it, end, [](const auto& wch) { return !IS_GLYPH_CHAR(wch); });
+        const auto nextControlChar = std::find_if(it, end, controlCharPredicate);
         if (nextControlChar != it)
         {
-            _writeCharsLegacyUnprocessed(screenInfo, { it, nextControlChar }, psScrollY);
+            const std::wstring_view chunk{ it, nextControlChar };
+            const auto lastCharWrapped = _writeCharsLegacyUnprocessed(screenInfo, chunk, psScrollY);
             it = nextControlChar;
+
+            if (io)
+            {
+                io->WriteUTF16(chunk);
+                if (lastCharWrapped)
+                {
+                    io->WriteUTF8(" \b");
+                }
+            }
         }
 
-        for (; it != end && !IS_GLYPH_CHAR(*it); ++it)
+        if (it == end)
         {
-            switch (*it)
+            break;
+        }
+
+        bool lastCharWrapped = false;
+
+        do
+        {
+            auto wch = *it;
+
+            switch (wch)
             {
             case UNICODE_NULL:
-                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], 1 }, psScrollY);
-                continue;
+            {
+                lastCharWrapped = _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], 1 }, psScrollY);
+                wch = L' ';
+                break;
+            }
             case UNICODE_BELL:
+            {
                 std::ignore = screenInfo.SendNotifyBeep();
-                continue;
+                break;
+            }
             case UNICODE_BACKSPACE:
             {
                 auto pos = cursor.GetPosition();
                 pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(pos.x);
                 AdjustCursorPosition(screenInfo, pos, psScrollY);
-                continue;
+                break;
             }
             case UNICODE_TAB:
             {
                 const auto pos = cursor.GetPosition();
                 const auto remaining = width - pos.x;
                 const auto tabCount = gsl::narrow_cast<size_t>(std::min(remaining, 8 - (pos.x & 7)));
-                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], tabCount }, psScrollY);
-                continue;
+                lastCharWrapped = _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], tabCount }, psScrollY);
+                break;
             }
             case UNICODE_LINEFEED:
             {
@@ -228,30 +292,58 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
                 textBuffer.GetMutableRowByOffset(pos.y).SetWrapForced(false);
                 pos.y = pos.y + 1;
                 AdjustCursorPosition(screenInfo, pos, psScrollY);
-                continue;
+                break;
             }
             case UNICODE_CARRIAGERETURN:
             {
                 auto pos = cursor.GetPosition();
                 pos.x = 0;
                 AdjustCursorPosition(screenInfo, pos, psScrollY);
-                continue;
-            }
-            default:
                 break;
             }
-
-            // As a special favor to incompetent apps that attempt to display control chars,
-            // convert to corresponding OEM Glyph Chars
-            const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-            const auto ch = gsl::narrow_cast<char>(*it);
-            wchar_t wch = 0;
-            const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, &ch, 1, &wch, 1);
-            if (result == 1)
+            default:
             {
-                _writeCharsLegacyUnprocessed(screenInfo, { &wch, 1 }, psScrollY);
+                // As a special favor to incompetent apps that attempt to display control chars,
+                // convert to corresponding OEM Glyph Chars
+                const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+                const auto ch = gsl::narrow_cast<char>(wch);
+                const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, &ch, 1, &wch, 1);
+                if (result != 1)
+                {
+                    wch = 0;
+                }
+                if (wch)
+                {
+                    lastCharWrapped = _writeCharsLegacyUnprocessed(screenInfo, { &wch, 1 }, psScrollY);
+                }
+                break;
             }
+            }
+
+            if (io && wch)
+            {
+                io->WriteUTF16({ &wch, 1 });
+            }
+
+            ++it;
+        } while (it != end && controlCharPredicate(*it));
+
+        if (io && lastCharWrapped)
+        {
+            io->WriteUTF8(" \b");
         }
+    }
+}
+
+void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    screenInfo.GetStateMachine().ProcessString(str);
+
+    if (const auto io = gci.GetVtIo(&screenInfo))
+    {
+        io->WriteUTF16(str);
     }
 }
 
@@ -277,7 +369,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
                                       std::unique_ptr<WriteData>& waiter)
 try
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         waiter = std::make_unique<WriteData>(screenInfo,
@@ -288,24 +380,15 @@ try
         return CONSOLE_STATUS_WAIT;
     }
 
-    const auto vtIo = ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo();
     const auto restoreVtQuirk = wil::scope_exit([&]() {
         if (requiresVtQuirk)
         {
             screenInfo.ResetIgnoreLegacyEquivalentVTAttributes();
         }
-        if (vtIo->IsUsingVt())
-        {
-            vtIo->CorkRenderer(false);
-        }
     });
     if (requiresVtQuirk)
     {
         screenInfo.SetIgnoreLegacyEquivalentVTAttributes();
-    }
-    if (vtIo->IsUsingVt())
-    {
-        vtIo->CorkRenderer(true);
     }
 
     const std::wstring_view str{ pwchBuffer, *pcbBuffer / sizeof(WCHAR) };
@@ -316,7 +399,7 @@ try
     }
     else
     {
-        screenInfo.GetStateMachine().ProcessString(str);
+        WriteCharsVT(screenInfo, str);
     }
 
     return STATUS_SUCCESS;

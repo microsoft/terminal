@@ -30,8 +30,6 @@
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ViewportTests.cpp" />
     <ClCompile Include="VtIoTests.cpp" />
-    <ClCompile Include="VtRendererTests.cpp" />
-    <ClCompile Include="ConptyOutputTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -45,9 +43,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\renderer\atlas\atlas.vcxproj">
       <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\renderer\vt\ut_lib\vt.unittest.vcxproj">
-      <Project>{990F2657-8580-4828-943F-5DD657D11843}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\interactivity\base\lib\InteractivityBase.vcxproj">
       <Project>{06ec74cb-9a12-429c-b551-8562ec964846}</Project>

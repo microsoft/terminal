@@ -1198,21 +1198,6 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
 
     _viewport = newViewport;
     Tracing::s_TraceWindowViewport(_viewport);
-
-    // In Conpty mode, call TriggerScroll here without params. By not providing
-    // params, the renderer will make sure to update the VtEngine with the
-    // updated viewport size. If we don't do this, the engine can get into a
-    // torn state on this frame.
-    //
-    // Without this statement, the engine won't be told about the new view size
-    // till the start of the next frame. If any other text gets output before
-    // that frame starts, there's a very real chance that it'll cause errors as
-    // the engine tries to invalidate those regions.
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
-    {
-        ServiceLocator::LocateGlobals().pRender->TriggerScroll();
-    }
 }
 
 // Routine Description:
@@ -1417,6 +1402,7 @@ try
     newTextBuffer->SetCurrentAttributes(_textBuffer->GetCurrentAttributes());
 
     _textBuffer = std::move(newTextBuffer);
+    _viewport = _textBuffer->GetSize().Clamp(_viewport);
     return STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
@@ -1434,6 +1420,7 @@ try
     _textBuffer->GetCursor().StartDeferDrawing();
     auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     _textBuffer->ResizeTraditional(coordNewScreenSize);
+    _viewport = _textBuffer->GetSize().Clamp(_viewport);
     return STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
@@ -1902,15 +1889,6 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
-        // GH#381: When we switch into the alt buffer:
-        //  * flush the current frame, to clear out anything that we prepared for this buffer.
-        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
-        if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
-            LOG_IF_FAILED(gci.GetVtIo()->SwitchScreenBuffer(true));
-        }
-
         ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
@@ -1937,15 +1915,6 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
     if (psiMain != nullptr)
     {
         _handleDeferredResize(*psiMain);
-
-        // GH#381: When we switch into the main buffer:
-        //  * flush the current frame, to clear out anything that we prepared for this buffer.
-        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
-        if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
-            LOG_IF_FAILED(gci.GetVtIo()->SwitchScreenBuffer(false));
-        }
 
         ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
@@ -1995,8 +1964,8 @@ bool SCREEN_INFORMATION::_IsAltBuffer() const
 // - true iff this buffer has a main buffer.
 bool SCREEN_INFORMATION::_IsInPtyMode() const
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return _IsAltBuffer() || gci.IsInVtIoMode();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return _IsAltBuffer() || gci.GetVtIo(nullptr);
 }
 
 // Routine Description:
@@ -2085,8 +2054,6 @@ void SCREEN_INFORMATION::SetPopupAttributes(const TextAttribute& popupAttributes
 void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
                                               const TextAttribute& popupAttributes)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
     const auto oldPrimaryAttributes = GetAttributes();
     const auto oldPopupAttributes = GetPopupAttributes();
 
@@ -2102,10 +2069,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     // Force repaint of entire viewport, unless we're in conpty mode. In that
     // case, we don't really need to force a redraw of the entire screen just
     // because the text attributes changed.
-    if (!(gci.IsInVtIoMode()))
-    {
-        _textBuffer->TriggerRedrawAll();
-    }
+    _textBuffer->TriggerRedrawAll();
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
@@ -2181,50 +2145,12 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 // - S_OK
 [[nodiscard]] HRESULT SCREEN_INFORMATION::ClearBuffer()
 {
-    // Rotate the buffer to bring the cursor row to the top of the viewport.
-    const auto cursorPos = _textBuffer->GetCursor().GetPosition();
-    for (auto i = 0; i < cursorPos.y; i++)
-    {
-        _textBuffer->IncrementCircularBuffer();
-    }
-
-    // Erase everything below that point.
-    RETURN_IF_FAILED(SetCursorPosition({ 0, 1 }, false));
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::ToEnd);
-
+    _textBuffer->Reset();
     // Restore the original cursor x offset, but now on the first row.
-    RETURN_IF_FAILED(SetCursorPosition({ cursorPos.x, 0 }, false));
-
+    _textBuffer->GetCursor().SetYPosition(0);
     _textBuffer->TriggerRedrawAll();
 
     return S_OK;
-}
-
-// Method Description:
-// - Sets up the Output state machine to be in pty mode. Sequences it doesn't
-//      understand will be written to the pTtyConnection passed in here.
-// Arguments:
-// - pTtyConnection: This is a TerminalOutputConnection that we can write the
-//      sequence we didn't understand to.
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnection)
-{
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    if (pTtyConnection)
-    {
-        engine.SetTerminalConnection(pTtyConnection,
-                                     [&stateMachine = *_stateMachine]() -> bool {
-                                         ServiceLocator::LocateGlobals().pRender->NotifyPaintFrame();
-                                         return stateMachine.FlushToTerminal();
-                                     });
-    }
-    else
-    {
-        engine.SetTerminalConnection(nullptr,
-                                     nullptr);
-    }
 }
 
 // Routine Description:
@@ -2454,18 +2380,24 @@ void SCREEN_INFORMATION::UpdateBottom()
     _virtualBottom = _viewport.BottomInclusive();
 }
 
-// Method Description:
-// - Returns the "virtual" Viewport - the viewport with its bottom at
-//      `_virtualBottom`. For VT operations, this is essentially the mutable
-//      section of the buffer.
-// Arguments:
-// - <none>
-// Return Value:
-// - the virtual terminal viewport
+// Returns the section of the text buffer that would be visible on the screen
+// if the user didn't scroll away vertically. It's essentially the same as
+// GetVtPageArea() but includes the horizontal scroll offset and window width.
 Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
 {
-    const auto newTop = _virtualBottom - _viewport.Height() + 1;
-    return Viewport::FromDimensions({ _viewport.Left(), newTop }, _viewport.Dimensions());
+    const auto viewportHeight = _viewport.Height();
+    const auto bufferWidth = _textBuffer->GetSize().Width();
+    const auto top = std::max(0, _virtualBottom - viewportHeight + 1);
+    return Viewport::FromExclusive({ 0, top, bufferWidth, top + viewportHeight });
+}
+
+// Returns the section of the text buffer that's addressable by VT sequences.
+Viewport SCREEN_INFORMATION::GetVtPageArea() const noexcept
+{
+    const auto viewportHeight = _viewport.Height();
+    const auto bufferWidth = _textBuffer->GetSize().Width();
+    const auto top = std::max(0, _virtualBottom - viewportHeight + 1);
+    return Viewport::FromExclusive({ 0, top, bufferWidth, top + viewportHeight });
 }
 
 // Method Description:

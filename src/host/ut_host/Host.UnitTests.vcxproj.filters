@@ -57,9 +57,6 @@
     <ClCompile Include="VtIoTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VtRendererTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="AliasTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -79,9 +76,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ObjectTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ConptyOutputTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

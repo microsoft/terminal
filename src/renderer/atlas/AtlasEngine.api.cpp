@@ -160,13 +160,6 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateFlush(_In_ const bool /*circled*/, _Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT AtlasEngine::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
     _api.invalidatedTitle = true;

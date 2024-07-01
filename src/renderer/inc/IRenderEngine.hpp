@@ -62,7 +62,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept = 0;
         virtual void WaitUntilCanRender() noexcept = 0;
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* pForcePaint) noexcept = 0;
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
         [[nodiscard]] virtual HRESULT Invalidate(const til::rect* psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept = 0;
@@ -71,7 +70,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const til::point* pcoordDelta) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept = 0;
         [[nodiscard]] virtual HRESULT NotifyNewText(const std::wstring_view newText) noexcept = 0;
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept = 0;

@@ -3,27 +3,56 @@
 
 #pragma once
 
-#include "../inc/VtIoModes.hpp"
-#include "../renderer/vt/vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
 
 class ConsoleArguments;
-
-namespace Microsoft::Console::Render
-{
-    class VtEngine;
-}
 
 namespace Microsoft::Console::VirtualTerminal
 {
     class VtIo
     {
     public:
-        VtIo();
+        struct CorkLock
+        {
+            CorkLock() = default;
+            CorkLock(VtIo* io) noexcept;
+
+            ~CorkLock() noexcept;
+
+            CorkLock(const CorkLock&) = delete;
+            CorkLock& operator=(const CorkLock&) = delete;
+            CorkLock(CorkLock&& other) noexcept;
+            CorkLock& operator=(CorkLock&& other) noexcept;
+
+        private:
+            VtIo* _io = nullptr;
+        };
+
+        struct CursorRestore
+        {
+            CursorRestore() = default;
+            CursorRestore(VtIo* io, til::point position) noexcept;
+
+            ~CursorRestore() noexcept;
+
+            CursorRestore(const CursorRestore&) = delete;
+            CursorRestore& operator=(const CursorRestore&) = delete;
+            CursorRestore(CursorRestore&& other) noexcept;
+            CursorRestore& operator=(CursorRestore&& other) noexcept;
+
+        private:
+            VtIo* _io = nullptr;
+            til::point _position;
+        };
+
+        friend struct CorkLock;
+
+        static bool IsControlCharacter(wchar_t wch) noexcept;
+        static void FormatAttributes(std::string& target, WORD attributes);
+        static void FormatAttributes(std::wstring& target, WORD attributes);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
-
         [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
         [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
@@ -31,49 +60,55 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT StartIfNeeded();
 
-        [[nodiscard]] static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
-        [[nodiscard]] HRESULT SuppressResizeRepaint();
-        [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
-        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
         void SendCloseEvent();
 
         void CloseInput();
         void CloseOutput();
 
-        void CorkRenderer(bool corked) const noexcept;
-
-#ifdef UNIT_TESTING
-        void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine, const bool resizeQuirk = false);
-#endif
-
-        bool IsResizeQuirkEnabled() const;
-
-        [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
-        [[nodiscard]] HRESULT RequestMouseMode(bool enable) const noexcept;
-
         void CreatePseudoWindow();
-        void SetWindowVisibility(bool showOrHide) noexcept;
+
+        CorkLock Cork() noexcept;
+        bool BufferHasContent() const noexcept;
+
+        void WriteFormat(auto&&... args)
+        {
+            fmt::format_to(std::back_inserter(_back), std::forward<decltype(args)>(args)...);
+            _flush();
+        }
+        void WriteUTF8(std::string_view str);
+        void WriteUTF16(std::wstring_view str);
+        void WriteUCS2(wchar_t ch);
+        void WriteCUP(til::point position);
+        void WriteAttributes(WORD attributes);
+        void WriteInfos(til::point target, std::span<const CHAR_INFO> infos);
 
     private:
+        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
+
+        void _uncork();
+        void _flush();
+        void _flushNow();
+
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
         wil::unique_hfile _hOutput;
         // After CreateAndStartSignalThread is called, this will be invalid.
         wil::unique_hfile _hSignal;
-        VtIoMode _IoMode;
 
-        bool _initialized;
-
-        bool _lookingForCursorPosition;
-
-        bool _resizeQuirk{ false };
-        bool _closeEventSent{ false };
-
-        std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
-        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
+        std::string _front;
+        std::string _back;
+        OVERLAPPED* _overlapped = nullptr;
+        OVERLAPPED _overlappedBuf{};
+        wil::unique_event _overlappedEvent;
+        bool _overlappedPending = false;
+
+        bool _initialized = false;
+        bool _lookingForCursorPosition = false;
+        bool _closeEventSent = false;
+        int _corked = 0;
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;

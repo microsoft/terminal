@@ -192,20 +192,6 @@ try
 CATCH_LOG_RETURN_HR(E_FAIL);
 
 // Routine Description:
-// - This is unused by this renderer.
-// Arguments:
-// - pForcePaint - always filled with false.
-// Return Value:
-// - S_FALSE because this is unused.
-[[nodiscard]] HRESULT UiaEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
-// Routine Description:
 // - Prepares internal structures for a painting operation.
 // Arguments:
 // - <none>

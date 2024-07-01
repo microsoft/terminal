@@ -2,4 +2,3 @@ DIRS= \
      base \
      gdi \
      wddmcon \
-     vt \

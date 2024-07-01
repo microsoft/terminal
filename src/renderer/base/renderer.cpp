@@ -316,26 +316,6 @@ void Renderer::TriggerTeardown() noexcept
 {
     // We need to shut down the paint thread on teardown.
     _pThread->WaitForPaintCompletionAndDisable(INFINITE);
-
-    auto repaint = false;
-
-    // Then walk through and do one final paint on the caller's thread.
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
-    }
-
-    // BODGY: The only time repaint is true is when VtEngine is used.
-    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
-    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
-    if (repaint)
-    {
-        LOG_IF_FAILED(_PaintFrame());
-    }
 }
 
 // Routine Description:
@@ -483,38 +463,6 @@ void Renderer::TriggerScroll(const til::point* const pcoordDelta)
     _ScrollPreviousSelection(*pcoordDelta);
 
     NotifyPaintFrame();
-}
-
-// Routine Description:
-// - Called when the text buffer is about to circle its backing buffer.
-//      A renderer might want to get painted before that happens.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::TriggerFlush(const bool circling)
-{
-    const auto rects = _GetSelectionRects();
-    auto repaint = false;
-
-    FOREACH_ENGINE(pEngine)
-    {
-        auto fEngineRequestsRepaint = false;
-        auto hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
-        LOG_IF_FAILED(hr);
-
-        LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
-
-        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
-    }
-
-    // BODGY: The only time repaint is true is when VtEngine is used.
-    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
-    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
-    if (repaint)
-    {
-        LOG_IF_FAILED(_PaintFrame());
-    }
 }
 
 // Routine Description:

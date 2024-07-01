@@ -273,13 +273,6 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT AtlasEngine::ScrollFrame() noexcept
 {
     return S_OK;
@@ -821,6 +814,12 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
         u32 mappedLength = 0;
         wil::com_ptr<IDWriteFontFace2> mappedFontFace;
         _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
+
+        if (mappedLength > 0 && _api.bufferLine[idx + mappedLength - 1] == 0xFE0F)
+        {
+            __debugbreak();
+        }
+
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -852,6 +851,9 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
                 BOOL isTextSimple = FALSE;
                 THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
+                // Ensure some form of forward progress.
+                complexityLength = std::max<u32>(1, complexityLength);
+
                 if (isTextSimple)
                 {
                     const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
@@ -871,6 +873,24 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
                 }
                 else
                 {
+                    // DWrite's GetTextComplexity implementation is unfortunately stupidly simple. It just checks if any given character is simple or not.
+                    // It has no logic for recognizing complex characters that result from using zero-width joiners on simple characters.
+                    // As an example, the black cat emoji is U+1F408 U+200D U+2B1B and U+2B1B is a simple character and so it splits that emoji up.
+                    // We fix that here by simply joining the next codepoint whenever we see a zero-width joiner.
+                    // BODGY: That's technically not correct since the grapheme cluster may be even longer, but it works for all emojis that I tested.
+                    // This is because any emoji that ends in U+FE0F doesn't ever get split (maybe because it avoids emitting very short complexity runs?).
+                    if (_api.bufferLine[idx + complexityLength - 1] == 0x200D)
+                    {
+                        const auto beg = _api.bufferLine.begin() + idx + complexityLength;
+                        const auto end = _api.bufferLine.end();
+
+                        complexityLength++;
+                        if (beg != end && til::is_trailing_surrogate(beg[1]))
+                        {
+                            complexityLength++;
+                        }
+                    }
+
                     _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
                 }
             }

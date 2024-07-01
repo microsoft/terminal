@@ -1,3 +1,0 @@
-BUILD_PASS1_CONSUMES= \
-    onecore\windows\vcpkg|PASS1 \
-

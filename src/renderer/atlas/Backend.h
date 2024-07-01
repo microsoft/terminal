@@ -20,7 +20,7 @@ namespace Microsoft::Console::Render::Atlas
 #define ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION 0
 
     // Redraw at display refresh rate at all times. This helps with shader debugging.
-#define ATLAS_DEBUG_CONTINUOUS_REDRAW 0
+#define ATLAS_DEBUG_CONTINUOUS_REDRAW 1
 
     // Hot reload the builtin .hlsl files whenever they change on disk.
     // Enabled by default in debug builds.

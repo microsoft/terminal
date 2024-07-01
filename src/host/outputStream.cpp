@@ -202,8 +202,8 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 // - <none>
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto hwnd = gci.GetVtIo(nullptr) ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
     // conhost HWND, it's going to need to get processed by the window message
@@ -361,7 +361,7 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
 // - true if we're in pty mode.
 bool ConhostInternalGetSet::IsConsolePty() const
 {
-    return ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode();
+    return ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo(nullptr);
 }
 
 // Routine Description:

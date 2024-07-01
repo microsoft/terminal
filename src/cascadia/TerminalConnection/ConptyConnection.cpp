@@ -260,7 +260,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
 
-            _flags = PSEUDOCONSOLE_RESIZE_QUIRK;
+            _flags = 0;
 
             // If we're using an existing buffer, we want the new connection
             // to reuse the existing cursor. When not setting this flag, the

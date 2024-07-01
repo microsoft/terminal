@@ -38,7 +38,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT EndPaint() noexcept override;
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
         [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* const psrRegion) noexcept override;

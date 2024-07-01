@@ -54,7 +54,6 @@ class ApiRoutinesTests
         m_state->CleanupGlobalInputBuffer();
 
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         m_state.reset(nullptr);
 
