@@ -171,7 +171,15 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE:
     {
-        // https://www.desmos.com/calculator/8c1ee1tobl
+        // https://www.desmos.com/calculator/6jqhr7kmkc
+        // The curly line has the same height as a double underline. If we gave it the same thickness as the double
+        // underline stroke, it would look way too fat. Half the width looks quite alright on current displays.
+        float strokeWidthHalf = doubleUnderlineWidth * data.renditionScale.y * 0.5f;
+        // We must subtract half a pixel from the amplitude, because pixel positions are always centered (= 0.5f/0.5f offset).
+        // If we didn't do this, there would be no space to give the line some anti-aliasing at the top and bottom.
+        float amplitude = (curlyLineHalfHeight - strokeWidthHalf) * data.renditionScale.y;
+        float frequency = data.renditionScale.x / curlyLineHalfHeight * 1.57079632679489661923f;
+        float s = sin(data.position.x * frequency);
         // We want both vertical and horizontal anti-aliasing to give it a smooth appearance.
         // We use the distance to the sine curve as the alpha value - the closer the more opaque.
         // However, I'm too incompetent to figure out how to calculate the distance mathematically
@@ -197,11 +205,7 @@ Output main(PSData data) : SV_Target
         //
         // We already have sin(x) and 1 / sqrt(x) is very cheap to calculate.
         //   abs(position.y - sin(position.x)) * rsqrt(2 - sin(x)^2)
-        float strokeWidthHalf = doubleUnderlineWidth * data.renditionScale.y * 0.5f;
-        float amplitude = (curlyLineHalfHeight - strokeWidthHalf) * data.renditionScale.y;
-        float frequency = data.renditionScale.x / curlyLineHalfHeight * 1.57079632679489661923f;
-        float s = sin(data.position.x * frequency);
-        float d = abs(curlyLineHalfHeight - data.texcoord.y - s * amplitude) * rsqrt(2 - s * s);
+        float d = abs(data.texcoord.y - curlyLineHalfHeight + s * amplitude) * rsqrt(2 - s * s) + 0.5f;
         float a = 1 - saturate(d - strokeWidthHalf);
         color = a * premultiplyColor(data.color);
         weights = color.aaaa;
