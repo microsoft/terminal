@@ -91,7 +91,7 @@
                           x:DataType="local:FilteredTask">
                 <mux:TreeViewItem x:Name="rootItem"
                                   AutomationProperties.HelpText="{x:Bind Input, Mode=OneWay}"
-                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                                  AutomationProperties.Name="{x:Bind FilteredCommand.Item.Name, Mode=OneWay}"
                                   ItemsSource="{x:Bind Children, Mode=OneWay}"
                                   KeyUp="_treeItemKeyUpHandler"
                                   Visibility="{x:Bind Visibility, Mode=OneWay}">
@@ -171,7 +171,7 @@
                         <local:HighlightedTextControl Grid.Column="1"
                                                       HorizontalAlignment="Left"
                                                       IsTabStop="False"
-                                                      Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                                                      Text="{x:Bind FilteredCommand.HighlightedName, Mode=OneWay}" />
 
                         <!--
                             BODGY: I can't choose different templates if this item is nested or not.

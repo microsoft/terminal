@@ -63,13 +63,13 @@ namespace winrt::TerminalApp::implementation
         void _runCommand(const Microsoft::Terminal::Settings::Model::Command& command);
     };
 
-    struct FilteredTask : FilteredTaskT<FilteredTask, TerminalApp::implementation::FilteredCommand>
+    struct FilteredTask : FilteredTaskT<FilteredTask>
     {
         FilteredTask() = default;
 
         FilteredTask(const winrt::Microsoft::Terminal::Settings::Model::Command& command)
         {
-            _constructFilteredCommand(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command, winrt::hstring{}));
+            _filteredCommand = winrt::make_self<implementation::FilteredCommand>(winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(command, winrt::hstring{}));
             _command = command;
 
             // The Children() method must always return a non-null vector
@@ -84,12 +84,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        void UpdateFilter(const winrt::hstring& filter) override
+        void UpdateFilter(const winrt::hstring& filter)
         {
-            TerminalApp::implementation::FilteredCommand::UpdateFilter(filter);
+            _filteredCommand->UpdateFilter(filter);
             for (const auto& c : _children)
             {
-                c.UpdateFilter(filter);
+                auto impl = winrt::get_self<implementation::FilteredTask>(c);
+                impl->UpdateFilter(filter);
             }
 
             PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Visibility" });
@@ -97,7 +98,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring Input()
         {
-            if (const auto& actionItem{ _Item.try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (const auto& actionItem{ _filteredCommand->Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
                 if (const auto& command{ actionItem.Command() })
                 {
@@ -113,6 +114,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> Children() { return _children; }
         bool HasChildren() { return _children.Size() > 0; }
         winrt::Microsoft::Terminal::Settings::Model::Command Command() { return _command; }
+        winrt::TerminalApp::FilteredCommand FilteredCommand() { return *_filteredCommand; }
 
         int32_t Row() { return HasChildren() ? 2 : 1; } // See the BODGY comment in the .XAML for explanation
 
@@ -122,22 +124,26 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Visibility Visibility()
         {
             // Is there no filter, or do we match it?
-            if (_Filter.empty() || _Weight > 0)
+            if (_filteredCommand->Filter().empty() || _filteredCommand->Weight() > 0)
             {
                 return winrt::Windows::UI::Xaml::Visibility::Visible;
             }
             // If we don't match, maybe one of our children does
-            auto totalWeight = _Weight;
+            auto totalWeight = _filteredCommand->Weight();
             for (const auto& c : _children)
             {
-                totalWeight += c.Weight();
+                auto impl = winrt::get_self<implementation::FilteredTask>(c);
+                totalWeight += impl->_filteredCommand->Weight();
             }
 
             return totalWeight > 0 ? winrt::Windows::UI::Xaml::Visibility::Visible : winrt::Windows::UI::Xaml::Visibility::Collapsed;
         };
 
+        til::property_changed_event PropertyChanged;
+
     private:
         winrt::Microsoft::Terminal::Settings::Model::Command _command{ nullptr };
+        winrt::com_ptr<winrt::TerminalApp::implementation::FilteredCommand> _filteredCommand{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _children{ nullptr };
     };
 }

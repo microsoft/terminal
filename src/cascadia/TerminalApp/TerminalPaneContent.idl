@@ -18,13 +18,14 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<TerminalPaneContent, Object> RestartTerminalRequested;
     }
 
-    [default_interface] runtimeclass FilteredTask : TerminalApp.FilteredCommand
+    [default_interface] runtimeclass FilteredTask : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Input{ get; };
         Windows.Foundation.Collections.IObservableVector<FilteredTask> Children { get; };
         Boolean HasChildren { get; };
         Int32 Row { get; };
         Windows.UI.Xaml.Visibility Visibility { get; };
+        TerminalApp.FilteredCommand FilteredCommand{ get; };
     }
 
     [default_interface] runtimeclass SnippetsPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent, Windows.UI.Xaml.Data.INotifyPropertyChanged

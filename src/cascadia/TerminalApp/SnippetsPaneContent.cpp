@@ -37,7 +37,8 @@ namespace winrt::TerminalApp::implementation
         // That'll also trigger a PropertyChanged for the Visibility property.
         for (const auto& t : _allTasks)
         {
-            t.UpdateFilter(queryString);
+            auto impl = winrt::get_self<implementation::FilteredTask>(t);
+            impl->UpdateFilter(queryString);
         }
     }
 
