@@ -666,6 +666,64 @@ try
 }
 CATCH_RETURN();
 
+[[nodiscard]] HRESULT GdiEngine::PaintImageSlice(const ImageSlice& imageSlice,
+                                                 const til::CoordType targetRow,
+                                                 const til::CoordType viewportLeft) noexcept
+try
+{
+    LOG_IF_FAILED(_FlushBufferLines());
+    LOG_IF_FAILED(ResetLineTransform());
+
+    const auto& imagePixels = imageSlice.Pixels();
+    if (_imageMask.size() < imagePixels.size())
+    {
+        _imageMask.resize(imagePixels.size());
+    }
+
+    const auto srcCellSize = imageSlice.CellSize();
+    const auto dstCellSize = _GetFontSize();
+    const auto srcWidth = imageSlice.PixelWidth();
+    const auto srcHeight = srcCellSize.height;
+    const auto dstWidth = srcWidth * dstCellSize.width / srcCellSize.width;
+    const auto dstHeight = srcHeight * dstCellSize.height / srcCellSize.height;
+    const auto x = (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width;
+    const auto y = targetRow * dstCellSize.height;
+
+    auto bitmapInfo = BITMAPINFO{
+        .bmiHeader = {
+            .biSize = sizeof(BITMAPINFOHEADER),
+            .biWidth = srcWidth,
+            .biHeight = -srcHeight,
+            .biPlanes = 1,
+            .biBitCount = 32,
+            .biCompression = BI_RGB,
+        }
+    };
+
+    auto allOpaque = true;
+    auto allTransparent = true;
+    for (size_t i = 0; i < imagePixels.size(); i++)
+    {
+        const auto opaque = til::at(imagePixels, i).rgbReserved != 0;
+        allOpaque &= opaque;
+        allTransparent &= !opaque;
+        til::at(_imageMask, i) = (opaque ? 0 : 0xFFFFFF);
+    }
+
+    if (allOpaque)
+    {
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+    }
+    else if (!allTransparent)
+    {
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, _imageMask.data(), &bitmapInfo, DIB_RGB_COLORS, SRCAND);
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCPAINT);
+    }
+
+    return S_OK;
+}
+CATCH_RETURN();
+
 // Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
