@@ -1276,7 +1276,8 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<SaveSnippetArgs>())
             {
-                if (realArgs.Commandline().empty())
+                auto commandLine = realArgs.Commandline();
+                if (commandLine.empty())
                 {
                     if (const auto termControl{ _GetActiveControl() })
                     {
@@ -1284,12 +1285,12 @@ namespace winrt::TerminalApp::implementation
                         {
                             const auto selections{ termControl.SelectedText(true) };
                             const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
-                            realArgs.Commandline(selection);
+                            commandLine = selection;
                         }
                     }
                 }
 
-                if (realArgs.Commandline().empty())
+                if (commandLine.empty())
                 {
                     ActionSaveFailed(L"CommandLine is Required");
                     return;
@@ -1297,14 +1298,14 @@ namespace winrt::TerminalApp::implementation
 
                 try
                 {
-                    winrt::Microsoft::Terminal::Control::KeyChord keyChord = nullptr;
+                    KeyChord keyChord = nullptr;
                     if (!realArgs.KeyChord().empty())
                     {
                         keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
                     }
-                    _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), realArgs.Commandline(), keyChord);
+                    _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), commandLine, keyChord);
                     _settings.WriteSettingsToDisk();
-                    ActionSaved(realArgs.Commandline(), realArgs.Name(), realArgs.KeyChord());
+                    ActionSaved(commandLine, realArgs.Name(), realArgs.KeyChord());
                 }
                 catch (const winrt::hresult_error& ex)
                 {
@@ -1319,6 +1320,57 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
+    void TerminalPage::ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord)
+    {
+        // If we haven't ever loaded the TeachingTip, then do so now and
+        // create the toast for it.
+        if (_actionSavedToast == nullptr)
+        {
+            if (auto tip{ FindName(L"ActionSavedToast").try_as<MUX::Controls::TeachingTip>() })
+            {
+                _actionSavedToast = std::make_shared<Toast>(tip);
+                // Make sure to use the weak ref when setting up this
+                // callback.
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(ActionSavedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        SavedActionName(name);
+        SavedActionKeyChord(keyChord);
+        SavedActionCommandLine(input);
+
+        if (_actionSavedToast != nullptr)
+        {
+            _actionSavedToast->Open();
+        }
+    }
+
+    void TerminalPage::ActionSaveFailed(winrt::hstring message)
+    {
+        // If we haven't ever loaded the TeachingTip, then do so now and
+        // create the toast for it.
+        if (_actionSaveFailedToast == nullptr)
+        {
+            if (auto tip{ FindName(L"ActionSaveFailedToast").try_as<MUX::Controls::TeachingTip>() })
+            {
+                _actionSaveFailedToast = std::make_shared<Toast>(tip);
+                // Make sure to use the weak ref when setting up this
+                // callback.
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(ActionSaveFailedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        ActionSaveFailedMessage().Text(message);
+
+        if (_actionSaveFailedToast != nullptr)
+        {
+            _actionSaveFailedToast->Open();
+        }
+    }
+
 
     void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
