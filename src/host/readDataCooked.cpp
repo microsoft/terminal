@@ -300,6 +300,15 @@ void COOKED_READ_DATA::EraseBeforeResize() const
 // The counter-part to EraseBeforeResize().
 void COOKED_READ_DATA::RedrawAfterResize()
 {
+    // Get the new cursor position after the reflow. Just like how the COOKED_READ_DATA constructor did it.
+    const auto& textBuffer = _screenInfo.GetTextBuffer();
+    const auto& cursor = textBuffer.GetCursor();
+    auto absoluteCursorPos = cursor.GetPosition();
+    _screenInfo.GetVtPageArea().ConvertToOrigin(&absoluteCursorPos);
+    absoluteCursorPos.x = std::max(0, absoluteCursorPos.x);
+    absoluteCursorPos.y = std::max(0, absoluteCursorPos.y);
+    _originInViewport = absoluteCursorPos;
+
     // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
     // They have all been erased with the CSI J above.
     _pagerHeight = 0;
