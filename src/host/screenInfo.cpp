@@ -1413,6 +1413,7 @@ try
     newTextBuffer->SetCurrentAttributes(_textBuffer->GetCurrentAttributes());
 
     _textBuffer = std::move(newTextBuffer);
+    _viewport = _textBuffer->GetSize().Clamp(_viewport);
     return STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
@@ -1430,6 +1431,7 @@ try
     _textBuffer->GetCursor().StartDeferDrawing();
     auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     _textBuffer->ResizeTraditional(coordNewScreenSize);
+    _viewport = _textBuffer->GetSize().Clamp(_viewport);
     return STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
