@@ -8,7 +8,7 @@
 
   <!-- TAEF -->
   <PropertyGroup>
-    <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002</TAEFPackagePathRoot>
+    <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.93.240607003</TAEFPackagePathRoot>
   </PropertyGroup>
 
   <!-- AppiumWebDriver -->
