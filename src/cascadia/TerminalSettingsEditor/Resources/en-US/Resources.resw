@@ -342,6 +342,24 @@
     <value>When enabled, the terminal will use a software rasterizer (WARP). This setting should be left disabled under almost all circumstances.</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
+  <data name="Globals_TextMeasurement.Header" xml:space="preserve">
+    <value>Text measurement mode</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+    <value>This changes the way incoming text is grouped into cells. The "Grapheme clusters" option is the most modern and Unicode-correct way to do so, while "wcswidth" is a common approach on UNIX, and "Windows Console" replicates the way it used to work on Windows. Changing this setting requires a restart of Windows Terminal and it only applies to applications launched from within it.</value>
+  </data>
+  <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
+    <value>Grapheme clusters</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
+    <value>wcswidth</value>
+    <comment>{Locked="wcswidth"}</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
+    <value>Windows Console</value>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columns</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -931,7 +949,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font. This feature is unavailable when using Direct2D as the Graphics API.</value>
+    <value>When enabled, the terminal draws custom glyphs for block element and box drawing characters instead of using the font.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

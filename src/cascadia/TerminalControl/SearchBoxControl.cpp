@@ -155,10 +155,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // search box remains in Visible state (though not really *visible*) during the
             // first load. So, we only need to apply this check here (after checking that
             // we're done initializing).
-            if (Visibility() == Visibility::Visible)
+            if (IsOpen())
             {
                 callback();
                 return;
+            }
+
+            // Stop ongoing close animation if any
+            if (CloseAnimation().GetCurrentState() == Media::Animation::ClockState::Active)
+            {
+                CloseAnimation().Stop();
             }
 
             VisualStateManager::GoToState(*this, L"Opened", false);
@@ -194,6 +200,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             VisualStateManager::GoToState(*this, L"Closed", false);
         }
+    }
+
+    bool SearchBoxControl::IsOpen()
+    {
+        return Visibility() == Visibility::Visible && CloseAnimation().GetCurrentState() != Media::Animation::ClockState::Active;
     }
 
     winrt::hstring SearchBoxControl::Text()

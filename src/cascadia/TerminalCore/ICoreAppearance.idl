@@ -122,5 +122,7 @@ namespace Microsoft.Terminal.Core
         Boolean IntenseIsBold;
         Boolean IntenseIsBright;
         AdjustTextMode AdjustIndistinguishableColors;
+
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 }

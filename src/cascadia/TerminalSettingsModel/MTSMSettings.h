@@ -27,6 +27,7 @@ Author(s):
     X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                         \
     X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
     X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
+    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                         \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
@@ -96,7 +97,8 @@ Author(s):
     X(bool, AutoMarkPrompts, "autoMarkPrompts", false)                                                                                                         \
     X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
     X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
-    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
+    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -136,9 +138,10 @@ Author(s):
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
 
-#define MTSM_THEME_SETTINGS(X)                                                             \
-    X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr) \
-    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr) \
+#define MTSM_THEME_SETTINGS(X)                                                                   \
+    X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr)       \
+    X(winrt::Microsoft::Terminal::Settings::Model::SettingsTheme, Settings, "settings", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr)       \
     X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr)
 
 #define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
@@ -147,6 +150,9 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
     X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
     X(bool, UseMica, "useMica", false)
+
+#define MTSM_THEME_SETTINGS_SETTINGS(X) \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "theme", winrt::Windows::UI::Xaml::ElementTheme::Default)
 
 #define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \

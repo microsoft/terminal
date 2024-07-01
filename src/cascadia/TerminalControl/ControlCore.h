@@ -68,8 +68,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> History;
         til::property<winrt::hstring> CurrentCommandline;
+        til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> QuickFixes;
 
-        CommandHistoryContext(std::vector<winrt::hstring>&& history)
+        CommandHistoryContext(std::vector<winrt::hstring>&& history) :
+            QuickFixes(winrt::single_threaded_vector<winrt::hstring>())
         {
             History(winrt::single_threaded_vector<winrt::hstring>(std::move(history)));
         }
@@ -152,6 +154,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Close();
         void PersistToPath(const wchar_t* path) const;
         void RestoreFromPath(const wchar_t* path) const;
+
+        void ClearQuickFix();
 
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;
@@ -241,6 +245,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
+        bool QuickFixesAvailable() const noexcept;
+        void UpdateQuickFixes(const Windows::Foundation::Collections::IVector<hstring>& quickFixes);
 
         void AdjustOpacity(const float opacity, const bool relative);
 
@@ -256,6 +262,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
+
+        void PreviewInput(std::wstring_view input);
 
         RUNTIME_SETTING(float, Opacity, _settings->Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
@@ -283,6 +291,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
         til::typed_event<IInspectable, Control::CompletionsChangedEventArgs> CompletionsChanged;
+        til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
+        til::typed_event<> RefreshQuickFixUI;
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
@@ -352,6 +362,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _contextMenuBufferPosition{ 0, 0 };
 
+        Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
+
         void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
@@ -375,6 +387,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
+        void _terminalSearchMissingCommand(std::wstring_view missingCommand);
 
         winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 

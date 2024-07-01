@@ -8,6 +8,7 @@
 #include <LibraryResources.h>
 
 #include "SuggestionsControl.g.cpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -18,6 +19,8 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+using namespace std::chrono_literals;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -103,9 +106,7 @@ namespace winrt::TerminalApp::implementation
             // stays "attached" to the cursor.
             if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
             {
-                auto m = this->Margin();
-                m.Top = (_anchor.Y - ActualHeight());
-                this->Margin(m);
+                this->_recalculateTopMargin();
             }
         });
 
@@ -281,9 +282,78 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
-                PreviewAction.raise(*this, actionPaletteItem.Command());
+                const auto& cmd = actionPaletteItem.Command();
+                PreviewAction.raise(*this, cmd);
+
+                const auto description{ cmd.Description() };
+
+                if (const auto& selected{ SelectedItem() })
+                {
+                    selected.SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+                }
+
+                if (!description.empty())
+                {
+                    _openTooltip(cmd);
+                }
+                else
+                {
+                    // If there's no description, then just close the tooltip.
+                    _descriptionsView().Visibility(Visibility::Collapsed);
+                    _descriptionsBackdrop().Visibility(Visibility::Collapsed);
+                    _recalculateTopMargin();
+                }
             }
         }
+    }
+
+    void SuggestionsControl::_openTooltip(Command cmd)
+    {
+        const auto description{ cmd.Description() };
+        if (description.empty())
+        {
+            return;
+        }
+
+        // Build the contents of the "tooltip" based on the description
+        //
+        // First, the title. This is just the name of the command.
+        _descriptionTitle().Inlines().Clear();
+        Documents::Run titleRun;
+        titleRun.Text(cmd.Name());
+        _descriptionTitle().Inlines().Append(titleRun);
+
+        // Now fill up the "subtitle" part of the "tooltip" with the actual
+        // description itself.
+        const auto& inlines{ _descriptionComment().Inlines() };
+        inlines.Clear();
+
+        // Split the filtered description on '\n`
+        const auto lines = ::Microsoft::Console::Utils::SplitString(description, L'\n');
+        // build a Run + LineBreak, and add them to the text block
+        for (const auto& line : lines)
+        {
+            // Trim off any `\r`'s in the string. Pwsh completions will
+            // frequently have these embedded.
+            std::wstring trimmed{ line };
+            trimmed.erase(std::remove(trimmed.begin(), trimmed.end(), L'\r'), trimmed.end());
+            if (trimmed.empty())
+            {
+                continue;
+            }
+
+            Documents::Run textRun;
+            textRun.Text(trimmed);
+            inlines.Append(textRun);
+            inlines.Append(Documents::LineBreak{});
+        }
+
+        // Now, make ourselves visible.
+        _descriptionsView().Visibility(Visibility::Visible);
+        _descriptionsBackdrop().Visibility(Visibility::Visible);
+        // and update the padding to account for our new contents.
+        _recalculateTopMargin();
+        return;
     }
 
     void SuggestionsControl::_previewKeyDownHandler(const IInspectable& /*sender*/,
@@ -1020,14 +1090,69 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_setDirection(TerminalApp::SuggestionsDirection direction)
     {
         _direction = direction;
+
+        // We need to move either the list of suggestions, or the tooltip, to
+        // the top of the stack panel (depending on the layout).
+        Grid controlToMoveToTop = nullptr;
+
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             Controls::Grid::SetRow(_searchBox(), 0);
+            controlToMoveToTop = _backdrop();
         }
         else // BottomUp
         {
             Controls::Grid::SetRow(_searchBox(), 4);
+            controlToMoveToTop = _descriptionsBackdrop();
         }
+
+        assert(controlToMoveToTop);
+        const auto& children{ _listAndDescriptionStack().Children() };
+        uint32_t index;
+        if (children.IndexOf(controlToMoveToTop, index))
+        {
+            children.Move(index, 0);
+        }
+    }
+
+    void SuggestionsControl::_recalculateTopMargin()
+    {
+        auto currentMargin = Margin();
+        // Call Measure() on the descriptions backdrop, so that it gets it's new
+        // DesiredSize for this new description text.
+        //
+        // If you forget this, then we _probably_ weren't laid out since
+        // updating that text, and the ActualHeight will be the _last_
+        // description's height.
+        _descriptionsBackdrop().Measure({
+            static_cast<float>(ActualWidth()),
+            static_cast<float>(ActualHeight()),
+        });
+
+        // Now, position vertically.
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+        {
+            // The control should open right below the cursor, with the list
+            // extending below. This is easy, we can just use the cursor as the
+            // origin (more or less)
+            currentMargin.Top = (_anchor.Y);
+        }
+        else
+        {
+            // Bottom Up.
+
+            // This is wackier, because we need to calculate the offset upwards
+            // from our anchor. So we need to get the size of our elements:
+            const auto backdropHeight = _backdrop().ActualHeight();
+            const auto descriptionDesiredHeight = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
+                                                      _descriptionsBackdrop().DesiredSize().Height :
+                                                      0;
+
+            const auto marginTop = (_anchor.Y - backdropHeight - descriptionDesiredHeight);
+
+            currentMargin.Top = marginTop;
+        }
+        Margin(currentMargin);
     }
 
     void SuggestionsControl::Open(TerminalApp::SuggestionsMode mode,
@@ -1047,9 +1172,8 @@ namespace winrt::TerminalApp::implementation
         _anchor = anchor;
         _space = space;
 
-        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
         // Is there space in the window below the cursor to open the menu downwards?
-        const bool canOpenDownwards = (_anchor.Y + characterHeight + actualSize.height) < space.Height;
+        const bool canOpenDownwards = (_anchor.Y + characterHeight + ActualHeight()) < space.Height;
         _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
                                          TerminalApp::SuggestionsDirection::BottomUp);
         // Set the anchor below by a character height
@@ -1063,26 +1187,13 @@ namespace winrt::TerminalApp::implementation
         const auto proposedX = gsl::narrow_cast<int>(_anchor.X - 40);
         // If the control is too wide to fit in the window, clamp it fit inside
         // the window.
-        const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
+        const auto maxX = gsl::narrow_cast<int>(space.Width - ActualWidth());
         const auto clampedX = std::clamp(proposedX, 0, maxX);
 
-        // Create a thickness for the new margins
-        auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
-        // Now, position vertically.
-        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
-        {
-            // The control should open right below the cursor, with the list
-            // extending below. This is easy, we can just use the cursor as the
-            // origin (more or less)
-            newMargin.Top = (_anchor.Y);
-        }
-        else
-        {
-            // Position at the cursor. The suggestions UI itself will maintain
-            // its own offset such that it's always above its origin
-            newMargin.Top = (_anchor.Y - actualSize.height);
-        }
-        Margin(newMargin);
+        // Create a thickness for the new margins. This will set the left, then
+        // we'll go update the top separately
+        Margin(Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0));
+        _recalculateTopMargin();
 
         _searchBox().Text(filter);
 
@@ -1099,5 +1210,4 @@ namespace winrt::TerminalApp::implementation
         // selection starting at the end of the string.
         _searchBox().Select(filter.size(), 0);
     }
-
 }
