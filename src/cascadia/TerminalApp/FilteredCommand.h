@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
         FilteredCommand() = default;
         FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        void UpdateFilter(const winrt::hstring& filter);
+        virtual void UpdateFilter(const winrt::hstring& filter);
 
         static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 
@@ -28,6 +28,9 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Filter, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(int, Weight, PropertyChanged.raise);
+
+    protected:
+        void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
     private:
         winrt::TerminalApp::HighlightedText _computeHighlightedName();

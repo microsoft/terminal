@@ -525,7 +525,7 @@ namespace winrt::TerminalApp::implementation
     // - pane: The new pane to add to the tree of panes; note that this pane
     //         could itself be a parent pane/the root node of a tree of panes
     // Return Value:
-    // - <none>
+    // - a pair of (the Pane that now holds the original content, the new Pane in the tree)
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> TerminalTab::SplitPane(SplitDirection splitType,
                                                                                    const float splitSize,
                                                                                    std::shared_ptr<Pane> pane)
@@ -1223,6 +1223,20 @@ namespace winrt::TerminalApp::implementation
 
         // Raise our own ActivePaneChanged event.
         ActivePaneChanged.raise(*this, nullptr);
+
+        // If the new active pane is a terminal, tell other interested panes
+        // what the new active pane is.
+        const auto content{ pane->GetContent() };
+        if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
+        {
+            const auto& termControl{ termContent.GetTermControl() };
+            _rootPane->WalkTree([termControl](const auto& p) {
+                if (const auto& taskPane{ p->GetContent().try_as<SnippetsPaneContent>() })
+                {
+                    taskPane.SetLastActiveControl(termControl);
+                }
+            });
+        }
     }
 
     // Method Description:

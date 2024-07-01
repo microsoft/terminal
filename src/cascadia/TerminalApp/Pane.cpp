@@ -2944,7 +2944,8 @@ void Pane::FinalizeConfigurationGivenDefault()
 // - Returns true if the pane or one of its descendants is read-only
 bool Pane::ContainsReadOnly() const
 {
-    return _IsLeaf() ? _content.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+    return _IsLeaf() ? (_content == nullptr ? false : _content.ReadOnly()) :
+                       (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
 // Method Description:
