@@ -5,7 +5,7 @@ using namespace mem;
 
 Arena::Arena(size_t bytes)
 {
-    m_alloc = static_cast<uint8_t*>(THROW_IF_NULL_ALLOC(VirtualAlloc(nullptr, bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)));
+    m_alloc = static_cast<uint8_t*>(THROW_IF_NULL_ALLOC(VirtualAlloc(nullptr, bytes, MEM_RESERVE, PAGE_READWRITE)));
 }
 
 Arena::~Arena()
@@ -41,8 +41,18 @@ void* Arena::_push_raw(size_t bytes, size_t alignment)
 {
     const auto mask = alignment - 1;
     const auto pos = (m_pos + mask) & ~mask;
+    const auto pos_new = pos + bytes;
     const auto ptr = m_alloc + pos;
-    m_pos = pos + bytes;
+
+    if (pos_new > m_commit)
+    {
+        // Commit in 1MB chunks and pre-commit 1MiB in advance.
+        const auto commit_new = (pos_new + 0x1FFFFF) & ~0xFFFFF;
+        THROW_IF_NULL_ALLOC(VirtualAlloc(m_alloc + m_commit, commit_new - m_commit, MEM_COMMIT, PAGE_READWRITE));
+        m_commit = commit_new;
+    }
+
+    m_pos = pos_new;
     return ptr;
 }
 
@@ -76,8 +86,8 @@ ScopedArena::~ScopedArena()
 static [[msvc::noinline]] std::array<Arena, 2> thread_arenas_init()
 {
     return {
-        Arena{ 64 * 1024 * 1024 },
-        Arena{ 64 * 1024 * 1024 },
+        Arena{ 1024 * 1024 * 1024 },
+        Arena{ 1024 * 1024 * 1024 },
     };
 }
 
@@ -166,7 +176,9 @@ std::wstring_view mem::format(Arena& arena, const wchar_t* fmt, va_list args)
         return {};
     }
 
+    // Make space for a terminating \0 character.
     len++;
+
     const auto buffer = arena.push_uninitialized<wchar_t>(len);
 
     len = _vsnwprintf(buffer, len, fmt, args);

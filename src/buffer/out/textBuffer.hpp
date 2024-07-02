@@ -72,7 +72,7 @@ public:
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
                const bool isActiveBuffer,
-               Microsoft::Console::Render::Renderer& renderer);
+               Microsoft::Console::Render::Renderer* renderer);
 
     TextBuffer(const TextBuffer&) = delete;
     TextBuffer(TextBuffer&&) = delete;
@@ -135,6 +135,7 @@ public:
     const Microsoft::Console::Types::Viewport GetSize() const noexcept;
 
     void ScrollRows(const til::CoordType firstRow, const til::CoordType size, const til::CoordType delta);
+    void CopyRow(const til::CoordType srcRow, const til::CoordType dstRow, TextBuffer& dstBuffer) const;
 
     til::CoordType TotalRowCount() const noexcept;
 
@@ -161,7 +162,7 @@ public:
     void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
     bool IsActiveBuffer() const noexcept;
 
-    Microsoft::Console::Render::Renderer& GetRenderer() noexcept;
+    Microsoft::Console::Render::Renderer* GetRenderer() noexcept;
 
     void NotifyPaintFrame() noexcept;
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
@@ -333,7 +334,7 @@ private:
 
     static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
 
-    Microsoft::Console::Render::Renderer& _renderer;
+    Microsoft::Console::Render::Renderer* _renderer = nullptr;
 
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;

@@ -16,5 +16,6 @@ struct ConhostHandle
 };
 
 ConhostHandle spawn_conhost(mem::Arena& arena, const wchar_t* path);
+void check_spawn_conhost_dll(int argc, const wchar_t* argv[]);
 HANDLE get_active_connection();
 void set_active_connection(HANDLE connection);

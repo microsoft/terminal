@@ -699,17 +699,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        if (!isMicaAvailable)
-        {
-            return;
-        }
-
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-        const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
+        const bool hasThemeForSettings{ theme.Settings() != nullptr };
+        const auto& appTheme = theme.RequestedTheme();
+        const auto& requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
 
         RequestedTheme(requestedTheme);
 
-        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
+        // Mica gets it's appearance from the app's theme, not necessarily the
+        // Page's theme. In the case of dark app, light settings, mica will be a
+        // dark color, and the text will also be dark, making the UI _very_ hard
+        // to read. (and similarly in the inverse situation).
+        //
+        // To mitigate this, don't set the transparent background in the case
+        // that our theme is different than the app's.
+        const bool actuallyUseMica = isMicaAvailable && (appTheme == requestedTheme);
+
+        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) && actuallyUseMica ?
                                L"SettingsPageMicaBackground" :
                                L"SettingsPageBackground";
 

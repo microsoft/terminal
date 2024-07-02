@@ -5,7 +5,6 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
-#include <til/string.h>
 #include <winternl.h>
 
 #include "CTerminalHandoff.h"
@@ -259,11 +258,39 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
             _sessionId = unbox_prop_or<winrt::guid>(settings, L"sessionId", _sessionId);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
-            _inheritCursor = unbox_prop_or<bool>(settings, L"inheritCursor", _inheritCursor);
             _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
 
-            const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
+            _flags = PSEUDOCONSOLE_RESIZE_QUIRK;
 
+            // If we're using an existing buffer, we want the new connection
+            // to reuse the existing cursor. When not setting this flag, the
+            // PseudoConsole sends a clear screen VT code which our renderer
+            // interprets into making all the previous lines be outside the
+            // current viewport.
+            const auto inheritCursor = unbox_prop_or<bool>(settings, L"inheritCursor", false);
+            if (inheritCursor)
+            {
+                _flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
+            }
+
+            const auto textMeasurement = unbox_prop_or<winrt::hstring>(settings, L"textMeasurement", winrt::hstring{});
+            if (!textMeasurement.empty())
+            {
+                if (textMeasurement == L"graphemes")
+                {
+                    _flags |= PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES;
+                }
+                else if (textMeasurement == L"wcswidth")
+                {
+                    _flags |= PSEUDOCONSOLE_GLYPH_WIDTH_WCSWIDTH;
+                }
+                else if (textMeasurement == L"console")
+                {
+                    _flags |= PSEUDOCONSOLE_GLYPH_WIDTH_CONSOLE;
+                }
+            }
+
+            const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
             const bool reloadEnvironmentVariables = unbox_prop_or<bool>(settings, L"reloadEnvironmentVariables", false);
 
             if (reloadEnvironmentVariables)
@@ -318,19 +345,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK;
-
-            // If we're using an existing buffer, we want the new connection
-            // to reuse the existing cursor. When not setting this flag, the
-            // PseudoConsole sends a clear screen VT code which our renderer
-            // interprets into making all the previous lines be outside the
-            // current viewport.
-            if (_inheritCursor)
-            {
-                flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
-            }
-
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), flags, &_inPipe, &_outPipe, &_hPC));
+            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), _flags, &_inPipe, &_outPipe, &_hPC));
 
             if (_initialParentHwnd != 0)
             {

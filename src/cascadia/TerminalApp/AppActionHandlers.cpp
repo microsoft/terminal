@@ -1264,6 +1264,113 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleSaveSnippet(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if constexpr (!Feature_SaveSnippet::IsEnabled())
+        {
+            return;
+        }
+
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveSnippetArgs>())
+            {
+                auto commandLine = realArgs.Commandline();
+                if (commandLine.empty())
+                {
+                    if (const auto termControl{ _GetActiveControl() })
+                    {
+                        if (termControl.HasSelection())
+                        {
+                            const auto selections{ termControl.SelectedText(true) };
+                            const auto selection = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                            commandLine = selection;
+                        }
+                    }
+                }
+
+                if (commandLine.empty())
+                {
+                    ActionSaveFailed(L"CommandLine is Required");
+                    return;
+                }
+
+                try
+                {
+                    KeyChord keyChord = nullptr;
+                    if (!realArgs.KeyChord().empty())
+                    {
+                        keyChord = KeyChordSerialization::FromString(winrt::to_hstring(realArgs.KeyChord()));
+                    }
+                    _settings.GlobalSettings().ActionMap().AddSendInputAction(realArgs.Name(), commandLine, keyChord);
+                    _settings.WriteSettingsToDisk();
+                    ActionSaved(commandLine, realArgs.Name(), realArgs.KeyChord());
+                }
+                catch (const winrt::hresult_error& ex)
+                {
+                    auto code = ex.code();
+                    auto message = ex.message();
+                    ActionSaveFailed(message);
+                    args.Handled(true);
+                    return;
+                }
+
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord)
+    {
+        // If we haven't ever loaded the TeachingTip, then do so now and
+        // create the toast for it.
+        if (_actionSavedToast == nullptr)
+        {
+            if (auto tip{ FindName(L"ActionSavedToast").try_as<MUX::Controls::TeachingTip>() })
+            {
+                _actionSavedToast = std::make_shared<Toast>(tip);
+                // Make sure to use the weak ref when setting up this
+                // callback.
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(ActionSavedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        SavedActionName(name);
+        SavedActionKeyChord(keyChord);
+        SavedActionCommandLine(input);
+
+        if (_actionSavedToast != nullptr)
+        {
+            _actionSavedToast->Open();
+        }
+    }
+
+    void TerminalPage::ActionSaveFailed(winrt::hstring message)
+    {
+        // If we haven't ever loaded the TeachingTip, then do so now and
+        // create the toast for it.
+        if (_actionSaveFailedToast == nullptr)
+        {
+            if (auto tip{ FindName(L"ActionSaveFailedToast").try_as<MUX::Controls::TeachingTip>() })
+            {
+                _actionSaveFailedToast = std::make_shared<Toast>(tip);
+                // Make sure to use the weak ref when setting up this
+                // callback.
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(ActionSaveFailedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        ActionSaveFailedMessage().Text(message);
+
+        if (_actionSaveFailedToast != nullptr)
+        {
+            _actionSaveFailedToast->Open();
+        }
+    }
+
     void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
@@ -1340,7 +1447,7 @@ namespace winrt::TerminalApp::implementation
                 //       requires context from the control)
                 // then get that here.
                 const bool shouldGetContext = realArgs.UseCommandline() ||
-                                              WI_IsFlagSet(source, SuggestionsSource::CommandHistory);
+                                              WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::QuickFixes);
                 if (shouldGetContext)
                 {
                     if (const auto& control{ _GetActiveControl() })
@@ -1373,7 +1480,20 @@ namespace winrt::TerminalApp::implementation
                 if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
                     context != nullptr)
                 {
-                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
+                    // \ue81c --> History icon
+                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false, hstring{ L"\ue81c" });
+                    for (const auto& t : recentCommands)
+                    {
+                        commandsCollection.push_back(t);
+                    }
+                }
+
+                if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
+                    context != nullptr &&
+                    context.QuickFixes() != nullptr)
+                {
+                    // \ue74c --> OEM icon
+                    const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });
                     for (const auto& t : recentCommands)
                     {
                         commandsCollection.push_back(t);

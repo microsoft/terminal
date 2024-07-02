@@ -5,6 +5,7 @@
 
 #include <til/rle.h>
 
+#include "ImageSlice.hpp"
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
@@ -151,6 +152,8 @@ public:
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
+    const ImageSlice::Pointer& GetImageSlice() const noexcept;
+    ImageSlice::Pointer& GetMutableImageSlice() noexcept;
     uint16_t size() const noexcept;
     til::CoordType GetLastNonSpaceColumn() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
@@ -296,6 +299,8 @@ private:
     til::small_rle<TextAttribute, uint16_t, 1> _attr;
     // The width of the row in visual columns.
     uint16_t _columnCount = 0;
+    // Stores any image content covering the row.
+    ImageSlice::Pointer _imageSlice;
     // Stores double-width/height (DECSWL/DECDWL/DECDHL) attributes.
     LineRendition _lineRendition = LineRendition::SingleWidth;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line

@@ -50,6 +50,7 @@ perlw
 postmodern
 Powerline
 ptys
+pwn
 pwshw
 qof
 qps
@@ -80,6 +81,7 @@ und
 vsdevcmd
 westus
 workarounds
+wtconfig
 XBox
 YBox
 yeru
