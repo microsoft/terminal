@@ -13,6 +13,14 @@ parameters:
   - name: targetBranch
     type: string
     default: "automated/loc-update"
+  - name: submitToTouchdown
+    displayName: Send New Strings to Touchdown
+    type: boolean
+    default: true
+  - name: checkInLocOutputs
+    displayName: Submit Pull Request
+    type: boolean
+    default: true
 
 pool:
   vmImage: windows-2019
@@ -52,7 +60,7 @@ steps:
     outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
-    localizationTarget: true
+    localizationTarget: ${{ parameters.submitToTouchdown }}
 
 - pwsh: |-
     $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw','PDP.xml' | ? FullName -Like '*en-US\*\*.*'
@@ -65,32 +73,37 @@ steps:
     & ./build/scripts/Generate-PseudoLocalizations.ps1
   displayName: Move Loc files to the right places
 
-- pwsh: |-
-    git add **/*.resw
-    git add build/StoreSubmission/**/*.xml
-    git status
-    git diff --quiet --cached --exit-code
-    If ($LASTEXITCODE -Ne 0) {
-      $Now = Get-Date
-      git commit -m "Localization Updates - $Now"
-      git push origin HEAD:refs/heads/${{parameters.targetBranch}} -f
-      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]1"
-    } Else {
-      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]0"
-    }
-  displayName: git commit and push
+- publish: LocOutputMunged.tar
+  artifact: loc-outputs
+  displayName: Publish Loc Outputs for inspection
 
-- pwsh: |-
-    Import-Module PSGitHub
-    $BaseBranch = "$(Build.SourceBranch)" -Replace "^refs/heads/",""
-    Write-Host "Preparing PR against $BaseBranch"
-    $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
-    $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
-    $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
-    $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}" -BaseBranch $BaseBranch
-    If ($null -Eq $existingPr) {
-      $Now = Get-Date
-      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base $BaseBranch -Title "Localization Updates - $BaseBranch - $Now" -Verbose
-    }
-  displayName: Publish pull request
-  condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())
+- ${{ if eq(parameters.checkInLocOutputs, true) }}:
+  - pwsh: |-
+      git add **/*.resw
+      git add build/StoreSubmission/**/*.xml
+      git status
+      git diff --quiet --cached --exit-code
+      If ($LASTEXITCODE -Ne 0) {
+        $Now = Get-Date
+        git commit -m "Localization Updates - $Now"
+        git push origin HEAD:refs/heads/${{parameters.targetBranch}} -f
+        Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]1"
+      } Else {
+        Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]0"
+      }
+    displayName: git commit and push
+
+  - pwsh: |-
+      Import-Module PSGitHub
+      $BaseBranch = "$(Build.SourceBranch)" -Replace "^refs/heads/",""
+      Write-Host "Preparing PR against $BaseBranch"
+      $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
+      $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
+      $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
+      $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}" -BaseBranch $BaseBranch
+      If ($null -Eq $existingPr) {
+        $Now = Get-Date
+        New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base $BaseBranch -Title "Localization Updates - $BaseBranch - $Now" -Verbose
+      }
+    displayName: Publish pull request
+    condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())
