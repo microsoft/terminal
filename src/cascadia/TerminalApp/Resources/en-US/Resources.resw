@@ -288,6 +288,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Save command line as input action</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>An optional argument</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>An optional argument</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Move focus to another tab</value>
   </data>
@@ -897,5 +906,11 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Restart the active pane connection</value>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Action saved</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Action save failed</value>
   </data>
 </root>
