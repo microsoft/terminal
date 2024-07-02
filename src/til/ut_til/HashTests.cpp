@@ -24,13 +24,13 @@ class HashTests
         };
 
         static constexpr std::array tests{
-            Test{ "", 0, 0x42bc986dc5eec4d3, 0xa45f982f },
-            Test{ "a", 1, 0x84508dc903c31551, 0x09021114 },
-            Test{ "abc", 2, 0x0bc54887cfc9ecb1, 0xfe40215d },
-            Test{ "message digest", 3, 0x6e2ff3298208a67c, 0x6e0fb730 },
-            Test{ "abcdefghijklmnopqrstuvwxyz", 4, 0x9a64e42e897195b9, 0x9435b8c2 },
-            Test{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 5, 0x9199383239c32554, 0xccf9734c },
-            Test{ "12345678901234567890123456789012345678901234567890123456789012345678901234567890", 6, 0x7c1ccf6bba30f5a5, 0x9fa5ef6e },
+            Test{ "", 0, 0x93228a4de0eec5a2, 0xa45f982f },
+            Test{ "a", 1, 0x0dc3b86c0704cea4, 0x09021114 },
+            Test{ "abc", 2, 0x93dc6a6329f8ddba, 0xfe40215d },
+            Test{ "message digest", 3, 0x0031cdc21324150f, 0x6e0fb730 },
+            Test{ "abcdefghijklmnopqrstuvwxyz", 4, 0xd7523bef5b2a3fbd, 0x9435b8c2 },
+            Test{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 5, 0x416757764b7bd75b, 0xccf9734c },
+            Test{ "12345678901234567890123456789012345678901234567890123456789012345678901234567890", 6, 0xa2db61f63e5a8f20, 0x9fa5ef6e },
         };
 
         for (const auto& t : tests)

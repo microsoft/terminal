@@ -182,6 +182,7 @@ changelists
 charinfo
 CHARSETINFO
 chh
+CHPE
 chshdng
 CHT
 CLASSSTRING
@@ -871,6 +872,7 @@ INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
 Interner
+intrin
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1356,6 +1358,7 @@ pipestr
 pixelheight
 PIXELSLIST
 PJOBOBJECT
+plast
 platforming
 playsound
 ploc
@@ -1460,6 +1463,8 @@ Qxxxxxxxxxxxxxxx
 qzmp
 RAII
 RALT
+RAPIDHASH
+rapidhash
 rasterbar
 rasterfont
 rasterization
@@ -1715,6 +1720,7 @@ STDAPI
 stdc
 stdcpp
 STDEXT
+stdint
 STDMETHODCALLTYPE
 STDMETHODIMP
 STGM
@@ -2155,6 +2161,7 @@ XManifest
 XMath
 XNamespace
 xorg
+Xors
 XPan
 XResource
 xsi
