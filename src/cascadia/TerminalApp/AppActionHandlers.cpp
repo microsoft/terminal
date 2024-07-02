@@ -1265,7 +1265,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleSaveSnippet(const IInspectable& /*sender*/,
-                                       const ActionEventArgs& args)
+                                          const ActionEventArgs& args)
     {
         if constexpr (!Feature_SaveSnippet::IsEnabled())
         {
@@ -1370,7 +1370,6 @@ namespace winrt::TerminalApp::implementation
             _actionSaveFailedToast->Open();
         }
     }
-
 
     void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
