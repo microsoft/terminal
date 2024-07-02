@@ -727,4 +727,7 @@
     <value>Open about dialog</value>
     <comment>This will open the "about" dialog, to display version info and other documentation</comment>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Quick fix</value>
+  </data>
 </root>

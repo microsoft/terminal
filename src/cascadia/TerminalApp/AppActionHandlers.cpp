@@ -1486,4 +1486,14 @@ namespace winrt::TerminalApp::implementation
         _ShowAboutDialog();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleQuickFix(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.OpenQuickFixMenu();
+        }
+        args.Handled(true);
+    }
 }
