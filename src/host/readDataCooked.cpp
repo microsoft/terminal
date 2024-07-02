@@ -289,8 +289,15 @@ bool COOKED_READ_DATA::Read(const bool isUnicode, size_t& numBytes, ULONG& contr
 // Printing wide glyphs at the end of a row results in a forced line wrap and a padding whitespace to be inserted.
 // When the text buffer resizes these padding spaces may vanish and the _distanceCursor and _distanceEnd measurements become inaccurate.
 // To fix this, this function is called before a resize and will clear the input line. Afterwards, RedrawAfterResize() will restore it.
-void COOKED_READ_DATA::EraseBeforeResize() const
+void COOKED_READ_DATA::EraseBeforeResize()
 {
+    if (_redrawPending)
+    {
+        return;
+    }
+
+    _redrawPending = true;
+
     std::wstring output;
     _appendCUP(output, _originInViewport);
     output.append(L"\x1b[J");
@@ -300,6 +307,13 @@ void COOKED_READ_DATA::EraseBeforeResize() const
 // The counter-part to EraseBeforeResize().
 void COOKED_READ_DATA::RedrawAfterResize()
 {
+    if (!_redrawPending)
+    {
+        return;
+    }
+
+    _redrawPending = false;
+
     // Get the new cursor position after the reflow. Just like how the COOKED_READ_DATA constructor did it.
     const auto& textBuffer = _screenInfo.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
@@ -315,7 +329,7 @@ void COOKED_READ_DATA::RedrawAfterResize()
 
     // Ensure that the entire buffer content is rewritten after the above CSI J.
     _bufferDirtyBeg = 0;
-    _dirty = true;
+    _dirty = !_buffer.empty();
 
     _redisplay();
 }

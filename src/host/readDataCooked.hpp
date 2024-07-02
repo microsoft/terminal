@@ -30,7 +30,7 @@ public:
 
     bool Read(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
 
-    void EraseBeforeResize() const;
+    void EraseBeforeResize();
     void RedrawAfterResize();
 
     void SetInsertMode(bool insertMode) noexcept;
@@ -158,6 +158,7 @@ private:
     State _state = State::Accumulating;
     bool _insertMode = false;
     bool _dirty = false;
+    bool _redrawPending = false;
 
     til::point _originInViewport;
     // This value is in the pager coordinate space. (0,0) is the first character of the

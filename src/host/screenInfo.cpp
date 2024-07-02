@@ -1037,6 +1037,11 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
     const auto DeltaY = pcoordSize->height - _viewport.Height();
     const auto coordScreenBufferSize = GetBufferSize().Dimensions();
 
+    if (DeltaX == 0 && DeltaY == 0)
+    {
+        return;
+    }
+
     // do adjustments on a copy that's easily manipulated.
     auto srNewViewport = _viewport.ToInclusive();
 
@@ -1120,15 +1125,11 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
             // If the new bottom is supposed to be before the final line of the buffer
             // Check to ensure that we don't hide the prompt by collapsing the window.
 
-            // The final valid end position will be the coordinates of
-            // the last character displayed (including any characters
-            // in the input line)
-            til::point coordValidEnd;
-            Selection::Instance().GetValidAreaBoundaries(nullptr, &coordValidEnd);
+            const auto coordValidEnd = _textBuffer->GetCursor().GetPosition();
 
             // If the bottom of the window when adjusted would be
             // above the final line of valid text...
-            if (srNewViewport.bottom + DeltaY < coordValidEnd.y)
+            if (sBottomProposed < coordValidEnd.y)
             {
                 // Adjust the top of the window instead of the bottom
                 // (so the lines slide upward)
@@ -1195,19 +1196,11 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
     _viewport = newViewport;
     Tracing::s_TraceWindowViewport(_viewport);
 
-    // In Conpty mode, call TriggerScroll here without params. By not providing
-    // params, the renderer will make sure to update the VtEngine with the
-    // updated viewport size. If we don't do this, the engine can get into a
-    // torn state on this frame.
-    //
-    // Without this statement, the engine won't be told about the new view size
-    // till the start of the next frame. If any other text gets output before
-    // that frame starts, there's a very real chance that it'll cause errors as
-    // the engine tries to invalidate those regions.
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.HasPendingCookedRead())
     {
-        ServiceLocator::LocateGlobals().pRender->TriggerScroll();
+        gci.CookedReadData().RedrawAfterResize();
+        MakeCurrentCursorVisible();
     }
 }
 
@@ -1413,7 +1406,6 @@ try
     newTextBuffer->SetCurrentAttributes(_textBuffer->GetCurrentAttributes());
 
     _textBuffer = std::move(newTextBuffer);
-    _viewport = _textBuffer->GetSize().Clamp(_viewport);
     return STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
@@ -1431,7 +1423,6 @@ try
     _textBuffer->GetCursor().StartDeferDrawing();
     auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     _textBuffer->ResizeTraditional(coordNewScreenSize);
-    _viewport = _textBuffer->GetSize().Clamp(_viewport);
     return STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
@@ -1463,13 +1454,6 @@ NT_CATCH_RETURN()
     {
         gci.CookedReadData().EraseBeforeResize();
     }
-    const auto cookedReadRestore = wil::scope_exit([]() {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (gci.HasPendingCookedRead())
-        {
-            gci.CookedReadData().RedrawAfterResize();
-        }
-    });
 
     const auto fWrapText = gci.GetWrapText();
     // GH#3493: Don't reflow the alt buffer.
