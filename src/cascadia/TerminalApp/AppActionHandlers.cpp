@@ -1490,4 +1490,16 @@ namespace winrt::TerminalApp::implementation
         _ShowAboutDialog();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleHandleUri(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& uriArgs{ args.ActionArgs().try_as<HandleUriArgs>() })
+        {
+            if (!uriArgs.Uri().empty())
+            {
+                args.Handled(true);
+            }
+        }
+    }
 }
