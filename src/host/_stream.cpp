@@ -255,6 +255,11 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     }
 }
 
+void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
+{
+    screenInfo.GetStateMachine().ProcessString(str);
+}
+
 // Routine Description:
 // - Takes the given text and inserts it into the given screen buffer.
 // Note:
