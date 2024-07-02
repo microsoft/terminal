@@ -2691,21 +2691,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Select the region of text between [s.start, s.end), in buffer space
     void ControlCore::_selectSpan(til::point_span s)
     {
-        // s.end is an _exclusive_ point. We need an inclusive one. But
-        // decrement in bounds wants an inclusive one. If you pass an exclusive
-        // one, then it might assert at you for being out of bounds. So we also
-        // take care of the case that the end point is outside the viewport
-        // manually.
+        // s.end is an _exclusive_ point. We need an inclusive one.
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
         til::point inclusiveEnd = s.end;
-        if (s.end.x == bufferSize.Width())
-        {
-            inclusiveEnd = til::point{ std::max(0, s.end.x - 1), s.end.y };
-        }
-        else
-        {
-            bufferSize.DecrementInBounds(inclusiveEnd);
-        }
+        bufferSize.DecrementInBounds(inclusiveEnd);
 
         _terminal->SelectNewRegion(s.start, inclusiveEnd);
         _renderer->TriggerSelection();
