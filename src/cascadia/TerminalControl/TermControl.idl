@@ -149,6 +149,7 @@ namespace Microsoft.Terminal.Control
         Double QuickFixButtonCollapsedWidth { get; };
 
         void ShowContextMenu();
+        void OpenQuickFixMenu();
         void RefreshQuickFixMenu();
         void ClearQuickFix();
 

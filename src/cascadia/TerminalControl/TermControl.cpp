@@ -3892,6 +3892,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return std::max(CharacterDimensions().Width * 2.0 / 3.0, GetPadding().Left);
     }
 
+    void TermControl::OpenQuickFixMenu()
+    {
+        if (Feature_QuickFix::IsEnabled() && _core.QuickFixesAvailable())
+        {
+            QuickFixButton().Flyout().ShowAt(QuickFixButton());
+        }
+    }
+
     void TermControl::RefreshQuickFixMenu()
     {
         if (!Feature_QuickFix::IsEnabled())
