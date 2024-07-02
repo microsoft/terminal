@@ -12,6 +12,7 @@
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="..\cursor.cpp" />
+    <ClCompile Include="..\ImageSlice.cpp" />
     <ClCompile Include="..\OutputCell.cpp" />
     <ClCompile Include="..\OutputCellIterator.cpp" />
     <ClCompile Include="..\OutputCellRect.cpp" />
@@ -32,6 +33,7 @@
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ICharRow.hpp" />
+    <ClInclude Include="..\ImageSlice.hpp" />
     <ClInclude Include="..\LineRendition.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />
     <ClInclude Include="..\OutputCellIterator.hpp" />

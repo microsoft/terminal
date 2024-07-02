@@ -142,6 +142,10 @@ public:
 
     bool DoWTAction(const std::wstring_view /*string*/) override { return false; }
 
+    StringHandler DefineSixelImage(const VTInt /*macroParameter*/,
+                                   const DispatchTypes::SixelBackground /*backgroundSelect*/,
+                                   const VTParameter /*backgroundColor*/) override { return nullptr; }; // SIXEL
+
     StringHandler DownloadDRCS(const VTInt /*fontNumber*/,
                                const VTParameter /*startChar*/,
                                const DispatchTypes::DrcsEraseControl /*eraseControl*/,

@@ -149,6 +149,10 @@ public:
 
     virtual bool DoWTAction(const std::wstring_view string) = 0;
 
+    virtual StringHandler DefineSixelImage(const VTInt macroParameter,
+                                           const DispatchTypes::SixelBackground backgroundSelect,
+                                           const VTParameter backgroundColor) = 0; // SIXEL
+
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,

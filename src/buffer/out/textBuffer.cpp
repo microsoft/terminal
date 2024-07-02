@@ -529,6 +529,7 @@ void TextBuffer::Replace(til::CoordType row, const TextAttribute& attributes, Ro
     auto& r = GetMutableRowByOffset(row);
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
+    ImageSlice::EraseCells(r, state.columnBegin, state.columnEnd);
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
 }
 
@@ -557,7 +558,11 @@ void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, Row
         const auto& scratchAttr = scratch.Attributes();
         const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), gsl::narrow<uint16_t>(state.columnBegin + copyAmount));
         rowAttr.replace(gsl::narrow<uint16_t>(restoreState.columnBegin), gsl::narrow<uint16_t>(restoreState.columnEnd), restoreAttr);
+        // If there is any image content, that needs to be copied too.
+        ImageSlice::CopyCells(r, state.columnBegin, r, restoreState.columnBegin, restoreState.columnEnd);
     }
+    // Image content at the insert position needs to be erased.
+    ImageSlice::EraseCells(r, state.columnBegin, restoreState.columnBegin);
 
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, restoreState.columnEndDirty, row + 1 }));
 }
@@ -612,6 +617,7 @@ void TextBuffer::FillRect(const til::rect& rect, const std::wstring_view& fill, 
             auto& r = GetMutableRowByOffset(y);
             r.CopyTextFrom(state);
             r.ReplaceAttributes(rect.left, rect.right, attributes);
+            ImageSlice::EraseCells(r, rect.left, rect.right);
             TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, y, state.columnEndDirty, y + 1 }));
         }
     }
@@ -858,8 +864,16 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
 
     for (; y != end; y += step)
     {
-        GetMutableRowByOffset(y + delta).CopyFrom(GetRowByOffset(y));
+        CopyRow(y, y + delta, *this);
     }
+}
+
+void TextBuffer::CopyRow(const til::CoordType srcRowIndex, const til::CoordType dstRowIndex, TextBuffer& dstBuffer) const
+{
+    auto& dstRow = dstBuffer.GetMutableRowByOffset(dstRowIndex);
+    const auto& srcRow = GetRowByOffset(srcRowIndex);
+    dstRow.CopyFrom(srcRow);
+    ImageSlice::CopyRow(srcRow, dstRow);
 }
 
 Cursor& TextBuffer::GetCursor() noexcept
@@ -902,6 +916,8 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         row.SetLineRendition(lineRendition);
         // If the line rendition has changed, the row can no longer be wrapped.
         row.SetWrapForced(false);
+        // And all image content on the row is removed.
+        row.GetMutableImageSlice().reset();
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {
@@ -1029,7 +1045,7 @@ void TextBuffer::ResizeTraditional(til::size newSize)
 
     for (; dstRow < copyableRows; ++dstRow, ++srcRow)
     {
-        newBuffer.GetMutableRowByOffset(dstRow).CopyFrom(GetRowByOffset(srcRow));
+        CopyRow(srcRow, dstRow, newBuffer);
     }
 
     // NOTE: Keep this in sync with _reserve().
@@ -2789,6 +2805,12 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
                 .sourceColumnLimit = oldRowLimit,
             };
             newRow.CopyTextFrom(state);
+
+            // If we're at the start of the old row, copy its image content.
+            if (oldX == 0)
+            {
+                ImageSlice::CopyRow(oldRow, newRow);
+            }
 
             const auto& oldAttr = oldRow.Attributes();
             auto& newAttr = newRow.Attributes();

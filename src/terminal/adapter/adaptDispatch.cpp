@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "adaptDispatch.hpp"
+#include "SixelParser.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../renderer/base/renderer.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
@@ -626,6 +627,8 @@ void AdaptDispatch::_ScrollRectVertically(const Page& page, const til::rect& scr
                 textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
                 srcView.WalkInBounds(srcPos, walkDirection);
             } while (dstView.WalkInBounds(dstPos, walkDirection));
+            // Copy any image content in the affected area.
+            ImageSlice::CopyBlock(textBuffer, srcView.ToExclusive(), textBuffer, dstView.ToExclusive());
         }
     }
 
@@ -676,6 +679,8 @@ void AdaptDispatch::_ScrollRectHorizontally(const Page& page, const til::rect& s
             next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
             textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
+        // Copy any image content in the affected area.
+        ImageSlice::CopyBlock(textBuffer, source.ToExclusive(), textBuffer, target.ToExclusive());
     }
 
     // Columns revealed by the scroll are filled with standard erase attributes.
@@ -894,6 +899,8 @@ void AdaptDispatch::_SelectiveEraseRect(const Page& page, const til::rect& erase
                 {
                     // The text is cleared but the attributes are left as is.
                     rowBuffer.ClearCell(col);
+                    // Any image content also needs to be erased.
+                    ImageSlice::EraseCells(rowBuffer, col, col + 1);
                     page.Buffer().TriggerRedraw(Viewport::FromCoord({ col, row }));
                 }
             }
@@ -1252,6 +1259,8 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
                 dst.Buffer().WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
             }
         } while (dstView.WalkInBounds(dstPos, walkDirection));
+        // Copy any image content in the affected area.
+        ImageSlice::CopyBlock(src.Buffer(), srcView.ToExclusive(), dst.Buffer(), dstView.ToExclusive());
         _api.NotifyAccessibilityChange(dstRect);
     }
 
@@ -1530,6 +1539,7 @@ bool AdaptDispatch::DeviceAttributes()
     // extensions.
     //
     // 1 = 132 column mode (ConHost only)
+    // 4 = Sixel Graphics (ConHost only)
     // 6 = Selective erase
     // 7 = Soft fonts
     // 14 = 8-bit interface architecture
@@ -1547,7 +1557,7 @@ bool AdaptDispatch::DeviceAttributes()
     }
     else
     {
-        _api.ReturnResponse(L"\x1b[?61;1;6;7;14;21;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;1;4;6;7;14;21;22;23;24;28;32;42c");
     }
     return true;
 }
@@ -1991,6 +2001,13 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
             page.Buffer().ResetLineRenditionRange(page.Top(), page.Bottom());
         }
         return true;
+    case DispatchTypes::ModeParams::DECSDM_SixelDisplayMode:
+        _modes.set(Mode::SixelDisplay, enable);
+        if (_sixelParser)
+        {
+            _sixelParser->SetDisplayMode(enable);
+        }
+        return true;
     case DispatchTypes::ModeParams::DECECM_EraseColorMode:
         _modes.set(Mode::EraseColor, enable);
         return true;
@@ -2138,6 +2155,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
         state = mapTemp(_modes.test(Mode::AllowDECSLRM));
+        break;
+    case DispatchTypes::ModeParams::DECSDM_SixelDisplayMode:
+        state = mapTemp(_modes.test(Mode::SixelDisplay));
         break;
     case DispatchTypes::ModeParams::DECECM_EraseColorMode:
         state = mapTemp(_modes.test(Mode::EraseColor));
@@ -3152,6 +3172,12 @@ bool AdaptDispatch::SoftReset()
     _savedCursorState.at(0).TermOutput = _termOutput;
     _savedCursorState.at(1).TermOutput = _termOutput;
 
+    // Soft reset the Sixel parser if in use.
+    if (_sixelParser)
+    {
+        _sixelParser->SoftReset();
+    }
+
     return !_api.IsConsolePty();
 }
 
@@ -3188,6 +3214,9 @@ bool AdaptDispatch::HardReset()
 
     // Reset all page buffers.
     _pages.Reset();
+
+    // Reset the Sixel parser.
+    _sixelParser = nullptr;
 
     // Completely reset the TerminalOutput state.
     _termOutput = {};
@@ -4041,6 +4070,28 @@ bool AdaptDispatch::DoWTAction(const std::wstring_view string)
         return true;
     }
     return false;
+}
+
+// Method Description:
+// - SIXEL - Defines an image transmitted in sixel format via the returned
+//   StringHandler function.
+// Arguments:
+// - macroParameter - Selects one a of set of predefined aspect ratios.
+// - backgroundSelect - Whether the background should be transparent or opaque.
+// - backgroundColor - The color number used for the background (VT240).
+// Return Value:
+// - a function to receive the pixel data or nullptr if parameters are invalid
+ITermDispatch::StringHandler AdaptDispatch::DefineSixelImage(const VTInt macroParameter,
+                                                             const DispatchTypes::SixelBackground backgroundSelect,
+                                                             const VTParameter backgroundColor)
+{
+    // The sixel parser is created on demand.
+    if (!_sixelParser)
+    {
+        _sixelParser = std::make_unique<SixelParser>(*this, _api.GetStateMachine());
+        _sixelParser->SetDisplayMode(_modes.test(Mode::SixelDisplay));
+    }
+    return _sixelParser->DefineImage(macroParameter, backgroundSelect, backgroundColor);
 }
 
 // Method Description:
