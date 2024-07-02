@@ -940,12 +940,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
 
             auto result = std::vector<Model::Command>();
-            if (auto actions{ root[JsonKey("actions")] })
+            if (auto actions{ root[JsonKey("snippets")] })
             {
-                std::vector<SettingsLoadWarnings> warnings;
                 for (const auto& json : actions)
                 {
-                    auto parsed = Command::FromJson(json, warnings, OriginTag::Generated);
+                    auto parsed = Command::FromSnippetJson(json);
                     // Skip over things that aren't snippets
                     if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
                     {

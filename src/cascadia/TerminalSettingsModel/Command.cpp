@@ -286,6 +286,74 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;
     }
 
+    winrt::com_ptr<Command> Command::FromSnippetJson(const Json::Value& json)
+    {
+        auto result = winrt::make_self<Command>();
+        result->_Origin = OriginTag::Generated;
+
+        //auto nested = false;
+        JsonUtils::GetValueForKey(json, IDKey, result->_ID);
+        // JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
+        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
+        result->_name = _nameFromJson(json);
+
+        // // For iterable commands, we'll make another pass at parsing them once
+        // // the json is patched. So ignore parsing sub-commands for now. Commands
+        // // will only be marked iterable on the first pass.
+        // if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
+        // {
+        //     // Initialize our list of subcommands.
+        //     result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+        //     result->_nestedCommand = true;
+        //     Command::LayerSnippetJson(result->_subcommands, nestedCommandsJson, OriginTag::Generated);
+
+        //     if (result->_subcommands.Size() == 0)
+        //     {
+        //         result->_ActionAndArgs = make<implementation::ActionAndArgs>();
+        //     }
+
+        //     nested = true;
+        // }
+        // else if (json.isMember(JsonKey(CommandsKey)))
+        // {
+        //     // { "name": "foo", "commands": null } will land in this case, which
+        //     // should also be used for unbinding.
+
+        //     // create an "invalid" ActionAndArgs
+        //     result->_ActionAndArgs = make<implementation::ActionAndArgs>();
+        //     result->_nestedCommand = true;
+        // }
+        // else if (!nested)
+        // {
+        auto action{ ShortcutAction::SendInput };
+        IActionArgs args{ nullptr };
+        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+        std::tie(args, parseWarnings) = SendInputArgs::FromJson(json);
+        // auto args{ *SendInputArgs::FromJson(json) };
+        result->_ActionAndArgs = *winrt::make_self<implementation::ActionAndArgs>(action, args);
+        // }
+
+        // // If we're a nested command, we can ignore the current action.
+        // if (!nested)
+        // {
+        //     if (const auto actionJson{ json[JsonKey(ActionKey)] })
+        //     {
+        //         result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
+        //     }
+        //     else
+        //     {
+        //         // { name: "foo", action: null } will land in this case, which
+        //         // should also be used for unbinding.
+
+        //         // create an "invalid" ActionAndArgs
+        //         result->_ActionAndArgs = make<implementation::ActionAndArgs>();
+        //     }
+        // }
+
+        return result;
+    }
+
     // Function Description:
     // - Attempt to parse all the json objects in `json` into new Command
     //   objects, and add them to the map of commands.

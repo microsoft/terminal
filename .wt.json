@@ -1,28 +1,28 @@
 {
-    "actions":
+    "$version": "1.0.0",
+    "snippets":
     [
         {
-            "command": { "action": "sendInput", "input": "bx\r" },
+            "input": "bx\r",
             "name": "Build project",
             "description": "Build the project in the CWD"
         },
         {
-            "command": { "action": "sendInput", "input": "bz\r" },
+            "input": "bz\r",
             "name": "Build solution, incremental",
             "description": "Just build changes to the solution"
         },
         {
-            "command": { "action": "sendInput", "input": "bcz\r" },
+            "input": "bcz\r",
             "name": "Clean & build solution",
             "icon": "\uE8e6",
             "description": "Start over. Go get your coffee. "
         },
         {
-            "command": { "action": "sendInput", "input": "nuget push -ApiKey az -source TerminalDependencies %userprofile%\\Downloads" },
+            "input": "nuget push -ApiKey az -source TerminalDependencies %userprofile%\\Downloads",
             "name": "Upload package to nuget feed",
             "icon": "\uE898",
             "description": "Go download a .nupkg, put it in ~/Downloads, and use this to push to our private feed."
-        },
-
+        }
     ]
 }
