@@ -52,7 +52,7 @@ steps:
     outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
-    localizationTarget: false
+    localizationTarget: true
 
 - pwsh: |-
     $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw','PDP.xml' | ? FullName -Like '*en-US\*\*.*'
@@ -64,10 +64,6 @@ steps:
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
     & ./build/scripts/Generate-PseudoLocalizations.ps1
   displayName: Move Loc files to the right places
-
-- publish: LocOutputMunged.tar
-  artifact: loc-output
-  condition: always()
 
 - pwsh: |-
     git add **/*.resw
