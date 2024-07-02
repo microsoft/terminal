@@ -108,7 +108,7 @@ bool ShouldTakeOverKeyboardShortcuts()
 void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
 {
     auto& keyEvent = event.Event.KeyEvent;
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto ContinueProcessing = true;
 
     if (WI_IsAnyFlagSet(keyEvent.dwControlKeyState, CTRL_PRESSED) &&
@@ -167,6 +167,8 @@ void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
             keyEvent.bKeyDown = false;
             gci.pInputBuffer->Write(event);
         }
+
+        gci.GetActiveOutputBuffer().SnapOnInput(keyEvent.wVirtualKeyCode);
     }
 }
 

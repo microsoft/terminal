@@ -79,6 +79,7 @@ public:
     void GetRequiredConsoleSizeInPixels(_Out_ til::size* const pRequiredSize) const;
 
     void MakeCurrentCursorVisible();
+    void SnapOnInput(WORD vkey);
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 

@@ -1538,6 +1538,30 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
     MakeCursorVisible(_textBuffer->GetCursor().GetPosition());
 }
 
+static constexpr bool IsInputKey(WORD vkey)
+{
+    return vkey != VK_CONTROL &&
+           vkey != VK_LCONTROL &&
+           vkey != VK_RCONTROL &&
+           vkey != VK_MENU &&
+           vkey != VK_LMENU &&
+           vkey != VK_RMENU &&
+           vkey != VK_SHIFT &&
+           vkey != VK_LSHIFT &&
+           vkey != VK_RSHIFT &&
+           vkey != VK_LWIN &&
+           vkey != VK_RWIN &&
+           vkey != VK_SNAPSHOT;
+}
+
+void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
+{
+    if (IsInputKey(vkey))
+    {
+        MakeCurrentCursorVisible();
+    }
+}
+
 // Routine Description:
 // - This routine sets the cursor size and visibility both in the data
 //      structures and on the screen. Also updates the cursor information of
