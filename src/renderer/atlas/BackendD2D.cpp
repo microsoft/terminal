@@ -635,7 +635,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         const auto center = cellCenter + position + 0.5f * height;
         const auto top = center - (height - duHeight);
         const auto bottom = center + (height - duHeight);
-        const auto step = 0.5f * height;
+        const auto step = roundf(0.5f * height);
         const auto period = 4.0f * step;
 
         const auto from = r.from * scaledCellWidth;
