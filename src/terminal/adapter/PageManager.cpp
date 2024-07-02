@@ -52,6 +52,11 @@ void Page::SetAttributes(const TextAttribute& attr, ITerminalApi* api) const
     }
 }
 
+til::size Page::Size() const noexcept
+{
+    return { Width(), Height() };
+}
+
 til::CoordType Page::Top() const noexcept
 {
     // If we ever support vertical window panning, the page top won't

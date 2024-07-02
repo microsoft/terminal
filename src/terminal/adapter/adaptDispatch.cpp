@@ -3648,6 +3648,12 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
+
+    const auto reportSize = [&](const auto size) {
+        const auto reportType = function - 10;
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{};{};{}t"), reportType, size.height, size.width));
+    };
+
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::DeIconifyWindow:
@@ -3663,11 +3669,19 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
-    {
-        const auto page = _pages.VisiblePage();
-        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[8;{};{}t"), page.Height(), page.Width()));
+        reportSize(_pages.VisiblePage().Size());
         return true;
-    }
+    case DispatchTypes::WindowManipulationType::ReportTextSizeInPixels:
+        // Prior to the existence of the character cell size query, Sixel applications
+        // that wanted to know the cell size would request the text area in pixels and
+        // divide that by the text area in characters. But for this to work, we need to
+        // return the virtual pixel size, as used in the Sixel graphics emulation, and
+        // not the physical pixel size (which should be of no concern to applications).
+        reportSize(_pages.VisiblePage().Size() * SixelParser::CellSizeForLevel());
+        return true;
+    case DispatchTypes::WindowManipulationType::ReportCharacterCellSize:
+        reportSize(SixelParser::CellSizeForLevel());
+        return true;
     default:
         return false;
     }

@@ -3377,10 +3377,23 @@ public:
 
     TEST_METHOD(WindowManipulationTypeTests)
     {
+        // Our pixel size reports are based on a virtual cell size of 10x20 pixels
+        // for compatibility with the VT240 and VT340 graphic terminals.
+        const auto cellSize = til::size{ 10, 20 };
+
         _testGetSet->PrepData();
-        _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
         const auto [textBuffer, viewport, _] = _testGetSet->GetBufferAndViewport();
-        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", viewport.height(), textBuffer.GetSize().Width());
+
+        _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
+        std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", viewport.height(), textBuffer.GetSize().Width());
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInPixels, NULL, NULL);
+        expectedResponse = fmt::format(L"\033[4;{};{}t", viewport.height() * cellSize.height, textBuffer.GetSize().Width() * cellSize.width);
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+
+        _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportCharacterCellSize, NULL, NULL);
+        expectedResponse = fmt::format(L"\033[6;{};{}t", cellSize.height, cellSize.width);
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
     }
 
