@@ -926,9 +926,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (!localTasksFileContents.empty())
         {
             auto data = winrt::to_string(localTasksFileContents);
-            std::string errs;
-            static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
             Json::Value root;
+            std::string errs;
+            const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
             if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
             {
                 // In the real settings parser, we'd throw here:
