@@ -87,6 +87,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
 
         INHERITABLE_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
+        INHERITABLE_PROFILE_SETTING(Boolean, RainbowSuggestions);
 
     }
 }

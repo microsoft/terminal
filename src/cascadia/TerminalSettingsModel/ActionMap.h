@@ -78,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
         void DeleteKeyBinding(const Control::KeyChord& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
+        void AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys);
 
         Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,

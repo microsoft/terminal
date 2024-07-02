@@ -896,6 +896,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return results;
     }
 
+    void ActionMap::AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys)
+    {
+        auto newAction = winrt::make<ActionAndArgs>();
+        newAction.Action(ShortcutAction::SendInput);
+        auto sendInputArgs = winrt::make<SendInputArgs>(input);
+        newAction.Args(sendInputArgs);
+        auto cmd{ make_self<Command>() };
+        if (!name.empty())
+        {
+            cmd->Name(name);
+        }
+        cmd->ActionAndArgs(newAction);
+        cmd->GenerateID();
+        AddAction(*cmd, keys);
+    }
+
     // Update ActionMap's cache of actions for this directory. We'll look for a
     // .wt.json in this directory. If it exists, we'll read it, parse it's JSON,
     // then take all the sendInput actions in it and store them in our

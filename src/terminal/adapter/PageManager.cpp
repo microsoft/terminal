@@ -99,7 +99,7 @@ void Page::MoveViewportDown() noexcept
     _viewport.bottom++;
 }
 
-PageManager::PageManager(ITerminalApi& api, Renderer& renderer) noexcept :
+PageManager::PageManager(ITerminalApi& api, Renderer* renderer) noexcept :
     _api{ api },
     _renderer{ renderer }
 {
@@ -175,11 +175,11 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
         auto& saveBuffer = _getBuffer(_visiblePageNumber, pageSize);
         for (auto i = 0; i < pageSize.height; i++)
         {
-            saveBuffer.GetMutableRowByOffset(i).CopyFrom(visibleBuffer.GetRowByOffset(visibleTop + i));
+            visibleBuffer.CopyRow(visibleTop + i, i, saveBuffer);
         }
         for (auto i = 0; i < pageSize.height; i++)
         {
-            visibleBuffer.GetMutableRowByOffset(visibleTop + i).CopyFrom(newBuffer.GetRowByOffset(i));
+            newBuffer.CopyRow(i, visibleTop + i, visibleBuffer);
         }
         _visiblePageNumber = newPageNumber;
         redrawRequired = true;
@@ -220,9 +220,9 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
     }
 
     _activePageNumber = newPageNumber;
-    if (redrawRequired)
+    if (redrawRequired && _renderer)
     {
-        _renderer.TriggerRedrawAll();
+        _renderer->TriggerRedrawAll();
     }
 }
 

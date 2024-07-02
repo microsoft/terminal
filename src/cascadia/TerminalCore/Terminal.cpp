@@ -47,9 +47,9 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
                                 Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
-    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
+    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
 
-    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, _terminalInput);
+    auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
@@ -95,6 +95,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
+    _rainbowSuggestions = settings.RainbowSuggestions();
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -699,34 +700,44 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    // GH#1527: When the user has auto mark prompts enabled, we're going to try
-    // and heuristically detect if this was the line the prompt was on.
-    // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
-    //   as prompts. That's omitted for now.)
-    // * AND we're not in the alt buffer
-    //
-    // Then treat this line like it's a prompt mark.
-    if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
+    if (vkey == VK_RETURN && !_inAltBuffer())
     {
-        // We need to be a little tricky here, to try and support folks that are
-        // auto-marking prompts, but don't necessarily have the rest of shell
-        // integration enabled.
-        //
-        // We'll set the current attributes to Output, so that the output after
-        // here is marked as the command output. But we also need to make sure
-        // that a mark was started.
-        // We can't just check if the current row has a mark - there could be a
-        // multiline prompt.
-        //
-        // (TextBuffer::_createPromptMarkIfNeeded does that work for us)
-
-        const bool createdMark = _activeBuffer().StartOutput();
-        if (createdMark)
+        // Treat VK_RETURN as a new prompt,
+        // so we should clear the quick fix UI if it's visible.
+        if (_pfnClearQuickFix)
         {
-            _activeBuffer().ManuallyMarkRowAsPrompt(_activeBuffer().GetCursor().GetPosition().y);
+            _pfnClearQuickFix();
+        }
 
-            // This changed the scrollbar marks - raise a notification to update them
-            _NotifyScrollEvent();
+        // GH#1527: When the user has auto mark prompts enabled, we're going to try
+        // and heuristically detect if this was the line the prompt was on.
+        // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
+        //   as prompts. That's omitted for now.)
+        // * AND we're not in the alt buffer
+        //
+        // Then treat this line like it's a prompt mark.
+        if (_autoMarkPrompts)
+        {
+            // We need to be a little tricky here, to try and support folks that are
+            // auto-marking prompts, but don't necessarily have the rest of shell
+            // integration enabled.
+            //
+            // We'll set the current attributes to Output, so that the output after
+            // here is marked as the command output. But we also need to make sure
+            // that a mark was started.
+            // We can't just check if the current row has a mark - there could be a
+            // multiline prompt.
+            //
+            // (TextBuffer::_createPromptMarkIfNeeded does that work for us)
+
+            const bool createdMark = _activeBuffer().StartOutput();
+            if (createdMark)
+            {
+                _activeBuffer().ManuallyMarkRowAsPrompt(_activeBuffer().GetCursor().GetPosition().y);
+
+                // This changed the scrollbar marks - raise a notification to update them
+                _NotifyScrollEvent();
+            }
         }
     }
 
@@ -961,7 +972,7 @@ Viewport Terminal::_GetMutableViewport() const noexcept
     // GH#3493: if we're in the alt buffer, then it's possible that the mutable
     // viewport's size hasn't been updated yet. In that case, use the
     // temporarily stashed _altBufferSize instead.
-    return _inAltBuffer() ? Viewport::FromDimensions(_altBufferSize) :
+    return _inAltBuffer() ? Viewport::FromDimensions({}, _altBufferSize) :
                             _mutableViewport;
 }
 
@@ -1225,6 +1236,16 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
 void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
 {
     _pfnCompletionsChanged.swap(pfn);
+}
+
+void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept
+{
+    _pfnSearchMissingCommand.swap(pfn);
+}
+
+void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept
+{
+    _pfnClearQuickFix.swap(pfn);
 }
 
 // Method Description:
@@ -1582,6 +1603,89 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
     const auto absoluteCursorPosition{ GetCursorPosition() };
     const auto viewport{ _GetMutableViewport() };
     return absoluteCursorPosition - viewport.Origin();
+}
+
+void Terminal::PreviewText(std::wstring_view input)
+{
+    // Our default suggestion text is default-on-default, in italics.
+    static constexpr TextAttribute previewAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
+
+    auto lock = LockForWriting();
+    if (input.empty())
+    {
+        snippetPreview.text = L"";
+        snippetPreview.cursorPos = 0;
+        snippetPreview.attributes.clear();
+        _activeBuffer().NotifyPaintFrame();
+        return;
+    }
+
+    // When we're previewing suggestions, they might be preceded with DEL
+    // characters to backspace off the old command.
+    //
+    // But also, in the case of something like pwsh, there might be MORE "ghost"
+    // text in the buffer _after_ the commandline.
+    //
+    // We need to trim off the leading DELs, then pad out the rest of the line
+    // to cover any other ghost text.
+    // Where do the DELs end?
+    const auto strBegin = input.find_first_not_of(L"\x7f");
+    if (strBegin != std::wstring::npos)
+    {
+        // Trim them off.
+        input = input.substr(strBegin);
+    }
+    // How many spaces do we need, so that the preview exactly covers the entire
+    // prompt, all the way to the end of the viewport?
+    const auto bufferWidth = _GetMutableViewport().Width();
+    const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
+    const auto expectedLenTillEnd = strBegin + (static_cast<size_t>(bufferWidth) - static_cast<size_t>(cursorX));
+    std::wstring preview{ input };
+    const auto originalSize{ preview.size() };
+    if (expectedLenTillEnd > originalSize)
+    {
+        // pad it out
+        preview.insert(originalSize, expectedLenTillEnd - originalSize, L' ');
+    }
+
+    // Build our composition data
+    // The text is just the trimmed command, with the spaces at the end.
+    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+
+    // The attributes depend on the $profile:experimental.rainbowSuggestions setting:.
+    const auto len = snippetPreview.text.size();
+    snippetPreview.attributes.clear();
+
+    if (_rainbowSuggestions)
+    {
+        // Let's do something fun.
+
+        // Use the actual text length for the number of steps, not including the
+        // trailing spaces.
+        const float increment = 1.0f / originalSize;
+        for (auto i = 0u; i < originalSize; i++)
+        {
+            const auto color = til::color::from_hue(increment * i);
+            TextAttribute curr = previewAttrs;
+            curr.SetForeground(color);
+            snippetPreview.attributes.emplace_back(1, curr);
+        }
+
+        if (originalSize < len)
+        {
+            TextAttribute curr;
+            snippetPreview.attributes.emplace_back(len - originalSize, curr);
+        }
+    }
+    else
+    {
+        // Default:
+        // Use the default attribute we defined above.
+        snippetPreview.attributes.emplace_back(len, previewAttrs);
+    }
+
+    snippetPreview.cursorPos = len;
+    _activeBuffer().NotifyPaintFrame();
 }
 
 // These functions are used by TerminalInput, which must build in conhost

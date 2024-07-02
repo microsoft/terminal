@@ -37,7 +37,7 @@ class UTextAdapterTests
     TEST_METHOD(Unicode)
     {
         DummyRenderer renderer;
-        TextBuffer buffer{ til::size{ 24, 1 }, TextAttribute{}, 0, false, renderer };
+        TextBuffer buffer{ til::size{ 24, 1 }, TextAttribute{}, 0, false, &renderer };
 
         RowWriteState state{
             .text = L"abc 𝒶𝒷𝒸 abc ネコちゃん",

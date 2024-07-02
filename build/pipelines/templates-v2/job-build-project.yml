@@ -68,6 +68,9 @@ parameters:
   - name: signingIdentity
     type: object
     default: {}
+  - name: enableCaching
+    type: boolean
+    default: false
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -95,6 +98,7 @@ jobs:
     # Yup.
     BuildTargetParameter: ' '
     SelectedSigningFragments: ' '
+    MSBuildCacheParameters: ' '
     # When building the unpackaged distribution, build it in portable mode if it's Canary-branded
     ${{ if eq(parameters.branding, 'Canary') }}:
       UnpackagedBuildArguments: -PortableMode
@@ -111,6 +115,7 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
+
   # This generates either nothing for BuildTargetParameter, or /t:X;Y;Z, to control targets later.
   - pwsh: |-
       If (-Not [bool]::Parse("${{ parameters.buildEverything }}")) {
@@ -139,6 +144,17 @@ jobs:
       }
     displayName: Prepare Build and Sign Targets
 
+  - ${{ if eq(parameters.enableCaching, true) }}:
+    - pwsh: |-
+        $MSBuildCacheParameters = ""
+        $MSBuildCacheParameters += " -graph"
+        $MSBuildCacheParameters += " -reportfileaccesses"
+        $MSBuildCacheParameters += " -p:MSBuildCacheEnabled=true"
+        $MSBuildCacheParameters += " -p:MSBuildCacheLogDirectory=$(Build.SourcesDirectory)\MSBuildCacheLogs"
+        Write-Host "MSBuildCacheParameters: $MSBuildCacheParameters"
+        Write-Host "##vso[task.setvariable variable=MSBuildCacheParameters]$MSBuildCacheParameters"
+      displayName: Prepare MSBuildCache variables
+
   - pwsh: |-
       .\build\scripts\Generate-ThirdPartyNotices.ps1 -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
     displayName: Generate NOTICE.html from NOTICE.md
@@ -160,21 +176,37 @@ jobs:
         ${{ parameters.additionalBuildOptions }}
         /bl:$(Build.SourcesDirectory)\msbuild.binlog
         $(BuildTargetParameter)
+        $(MSBuildCacheParameters)
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
+      msbuildArchitecture: x64
       maximumCpuCount: true
+    ${{ if eq(parameters.enableCaching, true) }}:
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - ${{ if eq(parameters.publishArtifacts, true) }}:
     - publish: $(Build.SourcesDirectory)/msbuild.binlog
       artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
       condition: always()
       displayName: Publish Build Log
+    - ${{ if eq(parameters.enableCaching, true) }}:
+      - publish: $(Build.SourcesDirectory)\MSBuildCacheLogs
+        artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+        condition: always()
+        displayName: Publish MSBuildCache Logs
   - ${{ else }}:
     - task: CopyFiles@2
       displayName: Copy Build Log
       inputs:
         contents: $(Build.SourcesDirectory)/msbuild.binlog
         TargetFolder: $(Terminal.BinDir)
+    - ${{ if eq(parameters.enableCaching, true) }}:
+      - task: CopyFiles@2
+        displayName: Copy MSBuildCache Logs
+        inputs:
+          contents: $(Build.SourcesDirectory)/MSBuildCacheLogs/**
+          TargetFolder: $(Terminal.BinDir)/MSBuildCacheLogs
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:
