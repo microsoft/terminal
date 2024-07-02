@@ -306,7 +306,7 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
         // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
         const auto height = std::max(3, duBottom + duHeight - duTop);
-        const auto position = std::min(duTop, cellHeight - height - duHeight);
+        const auto position = std::min(duTop, cellHeight - height);
 
         _curlyLineHalfHeight = height * 0.5f;
         _curlyUnderline.position = gsl::narrow_cast<u16>(position);

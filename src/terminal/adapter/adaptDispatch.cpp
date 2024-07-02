@@ -616,8 +616,8 @@ void AdaptDispatch::_ScrollRectVertically(const Page& page, const til::rect& scr
             // requested buffer range one cell at a time.
             const auto srcOrigin = til::point{ scrollRect.left, top };
             const auto dstOrigin = til::point{ scrollRect.left, top + actualDelta };
-            const auto srcView = Viewport::FromDimensions(srcOrigin, width, height);
-            const auto dstView = Viewport::FromDimensions(dstOrigin, width, height);
+            const auto srcView = Viewport::FromDimensions(srcOrigin, { width, height });
+            const auto dstView = Viewport::FromDimensions(dstOrigin, { width, height });
             const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
             auto srcPos = srcView.GetWalkOrigin(walkDirection);
             auto dstPos = dstView.GetWalkOrigin(walkDirection);
@@ -663,7 +663,7 @@ void AdaptDispatch::_ScrollRectHorizontally(const Page& page, const til::rect& s
         const auto height = scrollRect.height();
         const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
 
-        const auto source = Viewport::FromDimensions({ left, top }, width, height);
+        const auto source = Viewport::FromDimensions({ left, top }, { width, height });
         const auto target = Viewport::Offset(source, { actualDelta, 0 });
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
         auto sourcePos = source.GetWalkOrigin(walkDirection);
@@ -901,7 +901,7 @@ void AdaptDispatch::_SelectiveEraseRect(const Page& page, const til::rect& erase
                     rowBuffer.ClearCell(col);
                     // Any image content also needs to be erased.
                     ImageSlice::EraseCells(rowBuffer, col, col + 1);
-                    page.Buffer().TriggerRedraw(Viewport::FromCoord({ col, row }));
+                    page.Buffer().TriggerRedraw(Viewport::FromDimensions({ col, row }, { 1, 1 }));
                 }
             }
         }

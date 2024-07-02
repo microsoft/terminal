@@ -79,16 +79,16 @@ namespace Microsoft::Console::VirtualTerminal
         bool _displayMode = true;
         til::rect _textMargins;
         til::point _textCursor;
-        bool _textCursorWasVisible;
-        til::CoordType _availablePixelWidth;
-        til::CoordType _availablePixelHeight;
-        til::CoordType _maxPixelAspectRatio;
-        til::CoordType _pixelAspectRatio;
-        til::CoordType _sixelHeight;
-        til::CoordType _segmentHeight;
-        til::CoordType _pendingTextScrollCount;
+        bool _textCursorWasVisible = false;
+        til::CoordType _availablePixelWidth = 0;
+        til::CoordType _availablePixelHeight = 0;
+        til::CoordType _maxPixelAspectRatio = 0;
+        til::CoordType _pixelAspectRatio = 0;
+        til::CoordType _sixelHeight = 0;
+        til::CoordType _segmentHeight = 0;
+        til::CoordType _pendingTextScrollCount = 0;
         til::size _backgroundSize;
-        bool _backgroundFillRequired;
+        bool _backgroundFillRequired = false;
 
         void _initColorMap(const VTParameter backgroundColor);
         void _defineColor(const VTParameters& colorParameters);
@@ -101,10 +101,10 @@ namespace Microsoft::Console::VirtualTerminal
         std::array<bool, MAX_COLORS> _colorMapUsed = {};
         std::array<COLORREF, MAX_COLORS> _colorTable = {};
         const size_t _maxColors;
-        size_t _colorsUsed;
-        size_t _colorsAvailable;
-        bool _colorTableChanged;
-        IndexedPixel _foregroundPixel;
+        size_t _colorsUsed = 0;
+        size_t _colorsAvailable = 0;
+        bool _colorTableChanged = false;
+        IndexedPixel _foregroundPixel = 0;
 
         void _initImageBuffer();
         void _resizeImageBuffer(const til::CoordType requiredHeight);
@@ -116,10 +116,10 @@ namespace Microsoft::Console::VirtualTerminal
         std::vector<IndexedPixel> _imageBuffer;
         til::point _imageOriginCell;
         til::point _imageCursor;
-        til::CoordType _imageWidth;
-        til::CoordType _imageMaxWidth;
-        size_t _imageLineCount;
-        size_t _lastFlushLine;
+        til::CoordType _imageWidth = 0;
+        til::CoordType _imageMaxWidth = 0;
+        size_t _imageLineCount = 0;
+        size_t _lastFlushLine = 0;
         std::chrono::steady_clock::time_point _lastFlushTime;
     };
 }

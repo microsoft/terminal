@@ -288,6 +288,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Save command line as input action</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>An optional argument</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>An optional argument</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Move focus to another tab</value>
   </data>
@@ -919,5 +928,11 @@
   <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
     <value>Add some "Send input" actions in your settings to have them show up here.</value>
     <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Action saved</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Action save failed</value>
   </data>
 </root>
