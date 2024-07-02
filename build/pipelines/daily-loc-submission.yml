@@ -22,10 +22,6 @@ resources:
   - repository: self
     type: git
     ref: main
-  - repository: internal
-    type: git
-    name: Terminal.Internal
-    ref: main
 
 steps:
 
@@ -35,14 +31,6 @@ steps:
   fetchDepth: 1 # Don't need a deep checkout for loc files!
   fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
   persistCredentials: true
-  path: s # Adding a second repo made Azure DevOps change where we're checked out.
-
-- checkout: internal
-  clean: true
-  submodules: false
-  fetchDepth: 1
-  persistCredentials: true
-  path: s/Terminal.Internal
 
 - pwsh: |-
     Install-Module PSGitHub -Scope CurrentUser -Force
@@ -59,29 +47,27 @@ steps:
     authType: SubjectNameIssuer
     resourceFilePath: |
      **\en-US\*.resw
-     Terminal.Internal\PDPs\Stable\PDPs\en-us\PDP.xml
-     Terminal.Internal\PDPs\Preview\PDPs\en-us\PDP.xml
+     build\StoreSubmission\Stable\PDPs\en-us\PDP.xml
+     build\StoreSubmission\Preview\PDPs\en-us\PDP.xml
     outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
-    localizationTarget: true
+    localizationTarget: false
 
 - pwsh: |-
     $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw','PDP.xml' | ? FullName -Like '*en-US\*\*.*'
     $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
 
-    # TEMPORARY - Move PDPs into place until we can get them renamed on the backend.
-    New-Item -Type Directory -EA:Ignore LocOutput\build\StoreSubmission
-    Move-Item LocOutput\Terminal.Internal\PDPs\* LocOutput\build\StoreSubmission
-    Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
-
     & tar.exe -c -f LocOutputMunged.tar -C LocOutput .
     & tar.exe -x -v -f LocOutputMunged.tar
-    rm LocOutputMunged.tar
     rm -r -fo LocOutput
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
     & ./build/scripts/Generate-PseudoLocalizations.ps1
   displayName: Move Loc files to the right places
+
+- publish: LocOutputMunged.tar
+  artifact: loc-output
+  condition: always()
 
 - pwsh: |-
     git add **/*.resw
