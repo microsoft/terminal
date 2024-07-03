@@ -616,8 +616,8 @@ void AdaptDispatch::_ScrollRectVertically(const Page& page, const til::rect& scr
             // requested buffer range one cell at a time.
             const auto srcOrigin = til::point{ scrollRect.left, top };
             const auto dstOrigin = til::point{ scrollRect.left, top + actualDelta };
-            const auto srcView = Viewport::FromDimensions(srcOrigin, width, height);
-            const auto dstView = Viewport::FromDimensions(dstOrigin, width, height);
+            const auto srcView = Viewport::FromDimensions(srcOrigin, { width, height });
+            const auto dstView = Viewport::FromDimensions(dstOrigin, { width, height });
             const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
             auto srcPos = srcView.GetWalkOrigin(walkDirection);
             auto dstPos = dstView.GetWalkOrigin(walkDirection);
@@ -663,7 +663,7 @@ void AdaptDispatch::_ScrollRectHorizontally(const Page& page, const til::rect& s
         const auto height = scrollRect.height();
         const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
 
-        const auto source = Viewport::FromDimensions({ left, top }, width, height);
+        const auto source = Viewport::FromDimensions({ left, top }, { width, height });
         const auto target = Viewport::Offset(source, { actualDelta, 0 });
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
         auto sourcePos = source.GetWalkOrigin(walkDirection);
@@ -901,7 +901,7 @@ void AdaptDispatch::_SelectiveEraseRect(const Page& page, const til::rect& erase
                     rowBuffer.ClearCell(col);
                     // Any image content also needs to be erased.
                     ImageSlice::EraseCells(rowBuffer, col, col + 1);
-                    page.Buffer().TriggerRedraw(Viewport::FromCoord({ col, row }));
+                    page.Buffer().TriggerRedraw(Viewport::FromDimensions({ col, row }, { 1, 1 }));
                 }
             }
         }
@@ -3648,6 +3648,12 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
+
+    const auto reportSize = [&](const auto size) {
+        const auto reportType = function - 10;
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[{};{};{}t"), reportType, size.height, size.width));
+    };
+
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::DeIconifyWindow:
@@ -3663,11 +3669,19 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
-    {
-        const auto page = _pages.VisiblePage();
-        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[8;{};{}t"), page.Height(), page.Width()));
+        reportSize(_pages.VisiblePage().Size());
         return true;
-    }
+    case DispatchTypes::WindowManipulationType::ReportTextSizeInPixels:
+        // Prior to the existence of the character cell size query, Sixel applications
+        // that wanted to know the cell size would request the text area in pixels and
+        // divide that by the text area in characters. But for this to work, we need to
+        // return the virtual pixel size, as used in the Sixel graphics emulation, and
+        // not the physical pixel size (which should be of no concern to applications).
+        reportSize(_pages.VisiblePage().Size() * SixelParser::CellSizeForLevel());
+        return true;
+    case DispatchTypes::WindowManipulationType::ReportCharacterCellSize:
+        reportSize(SixelParser::CellSizeForLevel());
+        return true;
     default:
         return false;
     }
