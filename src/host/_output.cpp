@@ -14,7 +14,6 @@
 #include "../types/inc/convert.hpp"
 #include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/Viewport.hpp"
-#include "til/unicode.h"
 
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;

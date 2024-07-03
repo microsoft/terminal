@@ -212,8 +212,8 @@ bool VtIo::IsUsingVt() const
     // which is not the default in terminals, so we have to do that explicitly.
     WriteUTF8(
         "\x1b[20h" // Line Feed / New Line Mode (LNM)
-        "\033[?9001h" // Win32 Input Mode
         "\033[?1004h" // Focus Event Mode
+        "\033[?9001h" // Win32 Input Mode
     );
 
     if (_pVtInputThread)
@@ -380,9 +380,6 @@ void VtIo::WriteUTF8(std::string_view str)
         return;
     }
 
-    // Always appending to _buffer instead of directly writing `str` to the pipe, even if we aren't even
-    // using overlapped IO, is a bit of a waste, but it makes the retry in _flush() quite a bit simpler.
-    // Coincidentally, most VtIo translations rely on buffer corking and so we'd have to append to _buffer anyway.
     _back.append(str);
     _flush();
 }
@@ -394,8 +391,18 @@ void VtIo::WriteUTF16(std::wstring_view str)
         return;
     }
 
-    const auto str8 = til::u16u8(str);
-    WriteUTF8(str8);
+    const auto existingUTF8Len = _back.size();
+    const auto incomingUTF16Len = gsl::narrow<int>(str.size());
+    // When converting from UTF-16 to UTF-8 the worst case is 3 bytes per UTF-16 code unit.
+    const auto totalUTF8Cap = gsl::narrow<size_t>(gsl::narrow_cast<uint64_t>(incomingUTF16Len) * 3 + existingUTF8Len);
+    const auto incomingUTF8Cap = gsl::narrow<int>(totalUTF8Cap - existingUTF8Len);
+
+    _back._Resize_and_overwrite(totalUTF8Cap, [=](char* ptr, const size_t) noexcept {
+        const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), incomingUTF16Len, ptr + existingUTF8Len, incomingUTF8Cap, nullptr, nullptr);
+        return existingUTF8Len + std::max(0, len);
+    });
+
+    _flush();
 }
 
 void VtIo::WriteUCS2(wchar_t ch)
@@ -403,6 +410,10 @@ void VtIo::WriteUCS2(wchar_t ch)
     char buf[4];
     size_t len = 0;
 
+    if (ch < L' ')
+    {
+        ch = UNICODE_SPACE;
+    }
     if (til::is_surrogate(ch))
     {
         ch = UNICODE_REPLACEMENT;
@@ -427,9 +438,50 @@ void VtIo::WriteUCS2(wchar_t ch)
     WriteUTF8({ &buf[0], len });
 }
 
+// CUP: Cursor Position
 void VtIo::WriteCUP(til::point position)
 {
     WriteFormat("\x1b[{};{}H", position.y + 1, position.x + 1);
+}
+
+// DECTCEM: Text Cursor Enable
+void VtIo::WriteDECTCEM(bool enabled)
+{
+    char buf[] = "\x1b[?25h";
+    buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
+    WriteUTF8({ buf, std::size(buf) - 1 });
+}
+
+// SGR 1006: SGR Extended Mouse Mode
+void VtIo::WriteSGR1006(bool enabled)
+{
+    char buf[] = "\x1b[?1003;1006h";
+    buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
+    WriteUTF8({ buf, std::size(buf) - 1 });
+}
+
+// DECAWM: Autowrap Mode
+void VtIo::WriteDECAWM(bool enabled)
+{
+    char buf[] = "\x1b[?7h";
+    buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
+    WriteUTF8({ buf, std::size(buf) - 1 });
+}
+
+// LNM: Line Feed / New Line Mode
+void VtIo::WriteLNM(bool enabled)
+{
+    char buf[] = "\x1b[20h";
+    buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
+    WriteUTF8({ buf, std::size(buf) - 1 });
+}
+
+// ASB: Alternate Screen Buffer
+void VtIo::WriteASB(bool enabled)
+{
+    char buf[] = "\x1b[?1049h";
+    buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
+    WriteUTF8({ buf, std::size(buf) - 1 });
 }
 
 void VtIo::WriteAttributes(WORD attributes)

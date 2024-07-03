@@ -79,6 +79,11 @@ namespace Microsoft::Console::VirtualTerminal
         void WriteUTF16(std::wstring_view str);
         void WriteUCS2(wchar_t ch);
         void WriteCUP(til::point position);
+        void WriteDECTCEM(bool enabled);
+        void WriteSGR1006(bool enabled);
+        void WriteDECAWM(bool enabled);
+        void WriteLNM(bool enabled);
+        void WriteASB(bool enabled);
         void WriteAttributes(WORD attributes);
         void WriteInfos(til::point target, std::span<const CHAR_INFO> infos);
 

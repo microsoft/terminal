@@ -340,11 +340,41 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    screenInfo.GetStateMachine().ProcessString(str);
-
     if (const auto io = gci.GetVtIo(&screenInfo))
     {
+        using Mode = Microsoft::Console::VirtualTerminal::TerminalInput::Mode;
+
+        auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
+
+        // These two modes are ones that should always stay enabled when we're ConPTY.
+        // To figure out whether some VT sequence disabled them (primarily RIS = ESC c),
+        // we temporarily enable them, restore them, and check if they got reset in between.
+        const auto beforeFocusEvent = terminalInput.GetInputMode(Mode::FocusEvent);
+        const auto beforeWin32 = terminalInput.GetInputMode(Mode::Win32);
+        terminalInput.SetInputMode(Mode::FocusEvent, true);
+        terminalInput.SetInputMode(Mode::Win32, true);
+
+        screenInfo.GetStateMachine().ProcessString(str);
+
+        const auto afterFocusEvent = terminalInput.GetInputMode(Mode::FocusEvent);
+        const auto afterWin32 = terminalInput.GetInputMode(Mode::Win32);
+        terminalInput.SetInputMode(Mode::FocusEvent, beforeFocusEvent);
+        terminalInput.SetInputMode(Mode::Win32, beforeWin32);
+
+        const auto cork = io->Cork();
         io->WriteUTF16(str);
+        if (!afterFocusEvent)
+        {
+            io->WriteUTF8("\033[?1004h");
+        }
+        if (!afterWin32)
+        {
+            io->WriteUTF8("\033[?9001h");
+        }
+    }
+    else
+    {
+        screenInfo.GetStateMachine().ProcessString(str);
     }
 }
 

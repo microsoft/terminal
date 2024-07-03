@@ -6,7 +6,6 @@
 #include <til/rand.h>
 
 #include "CommonState.hpp"
-#include "directio.h"
 #include "../VtIo.hpp"
 #include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../renderer/base/Renderer.hpp"
@@ -54,6 +53,9 @@ static std::pair<wil::unique_hfile, wil::unique_hfile> createOverlappedPipe(DWOR
 #define sgr_blu(s) "\x1b[27;34;40m" s
 // What the default attributes `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED` result in.
 #define sgr_rst() "\x1b[27;39;49m"
+
+// Any RIS sequence should re-enable our required ConPTY modes Focus Event Mode and Win32 Input Mode.
+#define ris() "\033c\x1b[?1004h\x1b[?9001h"
 
 static constexpr std::wstring_view s_initialContentVT{
     // clang-format off
@@ -409,7 +411,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         // cmd uses ScrollConsoleScreenBuffer to clear the buffer contents and that gets translated to a clear screen sequence.
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -4 }, std::nullopt, 0, 0, true));
-        expected = "\033c";
+        expected = ris();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
@@ -518,17 +520,21 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         routines.SetConsoleActiveScreenBufferImpl(*screenInfoAlt);
         setupInitialContents();
+        THROW_IF_FAILED(routines.SetConsoleOutputModeImpl(*screenInfoAlt, ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING));
         readOutput();
 
         routines.SetConsoleActiveScreenBufferImpl(*screenInfo);
 
         const auto expected =
-            "\x1b[?1049l" //
+            "\x1b[?1049l" // ASB (Alternate Screen Buffer)
             cup(1, 1) sgr_red("AB") sgr_blu("ab") sgr_red("CD") sgr_blu("cd") //
             cup(2, 1) sgr_red("EF") sgr_blu("ef") sgr_red("GH") sgr_blu("gh") //
             cup(3, 1) sgr_blu("ij") sgr_red("IJ") sgr_blu("kl") sgr_red("KL") //
             cup(4, 1) sgr_blu("mn") sgr_red("MN") sgr_blu("op") sgr_red("OP") //
-            cup(1, 1) sgr_rst();
+            cup(1, 1) sgr_rst() //
+            "\x1b[?25h" // DECTCEM (Text Cursor Enable)
+            "\x1b[?7h" // DECAWM (Autowrap Mode)
+            "\x1b[20h"; // LNM (Line Feed / New Line Mode)
         const auto actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
     }

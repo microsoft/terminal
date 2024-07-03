@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "getset.h"
 
 #include "ApiRoutines.h"
@@ -11,6 +10,7 @@
 #include "misc.h"
 #include "output.h"
 #include "_output.h"
+#include "_stream.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
@@ -381,9 +381,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 
                 if (WI_IsFlagSet(diff, ENABLE_MOUSE_INPUT))
                 {
-                    char buf[] = "\x1b[?1003;1006h"; // Any Event Mouse + SGR Extended Mode
-                    buf[std::size(buf) - 2] = WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) ? 'h' : 'l';
-                    io->WriteUTF8(buf);
+                    io->WriteSGR1006(WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT));
                 }
             }
         }
@@ -457,16 +455,12 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         {
             if (WI_IsFlagSet(diff, ENABLE_WRAP_AT_EOL_OUTPUT))
             {
-                char buf[] = "\x1b[?7h"; // Autowrap Mode (DECAWM)
-                buf[std::size(buf) - 2] = WI_IsFlagSet(dwNewMode, ENABLE_WRAP_AT_EOL_OUTPUT) ? 'h' : 'l';
-                io->WriteUTF8(buf);
+                io->WriteDECAWM(WI_IsFlagSet(dwNewMode, ENABLE_WRAP_AT_EOL_OUTPUT));
             }
 
             if (WI_IsFlagSet(diff, DISABLE_NEWLINE_AUTO_RETURN))
             {
-                char buf[] = "\x1b[20h"; // Line Feed / New Line Mode (LNM)
-                buf[std::size(buf) - 2] = WI_IsFlagClear(mode, DISABLE_NEWLINE_AUTO_RETURN) ? 'h' : 'l';
-                io->WriteUTF8(buf);
+                io->WriteLNM(WI_IsFlagClear(dwNewMode, DISABLE_NEWLINE_AUTO_RETURN));
             }
         }
 
@@ -508,33 +502,31 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
                 alt.SetViewportSize(&size);
             }
 
-            io->WriteUTF8("\x1b[?1049l");
-
+            Viewport read;
             til::small_vector<CHAR_INFO, 1024> infos;
             infos.resize(area, CHAR_INFO{ L' ', FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
 
-            Viewport read;
-            THROW_IF_FAILED(ReadConsoleOutputWImpl(main, infos, viewport, read));
-            for (til::CoordType i = 0; i < size.height; i++)
-            {
-                io->WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
-            }
-
-            io->WriteCUP(main.GetTextBuffer().GetCursor().GetPosition());
-            io->WriteAttributes(main.GetAttributes().GetLegacyAttributes());
-
-            if (hasAltBuffer)
-            {
-                io->WriteUTF8("\x1b[?1049h");
-
-                THROW_IF_FAILED(ReadConsoleOutputWImpl(alt, infos, viewport, read));
+            const auto dumpScreenInfo = [&](SCREEN_INFORMATION& screenInfo) {
+                THROW_IF_FAILED(ReadConsoleOutputWImpl(screenInfo, infos, viewport, read));
                 for (til::CoordType i = 0; i < size.height; i++)
                 {
                     io->WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
                 }
 
-                io->WriteCUP(alt.GetTextBuffer().GetCursor().GetPosition());
-                io->WriteAttributes(alt.GetAttributes().GetLegacyAttributes());
+                io->WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
+                io->WriteAttributes(screenInfo.GetAttributes().GetLegacyAttributes());
+                io->WriteDECTCEM(screenInfo.GetTextBuffer().GetCursor().IsVisible());
+                io->WriteDECAWM(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT));
+                io->WriteLNM(WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN));
+            };
+
+            io->WriteASB(false);
+            dumpScreenInfo(main);
+
+            if (hasAltBuffer)
+            {
+                io->WriteASB(true);
+                dumpScreenInfo(alt);
             }
         }
 
@@ -791,7 +783,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         if (const auto io = gci.GetVtIo(&context))
         {
-            io->WriteFormat(FMT_COMPILE("\x1b[{};{}H"), position.y + 1, position.x + 1);
+            io->WriteCUP(position);
         }
 
         RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
@@ -871,9 +863,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         if (const auto io = gci.GetVtIo(&context))
         {
-            char buf[] = "\x1b[?25l";
-            buf[std::size(buf) - 2] = isVisible ? 'h' : 'l';
-            io->WriteUTF8(buf);
+            io->WriteDECTCEM(isVisible);
         }
 
         return S_OK;
@@ -1029,7 +1019,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                 !clip &&
                 fillCharacter == UNICODE_SPACE && fillAttribute == buffer.GetAttributes().GetLegacyAttributes())
             {
-                io->WriteUTF8("\033c");
+                WriteCharsVT(context, L"\033c");
                 return S_OK;
             }
 
