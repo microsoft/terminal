@@ -147,6 +147,6 @@ void VtInputThread::_InputThread()
 
 bool VtInputThread::IsLookingForDSR() const noexcept
 {
-    const auto& engine = static_cast<InputStateMachineEngine&>( _pInputStateMachine->Engine());
+    const auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
     return engine.IsLookingForDSR();
 }
