@@ -89,7 +89,6 @@ class TextBufferIteratorTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         delete m_state;
 

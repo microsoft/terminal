@@ -47,14 +47,6 @@ Revision History:
 #include "../types/inc/Viewport.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
-// fwdecl unittest classes
-#ifdef UNIT_TESTING
-namespace TerminalCoreUnitTests
-{
-    class ConptyRoundtripTests;
-};
-#endif
-
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
@@ -212,8 +204,6 @@ public:
 
     [[nodiscard]] HRESULT ClearBuffer();
 
-    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
-
     void UpdateBottom();
 
     FontInfo& GetCurrentFont() noexcept;
@@ -224,6 +214,9 @@ public:
 
     void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
     void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
+
+    [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
+    [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
@@ -247,9 +240,6 @@ private:
                                                const til::size* const pcoordFontSize,
                                                _Out_ bool* const pfIsHorizontalVisible,
                                                _Out_ bool* const pfIsVerticalVisible);
-
-    [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
-    [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
@@ -296,7 +286,5 @@ private:
     friend class TextBufferIteratorTests;
     friend class ScreenBufferTests;
     friend class CommonState;
-    friend class ConptyOutputTests;
-    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };

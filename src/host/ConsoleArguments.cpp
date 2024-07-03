@@ -19,7 +19,6 @@ const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
-const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
@@ -112,7 +111,6 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _vtOutHandle(hStdOut)
 {
     _clientCommandline = L"";
-    _vtMode = L"";
     _headless = false;
     _runAsComServer = false;
     _createServerHandle = true;
@@ -138,7 +136,6 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _clientCommandline = other._clientCommandline;
         _vtInHandle = other._vtInHandle;
         _vtOutHandle = other._vtOutHandle;
-        _vtMode = other._vtMode;
         _headless = other._headless;
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
@@ -476,7 +473,10 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         }
         else if (arg == VT_MODE_ARG)
         {
-            hr = s_GetArgumentValue(args, i, &_vtMode);
+            // The --vtmode flag was hardcoded into telnet.exe to force ConPTY to filter non-ASCII characters.
+            // The filtering was moved into telnet, because no one else ever used this functionality.
+            s_ConsumeArg(args, i);
+            hr = S_OK;
         }
         else if (arg == WIDTH_ARG)
         {
@@ -499,12 +499,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         else if (arg == INHERIT_CURSOR_ARG)
         {
             _inheritCursor = true;
-            s_ConsumeArg(args, i);
-            hr = S_OK;
-        }
-        else if (arg == RESIZE_QUIRK)
-        {
-            _resizeQuirk = true;
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
@@ -630,11 +624,6 @@ std::wstring ConsoleArguments::GetClientCommandline() const
     return _clientCommandline;
 }
 
-std::wstring ConsoleArguments::GetVtMode() const
-{
-    return _vtMode;
-}
-
 const std::wstring& ConsoleArguments::GetTextMeasurement() const
 {
     return _textMeasurement;
@@ -663,10 +652,6 @@ short ConsoleArguments::GetHeight() const
 bool ConsoleArguments::GetInheritCursor() const
 {
     return _inheritCursor;
-}
-bool ConsoleArguments::IsResizeQuirkEnabled() const
-{
-    return _resizeQuirk;
 }
 
 #ifdef UNIT_TESTING

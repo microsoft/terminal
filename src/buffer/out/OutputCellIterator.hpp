@@ -33,6 +33,7 @@ public:
     using pointer = OutputCellView*;
     using reference = OutputCellView&;
 
+    OutputCellIterator() = default;
     OutputCellIterator(const wchar_t& wch, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const wchar_t& wch, const TextAttribute& attr, const size_t fillLimit = 0) noexcept;

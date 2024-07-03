@@ -136,7 +136,6 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
-    const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
 
     const wchar_t* textMeasurement;
     switch (dwFlags & PSEUDOCONSOLE_GLYPH_WIDTH__MASK)
@@ -157,10 +156,9 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 
     swprintf_s(cmd,
                MAX_PATH,
-               L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+               L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
-               bResizeQuirk ? L"--resizeQuirk " : L"",
                textMeasurement,
                size.X,
                size.Y,

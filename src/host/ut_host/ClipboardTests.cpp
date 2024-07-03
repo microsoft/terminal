@@ -49,7 +49,6 @@ class ClipboardTests
     {
         m_state->CleanupGlobalInputBuffer();
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         return true;
     }

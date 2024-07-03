@@ -41,7 +41,6 @@ class SelectionTests
         m_pSelection = nullptr;
 
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         delete m_state;
 
@@ -373,7 +372,6 @@ class SelectionInputTests
         CommandHistory::s_Free(nullptr);
         m_pHistory = nullptr;
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;

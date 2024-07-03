@@ -286,9 +286,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
-        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize);
-        StringHandler _CreatePassthroughHandler();
-
         std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
 

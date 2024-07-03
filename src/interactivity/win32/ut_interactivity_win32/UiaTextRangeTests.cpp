@@ -377,7 +377,6 @@ class UiaTextRangeTests
     {
         _state->CleanupNewTextBufferInfo();
         _state->CleanupGlobalScreenBuffer();
-        _state->CleanupGlobalFont();
         delete _state;
         delete _range;
 

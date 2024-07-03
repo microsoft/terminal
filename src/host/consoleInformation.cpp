@@ -45,6 +45,11 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
     return _lock.recursion_depth();
 }
 
+Microsoft::Console::VirtualTerminal::VtIo* CONSOLE_INFORMATION::GetVtIoNoCheck()
+{
+    return &_vtIo;
+}
+
 // Routine Description:
 // - This routine allocates and initialized a console and its associated
 //   data - input buffer and screen buffer.
@@ -118,14 +123,10 @@ ErrorExit2:
     return Status;
 }
 
-VtIo* CONSOLE_INFORMATION::GetVtIo()
+VtIo* CONSOLE_INFORMATION::GetVtIo(const SCREEN_INFORMATION* context)
 {
-    return &_vtIo;
-}
-
-bool CONSOLE_INFORMATION::IsInVtIoMode() const
-{
-    return _vtIo.IsUsingVt();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return _vtIo.IsUsingVt() && (context == nullptr || context == &gci.GetActiveOutputBuffer()) ? &_vtIo : nullptr;
 }
 
 bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept

@@ -485,12 +485,9 @@ CATCH_RETURN();
 
         // The buffer given should be big enough to hold the dimensions of the request.
         const auto targetArea = targetSize.area<size_t>();
-        RETURN_HR_IF(E_INVALIDARG, targetArea < targetBuffer.size());
+        RETURN_HR_IF(E_INVALIDARG, targetArea > targetBuffer.size());
 
-        // Clip the request rectangle to the size of the storage buffer
         auto clip = requestRectangle.ToExclusive();
-        clip.right = std::min(clip.right, storageSize.width);
-        clip.bottom = std::min(clip.bottom, storageSize.height);
 
         // Find the target point (where to write the user's buffer)
         // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
@@ -502,8 +499,18 @@ CATCH_RETURN();
         clip.left = std::max(clip.left, 0);
         clip.top = std::max(clip.top, 0);
 
+        // Clip the request rectangle to the size of the storage buffer
+        clip.right = std::clamp(clip.right, clip.left, storageSize.width);
+        clip.bottom = std::clamp(clip.bottom, clip.top, storageSize.height);
+
         // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
         const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
+
+        if (!clippedRequestRectangle.IsValid())
+        {
+            readRectangle = Viewport::FromDimensions(clippedRequestRectangle.Origin(), { 0, 0 });
+            return S_OK;
+        }
 
         // We will start reading the buffer at the point of the top left corner (origin) of the (potentially adjusted) request
         const auto sourcePoint = clippedRequestRectangle.Origin();
@@ -599,96 +606,50 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
-                                                            std::span<CHAR_INFO> buffer,
-                                                            const Viewport& requestRectangle,
-                                                            Viewport& writtenRectangle) noexcept
+[[nodiscard]] HRESULT WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
+                                                    std::span<const CHAR_INFO> buffer,
+                                                    size_t bufferStride,
+                                                    const Viewport& requestRectangle,
+                                                    Viewport& writtenRectangle) noexcept
 {
     try
     {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        const auto io = gci.GetVtIo(&context);
+
         auto& storageBuffer = context.GetActiveBuffer();
         const auto storageRectangle = storageBuffer.GetBufferSize();
-        const auto storageSize = storageRectangle.Dimensions();
+        const auto writeRectangle = storageRectangle.Clamp(requestRectangle);
 
-        const auto sourceSize = requestRectangle.Dimensions();
-
-        // If either dimension of the request is too small, return an empty rectangle as the read and exit early.
-        if (sourceSize.width <= 0 || sourceSize.height <= 0)
+        if (!writeRectangle.IsValid())
         {
             writtenRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
         }
 
-        // If the top and left of the destination we're trying to write it outside the buffer,
-        // give the original request rectangle back and exit early OK.
-        if (requestRectangle.Left() >= storageSize.width || requestRectangle.Top() >= storageSize.height)
-        {
-            writtenRectangle = requestRectangle;
-            return S_OK;
-        }
-
-        // Do clipping according to the legacy patterns.
-        auto writeRegion = requestRectangle.ToInclusive();
-        til::inclusive_rect sourceRect;
-        if (writeRegion.right > storageSize.width - 1)
-        {
-            writeRegion.right = storageSize.width - 1;
-        }
-        sourceRect.right = writeRegion.right - writeRegion.left;
-        if (writeRegion.bottom > storageSize.height - 1)
-        {
-            writeRegion.bottom = storageSize.height - 1;
-        }
-        sourceRect.bottom = writeRegion.bottom - writeRegion.top;
-
-        if (writeRegion.left < 0)
-        {
-            sourceRect.left = -writeRegion.left;
-            writeRegion.left = 0;
-        }
-        else
-        {
-            sourceRect.left = 0;
-        }
-
-        if (writeRegion.top < 0)
-        {
-            sourceRect.top = -writeRegion.top;
-            writeRegion.top = 0;
-        }
-        else
-        {
-            sourceRect.top = 0;
-        }
-
-        if (sourceRect.left > sourceRect.right || sourceRect.top > sourceRect.bottom)
-        {
-            return E_INVALIDARG;
-        }
-
-        const auto writeRectangle = Viewport::FromInclusive(writeRegion);
-
+        const auto offsetY = writeRectangle.Top() - requestRectangle.Top();
+        const auto offsetX = writeRectangle.Left() - requestRectangle.Left();
+        auto totalOffset = offsetY * bufferStride + offsetX;
         auto target = writeRectangle.Origin();
 
         // For every row in the request, create a view into the clamped portion of just the one line to write.
         // This allows us to restrict the width of the call without allocating/copying any memory by just making
         // a smaller view over the existing big blob of data from the original call.
-        for (; target.y < writeRectangle.BottomExclusive(); target.y++)
+        for (; target.y <= writeRectangle.BottomInclusive(); target.y++)
         {
-            // We find the offset into the original buffer by the dimensions of the original request rectangle.
-            const auto rowOffset = (target.y - requestRectangle.Top()) * requestRectangle.Width();
-            const auto colOffset = target.x - requestRectangle.Left();
-            const auto totalOffset = rowOffset + colOffset;
-
             // Now we make a subspan starting from that offset for as much of the original request as would fit
-            const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
-
-            // Convert to a CHAR_INFO view to fit into the iterator
-            const auto charInfos = std::span<const CHAR_INFO>(subspan.data(), subspan.size());
+            const auto charInfos = buffer.subspan(totalOffset, writeRectangle.Width());
 
             // Make the iterator and write to the target position.
-            OutputCellIterator it(charInfos);
-            storageBuffer.Write(it, target);
+            storageBuffer.Write(OutputCellIterator(charInfos), target);
+
+            if (io)
+            {
+                io->WriteInfos(target, charInfos);
+            }
+
+            totalOffset += bufferStride;
         }
 
         // If we've overwritten image content, it needs to be erased.
@@ -712,11 +673,20 @@ CATCH_RETURN();
 
     try
     {
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto io = gci.GetVtIo(&context);
+        const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
+
         const auto codepage = gci.OutputCP;
         LOG_IF_FAILED(_ConvertCellsToWInplace(codepage, buffer, requestRectangle));
 
-        RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
+        RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
+
+        if (io && io->BufferHasContent())
+        {
+            io->WriteCUP(context.GetTextBuffer().GetCursor().GetPosition());
+            io->WriteAttributes(context.GetAttributes().GetLegacyAttributes());
+        }
 
         return S_OK;
     }
@@ -733,16 +703,26 @@ CATCH_RETURN();
 
     try
     {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto io = gci.GetVtIo(&context);
+        const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
+
         if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
             auto translated = _ConvertCellsToMungedW(buffer, requestRectangle);
-            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, translated, requestRectangle, writtenRectangle));
+            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, translated, requestRectangle.Width(), requestRectangle, writtenRectangle));
         }
         else
         {
-            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
+            RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
+        }
+
+        if (io && io->BufferHasContent())
+        {
+            io->WriteCUP(context.GetTextBuffer().GetCursor().GetPosition());
+            io->WriteAttributes(context.GetAttributes().GetLegacyAttributes());
         }
 
         return S_OK;

@@ -1943,11 +1943,6 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, enable);
-        // No need to force a redraw in pty mode.
-        if (_api.IsConsolePty())
-        {
-            return false;
-        }
         if (_renderer)
         {
             _renderer->TriggerRedrawAll();
@@ -1971,7 +1966,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         _pages.ActivePage().Cursor().SetBlinkingAllowed(enable);
-        return !_api.IsConsolePty();
+        return true;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         _pages.ActivePage().Cursor().SetIsVisible(enable);
         return true;
@@ -2039,7 +2034,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
         _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
-        return !_api.IsConsolePty();
+        return true;
     case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
         return true;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
@@ -3178,7 +3173,7 @@ bool AdaptDispatch::SoftReset()
         _sixelParser->SoftReset();
     }
 
-    return !_api.IsConsolePty();
+    return true;
 }
 
 //Routine Description:
@@ -3353,11 +3348,7 @@ bool AdaptDispatch::_EraseScrollback()
     cursor.SetYPosition(row - page.Top());
     cursor.SetHasMoved(true);
 
-    // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
-    // make the state machine propagate this ED sequence to the connected
-    // terminal application. While we're in conpty mode, we don't really
-    // have a scrollback, but the attached terminal might.
-    return !_api.IsConsolePty();
+    return true;
 }
 
 //Routine Description:
@@ -3379,7 +3370,6 @@ bool AdaptDispatch::_EraseAll()
     const auto pageHeight = page.Height();
     const auto bufferHeight = page.BufferHeight();
     auto& textBuffer = page.Buffer();
-    const auto inPtyMode = _api.IsConsolePty();
 
     // Stash away the current position of the cursor within the page.
     // We'll need to restore the cursor to that same relative position, after
@@ -3406,10 +3396,7 @@ bool AdaptDispatch::_EraseAll()
         // We don't want to trigger a scroll in pty mode, because we're going to
         // pass through the ED sequence anyway, and this will just result in the
         // buffer being scrolled up by two pages instead of one.
-        if (!inPtyMode)
-        {
-            textBuffer.TriggerScroll({ 0, -delta });
-        }
+        textBuffer.TriggerScroll({ 0, -delta });
     }
     // Move the viewport if necessary.
     if (newPageTop != page.Top())
@@ -3427,15 +3414,7 @@ bool AdaptDispatch::_EraseAll()
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newPageTop, newPageBottom);
 
-    // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
-    // make the state machine propagate this ED sequence to the connected
-    // terminal application. While we're in conpty mode, when the client
-    // requests a Erase All operation, we need to manually tell the
-    // connected terminal to do the same thing, so that the terminal will
-    // move it's own buffer contents into the scrollback. But this only
-    // applies if we're in the active buffer, since this should have no
-    // visible effect for an inactive buffer.
-    return !(inPtyMode && textBuffer.IsActiveBuffer());
+    return true;
 }
 
 //Routine Description:
@@ -3492,9 +3471,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     cursor.SetType(actualType);
     cursor.SetBlinkingAllowed(fEnableBlinking);
 
-    // If we're a conpty, always return false, so that this cursor state will be
-    // sent to the connected terminal
-    return !_api.IsConsolePty();
+    return true;
 }
 
 // Method Description:
@@ -3517,12 +3494,6 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetClipboard(const wil::zwstring_view content)
 {
-    // Return false to forward the operation to the hosting terminal,
-    // since ConPTY can't handle this itself.
-    if (_api.IsConsolePty())
-    {
-        return false;
-    }
     _api.CopyToClipboard(content);
     return true;
 }
@@ -3537,15 +3508,6 @@ bool AdaptDispatch::SetClipboard(const wil::zwstring_view content)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    if (_api.IsConsolePty())
-    {
-        return false;
-    }
 
     if (_renderer)
     {
@@ -3610,12 +3572,6 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, bgIndex);
         break;
     default:
-        return false;
-    }
-
-    // No need to force a redraw in pty mode.
-    if (_api.IsConsolePty())
-    {
         return false;
     }
 
@@ -3727,13 +3683,6 @@ bool AdaptDispatch::EndHyperlink()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 {
-    // Return false to forward the operation to the hosting terminal,
-    // since ConPTY can't handle this itself.
-    if (_api.IsConsolePty())
-    {
-        return false;
-    }
-
     constexpr size_t TaskbarMaxState{ 4 };
     constexpr size_t TaskbarMaxProgress{ 100 };
 
@@ -3835,14 +3784,6 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
-    const auto isConPty = _api.IsConsolePty();
-    if (isConPty && _renderer)
-    {
-        // Flush the frame manually, to make sure marks end up on the right
-        // line, like the alt buffer sequence.
-        _renderer->TriggerFlush(false);
-    }
-
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
     {
         return false;
@@ -3864,7 +3805,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
         handled = true;
     }
 
-    return handled && !isConPty;
+    return handled;
 }
 
 // Method Description:
@@ -3879,14 +3820,6 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 {
-    const auto isConPty = _api.IsConsolePty();
-    if (isConPty && _renderer)
-    {
-        // Flush the frame manually, to make sure marks end up on the right
-        // line, like the alt buffer sequence.
-        _renderer->TriggerFlush(false);
-    }
-
     if constexpr (!Feature_ScrollbarMarks::IsEnabled())
     {
         return false;
@@ -3955,7 +3888,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
-    return handled && !isConPty;
+    return handled;
 }
 // Method Description:
 // - Performs a VsCode action
@@ -3970,14 +3903,6 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 // - false in conhost, true for the SetMark action, otherwise false.
 bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty() && _renderer)
-    {
-        // Flush the frame manually to make sure this action happens at the right time.
-        _renderer->TriggerFlush(false);
-        return false;
-    }
-
     if constexpr (!Feature_ShellCompletions::IsEnabled())
     {
         return false;
@@ -4052,14 +3977,6 @@ bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 // - false in conhost, true for the CmdNotFound action, otherwise false.
 bool AdaptDispatch::DoWTAction(const std::wstring_view string)
 {
-    // This is not implemented in conhost.
-    if (_api.IsConsolePty())
-    {
-        // Flush the frame manually to make sure this action happens at the right time.
-        _renderer->TriggerFlush(false);
-        return false;
-    }
-
     const auto parts = Utils::SplitString(string, L';');
 
     if (parts.size() < 1)
@@ -4151,19 +4068,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         return nullptr;
     }
 
-    // If we're a conpty, we create a special passthrough handler that will
-    // forward the DECDLD sequence to the conpty terminal with a hard-coded ID.
-    // That ID is also pre-mapped into the G1 table, so the VT engine can just
-    // switch to G1 when it needs to output any DRCS characters. But note that
-    // we still need to process the DECDLD sequence locally, so the character
-    // set translation is correctly handled on the host side.
-    const auto conptyPassthrough = _api.IsConsolePty() ? _CreateDrcsPassthroughHandler(charsetSize) : nullptr;
-
     return [=](const auto ch) {
-        if (conptyPassthrough)
-        {
-            conptyPassthrough(ch);
-        }
         // We pass the data string straight through to the font buffer class
         // until we receive an ESC, indicating the end of the string. At that
         // point we can finalize the buffer, and if valid, update the renderer
@@ -4195,46 +4100,6 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         }
         return true;
     };
-}
-
-// Routine Description:
-// - Helper method to create a string handler that can be used to pass through
-//   DECDLD sequences when in conpty mode. This patches the original sequence
-//   with a hard-coded character set ID, and pre-maps that ID into the G1 table.
-// Arguments:
-// - <none>
-// Return value:
-// - a function to receive the data or nullptr if the initial flush fails
-ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize)
-{
-    const auto defaultPassthrough = _CreatePassthroughHandler();
-    if (defaultPassthrough)
-    {
-        auto& engine = _api.GetStateMachine().Engine();
-        return [=, &engine, gotId = false](const auto ch) mutable {
-            // The character set ID is contained in the first characters of the
-            // sequence, so we just ignore that initial content until we receive
-            // a "final" character (i.e. in range 30 to 7E). At that point we
-            // pass through a hard-coded ID of "@".
-            if (!gotId)
-            {
-                if (ch >= 0x30 && ch <= 0x7E)
-                {
-                    gotId = true;
-                    defaultPassthrough('@');
-                }
-            }
-            else if (!defaultPassthrough(ch))
-            {
-                // Once the DECDLD sequence is finished, we also output an SCS
-                // sequence to map the character set into the G1 table.
-                const auto charset96 = charsetSize == DispatchTypes::CharsetSize::Size96;
-                engine.ActionPassThroughString(charset96 ? L"\033-@" : L"\033)@");
-            }
-            return true;
-        };
-    }
-    return nullptr;
 }
 
 // Method Description:
@@ -4367,13 +4232,6 @@ ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchT
 // - a function to parse the report data.
 ITermDispatch::StringHandler AdaptDispatch::_RestoreColorTable()
 {
-    // If we're a conpty, we create a passthrough string handler to forward the
-    // color report to the connected terminal.
-    if (_api.IsConsolePty())
-    {
-        return _CreatePassthroughHandler();
-    }
-
     return [this, parameter = VTInt{}, parameters = std::vector<VTParameter>{}](const auto ch) mutable {
         if (ch >= L'0' && ch <= L'9')
         {
@@ -5049,15 +4907,6 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreTabStops()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::PlaySounds(const VTParameters parameters)
 {
-    // If we're a conpty, we return false so the command will be passed on
-    // to the connected terminal. But we need to flush the current frame
-    // first, otherwise the visual output will lag behind the sound.
-    if (_api.IsConsolePty() && _renderer)
-    {
-        _renderer->TriggerFlush(false);
-        return false;
-    }
-
     // First parameter is the volume, in the range 0 to 7. We multiply by
     // 127 / 7 to obtain an equivalent MIDI velocity in the range 0 to 127.
     const auto velocity = std::min(parameters.at(0).value_or(0), 7) * 127 / 7;
@@ -5075,52 +4924,4 @@ bool AdaptDispatch::PlaySounds(const VTParameters parameters)
         _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
         return true;
     });
-}
-
-// Routine Description:
-// - Helper method to create a string handler that can be used to pass through
-//   DCS sequences when in conpty mode.
-// Arguments:
-// - <none>
-// Return value:
-// - a function to receive the data or nullptr if the initial flush fails
-ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
-{
-    // Before we pass through any more data, we need to flush the current frame
-    // first, otherwise it can end up arriving out of sync.
-    if (_renderer)
-    {
-        _renderer->TriggerFlush(false);
-    }
-
-    // Then we need to flush the sequence introducer and parameters that have
-    // already been parsed by the state machine.
-    auto& stateMachine = _api.GetStateMachine();
-    if (stateMachine.FlushToTerminal())
-    {
-        // And finally we create a StringHandler to receive the rest of the
-        // sequence data, and pass it through to the connected terminal.
-        auto& engine = stateMachine.Engine();
-        return [&, buffer = std::wstring{}](const auto ch) mutable {
-            // To make things more efficient, we buffer the string data before
-            // passing it through, only flushing if the buffer gets too large,
-            // or we're dealing with the last character in the current output
-            // fragment, or we've reached the end of the string.
-            const auto endOfString = ch == AsciiChars::ESC;
-            buffer += ch;
-            if (buffer.length() >= 4096 || stateMachine.IsProcessingLastCharacter() || endOfString)
-            {
-                // The end of the string is signaled with an escape, but for it
-                // to be a valid string terminator we need to add a backslash.
-                if (endOfString)
-                {
-                    buffer += L'\\';
-                }
-                engine.ActionPassThroughString(buffer, true);
-                buffer.clear();
-            }
-            return !endOfString;
-        };
-    }
-    return nullptr;
 }

@@ -28,8 +28,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _hFile{ std::move(hPipe) },
     _hThread{},
     _u8State{},
-    _dwThreadId{ 0 },
-    _pfnSetLookingForDSR{}
+    _dwThreadId{ 0 }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
@@ -44,9 +43,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     // we need this callback to be able to flush an unknown input sequence to the app
     auto flushCallback = [capture0 = _pInputStateMachine.get()] { return capture0->FlushToTerminal(); };
     engineRef->SetFlushToInputQueueCallback(flushCallback);
-
-    // we need this callback to capture the reply if someone requests a status from the terminal
-    _pfnSetLookingForDSR = [engineRef](auto&& PH1) { engineRef->SetLookingForDSR(std::forward<decltype(PH1)>(PH1)); };
 }
 
 // Function Description:
@@ -112,14 +108,6 @@ bool VtInputThread::DoReadInput()
     return true;
 }
 
-void VtInputThread::SetLookingForDSR(const bool looking) noexcept
-{
-    if (_pfnSetLookingForDSR)
-    {
-        _pfnSetLookingForDSR(looking);
-    }
-}
-
 // Method Description:
 // - The ThreadProc for the VT Input Thread. Reads input from the pipe, and
 //      passes it to _HandleRunInput to be processed by the
@@ -129,7 +117,7 @@ void VtInputThread::_InputThread()
     while (DoReadInput())
     {
     }
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
+    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIoNoCheck()->CloseInput();
 }
 
 // Method Description:
@@ -155,4 +143,10 @@ void VtInputThread::_InputThread()
     LOG_IF_FAILED(SetThreadDescription(hThread, L"ConPTY Input Handler Thread"));
 
     return S_OK;
+}
+
+bool VtInputThread::IsLookingForDSR() const noexcept
+{
+    const auto& engine = static_cast<InputStateMachineEngine&>( _pInputStateMachine->Engine());
+    return engine.IsLookingForDSR();
 }

@@ -132,8 +132,9 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
 
+        bool IsLookingForDSR() const noexcept;
+
         bool EncounteredWin32InputModeSequence() const noexcept override;
-        void SetLookingForDSR(const bool looking) noexcept;
 
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;

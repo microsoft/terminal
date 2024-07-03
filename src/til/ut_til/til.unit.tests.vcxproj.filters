@@ -41,9 +41,6 @@
     <ClInclude Include="..\..\inc\til\bit.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\til\bitmap.h">
-      <Filter>inc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\til\coalesce.h">
       <Filter>inc</Filter>
     </ClInclude>
