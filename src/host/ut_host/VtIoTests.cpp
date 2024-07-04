@@ -3,13 +3,7 @@
 
 #include "precomp.h"
 
-#include <til/rand.h>
-
 #include "CommonState.hpp"
-#include "../VtIo.hpp"
-#include "../../interactivity/inc/ServiceLocator.hpp"
-#include "../../renderer/base/Renderer.hpp"
-#include "../../types/inc/Viewport.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -29,19 +23,6 @@ constexpr CHAR_INFO red(wchar_t ch) noexcept
 constexpr CHAR_INFO blu(wchar_t ch) noexcept
 {
     return { ch, FOREGROUND_BLUE };
-}
-
-#pragma warning(disable : 4505)
-
-static std::pair<wil::unique_hfile, wil::unique_hfile> createOverlappedPipe(DWORD bufferSize)
-{
-    const auto rnd = til::gen_random<uint64_t>();
-    const auto name = fmt::format(FMT_COMPILE(LR"(\\.\pipe\{:016x})"), rnd);
-    wil::unique_hfile rx{ CreateNamedPipeW(name.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_WAIT, 1, bufferSize, bufferSize, 0, nullptr) };
-    THROW_LAST_ERROR_IF(!rx);
-    wil::unique_hfile tx{ CreateFileW(name.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr) };
-    THROW_LAST_ERROR_IF(!tx);
-    return { std::move(tx), std::move(rx) };
 }
 
 #define cup(y, x) "\x1b[" #y ";" #x "H"

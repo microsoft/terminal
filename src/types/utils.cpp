@@ -4,12 +4,11 @@
 #include "precomp.h"
 #include "inc/utils.hpp"
 
-#include <propsys.h>
+#include <til/rand.h>
+#include <til/string.h>
+#include <wil/token_helpers.h>
 
 #include "inc/colorTable.hpp"
-
-#include <wil/token_helpers.h>
-#include <til/string.h>
 
 using namespace Microsoft::Console;
 
@@ -629,6 +628,46 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
 bool Utils::IsValidHandle(const HANDLE handle) noexcept
 {
     return handle != nullptr && handle != INVALID_HANDLE_VALUE;
+}
+
+// From ntifs.h, which isn't part of the regular Windows SDK (they're in the driver SDK (WDK)).
+__kernel_entry NTSYSCALLAPI NTSTATUS NtQueryInformationFile(
+    _In_ HANDLE FileHandle,
+    _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+    _Out_ PVOID FileInformation,
+    _In_ ULONG Length,
+    _In_ FILE_INFORMATION_CLASS FileInformationClass);
+
+#define FileModeInformation (FILE_INFORMATION_CLASS)16
+
+typedef struct _FILE_MODE_INFORMATION
+{
+    ULONG Mode;
+} FILE_MODE_INFORMATION, *PFILE_MODE_INFORMATION;
+
+bool Utils::HandleWantsOverlappedIo(HANDLE handle) noexcept
+{
+    static const auto pNtQueryInformationFile = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"ntdll.dll"), NtQueryInformationFile);
+    if (!pNtQueryInformationFile)
+    {
+        return false;
+    }
+
+    IO_STATUS_BLOCK statusBlock;
+    FILE_MODE_INFORMATION modeInfo;
+    const auto status = pNtQueryInformationFile(handle, &statusBlock, &modeInfo, sizeof(modeInfo), FileModeInformation);
+    return status == 0 && WI_AreAllFlagsClear(modeInfo.Mode, FILE_SYNCHRONOUS_IO_ALERT | FILE_SYNCHRONOUS_IO_NONALERT);
+}
+
+Utils::OverlappedPipe Utils::CreateOverlappedPipe(DWORD bufferSize)
+{
+    const auto rnd = til::gen_random<uint64_t>();
+    const auto name = fmt::format(FMT_COMPILE(LR"(\\.\pipe\{:016x})"), rnd);
+    wil::unique_hfile rx{ CreateNamedPipeW(name.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_WAIT, 1, bufferSize, bufferSize, 0, nullptr) };
+    THROW_LAST_ERROR_IF(!rx);
+    wil::unique_hfile tx{ CreateFileW(name.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr) };
+    THROW_LAST_ERROR_IF(!tx);
+    return { std::move(tx), std::move(rx) };
 }
 
 // Function Description:

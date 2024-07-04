@@ -15,6 +15,12 @@ Author(s):
 
 namespace Microsoft::Console::Utils
 {
+    struct OverlappedPipe
+    {
+        wil::unique_hfile tx;
+        wil::unique_hfile rx;
+    };
+
     // Function Description:
     // - Returns -1, 0 or +1 to indicate the sign of the passed-in value.
     template<typename T>
@@ -24,6 +30,8 @@ namespace Microsoft::Console::Utils
     }
 
     bool IsValidHandle(const HANDLE handle) noexcept;
+    bool HandleWantsOverlappedIo(HANDLE handle) noexcept;
+    OverlappedPipe CreateOverlappedPipe(DWORD bufferSize);
 
     // Function Description:
     // - Clamps a long in between `min` and `SHRT_MAX`
@@ -85,7 +93,7 @@ namespace Microsoft::Console::Utils
 
     constexpr unsigned long EndianSwap(unsigned long value)
     {
-        return gsl::narrow_cast<unsigned long>(EndianSwap(gsl::narrow_cast<uint32_t>(value)));
+        return EndianSwap(static_cast<uint32_t>(value));
     }
 
     constexpr GUID EndianSwap(GUID value)

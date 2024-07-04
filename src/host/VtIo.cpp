@@ -13,43 +13,12 @@
 #include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/utils.hpp"
 
-// Some additional imports from ntifs.h which aren't in the regular Windows SDK (they're in the driver SDK (WDK)).
-__kernel_entry NTSYSCALLAPI NTSTATUS NtQueryInformationFile(
-    _In_ HANDLE FileHandle,
-    _Out_ PIO_STATUS_BLOCK IoStatusBlock,
-    _Out_ PVOID FileInformation,
-    _In_ ULONG Length,
-    _In_ FILE_INFORMATION_CLASS FileInformationClass);
-
-#define FileModeInformation (FILE_INFORMATION_CLASS)16
-
-typedef struct _FILE_MODE_INFORMATION
-{
-    ULONG Mode;
-} FILE_MODE_INFORMATION, *PFILE_MODE_INFORMATION;
-
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Utils;
 using namespace Microsoft::Console::Interactivity;
-
-static bool handleWantsOverlappedIo(HANDLE handle) noexcept
-{
-    const auto ntdll = GetModuleHandleW(L"ntdll.dll");
-    const auto pNtQueryInformationFile = GetProcAddressByFunctionDeclaration(ntdll, NtQueryInformationFile);
-
-    if (!pNtQueryInformationFile)
-    {
-        return false;
-    }
-
-    IO_STATUS_BLOCK statusBlock;
-    FILE_MODE_INFORMATION modeInfo;
-    const auto status = pNtQueryInformationFile(handle, &statusBlock, &modeInfo, sizeof(modeInfo), FileModeInformation);
-    return status == 0 && WI_AreAllFlagsClear(modeInfo.Mode, FILE_SYNCHRONOUS_IO_ALERT | FILE_SYNCHRONOUS_IO_NONALERT);
-}
 
 [[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
 {
@@ -115,13 +84,14 @@ static bool handleWantsOverlappedIo(HANDLE handle) noexcept
     _hOutput.reset(OutHandle);
     _hSignal.reset(SignalHandle);
 
-    if (handleWantsOverlappedIo(_hOutput.get()))
+    if (Utils::HandleWantsOverlappedIo(_hOutput.get()))
     {
         _overlappedEvent.reset(CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS));
-        THROW_LAST_ERROR_IF(!_overlappedEvent);
-
+        if (_overlappedEvent)
+        {
         _overlappedBuf.hEvent = _overlappedEvent.get();
         _overlapped = &_overlappedBuf;
+        }
     }
 
     // The only way we're initialized is if the args said we're in conpty mode.
@@ -609,7 +579,7 @@ void VtIo::_uncork()
 
 void VtIo::_flush()
 {
-    if (_corked <= 0)
+    if (_corked <= 0 && !_back.empty())
     {
         _flushNow();
     }
