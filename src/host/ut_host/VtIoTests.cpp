@@ -49,10 +49,10 @@ static std::pair<wil::unique_hfile, wil::unique_hfile> createOverlappedPipe(DWOR
 #define lnm(h) "\x1b[20" #h
 
 // The escape sequences that red() / blu() result in.
-#define sgr_red(s) "\x1b[27;31;40m" s
-#define sgr_blu(s) "\x1b[27;34;40m" s
+#define sgr_red(s) "\x1b[0;31;40m" s
+#define sgr_blu(s) "\x1b[0;34;40m" s
 // What the default attributes `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED` result in.
-#define sgr_rst() "\x1b[27;39;49m"
+#define sgr_rst() "\x1b[0m"
 
 // Any RIS sequence should re-enable our required ConPTY modes Focus Event Mode and Win32 Input Mode.
 #define ris() "\033c\x1b[?1004h\x1b[?9001h"
@@ -196,42 +196,42 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         const auto expected =
             // 16 foreground colors
-            "\x1b[27;30;40m"
-            "\x1b[27;34;40m"
-            "\x1b[27;32;40m"
-            "\x1b[27;36;40m"
-            "\x1b[27;31;40m"
-            "\x1b[27;35;40m"
-            "\x1b[27;33;40m"
-            "\x1b[27;39;49m" // <-- FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED gets translated to the default colors
-            "\x1b[27;90;40m"
-            "\x1b[27;94;40m"
-            "\x1b[27;92;40m"
-            "\x1b[27;96;40m"
-            "\x1b[27;91;40m"
-            "\x1b[27;95;40m"
-            "\x1b[27;93;40m"
-            "\x1b[27;97;40m"
+            "\x1b[0;30;40m"
+            "\x1b[0;34;40m"
+            "\x1b[0;32;40m"
+            "\x1b[0;36;40m"
+            "\x1b[0;31;40m"
+            "\x1b[0;35;40m"
+            "\x1b[0;33;40m"
+            "\x1b[0m" // <-- FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED gets translated to the default colors
+            "\x1b[0;90;40m"
+            "\x1b[0;94;40m"
+            "\x1b[0;92;40m"
+            "\x1b[0;96;40m"
+            "\x1b[0;91;40m"
+            "\x1b[0;95;40m"
+            "\x1b[0;93;40m"
+            "\x1b[0;97;40m"
             // 16 background colors
-            "\x1b[27;30;40m"
-            "\x1b[27;30;44m"
-            "\x1b[27;30;42m"
-            "\x1b[27;30;46m"
-            "\x1b[27;30;41m"
-            "\x1b[27;30;45m"
-            "\x1b[27;30;43m"
-            "\x1b[27;30;47m"
-            "\x1b[27;30;100m"
-            "\x1b[27;30;104m"
-            "\x1b[27;30;102m"
-            "\x1b[27;30;106m"
-            "\x1b[27;30;101m"
-            "\x1b[27;30;105m"
-            "\x1b[27;30;103m"
-            "\x1b[27;30;107m"
+            "\x1b[0;30;40m"
+            "\x1b[0;30;44m"
+            "\x1b[0;30;42m"
+            "\x1b[0;30;46m"
+            "\x1b[0;30;41m"
+            "\x1b[0;30;45m"
+            "\x1b[0;30;43m"
+            "\x1b[0;30;47m"
+            "\x1b[0;30;100m"
+            "\x1b[0;30;104m"
+            "\x1b[0;30;102m"
+            "\x1b[0;30;106m"
+            "\x1b[0;30;101m"
+            "\x1b[0;30;105m"
+            "\x1b[0;30;103m"
+            "\x1b[0;30;107m"
             // The remaining two calls
-            "\x1b[7;95;42m"
-            "\x1b[7;39;49m";
+            "\x1b[0;7;95;42m"
+            "\x1b[0;7m";
         const auto actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
     }

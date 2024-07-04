@@ -333,23 +333,31 @@ bool VtIo::IsControlCharacter(wchar_t wch) noexcept
 
 static size_t formatAttributes(char (&buffer)[16], WORD attributes) noexcept
 {
-    const uint8_t rv = WI_IsFlagSet(attributes, COMMON_LVB_REVERSE_VIDEO) ? 7 : 27;
-    uint8_t fg = 39;
-    uint8_t bg = 49;
+    auto end = &buffer[0];
+    memcpy(end, "\x1b[0", 4);
+    end += 3;
+
+    if (attributes & COMMON_LVB_REVERSE_VIDEO)
+    {
+        memcpy(end, ";7", 2);
+        end += 2;
+    }
 
     // `attributes` of exactly `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED`
     // are often used to indicate the default colors in Windows Console applications.
-    // Thus, we translate them to 39/49 (default foreground/background).
+    // Since we always emit SGR 0 (reset all attributes), we simply need to skip this branch.
     if ((attributes & (FG_ATTRS | BG_ATTRS)) != (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED))
     {
         // The Console API represents colors in BGR order, but VT represents them in RGB order.
         // This LUT transposes them. This is for foreground colors. Add +10 to get the background ones.
         static constexpr uint8_t lut[] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97 };
-        fg = lut[attributes & 0xf];
-        bg = lut[(attributes >> 4) & 0xf] + 10;
+        const uint8_t fg = lut[attributes & 0xf];
+        const uint8_t bg = lut[(attributes >> 4) & 0xf] + 10;
+        end = fmt::format_to(end, FMT_COMPILE(";{};{}"), fg, bg);
     }
 
-    return fmt::format_to(&buffer[0], FMT_COMPILE("\x1b[0;{};{};{}m"), rv, fg, bg) - &buffer[0];
+    *end++ = 'm';
+    return end - &buffer[0];
 }
 
 void VtIo::FormatAttributes(std::string& target, WORD attributes)
