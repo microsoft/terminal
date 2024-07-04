@@ -3275,20 +3275,6 @@ bool AdaptDispatch::HardReset()
         _macroBuffer = nullptr;
     }
 
-    // If we're in a conpty, we need flush this RIS sequence to the connected
-    // terminal application, but we also need to follow that up with a DECSET
-    // sequence to re-enable the modes that we require (namely win32 input mode
-    // and focus event mode). It's important that this is kept in sync with the
-    // VtEngine::RequestWin32Input method which requests the modes on startup.
-    if (_api.IsConsolePty())
-    {
-        auto& stateMachine = _api.GetStateMachine();
-        if (stateMachine.FlushToTerminal())
-        {
-            auto& engine = stateMachine.Engine();
-            engine.ActionPassThroughString(L"\033[?9001h\033[?1004h");
-        }
-    }
     return true;
 }
 
