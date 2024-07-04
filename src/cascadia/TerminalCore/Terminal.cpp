@@ -1259,7 +1259,7 @@ void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlight
 // Method Description:
 // - Stores the focused search highlighted region in the terminal
 // - If the region isn't empty, it will be brought into view
-void Terminal::SetSearchHighlightFocused(const size_t focusedIdx)
+void Terminal::SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset)
 {
     _assertLocked();
     _searchHighlightFocused = focusedIdx;
@@ -1268,7 +1268,9 @@ void Terminal::SetSearchHighlightFocused(const size_t focusedIdx)
     if (focusedIdx < _searchHighlights.size())
     {
         const auto focused = til::at(_searchHighlights, focusedIdx);
-        _ScrollToPoints(focused.start, focused.end);
+        const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
+        const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
+        _ScrollToPoints(adjustedStart, adjustedEnd);
     }
 }
 

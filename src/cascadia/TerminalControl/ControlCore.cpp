@@ -1721,7 +1721,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
             {
-                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx));
+                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx), _searchScrollOffset);
             }
             _renderer->TriggerSearchHighlight(oldResults);
         }
@@ -1751,7 +1751,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
         _terminal->SetSearchHighlights({});
-        _terminal->SetSearchHighlightFocused({});
+        _terminal->SetSearchHighlightFocused({}, _searchScrollOffset);
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
     }
@@ -2934,4 +2934,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->PreviewText(input);
     }
 
+    void ControlCore::SetSearchScrollOffset(til::CoordType offset)
+    {
+        _searchScrollOffset = offset;
+    }
 }

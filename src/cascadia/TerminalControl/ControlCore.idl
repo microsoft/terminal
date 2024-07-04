@@ -169,6 +169,7 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectOutput();
 
         void ClearQuickFix();
+        void SetSearchScrollOffset(Int32 offset);
 
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;

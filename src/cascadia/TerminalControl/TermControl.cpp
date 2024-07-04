@@ -571,6 +571,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _searchBox->Open([weakThis = get_weak()]() {
                     if (const auto self = weakThis.get(); self && !self->_IsClosing())
                     {
+                        const auto displayInfo = DisplayInformation::GetForCurrentView();
+                        const auto scaleFactor = self->_core.FontSize().Height / displayInfo.RawPixelsPerViewPixel();
+                        const auto searchBoxRows = self->_searchBox->ActualHeight() / scaleFactor;
+                        self->_core.SetSearchScrollOffset(static_cast<int32_t>(std::ceil(searchBoxRows)));
                         self->_searchBox->SetFocusOnTextbox();
                         self->_refreshSearch();
                     }
