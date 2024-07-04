@@ -21,5 +21,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean AreGithubCopilotTokensSet { get; };
         void GithubCopilotAuthToken(String authToken);
         void GithubCopilotRefreshToken(String refreshToken);
+
+        void InitiateGithubAuth_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
     }
 }

@@ -425,6 +425,9 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
+        void _InitiateGithubAuth();
+        winrt::fire_and_forget _CompleteGithubAuth(const Windows::Foundation::Uri uri);
+
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 

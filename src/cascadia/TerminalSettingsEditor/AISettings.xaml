@@ -268,6 +268,13 @@
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
                             </StackPanel>
+                            <Button Grid.Row="1"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Click="{x:Bind ViewModel.InitiateGithubAuth_Click}"
+                                    Style="{StaticResource AccentButtonStyle}">
+                                <TextBlock x:Uid="AISettings_InitiateGithubAuthFlow" />
+                            </Button>
                         </Grid>
                     </StackPanel>
                 </local:SettingContainer>

@@ -548,7 +548,6 @@ void AppCommandlineArgs::_buildHandleUriParser()
         // that `this` will still be safe - this function just lets us know this
         // command was parsed.
         subcommand->callback([&, this]() {
-            wil::WaitForDebuggerPresent(false);
             // Build the action from the values we've parsed on the commandline.
             const auto cmdlineArgs = _currentCommandline->Args();
             winrt::hstring uri;
@@ -994,7 +993,8 @@ void AppCommandlineArgs::ValidateStartupCommands()
         // If we parsed no commands, or the first command we've parsed is not a new
         // tab action, prepend a new-tab command to the front of the list.
         if (_startupActions.empty() ||
-            _startupActions.front().Action() != ShortcutAction::NewTab)
+            (_startupActions.front().Action() != ShortcutAction::NewTab &&
+             _startupActions.front().Action() != ShortcutAction::HandleUri))
         {
             // Build the NewTab action from the values we've parsed on the commandline.
             NewTerminalArgs newTerminalArgs{};

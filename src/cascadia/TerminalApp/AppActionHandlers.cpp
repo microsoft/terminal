@@ -1496,9 +1496,16 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& uriArgs{ args.ActionArgs().try_as<HandleUriArgs>() })
         {
-            if (!uriArgs.Uri().empty())
+            const auto uriString{ uriArgs.Uri() };
+            if (!uriString.empty())
             {
-                args.Handled(true);
+                Windows::Foundation::Uri uri{ uriString };
+                // we only accept "github-auth" host names for now
+                if (uri.Host() == L"github-auth")
+                {
+                    _CompleteGithubAuth(uri);
+                    args.Handled(true);
+                }
             }
         }
     }

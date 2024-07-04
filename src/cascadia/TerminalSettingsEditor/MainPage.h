@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
 
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
+        til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;

@@ -123,5 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettings::ClearGithubCopilotTokens_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
+        _ViewModel.GithubCopilotAuthToken(L"");
+        _ViewModel.GithubCopilotRefreshToken(L"");
     }
 }

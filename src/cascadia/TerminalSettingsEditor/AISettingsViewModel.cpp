@@ -8,6 +8,7 @@
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
+#include <shellapi.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -96,5 +97,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool AISettingsViewModel::GithubCopilotIsActive()
     {
         return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::GithubCopilot;
+    }
+
+    void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _awaitingGithubAuth = true;
+        GithubAuthRequested.raise(nullptr, nullptr);
     }
 }

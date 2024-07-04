@@ -42,5 +42,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
     }
 }

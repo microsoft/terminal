@@ -17,6 +17,12 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 
+#include <winrt/Windows.Web.Http.h>
+#include <winrt/Windows.Web.Http.Headers.h>
+#include <winrt/Windows.Web.Http.Filters.h>
+
+#include <winrt/Windows.Data.Json.h>
+
 #include "../../types/inc/utils.hpp"
 #include "App.h"
 #include "ColorHelper.h"
@@ -45,6 +51,9 @@ using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
+namespace WWH = ::winrt::Windows::Web::Http;
+namespace WSS = ::winrt::Windows::Storage::Streams;
+namespace WDJ = ::winrt::Windows::Data::Json;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
@@ -4029,7 +4038,83 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        sui.GithubAuthRequested([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_InitiateGithubAuth();
+            }
+        });
+
         return *settingsContent;
+    }
+
+    void TerminalPage::_InitiateGithubAuth()
+    {
+        // todo: we probably want a "state" parameter for protection against forgery attacks
+        ShellExecute(nullptr, L"open", L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1", nullptr, nullptr, SW_SHOWNORMAL);
+    }
+
+    winrt::fire_and_forget TerminalPage::_CompleteGithubAuth(const Windows::Foundation::Uri uri)
+    {
+        winrt::Windows::Web::Http::HttpClient httpClient{};
+        httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
+
+        WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Windows::Foundation::Uri{ L"https://github.com/login/oauth/access_token" } };
+        request.Headers().Accept().TryParseAdd(L"application/json");
+
+        WDJ::JsonObject jsonContent;
+        jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
+        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"notShowingSecretForCommitForObviousReasons"));
+        jsonContent.SetNamedValue(L"code", WDJ::JsonValue::CreateStringValue(uri.QueryParsed().GetFirstValueByName(L"code")));
+        const auto stringContent = jsonContent.ToString();
+        WWH::HttpStringContent requestContent{
+            stringContent,
+            WSS::UnicodeEncoding::Utf8,
+            L"application/json"
+        };
+
+        request.Content(requestContent);
+
+        co_await winrt::resume_background();
+
+        try
+        {
+            const auto response = httpClient.SendRequestAsync(request).get();
+            // Parse out the suggestion from the response
+            const auto string{ response.Content().ReadAsStringAsync().get() };
+            const auto jsonResult{ WDJ::JsonObject::Parse(string) };
+            const auto authToken{ jsonResult.GetNamedString(L"access_token") };
+            const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
+            if (!authToken.empty() && !refreshToken.empty())
+            {
+                _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
+                _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
+
+                // todo: this _settingsTab check only works if new instance behavior is set to attach to this window,
+                //       fix this to work with any new instance behavior
+                if (_settingsTab)
+                {
+                    if (auto terminalTab{ _GetTerminalTabImpl(_settingsTab) })
+                    {
+                        // refresh the settings UI now that we have the auth tokens stored
+                        co_await winrt::resume_foreground(Dispatcher());
+                        terminalTab->UpdateSettings(_settings);
+
+                        // also reload the extension palette with the new settings
+                        if (_extensionPalette)
+                        {
+                            _extensionPalette = nullptr;
+                            _loadQueryExtension();
+                        }
+                    }
+                }
+            }
+        }
+        catch (...)
+        {
+        }
+
+        co_return;
     }
 
     // Method Description:
