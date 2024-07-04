@@ -89,8 +89,8 @@ using namespace Microsoft::Console::Interactivity;
         _overlappedEvent.reset(CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS));
         if (_overlappedEvent)
         {
-        _overlappedBuf.hEvent = _overlappedEvent.get();
-        _overlapped = &_overlappedBuf;
+            _overlappedBuf.hEvent = _overlappedEvent.get();
+            _overlapped = &_overlappedBuf;
         }
     }
 
@@ -155,40 +155,43 @@ bool VtIo::IsUsingVt() const
         return S_FALSE;
     }
 
-    // MSFT: 15813316
-    // If the terminal application wants us to inherit the cursor position,
-    //  we're going to emit a VT sequence to ask for the cursor position, then
-    //  read input until we get a response. Terminals who request this behavior
-    //  but don't respond will hang.
-    // If we get a response, the InteractDispatch will call SetCursorPosition,
-    //      which will call to our VtIo::SetCursorPosition method.
-    // We need both handles for this initialization to work. If we don't have
-    //      both, we'll skip it. They either aren't going to be reading output
-    //      (so they can't get the DSR) or they can't write the response to us.
-    if (_pVtInputThread && _pVtInputThread->IsLookingForDSR())
-    {
-        WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
-        while (_pVtInputThread->DoReadInput() && _pVtInputThread->IsLookingForDSR())
-        {
-        }
-    }
-
-    // GH#4999 - Send a sequence to the connected terminal to request
-    // win32-input-mode from them. This will enable the connected terminal to
-    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
-    // this sequence, it'll just ignore it.
-
-    // By default, DISABLE_NEWLINE_AUTO_RETURN is reset. This implies LNM being set,
-    // which is not the default in terminals, so we have to do that explicitly.
-    WriteUTF8(
-        "\x1b[20h" // Line Feed / New Line Mode (LNM)
-        "\033[?1004h" // Focus Event Mode
-        "\033[?9001h" // Win32 Input Mode
-    );
-
     if (_pVtInputThread)
     {
         LOG_IF_FAILED(_pVtInputThread->Start());
+    }
+
+    {
+        const auto cork = Cork();
+
+        // GH#4999 - Send a sequence to the connected terminal to request
+        // win32-input-mode from them. This will enable the connected terminal to
+        // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+        // this sequence, it'll just ignore it.
+
+        // By default, DISABLE_NEWLINE_AUTO_RETURN is reset. This implies LNM being set,
+        // which is not the default in terminals, so we have to do that explicitly.
+        WriteUTF8(
+            "\x1b[20h" // Line Feed / New Line Mode (LNM)
+            "\033[?1004h" // Focus Event Mode
+            "\033[?9001h" // Win32 Input Mode
+        );
+
+        // MSFT: 15813316
+        // If the terminal application wants us to inherit the cursor position,
+        //  we're going to emit a VT sequence to ask for the cursor position, then
+        //  wait 1s until we get a response.
+        // If we get a response, the InteractDispatch will call SetCursorPosition,
+        //      which will call to our VtIo::SetCursorPosition method.
+        if (_lookingForCursorPosition)
+        {
+            WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+        }
+    }
+
+    if (_lookingForCursorPosition)
+    {
+        _lookingForCursorPosition = false;
+        _pVtInputThread->WaitUntilDSR(1000);
     }
 
     if (_pPtySignalInputThread)
