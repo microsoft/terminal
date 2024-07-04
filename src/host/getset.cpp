@@ -381,7 +381,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 
                 if (WI_IsFlagSet(diff, ENABLE_MOUSE_INPUT))
                 {
-                    io->WriteSGR1006(WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT));
+                    io->WriteSGR1006(WI_IsFlagSet(newMode, ENABLE_MOUSE_INPUT));
                 }
             }
         }
