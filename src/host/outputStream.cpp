@@ -33,6 +33,14 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
 {
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // ConPTY should not respond to requests. That's the job of the terminal.
+    if (gci.GetVtIo(nullptr))
+    {
+        return;
+    }
+
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
@@ -279,11 +287,17 @@ void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
 // - true if successful. false otherwise.
 void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
 {
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
+
     // Unlock the console, so the UI doesn't hang while we're busy.
     UnlockConsole();
 
     // This call will block for the duration, unless shutdown early.
-    const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    const auto windowHandle = window->GetWindowHandle();
     auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
     midiAudio.PlayNote(windowHandle, noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
 
