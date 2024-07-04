@@ -349,7 +349,7 @@ static size_t formatAttributes(char (&buffer)[16], WORD attributes) noexcept
         bg = lut[(attributes >> 4) & 0xf] + 10;
     }
 
-    return fmt::format_to(&buffer[0], FMT_COMPILE("\x1b[{};{};{}m"), rv, fg, bg) - &buffer[0];
+    return fmt::format_to(&buffer[0], FMT_COMPILE("\x1b[0;{};{};{}m"), rv, fg, bg) - &buffer[0];
 }
 
 void VtIo::FormatAttributes(std::string& target, WORD attributes)

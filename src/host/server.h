@@ -108,6 +108,7 @@ public:
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    const SCREEN_INFORMATION& GetActiveMainOutputBuffer() const;
     void SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer);
     bool HasActiveOutputBuffer() const;
 
@@ -153,6 +154,7 @@ private:
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle; // Path to .lnk file
     SCREEN_INFORMATION* pCurrentScreenBuffer = nullptr;
+    SCREEN_INFORMATION* pCurrentMainScreenBuffer = nullptr;
     COOKED_READ_DATA* _cookedReadData = nullptr; // non-ownership pointer
     bool _bracketedPasteMode = false;
 

@@ -45,11 +45,6 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
     return _lock.recursion_depth();
 }
 
-Microsoft::Console::VirtualTerminal::VtIo* CONSOLE_INFORMATION::GetVtIoNoCheck()
-{
-    return &_vtIo;
-}
-
 // Routine Description:
 // - This routine allocates and initialized a console and its associated
 //   data - input buffer and screen buffer.
@@ -123,10 +118,14 @@ ErrorExit2:
     return Status;
 }
 
+VtIo* CONSOLE_INFORMATION::GetVtIoNoCheck()
+{
+    return &_vtIo;
+}
+
 VtIo* CONSOLE_INFORMATION::GetVtIo(const SCREEN_INFORMATION* context)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return _vtIo.IsUsingVt() && (context == nullptr || context == &gci.GetActiveOutputBuffer()) ? &_vtIo : nullptr;
+    return _vtIo.IsUsingVt() && (context == nullptr || context == pCurrentMainScreenBuffer || context == pCurrentScreenBuffer) ? &_vtIo : nullptr;
 }
 
 bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
@@ -180,6 +179,11 @@ const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
     return *pCurrentScreenBuffer;
 }
 
+const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveMainOutputBuffer() const
+{
+    return *pCurrentMainScreenBuffer;
+}
+
 void CONSOLE_INFORMATION::SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer)
 {
     if (pCurrentScreenBuffer)
@@ -188,6 +192,7 @@ void CONSOLE_INFORMATION::SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer
     }
     pCurrentScreenBuffer = &screenBuffer;
     pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(true);
+    pCurrentMainScreenBuffer = &screenBuffer.GetMainBuffer();
 }
 
 bool CONSOLE_INFORMATION::HasActiveOutputBuffer() const
