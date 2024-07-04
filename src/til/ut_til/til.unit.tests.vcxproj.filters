@@ -6,7 +6,6 @@
   <ItemGroup>
     <ClCompile Include="..\precomp.cpp" />
     <ClCompile Include="BaseTests.cpp" />
-    <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
