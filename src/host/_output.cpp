@@ -64,7 +64,7 @@ struct FillConsoleResult
     til::CoordType cellsModified = 0;
 };
 
-static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillConsoleMode mode, const uint16_t* data, const size_t lengthToWrite, const til::point startingCoordinate)
+static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillConsoleMode mode, const void* data, const size_t lengthToWrite, const til::point startingCoordinate)
 {
     if (lengthToWrite == 0)
     {
@@ -79,6 +79,20 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
     auto& screenBuffer = screenInfo.GetActiveBuffer();
     const auto bufferSize = screenBuffer.GetBufferSize();
     FillConsoleResult result;
+
+    // Technically we could always pass `data` as `uint16_t*`, because `wchar_t` is guaranteed to be 16 bits large.
+    // However, OutputCellIterator is terrifyingly unsafe code and so we don't do that.
+    //
+    // Constructing an OutputCellIterator with a `wchar_t` takes the `wchar_t` by reference, so that it can reference
+    // it in a `wstring_view` forever. That's of course really bad because passing a `const uint16_t&` to a
+    // `const wchar_t&` argument implicitly converts the types. To do so, the implicit conversion allocates a
+    // `wchar_t` value on the stack. The lifetime of that copy DOES NOT get extended beyond the constructor call.
+    // The result is that OutputCellIterator would read random data from the stack.
+    //
+    // Don't ever assume the lifetime of implicitly convertible types given by reference.
+    // Ironically that's a bug that cannot happen with C pointers. To no ones surprise, C keeps on winning.
+    auto attrs = static_cast<const uint16_t*>(data);
+    auto chars = static_cast<const wchar_t*>(data);
 
     if (!bufferSize.IsInBounds(startingCoordinate))
     {
@@ -114,13 +128,13 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
             case FillConsoleMode::WriteAttribute:
                 for (size_t i = 0; i < len; ++i)
                 {
-                    infos[i].Attributes = *data++;
+                    infos[i].Attributes = *attrs++;
                 }
                 break;
             case FillConsoleMode::WriteCharacter:
                 for (size_t i = 0; i < len;)
                 {
-                    const auto ch = *data++;
+                    const auto ch = *chars++;
 
                     auto& lead = infos[i++];
                     lead.Char.UnicodeChar = ch;
@@ -138,7 +152,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
                 break;
             case FillConsoleMode::FillAttribute:
             {
-                const auto attr = *data;
+                const auto attr = *attrs;
                 for (size_t i = 0; i < len; ++i)
                 {
                     infos[i].Attributes = attr;
@@ -147,7 +161,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
             }
             case FillConsoleMode::FillCharacter:
             {
-                const auto ch = *data;
+                const auto ch = *chars;
 
                 if (IsGlyphFullWidth(ch))
                 {
@@ -205,16 +219,16 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         switch (mode)
         {
         case FillConsoleMode::WriteAttribute:
-            it = OutputCellIterator({ data, lengthToWrite });
+            it = OutputCellIterator({ attrs, lengthToWrite });
             break;
         case FillConsoleMode::WriteCharacter:
-            it = OutputCellIterator({ reinterpret_cast<const wchar_t*>(data), lengthToWrite });
+            it = OutputCellIterator({ chars, lengthToWrite });
             break;
         case FillConsoleMode::FillAttribute:
-            it = OutputCellIterator(TextAttribute(*data), lengthToWrite);
+            it = OutputCellIterator(TextAttribute(*attrs), lengthToWrite);
             break;
         case FillConsoleMode::FillCharacter:
-            it = OutputCellIterator(*data, lengthToWrite);
+            it = OutputCellIterator(*chars, lengthToWrite);
             break;
         default:
             __assume(false);
@@ -299,7 +313,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        used = FillConsoleImpl(OutContext, FillConsoleMode::WriteCharacter, reinterpret_cast<const uint16_t*>(chars.data()), chars.size(), target).lengthRead;
+        used = FillConsoleImpl(OutContext, FillConsoleMode::WriteCharacter, chars.data(), chars.size(), target).lengthRead;
     }
     CATCH_RETURN();
 
@@ -423,7 +437,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
             }
         }
 
-        cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillCharacter, reinterpret_cast<const uint16_t*>(&character), lengthToWrite, startingCoordinate).lengthRead;
+        cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillCharacter, &character, lengthToWrite, startingCoordinate).lengthRead;
         return S_OK;
     }
     CATCH_RETURN();
