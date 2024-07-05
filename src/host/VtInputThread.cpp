@@ -54,13 +54,15 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 //      InputStateMachineEngine.
 void VtInputThread::_InputThread()
 {
-    char buffer[4096];
-
     OVERLAPPED* overlapped = nullptr;
     OVERLAPPED overlappedBuf{};
     wil::unique_event overlappedEvent;
     bool overlappedPending = false;
+    char buffer[4096];
     DWORD read = 0;
+
+    til::u8state u8State;
+    std::wstring wstr;
 
     if (Utils::HandleWantsOverlappedIo(_hFile.get()))
     {
@@ -72,24 +74,31 @@ void VtInputThread::_InputThread()
         }
     }
 
+    // If we use overlapped IO We want to queue ReadFile() calls before processing the
+    // string, because LockConsole/ProcessString may take a while (relatively speaking).
+    // That's why the loop looks a little weird as it starts a read, processes the
+    // previous string, and finally converts the previous read to the next string.
     for (;;)
     {
-        if (!ReadFile(_hFile.get(), &buffer[0], sizeof(buffer), &read, overlapped))
+        // When we have a `wstr` that's ready for processing we must do so without blocking.
+        // Otherwise, whatever the user typed will be delayed until the next IO operation.
+        // With overlapped IO that's not a problem because the ReadFile() calls won't block.
+        if (overlapped)
         {
-            if (GetLastError() == ERROR_IO_PENDING)
+            if (!ReadFile(_hFile.get(), &buffer[0], sizeof(buffer), &read, overlapped))
             {
+                if (GetLastError() != ERROR_IO_PENDING)
+                {
+                    break;
+                }
                 overlappedPending = true;
-            }
-            else
-            {
-                break;
             }
         }
 
-        // _wstr can be empty in two situations:
+        // wstr can be empty in two situations:
         // * The previous call to til::u8u16 failed.
         // * We're using overlapped IO, and it's the first iteration.
-        if (!_wstr.empty())
+        if (!wstr.empty())
         {
             try
             {
@@ -101,18 +110,29 @@ void VtInputThread::_InputThread()
                 LockConsole();
                 const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-                _pInputStateMachine->ProcessString(_wstr);
+                _pInputStateMachine->ProcessString(wstr);
             }
             CATCH_LOG();
         }
 
-        // If we're using overlapped IO, on the first iteration we'll skip the ProcessString()
-        // and call GetOverlappedResult() which blocks until it's done.
-        // On every other iteration we'll call ProcessString() while the IO is already queued up.
-        if (overlappedPending)
+        // Here's the counterpart to the start of the loop. We processed whatever was in `wstr`,
+        // so blocking synchronously on the pipe is now possible.
+        // If we used overlapped IO, we need to wait for the ReadFile() to complete.
+        // If we didn't, we can now safely block on our ReadFile() call.
+        if (overlapped)
         {
-            overlappedPending = false;
-            if (!GetOverlappedResult(_hFile.get(), overlapped, &read, TRUE))
+            if (overlappedPending)
+            {
+                overlappedPending = false;
+                if (!GetOverlappedResult(_hFile.get(), overlapped, &read, TRUE))
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            if (!ReadFile(_hFile.get(), &buffer[0], sizeof(buffer), &read, overlapped))
             {
                 break;
             }
@@ -128,7 +148,7 @@ void VtInputThread::_InputThread()
         }
 
         // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-        FAILED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(read) }, _wstr, _u8State));
+        FAILED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(read) }, wstr, u8State));
     }
 
     ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIoNoCheck()->CloseInput();

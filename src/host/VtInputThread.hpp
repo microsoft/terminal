@@ -35,7 +35,5 @@ namespace Microsoft::Console
         DWORD _dwThreadId = 0;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
-        til::u8state _u8State;
-        std::wstring _wstr;
     };
 }
