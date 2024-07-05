@@ -615,7 +615,6 @@ CATCH_RETURN();
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
         const auto io = gci.GetVtIo(&context);
 
         auto& storageBuffer = context.GetActiveBuffer();
@@ -630,6 +629,7 @@ CATCH_RETURN();
 
         const auto offsetY = writeRectangle.Top() - requestRectangle.Top();
         const auto offsetX = writeRectangle.Left() - requestRectangle.Left();
+        const auto width = writeRectangle.Width();
         auto totalOffset = offsetY * bufferStride + offsetX;
         auto target = writeRectangle.Origin();
 
@@ -638,8 +638,13 @@ CATCH_RETURN();
         // a smaller view over the existing big blob of data from the original call.
         for (; target.y <= writeRectangle.BottomInclusive(); target.y++)
         {
-            // Now we make a subspan starting from that offset for as much of the original request as would fit
-            const auto charInfos = buffer.subspan(totalOffset, writeRectangle.Width());
+            // subspan() does not perform any bounds checks.
+            if ((totalOffset + width) > buffer.size())
+            {
+                return E_INVALIDARG;
+            }
+
+            const auto charInfos = buffer.subspan(totalOffset, width);
 
             // Make the iterator and write to the target position.
             storageBuffer.Write(OutputCellIterator(charInfos), target);

@@ -205,10 +205,10 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         switch (mode)
         {
         case FillConsoleMode::WriteAttribute:
-            it = OutputCellIterator(TextAttribute(*data), lengthToWrite);
+            it = OutputCellIterator({ data, lengthToWrite });
             break;
         case FillConsoleMode::WriteCharacter:
-            it = OutputCellIterator(*data, lengthToWrite);
+            it = OutputCellIterator({ reinterpret_cast<const wchar_t*>(data), lengthToWrite });
             break;
         case FillConsoleMode::FillAttribute:
             it = OutputCellIterator(TextAttribute(*data), lengthToWrite);
