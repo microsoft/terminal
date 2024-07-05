@@ -23,6 +23,7 @@ namespace til
                 //   cryptbase, instead it was using LoadLibrary()/GetProcAddress() on every call.
                 // * advapi32.dll doesn't exist on MinWin, cryptbase.dll however does.
                 module{ LoadLibraryExW(L"cryptbase.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) },
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
                 proc{ reinterpret_cast<decltype(proc)>(GetProcAddress(module.get(), "SystemFunction036")) }
             {
                 FAIL_FAST_LAST_ERROR_IF(!proc);
