@@ -223,7 +223,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        SearchResults Search(const std::wstring_view& text, bool goForward, bool caseSensitive, bool regularExpression, bool reset);
+        SearchResults Search(SearchRequest request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
         void SnapSearchResultToSelection(bool snap) noexcept;
@@ -264,7 +264,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         void PreviewInput(std::wstring_view input);
-        void SetSearchScrollOffset(til::CoordType offset);
 
         RUNTIME_SETTING(float, Opacity, _settings->Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
@@ -338,7 +337,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _colorGlyphs = true;
         CSSLengthPercentage _cellWidth;
         CSSLengthPercentage _cellHeight;
-        til::CoordType _searchScrollOffset = 0;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };

@@ -1689,22 +1689,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - resetOnly: If true, only Reset() will be called, if anything. FindNext() will never be called.
     // Return Value:
     // - <none>
-    SearchResults ControlCore::Search(const std::wstring_view& text, const bool goForward, const bool caseSensitive, const bool regularExpression, const bool resetOnly)
+    SearchResults ControlCore::Search(SearchRequest request)
     {
         const auto lock = _terminal->LockForWriting();
         SearchFlag flags{};
-        WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !caseSensitive);
-        WI_SetFlagIf(flags, SearchFlag::RegularExpression, regularExpression);
-        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), text, flags);
+        WI_SetFlagIf(flags, SearchFlag::CaseInsensitive, !request.CaseSensitive);
+        WI_SetFlagIf(flags, SearchFlag::RegularExpression, request.RegularExpression);
+        const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), request.Text, flags);
 
-        if (searchInvalidated || !resetOnly)
+        if (searchInvalidated || !request.Reset)
         {
             std::vector<til::point_span> oldResults;
 
             if (searchInvalidated)
             {
                 oldResults = _searcher.ExtractResults();
-                _searcher.Reset(*_terminal.get(), text, flags, !goForward);
+                _searcher.Reset(*_terminal.get(), request.Text, flags, !request.GoForward);
 
                 if (SnapSearchResultToSelection())
                 {
@@ -1716,12 +1716,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else
             {
-                _searcher.FindNext(!goForward);
+                _searcher.FindNext(!request.GoForward);
             }
 
             if (const auto idx = _searcher.CurrentMatch(); idx >= 0)
             {
-                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx), _searchScrollOffset);
+                _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(idx), request.ScrollOffset);
             }
             _renderer->TriggerSearchHighlight(oldResults);
         }
@@ -1751,7 +1751,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
         _terminal->SetSearchHighlights({});
-        _terminal->SetSearchHighlightFocused({}, _searchScrollOffset);
+        _terminal->SetSearchHighlightFocused({}, 0);
         _renderer->TriggerSearchHighlight(_searcher.Results());
         _searcher = {};
     }
@@ -2932,10 +2932,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::PreviewInput(std::wstring_view input)
     {
         _terminal->PreviewText(input);
-    }
-
-    void ControlCore::SetSearchScrollOffset(til::CoordType offset)
-    {
-        _searchScrollOffset = offset;
     }
 }
