@@ -630,10 +630,10 @@ bool Utils::IsValidHandle(const HANDLE handle) noexcept
 }
 
 // From ntifs.h, which isn't part of the regular Windows SDK (they're in the driver SDK (WDK)).
-NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(
+__kernel_entry NTSYSCALLAPI NTSTATUS NTAPI NtQueryInformationFile(
     _In_ HANDLE FileHandle,
     _Out_ PIO_STATUS_BLOCK IoStatusBlock,
-    _Out_ PVOID FileInformation,
+    _Out_writes_bytes_(Length) PVOID FileInformation,
     _In_ ULONG Length,
     _In_ FILE_INFORMATION_CLASS FileInformationClass);
 
