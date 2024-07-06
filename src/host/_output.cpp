@@ -75,7 +75,6 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
     const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto routines = ServiceLocator::LocateGlobals().api;
     auto& screenBuffer = screenInfo.GetActiveBuffer();
     const auto bufferSize = screenBuffer.GetBufferSize();
     FillConsoleResult result;
@@ -121,7 +120,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
             end = beg + gsl::narrow_cast<til::CoordType>(len);
 
             auto viewport = Viewport::FromInclusive({ beg, y, end - 1, y });
-            THROW_IF_FAILED(routines->ReadConsoleOutputWImpl(screenInfo, infos, viewport, unused));
+            THROW_IF_FAILED(ReadConsoleOutputWImplHelper(screenInfo, infos, viewport, unused));
 
             switch (mode)
             {

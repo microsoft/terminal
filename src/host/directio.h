@@ -20,9 +20,14 @@ Revision History:
 
 class SCREEN_INFORMATION;
 
+[[nodiscard]] HRESULT ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
+                                                   std::span<CHAR_INFO> targetBuffer,
+                                                   const Microsoft::Console::Types::Viewport& requestRectangle,
+                                                   Microsoft::Console::Types::Viewport& readRectangle) noexcept;
+
 [[nodiscard]] HRESULT WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
                                                     std::span<const CHAR_INFO> buffer,
-                                                    size_t bufferStride,
+                                                    til::CoordType bufferStride,
                                                     const Microsoft::Console::Types::Viewport& requestRectangle,
                                                     Microsoft::Console::Types::Viewport& writtenRectangle) noexcept;
 

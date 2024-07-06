@@ -1044,7 +1044,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             backup.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
             fill.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
 
-            RETURN_IF_FAILED(ReadConsoleOutputWImpl(context, backup, sourceViewport, readViewport));
+            RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, backup, sourceViewport, readViewport));
             RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, w, sourceViewport.Clamp(clipViewport), writtenViewport));
             RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, w, Viewport::FromDimensions(target, readViewport.Dimensions()).Clamp(clipViewport), writtenViewport));
 

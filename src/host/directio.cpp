@@ -463,98 +463,53 @@ CATCH_RETURN();
     return result;
 }
 
-[[nodiscard]] static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
-                                                           std::span<CHAR_INFO> targetBuffer,
-                                                           const Microsoft::Console::Types::Viewport& requestRectangle,
-                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
+[[nodiscard]] HRESULT ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
+                                                   std::span<CHAR_INFO> targetBuffer,
+                                                   const Viewport& requestRectangle,
+                                                   Viewport& readRectangle) noexcept
 {
     try
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto& storageBuffer = context.GetActiveBuffer().GetTextBuffer();
-        const auto storageSize = storageBuffer.GetSize().Dimensions();
+        auto& storageBuffer = context.GetActiveBuffer();
+        const auto storageRectangle = storageBuffer.GetBufferSize();
+        const auto clippedRectangle = storageRectangle.Clamp(requestRectangle);
 
-        const auto targetSize = requestRectangle.Dimensions();
-
-        // If either dimension of the request is too small, return an empty rectangle as read and exit early.
-        if (targetSize.width <= 0 || targetSize.height <= 0)
+        if (!clippedRectangle.IsValid())
         {
             readRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
         }
 
-        // The buffer given should be big enough to hold the dimensions of the request.
-        const auto targetArea = targetSize.area<size_t>();
-        RETURN_HR_IF(E_INVALIDARG, targetArea > targetBuffer.size());
+        const auto bufferStride = gsl::narrow_cast<size_t>(std::max(0, requestRectangle.Width()));
+        const auto width = gsl::narrow_cast<size_t>(clippedRectangle.Width());
+        const auto offsetY = clippedRectangle.Top() - requestRectangle.Top();
+        const auto offsetX = clippedRectangle.Left() - requestRectangle.Left();
+        // We always write the intersection between the valid `storageRectangle` and the given `requestRectangle`.
+        // This means that if the `requestRectangle` is -3 rows above the top of the buffer, we'll start
+        // reading from `buffer` at row offset 3, because the first 3 are outside the valid range.
+        // clippedRectangle.Top/Left() cannot be negative due to the previous Clamp() call.
+        auto totalOffset = offsetY * bufferStride + offsetX;
 
-        auto clip = requestRectangle.ToExclusive();
-
-        // Find the target point (where to write the user's buffer)
-        // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
-        til::point targetPoint;
-        targetPoint.x = clip.left < 0 ? -clip.left : 0;
-        targetPoint.y = clip.top < 0 ? -clip.top : 0;
-
-        // The clipped rect must be inside the buffer size, so it has a minimum value of 0. (max of itself and 0)
-        clip.left = std::max(clip.left, 0);
-        clip.top = std::max(clip.top, 0);
-
-        // Clip the request rectangle to the size of the storage buffer
-        clip.right = std::clamp(clip.right, clip.left, storageSize.width);
-        clip.bottom = std::clamp(clip.bottom, clip.top, storageSize.height);
-
-        // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
-        const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
-
-        if (!clippedRequestRectangle.IsValid())
+        if (bufferStride <= 0 || targetBuffer.size() < (clippedRectangle.Height() * bufferStride))
         {
-            readRectangle = Viewport::FromDimensions(clippedRequestRectangle.Origin(), { 0, 0 });
-            return S_OK;
+            return E_INVALIDARG;
         }
 
-        // We will start reading the buffer at the point of the top left corner (origin) of the (potentially adjusted) request
-        const auto sourcePoint = clippedRequestRectangle.Origin();
-
-        // Get an iterator to the beginning of the return buffer
-        // We might have to seek this forward or skip around if we clipped the request.
-        auto targetIter = targetBuffer.begin();
-        til::point targetPos;
-        const auto targetLimit = Viewport::FromDimensions(targetPoint, clippedRequestRectangle.Dimensions());
-
-        // Get an iterator to the beginning of the request inside the screen buffer
-        // This should walk exactly along every cell of the clipped request.
-        auto sourceIter = storageBuffer.GetCellDataAt(sourcePoint, clippedRequestRectangle);
-
-        // Walk through every cell of the target, advancing the buffer.
-        // Validate that we always still have a valid iterator to the backing store,
-        // that we always are writing inside the user's buffer (before the end)
-        // and we're always targeting the user's buffer inside its original bounds.
-        while (sourceIter && targetIter < targetBuffer.end())
+        for (til::CoordType y = clippedRectangle.Top(); y <= clippedRectangle.BottomInclusive(); y++)
         {
-            // If the point we're trying to write is inside the limited buffer write zone...
-            if (targetLimit.IsInBounds(targetPos))
+            auto it = storageBuffer.GetCellDataAt({ clippedRectangle.Left(), y });
+
+            for (size_t i = 0; i < width; i++)
             {
-                // Copy the data into position...
-                *targetIter = gci.AsCharInfo(*sourceIter);
-                // ... and advance the read iterator.
-                ++sourceIter;
+                targetBuffer[totalOffset + i] = gci.AsCharInfo(*it);
+                ++it;
             }
 
-            // Always advance the write iterator, we might have skipped it due to clipping.
-            ++targetIter;
-
-            // Increment the target
-            targetPos.x++;
-            if (targetPos.x >= targetSize.width)
-            {
-                targetPos.x = 0;
-                targetPos.y++;
-            }
+            totalOffset += bufferStride;
         }
 
-        // Reply with the region we read out of the backing buffer (potentially clipped)
-        readRectangle = clippedRequestRectangle;
-
+        readRectangle = clippedRectangle;
         return S_OK;
     }
     CATCH_RETURN();
@@ -573,7 +528,7 @@ CATCH_RETURN();
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto codepage = gci.OutputCP;
 
-        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
+        RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
 
         LOG_IF_FAILED(_ConvertCellsToAInplace(codepage, buffer, readRectangle));
 
@@ -592,7 +547,7 @@ CATCH_RETURN();
 
     try
     {
-        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
+        RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
 
         if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
@@ -608,43 +563,48 @@ CATCH_RETURN();
 
 [[nodiscard]] HRESULT WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
                                                     std::span<const CHAR_INFO> buffer,
-                                                    size_t bufferStride,
+                                                    til::CoordType bufferStride,
                                                     const Viewport& requestRectangle,
                                                     Viewport& writtenRectangle) noexcept
 {
     try
     {
+        if (bufferStride <= 0)
+        {
+            return E_INVALIDARG;
+        }
+
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto io = gci.GetVtIo(&context);
 
         auto& storageBuffer = context.GetActiveBuffer();
         const auto storageRectangle = storageBuffer.GetBufferSize();
-        const auto writeRectangle = storageRectangle.Clamp(requestRectangle);
+        const auto clippedRectangle = storageRectangle.Clamp(requestRectangle);
 
-        if (!writeRectangle.IsValid())
+        if (!clippedRectangle.IsValid())
         {
             writtenRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
         }
 
-        const auto offsetY = writeRectangle.Top() - requestRectangle.Top();
-        const auto offsetX = writeRectangle.Left() - requestRectangle.Left();
-        const auto width = writeRectangle.Width();
+        const auto width = clippedRectangle.Width();
+        // We always write the intersection between the valid `storageRectangle` and the given `requestRectangle`.
+        // This means that if the `requestRectangle` is -3 rows above the top of the buffer, we'll start
+        // reading from `buffer` at row offset 3, because the first 3 are outside the valid range.
+        // clippedRectangle.Top/Left() cannot be negative due to the previous Clamp() call.
+        const auto offsetY = clippedRectangle.Top() - requestRectangle.Top();
+        const auto offsetX = clippedRectangle.Left() - requestRectangle.Left();
         auto totalOffset = offsetY * bufferStride + offsetX;
-        auto target = writeRectangle.Origin();
 
-        // For every row in the request, create a view into the clamped portion of just the one line to write.
-        // This allows us to restrict the width of the call without allocating/copying any memory by just making
-        // a smaller view over the existing big blob of data from the original call.
-        for (; target.y <= writeRectangle.BottomInclusive(); target.y++)
+        if (bufferStride <= 0 || buffer.size() < (clippedRectangle.Height() * bufferStride))
         {
-            // subspan() does not perform any bounds checks.
-            if ((totalOffset + width) > buffer.size())
-            {
-                return E_INVALIDARG;
-            }
+            return E_INVALIDARG;
+        }
 
+        for (til::CoordType y = clippedRectangle.Top(); y <= clippedRectangle.BottomInclusive(); y++)
+        {
             const auto charInfos = buffer.subspan(totalOffset, width);
+            const til::point target{ clippedRectangle.Left(), y };
 
             // Make the iterator and write to the target position.
             storageBuffer.Write(OutputCellIterator(charInfos), target);
@@ -658,10 +618,10 @@ CATCH_RETURN();
         }
 
         // If we've overwritten image content, it needs to be erased.
-        ImageSlice::EraseBlock(storageBuffer.GetTextBuffer(), writeRectangle.ToExclusive());
+        ImageSlice::EraseBlock(storageBuffer.GetTextBuffer(), clippedRectangle.ToExclusive());
 
         // Since we've managed to write part of the request, return the clamped part that we actually used.
-        writtenRectangle = writeRectangle;
+        writtenRectangle = clippedRectangle;
 
         return S_OK;
     }
