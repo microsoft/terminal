@@ -35,9 +35,6 @@ constexpr CHAR_INFO blu(wchar_t ch) noexcept
 // What the default attributes `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED` result in.
 #define sgr_rst() "\x1b[0m"
 
-// Any RIS sequence should re-enable our required ConPTY modes Focus Event Mode and Win32 Input Mode.
-#define ris() "\033c\x1b[?1004h\x1b[?9001h\x1b[?7h\x1b[20h"
-
 static constexpr std::wstring_view s_initialContentVT{
     // clang-format off
     L""
@@ -411,7 +408,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         // cmd uses ScrollConsoleScreenBuffer to clear the buffer contents and that gets translated to a clear screen sequence.
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -4 }, std::nullopt, 0, 0, true));
-        expected = ris();
+        expected = "\x1b[H\x1b[2J\x1b[3J";
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
