@@ -491,7 +491,7 @@ CATCH_RETURN();
         // clippedRectangle.Top/Left() cannot be negative due to the previous Clamp() call.
         auto totalOffset = offsetY * bufferStride + offsetX;
 
-        if (bufferStride <= 0 || targetBuffer.size() < (clippedRectangle.Height() * bufferStride))
+        if (bufferStride <= 0 || targetBuffer.size() < gsl::narrow_cast<size_t>(clippedRectangle.Height() * bufferStride))
         {
             return E_INVALIDARG;
         }
@@ -596,7 +596,7 @@ CATCH_RETURN();
         const auto offsetX = clippedRectangle.Left() - requestRectangle.Left();
         auto totalOffset = offsetY * bufferStride + offsetX;
 
-        if (bufferStride <= 0 || buffer.size() < (clippedRectangle.Height() * bufferStride))
+        if (bufferStride <= 0 || buffer.size() < gsl::narrow_cast<size_t>(clippedRectangle.Height() * bufferStride))
         {
             return E_INVALIDARG;
         }

@@ -422,7 +422,7 @@ void VtIo::WriteUCS2(wchar_t ch)
 // CUP: Cursor Position
 void VtIo::WriteCUP(til::point position)
 {
-    WriteFormat("\x1b[{};{}H", position.y + 1, position.x + 1);
+    WriteFormat(FMT_COMPILE("\x1b[{};{}H"), position.y + 1, position.x + 1);
 }
 
 // DECTCEM: Text Cursor Enable
