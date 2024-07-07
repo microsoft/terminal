@@ -2090,6 +2090,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     _currentString = string;
     _runOffset = 0;
     _runSize = 0;
+    _injections.clear();
 
     if (_state != VTStates::Ground)
     {
@@ -2204,6 +2205,16 @@ void StateMachine::ProcessString(const std::wstring_view string)
 bool StateMachine::IsProcessingLastCharacter() const noexcept
 {
     return _processingLastCharacter;
+}
+
+void StateMachine::InjectSequence(const InjectionType type)
+{
+    _injections.emplace_back(type, _runOffset + _runSize);
+}
+
+const til::small_vector<Injection, 8>& StateMachine::GetInjections() const noexcept
+{
+    return _injections;
 }
 
 // Routine Description:

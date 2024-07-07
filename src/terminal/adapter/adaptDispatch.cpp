@@ -1551,7 +1551,7 @@ bool AdaptDispatch::DeviceAttributes()
     // 32 = Text macros
     // 42 = ISO Latin-2 character set
 
-        _api.ReturnResponse(L"\x1b[?61;1;4;6;7;14;21;22;23;24;28;32;42c");
+    _api.ReturnResponse(L"\x1b[?61;1;4;6;7;14;21;22;23;24;28;32;42c");
     return true;
 }
 
@@ -1999,6 +1999,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
+        _api.GetStateMachine().InjectSequence(InjectionType::DECSET_FOCUS);
         return true;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
@@ -2082,7 +2083,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi));
         break;
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-            state = mapTemp(_modes.test(Mode::Column));
+        state = mapTemp(_modes.test(Mode::Column));
         break;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         state = mapTemp(_renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed));
@@ -2103,7 +2104,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-            state = mapTemp(_modes.test(Mode::AllowDECCOLM));
+        state = mapTemp(_modes.test(Mode::AllowDECCOLM));
         break;
     case DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode:
         state = mapTemp(_modes.test(Mode::PageCursorCoupling));
@@ -3241,6 +3242,7 @@ bool AdaptDispatch::HardReset()
         _macroBuffer = nullptr;
     }
 
+    _api.GetStateMachine().InjectSequence(InjectionType::RIS);
     return true;
 }
 

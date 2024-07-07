@@ -23,8 +23,8 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::VirtualTerminal;
 using Microsoft::Console::Interactivity::ServiceLocator;
-using Microsoft::Console::VirtualTerminal::StateMachine;
 
 constexpr bool controlCharPredicate(wchar_t wch)
 {
@@ -339,42 +339,38 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
 void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& stateMachine = screenInfo.GetStateMachine();
+
+    stateMachine.ProcessString(str);
 
     if (const auto io = gci.GetVtIo(&screenInfo))
     {
-        using Mode = Microsoft::Console::VirtualTerminal::TerminalInput::Mode;
-
-        auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
-
-        // These two modes are ones that should always stay enabled when we're ConPTY.
-        // To figure out whether some VT sequence disabled them (primarily RIS = ESC c),
-        // we temporarily enable them, restore them, and check if they got reset in between.
-        const auto beforeFocusEvent = terminalInput.GetInputMode(Mode::FocusEvent);
-        const auto beforeWin32 = terminalInput.GetInputMode(Mode::Win32);
-        terminalInput.SetInputMode(Mode::FocusEvent, true);
-        terminalInput.SetInputMode(Mode::Win32, true);
-
-        screenInfo.GetStateMachine().ProcessString(str);
-
-        const auto afterFocusEvent = terminalInput.GetInputMode(Mode::FocusEvent);
-        const auto afterWin32 = terminalInput.GetInputMode(Mode::Win32);
-        terminalInput.SetInputMode(Mode::FocusEvent, beforeFocusEvent);
-        terminalInput.SetInputMode(Mode::Win32, beforeWin32);
-
         const auto cork = io->Cork();
-        io->WriteUTF16(str);
-        if (!afterFocusEvent)
+        const auto& injections = stateMachine.GetInjections();
+        size_t offset = 0;
+
+        for (const auto& injection : injections)
         {
-            io->WriteUTF8("\033[?1004h");
+            io->WriteUTF16(til::safe_slice_abs(str, offset, injection.offset));
+            offset = injection.offset;
+
+            switch (injection.type)
+            {
+            case InjectionType::RIS:
+                io->WriteUTF8(
+                    "\033[?1004h" // Focus Event Mode
+                    "\033[?9001h" // Win32 Input Mode
+                );
+                break;
+            case InjectionType::DECSET_FOCUS:
+                io->WriteUTF8(
+                    "\033[?1004h" // Focus Event Mode
+                );
+                break;
+            }
         }
-        if (!afterWin32)
-        {
-            io->WriteUTF8("\033[?9001h");
-        }
-    }
-    else
-    {
-        screenInfo.GetStateMachine().ProcessString(str);
+
+        io->WriteUTF16(til::safe_slice_abs(str, offset, std::wstring_view::npos));
     }
 }
 

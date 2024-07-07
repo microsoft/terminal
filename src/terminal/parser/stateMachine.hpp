@@ -37,6 +37,18 @@ namespace Microsoft::Console::VirtualTerminal
     // the their indexes.
     static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
 
+    enum class InjectionType : size_t
+    {
+        RIS,
+        DECSET_FOCUS,
+    };
+
+    struct Injection
+    {
+        InjectionType type;
+        size_t offset;
+    };
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -65,10 +77,11 @@ namespace Microsoft::Console::VirtualTerminal
         void ProcessString(const std::wstring_view string);
         bool IsProcessingLastCharacter() const noexcept;
 
+        void InjectSequence(InjectionType type);
+        const til::small_vector<Injection, 8>& GetInjections() const noexcept;
+
         void OnCsiComplete(const std::function<void()> callback);
-
         void ResetState() noexcept;
-
         bool FlushToTerminal();
 
         const IStateMachineEngine& Engine() const noexcept;
@@ -211,6 +224,7 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
+        til::small_vector<Injection, 8> _injections;
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
