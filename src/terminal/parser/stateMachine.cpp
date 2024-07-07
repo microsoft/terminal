@@ -1858,7 +1858,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         // code points that get translated as C1 controls when that is not their
         // intended use. In order to avoid them triggering unintentional escape
         // sequences, we ignore these characters by default.
-        if (_parserMode.any(Mode::AcceptC1, Mode::AlwaysAcceptC1))
+        if (_parserMode.test(Mode::AcceptC1))
         {
             ProcessCharacter(AsciiChars::ESC);
             ProcessCharacter(_c1To7Bit(wch));

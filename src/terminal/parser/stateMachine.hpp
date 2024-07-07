@@ -55,7 +55,6 @@ namespace Microsoft::Console::VirtualTerminal
         enum class Mode : size_t
         {
             AcceptC1,
-            AlwaysAcceptC1,
             Ansi,
         };
 
