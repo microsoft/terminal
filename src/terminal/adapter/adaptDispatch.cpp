@@ -2179,7 +2179,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 // - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
+bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 {
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
     return true;

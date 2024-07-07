@@ -95,7 +95,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetMode(const DispatchTypes::ModeParams param) override; // SM, DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // RM, DECRST
         bool RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
-        bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
+        bool SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
