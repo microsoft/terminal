@@ -195,12 +195,6 @@ public:
         Log::Comment(L"PlayMidiNote MOCK called...");
     }
 
-    bool IsConsolePty() const override
-    {
-        Log::Comment(L"IsConsolePty MOCK called...");
-        return _isPty;
-    }
-
     void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
     {
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");

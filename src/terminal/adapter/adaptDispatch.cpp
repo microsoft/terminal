@@ -1551,14 +1551,7 @@ bool AdaptDispatch::DeviceAttributes()
     // 32 = Text macros
     // 42 = ISO Latin-2 character set
 
-    if (_api.IsConsolePty())
-    {
-        _api.ReturnResponse(L"\x1b[?61;6;7;14;21;22;23;24;28;32;42c");
-    }
-    else
-    {
         _api.ReturnResponse(L"\x1b[?61;1;4;6;7;14;21;22;23;24;28;32;42c");
-    }
     return true;
 }
 
@@ -1853,7 +1846,7 @@ bool AdaptDispatch::RequestDisplayedExtent()
 void AdaptDispatch::_SetColumnMode(const bool enable)
 {
     // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
-    if (_modes.test(Mode::AllowDECCOLM) && !_api.IsConsolePty())
+    if (_modes.test(Mode::AllowDECCOLM))
     {
         const auto page = _pages.VisiblePage();
         const auto pageHeight = page.Height();
@@ -1894,23 +1887,6 @@ void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
 }
 
 // Routine Description:
-// - Determines whether we need to pass through input mode requests.
-//   If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-//   The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-//   output, but not Input.
-//   The original comment said, "Once the conpty supports these types of input,
-//   this check can be removed. See GH#4911". Unfortunately, time has shown
-//   us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-//   impact on the actual connected terminal. We can't remove this check,
-//   because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-// Return Value:
-// - True if we should pass through. False otherwise.
-bool AdaptDispatch::_PassThroughInputModes()
-{
-    return _api.IsConsolePty() && _api.IsVtInputEnabled();
-}
-
-// Routine Description:
 // - Support routine for routing mode parameters to be set/reset as flags
 // Arguments:
 // - param - mode parameter to set/reset
@@ -1935,7 +1911,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
         return SetAnsiMode(enable);
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
@@ -1963,7 +1939,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         _pages.ActivePage().Cursor().SetBlinkingAllowed(enable);
         return true;
@@ -1982,10 +1958,10 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
         _modes.set(Mode::AllowDECSLRM, enable);
         _DoSetLeftRightScrollingMargins(0, 0);
@@ -2008,27 +1984,25 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
-        // GH#12799 - If the app requested that we disable focus events, DON'T pass
-        // that through. ConPTY would _always_ like to know about focus events.
-        return !_PassThroughInputModes() || !enable;
+        return true;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
-        return !_PassThroughInputModes();
+        return true;
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         _SetAlternateScreenBufferMode(enable);
         return true;
@@ -2108,11 +2082,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi));
         break;
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-        // DECCOLM is not supported in conpty mode
-        if (!_api.IsConsolePty())
-        {
             state = mapTemp(_modes.test(Mode::Column));
-        }
         break;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         state = mapTemp(_renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed));
@@ -2133,11 +2103,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-        // DECCOLM is not supported in conpty mode
-        if (!_api.IsConsolePty())
-        {
             state = mapTemp(_modes.test(Mode::AllowDECCOLM));
-        }
         break;
     case DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode:
         state = mapTemp(_modes.test(Mode::PageCursorCoupling));
@@ -2215,7 +2181,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
-    return !_PassThroughInputModes();
+    return true;
 }
 
 // Routine Description:

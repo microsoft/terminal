@@ -310,11 +310,6 @@ void Terminal::ShowWindow(bool showOrHide)
     }
 }
 
-bool Terminal::IsConsolePty() const noexcept
-{
-    return false;
-}
-
 bool Terminal::IsVtInputEnabled() const noexcept
 {
     return false;

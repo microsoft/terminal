@@ -265,7 +265,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _SetColumnMode(const bool enable);
         void _SetAlternateScreenBufferMode(const bool enable);
-        bool _PassThroughInputModes();
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
 
         void _ClearSingleTabStop();

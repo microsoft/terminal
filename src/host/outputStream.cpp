@@ -350,7 +350,7 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     // to do this in pty mode, because the conpty resize operation is dependent
     // on the viewport *not* being adjusted.
     const auto cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
-    if (cursorOverflow > 0 && !IsConsolePty())
+    if (cursorOverflow > 0)
     {
         newViewport = Viewport::Offset(newViewport, { 0, cursorOverflow });
     }
@@ -365,17 +365,6 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     THROW_IF_FAILED(api->SetConsoleScreenBufferInfoExImpl(screenInfo, csbiex));
     THROW_IF_FAILED(api->SetConsoleWindowInfoImpl(screenInfo, true, sri));
     return true;
-}
-
-// Routine Description:
-// - Checks if the console host is acting as a pty.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if we're in pty mode.
-bool ConhostInternalGetSet::IsConsolePty() const
-{
-    return ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo(nullptr);
 }
 
 // Routine Description:
