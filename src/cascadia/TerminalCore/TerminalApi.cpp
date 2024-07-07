@@ -193,11 +193,6 @@ void Terminal::PlayMidiNote(const int noteNumber, const int velocity, const std:
 
 void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
-    if (_inAltBuffer())
-    {
-        return;
-    }
-
     // the new alt buffer is exactly the size of the viewport.
     _altBufferSize = _mutableViewport.Dimensions();
 
