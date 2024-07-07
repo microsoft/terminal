@@ -130,7 +130,7 @@ VtIo* CONSOLE_INFORMATION::GetVtIo() noexcept
 
 VtIo* CONSOLE_INFORMATION::GetVtIoForBuffer(const SCREEN_INFORMATION* context) noexcept
 {
-    return _vtIo.IsUsingVt() && (context == pCurrentMainScreenBuffer || context == pCurrentScreenBuffer) ? &_vtIo : nullptr;
+    return _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer()) ? &_vtIo : nullptr;
 }
 
 bool CONSOLE_INFORMATION::IsConPTY() const noexcept
@@ -189,11 +189,6 @@ const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
     return *pCurrentScreenBuffer;
 }
 
-const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveMainOutputBuffer() const
-{
-    return *pCurrentMainScreenBuffer;
-}
-
 void CONSOLE_INFORMATION::SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer)
 {
     if (pCurrentScreenBuffer)
@@ -202,7 +197,6 @@ void CONSOLE_INFORMATION::SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer
     }
     pCurrentScreenBuffer = &screenBuffer;
     pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(true);
-    pCurrentMainScreenBuffer = &screenBuffer.GetMainBuffer();
 }
 
 bool CONSOLE_INFORMATION::HasActiveOutputBuffer() const

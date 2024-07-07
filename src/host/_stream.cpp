@@ -320,10 +320,13 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& stateMachine = screenInfo.GetStateMachine();
+    // When switch between the main and alt-buffer SCREEN_INFORMATION::GetActiveBuffer()
+    // may change, so get the VtIo reference now, just in case.
+    const auto io = gci.GetVtIoForBuffer(&screenInfo);
 
     stateMachine.ProcessString(str);
 
-    if (const auto io = gci.GetVtIoForBuffer(&screenInfo))
+    if (io)
     {
         const auto cork = io->Cork();
         const auto& injections = stateMachine.GetInjections();

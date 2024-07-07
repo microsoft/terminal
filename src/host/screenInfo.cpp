@@ -1747,6 +1747,11 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     return *this;
 }
 
+const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
+{
+    return _psiAlternateBuffer;
+}
+
 // Routine Description:
 // - Instantiates a new buffer to be used as an alternate buffer. This buffer
 //     does not have a driver handle associated with it and shares a state

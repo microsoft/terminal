@@ -190,7 +190,7 @@ public:
 
     SCREEN_INFORMATION& GetMainBuffer();
     const SCREEN_INFORMATION& GetMainBuffer() const;
-
+    const SCREEN_INFORMATION* GetAltBuffer() const noexcept;
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
