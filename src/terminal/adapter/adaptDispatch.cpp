@@ -1538,8 +1538,7 @@ bool AdaptDispatch::DeviceAttributes()
     // level of 1. The subsequent parameters identify the supported feature
     // extensions.
     //
-    // 1 = 132 column mode (ConHost only)
-    // 4 = Sixel Graphics (ConHost only)
+    // 4 = Sixel Graphics
     // 6 = Selective erase
     // 7 = Soft fonts
     // 14 = 8-bit interface architecture
@@ -1551,7 +1550,7 @@ bool AdaptDispatch::DeviceAttributes()
     // 32 = Text macros
     // 42 = ISO Latin-2 character set
 
-    _api.ReturnResponse(L"\x1b[?61;1;4;6;7;14;21;22;23;24;28;32;42c");
+    _api.ReturnResponse(L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42c");
     return true;
 }
 
