@@ -575,7 +575,7 @@ CATCH_RETURN();
         }
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto io = gci.GetVtIo(&context);
+        const auto io = gci.GetVtIoForBuffer(&context);
 
         auto& storageBuffer = context.GetActiveBuffer();
         const auto storageRectangle = storageBuffer.GetBufferSize();
@@ -639,7 +639,7 @@ CATCH_RETURN();
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto io = gci.GetVtIo(&context);
+        const auto io = gci.GetVtIoForBuffer(&context);
         const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
 
         const auto codepage = gci.OutputCP;
@@ -669,7 +669,7 @@ CATCH_RETURN();
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto io = gci.GetVtIo(&context);
+        const auto io = gci.GetVtIoForBuffer(&context);
         const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
 
         if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())

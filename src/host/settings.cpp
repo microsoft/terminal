@@ -181,7 +181,7 @@ void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
         _dwScreenBufferSize.Y = height;
         _dwWindowSize.Y = height;
     }
-    else if (ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo(nullptr))
+    else if (ServiceLocator::LocateGlobals().getConsoleInformation().IsConPTY())
     {
         // If we're a PTY but we weren't explicitly told a size, use the window size as the buffer size.
         _dwScreenBufferSize = _dwWindowSize;

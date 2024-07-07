@@ -497,7 +497,7 @@ void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
     // this message, if it's already minimized. If the window is maximized a
     // restore will restore-down the window instead.
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (const auto io = gci.GetVtIo(nullptr))
+    if (const auto io = gci.GetVtIo())
     {
         char buf[] = "\x1b[1t";
         buf[2] = showOrHide ? '1' : '2';

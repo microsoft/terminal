@@ -98,7 +98,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         return {};
     }
 
-    if (const auto io = gci.GetVtIo(&screenInfo))
+    if (const auto io = gci.GetVtIoForBuffer(&screenInfo))
     {
         const auto corkLock = io->Cork();
 
@@ -382,7 +382,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(&OutContext))
+        if (const auto io = gci.GetVtIoForBuffer(&OutContext))
         {
             // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
             // the vintage console, `Clear-Host` is supposed to clear the entire
@@ -438,7 +438,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(&OutContext))
+        if (const auto io = gci.GetVtIoForBuffer(&OutContext))
         {
             // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
             // the vintage console, `Clear-Host` is supposed to clear the entire

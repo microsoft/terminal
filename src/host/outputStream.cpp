@@ -36,7 +36,7 @@ void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // ConPTY should not respond to requests. That's the job of the terminal.
-    if (gci.GetVtIo(nullptr))
+    if (gci.IsConPTY())
     {
         return;
     }
@@ -211,7 +211,7 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto hwnd = gci.GetVtIo(nullptr) ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    const auto hwnd = gci.IsConPTY() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
     // conhost HWND, it's going to need to get processed by the window message
@@ -346,9 +346,7 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     }
 
     // If the cursor row is now past the bottom of the viewport, we'll have to
-    // move the viewport down to bring it back into view. However, we don't want
-    // to do this in pty mode, because the conpty resize operation is dependent
-    // on the viewport *not* being adjusted.
+    // move the viewport down to bring it back into view.
     const auto cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
     if (cursorOverflow > 0)
     {

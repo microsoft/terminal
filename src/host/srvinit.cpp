@@ -852,7 +852,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // No matter what, create a renderer.
     try
     {
-        if (!gci.GetVtIo(nullptr))
+        if (!gci.IsConPTY())
         {
             auto renderThread = std::make_unique<RenderThread>();
             // stash a local pointer to the thread here -

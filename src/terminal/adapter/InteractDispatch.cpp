@@ -173,7 +173,7 @@ bool InteractDispatch::FocusChanged(const bool focused) const
 
     // This should likely always be true - we shouldn't ever have an
     // InteractDispatch outside ConPTY mode, but just in case...
-    if (gci.GetVtIo(nullptr))
+    if (gci.IsConPTY())
     {
         auto shouldActuallyFocus = false;
 

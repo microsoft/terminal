@@ -77,6 +77,7 @@ namespace Microsoft::Console::VirtualTerminal
         }
         void WriteUTF8(std::string_view str);
         void WriteUTF16(std::wstring_view str);
+        void WriteUTF16StripControlChars(std::wstring_view str);
         void WriteUCS2(wchar_t ch);
         void WriteCUP(til::point position);
         void WriteDECTCEM(bool enabled);

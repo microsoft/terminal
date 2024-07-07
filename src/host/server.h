@@ -103,8 +103,10 @@ public:
     bool IsConsoleLocked() const noexcept;
     ULONG GetCSRecursionCount() const noexcept;
 
-    Microsoft::Console::VirtualTerminal::VtIo* GetVtIoNoCheck();
-    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo(const SCREEN_INFORMATION* context);
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIoNoCheck() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo() noexcept;
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIoForBuffer(const SCREEN_INFORMATION* context) noexcept;
+    bool IsConPTY() const noexcept;
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;

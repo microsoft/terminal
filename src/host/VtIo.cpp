@@ -386,6 +386,30 @@ void VtIo::WriteUTF16(std::wstring_view str)
     _flush();
 }
 
+// Same as WriteUTF16, but replaces control characters with spaces.
+// We don't outright remove them because that would mess up the cursor position.
+// conhost traditionally assigned control chars a width of 1 when in the raw write mode.
+void VtIo::WriteUTF16StripControlChars(std::wstring_view str)
+{
+    const auto cork = Cork();
+    auto it = str.data();
+    const auto end = it + str.size();
+
+    // We can picture `str` as a repeated sequence of regular characters followed by control characters.
+    while (it != end)
+    {
+        const auto begControlChars = Microsoft::Console::Utils::FindActionableControlCharacter(it, end - it);
+        const auto begRegularChars = Microsoft::Console::Utils::FindNonActionableRegularCharacter(begControlChars, end - begControlChars);
+
+        WriteUTF16({ it, begControlChars }); // First we append the regular characters.
+        _back.append(begRegularChars - begControlChars, ' '); // And then as many spaces as control characters.
+
+        it = begRegularChars;
+    }
+
+    _flush();
+}
+
 void VtIo::WriteUCS2(wchar_t ch)
 {
     char buf[4];

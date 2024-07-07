@@ -52,7 +52,6 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 {
     BEGIN_TEST_CLASS(VtIoTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
-        //TEST_CLASS_PROPERTY(L"TestTimeout", L"0:1:0") // 1min
     END_TEST_CLASS()
 
     CommonState commonState;
@@ -142,10 +141,30 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(SetConsoleTitleW)
     {
-        THROW_IF_FAILED(routines.SetConsoleTitleWImpl(L"foobar"));
+        const char* expected = nullptr;
+        std::string_view actual;
 
-        const auto expected = "\x1b]0;foobar\a";
-        const auto actual = readOutput();
+        THROW_IF_FAILED(routines.SetConsoleTitleWImpl(
+            L"foobar"));
+        expected = "\x1b]0;foobar\a";
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        THROW_IF_FAILED(routines.SetConsoleTitleWImpl(
+            L"foo"
+            "\u0001\u001f"
+            "bar"));
+        expected = "\x1b]0;foo  bar\a";
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        THROW_IF_FAILED(routines.SetConsoleTitleWImpl(
+            L"foo"
+            "\u0001\u001f"
+            "bar"
+            "\u007f\u009f"));
+        expected = "\x1b]0;foo  bar  \a";
+        actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
     }
 

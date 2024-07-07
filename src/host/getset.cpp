@@ -363,7 +363,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
         }
 
-        if (const auto io = gci.GetVtIo(nullptr))
+        if (const auto io = gci.GetVtIo())
         {
             auto oldMode = context.InputMode;
             auto newMode = mode;
@@ -451,7 +451,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         }
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(&context))
+        if (const auto io = gci.GetVtIoForBuffer(&context))
         {
             if (WI_IsFlagSet(diff, ENABLE_WRAP_AT_EOL_OUTPUT))
             {
@@ -481,7 +481,7 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(nullptr))
+        if (const auto io = gci.GetVtIo())
         {
             const auto cork = io->Cork();
 
@@ -781,7 +781,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(&context))
+        if (const auto io = gci.GetVtIoForBuffer(&context))
         {
             io->WriteCUP(position);
         }
@@ -861,7 +861,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         context.SetCursorInformation(size, isVisible);
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(&context))
+        if (const auto io = gci.GetVtIoForBuffer(&context))
         {
             io->WriteDECTCEM(isVisible);
         }
@@ -912,7 +912,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
         //      will only return the buffer size, so we can't use that to clip the arg here.
         // So only clip the requested size if we're not headless
-        if (g.getConsoleInformation().GetVtIo(nullptr))
+        if (g.getConsoleInformation().IsConPTY())
         {
             // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
             RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
@@ -993,7 +993,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(&context))
+        if (const auto io = gci.GetVtIoForBuffer(&context))
         {
             auto& buffer = context.GetActiveBuffer();
 
@@ -1087,7 +1087,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         context.SetAttributes(attr);
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo(&context))
+        if (const auto io = gci.GetVtIoForBuffer(&context))
         {
             io->WriteAttributes(attribute);
         }
@@ -1223,7 +1223,7 @@ void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
             //      console, so that they know that this console is in fact a real
             //      console window.
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            if (gci.GetVtIo(nullptr))
+            if (gci.IsConPTY())
             {
                 hwnd = ServiceLocator::LocatePseudoWindow();
             }
@@ -1627,10 +1627,12 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetTitle(title);
 
-    if (const auto io = gci.GetVtIo(nullptr))
+    if (const auto io = gci.GetVtIo())
     {
-        const auto title8 = til::u16u8(title);
-        io->WriteFormat(FMT_COMPILE("\x1b]0;{}\x7"), title8);
+        const auto cork = io->Cork();
+        io->WriteUTF8("\x1b]0;");
+        io->WriteUTF16StripControlChars(title);
+        io->WriteUTF8("\x7");
     }
 
     return S_OK;
