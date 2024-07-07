@@ -373,12 +373,38 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
                                                                   const WORD attribute,
                                                                   const size_t lengthToWrite,
                                                                   const til::point startingCoordinate,
-                                                                  size_t& cellsModified) noexcept
+                                                                  size_t& cellsModified,
+                                                                  const bool enablePowershellShim) noexcept
 {
     try
     {
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (const auto io = gci.GetVtIo(&OutContext))
+        {
+            // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
+            // the vintage console, `Clear-Host` is supposed to clear the entire
+            // buffer. In conpty however, there's no difference between the viewport
+            // and the entirety of the buffer. We're going to see if this API call
+            // exactly matched the way we expect powershell to call it. If it does,
+            // then let's manually emit a Full Reset (RIS).
+            if (enablePowershellShim)
+            {
+                const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
+                const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
+                const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
+                const auto wroteSpaces = attribute == (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+
+                if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+                {
+                    // PowerShell has previously called FillConsoleOutputCharacterW() which triggered a call to WriteClearScreen().
+                    cellsModified = lengthToWrite;
+                    return S_OK;
+                }
+            }
+        }
 
         cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillAttribute, &attribute, lengthToWrite, startingCoordinate).cellsModified;
         return S_OK;
@@ -429,7 +455,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
 
                 if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
                 {
-                    WriteCharsVT(OutContext, L"\033c");
+                    WriteClearScreen(OutContext);
                     cellsModified = lengthToWrite;
                     return S_OK;
                 }

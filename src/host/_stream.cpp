@@ -374,6 +374,21 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
     }
 }
 
+void WriteClearScreen(SCREEN_INFORMATION& screenInfo)
+{
+    std::wstring buffer;
+    buffer.append(L"\033c");
+    if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT))
+    {
+        buffer.append(L"\x1b[?7h"); // DECAWM: Autowrap Mode
+    }
+    if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
+    {
+        buffer.append(L"\x1b[20h"); // LNM: Line Feed / New Line Mode
+    }
+    WriteCharsVT(screenInfo, buffer);
+}
+
 // Routine Description:
 // - Takes the given text and inserts it into the given screen buffer.
 // Note:

@@ -1019,7 +1019,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                 !clip &&
                 fillCharacter == UNICODE_SPACE && fillAttribute == buffer.GetAttributes().GetLegacyAttributes())
             {
-                WriteCharsVT(context, L"\033c");
+                WriteClearScreen(context);
                 return S_OK;
             }
 
