@@ -36,7 +36,7 @@ constexpr CHAR_INFO blu(wchar_t ch) noexcept
 #define sgr_rst() "\x1b[0m"
 
 // Any RIS sequence should re-enable our required ConPTY modes Focus Event Mode and Win32 Input Mode.
-#define ris() "\033c\x1b[?1004h\x1b[?9001h"
+#define ris() "\033c\x1b[?1004h\x1b[?9001h\x1b[?7h\x1b[20h"
 
 static constexpr std::wstring_view s_initialContentVT{
     // clang-format off
