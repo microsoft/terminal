@@ -106,7 +106,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::WUX::Media::Brush SnippetsPaneContent::BackgroundBrush()
     {
-        static const auto key = winrt::box_value(L"UnfocusedBorderBrush");
+        static const auto key = winrt::box_value(L"SettingsUiTabBrush");
         return ThemeLookup(WUX::Application::Current().Resources(),
                            _settings.GlobalSettings().CurrentTheme().RequestedTheme(),
                            key)

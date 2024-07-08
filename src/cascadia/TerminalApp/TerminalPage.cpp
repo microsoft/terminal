@@ -4687,7 +4687,10 @@ namespace winrt::TerminalApp::implementation
         {
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
-            TitlebarBrush(themeBrush);
+            // If the tab content returned nullptr for the terminalBrush, we
+            // _don't_ want to use it as the tab row background. We want to just
+            // use the default tab row background.
+            TitlebarBrush(themeBrush ? themeBrush : backgroundSolidBrush);
         }
         else
         {
