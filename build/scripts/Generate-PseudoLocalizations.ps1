@@ -1,5 +1,5 @@
-Get-ChildItem -Recurse -Filter *.resw
-    | Where-Object { $_.Directory.Name.StartsWith("qps-ploc") }
+Get-ChildItem -Recurse -Directory -Filter qps-ploc*
+    | Get-ChildItem -Include *.resw,*.xml
     | ForEach-Object {
         $source = Join-Path $_.Directory "../en-US/$($_.Name)"
         $target = $_

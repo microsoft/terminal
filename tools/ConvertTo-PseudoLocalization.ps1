@@ -1,5 +1,5 @@
 param(
-    [Parameter(Mandatory=$True)]
+    [Parameter(Mandatory = $True)]
     [string]$Path
 )
 
@@ -55,40 +55,14 @@ $mapping['Y'[0]] = '¥ÝŶΎΥΫỲЎ'
 $mapping['z'[0]] = 'źżž'
 $mapping['Z'[0]] = 'ŹŻΖŽ'
 
-[xml]$content = Get-Content $Path
+$content = [System.Xml.XmlDocument]::new()
+$content.PreserveWhitespace = $true
+$content.Load($Path)
 
-foreach ($entry in $content.root.data) {
-    $value = $entry.value
-    $comment = $entry.comment ?? ''
-    $placeholders = @{}
-
-    if ($comment.StartsWith('{Locked')) {
-        # Skip {Locked} and {Locked=qps-ploc} entries
-        if ($comment -match '\{Locked(\}|=[^}]*qps-ploc).*') {
-            continue
-        }
-
-        $lockedList = ($comment -replace '\{Locked=(.*?)\}.*','$1') -split ','
-        $placeholderChar = 0xE000
-
-        # Replaced all locked words with placeholders from the Unicode Private Use Area
-        foreach ($locked in $lockedList) {
-            if ($locked.StartsWith('"') -and $locked.EndsWith('"')) {
-                $locked = $locked.Substring(1, $locked.Length - 2)
-                $locked = $locked.Replace('\"', '"')
-            }
-
-            $placeholder = "$([char]$placeholderChar)"
-            $placeholderChar++
-
-            $placeholders[$placeholder] = $locked
-            $value = $value.Replace($locked, $placeholder)
-        }
-    }
-
-    # We can't rely on $entry.name.GetHashCode() to be consistent across different runs,
+function GetPseudoLocalization([string]$key, [string]$value) {
+    # We can't rely on $key.GetHashCode() to be consistent across different runs,
     # because in the future PowerShell may enable UseRandomizedStringHashAlgorithm.
-    $hash = [System.Text.Encoding]::UTF8.GetBytes($entry.name)
+    $hash = [System.Text.Encoding]::UTF8.GetBytes($key)
     $hash = [System.Security.Cryptography.SHA1]::Create().ComputeHash($hash)
     $hash = [System.BitConverter]::ToInt32($hash)
 
@@ -98,22 +72,86 @@ foreach ($entry in $content.root.data) {
     foreach ($char in $value.ToCharArray()) {
         if ($m = $mapping[$char]) {
             $newValue += $m[$rng.Next(0, $mapping[$char].Length)]
-        } else {
+        }
+        else {
             $newValue += $char
         }
     }
 
-    # Replace all placeholders with their original values
-    foreach ($kv in $placeholders.GetEnumerator()) {
-        $newValue = $newValue.Replace($kv.Key, $kv.Value)
+    return $newValue
+}
+
+function PadPseudoLocalization([string]$value) {
+    # Add 40% padding to the end of the string
+    $paddingLength = [System.Math]::Round(0.4 * $value.Length)
+    $padding = ' !!!' * ($paddingLength / 4 + 1)
+    $value += $padding.Substring(0, $paddingLength)
+    return $value
+}
+
+if ($path.EndsWith(".resw")) {
+    foreach ($entry in $content.SelectNodes('//root/data')) {
+        $value = $entry.value
+        $comment = $entry.SelectSingleNode('comment')?.'#text' ?? ''
+        $placeholders = @{}
+
+        if ($comment.StartsWith('{Locked')) {
+            # Skip {Locked} and {Locked=qps-ploc} entries
+            if ($comment -match '\{Locked(\}|=[^}]*qps-ploc).*') {
+                continue
+            }
+
+            $lockedList = ($comment -replace '\{Locked=(.*?)\}.*', '$1') -split ','
+            $placeholderChar = 0xE000
+
+            # Replaced all locked words with placeholders from the Unicode Private Use Area
+            foreach ($locked in $lockedList) {
+                if ($locked.StartsWith('"') -and $locked.EndsWith('"')) {
+                    $locked = $locked.Substring(1, $locked.Length - 2)
+                    $locked = $locked.Replace('\"', '"')
+                }
+
+                $placeholder = "$([char]$placeholderChar)"
+                $placeholderChar++
+
+                $placeholders[$placeholder] = $locked
+                $value = $value.Replace($locked, $placeholder)
+            }
+        }
+
+        $newValue = GetPseudoLocalization $entry.name $value
+
+        # Replace all placeholders with their original values
+        foreach ($kv in $placeholders.GetEnumerator()) {
+            $newValue = $newValue.Replace($kv.Key, $kv.Value)
+        }
+
+        $newValue = PadPseudoLocalization $newValue
+
+        $entry.value = $newValue
+    }
+} elseif ($path.EndsWith(".xml")) {
+    foreach ($entry in $content.DocumentElement.SelectNodes('//*[@_locID]/text()')) {
+        $value = $entry.Value
+        if ($value.Trim().Length -eq 0) {
+            continue
+        }
+
+        $locID = $entry.ParentNode.GetAttribute('_locID')
+        $newValue = GetPseudoLocalization $locID $value
+        $newValue = PadPseudoLocalization $newValue
+        $entry.Value = $newValue
     }
 
-    # Add 40% padding to the end of the string
-    $paddingLength = [System.Math]::Round(0.4 * $newValue.Length)
-    $padding = ' !!!' * ($paddingLength / 4 + 1)
-    $newValue += $padding.Substring(0, $paddingLength)
+    # Remove all _locComment_text comments
+    foreach ($entry in $content.DocumentElement.SelectNodes('//*/comment()[contains(., "_locComment_text")]')) {
+        $null = $entry.ParentNode.RemoveChild($entry)
+    }
 
-    $entry.value = $newValue
+    # Remove all _locID attributes
+    foreach ($entry in $content.DocumentElement.SelectNodes('//*[@_locID]')) {
+        $entry.RemoveAttribute('_locID')
+    }
 }
 
 return $content
