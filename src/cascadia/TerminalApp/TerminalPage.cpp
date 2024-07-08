@@ -3311,18 +3311,22 @@ namespace winrt::TerminalApp::implementation
             // Prevent the user from opening a bunch of snippets panes.
             //
             // Look at the focused tab, and if it already has one, then just focus it.
-            const bool found = _GetFocusedTab().try_as<TerminalTab>()->GetRootPane()->WalkTree([](const auto& p) -> bool {
-                if (const auto& snippets{ p->GetContent().try_as<SnippetsPaneContent>() })
-                {
-                    snippets->Focus(FocusState::Programmatic);
-                    return true;
-                }
-                return false;
-            });
-            // Bail out if we already found one.
-            if (found)
+            if (const auto& focusedTab{ _GetFocusedTab() })
             {
-                return nullptr;
+                const auto rootPane{ focusedTab.try_as<TerminalTab>()->GetRootPane() };
+                const bool found = rootPane == nullptr ? false : rootPane->WalkTree([](const auto& p) -> bool {
+                    if (const auto& snippets{ p->GetContent().try_as<SnippetsPaneContent>() })
+                    {
+                        snippets->Focus(FocusState::Programmatic);
+                        return true;
+                    }
+                    return false;
+                    });
+                // Bail out if we already found one.
+                if (found)
+                {
+                    return nullptr;
+                }
             }
 
             const auto& tasksContent{ winrt::make_self<SnippetsPaneContent>() };
