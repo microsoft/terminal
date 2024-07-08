@@ -60,23 +60,21 @@ $content.PreserveWhitespace = $true
 $content.Load($Path)
 
 function GetPseudoLocalization([string]$key, [string]$value, [string]$comment) {
-    $locked = $null
-    if ($comment -match '.*\{Locked=?([^}]*)\}.*') {
-        $locked = $Matches[1]
-    }
-
-    # Skip {Locked} and {Locked=qps-ploc} entries
-    if ($locked -and (($locked -eq '') -or $locked.Contains('qps-ploc'))) {
-        continue
-    }
-
     $placeholders = @{}
+    $placeholderChar = 0xE000
 
-    if ($locked) {
+    # Iterate through all {Locked=...} comments and replace locked
+    # words with placeholders from the Unicode Private Use Area.
+    foreach ($m in [regex]::Matches($comment, '\{Locked=?([^}]*)\}')) {
+        $locked = $m.Groups[1].Value
+
+        # Skip {Locked} and {Locked=qps-ploc} entries
+        if (($locked -eq '') -or $locked.Contains('qps-ploc')) {
+            return $value
+        }
+
         $lockedList = $locked -split ','
-        $placeholderChar = 0xE000
 
-        # Replaced all locked words with placeholders from the Unicode Private Use Area
         foreach ($locked in $lockedList) {
             if ($locked.StartsWith('"') -and $locked.EndsWith('"')) {
                 $locked = $locked.Substring(1, $locked.Length - 2)
@@ -98,7 +96,7 @@ function GetPseudoLocalization([string]$key, [string]$value, [string]$comment) {
     $hash = [System.BitConverter]::ToInt32($hash)
     $rng = [System.Random]::new($hash)
 
-    $lines = $value.Split("`n")
+    $lines = $value -split '\r?\n'
     $lines = $lines | ForEach-Object {
         # Replace all characters with pseudo-localized characters
         $newValue = ''
@@ -117,11 +115,12 @@ function GetPseudoLocalization([string]$key, [string]$value, [string]$comment) {
         }
 
         # Add 40% padding to the end of the string
-        $paddingLength = [System.Math]::Round(0.4 * $_.Length)
+        $paddingLength = [System.Math]::Round(0.4 * $newValue.Length)
         $padding = ' !!!' * ($paddingLength / 4 + 1)
         $newValue + $padding.Substring(0, $paddingLength)
     }
-    return $lines -join "`n"
+    $lines = $lines -join "`r`n"
+    return $lines
 }
 
 if ($path.EndsWith(".resw")) {
@@ -133,7 +132,7 @@ if ($path.EndsWith(".resw")) {
 elseif ($path.EndsWith(".xml")) {
     foreach ($parent in $content.DocumentElement.SelectNodes('//*[@_locID]')) {
         $locID = $parent.GetAttribute('_locID')
-        $comment = $parent.SelectSingleNode('comment()[contains(., "_locComment_text")]')?.'#text' ?? ''
+        $comment = $parent.SelectSingleNode('comment()[contains(., "_locComment_text")]')?.Value ?? ''
 
         foreach ($entry in $parent.SelectNodes('text()')) {
             $value = $entry.Value
