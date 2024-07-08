@@ -277,6 +277,10 @@ winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvide
         // no explicitly set provider but we have an open ai key, use that
         return LLMProvider::OpenAI;
     }
+    else if (!GithubCopilotAuthToken().empty() && !GithubCopilotRefreshToken().empty())
+    {
+        return LLMProvider::GithubCopilot;
+    }
     else
     {
         return LLMProvider{};

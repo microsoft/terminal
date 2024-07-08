@@ -124,7 +124,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
             catch (...)
             {
-                // unknown failure, try refreshing the auth token and then attempting again
+                // unknown failure, if we have already attempted a refresh report failure
+                // otherwise, try refreshing the auth token
                 if (refreshAttempted)
                 {
                     message = RS_(L"UnknownErrorMessage");
@@ -133,7 +134,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 else
                 {
                     _refreshAuthTokens();
-                    _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
                     refreshAttempted = true;
                 }
             }
@@ -210,6 +210,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
         jsonContent.SetNamedValue(L"grant_type", WDJ::JsonValue::CreateStringValue(L"refresh_token"));
+        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"FineKeepYourSecrets"));
         jsonContent.SetNamedValue(L"refresh_token", WDJ::JsonValue::CreateStringValue(_refreshToken));
         const auto stringContent = jsonContent.ToString();
         WWH::HttpStringContent requestContent{
@@ -228,6 +229,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
             _authToken = jsonResult.GetNamedString(L"access_token");
             _refreshToken = jsonResult.GetNamedString(L"refresh_token");
+            _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
+            // todo: this doesn't currently work
+            // todo: we should send the new tokens back to settings for storage
+            //       or should the refreshing happen in terminal page itself? we need the client secret again
+            //       ...but that require re-initializing the palette
         }
         catch (...)
         {
