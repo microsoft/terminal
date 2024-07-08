@@ -9,6 +9,7 @@ Get-ChildItem -Recurse -Directory -Filter qps-ploc*
         $writerSettings = [System.Xml.XmlWriterSettings]::new()
         $writerSettings.NewLineChars = "`r`n"
         $writerSettings.Indent = $true
+        $writerSettings.Encoding = [System.Text.UTF8Encoding]::new($false) # suppress the BOM
         $writer = [System.Xml.XmlWriter]::Create($target, $writerSettings)
         $ploc.Save($writer)
         $writer.Flush()
