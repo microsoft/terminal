@@ -232,7 +232,7 @@
                        x:Uid="SnippetPaneTitle"
                        HorizontalAlignment="Left"
                        FontSize="24" />
-            <Button HorizontalAlignment="Right">
+            <Button x:Uid="CloseSnippetsPaneButton" HorizontalAlignment="Right" Click="_closePaneClick">
 
                 <Button.Content>
                     <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"

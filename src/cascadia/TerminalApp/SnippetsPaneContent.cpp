@@ -138,6 +138,11 @@ namespace winrt::TerminalApp::implementation
             _runCommand(taskVM->Command());
         }
     }
+    void SnippetsPaneContent::_closePaneClick(const Windows::Foundation::IInspectable& /*sender*/,
+                                              const Windows::UI::Xaml::RoutedEventArgs&)
+    {
+        Close();
+    }
 
     // Called when one of the items in the list is tapped, or enter/space is
     // pressed on it while focused. Notably, this isn't the Tapped event - it
