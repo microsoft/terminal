@@ -95,10 +95,6 @@ function GetPseudoLocalization([string]$key, [string]$value, [string]$comment) {
     $hash = [System.BitConverter]::ToInt32($hash)
     $rng = [System.Random]::new($hash)
 
-    if ($key -eq 'NoticeFontNotFound') {
-        $value = $value
-    }
-
     $lines = $value -split '\r?\n'
     $lines = $lines | ForEach-Object {
         # Replace all characters with pseudo-localized characters
