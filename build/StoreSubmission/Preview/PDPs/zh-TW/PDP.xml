@@ -30,7 +30,7 @@
     </Keyword>
   </Keywords>
   <Description>
-    這是 Windows 終端機的預覽版，其中包含最新開發的功能。Windows 終端機是一種新式、快速、高效、功能強大且具生產力的終端應用程式，適合命令列工具和 Shell (例如命令提示字元、PowerShell 和 WSL) 的使用者。主要功能包括多個索引標籤、窗格、Unicode 和 UTF-8 字元支援、GPU 加速的文字呈現引擎，以及自訂主題、樣式和設定。
+    這是 Windows 終端機的預覽版，其中包含最新開發的功能。Windows 終端機是一種新式、快速、高效、功能強大且具生產力的終端應用程式，適合命令列工具和 Shell (例如命令提示字元、PowerShell 和 WSL) 的使用者。主要功能包括多個索引標籤、窗格、Unicode 和 UTF-8 字元支援、GPU 加速的文字呈現引擎，以及自訂佈景主題、樣式和設定。
 
 這是開放原始碼的專案，我們歡迎參與社群。若要參與，請瀏覽 https://github.com/microsoft/terminal </Description>
   <ShortDescription>

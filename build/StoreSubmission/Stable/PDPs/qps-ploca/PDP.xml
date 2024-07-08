@@ -10,9 +10,9 @@
   <Keywords>
     <!-- Valid length: 30 character limit, up to 7 elements -->
     <Keyword>
-      Тεгмιŋāľ !!</Keyword>
+      Τэŕмĩņªľ !!</Keyword>
     <Keyword>
-      Ćбñѕöℓэ !!</Keyword>
+      Ċőñşøľě !!</Keyword>
     <Keyword>
       
     </Keyword>
@@ -30,9 +30,9 @@
     </Keyword>
   </Keywords>
   <Description>
-      Ŧђэ Windows Τēяmіňаĺ íŝ ä мǿðєѓπ, ƒâѕť, έƒƒĭςίєйť, φôωзŕƒµŀ, αиđ ρгôðųçτїνέ ťĕŗмîηäℓ аφφℓіçâŧїõń ƒǿř ûśегѕ òƒ сθмmάŉδ-ĺïŋё τσθℓş ąñδ šĥëŀľś łīķé €øмmªйð Ρѓòmρŧ, Рøẃ℮ŗŠħěĺℓ, ǻлδ ẀŜĽ. Îтş мдïη ƒĕąтΰřèš įπčŀûďĕ мŭłτїρļê ťăъѕ, ρªŋёş, Ūŉΐċőðε áиδ ÚΤ₣-8 ¢ĥàгå¢тĕř śΰφρöгτ, ǻ ĢРŰ áçĉěłéřáŧ℮đ ţė×ŧ гεήđ℮гîиġ ĕпĝїŋě, äйď ¢µšτοm ťћёмěş, şτŷłэś, áⁿδ сбиƒîğџяãтįŏńŝ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !
+      Ţћē Windows Ťěřмĭпªļ ΐŝ а mσđ℮ŗⁿ, ƒαšτ, ëƒƒĭċíèñŧ, ρоώëřƒųļ, ãлđ ρгσďűςťįν℮ тĕгмΐņǻľ аφφľīсàтĭόŉ ƒбř ΰśēřś оƒ ċǿmmάņď-ľιñĕ тθōℓѕ àήδ ŝнέŀłš ℓįкё Ćσммāпď Рřσmρŧ, РощёŕŠћėļℓ, ãπď ŴŜŁ. Īтś мǻĭп ƒзåţųŗêš ιņçłϋðē мΰℓŧìрļέ ţãвš, ράи℮ѕ, Üήιсοδê âиð ŮΤ₣-8 ćћăŗªĉтĕя şΰρφоѓť, ă ĜРЏ äĉçěľēґάţèđ ŧ℮жт яēπđěřĭñģ éπğíńз, åñδ сύšťóм тћêmĕš, śŧŷłéš, âπð ςбήƒīĝџѓáťίόńš. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !
 
-Ţћìś ĭŝ àй øρëň şоûřĉê рґöĵє¢ŧ ăπď шз ẅéℓċömэ ¢όммυńĭŧŷ рáŗťĭćίрªţіθń. Тθ рǻяτìсìρáтę ρℓэăşĕ νìѕïţ ĥŧŧρš://ġïţĥŭъ.ςθm/mїĉѓθѕóƒт/тεřmίηâŀ !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! ! </Description>
+Ţĥíŝ ιš άň øρèñ šθūѓςë ρгбјė¢τ ąŉð ẅ℮ ẃêŀċõмè сοмmúńїťγ φàřτĩĉîрªťϊòη. Ţò ράятїĉîрǻŧê ρĺęαŝě νîŝϊт ħŧťφѕ://ġїтђûь.ĉόm/mìĉřòşοƒţ/τéřmíпâľ  !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</Description>
   <ShortDescription>
     <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
     
@@ -54,10 +54,10 @@
     
   </DevStudio>
   <ReleaseNotes>
-    Vēґѕιби __VERSION_NUMBER__ !!! !!! !
+    Vėѓѕіöй __VERSION_NUMBER__ !!! !!! !
 
-Рℓěãšє śεэ óűŗ ĞïŧΗųв ѓěŀзªśεѕ рαġē ƒøř αδđīťíόŋäŀ δзŧªìĺş. !!! !!! !!! !!! !!! !!!
-  </ReleaseNotes>
+Рļєάśé ѕέę όüґ ĢίŧĦŭв řęļзąѕєš рαġè ƒőŗ äđδĭτíθņâℓ đέтαιľś. !!! !!! !!! !!! !!! !!!
+   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
     <!-- Valid attributes: any of DesktopImage, MobileImage, XboxImage, SurfaceHubImage, and HoloLensImage -->
@@ -80,15 +80,15 @@
     <!--   ChallengePromoIcon, RewardDisplayIcon, Icon150X150, Icon71X71,-->
     <!--   BoxArt, BrandedKeyArt, PosterArt, FeaturedPromotionalArt, PromotionalArt16x9, TitledHeroArt-->
     <!-- There is no content for any of these elements, just a single attribute called FileName. -->
-    <PosterArt FileName="Store Poster Art.png"/>
-    <BoxArt FileName="Store Box Art.png"/>
-    <PromotionalArt16x9 FileName="Store Thumbnail.png"/>
+    <PosterArt FileName="Store Poster Art.png" />
+    <BoxArt FileName="Store Box Art.png" />
+    <PromotionalArt16x9 FileName="Store Thumbnail.png" />
   </AdditionalAssets>
   <Trailers>
     <!-- Maximum number of trailers permitted: 15 -->
     <Trailer FileName="CC0605_CommandLine_Teaser_WEB_MASTER_H264_1080p_23.976_-16LKFS_-3dbTP_ST.mp4">
       <Title>
-        Ţнê ήėщ Ẅĭņďбωś Τєŗмίπαľ !!! !!! !</Title>
+        Ŧћë иĕẁ Шįπδõωš Тёŗmĭлдŀ !!! !!! !</Title>
       <Images>
         <!-- Current maximum of 1 image per trailer permitted. -->
         <Image FileName="Store Thumbnail.png">
@@ -100,15 +100,15 @@
   <AppFeatures>
     <!-- Valid length: 200 character limit, up to 20 elements -->
     <AppFeature>
-      Μμłŧĩφĺê ţăъš !!! </AppFeature>
+      Μΰℓţіρļę ťăъś !!! </AppFeature>
     <AppFeature>
-      ₣úłļ Џήïсθđ℮ ѕϋφрóґŧ !!! !!!</AppFeature>
+      ₣υłľ Űňìčόďέ şůррοяŧ !!! !!!</AppFeature>
     <AppFeature>
-      ĞРÛ-áсčēℓéřǻťěđ ţėжŧ ŕэиðéŕĭņĝ !!! !!! !!!</AppFeature>
+      ĞΡÙ-асçêľëřăţєđ ţέхŧ яéŉδęŗίńğ !!! !!! !!!</AppFeature>
     <AppFeature>
-      ₣ύĺľ ¢ůѕţõмїźàъΐľΐţў !!! !!!</AppFeature>
+      ₣џℓł ćűşŧõmîźăвϊľįтγ !!! !!!</AppFeature>
     <AppFeature>
-      Śφŀīť φàňěŝ !!!</AppFeature>
+      Ŝφľīť ρªлёѕ !!!</AppFeature>
     <AppFeature>
       
     </AppFeature>
@@ -158,20 +158,20 @@
   <RecommendedHardware>
     <!-- Valid length: 200 character limit, up to 11 elements -->
     <Recommendation>
-      Ќëўвőâŕð !!</Recommendation>
+      Κёÿъόáѓď !!</Recommendation>
   </RecommendedHardware>
   <MinimumHardware>
     <!-- Valid length: 200 character limit, up to 11 elements -->
   </MinimumHardware>
   <CopyrightAndTrademark>
-    €όруѓїģĥť (ς) Μíсŗθšοƒŧ Ċσŕрόŗаτīõл !!! !!! !!! !</CopyrightAndTrademark>
+    Ĉθрўґіġнт (с) Μìĉгōŝŏƒτ Čōяροґąтΐοй !!! !!! !!! !</CopyrightAndTrademark>
   <AdditionalLicenseTerms>
     
   </AdditionalLicenseTerms>
   <WebsiteURL>
-    нτтφš://ğιťћϋь.ćóm/мīĉřöšοƒт/ŧėřмîňąļ !!! !!! !!! !!</WebsiteURL>
+    ћťŧφş://ġїţħųъ.ćòm/mįćѓσşòƒţ/ŧέřмїŉаŀ !!! !!! !!! !!</WebsiteURL>
   <SupportContactInfo>
-    ħтţρŝ://ĝĭţнûь.ćόм/mΐčŕоşøƒť/ŧзřmїйąŀ/ĭśşüęš/ŉėω !!! !!! !!! !!! !!</SupportContactInfo>
+    ђтťφş://ĝїťнûв.¢ǿm/мíčѓõŝόƒτ/ŧеґmіиάł/ΐѕѕύéѕ/ηëш !!! !!! !!! !!! !!</SupportContactInfo>
   <PrivacyPolicyURL>
-    ђţтρś://ğó.мìςŕôšôƒť.ĉőm/ƒẅŀìŉк/?₤ïⁿкЇĐ=521839 !!! !!! !!! !!! !</PrivacyPolicyURL>
+    ĥţťφş://ģō.mîċґοşоƒт.ĉöм/ƒẃłīик/?₤ϊñķΪÐ=521839 !!! !!! !!! !!! !</PrivacyPolicyURL>
 </ProductDescription>
