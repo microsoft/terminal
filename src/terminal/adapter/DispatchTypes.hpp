@@ -589,6 +589,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
+        ReportTextSizeInPixels = 14,
+        ReportCharacterCellSize = 16,
         ReportTextSizeInCharacters = 18
     };
 

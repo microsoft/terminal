@@ -28,8 +28,8 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         static constexpr VTInt DefaultConformance = 9;
 
-        static til::size CellSizeForLevel(const VTInt conformanceLevel) noexcept;
-        static size_t MaxColorsForLevel(const VTInt conformanceLevel) noexcept;
+        static til::size CellSizeForLevel(const VTInt conformanceLevel = DefaultConformance) noexcept;
+        static size_t MaxColorsForLevel(const VTInt conformanceLevel = DefaultConformance) noexcept;
 
         SixelParser(AdaptDispatch& dispatcher, const StateMachine& stateMachine, const VTInt conformanceLevel = DefaultConformance) noexcept;
         void SoftReset();
