@@ -61,19 +61,20 @@ $content.Load($Path)
 
 function GetPseudoLocalization([string]$key, [string]$value, [string]$comment) {
     $placeholders = @{}
+    $placeholderChar = 0xE000
 
-    if ($comment -match '.*\{Locked=?([^}]*)\}.*') {
-        $locked = $Matches[1] ?? ''
+    # Iterate through all {Locked=...} comments and replace locked
+    # words with placeholders from the Unicode Private Use Area.
+    foreach ($m in [regex]::Matches($comment, '\{Locked=?([^}]*)\}')) {
+        $locked = $m.Groups[1].Value
 
         # Skip {Locked} and {Locked=qps-ploc} entries
-        if ((($locked -eq '') -or $locked.Contains('qps-ploc'))) {
+        if (($locked -eq '') -or $locked.Contains('qps-ploc')) {
             return $value
         }
 
         $lockedList = $locked -split ','
-        $placeholderChar = 0xE000
 
-        # Replaced all locked words with placeholders from the Unicode Private Use Area
         foreach ($locked in $lockedList) {
             if ($locked.StartsWith('"') -and $locked.EndsWith('"')) {
                 $locked = $locked.Substring(1, $locked.Length - 2)
