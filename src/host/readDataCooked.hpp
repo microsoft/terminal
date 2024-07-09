@@ -51,6 +51,7 @@ private:
 
     enum class PopupKind
     {
+        // The F2 popup:
         // Copies text from the previous command between the current cursor position and the first instance
         // of a given char (but not including it) into the current prompt line at the current cursor position.
         // Basically, F3 and this prompt have identical behavior, but the prompt searches for a terminating character.
@@ -63,11 +64,14 @@ private:
         // Then this command, given the char "o" will turn it into
         //   echo hell efgh
         CopyToChar,
+        // The F4 popup:
         // Erases text between the current cursor position and the first instance of a given char (but not including it).
         // It's unknown to me why this is was historically called "copy from char" as it conhost never copied anything.
         CopyFromChar,
+        // The F9 popup:
         // Let's you choose to replace the current prompt with one from the command history by index.
         CommandNumber,
+        // The F7 popup:
         // Let's you choose to replace the current prompt with one from the command history via a
         // visual select dialog. Among all the popups this one is the most widely used one by far.
         CommandList,
@@ -119,6 +123,17 @@ private:
     static size_t _wordPrev(const std::wstring_view& chars, size_t position);
     static size_t _wordNext(const std::wstring_view& chars, size_t position);
 
+    til::point _getCursorPosition() const noexcept
+    {
+        const auto& textBuffer = _screenInfo.GetTextBuffer();
+        const auto& cursor = textBuffer.GetCursor();
+        auto cursorPos = cursor.GetPosition();
+
+        _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
+        cursorPos.x = std::max(0, cursorPos.x);
+        cursorPos.y = std::max(0, cursorPos.y);
+        return cursorPos;
+    }
     void _readCharInputLoop();
     void _handleChar(wchar_t wch, DWORD modifiers);
     void _handleVkey(uint16_t vkey, DWORD modifiers);

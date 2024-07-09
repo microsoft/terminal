@@ -61,14 +61,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     THROW_IF_FAILED(_screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
 #endif
 
-    const auto& textBuffer = _screenInfo.GetTextBuffer();
-    const auto& cursor = textBuffer.GetCursor();
-    auto cursorPos = cursor.GetPosition();
-
-    _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
-    cursorPos.x = std::max(0, cursorPos.x);
-    cursorPos.y = std::max(0, cursorPos.y);
-
+    const auto cursorPos = _getCursorPosition();
     _originInViewport = cursorPos;
 
     if (!initialData.empty())
@@ -314,14 +307,8 @@ void COOKED_READ_DATA::RedrawAfterResize()
 
     _redrawPending = false;
 
-    // Get the new cursor position after the reflow. Just like how the COOKED_READ_DATA constructor did it.
-    const auto& textBuffer = _screenInfo.GetTextBuffer();
-    const auto& cursor = textBuffer.GetCursor();
-    auto cursorPos = cursor.GetPosition();
-    _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
-    cursorPos.x = std::max(0, cursorPos.x);
-    cursorPos.y = std::max(0, cursorPos.y);
-    _originInViewport = cursorPos;
+    // Get the new cursor position after the reflow, since it may have changed.
+    _originInViewport = _getCursorPosition();
 
     // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
     // They have all been erased with the CSI J above.
@@ -357,9 +344,12 @@ til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
     static constexpr til::point min;
     const til::point max{ viewport.RightInclusive(), viewport.BottomInclusive() };
 
+    // Convert from VT-viewport-relative coordinate space back to the console one.
     auto beg = _originInViewport;
     virtualViewport.ConvertFromOrigin(&beg);
 
+    // Since the pager may be longer than the viewport is tall, we need to clamp the coordinates to still remain within
+    // the current viewport (the pager doesn't write outside of the viewport, since that's not supported by VT).
     auto end = _pagerPromptEnd;
     end.y -= _pagerContentTop;
     end = std::clamp(end, min, max);
