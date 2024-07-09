@@ -19,7 +19,13 @@ namespace WWH = ::winrt::Windows::Web::Http;
 namespace WSS = ::winrt::Windows::Storage::Streams;
 namespace WDJ = ::winrt::Windows::Data::Json;
 
-static constexpr std::wstring_view acceptedModel{ L"gpt-35-turbo" };
+static constexpr std::wstring_view acceptedModels[] = {
+    L"gpt-35-turbo",
+    L"gpt4",
+    L"gpt4-32k",
+    L"gpt4o",
+    L"gpt-35-turbo-16k"
+};
 static constexpr std::wstring_view acceptedSeverityLevel{ L"safe" };
 
 const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
@@ -154,7 +160,16 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     bool AzureLLMProvider::_verifyModelIsValidHelper(const WDJ::JsonObject jsonResponse)
     {
-        if (jsonResponse.GetNamedString(L"model") != acceptedModel)
+        const auto model = jsonResponse.GetNamedString(L"model");
+        bool modelIsAccepted{ false };
+        for (const auto acceptedModel : acceptedModels)
+        {
+            if (model == acceptedModel)
+            {
+                modelIsAccepted = true;
+            }
+        }
+        if (!modelIsAccepted)
         {
             return false;
         }
