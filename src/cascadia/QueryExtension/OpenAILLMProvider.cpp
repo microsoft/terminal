@@ -71,7 +71,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         WDJ::JsonObject jsonContent;
         WDJ::JsonObject messageObject;
 
-        // _ActiveCommandline should be set already, we request for it the moment we become visible
         winrt::hstring engineeredPrompt{ promptCopy };
         if (_context && !_context.ActiveCommandline().empty())
         {
