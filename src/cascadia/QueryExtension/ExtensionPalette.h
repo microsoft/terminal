@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct ExtensionPalette : ExtensionPaletteT<ExtensionPalette>
     {
-        ExtensionPalette(const Extension::ILLMProvider llmProvider);
+        ExtensionPalette(const Extension::ILMProvider lmProvider);
 
         // We don't use the winrt_property macro here because we just need the setter
         void IconPath(const winrt::hstring& iconPath);
@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 
-        ILLMProvider _llmProvider{ nullptr };
+        ILMProvider _lmProvider{ nullptr };
 
         // chat history storage
         Windows::Foundation::Collections::IObservableVector<GroupedChatMessages> _messages{ nullptr };
