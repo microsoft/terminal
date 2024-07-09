@@ -14,8 +14,12 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean AreAzureOpenAIKeyAndEndpointSet { get; };
         String AzureOpenAIEndpoint;
         String AzureOpenAIKey;
+        Boolean AzureOpenAIIsActive { get; };
+        void SetAzureOpenAIActive();
 
         Boolean IsOpenAIKeySet { get; };
         String OpenAIKey;
+        Boolean OpenAIIsActive { get; };
+        void SetOpenAIActive();
     }
 }

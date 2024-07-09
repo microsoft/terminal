@@ -22,13 +22,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AzureOpenAIEndpoint(winrt::hstring endpoint);
         winrt::hstring AzureOpenAIKey();
         void AzureOpenAIKey(winrt::hstring key);
+        bool AzureOpenAIIsActive();
+        void SetAzureOpenAIActive();
 
         bool IsOpenAIKeySet();
         winrt::hstring OpenAIKey();
         void OpenAIKey(winrt::hstring key);
-
-        bool AzureOpenAIIsActive();
         bool OpenAIIsActive();
+        void SetOpenAIActive();
 
     private:
         Model::CascadiaSettings _Settings;

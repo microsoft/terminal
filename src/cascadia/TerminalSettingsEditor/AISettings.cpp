@@ -120,4 +120,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
     }
+
+    void AISettings::SetAzureOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.SetAzureOpenAIActive();
+    }
+
+    void AISettings::SetOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.SetOpenAIActive();
+    }
 }
