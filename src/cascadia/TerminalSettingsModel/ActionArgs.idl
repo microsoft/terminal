@@ -119,6 +119,7 @@ namespace Microsoft.Terminal.Settings.Model
         Tasks = 0x1,
         CommandHistory = 0x2,
         DirectoryHistory = 0x4,
+        QuickFixes = 0x8,
         All = 0xffffffff,
     };
 
@@ -225,6 +226,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
     {
+        SendInputArgs(String input);
+
         String Input { get; };
     };
 
@@ -352,6 +355,15 @@ namespace Microsoft.Terminal.Settings.Model
     {
         FindMatchArgs(FindMatchDirection direction);
         FindMatchDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs
+    {
+        SaveSnippetArgs();
+        SaveSnippetArgs(String Name, String Commandline, String KeyChord);
+        String Name;
+        String Commandline;
+        String KeyChord;
     };
 
     [default_interface] runtimeclass NewWindowArgs : IActionArgs

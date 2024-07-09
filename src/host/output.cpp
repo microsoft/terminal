@@ -113,6 +113,9 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
             next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
             screenInfo.GetTextBuffer().WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
+
+        auto& textBuffer = screenInfo.GetTextBuffer();
+        ImageSlice::CopyBlock(textBuffer, source.ToExclusive(), textBuffer, target.ToExclusive());
     }
 }
 
@@ -425,6 +428,9 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     {
         const auto& view = remaining.at(i);
         screenInfo.WriteRect(fillData, view);
+
+        // If the region has image content it needs to be erased.
+        ImageSlice::EraseBlock(screenInfo.GetTextBuffer(), view.ToExclusive());
 
         // If we're scrolling an area that encompasses the full buffer width,
         // then the filled rows should also have their line rendition reset.

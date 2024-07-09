@@ -301,6 +301,12 @@ Please either install the missing font or choose another one.</value>
     <value>Select output</value>
     <comment>The tooltip for a button for selecting all of a command's output</comment>
   </data>
+  <data name="QuickFixButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Quick fix</value>
+  </data>
+  <data name="QuickFixButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Quick fix</value>
+  </data>
   <data name="SessionRestoreMessage" xml:space="preserve">
     <value>Restored</value>
     <comment>"Restored" as in "This content was restored"</comment>
@@ -316,6 +322,13 @@ Please either install the missing font or choose another one.</value>
   <data name="SearchRegexInvalid" xml:space="preserve">
     <value>invalid</value>
     <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
+  <data name="QuickFixAvailable" xml:space="preserve">
+    <value>Quick fix available</value>
+    <comment>"Quick fix" is referencing the same feature as "QuickFixButton.ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="QuickFixMenu.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Quick fix</value>
   </data>
   <data name="PreviewTextAnnouncement" xml:space="preserve">
     <value>Suggested input: {0}</value>

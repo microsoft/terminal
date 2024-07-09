@@ -2,14 +2,12 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "textBuffer.hpp"
 
 #include <til/hash.h>
-#include <til/unicode.h>
 
 #include "UTextAdapter.h"
-#include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
 #include "search.h"
@@ -376,17 +374,23 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const til::point at, const View
 // Given the character offset `position` in the `chars` string, this function returns the starting position of the next grapheme.
 // For instance, given a `chars` of L"x\uD83D\uDE42y" and a `position` of 1 it'll return 3.
 // GraphemePrev would do the exact inverse of this operation.
-// In the future, these functions are expected to also deliver information about how many columns a grapheme occupies.
-// (I know that mere UTF-16 code point iteration doesn't handle graphemes, but that's what we're working towards.)
 size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position) noexcept
 {
-    return til::utf16_iterate_next(chars, position);
+    auto& cwd = CodepointWidthDetector::Singleton();
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    GraphemeState state{ .beg = chars.data() + position };
+    cwd.GraphemeNext(state, chars);
+    return position + state.len;
 }
 
 // It's the counterpart to GraphemeNext. See GraphemeNext.
 size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position) noexcept
 {
-    return til::utf16_iterate_prev(chars, position);
+    auto& cwd = CodepointWidthDetector::Singleton();
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    GraphemeState state{ .beg = chars.data() + position };
+    cwd.GraphemePrev(state, chars);
+    return position - state.len;
 }
 
 // Ever wondered how much space a piece of text needs before inserting it? This function will tell you!
@@ -413,7 +417,7 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
     {
     }
 
-    const auto dist = gsl::narrow_cast<size_t>(it - beg);
+    auto dist = gsl::narrow_cast<size_t>(it - beg);
     auto col = gsl::narrow_cast<til::CoordType>(dist);
 
     if (it == asciiEnd) [[likely]]
@@ -423,33 +427,26 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
     }
 
     // Unicode slow-path where we need to count text and columns separately.
-    for (;;)
+    auto& cwd = CodepointWidthDetector::Singleton();
+    const auto len = chars.size();
+
+    // The non-ASCII character we have encountered may be a combining mark, like "a^" which is then displayed as "â".
+    // In order to recognize both characters as a single grapheme, we need to back up by 1 ASCII character
+    // and let GraphemeNext() find the next proper grapheme boundary.
+    if (dist != 0)
     {
-        auto ptr = &*it;
-        const auto wch = *ptr;
-        size_t len = 1;
+        dist--;
+        col--;
+    }
 
-        col++;
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    GraphemeState state{ .beg = chars.data() + dist };
 
-        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
-        // It also allows us to skip the surrogate pair decoding at the same time.
-        if (wch >= 0x80)
-        {
-            if (til::is_surrogate(wch))
-            {
-                const auto it2 = it + 1;
-                if (til::is_leading_surrogate(wch) && it2 != end && til::is_trailing_surrogate(*it2))
-                {
-                    len = 2;
-                }
-                else
-                {
-                    ptr = &UNICODE_REPLACEMENT;
-                }
-            }
-
-            col += IsGlyphFullWidth({ ptr, len });
-        }
+    while (dist < len)
+    {
+        cwd.GraphemeNext(state, chars);
+        dist += state.len;
+        col += state.width;
 
         // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
         // because if we tried inserting a wide glyph into just 1 remaining column it will
@@ -458,17 +455,13 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         if (col > columnLimit)
         {
             columns = columnLimit;
-            return gsl::narrow_cast<size_t>(it - beg);
-        }
-
-        // But if we simply ran out of text we just need to return the actual number of columns.
-        it += len;
-        if (it == end)
-        {
-            columns = col;
-            return chars.size();
+            return dist;
         }
     }
+
+    // But if we simply ran out of text we just need to return the actual number of columns.
+    columns = col;
+    return chars.size();
 }
 
 // Pretend as if `position` is a regular cursor in the TextBuffer.
@@ -536,6 +529,7 @@ void TextBuffer::Replace(til::CoordType row, const TextAttribute& attributes, Ro
     auto& r = GetMutableRowByOffset(row);
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
+    ImageSlice::EraseCells(r, state.columnBegin, state.columnEnd);
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
 }
 
@@ -564,7 +558,11 @@ void TextBuffer::Insert(til::CoordType row, const TextAttribute& attributes, Row
         const auto& scratchAttr = scratch.Attributes();
         const auto restoreAttr = scratchAttr.slice(gsl::narrow<uint16_t>(state.columnBegin), gsl::narrow<uint16_t>(state.columnBegin + copyAmount));
         rowAttr.replace(gsl::narrow<uint16_t>(restoreState.columnBegin), gsl::narrow<uint16_t>(restoreState.columnEnd), restoreAttr);
+        // If there is any image content, that needs to be copied too.
+        ImageSlice::CopyCells(r, state.columnBegin, r, restoreState.columnBegin, restoreState.columnEnd);
     }
+    // Image content at the insert position needs to be erased.
+    ImageSlice::EraseCells(r, state.columnBegin, restoreState.columnBegin);
 
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, restoreState.columnEndDirty, row + 1 }));
 }
@@ -619,6 +617,7 @@ void TextBuffer::FillRect(const til::rect& rect, const std::wstring_view& fill, 
             auto& r = GetMutableRowByOffset(y);
             r.CopyTextFrom(state);
             r.ReplaceAttributes(rect.left, rect.right, attributes);
+            ImageSlice::EraseCells(r, rect.left, rect.right);
             TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, y, state.columnEndDirty, y + 1 }));
         }
     }
@@ -791,7 +790,7 @@ const til::CoordType TextBuffer::GetFirstRowIndex() const noexcept
 
 const Viewport TextBuffer::GetSize() const noexcept
 {
-    return Viewport::FromDimensions({ _width, _height });
+    return Viewport::FromDimensions({}, { _width, _height });
 }
 
 void TextBuffer::_SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept
@@ -865,8 +864,16 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
 
     for (; y != end; y += step)
     {
-        GetMutableRowByOffset(y + delta).CopyFrom(GetRowByOffset(y));
+        CopyRow(y, y + delta, *this);
     }
+}
+
+void TextBuffer::CopyRow(const til::CoordType srcRowIndex, const til::CoordType dstRowIndex, TextBuffer& dstBuffer) const
+{
+    auto& dstRow = dstBuffer.GetMutableRowByOffset(dstRowIndex);
+    const auto& srcRow = GetRowByOffset(srcRowIndex);
+    dstRow.CopyFrom(srcRow);
+    ImageSlice::CopyRow(srcRow, dstRow);
 }
 
 Cursor& TextBuffer::GetCursor() noexcept
@@ -909,6 +916,8 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         row.SetLineRendition(lineRendition);
         // If the line rendition has changed, the row can no longer be wrapped.
         row.SetWrapForced(false);
+        // And all image content on the row is removed.
+        row.GetMutableImageSlice().reset();
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {
@@ -1036,7 +1045,7 @@ void TextBuffer::ResizeTraditional(til::size newSize)
 
     for (; dstRow < copyableRows; ++dstRow, ++srcRow)
     {
-        newBuffer.GetMutableRowByOffset(dstRow).CopyFrom(GetRowByOffset(srcRow));
+        CopyRow(srcRow, dstRow, newBuffer);
     }
 
     // NOTE: Keep this in sync with _reserve().
@@ -1395,7 +1404,7 @@ til::point TextBuffer::_GetWordEndForSelection(const til::point target, const st
             }
         }
 
-        bufferSize.IncrementInBoundsCircular(result);
+        bufferSize.IncrementInBounds(result);
     }
 
     if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)
@@ -2796,6 +2805,12 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
                 .sourceColumnLimit = oldRowLimit,
             };
             newRow.CopyTextFrom(state);
+
+            // If we're at the start of the old row, copy its image content.
+            if (oldX == 0)
+            {
+                ImageSlice::CopyRow(oldRow, newRow);
+            }
 
             const auto& oldAttr = oldRow.Attributes();
             auto& newAttr = newRow.Attributes();

@@ -9,6 +9,7 @@
 #include "../renderer/vt/Xterm256Engine.hpp"
 
 #include "../renderer/base/renderer.hpp"
+#include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/utils.hpp"
 #include "handle.h" // LockConsole
 #include "input.h" // ProcessCtrlEvents
@@ -73,6 +74,28 @@ VtIo::VtIo() :
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
     {
+        // Honestly, no idea where else to put this.
+        if (const auto& textMeasurement = pArgs->GetTextMeasurement(); !textMeasurement.empty())
+        {
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            SettingsTextMeasurementMode settingsMode = SettingsTextMeasurementMode::Graphemes;
+            TextMeasurementMode mode = TextMeasurementMode::Graphemes;
+
+            if (textMeasurement == L"wcswidth")
+            {
+                settingsMode = SettingsTextMeasurementMode::Wcswidth;
+                mode = TextMeasurementMode::Wcswidth;
+            }
+            else if (textMeasurement == L"console")
+            {
+                settingsMode = SettingsTextMeasurementMode::Console;
+                mode = TextMeasurementMode::Console;
+            }
+
+            gci.SetTextMeasurementMode(settingsMode);
+            CodepointWidthDetector::Singleton().Reset(mode);
+        }
+
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
@@ -150,9 +173,7 @@ VtIo::VtIo() :
 
         if (IsValidHandle(_hOutput.get()))
         {
-            auto initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                            gci.GetWindowSize().width,
-                                                            gci.GetWindowSize().height);
+            auto initialViewport = Viewport::FromDimensions({ 0, 0 }, gci.GetWindowSize());
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:

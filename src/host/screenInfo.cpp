@@ -2,23 +2,12 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "screenInfo.hpp"
-#include "dbcs.h"
+
 #include "output.h"
-#include "_output.h"
-#include "misc.h"
-#include "handle.h"
-
-#include <cmath>
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../types/inc/Viewport.hpp"
-#include "../types/inc/GlyphWidth.hpp"
-#include "../terminal/parser/OutputStateMachineEngine.hpp"
-
+#include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/convert.hpp"
-
-#pragma hdrstop
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -163,7 +152,7 @@ Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
     auto v = _textBuffer->GetSize();
     if (gci.IsTerminalScrolling() && v.Height() > _virtualBottom)
     {
-        v = Viewport::FromDimensions({ 0, 0 }, v.Width(), _virtualBottom + 1);
+        v = Viewport::FromDimensions({}, { v.Width(), _virtualBottom + 1 });
     }
     return v;
 }
@@ -524,15 +513,30 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
 {
     if (IsActiveScreenBuffer())
     {
-        // Hand the handle to our internal structure to the font change trigger in case it updates it based on what's appropriate.
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerFontChange(ServiceLocator::LocateGlobals().dpi,
-                                                                       GetDesiredFont(),
-                                                                       GetCurrentFont());
+        auto& globals = ServiceLocator::LocateGlobals();
+        const auto& gci = globals.getConsoleInformation();
 
-            NotifyGlyphWidthFontChanged();
+        // Hand the handle to our internal structure to the font change trigger in case it updates it based on what's appropriate.
+        if (globals.pRender != nullptr)
+        {
+            globals.pRender->TriggerFontChange(globals.dpi, GetDesiredFont(), GetCurrentFont());
         }
+
+        TextMeasurementMode mode;
+        switch (gci.GetTextMeasurementMode())
+        {
+        case SettingsTextMeasurementMode::Wcswidth:
+            mode = TextMeasurementMode::Wcswidth;
+            break;
+        case SettingsTextMeasurementMode::Console:
+            mode = TextMeasurementMode::Console;
+            break;
+        default:
+            mode = TextMeasurementMode::Graphemes;
+            break;
+        }
+
+        CodepointWidthDetector::Singleton().Reset(mode);
     }
 }
 
@@ -2456,7 +2460,6 @@ Viewport SCREEN_INFORMATION::GetVtPageArea() const noexcept
 
 // Method Description:
 // - Returns true if the character at the cursor's current position is wide.
-//   See IsGlyphFullWidth
 // Arguments:
 // - <none>
 // Return Value:

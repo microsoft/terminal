@@ -561,7 +561,7 @@ try
         const auto originY{ std::min(_start.y, inclusiveEnd.y) };
         const auto width{ std::abs(inclusiveEnd.x - _start.x + 1) };
         const auto height{ std::abs(inclusiveEnd.y - _start.y + 1) };
-        viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
+        viewportRange = Viewport::FromDimensions({ originX, originY }, { width, height });
     }
     auto iter{ buffer.GetCellDataAt(searchStart, viewportRange) };
     const auto iterStep{ searchBackwards ? -1 : 1 };
@@ -827,7 +827,7 @@ try
         const auto originY{ std::min(_start.y, inclusiveEnd.y) };
         const auto width{ std::abs(inclusiveEnd.x - _start.x + 1) };
         const auto height{ std::abs(inclusiveEnd.y - _start.y + 1) };
-        viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
+        viewportRange = Viewport::FromDimensions({ originX, originY }, { width, height });
     }
     auto iter{ buffer.GetCellDataAt(_start, viewportRange) };
     for (; iter && iter.Pos() != inclusiveEnd; ++iter)
@@ -1337,7 +1337,7 @@ Viewport UiaTextRangeBase::_getOptimizedBufferSize() const noexcept
     const auto width = textBufferEnd.x + 1;
     const auto height = textBufferEnd.y + 1;
 
-    return Viewport::FromDimensions({ 0, 0 }, width, height);
+    return Viewport::FromDimensions({ 0, 0 }, { width, height });
 }
 
 // We consider the "document end" to be the line beneath the cursor or

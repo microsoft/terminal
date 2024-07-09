@@ -34,6 +34,7 @@
 #include "ScrollToMarkArgs.g.h"
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
+#include "SaveSnippetArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 #include "SuggestionsArgs.g.h"
 #include "FindMatchArgs.g.h"
@@ -214,6 +215,12 @@ protected:                                                                  \
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SAVE_TASK_ARGS(X)                                                           \
+    X(winrt::hstring, Name, "name", false, L"")                                     \
+    X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), L"") \
+    X(winrt::hstring, KeyChord, "keyChord", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SUGGESTIONS_ARGS(X)                                                 \
@@ -819,6 +826,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
+    ACTION_ARGS_STRUCT(SaveSnippetArgs, SAVE_TASK_ARGS);
+
     ACTION_ARGS_STRUCT(SuggestionsArgs, SUGGESTIONS_ARGS);
 
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
@@ -928,6 +937,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SetTabColorArgs);
     BASIC_FACTORY(RenameTabArgs);
     BASIC_FACTORY(SwapPaneArgs);
+    BASIC_FACTORY(SendInputArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(SetFocusModeArgs);
     BASIC_FACTORY(SetFullScreenArgs);
@@ -940,6 +950,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseTabArgs);
     BASIC_FACTORY(MoveTabArgs);
     BASIC_FACTORY(OpenSettingsArgs);
+    BASIC_FACTORY(SaveSnippetArgs);
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
     BASIC_FACTORY(FocusPaneArgs);
