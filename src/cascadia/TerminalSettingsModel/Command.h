@@ -38,6 +38,7 @@ static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
 static constexpr std::string_view KeysKey{ "keys" };
+static constexpr std::string_view DescriptionKey{ "description" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -78,11 +79,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
         static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
                                                                                            winrt::hstring currentCommandline,
-                                                                                           bool directories);
+                                                                                           bool directories,
+                                                                                           hstring iconPath);
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
         WINRT_PROPERTY(OriginTag, Origin);
+        WINRT_PROPERTY(winrt::hstring, Description, L"");
 
     private:
         Json::Value _originalJson;

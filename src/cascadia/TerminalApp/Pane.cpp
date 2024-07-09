@@ -1711,7 +1711,9 @@ void Pane::_SetupChildCloseHandlers()
 IPaneContent Pane::_takePaneContent()
 {
     _closeRequestedRevoker.revoke();
-    return std::move(_content);
+    // we cannot return std::move(_content) because we don't want _content to be null,
+    // since _content gets accessed even after Close is called
+    return _content;
 }
 
 // This method safely sets the content of the Pane. It'll ensure to revoke and
@@ -1721,15 +1723,14 @@ void Pane::_setPaneContent(IPaneContent content)
 {
     // The IPaneContent::Close() implementation may be buggy and raise the CloseRequested event again.
     // _takePaneContent() avoids this as it revokes the event handler.
-    if (const auto c = _takePaneContent())
+    if (_takePaneContent())
     {
-        c.Close();
+        _content.Close();
     }
 
-    _content = std::move(content);
-
-    if (_content)
+    if (content)
     {
+        _content = std::move(content);
         _closeRequestedRevoker = _content.CloseRequested(winrt::auto_revoke, [this](auto&&, auto&&) { Close(); });
     }
 }
@@ -2943,7 +2944,8 @@ void Pane::FinalizeConfigurationGivenDefault()
 // - Returns true if the pane or one of its descendants is read-only
 bool Pane::ContainsReadOnly() const
 {
-    return _IsLeaf() ? _content.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+    return _IsLeaf() ? (_content == nullptr ? false : _content.ReadOnly()) :
+                       (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
 // Method Description:

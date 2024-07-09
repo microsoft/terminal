@@ -343,10 +343,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
 
         _RightClickContextMenu = profile.RightClickContextMenu();
-
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
-
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
+        _RainbowSuggestions = profile.RainbowSuggestions();
     }
 
     // Method Description:
@@ -367,6 +366,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _GraphicsAPI = globalSettings.GraphicsAPI();
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
+        _TextMeasurement = globalSettings.TextMeasurement();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();

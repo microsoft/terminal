@@ -535,6 +535,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
+        DECSDM_SixelDisplayMode = DECPrivateMode(80),
         DECECM_EraseColorMode = DECPrivateMode(117),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
@@ -545,7 +546,17 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ALTERNATE_SCROLL = DECPrivateMode(1007),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
+        GCM_GraphemeClusterMode = DECPrivateMode(2027),
         W32IM_Win32InputMode = DECPrivateMode(9001),
+    };
+
+    enum ModeResponses : VTInt
+    {
+        DECRPM_Unsupported = 0,
+        DECRPM_Enabled = 1,
+        DECRPM_Disabled = 2,
+        DECRPM_PermanentlyEnabled = 3,
+        DECRPM_PermanentlyDisabled = 4,
     };
 
     enum CharacterSets : uint64_t
@@ -578,6 +589,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
+        ReportTextSizeInPixels = 14,
+        ReportCharacterCellSize = 16,
         ReportTextSizeInCharacters = 18
     };
 
@@ -603,6 +616,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         WithReturn,
         WithoutReturn,
         DependsOnMode
+    };
+
+    enum class SixelBackground : VTInt
+    {
+        Default = 0,
+        Transparent = 1,
+        Opaque = 2
     };
 
     enum class DrcsEraseControl : VTInt

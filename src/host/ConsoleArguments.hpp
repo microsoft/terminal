@@ -47,6 +47,7 @@ public:
     std::wstring GetOriginalCommandLine() const;
     std::wstring GetClientCommandline() const;
     std::wstring GetVtMode() const;
+    const std::wstring& GetTextMeasurement() const;
     bool GetForceV1() const;
     bool GetForceNoHandoff() const;
 
@@ -123,6 +124,7 @@ private:
     HANDLE _vtOutHandle;
 
     std::wstring _vtMode;
+    std::wstring _textMeasurement;
 
     bool _forceNoHandoff;
     bool _forceV1;

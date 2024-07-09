@@ -182,6 +182,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum DcsActionCodes : uint64_t
         {
+            SIXEL_DefineImage = VTID("q"),
             DECDLD_DownloadDRCS = VTID("{"),
             DECAUPSS_AssignUserPreferenceSupplementalSet = VTID("!u"),
             DECDMAC_DefineMacro = VTID("!z"),
@@ -229,6 +230,7 @@ namespace Microsoft::Console::VirtualTerminal
             FinalTermAction = 133,
             VsCodeAction = 633,
             ITerm2Action = 1337,
+            WTAction = 9001,
         };
 
         bool _GetOscSetColorTable(const std::wstring_view string,

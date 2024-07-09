@@ -3,7 +3,7 @@
 
 namespace Microsoft.Terminal.Query.Extension
 {
-    interface ILLMProvider
+    interface ILMProvider
     {
         void ClearMessageHistory();
         void SetSystemPrompt(String systemPrompt);

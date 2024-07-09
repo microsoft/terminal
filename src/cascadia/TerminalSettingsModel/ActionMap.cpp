@@ -882,6 +882,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return results;
     }
 
+    void ActionMap::AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys)
+    {
+        auto newAction = winrt::make<ActionAndArgs>();
+        newAction.Action(ShortcutAction::SendInput);
+        auto sendInputArgs = winrt::make<SendInputArgs>(input);
+        newAction.Args(sendInputArgs);
+        auto cmd{ make_self<Command>() };
+        if (!name.empty())
+        {
+            cmd->Name(name);
+        }
+        cmd->ActionAndArgs(newAction);
+        cmd->GenerateID();
+        AddAction(*cmd, keys);
+    }
+
     IVector<Model::Command> ActionMap::FilterToSendInput(
         winrt::hstring currentCommandline)
     {

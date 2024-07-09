@@ -342,6 +342,24 @@
     <value>Quando habilitado, o terminal usará um rasterizador de software (WARP). Esta configuração deve ser desabilitada em quase todas as circunstâncias.</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
+  <data name="Globals_TextMeasurement.Header" xml:space="preserve">
+    <value>Modo de medição de texto</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+    <value>Isso altera a maneira como o texto de entrada é agrupado em células. A opção "Clusters do Grapheme" é a maneira mais moderna e correta de fazer isso, enquanto "wcswidth" é uma abordagem comum no UNIX e o "Console do Windows" replica a maneira como ele funciona no Windows. Alterar essa configuração requer uma reinicialização Terminal do Windows e aplica-se somente a aplicativos iniciados de dentro dela.</value>
+  </data>
+  <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
+    <value>Clusters do Grapheme</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
+    <value>wcswidth</value>
+    <comment>{Locked="wcswidth"}</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
+    <value>Console do Windows</value>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colunas</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -931,7 +949,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>Quando habilitado, o terminal desenha glifos personalizados para caracteres de desenho de elemento de bloco e caixa em vez de usar a fonte. Esse recurso não está disponível ao usar o Direct2D como a API de Gráficos.</value>
+    <value>Quando habilitado, o terminal desenha glifos personalizados para elementos de bloco e caracteres de desenho de caixa em vez de usar a fonte.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
