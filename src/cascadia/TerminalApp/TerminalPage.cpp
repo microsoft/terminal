@@ -3321,7 +3321,7 @@ namespace winrt::TerminalApp::implementation
                         return true;
                     }
                     return false;
-                    });
+                });
                 // Bail out if we already found one.
                 if (found)
                 {
