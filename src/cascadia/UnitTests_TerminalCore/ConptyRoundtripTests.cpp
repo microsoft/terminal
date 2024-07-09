@@ -4873,13 +4873,7 @@ void ConptyRoundtripTests::ReflowPromptRegions()
             til::point afterPos = originalPos;
             // walk that original pos dx times into the actual real place in the buffer.
             auto bufferViewport = tb.GetSize();
-            const auto walkDir = Viewport::WalkDir{ dx < 0 ? Viewport::XWalk::LeftToRight : Viewport::XWalk::RightToLeft,
-                                                    dx < 0 ? Viewport::YWalk::TopToBottom : Viewport::YWalk::BottomToTop };
-            for (auto i = 0; i < std::abs(dx); i++)
-            {
-                bufferViewport.WalkInBounds(afterPos,
-                                            walkDir);
-            }
+            bufferViewport.WalkInBounds(afterPos, -dx);
             const auto expectedOutputStart = !afterResize ?
                                                  originalPos : // printed exactly a row, so we're exactly below the prompt
                                                  afterPos;

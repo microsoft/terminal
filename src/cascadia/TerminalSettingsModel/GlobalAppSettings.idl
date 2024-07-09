@@ -79,6 +79,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Microsoft.Terminal.Control.GraphicsAPI, GraphicsAPI);
         INHERITABLE_SETTING(Boolean, DisablePartialInvalidation);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.TextMeasurement, TextMeasurement);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);

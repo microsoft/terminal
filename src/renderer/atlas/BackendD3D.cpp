@@ -15,9 +15,10 @@
 #include "dwrite.h"
 #include "wic.h"
 #include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/convert.hpp"
 
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
-#include "colorbrewer.h"
+#include <til/colorbrewer.h>
 #endif
 
 TIL_FAST_MATH_BEGIN
@@ -305,7 +306,7 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
         // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
         const auto height = std::max(3, duBottom + duHeight - duTop);
-        const auto position = std::min(duTop, cellHeight - height - duHeight);
+        const auto position = std::min(duTop, cellHeight - height);
 
         _curlyLineHalfHeight = height * 0.5f;
         _curlyUnderline.position = gsl::narrow_cast<u16>(position);
@@ -451,15 +452,21 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
         {
             if (error)
             {
-                LOG_HR_MSG(hr, "%.*hs", static_cast<int>(error->GetBufferSize()), static_cast<char*>(error->GetBufferPointer()));
+                if (p.warningCallback)
+                {
+                    //to handle compile time errors
+                    const std::string_view errMsgStrView{ static_cast<const char*>(error->GetBufferPointer()), error->GetBufferSize() };
+                    const auto errMsgWstring = ConvertToW(CP_ACP, errMsgStrView);
+                    p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, errMsgWstring);
+                }
             }
             else
             {
-                LOG_HR(hr);
-            }
-            if (p.warningCallback)
-            {
-                p.warningCallback(D2DERR_SHADER_COMPILE_FAILED, p.s->misc->customPixelShaderPath);
+                if (p.warningCallback)
+                {
+                    //to handle errors such as file not found, path not found, access denied
+                    p.warningCallback(hr, p.s->misc->customPixelShaderPath);
+                }
             }
         }
 
@@ -2222,7 +2229,7 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
         if (rect.non_empty())
         {
             _appendQuad() = {
-                .shadingType = ShadingType::Selection,
+                .shadingType = static_cast<u16>(ShadingType::Selection),
                 .position = {
                     static_cast<i16>(rect.left),
                     static_cast<i16>(rect.top),
@@ -2231,7 +2238,7 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
                     static_cast<u16>(rect.right - rect.left),
                     static_cast<u16>(rect.bottom - rect.top),
                 },
-                .color = colorbrewer::pastel1[i] | 0x1f000000,
+                .color = til::colorbrewer::pastel1[i] | 0x1f000000,
             };
         }
     }

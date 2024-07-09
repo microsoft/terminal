@@ -209,6 +209,7 @@ void AppCommandlineArgs::_buildParser()
     _buildMovePaneParser();
     _buildSwapPaneParser();
     _buildFocusPaneParser();
+    _buildSaveSnippetParser();
 }
 
 // Method Description:
@@ -537,6 +538,72 @@ void AppCommandlineArgs::_buildFocusPaneParser()
     setupSubcommand(_focusPaneShort);
 }
 
+void AppCommandlineArgs::_buildSaveSnippetParser()
+{
+    _saveCommand = _app.add_subcommand("x-save-snippet", RS_A(L"SaveSnippetDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        subcommand->add_option("--name,-n", _saveInputName, RS_A(L"SaveSnippetArgDesc"));
+        subcommand->add_option("--keychord,-k", _keyChordOption, RS_A(L"KeyChordArgDesc"));
+        subcommand->add_option("command,", _commandline, RS_A(L"CmdCommandArgDesc"));
+        subcommand->positionals_at_end(true);
+
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the action from the values we've parsed on the commandline.
+            ActionAndArgs saveSnippet{};
+            saveSnippet.Action(ShortcutAction::SaveSnippet);
+            // First, parse out the commandline in the same way that
+            // _getNewTerminalArgs does it
+            SaveSnippetArgs args{};
+
+            if (!_commandline.empty())
+            {
+                std::ostringstream cmdlineBuffer;
+
+                for (const auto& arg : _commandline)
+                {
+                    if (cmdlineBuffer.tellp() != 0)
+                    {
+                        // If there's already something in here, prepend a space
+                        cmdlineBuffer << ' ';
+                    }
+
+                    if (arg.find(" ") != std::string::npos)
+                    {
+                        cmdlineBuffer << '"' << arg << '"';
+                    }
+                    else
+                    {
+                        cmdlineBuffer << arg;
+                    }
+                }
+
+                args.Commandline(winrt::to_hstring(cmdlineBuffer.str()));
+            }
+
+            if (!_keyChordOption.empty())
+            {
+                args.KeyChord(winrt::to_hstring(_keyChordOption));
+            }
+
+            if (!_saveInputName.empty())
+            {
+                winrt::hstring hString = winrt::to_hstring(_saveInputName);
+                args.Name(hString);
+            }
+
+            saveSnippet.Args(args);
+            _startupActions.push_back(saveSnippet);
+        });
+    };
+
+    setupSubcommand(_saveCommand);
+}
+
 // Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
@@ -710,7 +777,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusPaneCommand ||
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
-             *_newPaneCommand.subcommand);
+             *_newPaneCommand.subcommand ||
+             *_saveCommand);
 }
 
 // Method Description:

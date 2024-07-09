@@ -333,6 +333,14 @@ void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replac
     }
 }
 
+void Terminal::SearchMissingCommand(const std::wstring_view command)
+{
+    if (_pfnSearchMissingCommand)
+    {
+        _pfnSearchMissingCommand(command);
+    }
+}
+
 void Terminal::NotifyBufferRotation(const int delta)
 {
     // Update our selection, so it doesn't move as the buffer is cycled

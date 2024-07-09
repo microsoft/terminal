@@ -116,6 +116,8 @@ binplaced
 binskim
 bitcoin
 bitcrazed
+BITMAPINFO
+BITMAPINFOHEADER
 bitmasks
 BITOPERATION
 BKCOLOR
@@ -123,6 +125,7 @@ BKGND
 Bksp
 Blt
 BLUESCROLL
+bmi
 BODGY
 BOLDFONT
 Borland
@@ -146,6 +149,7 @@ bytebuffer
 cac
 cacafire
 CALLCONV
+CANDRABINDU
 capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
@@ -156,6 +160,7 @@ CBash
 cbiex
 CBN
 cbt
+Ccc
 CCCBB
 cch
 CCHAR
@@ -293,7 +298,6 @@ CREATESTRUCT
 CREATESTRUCTW
 createvpack
 crisman
-CRLFs
 crloew
 CRTLIBS
 csbi
@@ -394,6 +398,11 @@ DECERA
 DECFI
 DECFNK
 DECFRA
+DECGCI
+DECGCR
+DECGNL
+DECGRA
+DECGRI
 DECIC
 DECID
 DECINVM
@@ -430,6 +439,7 @@ DECSCA
 DECSCNM
 DECSCPP
 DECSCUSR
+DECSDM
 DECSED
 DECSEL
 DECSERA
@@ -515,6 +525,7 @@ dsound
 DSSCL
 DSwap
 DTest
+DTo
 DTTERM
 dup'ed
 dvi
@@ -593,6 +604,7 @@ fesb
 FFAF
 ffd
 FFDE
+FFFD
 FFFDb
 fgbg
 FGCOLOR
@@ -613,6 +625,7 @@ FINDREGEX
 FINDSTRINGEXACT
 FINDUP
 FIter
+FITZPATRICK
 FIXEDFILEINFO
 Flg
 flyouts
@@ -737,6 +750,7 @@ HABCDEF
 Hackathon
 HALTCOND
 HANGEUL
+hardlinks
 hashalg
 HASSTRINGS
 hbitmap
@@ -880,10 +894,12 @@ jconcpp
 JLO
 JOBOBJECT
 JOBOBJECTINFOCLASS
+JONGSEONG
 JPN
 jsoncpp
 jsprovider
 jumplist
+JUNGSEONG
 KAttrs
 kawa
 Kazu
@@ -902,6 +918,7 @@ keyups
 KILLACTIVE
 KILLFOCUS
 kinda
+KIYEOK
 KLF
 KLMNO
 KLMNOPQRST
@@ -1011,6 +1028,7 @@ luma
 lval
 LVB
 LVERTICAL
+LVT
 LWA
 LWIN
 lwkmvj
@@ -1079,6 +1097,7 @@ MOUSEFIRST
 MOUSEHWHEEL
 MOVESTART
 msb
+msbuildcache
 msctf
 msctls
 msdata
@@ -1206,6 +1225,7 @@ ntuser
 NTVDM
 ntverp
 nugetversions
+NUKTA
 nullness
 nullonfailure
 nullopts
@@ -1468,7 +1488,6 @@ READMODE
 rectread
 redef
 redefinable
-Redir
 redist
 REDSCROLL
 REFCLSID
@@ -1486,8 +1505,10 @@ renderengine
 rendersize
 reparented
 reparenting
+REPH
 replatformed
 Replymessage
+reportfileaccesses
 repositorypath
 Requiresx
 rerasterize
@@ -1502,6 +1523,7 @@ rfa
 rfid
 rftp
 rgbi
+RGBQUAD
 rgbs
 rgci
 rgfae
@@ -1515,6 +1537,7 @@ rgw
 RIGHTALIGN
 RIGHTBUTTON
 riid
+ris
 RIS
 roadmap
 robomac
@@ -1665,9 +1688,11 @@ SOLIDBOX
 Solutiondir
 somefile
 sourced
+SRCAND
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
+SRCPAINT
 srcsrv
 SRCSRVTRG
 srctool
@@ -1920,6 +1945,7 @@ vga
 vgaoem
 viewkind
 viewports
+VIRAMA
 Virt
 VIRTTERM
 vkey
@@ -1970,8 +1996,8 @@ wchars
 WCIA
 WCIW
 WCSHELPER
-wcsicmp
 wcsrev
+wcswidth
 wddm
 wddmcon
 WDDMCONSOLECONTEXT
@@ -2004,6 +2030,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windir
 windll
 WINDOWALPHA
 windowdpiapi
@@ -2126,6 +2153,7 @@ XFORM
 XIn
 XManifest
 XMath
+XNamespace
 xorg
 XPan
 XResource
@@ -2157,6 +2185,7 @@ Zabcdefghijklmn
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl
+ZWJs
 zxcvbnm
 ZYXWVU
 ZYXWVUTd

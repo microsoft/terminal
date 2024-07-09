@@ -33,6 +33,7 @@
 #include "ScrollToMarkArgs.g.cpp"
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
+#include "SaveSnippetArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
@@ -945,6 +946,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             Opacity())
             };
         }
+    }
+
+    winrt::hstring SaveSnippetArgs::GenerateName() const
+    {
+        if (Feature_SaveSnippet::IsEnabled())
+        {
+            std::wstringstream ss;
+
+            ss << RS_(L"SaveSnippetNamePrefix").c_str() << L" commandline: " << Commandline().c_str();
+
+            if (!Name().empty())
+            {
+                ss << L", name: " << Name().c_str();
+            }
+
+            if (!KeyChord().empty())
+            {
+                ss << L", keyChord " << KeyChord().c_str();
+            }
+
+            return winrt::hstring{ ss.str() };
+        }
+        return L"";
     }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)

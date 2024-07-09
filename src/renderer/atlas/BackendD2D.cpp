@@ -7,7 +7,7 @@
 #include <til/unicode.h>
 
 #if ATLAS_DEBUG_SHOW_DIRTY
-#include "colorbrewer.h"
+#include <til/colorbrewer.h>
 #endif
 
 #if ATLAS_DEBUG_DUMP_RENDER_TARGET
@@ -394,8 +394,14 @@ void BackendD2D::_prepareBuiltinGlyphRenderTarget(const RenderingPayload& p)
     THROW_IF_FAILED(target->GetBitmap(_builtinGlyphsBitmap.put()));
     _builtinGlyphsRenderTarget = target.query<ID2D1DeviceContext>();
     _builtinGlyphsBitmapCellCountU = cellCountU;
-    _builtinGlyphsRenderTargetActive = false;
     memset(&_builtinGlyphsReady[0], 0, sizeof(_builtinGlyphsReady));
+
+    _builtinGlyphsRenderTarget->BeginDraw();
+    _builtinGlyphsRenderTargetActive = true;
+
+    // The initial contents of the bitmap are undefined.
+    // -> We need to define them. :)
+    _builtinGlyphsRenderTarget->Clear();
 }
 
 D2D1_RECT_U BackendD2D::_prepareBuiltinGlyph(const RenderingPayload& p, char32_t ch, u32 off)
@@ -622,24 +628,14 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
         // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
         const auto height = std::max(3.0f, duBottom + duHeight - duTop);
-        const auto position = std::min(duTop, cellHeight - height - duHeight);
+        const auto position = std::min(duTop, cellHeight - height);
 
         // The amplitude of the wave needs to account for the stroke width, so that the final height including
         // antialiasing isn't larger than our target `height`. That's why we calculate `(height - duHeight)`.
-        //
-        // In other words, Direct2D draws strokes centered on the path. This also means that (for instance)
-        // for a line width of 1px, we need to ensure that the amplitude passes through the center of a pixel.
-        // Because once the path gets stroked, it'll occupy half a pixel on either side of the path.
-        // This results in a "crisp" look. That's why we do `round(amp + half) - half`.
-        const auto halfLineWidth = 0.5f * duHeight;
-        const auto amplitude = roundf((height - duHeight) * 0.5f + halfLineWidth) - halfLineWidth;
-        // While the amplitude needs to account for the stroke width, the vertical center of the wave needs
-        // to be at an integer pixel position of course. Otherwise, the wave won't be vertically symmetric.
-        const auto center = cellCenter + position + amplitude + halfLineWidth;
-
-        const auto top = center - 2.0f * amplitude;
-        const auto bottom = center + 2.0f * amplitude;
-        const auto step = 0.5f * height;
+        const auto center = cellCenter + position + 0.5f * height;
+        const auto top = center - (height - duHeight);
+        const auto bottom = center + (height - duHeight);
+        const auto step = roundf(0.5f * height);
         const auto period = 4.0f * step;
 
         const auto from = r.from * scaledCellWidth;
@@ -911,7 +907,7 @@ void BackendD2D::_debugShowDirty(const RenderingPayload& p)
                 static_cast<f32>(rect.right),
                 static_cast<f32>(rect.bottom),
             };
-            const auto color = colorbrewer::pastel1[i] | 0x1f000000;
+            const auto color = til::colorbrewer::pastel1[i] | 0x1f000000;
             _fillRectangle(rectF, color);
         }
     }

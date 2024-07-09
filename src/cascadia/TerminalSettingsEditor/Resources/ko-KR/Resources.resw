@@ -342,6 +342,24 @@
     <value>사용하도록 설정하면 터미널에서 소프트웨어 래스터라이저(WARP)를 사용합니다. 거의 모든 상황에서는 이 설정을 사용하지 않도록 설정해야 합니다.</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
+  <data name="Globals_TextMeasurement.Header" xml:space="preserve">
+    <value>텍스트 측정 모드</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+    <value>들어오는 텍스트가 셀로 그룹화되는 방식을 변경합니다. "Grapheme 클러스터" 옵션은 가장 최신이며 유니코드로 올바른 방법이며, "wcswidth"는 UNIX에서 일반적인 접근 방식이며 "Windows 콘솔"은 Windows에서 작동하는 방식을 복제합니다. 이 설정을 변경하려면 Windows 터미널 다시 시작해야 하며 이 설정 내에서 시작된 애플리케이션에만 적용됩니다.</value>
+  </data>
+  <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
+    <value>Grapheme 클러스터</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
+    <value>wcswidth</value>
+    <comment>{Locked="wcswidth"}</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
+    <value>Windows 콘솔</value>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>열</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -931,7 +949,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>사용하도록 설정하면 터미널은 글꼴을 사용하는 대신 블록 요소 및 상자 그리기 문자에 대한 사용자 지정 문자 모양을 그립니다. Direct2D를 그래픽 API로 사용할 때는 이 기능을 사용할 수 없습니다.</value>
+    <value>사용하도록 설정하면 터미널은 글꼴을 사용하는 대신 블록 요소 및 상자 그리기 문자에 대한 사용자 지정 문자 모양을 그립니다.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

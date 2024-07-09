@@ -130,6 +130,8 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         OutputCellIterator it(chars);
         const auto finished = screenInfo.Write(it, target);
         used = finished.GetInputDistance(it);
+        // If we've overwritten image content, it needs to be erased.
+        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), target, used);
     }
     CATCH_RETURN();
 
@@ -223,7 +225,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         {
             // Notify accessibility
             auto endingCoordinate = startingCoordinate;
-            bufferSize.MoveInBounds(cellsModifiedCoord, endingCoordinate);
+            bufferSize.WalkInBounds(endingCoordinate, cellsModifiedCoord);
             screenBuffer.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
         }
     }
@@ -283,11 +285,14 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
         cellsModified = cellsModifiedCoord;
 
+        // If we've overwritten image content, it needs to be erased.
+        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), startingCoordinate, cellsModified);
+
         // Notify accessibility
         if (screenInfo.HasAccessibilityEventing())
         {
             auto endingCoordinate = startingCoordinate;
-            bufferSize.MoveInBounds(cellsModifiedCoord, endingCoordinate);
+            bufferSize.WalkInBounds(endingCoordinate, cellsModifiedCoord);
             screenInfo.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
         }
 

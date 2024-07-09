@@ -49,7 +49,8 @@
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, AutoMarkPrompts)                                                                                      \
-    X(bool, RepositionCursorWithMouse, false)
+    X(bool, RepositionCursorWithMouse, false)                                                                     \
+    X(bool, RainbowSuggestions)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
@@ -76,6 +77,7 @@
     X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI)                                                                                     \
     X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
+    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \

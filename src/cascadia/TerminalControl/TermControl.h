@@ -73,8 +73,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
+        void PreviewInput(const winrt::hstring& text);
 
         Windows::Foundation::Point CursorPositionInDips();
+        double QuickFixButtonWidth();
+        double QuickFixButtonCollapsedWidth();
 
         void WindowVisibilityChanged(const bool showOrHide);
 
@@ -167,6 +170,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
+        void UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions);
 
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
@@ -178,6 +182,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void RawWriteString(const winrt::hstring& text);
 
         void ShowContextMenu();
+        void RefreshQuickFixMenu();
+        void ClearQuickFix();
 
         void Detach();
 
@@ -202,17 +208,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::KeySentEventArgs> KeySent;
         til::typed_event<IInspectable, Control::CharSentEventArgs> CharSent;
         til::typed_event<IInspectable, Control::StringSentEventArgs> StringSent;
+        til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
         // the core ever gets detached & reattached to another window.
-        BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
-        BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
-        BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,     IInspectable, Control::CompletionsChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,             IInspectable, Control::TitleChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,          IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,       IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged,   IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,        IInspectable, Control::ShowWindowArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested,   IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,       IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
@@ -242,6 +249,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _closing{ false };
         bool _focused{ false };
         bool _initializedTerminal{ false };
+        bool _quickFixButtonCollapsible{ false };
+        bool _quickFixesAvailable{ false };
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
@@ -332,6 +341,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _MouseWheelHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _ScrollbarChangeHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs& e);
 
+        void _QuickFixButton_PointerEntered(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _QuickFixButton_PointerExited(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+
         void _GotFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void _LostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
@@ -394,6 +406,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
         void _showContextMenuAt(const til::point& controlRelativePos);
 
+        void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
+
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
@@ -423,6 +437,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
+            Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
+            Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;

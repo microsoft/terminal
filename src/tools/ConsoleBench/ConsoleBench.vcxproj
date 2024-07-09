@@ -25,6 +25,9 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="ConsoleBench.exe.manifest" />
+  </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <ControlFlowGuard>false</ControlFlowGuard>
