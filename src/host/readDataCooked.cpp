@@ -826,7 +826,7 @@ void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* inp
     if (offset <= _bufferDirtyBeg)
     {
         const auto& textBuffer = _screenInfo.GetTextBuffer();
-        _bufferDirtyBeg = textBuffer.GraphemePrev(_buffer, _bufferCursor);
+        _bufferDirtyBeg = textBuffer.GraphemePrev(_buffer, offset + 1);
     }
 }
 
