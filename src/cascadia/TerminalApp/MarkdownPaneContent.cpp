@@ -29,11 +29,22 @@ namespace winrt::TerminalApp::implementation
 {
     struct MyMarkdownData
     {
-        WUX::Controls::StackPanel root{};
+        WUX::Controls::RichTextBlock root{};
         implementation::MarkdownPaneContent* page{ nullptr };
         WUX::Controls::TextBlock current{ nullptr };
         WUX::Documents::Run currentRun{ nullptr };
+        WUX::Documents::Paragraph lastParagraph{ nullptr };
         TerminalApp::CodeBlock currentCodeBlock{ nullptr };
+
+        WUX::Documents::Paragraph currentParagraph()
+        {
+            if (lastParagraph == nullptr)
+            {
+                lastParagraph = WUX::Documents::Paragraph();
+                root.Blocks().Append(lastParagraph);
+            }
+            return lastParagraph;
+        }
     };
     WUX::Controls::TextBlock makeDefaultTextBlock()
     {
@@ -395,19 +406,17 @@ namespace winrt::TerminalApp::implementation
             {
                 auto heading = node->content;
                 auto headingHstr{ winrt::to_hstring(std::string_view{ (char*)heading.ptr, (size_t)heading.size }) };
-                // char* headingStr = (char*)malloc(heading.size + 1); // Allocate memory for the char*
-                // if (headingStr != NULL)
-                // {
-                //     cmark_strbuf_copy_cstr(headingStr, heading.size + 1, &heading);
-                // }
+
                 auto level = node->as.heading.level;
-                // Paragraph paragraph = Paragraph();
-                // Run run = Run();
-                WUX::Controls::TextBlock tb{};
-                tb.Text(headingHstr);
-                tb.FontSize((double)(14 + 6 * (6 - level)));
-                // paragraph.Inlines().Append(run);
-                data.root.Children().Append(tb);
+                WUX::Documents::Paragraph paragraph{};
+                paragraph.FontSize((double)(14 + 6 * (6 - level)));
+
+                WUX::Documents::Run run{};
+                run.Text(headingHstr);
+                paragraph.Inlines().Append(run);
+                data.root.Blocks().Append(paragraph);
+
+                data.lastParagraph = nullptr;
             }
             break;
 
@@ -508,14 +517,22 @@ namespace winrt::TerminalApp::implementation
             //     cmark_strbuf_puts(html, "</p>\n");
             //   }
             // }
+            {
+                data.lastParagraph = WUX::Documents::Paragraph();
+                data.root.Blocks().Append(data.lastParagraph);
+            }
             break;
         }
         case CMARK_NODE_TEXT:
             // escape_html(html, node->as.literal.data, node->as.literal.len);
             {
-                WUX::Controls::TextBlock tb = makeDefaultTextBlock();
-                tb.Text(winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }));
-                data.root.Children().Append(tb);
+                // WUX::Controls::TextBlock tb = makeDefaultTextBlock();
+                // tb.Text(winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }));
+                // data.root.Children().Append(tb);
+
+                WUX::Documents::Run run{};
+                run.Text(winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }));
+                data.currentParagraph().Inlines().Append(run);
             }
 
             break;
@@ -683,7 +700,7 @@ namespace winrt::TerminalApp::implementation
             curr = cmark_iter_get_node(iter);
             renderNode(curr, ev_type, data, 0);
             // bool entering = (ev_type == CMARK_EVENT_ENTER);
-            // 
+            //
             // // auto child = doc->first_child;
             // if (curr->type == CMARK_NODE_HEADING && entering)
             // {
@@ -709,8 +726,6 @@ namespace winrt::TerminalApp::implementation
             //     RenderedMarkdown().Children().Append(tb);
             // }
         }
-
-        
     }
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -799,6 +814,10 @@ namespace winrt::TerminalApp::implementation
     {
         const auto& value{ FileContents() };
         MyMarkdownData data{};
+
+        data.root.IsTextSelectionEnabled(true);
+        data.root.TextWrapping(WUX::TextWrapping::WrapWholeWords);
+
         parseMarkdown(value, data);
         RenderedMarkdown().Children().Append(data.root);
     }
