@@ -20,8 +20,8 @@ namespace Microsoft::Console::VirtualTerminal
     class VtIo
     {
     public:
-        static void FormatAttributes(std::string& target, WORD attributes);
-        static void FormatAttributes(std::wstring& target, WORD attributes);
+        static void FormatAttributes(std::string& target, const TextAttribute& attributes);
+        static void FormatAttributes(std::wstring& target, const TextAttribute& attributes);
 
         VtIo();
 

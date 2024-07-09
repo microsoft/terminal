@@ -1251,7 +1251,7 @@ void COOKED_READ_DATA::_appendCUP(std::wstring& output, til::point pos)
 
 void COOKED_READ_DATA::_appendPopupAttr(std::wstring& output) const
 {
-    VtIo::FormatAttributes(output, _screenInfo.GetPopupAttributes().GetLegacyAttributes());
+    VtIo::FormatAttributes(output, _screenInfo.GetPopupAttributes());
 }
 
 void COOKED_READ_DATA::_popupPush(const PopupKind kind)

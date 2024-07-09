@@ -522,8 +522,8 @@ bool VtIo::IsResizeQuirkEnabled() const
 // Formats the given console attributes to their closest VT equivalent.
 // `out` must refer to at least `formatAttributesMaxLen` characters of valid memory.
 // Returns a pointer past the end.
-static constexpr size_t formatAttributesMaxLen = 13;
-static char* formatAttributes(char* out, WORD attributes) noexcept
+static constexpr size_t formatAttributesMaxLen = 16;
+static char* formatAttributes(char* out, const TextAttribute& attributes) noexcept
 {
     // Applications expect that SetConsoleTextAttribute() completely replaces whatever attributes are currently set,
     // including any potential VT-exclusive attributes. Since we don't know what those are, we must always emit a SGR 0.
@@ -534,25 +534,22 @@ static char* formatAttributes(char* out, WORD attributes) noexcept
     out += 3;
 
     // 2 bytes.
-    if (attributes & COMMON_LVB_REVERSE_VIDEO)
+    if (attributes.IsReverseVideo())
     {
         memcpy(out, ";7", 2);
         out += 2;
     }
 
-    // `attributes` of exactly `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED`
-    // are often used to indicate the default colors in Windows Console applications.
-    // Since we always emit SGR 0 (reset all attributes), we simply need to skip this branch.
-    //
-    // 7 bytes (";97;107").
-    if ((attributes & (FG_ATTRS | BG_ATTRS)) != (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED))
+    // 7 bytes (";97").
+    if (attributes.GetForeground().IsIndex16())
     {
-        // The Console API represents colors in BGR order, but VT represents them in RGB order.
-        // This LUT transposes them. This is for foreground colors. Add +10 to get the background ones.
-        static constexpr uint8_t lut[] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97 };
-        const uint8_t fg = lut[attributes & 0xf];
-        const uint8_t bg = lut[(attributes >> 4) & 0xf] + 10;
-        out = fmt::format_to(out, FMT_COMPILE(";{};{}"), fg, bg);
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), attributes.GetForeground().GetIndex());
+    }
+
+    // 4 bytes (";107").
+    if (attributes.GetBackground().IsIndex16())
+    {
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), attributes.GetBackground().GetIndex());
     }
 
     // 1 byte.
@@ -560,7 +557,7 @@ static char* formatAttributes(char* out, WORD attributes) noexcept
     return out;
 }
 
-void VtIo::FormatAttributes(std::string& target, WORD attributes)
+void VtIo::FormatAttributes(std::string& target, const TextAttribute& attributes)
 {
     const auto len = target.size();
     const auto cap = len + formatAttributesMaxLen;
@@ -571,7 +568,7 @@ void VtIo::FormatAttributes(std::string& target, WORD attributes)
     });
 }
 
-void VtIo::FormatAttributes(std::wstring& target, WORD attributes)
+void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attributes)
 {
     char buf[formatAttributesMaxLen];
     const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
