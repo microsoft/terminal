@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{7cae5851-50d5-4934-8d5e-30361a8a40f3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>cmark-gfm</RootNamespace>
+    <ProjectName>cmark-gfm</ProjectName>
+    <TargetName>cmark-gfm</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <AdditionalIncludeDirectories>$(SolutionDir)\oss\cmark-gfm\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- <WarningLevel>Level3</WarningLevel> -->
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <!-- <DisableSpecificWarnings>4242;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings> -->
+      <DisableSpecificWarnings>4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <TreatSpecificWarningsAsErrors>4189;4389</TreatSpecificWarningsAsErrors> <!-- NOT 4100 -->
+      <!-- <PreprocessorDefinitions>MD4C_USE_UTF16;%(PreprocessorDefinitions)</PreprocessorDefinitions> -->
+
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\arena.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\blocks.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\buffer.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\cmark.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\cmark_ctype.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\commonmark.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\footnotes.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\houdini_href_e.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\houdini_html_e.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\houdini_html_u.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\html.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\inlines.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\iterator.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\latex.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\linked_list.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\main.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\man.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\map.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\node.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\plaintext.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\plugin.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\references.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\registry.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\render.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\scanners.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\syntax_extension.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\utf8.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\src\xml.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\extensions\autolink.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\extensions\core-extensions.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\extensions\ext_scanners.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\extensions\strikethrough.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\extensions\table.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\extensions\tagfilter.c"/>
+    <ClCompile Include="$(SolutionDir)oss\cmark-gfm\extensions\tasklist.c"/>
+
+  </ItemGroup>
+  <ItemGroup>
+
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\buffer.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\chunk.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\cmark-gfm-extension_api.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\cmark-gfm.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\cmark-gfm_version.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\cmark_ctype.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\config.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\footnotes.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\houdini.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\html.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\inlines.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\iterator.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\map.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\node.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\parser.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\plugin.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\references.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\registry.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\render.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\scanners.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\syntax_extension.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\src\utf8.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\extensions\autolink.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\extensions\cmark-gfm-core-extensions.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\extensions\ext_scanners.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\extensions\strikethrough.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\extensions\table.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\extensions\tagfilter.h" />
+    <ClInclude Include="$(SolutionDir)oss\cmark-gfm\extensions\tasklist.h" />
+
+  </ItemGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+</Project>

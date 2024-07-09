@@ -237,7 +237,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{89CDCC
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types.Unit.Tests", "src\types\ut_types\Types.Unit.Tests.vcxproj", "{34DE34D3-1CD6-4EE3-8BD9-A26B5B27EC73}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "md4c", "src\dep\md4c\md4c.vcxproj", "{7CAE5851-50D5-4934-8D5E-30361A8A40F3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmark-gfm", "src\dep\cmark-gfm\cmark-gfm.vcxproj", "{7CAE5851-50D5-4934-8D5E-30361A8A40F3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfTerminalControl", "src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj", "{376FE273-6B84-4EB5-8B30-8DE9D21B022C}"
 EndProject
