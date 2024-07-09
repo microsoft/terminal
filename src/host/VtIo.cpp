@@ -525,6 +525,8 @@ bool VtIo::IsResizeQuirkEnabled() const
 static constexpr size_t formatAttributesMaxLen = 16;
 static char* formatAttributes(char* out, const TextAttribute& attributes) noexcept
 {
+    static uint8_t sgr[] = { 30, 31, 32, 33, 34, 35, 36, 37, 90, 91, 92, 93, 94, 95, 96, 97 };
+
     // Applications expect that SetConsoleTextAttribute() completely replaces whatever attributes are currently set,
     // including any potential VT-exclusive attributes. Since we don't know what those are, we must always emit a SGR 0.
     // Copying 4 bytes instead of the correct 3 means we need just 1 DWORD mov. Neat.
@@ -541,15 +543,17 @@ static char* formatAttributes(char* out, const TextAttribute& attributes) noexce
     }
 
     // 7 bytes (";97").
-    if (attributes.GetForeground().IsIndex16())
+    if (attributes.GetForeground().IsLegacy())
     {
-        out = fmt::format_to(out, FMT_COMPILE(";{}"), attributes.GetForeground().GetIndex());
+        const uint8_t index = sgr[attributes.GetForeground().GetIndex()];
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
     }
 
     // 4 bytes (";107").
-    if (attributes.GetBackground().IsIndex16())
+    if (attributes.GetBackground().IsLegacy())
     {
-        out = fmt::format_to(out, FMT_COMPILE(";{}"), attributes.GetBackground().GetIndex());
+        const uint8_t index = sgr[attributes.GetBackground().GetIndex()] + 10;
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
     }
 
     // 1 byte.
