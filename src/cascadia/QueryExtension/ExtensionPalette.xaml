@@ -352,18 +352,27 @@
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
-                    <Button x:Name="ClearMessagesButton"
-                            x:Uid="ClearMessagesButton"
-                            Grid.Row="0"
-                            Grid.Column="2"
-                            Margin="0,0,8,0"
-                            VerticalAlignment="Top"
-                            Click="_clearAndInitializeMessages">
-                        <Button.Content>
-                            <FontIcon FontSize="16"
-                                      Glyph="&#xE81C;" />
-                        </Button.Content>
-                    </Button>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="2"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Top"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                        <Button x:Uid="ClearMessagesButton"
+                                Click="_clearAndInitializeMessages">
+                            <Button.Content>
+                                <FontIcon FontSize="16"
+                                          Glyph="&#xE81C;" />
+                            </Button.Content>
+                        </Button>
+                        <Button x:Uid="ExportMessagesButton"
+                                Click="_exportMessagesToClipboard">
+                            <Button.Content>
+                                <FontIcon FontSize="16"
+                                          Glyph="&#xEDE1;" />
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
                     <mux:ProgressRing Grid.Row="1"
                                       Grid.Column="0"
                                       Width="15"

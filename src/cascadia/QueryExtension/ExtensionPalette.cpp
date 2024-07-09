@@ -373,6 +373,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _queryBox().Focus(FocusState::Programmatic);
     }
 
+    void ExtensionPalette::_exportMessagesToClipboard(const Windows::Foundation::IInspectable& /*sender*/,
+                                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+    }
+
     // Method Description:
     // - This event is called when the user clicks on a Chat Message. We will
     //   dispatch the contents of the message to the app to input into the active control.
