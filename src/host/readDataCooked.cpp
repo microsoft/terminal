@@ -821,13 +821,8 @@ void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* inp
 
     _buffer.replace(offset, remove, input, count);
     _bufferCursor = offset + count;
+    _bufferDirtyBeg = std::min(_bufferDirtyBeg, offset);
     _dirty = true;
-
-    if (offset <= _bufferDirtyBeg)
-    {
-        const auto& textBuffer = _screenInfo.GetTextBuffer();
-        _bufferDirtyBeg = textBuffer.GraphemePrev(_buffer, offset + 1);
-    }
 }
 
 void COOKED_READ_DATA::_replace(const std::wstring_view& str)
