@@ -30,9 +30,9 @@
     </Keyword>
   </Keywords>
   <Description>
-      Terminale Windows è un'applicazione terminale moderna, veloce, efficiente, utile e produttiva per gli utenti che utilizzano shell e strumenti da riga di comando come il prompt dei comandi, PowerShell e WSL. Le sue funzionalità principali includono più schede, riquadri, supporto dei caratteri Unicode e UTF-8, un motore di rendering del testo con accelerazione GPU, oltre a configurazioni, stili e temi personalizzati.
+      Terminale Windows è un'applicazione terminale moderna, veloce, efficiente, utile e produttiva per gli utenti che utilizzano shell e strumenti da riga di comando come il prompt dei comandi, PowerShell e WSL. Le funzionalità principali includono più schede, riquadri, supporto di caratteri Unicode e UTF-8, un motore di rendering del testo con accelerazione GPU e temi, stili e configurazioni personalizzati.
 
-Si tratta di un progetto open source in cui la partecipazione della community è ben gradita. Per partecipare, visita la pagina https://github.com/microsoft/terminal </Description>
+Si tratta di un progetto open source e la partecipazione della community è molto gradita. Per partecipare, visita la pagina https://github.com/microsoft/terminale </Description>
   <ShortDescription>
     <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
     

@@ -30,7 +30,7 @@
     </Keyword>
   </Keywords>
   <Description>
-    Dies ist die Vorschauversion des Windows-Terminals, die die neuesten Funktionen enthält, sobald sie entwickelt werden. Das Windows-Terminal ist eine moderne, schnelle, effiziente, leistungsstarke und produktive Terminalanwendung für Benutzer von Befehlszeilentools und Shells wie Eingabeaufforderung, PowerShell und WSL. Die wichtigsten Funktionen des Windows-Terminals umfassen mehrere Registerkarten, Bereiche, Unicode- und UTF-8-Zeichenunterstützung, GPU-beschleunigtes Textrendering-Modul sowie benutzerdefinierte Designs, Formatvorlagen und Konfigurationen.
+    Dies ist die Vorschauversion des Windows-Terminals, die die neuesten Funktionen enthält, sobald sie entwickelt werden. Das Windows-Terminal ist eine moderne, schnelle, effiziente, leistungsstarke und produktive Terminalanwendung für Benutzer von Befehlszeilentools und Shells wie Eingabeaufforderung, PowerShell und WSL. Die wichtigsten Features umfassen mehrere Registerkarten, Bereiche, Unicode- und UTF-8-Zeichenunterstützung, GPU-beschleunigtes Textrenderingmodul sowie benutzerdefinierte Designs, Formatvorlagen und Konfigurationen.
 
 Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme der Community. Um teilzunehmen, besuchen Sie bitte die Website https://github.com/microsoft/terminal </Description>
   <ShortDescription>

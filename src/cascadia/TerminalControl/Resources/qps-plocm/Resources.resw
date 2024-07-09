@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -195,11 +195,11 @@
     <comment>Whenever we encounter an invalid URI or URL we show this string as a warning.</comment>
   </data>
   <data name="NoticeFontNotFound" xml:space="preserve">
-    <value>Ůŉäвľė ťö ƒΐńđ τħé şèℓ℮ĉťēδ ƒòñŧ "{0}".
+    <value>Ůŉäвľė ťö ƒΐńđ τħé şèℓ℮ĉťēδ ƒòñŧ "{0}". !!! !!! !!! !!!
 
-"{1}" ђàś ъëęñ šеŀесťĕđ ιñśтёąδ.
+"{1}" ђàś ъëęñ šеŀесťĕđ ιñśтёąδ. !!! !!! !!! 
 
-Ρℓēάŝę ėїţħěř ĭлşţäļł ťнз mîşśĭηģ ƒóⁿт òґ ¢ћōóşę άηŏťнєѓ ôŋє. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+Ρℓēάŝę ėїţħěř ĭлşţäļł ťнз mîşśĭηģ ƒóⁿт òґ ¢ћōóşę άηŏťнєѓ ôŋє. !!! !!! !!! !!! !!! !!!</value>
     <comment>0 and 1 are names of fonts provided by the user and system respectively.</comment>
   </data>
   <data name="PixelShaderNotFound" xml:space="preserve">

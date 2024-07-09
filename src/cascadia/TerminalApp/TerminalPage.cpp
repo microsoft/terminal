@@ -16,6 +16,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
+#include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 
 #include "TerminalPage.g.cpp"
@@ -451,10 +452,10 @@ namespace winrt::TerminalApp::implementation
     // - command - command to dispatch
     // Return Value:
     // - <none>
-    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command)
     {
         const auto& actionAndArgs = command.ActionAndArgs();
-        _actionDispatch->DoAction(actionAndArgs);
+        _actionDispatch->DoAction(sender, actionAndArgs);
     }
 
     // Method Description:
@@ -635,9 +636,12 @@ namespace winrt::TerminalApp::implementation
             // GH#6586: now that we're done processing all startup commands,
             // focus the active control. This will work as expected for both
             // commandline invocations and for `wt` action invocations.
-            if (const auto control = _GetActiveControl())
+            if (const auto& terminalTab{ _GetFocusedTabImpl() })
             {
-                control.Focus(FocusState::Programmatic);
+                if (const auto& content{ terminalTab->GetActiveContent() })
+                {
+                    content.Focus(FocusState::Programmatic);
+                }
             }
         }
         if (initial)
@@ -2548,16 +2552,16 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UnZoomIfNeeded();
-        auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
+        auto [original, newGuy] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
         // the control here instead.
         if (_startupState == StartupState::Initialized)
         {
-            if (const auto control = _GetActiveControl())
+            if (const auto& content{ newGuy->GetContent() })
             {
-                control.Focus(FocusState::Programmatic);
+                content.Focus(FocusState::Programmatic);
             }
         }
     }
@@ -3352,6 +3356,8 @@ namespace winrt::TerminalApp::implementation
         return resultPane;
     }
 
+    // NOTE: callers of _MakePane should be able to accept nullptr as a return
+    // value gracefully.
     std::shared_ptr<Pane> TerminalPage::_MakePane(const INewContentArgs& contentArgs,
                                                   const winrt::TerminalApp::TabBase& sourceTab,
                                                   TerminalConnection::ITerminalConnection existingConnection)
@@ -3381,6 +3387,36 @@ namespace winrt::TerminalApp::implementation
         else if (paneType == L"settings")
         {
             content = _makeSettingsContent();
+        }
+        else if (paneType == L"snippets")
+        {
+            // Prevent the user from opening a bunch of snippets panes.
+            //
+            // Look at the focused tab, and if it already has one, then just focus it.
+            const bool found = _GetFocusedTab().try_as<TerminalTab>()->GetRootPane()->WalkTree([](const auto& p) -> bool {
+                if (const auto& snippets{ p->GetContent().try_as<SnippetsPaneContent>() })
+                {
+                    snippets->Focus(FocusState::Programmatic);
+                    return true;
+                }
+                return false;
+            });
+            // Bail out if we already found one.
+            if (found)
+            {
+                return nullptr;
+            }
+
+            const auto& tasksContent{ winrt::make_self<SnippetsPaneContent>() };
+            tasksContent->UpdateSettings(_settings);
+            tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+            tasksContent->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+            if (const auto& termControl{ _GetActiveControl() })
+            {
+                tasksContent->SetLastActiveControl(termControl);
+            }
+
+            content = *tasksContent;
         }
 
         assert(content);
