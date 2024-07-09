@@ -123,22 +123,12 @@ private:
     static size_t _wordPrev(const std::wstring_view& chars, size_t position);
     static size_t _wordNext(const std::wstring_view& chars, size_t position);
 
-    til::point _getCursorPosition() const noexcept
-    {
-        const auto& textBuffer = _screenInfo.GetTextBuffer();
-        const auto& cursor = textBuffer.GetCursor();
-        auto cursorPos = cursor.GetPosition();
-
-        _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
-        cursorPos.x = std::max(0, cursorPos.x);
-        cursorPos.y = std::max(0, cursorPos.y);
-        return cursorPos;
-    }
     void _readCharInputLoop();
     void _handleChar(wchar_t wch, DWORD modifiers);
     void _handleVkey(uint16_t vkey, DWORD modifiers);
     void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
     void _transitionState(State state) noexcept;
+    til::point _getViewportCursorPosition() const noexcept;
     void _replace(size_t offset, size_t remove, const wchar_t* input, size_t count);
     void _replace(const std::wstring_view& str);
     std::wstring_view _slice(size_t from, size_t to) const noexcept;

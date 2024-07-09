@@ -61,7 +61,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     THROW_IF_FAILED(_screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
 #endif
 
-    const auto cursorPos = _getCursorPosition();
+    const auto cursorPos = _getViewportCursorPosition();
     _originInViewport = cursorPos;
 
     if (!initialData.empty())
@@ -308,7 +308,7 @@ void COOKED_READ_DATA::RedrawAfterResize()
     _redrawPending = false;
 
     // Get the new cursor position after the reflow, since it may have changed.
-    _originInViewport = _getCursorPosition();
+    _originInViewport = _getViewportCursorPosition();
 
     // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
     // They have all been erased with the CSI J above.
@@ -805,6 +805,18 @@ void COOKED_READ_DATA::_transitionState(State state) noexcept
 {
     assert(_state == State::Accumulating);
     _state = state;
+}
+
+til::point COOKED_READ_DATA::_getViewportCursorPosition() const noexcept
+{
+    const auto& textBuffer = _screenInfo.GetTextBuffer();
+    const auto& cursor = textBuffer.GetCursor();
+    auto cursorPos = cursor.GetPosition();
+
+    _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
+    cursorPos.x = std::max(0, cursorPos.x);
+    cursorPos.y = std::max(0, cursorPos.y);
+    return cursorPos;
 }
 
 void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* input, size_t count)
