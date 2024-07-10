@@ -2424,6 +2424,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return successfulCopy;
     }
 
+    bool TermControl::CopyTextToClipboard(const winrt::hstring& text)
+    {
+        if (_IsClosing())
+        {
+            return false;
+        }
+
+        const auto successfulCopy = _interactivity.CopyTextToClipboard(text);
+
+        return successfulCopy;
+    }
+
     // Method Description:
     // - Initiate a paste operation.
     void TermControl::PasteTextFromClipboard()

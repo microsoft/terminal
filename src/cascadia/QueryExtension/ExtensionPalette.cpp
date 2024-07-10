@@ -5,6 +5,7 @@
 #include "ExtensionPalette.h"
 #include "../../types/inc/utils.hpp"
 #include "LibraryResources.h"
+#include <WinUser.h>
 
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
@@ -376,6 +377,23 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_exportMessagesToClipboard(const Windows::Foundation::IInspectable& /*sender*/,
                                                        const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        std::wstring concatenatedMessages{};
+        for (const auto groupedMessage : _messages)
+        {
+            for (const auto chatMessage : groupedMessage)
+            {
+                concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent();
+            }
+        }
+        if (!concatenatedMessages.empty())
+        {
+            if (!OpenClipboard(nullptr))
+            {
+                LOG_LAST_ERROR();
+                return;
+            }
+            EmptyClipboard();
+        }
     }
 
     // Method Description:
