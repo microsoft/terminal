@@ -27,6 +27,12 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    static const std::wstring bullets[]{
+        L"• ",
+        L"◦ ",
+        L"▪ "
+    };
+
     struct MyMarkdownData
     {
         WUX::Controls::RichTextBlock root{};
@@ -38,6 +44,8 @@ namespace winrt::TerminalApp::implementation
         WUX::Documents::Paragraph lastParagraph{ nullptr };
         TerminalApp::CodeBlock currentCodeBlock{ nullptr };
         WUX::Controls::Image currentImage{ nullptr };
+        int indent = 0;
+        int blockQuoteDepth = 0;
 
         WUX::Documents::Paragraph currentParagraph()
         {
@@ -45,6 +53,19 @@ namespace winrt::TerminalApp::implementation
             {
                 EndRun(); // sanity check
                 lastParagraph = WUX::Documents::Paragraph();
+                if (indent > 0)
+                {
+                    if (indent - blockQuoteDepth > 0)
+                    {
+                        lastParagraph.TextIndent(-12);
+                    }
+                    lastParagraph.Margin(WUX::ThicknessHelper::FromLengths(18 * indent, 0, 0, 0));
+                    //     if (blockQuoteDepth > 0)
+                    //     {
+                    //         lastParagraph.BorderThickness(WUX::ThicknessHelper::FromLengths(4, 0, 0, 0));
+                    //         lastParagraph.BorderBrush(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Red() });
+                    //     }
+                }
                 root.Blocks().Append(lastParagraph);
             }
             return lastParagraph;
@@ -204,14 +225,14 @@ namespace winrt::TerminalApp::implementation
     ////////////////////////////////////////////////////////////////////////////////
     void renderNode(cmark_node* node, cmark_event_type ev_type, MyMarkdownData& data, int /*options*/)
     {
-        // cmark_node* parent;
-        // cmark_node* grandparent;
+        cmark_node* parent;
+        cmark_node* grandparent;
         // cmark_strbuf *html = renderer->html;
         // cmark_llist* it;
         // cmark_syntax_extension* ext;
         // char start_heading[] = "<h0";
         // char end_heading[] = "</h0";
-        // bool tight;
+        bool tight;
         // bool filtered;
         // char buffer[BUFFER_SIZE];
 
@@ -261,6 +282,20 @@ namespace winrt::TerminalApp::implementation
             //   cmark_html_render_cr(html);
             //   cmark_strbuf_puts(html, "</blockquote>\n");
             // }
+
+            if (entering)
+            {
+                data.EndParagraph();
+                data.indent++;
+                data.blockQuoteDepth++;
+            }
+            else
+            {
+                data.EndParagraph();
+                data.indent = std::max(0, data.indent - 1);
+                data.blockQuoteDepth = std::max(0, data.blockQuoteDepth - 1);
+            }
+
             break;
 
         case CMARK_NODE_LIST:
@@ -288,6 +323,22 @@ namespace winrt::TerminalApp::implementation
             //   cmark_strbuf_puts(html,
             //                     list_type == CMARK_BULLET_LIST ? "</ul>\n" : "</ol>\n");
             // }
+
+            // cmark_list_type list_type = node->as.list.list_type;
+            // int start = node->as.list.start;
+            if (entering)
+            {
+                data.EndParagraph();
+                data.indent++;
+                // data.lastParagraph = WUX::Documents::Paragraph();
+                // data.lastParagraph.TextIndent(24 * data.indent);
+                // root.Blocks().Append(lastParagraph);
+            }
+            else
+            {
+                data.EndParagraph();
+                data.indent = std::max(0, data.indent - 1);
+            }
             break;
         }
 
@@ -300,6 +351,13 @@ namespace winrt::TerminalApp::implementation
             // } else {
             //   cmark_strbuf_puts(html, "</li>\n");
             // }
+
+            if (entering)
+            {
+                data.EndParagraph();
+                data.currentParagraph();
+                data.newRun().Text(winrt::hstring{ bullets[std::clamp(data.indent - data.blockQuoteDepth - 1, 0, 2)] });
+            }
             break;
 
         case CMARK_NODE_HEADING:
@@ -422,9 +480,40 @@ namespace winrt::TerminalApp::implementation
             //   }
             // }
             {
-                data.EndParagraph();
-                data.lastParagraph = WUX::Documents::Paragraph();
-                data.root.Blocks().Append(data.lastParagraph);
+                parent = cmark_node_parent(node);
+                grandparent = cmark_node_parent(parent);
+                if (grandparent != NULL && grandparent->type == CMARK_NODE_LIST)
+                {
+                    tight = grandparent->as.list.tight;
+                }
+                else
+                {
+                    tight = false;
+                }
+
+                if (!tight)
+                {
+                    if (entering)
+                    {
+                        data.EndParagraph();
+                        data.currentParagraph();
+                    }
+                    else
+                    {
+                        // if (parent->type == CMARK_NODE_FOOTNOTE_DEFINITION && node->next == NULL) {
+                        //   cmark_strbuf_putc(html, ' ');
+                        //   S_put_footnote_backref(renderer, html, parent);
+                        // }
+                        // cmark_strbuf_puts(html, "</p>\n");
+                        data.EndParagraph();
+                        data.currentParagraph();
+                    }
+                }
+
+                // data.EndParagraph();
+                data.currentParagraph();
+                // data.lastParagraph = WUX::Documents::Paragraph();
+                // data.root.Blocks().Append(data.lastParagraph);
             }
             break;
         }
