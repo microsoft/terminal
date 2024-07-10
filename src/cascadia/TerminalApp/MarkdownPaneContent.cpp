@@ -37,6 +37,7 @@ namespace winrt::TerminalApp::implementation
         WUX::Documents::Span _currentSpan{ nullptr };
         WUX::Documents::Paragraph lastParagraph{ nullptr };
         TerminalApp::CodeBlock currentCodeBlock{ nullptr };
+        WUX::Controls::Image currentImage{ nullptr };
 
         WUX::Documents::Paragraph currentParagraph()
         {
@@ -452,7 +453,7 @@ namespace winrt::TerminalApp::implementation
             break;
 
         case CMARK_NODE_HEADING:
-            data.lastParagraph = nullptr;
+            data.EndParagraph();
 
             if (entering)
             {
@@ -462,7 +463,8 @@ namespace winrt::TerminalApp::implementation
                 auto level = node->as.heading.level;
 
                 auto paragraph{ data.currentParagraph() };
-                paragraph.FontSize((double)(14 + 6 * (6 - level)));
+                // paragraph.FontSize((double)(14 + 6 * (6 - level)));
+                paragraph.FontSize(std::max(16u, 36u - ((level - 1) * 6u)));
 
                 // WUX::Documents::Run run{};
                 // auto currentRun{ data.currentRun() };
@@ -585,7 +587,14 @@ namespace winrt::TerminalApp::implementation
 
                 // WUX::Documents::Run run{};
                 const auto text{ winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }) };
-                data.newRun().Text(text);
+                if (data.currentImage)
+                {
+                    WUX::Controls::ToolTipService::SetToolTip(data.currentImage, box_value(text));
+                }
+                else
+                {
+                    data.newRun().Text(text);
+                }
                 // data.currentParagraph().Inlines().Append(run);
             }
 
@@ -766,10 +775,12 @@ namespace winrt::TerminalApp::implementation
                 WUX::Documents::InlineUIContainer imageBlock{};
                 imageBlock.Child(img);
                 data.currentParagraph().Inlines().Append(imageBlock);
+                data.currentImage = img;
             }
             else
             {
                 data.EndSpan();
+                data.currentImage = nullptr;
             }
             break;
 
