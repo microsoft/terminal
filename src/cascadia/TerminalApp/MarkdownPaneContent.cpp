@@ -571,6 +571,8 @@ namespace winrt::TerminalApp::implementation
 
         case CMARK_NODE_LINEBREAK:
             // cmark_strbuf_puts(html, "<br />\n");
+            data.EndRun();
+            data.currentParagraph().Inlines().Append(WUX::Documents::LineBreak());
             break;
 
         case CMARK_NODE_SOFTBREAK:
@@ -581,6 +583,7 @@ namespace winrt::TerminalApp::implementation
             // } else {
             //   cmark_strbuf_putc(html, '\n');
             // }
+            data.newRun().Text(L" ");
             break;
 
         case CMARK_NODE_CODE:
@@ -686,6 +689,27 @@ namespace winrt::TerminalApp::implementation
             // } else {
             //   cmark_strbuf_puts(html, "</a>");
             // }
+
+            if (entering)
+            {
+                std::string_view url{ (char*)node->as.link.url.data, (size_t)node->as.link.url.len };
+                std::string_view text{ (char*)node->as.link.title.data, (size_t)node->as.link.title.len };
+                const auto urlHstring{ winrt::to_hstring(url) };
+                const auto textHstring{ winrt::to_hstring(text) };
+
+                // <Hyperlink NavigateUri="https://docs.microsoft.com/uwp/api/Windows.UI.Xaml.Documents.Hyperlink">hyperlinks</Hyperlink>
+                WUX::Documents::Hyperlink a{};
+                a.NavigateUri(Windows::Foundation::Uri{ urlHstring });
+                WUX::Documents::Run linkRun{};
+                linkRun.Text(textHstring);
+                a.Inlines().Append(linkRun);
+                data.currentParagraph().Inlines().Append(a);
+                data._currentRun = linkRun;
+            }
+            else
+            {
+                data.EndRun();
+            }
             break;
 
         case CMARK_NODE_IMAGE:
