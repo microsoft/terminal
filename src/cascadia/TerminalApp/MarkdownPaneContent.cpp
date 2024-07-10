@@ -30,9 +30,11 @@ namespace winrt::TerminalApp::implementation
     struct MyMarkdownData
     {
         WUX::Controls::RichTextBlock root{};
-        implementation::MarkdownPaneContent* page{ nullptr };
+        // implementation::MarkdownPaneContent* page{ nullptr };
+        winrt::hstring baseUri{ L"" };
         WUX::Controls::TextBlock current{ nullptr };
         WUX::Documents::Run _currentRun{ nullptr };
+        WUX::Documents::Span _currentSpan{ nullptr };
         WUX::Documents::Paragraph lastParagraph{ nullptr };
         TerminalApp::CodeBlock currentCodeBlock{ nullptr };
 
@@ -51,16 +53,25 @@ namespace winrt::TerminalApp::implementation
             if (_currentRun == nullptr)
             {
                 _currentRun = WUX::Documents::Run();
-                currentParagraph().Inlines().Append(_currentRun);
+                currentSpan().Inlines().Append(_currentRun);
             }
             return _currentRun;
+        }
+        WUX::Documents::Span currentSpan()
+        {
+            if (_currentSpan == nullptr)
+            {
+                _currentSpan = WUX::Documents::Span();
+                currentParagraph().Inlines().Append(_currentSpan);
+            }
+            return _currentSpan;
         }
         WUX::Documents::Run newRun()
         {
             if (_currentRun == nullptr)
             {
                 _currentRun = WUX::Documents::Run();
-                currentParagraph().Inlines().Append(_currentRun);
+                currentSpan().Inlines().Append(_currentRun);
             }
             else
             {
@@ -77,13 +88,24 @@ namespace winrt::TerminalApp::implementation
                 newRun.FontStyle(old_FontStyle);
 
                 _currentRun = newRun;
-                currentParagraph().Inlines().Append(_currentRun);
+                // currentParagraph().Inlines().Append(_currentRun);
+                currentSpan().Inlines().Append(_currentRun);
             }
             return _currentRun;
         }
         void EndRun()
         {
             _currentRun = nullptr;
+        }
+        void EndSpan()
+        {
+            EndRun();
+            _currentSpan = nullptr;
+        }
+        void EndParagraph()
+        {
+            EndSpan();
+            lastParagraph = nullptr;
         }
     };
     WUX::Controls::TextBlock makeDefaultTextBlock()
@@ -548,7 +570,7 @@ namespace winrt::TerminalApp::implementation
             //   }
             // }
             {
-                data.EndRun();
+                data.EndParagraph();
                 data.lastParagraph = WUX::Documents::Paragraph();
                 data.root.Blocks().Append(data.lastParagraph);
             }
@@ -571,7 +593,7 @@ namespace winrt::TerminalApp::implementation
 
         case CMARK_NODE_LINEBREAK:
             // cmark_strbuf_puts(html, "<br />\n");
-            data.EndRun();
+            data.EndSpan();
             data.currentParagraph().Inlines().Append(WUX::Documents::LineBreak());
             break;
 
@@ -693,22 +715,23 @@ namespace winrt::TerminalApp::implementation
             if (entering)
             {
                 std::string_view url{ (char*)node->as.link.url.data, (size_t)node->as.link.url.len };
-                std::string_view text{ (char*)node->as.link.title.data, (size_t)node->as.link.title.len };
+                // std::string_view text{ (char*)node->as.link.title.data, (size_t)node->as.link.title.len };
                 const auto urlHstring{ winrt::to_hstring(url) };
-                const auto textHstring{ winrt::to_hstring(text) };
+                // const auto textHstring{ winrt::to_hstring(text) };
 
                 // <Hyperlink NavigateUri="https://docs.microsoft.com/uwp/api/Windows.UI.Xaml.Documents.Hyperlink">hyperlinks</Hyperlink>
                 WUX::Documents::Hyperlink a{};
-                a.NavigateUri(Windows::Foundation::Uri{ urlHstring });
-                WUX::Documents::Run linkRun{};
-                linkRun.Text(textHstring);
-                a.Inlines().Append(linkRun);
+                Windows::Foundation::Uri uri{ data.baseUri, urlHstring };
+                a.NavigateUri(uri);
+                // WUX::Documents::Run linkRun{};
+                // linkRun.Text(textHstring);
+                // a.Inlines().Append(linkRun);
                 data.currentParagraph().Inlines().Append(a);
-                data._currentRun = linkRun;
+                data._currentSpan = a;
             }
             else
             {
-                data.EndRun();
+                data.EndSpan();
             }
             break;
 
@@ -903,6 +926,7 @@ namespace winrt::TerminalApp::implementation
         const auto& value{ FileContents() };
         MyMarkdownData data{};
 
+        data.baseUri = _filePath;
         data.root.IsTextSelectionEnabled(true);
         data.root.TextWrapping(WUX::TextWrapping::WrapWholeWords);
 
