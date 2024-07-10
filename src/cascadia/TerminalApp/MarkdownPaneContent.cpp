@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
     struct MyMarkdownData
     {
         WUX::Controls::RichTextBlock root{};
-        // implementation::MarkdownPaneContent* page{ nullptr };
+        implementation::MarkdownPaneContent* page{ nullptr };
         winrt::hstring baseUri{ L"" };
         WUX::Controls::TextBlock current{ nullptr };
         WUX::Documents::Run _currentRun{ nullptr };
@@ -421,6 +421,27 @@ namespace winrt::TerminalApp::implementation
 
             // escape_html(html, node->as.code.literal.data, node->as.code.literal.len);
             // cmark_strbuf_puts(html, "</code></pre>\n");
+            {
+                data.EndParagraph();
+
+                std::string_view code{ (char*)node->as.code.literal.data, (size_t)node->as.code.literal.len - 1 };
+                const auto codeHstring{ winrt::to_hstring(code) };
+
+                auto codeBlock = winrt::make<implementation::CodeBlock>(codeHstring);
+                codeBlock.RequestRunCommands({ data.page, &MarkdownPaneContent::_handleRunCommandRequest });
+                // WUX::Controls::Image img{};
+                // WUX::Media::Imaging::BitmapImage bitmapImage;
+                // bitmapImage.UriSource(uri);
+                // img.Source(bitmapImage);
+                WUX::Documents::InlineUIContainer codeContainer{};
+                codeContainer.Child(codeBlock);
+                data.currentParagraph().Inlines().Append(codeContainer);
+
+                data.EndParagraph();
+                data.currentParagraph(); // .Inlines().Append(WUX::Documents::LineBreak());
+            }
+            // data.currentImage = img;
+
             break;
 
         case CMARK_NODE_HTML_BLOCK:
@@ -894,6 +915,7 @@ namespace winrt::TerminalApp::implementation
         const auto& value{ FileContents() };
         MyMarkdownData data{};
 
+        data.page = this;
         data.baseUri = _filePath;
         data.root.IsTextSelectionEnabled(true);
         data.root.TextWrapping(WUX::TextWrapping::WrapWholeWords);
@@ -960,7 +982,7 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto& strongControl{ _control.get() })
         {
-            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, Model::SendInputArgs{ text + winrt::hstring{ L"\r" } } };
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, Model::SendInputArgs{ text } };
 
             // By using the last active control as the sender here, the
             // actiopn dispatch will send this to the active control,

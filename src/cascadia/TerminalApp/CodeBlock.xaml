@@ -145,25 +145,27 @@
                 Padding="0"
                 VerticalAlignment="Top"
                 Style="{StaticResource PlayButtonTemplate}"
-                Tapped="_playPressed" />
+                Tapped="_playPressed"
+                Visibility="Collapsed" />
         <Border Grid.Column="1"
+                Padding="0"
                 HorizontalAlignment="Stretch"
                 Background="{ThemeResource BlockBackgroundColor}"
                 BorderBrush="{ThemeResource BlockBorderColor}"
                 BorderThickness="1"
                 CornerRadius="4">
-            <StackPanel x:Name="CommandsAndOutput">
-                <StackPanel x:Name="CommandLines"
-                            Padding="8">
+            <ScrollViewer HorizontalAlignment="Stretch"
+                          HorizontalScrollBarVisibility="Auto"
+                          HorizontalScrollMode="Auto">
+                <Grid x:Name="CommandsAndOutput"
+                      Margin="14"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch">
                     <TextBlock FontFamily="Cascadia Code"
                                IsTextSelectionEnabled="True"
                                Text="{x:Bind Commandlines}" />
-                </StackPanel>
-                <StackPanel x:Name="OutputBlockContainer"
-                            Visibility="Collapsed">
-                    <!--  Put the TermControl here.  -->
-                </StackPanel>
-            </StackPanel>
+                </Grid>
+            </ScrollViewer>
         </Border>
     </Grid>
 
