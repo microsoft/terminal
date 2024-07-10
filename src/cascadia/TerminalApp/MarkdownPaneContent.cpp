@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::RichTextBlock root{};
         implementation::MarkdownPaneContent* page{ nullptr };
         WUX::Controls::TextBlock current{ nullptr };
-        WUX::Documents::Run currentRun{ nullptr };
+        WUX::Documents::Run _currentRun{ nullptr };
         WUX::Documents::Paragraph lastParagraph{ nullptr };
         TerminalApp::CodeBlock currentCodeBlock{ nullptr };
 
@@ -44,6 +44,19 @@ namespace winrt::TerminalApp::implementation
                 root.Blocks().Append(lastParagraph);
             }
             return lastParagraph;
+        }
+        WUX::Documents::Run currentRun()
+        {
+            if (_currentRun == nullptr)
+            {
+                _currentRun = WUX::Documents::Run();
+                currentParagraph().Inlines().Append(_currentRun);
+            }
+            return _currentRun;
+        }
+        void EndRun()
+        {
+            _currentRun = nullptr;
         }
     };
     WUX::Controls::TextBlock makeDefaultTextBlock()
@@ -390,18 +403,6 @@ namespace winrt::TerminalApp::implementation
             break;
 
         case CMARK_NODE_HEADING:
-            // if (entering) {
-            //   cmark_html_render_cr(html);
-            //   start_heading[2] = (char)('0' + node->as.heading.level);
-            //   cmark_strbuf_puts(html, start_heading);
-            //   cmark_html_render_sourcepos(node, html, options);
-            //   cmark_strbuf_putc(html, '>');
-            // }
-            // else {
-            //   end_heading[3] = (char)('0' + node->as.heading.level);
-            //   cmark_strbuf_puts(html, end_heading);
-            //   cmark_strbuf_puts(html, ">\n");
-            // }
             if (entering)
             {
                 auto heading = node->content;
@@ -518,6 +519,7 @@ namespace winrt::TerminalApp::implementation
             //   }
             // }
             {
+                data.EndRun();
                 data.lastParagraph = WUX::Documents::Paragraph();
                 data.root.Blocks().Append(data.lastParagraph);
             }
@@ -530,9 +532,9 @@ namespace winrt::TerminalApp::implementation
                 // tb.Text(winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }));
                 // data.root.Children().Append(tb);
 
-                WUX::Documents::Run run{};
-                run.Text(winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }));
-                data.currentParagraph().Inlines().Append(run);
+                // WUX::Documents::Run run{};
+                data.currentRun().Text(winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }));
+                // data.currentParagraph().Inlines().Append(run);
             }
 
             break;
@@ -555,6 +557,14 @@ namespace winrt::TerminalApp::implementation
             // cmark_strbuf_puts(html, "<code>");
             // escape_html(html, node->as.literal.data, node->as.literal.len);
             // cmark_strbuf_puts(html, "</code>");
+            if (entering)
+            {
+                data.currentRun().FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
+            }
+            else
+            {
+                data.EndRun();
+            }
             break;
 
         case CMARK_NODE_HTML_INLINE:
@@ -596,9 +606,25 @@ namespace winrt::TerminalApp::implementation
             //     cmark_strbuf_puts(html, "</strong>");
             //   }
             // }
+            if (entering)
+            {
+                data.currentRun().FontWeight(Windows::UI::Text::FontWeights::Bold());
+            }
+            else
+            {
+                data.EndRun();
+            }
             break;
 
         case CMARK_NODE_EMPH:
+            if (entering)
+            {
+                data.currentRun().FontStyle(Windows::UI::Text::FontStyle::Italic);
+            }
+            else
+            {
+                data.EndRun();
+            }
             // if (entering) {
             //   cmark_strbuf_puts(html, "<em>");
             // } else {
