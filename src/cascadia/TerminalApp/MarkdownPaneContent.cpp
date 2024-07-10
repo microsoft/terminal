@@ -121,36 +121,7 @@ namespace winrt::TerminalApp::implementation
     // {
     //     MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
     //     switch (type)
-    //     {
-    //     case MD_BLOCK_UL:
-    //     {
-    //         break;
-    //     }
-    //     case MD_BLOCK_H:
-    //     {
-    //         MD_BLOCK_H_DETAIL* headerDetail = reinterpret_cast<MD_BLOCK_H_DETAIL*>(detail);
-    //         data->current = makeDefaultTextBlock();
-    //         const auto fontSize = std::max(16u, 36u - ((headerDetail->level - 1) * 6u));
-    //         data->current.FontSize(fontSize);
-    //         data->current.FontWeight(Windows::UI::Text::FontWeights::Bold());
-    //         WUX::Documents::Run run{};
-    //         // run.Text(winrtL'#');
-
-    //         // Immediately add the header block
-    //         data->root.Children().Append(data->current);
-
-    //         if (headerDetail->level == 1)
-    //         {
-    //             // <Border Height="1" BorderThickness="1" BorderBrush="Red" HorizontalAlignment="Stretch"></Border>
-    //             WUX::Controls::Border b;
-    //             b.Height(1);
-    //             b.BorderThickness(WUX::ThicknessHelper::FromLengths(1, 1, 1, 1));
-    //             b.BorderBrush(WUX::Media::SolidColorBrush(Windows::UI::Colors::Gray()));
-    //             b.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-    //             data->root.Children().Append(b);
-    //         }
-    //         break;
-    //     }
+    //     {b
     //     case MD_BLOCK_CODE:
     //     {
     //         MD_BLOCK_CODE_DETAIL* codeDetail = reinterpret_cast<MD_BLOCK_CODE_DETAIL*>(detail);
@@ -198,88 +169,12 @@ namespace winrt::TerminalApp::implementation
     //     }
     //     return 0;
     // }
-    // int md_parser_enter_span(MD_SPANTYPE type, void* /*detail*/, void* userdata)
-    // {
-    //     MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
-    //     data;
-
-    //     if (data->current == nullptr)
-    //     {
-    //         data->current = makeDefaultTextBlock();
-    //         data->root.Children().Append(data->current);
-    //     }
-    //     if (data->currentRun == nullptr)
-    //     {
-    //         data->currentRun = WUX::Documents::Run();
-    //     }
-    //     auto currentRun = data->currentRun;
-    //     switch (type)
-    //     {
-    //     case MD_SPAN_STRONG:
-    //     {
-    //         currentRun.FontWeight(Windows::UI::Text::FontWeights::Bold());
-    //         break;
-    //     }
-    //     case MD_SPAN_EM:
-    //     {
-    //         currentRun.FontStyle(Windows::UI::Text::FontStyle::Italic);
-    //         break;
-    //     }
-    //     case MD_SPAN_CODE:
-    //     {
-    //         currentRun.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
-    //         break;
-    //     }
-    //     default:
-    //     {
-    //         break;
-    //     }
-    //     }
-    //     return 0;
-    // }
-    // int md_parser_leave_span(MD_SPANTYPE type, void* /*detail*/, void* userdata)
-    // {
-    //     MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
-    //     switch (type)
-    //     {
-    //     case MD_SPAN_EM:
-    //     case MD_SPAN_STRONG:
-    //     // {
-    //     //     break;
-    //     // }
-    //     case MD_SPAN_CODE:
-    //     {
-    //         if (const auto& currentRun{ data->currentRun })
-    //         {
-    //             // data->current.Inlines().Append(currentRun);
-    //             // data->currentRun = nullptr;
-    //         }
-    //         break;
-    //     }
-    //     default:
-    //     {
-    //         break;
-    //     }
-    //     }
-    //     return 0;
-    // }
     // int md_parser_text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata)
     // {
     //     MyMarkdownData* data = reinterpret_cast<MyMarkdownData*>(userdata);
     //     winrt::hstring str{ text, size };
     //     switch (type)
     //     {
-    //     case MD_TEXT_BR:
-    //     case MD_TEXT_SOFTBR:
-    //     {
-    //         if (const auto& curr{ data->current })
-    //         {
-    //             data->current = makeDefaultTextBlock();
-    //             data->root.Children().Append(data->current);
-    //         }
-
-    //         break;
-    //     }
     //     case MD_TEXT_CODE:
     //     {
     //         if (str == L"\n")
@@ -302,53 +197,8 @@ namespace winrt::TerminalApp::implementation
     //             [[fallthrough]];
     //         }
     //     }
-    //     case MD_TEXT_NORMAL:
-    //     default:
-    //     {
-    //         data->currentCodeBlock = nullptr;
-
-    //         auto run = data->currentRun ? data->currentRun : WUX::Documents::Run{};
-    //         run.Text(str);
-    //         if (data->current)
-    //         {
-    //             data->current.Inlines().Append(run);
-    //         }
-    //         else
-    //         {
-    //             WUX::Controls::TextBlock block = makeDefaultTextBlock();
-    //             block.Inlines().Append(run);
-    //             data->root.Children().Append(block);
-    //             data->current = block;
-    //         }
-    //         // data->root.Children().Append(block);
-
-    //         data->currentRun = nullptr;
-    //         break;
-    //     }
     //     }
     //     return 0;
-    // }
-
-    // int parseMarkdown(const winrt::hstring& markdown, MyMarkdownData& data)
-    // {
-    //     MD_PARSER parser{
-    //         .abi_version = 0,
-    //         .flags = 0,
-    //         .enter_block = &md_parser_enter_block,
-    //         .leave_block = &md_parser_leave_block,
-    //         .enter_span = &md_parser_enter_span,
-    //         .leave_span = &md_parser_leave_span,
-    //         .text = &md_parser_text,
-    //     };
-
-    //     const auto result = md_parse(
-    //         markdown.c_str(),
-    //         (unsigned)markdown.size(),
-    //         &parser,
-    //         &data // user data
-    //     );
-
-    //     return result;
     // }
 
     ////////////////////////////////////////////////////////////////////////////////
