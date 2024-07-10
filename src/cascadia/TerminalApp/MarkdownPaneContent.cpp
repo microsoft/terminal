@@ -40,6 +40,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (lastParagraph == nullptr)
             {
+                EndRun(); // sanity check
                 lastParagraph = WUX::Documents::Paragraph();
                 root.Blocks().Append(lastParagraph);
             }
@@ -50,6 +51,32 @@ namespace winrt::TerminalApp::implementation
             if (_currentRun == nullptr)
             {
                 _currentRun = WUX::Documents::Run();
+                currentParagraph().Inlines().Append(_currentRun);
+            }
+            return _currentRun;
+        }
+        WUX::Documents::Run newRun()
+        {
+            if (_currentRun == nullptr)
+            {
+                _currentRun = WUX::Documents::Run();
+                currentParagraph().Inlines().Append(_currentRun);
+            }
+            else
+            {
+                auto old{ _currentRun };
+
+                auto old_FontFamily = old.FontFamily();
+                auto old_FontWeight = old.FontWeight();
+                auto old_FontStyle = old.FontStyle();
+
+                WUX::Documents::Run newRun{};
+
+                newRun.FontFamily(old_FontFamily);
+                newRun.FontWeight(old_FontWeight);
+                newRun.FontStyle(old_FontStyle);
+
+                _currentRun = newRun;
                 currentParagraph().Inlines().Append(_currentRun);
             }
             return _currentRun;
@@ -403,21 +430,23 @@ namespace winrt::TerminalApp::implementation
             break;
 
         case CMARK_NODE_HEADING:
+            data.lastParagraph = nullptr;
+
             if (entering)
             {
-                auto heading = node->content;
-                auto headingHstr{ winrt::to_hstring(std::string_view{ (char*)heading.ptr, (size_t)heading.size }) };
+                // auto heading = node->content;
+                // auto headingHstr{ winrt::to_hstring(std::string_view{ (char*)heading.ptr, (size_t)heading.size }) };
 
                 auto level = node->as.heading.level;
-                WUX::Documents::Paragraph paragraph{};
+
+                auto paragraph{ data.currentParagraph() };
                 paragraph.FontSize((double)(14 + 6 * (6 - level)));
 
-                WUX::Documents::Run run{};
-                run.Text(headingHstr);
-                paragraph.Inlines().Append(run);
-                data.root.Blocks().Append(paragraph);
-
-                data.lastParagraph = nullptr;
+                // WUX::Documents::Run run{};
+                // auto currentRun{ data.currentRun() };
+                // run.Text(headingHstr);
+                // paragraph.Inlines().Append(run);
+                // data.root.Blocks().Append(paragraph);
             }
             break;
 
@@ -533,7 +562,8 @@ namespace winrt::TerminalApp::implementation
                 // data.root.Children().Append(tb);
 
                 // WUX::Documents::Run run{};
-                data.currentRun().Text(winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }));
+                const auto text{ winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }) };
+                data.newRun().Text(text);
                 // data.currentParagraph().Inlines().Append(run);
             }
 
@@ -557,14 +587,20 @@ namespace winrt::TerminalApp::implementation
             // cmark_strbuf_puts(html, "<code>");
             // escape_html(html, node->as.literal.data, node->as.literal.len);
             // cmark_strbuf_puts(html, "</code>");
-            if (entering)
+            // if (entering)
             {
-                data.currentRun().FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
+                const auto text{ winrt::to_hstring(std::string_view{ (char*)node->as.literal.data, (size_t)node->as.literal.len }) };
+
+                const auto& codeRun{ data.newRun() };
+
+                codeRun.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
+                codeRun.Text(text);
+
+                data.newRun().FontFamily(data.root.FontFamily());
             }
-            else
-            {
-                data.EndRun();
-            }
+            // else
+            // {
+            // }
             break;
 
         case CMARK_NODE_HTML_INLINE:
@@ -608,22 +644,24 @@ namespace winrt::TerminalApp::implementation
             // }
             if (entering)
             {
-                data.currentRun().FontWeight(Windows::UI::Text::FontWeights::Bold());
+                data.newRun().FontWeight(Windows::UI::Text::FontWeights::Bold());
             }
             else
             {
-                data.EndRun();
+                // data.EndRun();
+                data.newRun().FontWeight(Windows::UI::Text::FontWeights::Normal());
             }
             break;
 
         case CMARK_NODE_EMPH:
             if (entering)
             {
-                data.currentRun().FontStyle(Windows::UI::Text::FontStyle::Italic);
+                data.newRun().FontStyle(Windows::UI::Text::FontStyle::Italic);
             }
             else
             {
-                data.EndRun();
+                // data.EndRun();
+                data.newRun().FontStyle(Windows::UI::Text::FontStyle::Normal);
             }
             // if (entering) {
             //   cmark_strbuf_puts(html, "<em>");
