@@ -753,6 +753,24 @@ namespace winrt::TerminalApp::implementation
 
             //   cmark_strbuf_puts(html, "\" />");
             // }
+
+            if (entering)
+            {
+                std::string_view url{ (char*)node->as.link.url.data, (size_t)node->as.link.url.len };
+                const auto urlHstring{ winrt::to_hstring(url) };
+                Windows::Foundation::Uri uri{ data.baseUri, urlHstring };
+                WUX::Controls::Image img{};
+                WUX::Media::Imaging::BitmapImage bitmapImage;
+                bitmapImage.UriSource(uri);
+                img.Source(bitmapImage);
+                WUX::Documents::InlineUIContainer imageBlock{};
+                imageBlock.Child(img);
+                data.currentParagraph().Inlines().Append(imageBlock);
+            }
+            else
+            {
+                data.EndSpan();
+            }
             break;
 
         case CMARK_NODE_FOOTNOTE_DEFINITION:
