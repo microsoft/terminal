@@ -1282,11 +1282,11 @@
 
                         <Button x:Name="QuickFixButton"
                                 x:Uid="QuickFixButton"
-                                x:Load="False"
                                 Width="{x:Bind QuickFixButtonWidth, Mode=OneWay}"
                                 Padding="0"
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="Center"
+                                x:Load="False"
                                 AllowFocusOnInteraction="False"
                                 CornerRadius="0,5,5,0"
                                 PointerEntered="_QuickFixButton_PointerEntered"
