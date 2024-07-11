@@ -67,36 +67,39 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Make sure we are on the background thread for the http request
         co_await winrt::resume_background();
 
-        WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ L"https://api.githubcopilot.com/chat/completions" } };
-        request.Headers().Accept().TryParseAdd(L"application/json");
-
-        WDJ::JsonObject jsonContent;
-        WDJ::JsonObject messageObject;
-
-        winrt::hstring engineeredPrompt{ promptCopy };
-        if (_context && !_context.ActiveCommandline().empty())
-        {
-            //engineeredPrompt = promptCopy + L". The shell I am running is " + _context.ActiveCommandline();
-            engineeredPrompt = promptCopy;
-        }
-        messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
-        messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
-        _jsonMessages.Append(messageObject);
-        jsonContent.SetNamedValue(L"messages", _jsonMessages);
-        const auto stringContent = jsonContent.ToString();
-        WWH::HttpStringContent requestContent{
-            stringContent,
-            WSS::UnicodeEncoding::Utf8,
-            L"application/json"
-        };
-
-        request.Content(requestContent);
-
-        // Send the request
         do
         {
             try
             {
+                // create the request object
+                // we construct the request object within the while loop because if we do need to attempt
+                // a request again after refreshing the tokens, we need a new request object
+                WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ L"https://api.githubcopilot.com/chat/completions" } };
+                request.Headers().Accept().TryParseAdd(L"application/json");
+
+                WDJ::JsonObject jsonContent;
+                WDJ::JsonObject messageObject;
+
+                winrt::hstring engineeredPrompt{ promptCopy };
+                if (_context && !_context.ActiveCommandline().empty())
+                {
+                    //engineeredPrompt = promptCopy + L". The shell I am running is " + _context.ActiveCommandline();
+                    engineeredPrompt = promptCopy;
+                }
+                messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
+                messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
+                _jsonMessages.Append(messageObject);
+                jsonContent.SetNamedValue(L"messages", _jsonMessages);
+                const auto stringContent = jsonContent.ToString();
+                WWH::HttpStringContent requestContent{
+                    stringContent,
+                    WSS::UnicodeEncoding::Utf8,
+                    L"application/json"
+                };
+
+                request.Content(requestContent);
+
+                // Send the request
                 const auto response = _httpClient.SendRequestAsync(request).get();
                 // Parse out the suggestion from the response
                 const auto string{ response.Content().ReadAsStringAsync().get() };
@@ -170,7 +173,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _authToken = jsonResult.GetNamedString(L"access_token");
             _refreshToken = jsonResult.GetNamedString(L"refresh_token");
             _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
-            // todo: this doesn't currently work
             // todo: we should send the new tokens back to settings for storage
             //       or should the refreshing happen in terminal page itself? we need the client secret again
             //       ...but that require re-initializing the palette
