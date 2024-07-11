@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring Icon() const;
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept { return nullptr; }
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
-        
+
         // See BasicPaneEvents for most generic event definitions
 
     private:
