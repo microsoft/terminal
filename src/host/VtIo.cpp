@@ -168,10 +168,7 @@ bool VtIo::IsUsingVt() const
         // send us full INPUT_RECORDs as input. If the terminal doesn't understand
         // this sequence, it'll just ignore it.
 
-        // By default, DISABLE_NEWLINE_AUTO_RETURN is reset. This implies LNM being set,
-        // which is not the default in terminals, so we have to do that explicitly.
         writer.WriteUTF8(
-            "\x1b[20h" // Line Feed / New Line Mode (LNM)
             "\033[?1004h" // Focus Event Mode
             "\033[?9001h" // Win32 Input Mode
         );
