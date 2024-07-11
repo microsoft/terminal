@@ -903,6 +903,20 @@
     <value>짧은 요약</value>
     <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
   </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>코드 조각 필터링...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>이 명령 입력</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>이 명령 입력</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>설정에서 코드 조각을 찾을 수 없습니다.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
   <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
     <value>설정에 "입력 보내기" 작업을 추가하여 여기에 표시합니다.</value>
     <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
@@ -912,5 +926,11 @@
   </data>
   <data name="ActionSaveFailedToast.Title" xml:space="preserve">
     <value>작업을 저장하지 못함</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>창 닫기</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>창 닫기</value>
   </data>
 </root>

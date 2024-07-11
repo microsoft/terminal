@@ -255,6 +255,13 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     }
 }
 
+// This is the main entrypoint for conhost to write VT to the buffer.
+// This wrapper around StateMachine exists so that we can add the necessary ConPTY transformations.
+void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
+{
+    screenInfo.GetStateMachine().ProcessString(str);
+}
+
 // Routine Description:
 // - Takes the given text and inserts it into the given screen buffer.
 // Note:

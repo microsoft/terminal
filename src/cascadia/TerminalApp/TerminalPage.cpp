@@ -1766,6 +1766,7 @@ namespace winrt::TerminalApp::implementation
         // there's an actual keychord for them.
 #define ON_ALL_ACTIONS(action) HOOKUP_ACTION(action);
         ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
     }
 
