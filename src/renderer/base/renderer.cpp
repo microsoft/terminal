@@ -1139,8 +1139,9 @@ void Renderer::_invalidateCurrentCursor() const
 
     const auto lineRendition = _currentCursorOptions.lineRendition;
     const auto cursorWidth = _currentCursorOptions.fIsDoubleWidth ? 2 : 1;
+    const auto x = coord.x - _viewport.Left();
 
-    til::rect rect{ coord.x, coord.y, coord.x + cursorWidth, coord.y + 1 };
+    til::rect rect{ x, coord.y, x + cursorWidth, coord.y + 1 };
     rect = BufferToScreenLine(rect, lineRendition);
 
     if (view.TrimToViewport(&rect))
