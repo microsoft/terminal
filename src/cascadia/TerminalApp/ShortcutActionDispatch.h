@@ -27,6 +27,7 @@ namespace winrt::TerminalApp::implementation
 
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION(action);
         ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
 
     private:

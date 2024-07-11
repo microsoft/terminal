@@ -283,6 +283,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Ein optionaler Befehl mit Argumenten, der auf der neuen Registerkarte oder im neuen Bereich erscheinen soll</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Befehlszeile als Eingabeaktion speichern</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Ein optionales Argument</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Ein optionales Argument</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Fokus auf eine andere Registerkarte verschieben</value>
   </data>
@@ -892,5 +901,19 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Verbindung mit aktivem Bereich neu starten</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Schnipsel</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Fügen Sie einige Aktionen "Eingabe senden" in Ihren Einstellungen hinzu, damit sie hier angezeigt werden.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Aktion gespeichert</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Fehler beim Speichern der Aktion</value>
   </data>
 </root>

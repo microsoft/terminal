@@ -280,6 +280,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>要在新选项卡或窗格中生成的可选命令(带参数)</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>将命令行另存为输入操作</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>可选参数</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>可选参数</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>将焦点移至另一个选项卡</value>
   </data>
@@ -889,5 +898,15 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>重新启动活动窗格连接</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>片段</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>已保存操作</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>操作保存失败</value>
   </data>
 </root>

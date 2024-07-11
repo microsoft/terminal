@@ -133,7 +133,7 @@ public:                                   \
         _##name = value;                  \
     }                                     \
                                           \
-private:                                  \
+protected:                                \
     type _##name{ __VA_ARGS__ };
 
 // Use this macro to quickly implement both the getter and setter for an
@@ -158,7 +158,7 @@ public:                                                                         
         }                                                                                 \
     };                                                                                    \
                                                                                           \
-private:                                                                                  \
+protected:                                                                                \
     type _##name{ __VA_ARGS__ };                                                          \
     void _set##name(const type& value)                                                    \
     {                                                                                     \

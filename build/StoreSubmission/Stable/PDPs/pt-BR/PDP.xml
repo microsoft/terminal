@@ -30,9 +30,9 @@
     </Keyword>
   </Keywords>
   <Description>
-      O Windows Terminal é um aplicativo de terminal moderno, rápido, eficiente, poderoso e produtivo para os usuários de ferramentas e shells de linha de comando, como prompt de comando, PowerShell e WSL. Seus principais recursos incluem várias guias, painéis, suporte a caracteres Unicode e UTF-8, um mecanismo de renderização de texto acelerado por GPU e temas, estilos e configurações personalizados.
+      O Terminal do Windows é um aplicativo de terminal moderno, rápido, eficiente, poderoso e produtivo para usuários de ferramentas de linha de comando e shells como Prompt de Comando, PowerShell e WSL. Seus principais recursos incluem várias guias, painéis, suporte a caracteres Unicode e UTF-8, um mecanismo de renderização de texto acelerado por GPU e temas, estilos e configurações personalizados.
 
-Este é um projeto de código aberto e agradecemos a participação da comunidade. Para participar, visite https://github.com/microsoft/terminal </Description>
+Este é um projeto de código aberto e a participação da comunidade é bem-vinda. Para participar, visite https://github.com/microsoft/terminal </Description>
   <ShortDescription>
     <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
     
