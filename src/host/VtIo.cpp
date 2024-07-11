@@ -405,8 +405,8 @@ VtIo::Writer::operator bool() const noexcept
 
 void VtIo::Writer::Submit()
 {
-    _io->_uncork();
-    _io = nullptr;
+    const auto io = std::exchange(_io, nullptr);
+    io->_uncork();
 }
 
 void VtIo::_uncork()
@@ -647,7 +647,7 @@ void VtIo::Writer::WriteUCS2StripControlChars(wchar_t ch) const
 // CUP: Cursor Position
 void VtIo::Writer::WriteCUP(til::point position) const
 {
-    WriteFormat(FMT_COMPILE("\x1b[{};{}H"), position.y + 1, position.x + 1);
+    fmt::format_to(std::back_inserter(_io->_back), FMT_COMPILE("\x1b[{};{}H"), position.y + 1, position.x + 1);
 }
 
 // DECTCEM: Text Cursor Enable

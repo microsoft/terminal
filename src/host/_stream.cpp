@@ -180,6 +180,11 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             pos.x = 0;
             pos.y++;
             AdjustCursorPosition(screenInfo, pos, psScrollY);
+
+            if (writer)
+            {
+                writer.WriteUTF8("\r\n");
+            }
         }
     }
 

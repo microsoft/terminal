@@ -30,10 +30,6 @@ namespace Microsoft::Console::VirtualTerminal
             void Submit();
 
             void BackupCursor() const;
-            void WriteFormat(auto&&... args) const
-            {
-                fmt::format_to(std::back_inserter(_io->_back), std::forward<decltype(args)>(args)...);
-            }
             void WriteUTF8(std::string_view str) const;
             void WriteUTF16(std::wstring_view str) const;
             void WriteUTF16TranslateCRLF(std::wstring_view str) const;
