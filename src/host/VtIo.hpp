@@ -13,86 +13,65 @@ namespace Microsoft::Console::VirtualTerminal
     class VtIo
     {
     public:
-        struct CorkLock
+        struct Writer
         {
-            CorkLock() = default;
-            CorkLock(VtIo* io) noexcept;
+            Writer() = default;
+            Writer(VtIo* io) noexcept;
 
-            ~CorkLock() noexcept;
+            ~Writer() noexcept;
 
-            CorkLock(const CorkLock&) = delete;
-            CorkLock& operator=(const CorkLock&) = delete;
-            CorkLock(CorkLock&& other) noexcept;
-            CorkLock& operator=(CorkLock&& other) noexcept;
+            Writer(const Writer&) = delete;
+            Writer& operator=(const Writer&) = delete;
+            Writer(Writer&& other) noexcept;
+            Writer& operator=(Writer&& other) noexcept;
+
+            explicit operator bool() const noexcept;
+
+            void Submit();
+
+            void BackupCursor() const;
+            void WriteFormat(auto&&... args) const
+            {
+                fmt::format_to(std::back_inserter(_io->_back), std::forward<decltype(args)>(args)...);
+            }
+            void WriteUTF8(std::string_view str) const;
+            void WriteUTF16(std::wstring_view str) const;
+            void WriteUTF16TranslateCRLF(std::wstring_view str) const;
+            void WriteUTF16StripControlChars(std::wstring_view str) const;
+            void WriteUCS2(wchar_t ch) const;
+            void WriteUCS2StripControlChars(wchar_t ch) const;
+            void WriteCUP(til::point position) const;
+            void WriteDECTCEM(bool enabled) const;
+            void WriteSGR1006(bool enabled) const;
+            void WriteDECAWM(bool enabled) const;
+            void WriteASB(bool enabled) const;
+            void WriteAttributes(const TextAttribute& attributes) const;
+            void WriteInfos(til::point target, std::span<const CHAR_INFO> infos) const;
 
         private:
             VtIo* _io = nullptr;
         };
 
-        struct CursorRestore
-        {
-            CursorRestore() = default;
-            CursorRestore(VtIo* io, til::point position) noexcept;
+        friend struct Writer;
 
-            ~CursorRestore() noexcept;
-
-            CursorRestore(const CursorRestore&) = delete;
-            CursorRestore& operator=(const CursorRestore&) = delete;
-            CursorRestore(CursorRestore&& other) noexcept;
-            CursorRestore& operator=(CursorRestore&& other) noexcept;
-
-        private:
-            VtIo* _io = nullptr;
-            til::point _position;
-        };
-
-        friend struct CorkLock;
-
-        static bool IsControlCharacter(wchar_t wch) noexcept;
-        static void FormatAttributes(std::string& target, WORD attributes);
-        static void FormatAttributes(std::wstring& target, WORD attributes);
+        static void FormatAttributes(std::string& target, const TextAttribute& attributes);
+        static void FormatAttributes(std::wstring& target, const TextAttribute& attributes);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
         [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
         [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
         bool IsUsingVt() const;
-
         [[nodiscard]] HRESULT StartIfNeeded();
-
         void SendCloseEvent();
-
         void CloseInput();
-        void CloseOutput();
-
         void CreatePseudoWindow();
-
-        CorkLock Cork() noexcept;
-        bool BufferHasContent() const noexcept;
-
-        void WriteFormat(auto&&... args)
-        {
-            fmt::format_to(std::back_inserter(_back), std::forward<decltype(args)>(args)...);
-            _flush();
-        }
-        void WriteUTF8(std::string_view str);
-        void WriteUTF16(std::wstring_view str);
-        void WriteUTF16StripControlChars(std::wstring_view str);
-        void WriteUCS2(wchar_t ch);
-        void WriteCUP(til::point position);
-        void WriteDECTCEM(bool enabled);
-        void WriteSGR1006(bool enabled);
-        void WriteDECAWM(bool enabled);
-        void WriteLNM(bool enabled);
-        void WriteASB(bool enabled);
-        void WriteAttributes(WORD attributes);
-        void WriteInfos(til::point target, std::span<const CHAR_INFO> infos);
+        Writer GetWriter() noexcept;
 
     private:
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
 
         void _uncork();
-        void _flush();
         void _flushNow();
 
         // After CreateIoHandlers is called, these will be invalid.
@@ -113,6 +92,8 @@ namespace Microsoft::Console::VirtualTerminal
         OVERLAPPED _overlappedBuf{};
         wil::unique_event _overlappedEvent;
         bool _overlappedPending = false;
+        bool _writerRestoreCursor = false;
+        bool _writerTainted = false;
 
         bool _initialized = false;
         bool _lookingForCursorPosition = false;

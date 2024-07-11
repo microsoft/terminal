@@ -116,7 +116,6 @@ namespace Microsoft::Console::Utils
     std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
 
     const wchar_t* FindActionableControlCharacter(const wchar_t* beg, const size_t len) noexcept;
-    const wchar_t* FindNonActionableRegularCharacter(const wchar_t* beg, const size_t len) noexcept;
 
     // Same deal, but in TerminalPage::_evaluatePathForCwd
     std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);

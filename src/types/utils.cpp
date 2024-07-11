@@ -980,19 +980,6 @@ plainSearch:
     return it;
 }
 
-const wchar_t* Utils::FindNonActionableRegularCharacter(const wchar_t* beg, const size_t len) noexcept
-{
-    auto it = beg;
-    const auto end = beg + len;
-
-#pragma loop(no_vector)
-    for (; it < end && isActionableFromGround(*it); ++it)
-    {
-    }
-
-    return it;
-}
-
 #pragma warning(pop)
 
 std::wstring Utils::EvaluateStartingDirectory(

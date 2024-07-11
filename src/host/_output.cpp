@@ -53,8 +53,8 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 enum class FillConsoleMode
 {
     WriteAttribute,
-    WriteCharacter,
     FillAttribute,
+    WriteCharacter,
     FillCharacter,
 };
 
@@ -79,140 +79,142 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
     const auto bufferSize = screenBuffer.GetBufferSize();
     FillConsoleResult result;
 
-    // Technically we could always pass `data` as `uint16_t*`, because `wchar_t` is guaranteed to be 16 bits large.
-    // However, OutputCellIterator is terrifyingly unsafe code and so we don't do that.
-    //
-    // Constructing an OutputCellIterator with a `wchar_t` takes the `wchar_t` by reference, so that it can reference
-    // it in a `wstring_view` forever. That's of course really bad because passing a `const uint16_t&` to a
-    // `const wchar_t&` argument implicitly converts the types. To do so, the implicit conversion allocates a
-    // `wchar_t` value on the stack. The lifetime of that copy DOES NOT get extended beyond the constructor call.
-    // The result is that OutputCellIterator would read random data from the stack.
-    //
-    // Don't ever assume the lifetime of implicitly convertible types given by reference.
-    // Ironically that's a bug that cannot happen with C pointers. To no ones surprise, C keeps on winning.
-    auto attrs = static_cast<const uint16_t*>(data);
-    auto chars = static_cast<const wchar_t*>(data);
-
     if (!bufferSize.IsInBounds(startingCoordinate))
     {
         return {};
     }
 
-    if (const auto io = gci.GetVtIoForBuffer(&screenInfo))
+    if (auto writer = gci.GetVtWriterForBuffer(&screenInfo))
     {
-        const auto corkLock = io->Cork();
+        writer.BackupCursor();
 
         const auto h = bufferSize.Height();
         const auto w = bufferSize.Width();
         auto y = startingCoordinate.y;
-        til::CoordType end = 0;
-        auto remaining = lengthToWrite;
-
-        til::small_vector<CHAR_INFO, 1024> infos;
-        infos.resize(gsl::narrow_cast<size_t>(w) + 1);
-
+        auto input = static_cast<const uint16_t*>(data);
+        size_t inputPos = 0;
+        til::small_vector<CHAR_INFO, 1024> infoBuffer;
         Viewport unused;
 
-        while (y < h && remaining > 0)
+        infoBuffer.resize(gsl::narrow_cast<size_t>(w));
+
+        while (y < h && inputPos < lengthToWrite)
         {
             const auto beg = y == startingCoordinate.y ? startingCoordinate.x : 0;
-            auto len = std::min(remaining, gsl::narrow_cast<size_t>(w - beg));
-            end = beg + gsl::narrow_cast<til::CoordType>(len);
+            const auto columnsAvailable = w - beg;
+            til::CoordType columns = 0;
 
-            auto viewport = Viewport::FromInclusive({ beg, y, end - 1, y });
-            THROW_IF_FAILED(ReadConsoleOutputWImplHelper(screenInfo, infos, viewport, unused));
+            const auto readViewport = Viewport::FromInclusive({ beg, y, w - 1, y });
+            THROW_IF_FAILED(ReadConsoleOutputWImplHelper(screenInfo, infoBuffer, readViewport, unused));
 
             switch (mode)
             {
             case FillConsoleMode::WriteAttribute:
-                for (size_t i = 0; i < len; ++i)
+                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
                 {
-                    infos[i].Attributes = *attrs++;
-                }
-                break;
-            case FillConsoleMode::WriteCharacter:
-                for (size_t i = 0; i < len;)
-                {
-                    const auto ch = *chars++;
-
-                    auto& lead = infos[i++];
-                    lead.Char.UnicodeChar = ch;
-                    lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
-
-                    if (IsGlyphFullWidth(ch))
-                    {
-                        lead.Attributes |= COMMON_LVB_LEADING_BYTE;
-
-                        auto& trail = infos[i++];
-                        trail.Char.UnicodeChar = ch;
-                        trail.Attributes = trail.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE) | COMMON_LVB_LEADING_BYTE;
-                    }
+                    infoBuffer[columns].Attributes = input[inputPos];
                 }
                 break;
             case FillConsoleMode::FillAttribute:
-            {
-                const auto attr = *attrs;
-                for (size_t i = 0; i < len; ++i)
+                for (const auto attr = input[0]; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
                 {
-                    infos[i].Attributes = attr;
+                    infoBuffer[columns].Attributes = attr;
                 }
                 break;
-            }
-            case FillConsoleMode::FillCharacter:
-            {
-                const auto ch = *chars;
-
-                if (IsGlyphFullWidth(ch))
+            case FillConsoleMode::WriteCharacter:
+                for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
                 {
-                    for (size_t i = 0; i < len;)
+                    const auto ch = input[inputPos];
+                    if (ch >= 0x80 && IsGlyphFullWidth(ch))
                     {
-                        auto& lead = infos[i++];
+                        // If the wide glyph doesn't fit into the last column, pad it with whitespace.
+                        if ((columns + 1) >= columnsAvailable)
+                        {
+                            auto& lead = infoBuffer[columns++];
+                            lead.Char.UnicodeChar = L' ';
+                            lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                            break;
+                        }
+
+                        auto& lead = infoBuffer[columns++];
                         lead.Char.UnicodeChar = ch;
-                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE) | COMMON_LVB_LEADING_BYTE;
+                        lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
 
-                        auto& trail = infos[i++];
+                        auto& trail = infoBuffer[columns++];
                         trail.Char.UnicodeChar = ch;
-                        trail.Attributes = trail.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE) | COMMON_LVB_LEADING_BYTE;
+                        trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
                     }
-                }
-                else
-                {
-                    for (size_t i = 0; i < len;)
+                    else
                     {
-                        auto& lead = infos[i++];
+                        auto& lead = infoBuffer[columns++];
                         lead.Char.UnicodeChar = ch;
                         lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
                     }
                 }
+                break;
+            case FillConsoleMode::FillCharacter:
+                // Identical to WriteCharacter above, but with the if() and for() swapped.
+                if (const auto ch = input[0]; ch >= 0x80 && IsGlyphFullWidth(ch))
+                {
+                    for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+                    {
+                        // If the wide glyph doesn't fit into the last column, pad it with whitespace.
+                        if ((columns + 1) >= columnsAvailable)
+                        {
+                            auto& lead = infoBuffer[columns++];
+                            lead.Char.UnicodeChar = L' ';
+                            lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                            break;
+                        }
 
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = ch;
+                        lead.Attributes = lead.Attributes & ~COMMON_LVB_TRAILING_BYTE | COMMON_LVB_LEADING_BYTE;
+
+                        auto& trail = infoBuffer[columns++];
+                        trail.Char.UnicodeChar = ch;
+                        trail.Attributes = trail.Attributes & ~COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
+                    }
+                }
+                else
+                {
+                    for (; columns < columnsAvailable && inputPos < lengthToWrite; ++inputPos)
+                    {
+                        auto& lead = infoBuffer[columns++];
+                        lead.Char.UnicodeChar = ch;
+                        lead.Attributes = lead.Attributes & ~(COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+                    }
+                }
                 break;
             }
-            }
 
-            if (auto& last = infos[len - 1]; last.Attributes & COMMON_LVB_LEADING_BYTE)
-            {
-                len--;
-                end--;
-            }
-
-            viewport = Viewport::FromInclusive({ beg, y, end - 1, y });
-            THROW_IF_FAILED(WriteConsoleOutputWImplHelper(screenInfo, infos, viewport.Width(), viewport, unused));
+            const auto writeViewport = Viewport::FromInclusive({ beg, y, beg + columns - 1, y });
+            THROW_IF_FAILED(WriteConsoleOutputWImplHelper(screenInfo, infoBuffer, w, writeViewport, unused));
 
             y += 1;
-            remaining -= len;
+            result.cellsModified += columns;
         }
 
-        result.lengthRead = lengthToWrite - remaining;
-        result.cellsModified = std::max(0, (y - startingCoordinate.y - 1) * w + end - startingCoordinate.x);
+        result.lengthRead = inputPos;
 
-        if (io && io->BufferHasContent())
-        {
-            io->WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
-            io->WriteAttributes(screenInfo.GetAttributes().GetLegacyAttributes());
-        }
+        writer.Submit();
     }
     else
     {
+        // Technically we could always pass `data` as `uint16_t*`, because `wchar_t` is guaranteed to be 16 bits large.
+        // However, OutputCellIterator is terrifyingly unsafe code and so we don't do that.
+        //
+        // Constructing an OutputCellIterator with a `wchar_t` takes the `wchar_t` by reference, so that it can reference
+        // it in a `wstring_view` forever. That's of course really bad because passing a `const uint16_t&` to a
+        // `const wchar_t&` argument implicitly converts the types. To do so, the implicit conversion allocates a
+        // `wchar_t` value on the stack. The lifetime of that copy DOES NOT get extended beyond the constructor call.
+        // The result is that OutputCellIterator would read random data from the stack.
+        //
+        // Don't ever assume the lifetime of implicitly convertible types given by reference.
+        // Ironically that's a bug that cannot happen with C pointers. To no ones surprise, C keeps on winning.
+        auto attrs = static_cast<const uint16_t*>(data);
+        auto chars = static_cast<const wchar_t*>(data);
+
         OutputCellIterator it;
 
         switch (mode)
@@ -381,16 +383,16 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIoForBuffer(&OutContext))
+        // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
+        // the vintage console, `Clear-Host` is supposed to clear the entire
+        // buffer. In conpty however, there's no difference between the viewport
+        // and the entirety of the buffer. We're going to see if this API call
+        // exactly matched the way we expect powershell to call it. If it does,
+        // then let's manually emit a Full Reset (RIS).
+        if (enablePowershellShim)
         {
-            // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
-            // the vintage console, `Clear-Host` is supposed to clear the entire
-            // buffer. In conpty however, there's no difference between the viewport
-            // and the entirety of the buffer. We're going to see if this API call
-            // exactly matched the way we expect powershell to call it. If it does,
-            // then let's manually emit a Full Reset (RIS).
-            if (enablePowershellShim)
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            if (const auto writer = gci.GetVtWriterForBuffer(&OutContext))
             {
                 const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
                 const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
@@ -437,16 +439,16 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         LockConsole();
         const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIoForBuffer(&OutContext))
+        // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
+        // the vintage console, `Clear-Host` is supposed to clear the entire
+        // buffer. In conpty however, there's no difference between the viewport
+        // and the entirety of the buffer. We're going to see if this API call
+        // exactly matched the way we expect powershell to call it. If it does,
+        // then let's manually emit a Full Reset (RIS).
+        if (enablePowershellShim)
         {
-            // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
-            // the vintage console, `Clear-Host` is supposed to clear the entire
-            // buffer. In conpty however, there's no difference between the viewport
-            // and the entirety of the buffer. We're going to see if this API call
-            // exactly matched the way we expect powershell to call it. If it does,
-            // then let's manually emit a Full Reset (RIS).
-            if (enablePowershellShim)
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            if (const auto writer = gci.GetVtWriterForBuffer(&OutContext))
             {
                 const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
                 const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());

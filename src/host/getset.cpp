@@ -363,7 +363,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
         }
 
-        if (const auto io = gci.GetVtIo())
+        if (auto writer = gci.GetVtWriter())
         {
             auto oldMode = context.InputMode;
             auto newMode = mode;
@@ -377,13 +377,13 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 
             if (const auto diff = oldMode ^ newMode)
             {
-                const auto cork = io->Cork();
-
                 if (WI_IsFlagSet(diff, ENABLE_MOUSE_INPUT))
                 {
-                    io->WriteSGR1006(WI_IsFlagSet(newMode, ENABLE_MOUSE_INPUT));
+                    writer.WriteSGR1006(WI_IsFlagSet(newMode, ENABLE_MOUSE_INPUT));
                 }
             }
+
+            writer.Submit();
         }
 
         context.InputMode = mode;
@@ -451,17 +451,14 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         }
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIoForBuffer(&context))
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
         {
             if (WI_IsFlagSet(diff, ENABLE_WRAP_AT_EOL_OUTPUT))
             {
-                io->WriteDECAWM(WI_IsFlagSet(dwNewMode, ENABLE_WRAP_AT_EOL_OUTPUT));
+                writer.WriteDECAWM(WI_IsFlagSet(dwNewMode, ENABLE_WRAP_AT_EOL_OUTPUT));
             }
 
-            if (WI_IsFlagSet(diff, DISABLE_NEWLINE_AUTO_RETURN))
-            {
-                io->WriteLNM(WI_IsFlagClear(dwNewMode, DISABLE_NEWLINE_AUTO_RETURN));
-            }
+            writer.Submit();
         }
 
         return S_OK;
@@ -481,10 +478,8 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIo())
+        if (auto writer = gci.GetVtWriter())
         {
-            const auto cork = io->Cork();
-
             const auto viewport = gci.GetActiveOutputBuffer().GetBufferSize();
             const auto size = viewport.Dimensions();
             const auto area = static_cast<size_t>(viewport.Width() * viewport.Height());
@@ -510,24 +505,25 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
                 THROW_IF_FAILED(ReadConsoleOutputWImpl(screenInfo, infos, viewport, read));
                 for (til::CoordType i = 0; i < size.height; i++)
                 {
-                    io->WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
+                    writer.WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
                 }
 
-                io->WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
-                io->WriteAttributes(screenInfo.GetAttributes().GetLegacyAttributes());
-                io->WriteDECTCEM(screenInfo.GetTextBuffer().GetCursor().IsVisible());
-                io->WriteDECAWM(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT));
-                io->WriteLNM(WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN));
+                writer.WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
+                writer.WriteAttributes(screenInfo.GetAttributes());
+                writer.WriteDECTCEM(screenInfo.GetTextBuffer().GetCursor().IsVisible());
+                writer.WriteDECAWM(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT));
             };
 
-            io->WriteASB(false);
+            writer.WriteASB(false);
             dumpScreenInfo(main);
 
             if (hasAltBuffer)
             {
-                io->WriteASB(true);
+                writer.WriteASB(true);
                 dumpScreenInfo(alt);
             }
+
+            writer.Submit();
         }
 
         SetActiveScreenBuffer(newContext.GetActiveBuffer());
@@ -781,9 +777,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIoForBuffer(&context))
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
         {
-            io->WriteCUP(position);
+            writer.WriteCUP(position);
+            writer.Submit();
         }
 
         RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
@@ -861,9 +858,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         context.SetCursorInformation(size, isVisible);
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIoForBuffer(&context))
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
         {
-            io->WriteDECTCEM(isVisible);
+            writer.WriteDECTCEM(isVisible);
+            writer.Submit();
         }
 
         return S_OK;
@@ -993,7 +991,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIoForBuffer(&context))
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
         {
             auto& buffer = context.GetActiveBuffer();
 
@@ -1020,10 +1018,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                 fillCharacter == UNICODE_SPACE && fillAttribute == buffer.GetAttributes().GetLegacyAttributes())
             {
                 WriteClearScreen(context);
+                writer.Submit();
                 return S_OK;
             }
-
-            const auto corkLock = io->Cork();
 
             const auto clipViewport = clip ? Viewport::FromInclusive(*clip) : bufferSize;
             const auto sourceViewport = Viewport::FromInclusive(source);
@@ -1044,15 +1041,13 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             backup.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
             fill.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
 
+            writer.BackupCursor();
+
             RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, backup, sourceViewport, readViewport));
             RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, w, sourceViewport.Clamp(clipViewport), writtenViewport));
             RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, w, Viewport::FromDimensions(target, readViewport.Dimensions()).Clamp(clipViewport), writtenViewport));
 
-            if (io && io->BufferHasContent())
-            {
-                io->WriteCUP(context.GetTextBuffer().GetCursor().GetPosition());
-                io->WriteAttributes(context.GetAttributes().GetLegacyAttributes());
-            }
+            writer.Submit();
         }
         else
         {
@@ -1087,9 +1082,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         context.SetAttributes(attr);
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (const auto io = gci.GetVtIoForBuffer(&context))
+        if (auto writer = gci.GetVtWriterForBuffer(&context))
         {
-            io->WriteAttributes(attribute);
+            writer.WriteAttributes(attr);
+            writer.Submit();
         }
 
         return S_OK;
@@ -1627,12 +1623,12 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetTitle(title);
 
-    if (const auto io = gci.GetVtIo())
+    if (auto writer = gci.GetVtWriter())
     {
-        const auto cork = io->Cork();
-        io->WriteUTF8("\x1b]0;");
-        io->WriteUTF16StripControlChars(title);
-        io->WriteUTF8("\x7");
+        writer.WriteUTF8("\x1b]0;");
+        writer.WriteUTF16StripControlChars(title);
+        writer.WriteUTF8("\x7");
+        writer.Submit();
     }
 
     return S_OK;

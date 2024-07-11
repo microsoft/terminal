@@ -160,12 +160,12 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     const auto width = textBuffer.GetSize().Width();
     auto& cursor = textBuffer.GetCursor();
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
-    auto it = text.begin();
+    const auto beg = text.begin();
     const auto end = text.end();
+    auto it = beg;
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto io = gci.GetVtIoForBuffer(&screenInfo);
-    const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
+    auto writer = gci.GetVtWriterForBuffer(&screenInfo);
 
     // If we enter this if condition, then someone wrote text in VT mode and now switched to non-VT mode.
     // Since the Console APIs don't support delayed EOL wrapping, we need to first put the cursor back
@@ -189,15 +189,16 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     {
         const auto lastCharWrapped = _writeCharsLegacyUnprocessed(screenInfo, text, psScrollY);
 
-        if (io)
+        if (writer)
         {
             // We're asked to produce VT output, but also to behave as if these control characters aren't control characters.
             // So, to make it work, we simply replace all the control characters with whitespace.
-            io->WriteUTF16StripControlChars(text);
+            writer.WriteUTF16StripControlChars(text);
             if (lastCharWrapped)
             {
-                io->WriteUTF8(" \r");
+                writer.WriteUTF8("\r\n");
             }
+            writer.Submit();
         }
 
         return;
@@ -212,12 +213,12 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             const auto lastCharWrapped = _writeCharsLegacyUnprocessed(screenInfo, chunk, psScrollY);
             it = nextControlChar;
 
-            if (io)
+            if (writer)
             {
-                io->WriteUTF16(chunk);
+                writer.WriteUTF16(chunk);
                 if (lastCharWrapped)
                 {
-                    io->WriteUTF8(" \r");
+                    writer.WriteUTF8("\r\n");
                 }
             }
         }
@@ -263,9 +264,12 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             case UNICODE_LINEFEED:
             {
                 auto pos = cursor.GetPosition();
-                if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
+                if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) && pos.x != 0)
                 {
                     pos.x = 0;
+                    // This causes the current \n to be replaced with a \r\n in the ConPTY VT output.
+                    wch = 0;
+                    lastCharWrapped = true;
                 }
 
                 textBuffer.GetMutableRowByOffset(pos.y).SetWrapForced(false);
@@ -299,20 +303,25 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             }
             }
 
-            if (io)
+            if (writer)
             {
                 if (wch)
                 {
-                    io->WriteUTF16({ &wch, 1 });
+                    writer.WriteUCS2(wch);
                 }
                 if (lastCharWrapped)
                 {
-                    io->WriteUTF8(" \r");
+                    writer.WriteUTF8("\r\n");
                 }
             }
 
             ++it;
         } while (it != end && controlCharPredicate(*it));
+    }
+
+    if (writer)
+    {
+        writer.Submit();
     }
 }
 
@@ -322,38 +331,42 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
     auto& stateMachine = screenInfo.GetStateMachine();
     // When switch between the main and alt-buffer SCREEN_INFORMATION::GetActiveBuffer()
     // may change, so get the VtIo reference now, just in case.
-    const auto io = gci.GetVtIoForBuffer(&screenInfo);
+    auto writer = gci.GetVtWriterForBuffer(&screenInfo);
 
     stateMachine.ProcessString(str);
 
-    if (io)
+    if (writer)
     {
-        const auto cork = io->Cork();
         const auto& injections = stateMachine.GetInjections();
         size_t offset = 0;
 
+        const auto write = [&](size_t beg, size_t end) {
+            const auto chunk = til::safe_slice_abs(str, beg, end);
+            if (WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
+            {
+                writer.WriteUTF16(chunk);
+            }
+            else
+            {
+                writer.WriteUTF16TranslateCRLF(chunk);
+            }
+        };
+
         for (const auto& injection : injections)
         {
-            io->WriteUTF16(til::safe_slice_abs(str, offset, injection.offset));
+            write(offset, injection.offset);
             offset = injection.offset;
 
-            switch (injection.type)
-            {
-            case InjectionType::RIS:
-                io->WriteUTF8(
-                    "\033[?1004h" // Focus Event Mode
-                    "\033[?9001h" // Win32 Input Mode
-                );
-                break;
-            case InjectionType::DECSET_FOCUS:
-                io->WriteUTF8(
-                    "\033[?1004h" // Focus Event Mode
-                );
-                break;
-            }
+            static constexpr std::array<std::string_view, 2> mapping{ {
+                { "\x1b[?1004h\x1b[?9001h" }, // RIS: Focus Event Mode + Win32 Input Mode
+                { "\033[?1004h" } // DECSET_FOCUS: Focus Event Mode
+            } };
+
+            writer.WriteUTF8(mapping[static_cast<size_t>(injection.type)]);
         }
 
-        io->WriteUTF16(til::safe_slice_abs(str, offset, std::wstring_view::npos));
+        write(offset, std::wstring_view::npos);
+        writer.Submit();
     }
 }
 

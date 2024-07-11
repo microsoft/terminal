@@ -161,7 +161,7 @@ bool VtIo::IsUsingVt() const
     }
 
     {
-        const auto cork = Cork();
+        auto writer = GetWriter();
 
         // GH#4999 - Send a sequence to the connected terminal to request
         // win32-input-mode from them. This will enable the connected terminal to
@@ -170,7 +170,7 @@ bool VtIo::IsUsingVt() const
 
         // By default, DISABLE_NEWLINE_AUTO_RETURN is reset. This implies LNM being set,
         // which is not the default in terminals, so we have to do that explicitly.
-        WriteUTF8(
+        writer.WriteUTF8(
             "\x1b[20h" // Line Feed / New Line Mode (LNM)
             "\033[?1004h" // Focus Event Mode
             "\033[?9001h" // Win32 Input Mode
@@ -184,8 +184,10 @@ bool VtIo::IsUsingVt() const
         //      which will call to our VtIo::SetCursorPosition method.
         if (_lookingForCursorPosition)
         {
-            WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+            writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
         }
+
+        writer.Submit();
     }
 
     if (_lookingForCursorPosition)
@@ -273,11 +275,6 @@ void VtIo::CloseInput()
     SendCloseEvent();
 }
 
-void VtIo::CloseOutput()
-{
-    _hOutput.reset();
-}
-
 void VtIo::SendCloseEvent()
 {
     LockConsole();
@@ -294,7 +291,7 @@ void VtIo::SendCloseEvent()
 
 // Returns true for C0 characters and C1 [single-character] CSI.
 // A copy of isActionableFromGround() from stateMachine.cpp.
-bool VtIo::IsControlCharacter(wchar_t wch) noexcept
+static constexpr bool IsControlCharacter(wchar_t wch) noexcept
 {
     // This is equivalent to:
     //   return (wch <= 0x1f) || (wch >= 0x7f && wch <= 0x9f);
@@ -304,48 +301,61 @@ bool VtIo::IsControlCharacter(wchar_t wch) noexcept
     return (wch <= 0x1f) | (static_cast<wchar_t>(wch - 0x7f) <= 0x20);
 }
 
-static size_t formatAttributes(char (&buffer)[16], WORD attributes) noexcept
+// Formats the given console attributes to their closest VT equivalent.
+// `out` must refer to at least `formatAttributesMaxLen` characters of valid memory.
+// Returns a pointer past the end.
+static constexpr size_t formatAttributesMaxLen = 16;
+static char* formatAttributes(char* out, const TextAttribute& attributes) noexcept
 {
-    auto end = &buffer[0];
-    memcpy(end, "\x1b[0", 4);
-    end += 3;
+    static uint8_t sgr[] = { 30, 31, 32, 33, 34, 35, 36, 37, 90, 91, 92, 93, 94, 95, 96, 97 };
 
-    if (attributes & COMMON_LVB_REVERSE_VIDEO)
+    // Applications expect that SetConsoleTextAttribute() completely replaces whatever attributes are currently set,
+    // including any potential VT-exclusive attributes. Since we don't know what those are, we must always emit a SGR 0.
+    // Copying 4 bytes instead of the correct 3 means we need just 1 DWORD mov. Neat.
+    //
+    // 3 bytes.
+    memcpy(out, "\x1b[0", 4);
+    out += 3;
+
+    // 2 bytes.
+    if (attributes.IsReverseVideo())
     {
-        memcpy(end, ";7", 2);
-        end += 2;
+        memcpy(out, ";7", 2);
+        out += 2;
     }
 
-    // `attributes` of exactly `FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED`
-    // are often used to indicate the default colors in Windows Console applications.
-    // Since we always emit SGR 0 (reset all attributes), we simply need to skip this branch.
-    if ((attributes & (FG_ATTRS | BG_ATTRS)) != (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED))
+    // 3 bytes (";97").
+    if (attributes.GetForeground().IsLegacy())
     {
-        // The Console API represents colors in BGR order, but VT represents them in RGB order.
-        // This LUT transposes them. This is for foreground colors. Add +10 to get the background ones.
-        static constexpr uint8_t lut[] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97 };
-        const uint8_t fg = lut[attributes & 0xf];
-        const uint8_t bg = lut[(attributes >> 4) & 0xf] + 10;
-        end = fmt::format_to(end, FMT_COMPILE(";{};{}"), fg, bg);
+        const uint8_t index = sgr[attributes.GetForeground().GetIndex()];
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
     }
 
-    *end++ = 'm';
-    return end - &buffer[0];
+    // 4 bytes (";107").
+    if (attributes.GetBackground().IsLegacy())
+    {
+        const uint8_t index = sgr[attributes.GetBackground().GetIndex()] + 10;
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
+    }
+
+    // 1 byte.
+    *out++ = 'm';
+    return out;
 }
 
-void VtIo::FormatAttributes(std::string& target, WORD attributes)
+void VtIo::FormatAttributes(std::string& target, const TextAttribute& attributes)
 {
-    char buf[16];
-    const auto len = formatAttributes(buf, attributes);
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
     target.append(buf, len);
 }
 
-void VtIo::FormatAttributes(std::wstring& target, WORD attributes)
+void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attributes)
 {
-    char buf[16];
-    const auto len = formatAttributes(buf, attributes);
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
 
-    wchar_t bufW[16];
+    wchar_t bufW[formatAttributesMaxLen];
     for (size_t i = 0; i < len; i++)
     {
         bufW[i] = buf[i];
@@ -354,71 +364,241 @@ void VtIo::FormatAttributes(std::wstring& target, WORD attributes)
     target.append(bufW, len);
 }
 
-void VtIo::WriteUTF8(std::string_view str)
+VtIo::Writer VtIo::GetWriter() noexcept
 {
-    if (str.empty() || !_hOutput)
-    {
-        return;
-    }
-
-    _back.append(str);
-    _flush();
+    _corked += 1;
+    return Writer{ this };
 }
 
-void VtIo::WriteUTF16(std::wstring_view str)
+VtIo::Writer::Writer(VtIo* io) noexcept :
+    _io{ io }
 {
-    if (str.empty() || !_hOutput)
+}
+
+VtIo::Writer::~Writer() noexcept
+{
+    // If _io is non-null, then we didn't call Submit, e.g. because of an exception.
+    // We need to avoid flushing the buffer in that case.
+    if (_io)
+    {
+        _io->_writerTainted = true;
+        _io->_uncork();
+    }
+}
+
+VtIo::Writer::Writer(Writer&& other) noexcept :
+    _io{ std::exchange(other._io, nullptr) }
+{
+}
+
+VtIo::Writer& VtIo::Writer::operator=(Writer&& other) noexcept
+{
+    if (this != &other)
+    {
+        this->~Writer();
+        _io = std::exchange(other._io, nullptr);
+    }
+    return *this;
+}
+
+VtIo::Writer::operator bool() const noexcept
+{
+    return _io != nullptr;
+}
+
+void VtIo::Writer::Submit()
+{
+    _io->_uncork();
+    _io = nullptr;
+}
+
+void VtIo::_uncork()
+{
+    _corked -= 1;
+    if (_corked <= 0)
+    {
+        _flushNow();
+    }
+}
+
+void VtIo::_flushNow()
+{
+    size_t minSize = 0;
+
+    if (_writerRestoreCursor)
+    {
+        minSize = 4;
+        _writerRestoreCursor = false;
+        _back.append("\x1b\x38"); // DECRC: DEC Restore Cursor (+ attributes)
+    }
+
+    if (_overlappedPending)
+    {
+        _overlappedPending = false;
+        std::ignore = _overlappedEvent.wait();
+    }
+
+    _front.clear();
+    _front.swap(_back);
+
+    // If it's >64KiB large and twice as large as the previous buffer, free the memory.
+    // This ensures that there's a pathway for shrinking the buffer from large sizes.
+    if (const auto cap = _back.capacity(); cap > 64 * 1024 && cap > _front.capacity() / 2)
+    {
+        _back = std::string{};
+    }
+
+    // We encountered an exception and shouldn't flush the broken pieces.
+    if (_writerTainted)
+    {
+        _writerTainted = false;
+        return;
+    }
+
+    // If _back (now _front) was empty, we can return early. If all _front contains is
+    // DECSC/DECRC that was added by BackupCursor & us, we can also return early.
+    if (_front.size() <= minSize)
     {
         return;
     }
 
-    const auto existingUTF8Len = _back.size();
-    const auto incomingUTF16Len = gsl::narrow<int>(str.size());
-    // When converting from UTF-16 to UTF-8 the worst case is 3 bytes per UTF-16 code unit.
-    const auto totalUTF8Cap = gsl::narrow<size_t>(gsl::narrow_cast<uint64_t>(incomingUTF16Len) * 3 + existingUTF8Len);
-    const auto incomingUTF8Cap = gsl::narrow<int>(totalUTF8Cap - existingUTF8Len);
+    // No point in calling WriteFile if we already encountered ERROR_BROKEN_PIPE.
+    // We do this after the above, so that _back doesn't grow indefinitely.
+    if (!_hOutput)
+    {
+        return;
+    }
 
-    _back._Resize_and_overwrite(totalUTF8Cap, [=](char* ptr, const size_t) noexcept {
-        const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), incomingUTF16Len, ptr + existingUTF8Len, incomingUTF8Cap, nullptr, nullptr);
+    for (;;)
+    {
+        if (WriteFile(_hOutput.get(), _front.data(), gsl::narrow_cast<DWORD>(_front.size()), nullptr, _overlapped))
+        {
+            return;
+        }
+
+        switch (const auto gle = GetLastError())
+        {
+        case ERROR_BROKEN_PIPE:
+            _hOutput.reset();
+            return;
+        case ERROR_IO_PENDING:
+            _overlappedPending = true;
+            return;
+        default:
+            LOG_WIN32(gle);
+            return;
+        }
+    }
+}
+
+void VtIo::Writer::BackupCursor() const
+{
+    if (!_io->_writerRestoreCursor)
+    {
+        _io->_writerRestoreCursor = true;
+        _io->_back.append("\x1b\x37"); // DECSC: DEC Save Cursor (+ attributes)
+    }
+}
+
+void VtIo::Writer::WriteUTF8(std::string_view str) const
+{
+    _io->_back.append(str);
+}
+
+void VtIo::Writer::WriteUTF16(std::wstring_view str) const
+{
+    if (str.empty())
+    {
+        return;
+    }
+
+    const auto existingUTF8Len = _io->_back.size();
+    const auto incomingUTF16Len = str.size();
+
+    // When converting from UTF-16 to UTF-8 the worst case is 3 bytes per UTF-16 code unit.
+    const auto incomingUTF8Cap = incomingUTF16Len * 3;
+    const auto totalUTF8Cap = existingUTF8Len + incomingUTF8Cap;
+
+    // Since WideCharToMultiByte() only supports `int` lengths, we check for an overflow past INT_MAX/3.
+    // We also check for an overflow of totalUTF8Cap just to be sure.
+    if (incomingUTF16Len > gsl::narrow_cast<size_t>(INT_MAX / 3) || totalUTF8Cap <= existingUTF8Len)
+    {
+        THROW_HR_MSG(E_INVALIDARG, "string too large");
+    }
+
+    // NOTE: Throwing inside resize_and_overwrite invokes undefined behavior.
+    _io->_back._Resize_and_overwrite(totalUTF8Cap, [&](char* buf, const size_t) noexcept {
+        const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), gsl::narrow_cast<int>(incomingUTF16Len), buf + existingUTF8Len, gsl::narrow_cast<int>(incomingUTF8Cap), nullptr, nullptr);
         return existingUTF8Len + std::max(0, len);
     });
+}
 
-    _flush();
+// When DISABLE_NEWLINE_AUTO_RETURN is not set (Bad! Don't do it!) we'll do newline translation for you.
+// That's the only difference of this function from WriteUTF16: It does LF -> CRLF translation.
+void VtIo::Writer::WriteUTF16TranslateCRLF(std::wstring_view str) const
+{
+    const auto beg = str.begin();
+    const auto end = str.end();
+    auto begCopy = beg;
+    auto endCopy = beg;
+
+    // Our goal is to prepend a \r in front of \n that don't already have one.
+    // There's no point in replacing \n\n\n with \r\n\r\n\r\n, however. It's just fine to do \r\n\n\n.
+    // After all we aren't a text file, we're a terminal, and \r\n and \n are identical if we're at the first column.
+    for (;;)
+    {
+        // To do so, we'll first find the next LF and emit the unrelated text before it.
+        endCopy = std::find(endCopy, end, L'\n');
+        WriteUTF16({ begCopy, endCopy });
+        begCopy = endCopy;
+
+        // Done? Great.
+        if (begCopy == end)
+        {
+            break;
+        }
+
+        // We only need to prepend a CR if the LF isn't already preceded by one.
+        if (begCopy == beg || begCopy[-1] != L'\r')
+        {
+            _io->_back.push_back('\r');
+        }
+
+        // Now extend the end of the next WriteUTF16 *past* this series of CRs and LFs.
+        // We've just ensured that the LF is preceded by a CR, so we can skip all this safely.
+        while (++endCopy != end && (*endCopy == L'\n' || *endCopy == L'\r'))
+        {
+        }
+    }
 }
 
 // Same as WriteUTF16, but replaces control characters with spaces.
 // We don't outright remove them because that would mess up the cursor position.
 // conhost traditionally assigned control chars a width of 1 when in the raw write mode.
-void VtIo::WriteUTF16StripControlChars(std::wstring_view str)
+void VtIo::Writer::WriteUTF16StripControlChars(std::wstring_view str) const
 {
-    const auto cork = Cork();
     auto it = str.data();
     const auto end = it + str.size();
 
     // We can picture `str` as a repeated sequence of regular characters followed by control characters.
     while (it != end)
     {
-        const auto begControlChars = Microsoft::Console::Utils::FindActionableControlCharacter(it, end - it);
-        const auto begRegularChars = Microsoft::Console::Utils::FindNonActionableRegularCharacter(begControlChars, end - begControlChars);
+        const auto begControlChars = FindActionableControlCharacter(it, end - it);
 
-        WriteUTF16({ it, begControlChars }); // First we append the regular characters.
-        _back.append(begRegularChars - begControlChars, ' '); // And then as many spaces as control characters.
+        WriteUTF16({ it, begControlChars });
 
-        it = begRegularChars;
+        for (it = begControlChars; it != end && IsControlCharacter(*it); ++it)
+        {
+            WriteUCS2StripControlChars(*it);
+        }
     }
-
-    _flush();
 }
 
-void VtIo::WriteUCS2(wchar_t ch)
+void VtIo::Writer::WriteUCS2(wchar_t ch) const
 {
     char buf[4];
     size_t len = 0;
 
-    if (ch < L' ')
-    {
-        ch = UNICODE_SPACE;
-    }
     if (til::is_surrogate(ch))
     {
         ch = UNICODE_REPLACEMENT;
@@ -440,67 +620,81 @@ void VtIo::WriteUCS2(wchar_t ch)
         buf[len++] = static_cast<char>(0x80 | (ch & 0x3f));
     }
 
-    WriteUTF8({ &buf[0], len });
+    _io->_back.append(buf, len);
+}
+
+void VtIo::Writer::WriteUCS2StripControlChars(wchar_t ch) const
+{
+    if (ch < 0x20)
+    {
+        static constexpr wchar_t lut[] = {
+            // clang-format off
+            L' ', L'☺', L'☻', L'♥', L'♦', L'♣', L'♠', L'•', L'◘', L'○', L'◙', L'♂', L'♀', L'♪', L'♫', L'☼',
+            L'►', L'◄', L'↕', L'‼', L'¶', L'§', L'▬', L'↨', L'↑', L'↓', L'→', L'←', L'∟', L'↔', L'▲', L'▼',
+            // clang-format on
+        };
+        ch = lut[ch];
+    }
+    else if (ch == 0x7F)
+    {
+        ch = L'⌂';
+    }
+    else if (ch > 0x7F && ch < 0xA0)
+    {
+        ch = L'?';
+    }
+
+    WriteUCS2(ch);
 }
 
 // CUP: Cursor Position
-void VtIo::WriteCUP(til::point position)
+void VtIo::Writer::WriteCUP(til::point position) const
 {
     WriteFormat(FMT_COMPILE("\x1b[{};{}H"), position.y + 1, position.x + 1);
 }
 
 // DECTCEM: Text Cursor Enable
-void VtIo::WriteDECTCEM(bool enabled)
+void VtIo::Writer::WriteDECTCEM(bool enabled) const
 {
     char buf[] = "\x1b[?25h";
     buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
-    WriteUTF8({ buf, std::size(buf) - 1 });
+    _io->_back.append(&buf[0], std::size(buf) - 1);
 }
 
 // SGR 1006: SGR Extended Mouse Mode
-void VtIo::WriteSGR1006(bool enabled)
+void VtIo::Writer::WriteSGR1006(bool enabled) const
 {
     char buf[] = "\x1b[?1003;1006h";
     buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
-    WriteUTF8({ buf, std::size(buf) - 1 });
+    _io->_back.append(&buf[0], std::size(buf) - 1);
 }
 
 // DECAWM: Autowrap Mode
-void VtIo::WriteDECAWM(bool enabled)
+void VtIo::Writer::WriteDECAWM(bool enabled) const
 {
     char buf[] = "\x1b[?7h";
     buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
-    WriteUTF8({ buf, std::size(buf) - 1 });
-}
-
-// LNM: Line Feed / New Line Mode
-void VtIo::WriteLNM(bool enabled)
-{
-    char buf[] = "\x1b[20h";
-    buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
-    WriteUTF8({ buf, std::size(buf) - 1 });
+    _io->_back.append(&buf[0], std::size(buf) - 1);
 }
 
 // ASB: Alternate Screen Buffer
-void VtIo::WriteASB(bool enabled)
+void VtIo::Writer::WriteASB(bool enabled) const
 {
     char buf[] = "\x1b[?1049h";
     buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
-    WriteUTF8({ buf, std::size(buf) - 1 });
+    _io->_back.append(&buf[0], std::size(buf) - 1);
 }
 
-void VtIo::WriteAttributes(WORD attributes)
+void VtIo::Writer::WriteAttributes(const TextAttribute& attributes) const
 {
-    FormatAttributes(_back, attributes);
-    _flush();
+    FormatAttributes(_io->_back, attributes);
 }
 
-void VtIo::WriteInfos(til::point target, std::span<const CHAR_INFO> infos)
+void VtIo::Writer::WriteInfos(til::point target, std::span<const CHAR_INFO> infos) const
 {
     const auto beg = infos.begin();
     const auto end = infos.end();
     const auto last = end - 1;
-    const auto cork = Cork();
     WORD attributes = 0xffff;
 
     WriteCUP(target);
@@ -543,116 +737,20 @@ void VtIo::WriteInfos(til::point target, std::span<const CHAR_INFO> infos)
         if (attributes != ci.Attributes)
         {
             attributes = ci.Attributes;
-            WriteAttributes(attributes);
+            WriteAttributes(TextAttribute{ attributes });
         }
 
-        const auto isSurrogate = til::is_surrogate(ch);
-        const auto isControl = IsControlCharacter(ch);
         int repeat = 1;
-        if (isSurrogate || isControl)
+        if (wide && (til::is_surrogate(ch) || IsControlCharacter(ch)))
         {
-            ch = isSurrogate ? UNICODE_REPLACEMENT : L' ';
-            // Space and U+FFFD are narrow characters, so if the caller intended
-            // for a wide glyph we need to emit two U+FFFD characters.
-            repeat = wide ? 2 : 1;
+            // Control characters, U+FFFD, etc. are narrow characters, so if the caller
+            // asked for a wide glyph we need to repeat the replacement character twice.
+            repeat++;
         }
 
         do
         {
-            WriteUCS2(ch);
+            WriteUCS2StripControlChars(ch);
         } while (--repeat);
     }
-}
-
-VtIo::CorkLock VtIo::Cork() noexcept
-{
-    _corked += 1;
-    return CorkLock{ this };
-}
-
-VtIo::CorkLock::CorkLock(VtIo* io) noexcept :
-    _io{ io }
-{
-}
-
-VtIo::CorkLock::~CorkLock() noexcept
-{
-    if (_io)
-    {
-        _io->_uncork();
-    }
-}
-
-VtIo::CorkLock::CorkLock(CorkLock&& other) noexcept :
-    _io{ std::exchange(other._io, nullptr) }
-{
-}
-
-VtIo::CorkLock& VtIo::CorkLock::operator=(CorkLock&& other) noexcept
-{
-    if (this != &other)
-    {
-        this->~CorkLock();
-        _io = std::exchange(other._io, nullptr);
-    }
-    return *this;
-}
-
-void VtIo::_uncork()
-{
-    _corked -= 1;
-    _flush();
-}
-
-void VtIo::_flush()
-{
-    if (_corked <= 0 && !_back.empty())
-    {
-        _flushNow();
-    }
-}
-
-void VtIo::_flushNow()
-{
-    if (_overlappedPending)
-    {
-        _overlappedPending = false;
-        std::ignore = _overlappedEvent.wait();
-    }
-
-    _front.clear();
-    _front.swap(_back);
-
-    // If it's >64KiB large and twice as large as the previous buffer, free the memory.
-    // This ensures that there's a pathway for shrinking the buffer from large sizes.
-    if (const auto cap = _back.capacity(); cap > 64 * 1024 && cap > _front.capacity() / 2)
-    {
-        _back = std::string{};
-    }
-
-    for (;;)
-    {
-        if (WriteFile(_hOutput.get(), _front.data(), gsl::narrow_cast<DWORD>(_front.size()), nullptr, _overlapped))
-        {
-            return;
-        }
-
-        switch (const auto gle = GetLastError())
-        {
-        case ERROR_BROKEN_PIPE:
-            CloseOutput();
-            return;
-        case ERROR_IO_PENDING:
-            _overlappedPending = true;
-            return;
-        default:
-            LOG_WIN32(gle);
-            return;
-        }
-    }
-}
-
-bool VtIo::BufferHasContent() const noexcept
-{
-    return !_back.empty();
 }

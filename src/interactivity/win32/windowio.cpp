@@ -935,9 +935,10 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // VtIo's CreatePseudoWindow, which will make sure that the window is
         // successfully created with the owner configured when the window is
         // first created. See GH#13066 for details.
-        if (const auto io = ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo())
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (gci.IsConPTY())
         {
-            io->CreatePseudoWindow();
+            gci.GetVtIoNoCheck()->CreatePseudoWindow();
         }
 
         // Register the pseudoconsole window as being owned by the root process.

@@ -574,9 +574,6 @@ CATCH_RETURN();
             return E_INVALIDARG;
         }
 
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto io = gci.GetVtIoForBuffer(&context);
-
         auto& storageBuffer = context.GetActiveBuffer();
         const auto storageRectangle = storageBuffer.GetBufferSize();
         const auto clippedRectangle = storageRectangle.Clamp(requestRectangle);
@@ -601,6 +598,9 @@ CATCH_RETURN();
             return E_INVALIDARG;
         }
 
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto writer = gci.GetVtWriterForBuffer(&context);
+
         for (til::CoordType y = clippedRectangle.Top(); y <= clippedRectangle.BottomInclusive(); y++)
         {
             const auto charInfos = buffer.subspan(totalOffset, width);
@@ -609,9 +609,9 @@ CATCH_RETURN();
             // Make the iterator and write to the target position.
             storageBuffer.Write(OutputCellIterator(charInfos), target);
 
-            if (io)
+            if (writer)
             {
-                io->WriteInfos(target, charInfos);
+                writer.WriteInfos(target, charInfos);
             }
 
             totalOffset += bufferStride;
@@ -622,6 +622,11 @@ CATCH_RETURN();
 
         // Since we've managed to write part of the request, return the clamped part that we actually used.
         writtenRectangle = clippedRectangle;
+
+        if (writer)
+        {
+            writer.Submit();
+        }
 
         return S_OK;
     }
@@ -639,18 +644,21 @@ CATCH_RETURN();
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto io = gci.GetVtIoForBuffer(&context);
-        const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
+        auto writer = gci.GetVtWriterForBuffer(&context);
+
+        if (writer)
+        {
+            writer.BackupCursor();
+        }
 
         const auto codepage = gci.OutputCP;
         LOG_IF_FAILED(_ConvertCellsToWInplace(codepage, buffer, requestRectangle));
 
         RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
 
-        if (io && io->BufferHasContent())
+        if (writer)
         {
-            io->WriteCUP(context.GetTextBuffer().GetCursor().GetPosition());
-            io->WriteAttributes(context.GetAttributes().GetLegacyAttributes());
+            writer.Submit();
         }
 
         return S_OK;
@@ -669,8 +677,12 @@ CATCH_RETURN();
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto io = gci.GetVtIoForBuffer(&context);
-        const auto corkLock = io ? io->Cork() : Microsoft::Console::VirtualTerminal::VtIo::CorkLock{};
+        auto writer = gci.GetVtWriterForBuffer(&context);
+
+        if (writer)
+        {
+            writer.BackupCursor();
+        }
 
         if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
@@ -684,10 +696,9 @@ CATCH_RETURN();
             RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, buffer, requestRectangle.Width(), requestRectangle, writtenRectangle));
         }
 
-        if (io && io->BufferHasContent())
+        if (writer)
         {
-            io->WriteCUP(context.GetTextBuffer().GetCursor().GetPosition());
-            io->WriteAttributes(context.GetAttributes().GetLegacyAttributes());
+            writer.Submit();
         }
 
         return S_OK;

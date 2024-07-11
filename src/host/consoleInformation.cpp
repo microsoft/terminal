@@ -123,14 +123,14 @@ VtIo* CONSOLE_INFORMATION::GetVtIoNoCheck() noexcept
     return &_vtIo;
 }
 
-VtIo* CONSOLE_INFORMATION::GetVtIo() noexcept
+VtIo::Writer CONSOLE_INFORMATION::GetVtWriter() noexcept
 {
-    return _vtIo.IsUsingVt() ? &_vtIo : nullptr;
+    return _vtIo.IsUsingVt() ? _vtIo.GetWriter() : VtIo::Writer{};
 }
 
-VtIo* CONSOLE_INFORMATION::GetVtIoForBuffer(const SCREEN_INFORMATION* context) noexcept
+VtIo::Writer CONSOLE_INFORMATION::GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept
 {
-    return _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer()) ? &_vtIo : nullptr;
+    return _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer()) ? _vtIo.GetWriter() : VtIo::Writer{};
 }
 
 bool CONSOLE_INFORMATION::IsConPTY() const noexcept
