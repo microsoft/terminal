@@ -4082,6 +4082,11 @@ namespace winrt::TerminalApp::implementation
             const auto response = httpClient.SendRequestAsync(request).get();
             // Parse out the suggestion from the response
             const auto string{ response.Content().ReadAsStringAsync().get() };
+
+            // we have to switch back to the main thread here in case the JSON parsing failed (indicating there was an error)
+            // and as a result we show the error dialog
+            co_await winrt::resume_foreground(Dispatcher());
+
             const auto jsonResult{ WDJ::JsonObject::Parse(string) };
             const auto authToken{ jsonResult.GetNamedString(L"access_token") };
             const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
@@ -4112,6 +4117,7 @@ namespace winrt::TerminalApp::implementation
         }
         catch (...)
         {
+            _ShowDialogHelper(L"GithubAuthFailedDialog");
         }
 
         co_return;

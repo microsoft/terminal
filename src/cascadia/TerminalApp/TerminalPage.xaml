@@ -153,6 +153,12 @@
             </TextBlock>
         </ContentDialog>
 
+        <ContentDialog x:Name="GithubAuthFailedDialog"
+                       x:Uid="GithubAuthFailedDialog"
+                       Grid.Row="2"
+                       x:Load="False"
+                       DefaultButton="Primary" />
+
         <local:CommandPalette x:Name="CommandPaletteElement"
                               Grid.Row="2"
                               VerticalAlignment="Stretch"
