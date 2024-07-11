@@ -448,7 +448,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         if (enablePowershellShim)
         {
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            if (const auto writer = gci.GetVtWriterForBuffer(&OutContext))
+            if (auto writer = gci.GetVtWriterForBuffer(&OutContext))
             {
                 const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
                 const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
@@ -458,6 +458,7 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
                 if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
                 {
                     WriteClearScreen(OutContext);
+                    writer.Submit();
                     cellsModified = lengthToWrite;
                     return S_OK;
                 }
