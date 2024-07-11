@@ -27,7 +27,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::Data::Json::JsonArray _jsonMessages;
 
-        winrt::Windows::Foundation::IAsyncOperation<Windows::Data::Json::JsonObject> _SendRequestReturningJson(winrt::hstring uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr, const winrt::Windows::Foundation::Uri referer = nullptr);
         void _refreshAuthTokens();
     };
 

@@ -45,13 +45,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         systemMessageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"system"));
         systemMessageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(systemMessageContent));
         _jsonMessages.Append(systemMessageObject);
-        //winrt::hstring uri{ fmt::format(L"https://github.com/login/device/code") };
-        //WWH::HttpFormUrlEncodedContent content{
-        //    std::unordered_map<winrt::hstring, winrt::hstring>{
-        //        { winrt::hstring{ L"client_id" }, winrt::hstring{ L"Iv1.b0870d058e4473a1" } }
-        //    }
-        //};
-        //_SendRequestReturningJson(uri, content);
     }
 
     void GithubCopilotLLMProvider::SetContext(const Extension::IContext context)
@@ -146,59 +139,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _jsonMessages.Append(responseMessageObject);
 
         co_return winrt::make<GithubCopilotResponse>(message, isError);
-    }
-
-    winrt::Windows::Foundation::IAsyncOperation<Windows::Data::Json::JsonObject> GithubCopilotLLMProvider::_SendRequestReturningJson(winrt::hstring uri, const WWH::IHttpContent& content, WWH::HttpMethod method, const Windows::Foundation::Uri referer)
-    {
-        if (!method)
-        {
-            method = content == nullptr ? WWH::HttpMethod::Get() : WWH::HttpMethod::Post();
-        }
-
-        WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ uri } };
-        request.Headers().Accept().TryParseAdd(L"application/json");
-
-        WDJ::JsonObject jsonContent;
-
-        jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
-        const auto stringContent = jsonContent.ToString();
-        WWH::HttpStringContent requestContent{
-            stringContent,
-            WSS::UnicodeEncoding::Utf8,
-            L"application/json"
-        };
-
-        request.Content(requestContent);
-
-        co_await winrt::resume_background();
-
-        const auto response{ _httpClient.SendRequestAsync(request).get() };
-        const auto string{ response.Content().ReadAsStringAsync().get() };
-        const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-
-        WWH::HttpRequestMessage request2{ WWH::HttpMethod::Post(), Uri{ L"https://github.com/login/oauth/access_token" } };
-        request2.Headers().Accept().TryParseAdd(L"application/json");
-
-        WDJ::JsonObject jsonContent2;
-        const auto devCode = jsonResult.GetNamedString(L"device_code");
-
-        jsonContent2.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
-        jsonContent2.SetNamedValue(L"device_code", WDJ::JsonValue::CreateStringValue(devCode));
-        jsonContent2.SetNamedValue(L"grant_type", WDJ::JsonValue::CreateStringValue(L"urn:ietf:params:oauth:grant-type:device_code"));
-        const auto stringContent2 = jsonContent2.ToString();
-        WWH::HttpStringContent requestContent2{
-            stringContent2,
-            WSS::UnicodeEncoding::Utf8,
-            L"application/json"
-        };
-
-        request2.Content(requestContent2);
-
-        const auto response2{ _httpClient.SendRequestAsync(request2).get() };
-        const auto string2{ response2.Content().ReadAsStringAsync().get() };
-        const auto jsonResult2{ WDJ::JsonObject::Parse(string2) };
-
-        co_return jsonResult2;
     }
 
     void GithubCopilotLLMProvider::_refreshAuthTokens()

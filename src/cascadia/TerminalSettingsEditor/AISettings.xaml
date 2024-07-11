@@ -267,6 +267,17 @@
                                                              Glyph="&#xE625;" />
                                     </muxc:InfoBadge.IconSource>
                                 </muxc:InfoBadge>
+                                <RichTextBlock TextWrapping="WrapWholeWords"
+                                               MaxWidth="900">
+                                    <Paragraph>
+                                        <Run Text="Placeholder description for github copilot" />
+                                        <Hyperlink NavigateUri="http://example.com"
+                                                   TextDecorations="None">
+                                            <Run Text="LinkToTerms" />
+                                        </Hyperlink>
+                                        <Run Text="More placeholder text!" />
+                                    </Paragraph>
+                                </RichTextBlock>
                             </StackPanel>
                             <Button Grid.Row="1"
                                     HorizontalAlignment="Right"
