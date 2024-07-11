@@ -903,6 +903,20 @@
     <value>Extraits</value>
     <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
   </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Filtrer les extraits de code...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Entrer cette commande</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Entrer cette commande</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Aucun extrait n'a été trouvé dans vos paramètres.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
   <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
     <value>Ajoutez des actions « Envoyer une entrée » dans vos paramètres pour les afficher ici.</value>
     <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
@@ -912,5 +926,11 @@
   </data>
   <data name="ActionSaveFailedToast.Title" xml:space="preserve">
     <value>Échec de l’enregistrement de l’action</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fermer le volet</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fermer le volet</value>
   </data>
 </root>
