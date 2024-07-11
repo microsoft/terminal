@@ -518,3 +518,66 @@ bool VtIo::IsResizeQuirkEnabled() const
     }
     return S_OK;
 }
+
+// Formats the given console attributes to their closest VT equivalent.
+// `out` must refer to at least `formatAttributesMaxLen` characters of valid memory.
+// Returns a pointer past the end.
+static constexpr size_t formatAttributesMaxLen = 16;
+static char* formatAttributes(char* out, const TextAttribute& attributes) noexcept
+{
+    static uint8_t sgr[] = { 30, 31, 32, 33, 34, 35, 36, 37, 90, 91, 92, 93, 94, 95, 96, 97 };
+
+    // Applications expect that SetConsoleTextAttribute() completely replaces whatever attributes are currently set,
+    // including any potential VT-exclusive attributes. Since we don't know what those are, we must always emit a SGR 0.
+    // Copying 4 bytes instead of the correct 3 means we need just 1 DWORD mov. Neat.
+    //
+    // 3 bytes.
+    memcpy(out, "\x1b[0", 4);
+    out += 3;
+
+    // 2 bytes.
+    if (attributes.IsReverseVideo())
+    {
+        memcpy(out, ";7", 2);
+        out += 2;
+    }
+
+    // 3 bytes (";97").
+    if (attributes.GetForeground().IsLegacy())
+    {
+        const uint8_t index = sgr[attributes.GetForeground().GetIndex()];
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
+    }
+
+    // 4 bytes (";107").
+    if (attributes.GetBackground().IsLegacy())
+    {
+        const uint8_t index = sgr[attributes.GetBackground().GetIndex()] + 10;
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
+    }
+
+    // 1 byte.
+    *out++ = 'm';
+    return out;
+}
+
+void VtIo::FormatAttributes(std::string& target, const TextAttribute& attributes)
+{
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
+    target.append(buf, len);
+}
+
+void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attributes)
+{
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
+
+    wchar_t bufW[formatAttributesMaxLen];
+    for (size_t i = 0; i < len; i++)
+    {
+        bufW[i] = buf[i];
+    }
+
+    target.append(bufW, len);
+}

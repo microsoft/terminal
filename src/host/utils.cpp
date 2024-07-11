@@ -59,9 +59,8 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwch
 // - Retrieves string resources from our resource files.
 // Arguments:
 // - id - Resource id from resource.h to the string we need to load.
-// Return Value:
-// - The string resource
-std::wstring _LoadString(const UINT id)
+// - out - Receives the translated string.
+void _LoadString(const UINT id, std::wstring& out)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR ItemString[70];
@@ -78,7 +77,7 @@ std::wstring _LoadString(const UINT id)
         ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString));
     }
 
-    return std::wstring(ItemString, ItemLength);
+    out.append(ItemString, ItemLength);
 }
 
 // Routine Description:
