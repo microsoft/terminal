@@ -961,7 +961,7 @@ llx
 LMENU
 lnkd
 lnkfile
-lnm
+LNM
 LOADONCALL
 LOBYTE
 localappdata
