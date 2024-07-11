@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>분할 창</value>
   </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>코드 조각 창 열기</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
+  </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>터미널(이식 가능)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>

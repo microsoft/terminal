@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Dividir panel</value>
   </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Apertura del panel de fragmentos</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
+  </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (portátil)</value>
     <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>

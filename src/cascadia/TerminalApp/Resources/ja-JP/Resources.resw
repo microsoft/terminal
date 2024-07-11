@@ -928,4 +928,10 @@
   <data name="ActionSaveFailedToast.Title" xml:space="preserve">
     <value>操作の保存に失敗しました</value>
   </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>ウィンドウを閉じる</value>
+  </data>
 </root>
