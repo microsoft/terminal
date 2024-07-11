@@ -1282,6 +1282,7 @@
 
                         <Button x:Name="QuickFixButton"
                                 x:Uid="QuickFixButton"
+                                x:Load="False"
                                 Width="{x:Bind QuickFixButtonWidth, Mode=OneWay}"
                                 Padding="0"
                                 HorizontalContentAlignment="Center"
