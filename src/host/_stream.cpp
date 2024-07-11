@@ -357,9 +357,15 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
     }
 }
 
+// Erases all contents of the given screenInfo, including the current screen and scrollback.
 void WriteClearScreen(SCREEN_INFORMATION& screenInfo)
 {
-    WriteCharsVT(screenInfo, L"\x1b[H\x1b[2J\x1b[3J");
+    WriteCharsVT(
+        screenInfo,
+        L"\x1b[H" // CUP to home
+        L"\x1b[2J" // Erase in Display: clear the screen
+        L"\x1b[3J" // Erase in Display: clear the scrollback buffer
+    );
 }
 
 // Routine Description:

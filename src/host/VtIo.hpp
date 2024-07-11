@@ -104,6 +104,9 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
+        // We use two buffers: A front and a back buffer. The front buffer is the one we're currently
+        // sending to the terminal (it's being "presented" = it's on the "front" & "visible").
+        // The back buffer is the one we're concurrently writing to.
         std::string _front;
         std::string _back;
         OVERLAPPED* _overlapped = nullptr;
