@@ -108,14 +108,18 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 
         line.reserve(size.width);
 
-        // Do a brute force search for the best starting position that ends at the current cursor position.
+        // We're given an "end position" and a string and we need to find its starting position.
+        // The problem is that a wide glyph that doesn't fit into the last column of a row gets padded with a whitespace
+        // and then written on the next line. Because of this, multiple starting positions can result in the same end
+        // position and this prevents us from simply laying out the text backwards from the end position.
+        // To solve this, we do a brute force search for the best starting position that ends at the end position.
         // The search is centered around `bestGuessColumn` with offsets 0, 1, -1, 2, -2, 3, -3, ...
         for (til::CoordType i = 0, attempts = 2 * size.width; i <= attempts; i++)
         {
             // Hilarious bit-trickery that no one can read. But it works. Check it out in a debugger.
-            // The idea is to use bits 1:31 as the value and bit 0 as a trigger to bit-flip the value.
-            // A bit-flipped positive number is negative, but offset by 1, so we add 1. Fun!
-            const auto offset = ((i / 2) ^ ((i & 1) - 1)) + 1;
+            // The idea is to use bits 1:31 as the value (i >> 1) and bit 0 (i & 1) as a trigger to bit-flip the value.
+            // A bit-flipped positive number is negative, but offset by 1, so we add 1 at the end. Fun!
+            const auto offset = ((i >> 1) ^ ((i & 1) - 1)) + 1;
             const auto columnBegin = bestGuessColumn + offset;
 
             if (columnBegin < 0 || columnBegin >= size.width)

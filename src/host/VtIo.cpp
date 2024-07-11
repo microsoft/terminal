@@ -542,7 +542,7 @@ static char* formatAttributes(char* out, const TextAttribute& attributes) noexce
         out += 2;
     }
 
-    // 7 bytes (";97").
+    // 3 bytes (";97").
     if (attributes.GetForeground().IsLegacy())
     {
         const uint8_t index = sgr[attributes.GetForeground().GetIndex()];
@@ -563,13 +563,9 @@ static char* formatAttributes(char* out, const TextAttribute& attributes) noexce
 
 void VtIo::FormatAttributes(std::string& target, const TextAttribute& attributes)
 {
-    const auto len = target.size();
-    const auto cap = len + formatAttributesMaxLen;
-    target._Resize_and_overwrite(cap, [=](char* ptr, const size_t) noexcept {
-        auto end = ptr + len;
-        end = formatAttributes(end, attributes);
-        return end - ptr;
-    });
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
+    target.append(buf, len);
 }
 
 void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attributes)
