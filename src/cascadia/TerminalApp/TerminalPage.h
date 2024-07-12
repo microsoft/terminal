@@ -449,6 +449,7 @@ namespace winrt::TerminalApp::implementation
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
         void _OnInputSuggestionRequested(const IInspectable& sender, const winrt::hstring& suggestion);
+        void _OnPasteToClipboardRequested(const IInspectable& sender, const winrt::hstring& text);
 
         void _Find(const TerminalTab& tab);
 

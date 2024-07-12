@@ -382,17 +382,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             for (const auto chatMessage : groupedMessage)
             {
-                concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent();
+                concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent() + L"\n";
             }
         }
         if (!concatenatedMessages.empty())
         {
-            if (!OpenClipboard(nullptr))
-            {
-                LOG_LAST_ERROR();
-                return;
-            }
-            EmptyClipboard();
+            _PasteToClipboardRequestedHandlers(*this, concatenatedMessages);
         }
     }
 

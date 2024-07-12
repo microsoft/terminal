@@ -2905,6 +2905,42 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG();
 
+    // Method Description:
+    // - This method is called when the user clicks the "export message history" button
+    //   in the query palette
+    // Arguments:
+    // - text - the text to copy to the clipboard
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnPasteToClipboardRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
+    {
+        try
+        {
+            if (const auto clipboard = _openClipboard(nullptr))
+            {
+                EmptyClipboard();
+
+                if (!text.empty())
+                {
+                    // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+                    //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+                    // --> We add +1 to the length. This works because .c_str() is null-terminated.
+                    const auto bytes = (text.size() + 1) * sizeof(wchar_t);
+
+                    wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
+
+                    const auto locked = GlobalLock(handle.get());
+                    memcpy(locked, text.c_str(), bytes);
+                    GlobalUnlock(handle.get());
+
+                    THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, handle.get()));
+                    handle.release();
+                }
+            }
+        }
+        CATCH_LOG();
+    }
+
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
         try
@@ -5406,6 +5442,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.PasteToClipboardRequested({ this, &TerminalPage::_OnPasteToClipboardRequested });
         _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
             if (const auto activeControl = _GetActiveControl())
             {

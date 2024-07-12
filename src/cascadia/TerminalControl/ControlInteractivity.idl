@@ -33,7 +33,6 @@ namespace Microsoft.Terminal.Control
         InteractivityAutomationPeer OnCreateAutomationPeer();
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
-        Boolean CopyTextToClipboard(String text);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(Microsoft.Terminal.Core.Point point);
 

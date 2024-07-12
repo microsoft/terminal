@@ -219,15 +219,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
-    bool ControlInteractivity::CopyTextToClipboard(const winrt::hstring& text)
-    {
-        if (_core)
-        {
-            return _core->CopyTextToClipboard(text);
-        }
-        return false;
-    }
-
     // Method Description:
     // - Initiate a paste operation.
     void ControlInteractivity::RequestPasteTextFromClipboard()

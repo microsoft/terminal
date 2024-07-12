@@ -1336,12 +1336,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
-    bool ControlCore::CopyTextToClipboard(const winrt::hstring& text)
-    {
-        copyToClipboard(text.data(), "", "");
-        return true;
-    }
-
     void ControlCore::SelectAll()
     {
         const auto lock = _terminal->LockForWriting();
