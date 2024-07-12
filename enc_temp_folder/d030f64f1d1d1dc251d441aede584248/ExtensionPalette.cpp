@@ -5,6 +5,7 @@
 #include "ExtensionPalette.h"
 #include "../../types/inc/utils.hpp"
 #include "LibraryResources.h"
+#include <WinUser.h>
 
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
