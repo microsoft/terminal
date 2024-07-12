@@ -150,8 +150,8 @@
     <comment>Tooltip for the button that allows the user to clear their chat history.</comment>
   </data>
   <data name="ExportMessagesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Export the message history to the clipboard</value>
-    <comment>Tooltip for the button that allows the user to copy their chat history to the clipboard.</comment>
+    <value>Export the message history to a text file</value>
+    <comment>Tooltip for the button that allows the user to export the message history.</comment>
   </data>
   <data name="TitleSubheader.Text" xml:space="preserve">
     <value>Take command of your Terminal. Ask Terminal Chat for assistance right in your terminal.</value>

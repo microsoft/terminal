@@ -366,7 +366,7 @@
                             </Button.Content>
                         </Button>
                         <Button x:Uid="ExportMessagesButton"
-                                Click="_exportMessagesToClipboard">
+                                Click="_exportMessagesToFile">
                             <Button.Content>
                                 <FontIcon FontSize="16"
                                           Glyph="&#xEDE1;" />

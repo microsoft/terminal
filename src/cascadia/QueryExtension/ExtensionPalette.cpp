@@ -373,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _queryBox().Focus(FocusState::Programmatic);
     }
 
-    void ExtensionPalette::_exportMessagesToClipboard(const Windows::Foundation::IInspectable& /*sender*/,
+    void ExtensionPalette::_exportMessagesToFile(const Windows::Foundation::IInspectable& /*sender*/,
                                                        const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         std::wstring concatenatedMessages{};
