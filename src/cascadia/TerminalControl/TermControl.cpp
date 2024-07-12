@@ -3896,6 +3896,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (Feature_QuickFix::IsEnabled() && _core.QuickFixesAvailable())
         {
+            // Expand the quick fix button if it's collapsed (looks nicer)
+            if (_quickFixButtonCollapsible)
+            {
+                VisualStateManager::GoToState(*this, StateNormal, false);
+                QuickFixButton().Flyout().Closing([weakThis = get_weak()](auto& /*sender*/, auto& /*args*/) {
+                    if (auto termCtrl = weakThis.get())
+                    {
+                        VisualStateManager::GoToState(*termCtrl, StateCollapsed, false);
+                    }
+                });
+            }
             QuickFixButton().Flyout().ShowAt(QuickFixButton());
         }
     }
