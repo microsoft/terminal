@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "inc/utils.hpp"
 
+#include <til/rand.h>
 #include <til/string.h>
 #include <wil/token_helpers.h>
 
@@ -656,6 +657,24 @@ bool Utils::HandleWantsOverlappedIo(HANDLE handle) noexcept
     FILE_MODE_INFORMATION modeInfo;
     const auto status = pNtQueryInformationFile(handle, &statusBlock, &modeInfo, sizeof(modeInfo), FileModeInformation);
     return status == 0 && WI_AreAllFlagsClear(modeInfo.Mode, FILE_SYNCHRONOUS_IO_ALERT | FILE_SYNCHRONOUS_IO_NONALERT);
+}
+
+Utils::Pipe Utils::CreatePipe(DWORD bufferSize)
+{
+    wil::unique_hfile rx, tx;
+    THROW_IF_WIN32_BOOL_FALSE(::CreatePipe(rx.addressof(), tx.addressof(), nullptr, bufferSize));
+    return { std::move(tx), std::move(rx) };
+}
+
+Utils::Pipe Utils::CreateOverlappedPipe(DWORD bufferSize)
+{
+    const auto rnd = til::gen_random<uint64_t>();
+    const auto name = fmt::format(FMT_COMPILE(LR"(\\.\pipe\{:016x})"), rnd);
+    wil::unique_hfile rx{ CreateNamedPipeW(name.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_WAIT, 1, bufferSize, bufferSize, 0, nullptr) };
+    THROW_LAST_ERROR_IF(!rx);
+    wil::unique_hfile tx{ CreateFileW(name.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr) };
+    THROW_LAST_ERROR_IF(!tx);
+    return { std::move(tx), std::move(rx) };
 }
 
 // Function Description:

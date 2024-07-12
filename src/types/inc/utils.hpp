@@ -15,6 +15,12 @@ Author(s):
 
 namespace Microsoft::Console::Utils
 {
+    struct Pipe
+    {
+        wil::unique_hfile tx;
+        wil::unique_hfile rx;
+    };
+
     // Function Description:
     // - Returns -1, 0 or +1 to indicate the sign of the passed-in value.
     template<typename T>
@@ -25,6 +31,8 @@ namespace Microsoft::Console::Utils
 
     bool IsValidHandle(const HANDLE handle) noexcept;
     bool HandleWantsOverlappedIo(HANDLE handle) noexcept;
+    Pipe CreatePipe(DWORD bufferSize);
+    Pipe CreateOverlappedPipe(DWORD bufferSize);
 
     // Function Description:
     // - Clamps a long in between `min` and `SHRT_MAX`

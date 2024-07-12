@@ -33,29 +33,6 @@ static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     // Function Description:
-    // - creates some basic anonymous pipes and passes them to CreatePseudoConsole
-    // Arguments:
-    // - size: The size of the conpty to create, in characters.
-    // - phInput: Receives the handle to the newly-created anonymous pipe for writing input to the conpty.
-    // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
-    // - phPc: Receives a token value to identify this conpty
-#pragma warning(suppress : 26430) // This statement sufficiently checks the out parameters. Analyzer cannot find this.
-    static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC) noexcept
-    {
-        RETURN_HR_IF(E_INVALIDARG, phPC == nullptr || phInput == nullptr || phOutput == nullptr);
-
-        wil::unique_hfile outPipeOurSide, outPipePseudoConsoleSide;
-        wil::unique_hfile inPipeOurSide, inPipePseudoConsoleSide;
-
-        RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, nullptr, 0));
-        RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&outPipeOurSide, &outPipePseudoConsoleSide, nullptr, 0));
-        RETURN_IF_FAILED(ConptyCreatePseudoConsole(size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
-        *phInput = inPipeOurSide.release();
-        *phOutput = outPipeOurSide.release();
-        return S_OK;
-    }
-
-    // Function Description:
     // - launches the client application attached to the new pseudoconsole
     HRESULT ConptyConnection::_LaunchAttachedClient() noexcept
     try
@@ -345,7 +322,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), _flags, &_inPipe, &_outPipe, &_hPC));
+            auto out = Utils::CreateOverlappedPipe(64 * 1024);
+            auto in = Utils::CreateOverlappedPipe(64 * 1024);
+
+            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), in.rx.get(), out.tx.get(), _flags, &_hPC));
+
+            _inPipe = std::move(in.tx);
+            _outPipe = std::move(out.rx);
 
             if (_initialParentHwnd != 0)
             {
