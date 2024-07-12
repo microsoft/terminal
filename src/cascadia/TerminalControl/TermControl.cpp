@@ -3907,7 +3907,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
                 });
             }
-            QuickFixButton().Flyout().ShowAt(QuickFixButton());
+            auto quickFixBtn = QuickFixButton();
+            quickFixBtn.Flyout().ShowAt(quickFixBtn);
         }
     }
 
