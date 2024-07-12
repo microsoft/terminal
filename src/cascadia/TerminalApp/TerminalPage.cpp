@@ -4054,6 +4054,10 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, L"open", L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1", nullptr, nullptr, SW_SHOWNORMAL);
     }
 
+    // todo: move this to a member funciton in githubcopilotllmprovider
+    // (could even be on the LMprovider interface? like completeauthwithurl)
+    // 1. copmleteauth 2. setauthentication(string) 3. event that says authchanged(newauth)
+    // construct empty github provider -> completeauthwithurl -> raises authchanged event
     winrt::fire_and_forget TerminalPage::_CompleteGithubAuth(const Windows::Foundation::Uri uri)
     {
         winrt::Windows::Web::Http::HttpClient httpClient{};
@@ -4097,8 +4101,15 @@ namespace winrt::TerminalApp::implementation
 
                 // todo: this _settingsTab check only works if new instance behavior is set to attach to this window,
                 //       fix this to work with any new instance behavior
+                //       FIX THIS IN POST, FINE FOR NOW
                 if (_settingsTab)
                 {
+                    // add a static function to settings editor main page,
+                    // smth like "refreshEndpointAuthStatus"
+                    // then in this function just call SEttingsEditor::MainPAge::Refresh...
+                    // implement that in MainPage by just dispatching a til::event, AISettingsPage listens to that event
+                    // and refreshes the UI there
+                    // see conptyconnection::newconnection
                     if (auto terminalTab{ _GetTerminalTabImpl(_settingsTab) })
                     {
                         // refresh the settings UI now that we have the auth tokens stored
