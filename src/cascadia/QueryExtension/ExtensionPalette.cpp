@@ -374,7 +374,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     }
 
     void ExtensionPalette::_exportMessagesToFile(const Windows::Foundation::IInspectable& /*sender*/,
-                                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         std::wstring concatenatedMessages{};
         for (const auto groupedMessage : _messages)
