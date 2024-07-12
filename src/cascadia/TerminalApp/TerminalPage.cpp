@@ -1842,12 +1842,15 @@ namespace winrt::TerminalApp::implementation
                 page->_PopulateContextMenu(weakTerm.get(), sender.try_as<MUX::Controls::CommandBarFlyout>(), true);
             }
         });
-        term.QuickFixMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
-            if (const auto& page{ weak.get() })
-            {
-                page->_PopulateQuickFixMenu(weakTerm.get(), sender.try_as<Controls::MenuFlyout>());
-            }
-        });
+        if constexpr (Feature_QuickFix::IsEnabled())
+        {
+            term.QuickFixMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
+                if (const auto& page{ weak.get() })
+                {
+                    page->_PopulateQuickFixMenu(weakTerm.get(), sender.try_as<Controls::MenuFlyout>());
+                }
+            });
+        }
     }
 
     // Method Description:
