@@ -386,7 +386,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         if (!concatenatedMessages.empty())
         {
-            _PasteToClipboardRequestedHandlers(*this, concatenatedMessages);
+            _ExportChatHistoryRequestedHandlers(*this, concatenatedMessages);
         }
     }
 

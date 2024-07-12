@@ -9,6 +9,7 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
+#include <shlobj.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -485,6 +486,50 @@ namespace winrt::TerminalApp::implementation
         {
             activeControl.SendInput(suggestion);
         }
+    }
+
+    // Method Description:
+    // - This method is called when the user clicks the "export message history" button
+    //   in the query palette
+    // Arguments:
+    // - text - the text to copy to the clipboard
+    // Return Value:
+    // - <none>
+    fire_and_forget TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
+    {
+        // This will be used to set up the file picker "filter", to select .txt
+        // files by default.
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Text Files (*.txt)", L"*.txt" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+        // An arbitrary GUID to associate with all instances of this
+        // dialog, so they all re-open in the same path as they were
+        // open before:
+        static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
+
+        try
+        {
+            const auto path = co_await SaveFilePicker(*_hostingHwnd, [](auto&& dialog) {
+                THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                try
+                {
+                    // Default to the Downloads folder
+                    auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                    dialog->SetDefaultFolder(folderShellItem.get());
+                }
+                CATCH_LOG(); // non-fatal
+                THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+            });
+
+            if (!path.empty())
+            {
+                CascadiaSettings::ExportFile(path, text);
+            }
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -2904,42 +2949,6 @@ namespace winrt::TerminalApp::implementation
         eventArgs.HandleClipboardData(std::move(text));
     }
     CATCH_LOG();
-
-    // Method Description:
-    // - This method is called when the user clicks the "export message history" button
-    //   in the query palette
-    // Arguments:
-    // - text - the text to copy to the clipboard
-    // Return Value:
-    // - <none>
-    void TerminalPage::_OnPasteToClipboardRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
-    {
-        try
-        {
-            if (const auto clipboard = _openClipboard(nullptr))
-            {
-                EmptyClipboard();
-
-                if (!text.empty())
-                {
-                    // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
-                    //   CF_UNICODETEXT: [...] A null character signals the end of the data.
-                    // --> We add +1 to the length. This works because .c_str() is null-terminated.
-                    const auto bytes = (text.size() + 1) * sizeof(wchar_t);
-
-                    wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
-
-                    const auto locked = GlobalLock(handle.get());
-                    memcpy(locked, text.c_str(), bytes);
-                    GlobalUnlock(handle.get());
-
-                    THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, handle.get()));
-                    handle.release();
-                }
-            }
-        }
-        CATCH_LOG();
-    }
 
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
@@ -5442,7 +5451,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
-        _extensionPalette.PasteToClipboardRequested({ this, &TerminalPage::_OnPasteToClipboardRequested });
+        _extensionPalette.ExportChatHistoryRequested({ this, &TerminalPage::_OnExportChatHistoryRequested });
         _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
             if (const auto activeControl = _GetActiveControl())
             {

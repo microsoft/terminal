@@ -38,6 +38,6 @@ namespace Microsoft.Terminal.Query.Extension
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> AIKeyAndEndpointRequested;
         event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
-        event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> PasteToClipboardRequested;
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> ExportChatHistoryRequested;
     }
 }

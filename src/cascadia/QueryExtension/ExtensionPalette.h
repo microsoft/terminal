@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         TYPED_EVENT(ActiveControlInfoRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(AIKeyAndEndpointRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(InputSuggestionRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
-        TYPED_EVENT(PasteToClipboardRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
+        TYPED_EVENT(ExportChatHistoryRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
 
     private:
         friend struct ExtensionPaletteT<ExtensionPalette>; // for Xaml to bind events
