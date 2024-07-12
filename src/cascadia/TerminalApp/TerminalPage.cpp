@@ -492,7 +492,7 @@ namespace winrt::TerminalApp::implementation
     // - This method is called when the user clicks the "export message history" button
     //   in the query palette
     // Arguments:
-    // - text - the text to copy to the clipboard
+    // - text - the text to export
     // Return Value:
     // - <none>
     fire_and_forget TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
