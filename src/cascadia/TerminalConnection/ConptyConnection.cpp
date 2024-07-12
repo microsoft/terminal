@@ -322,8 +322,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            auto out = Utils::CreateOverlappedPipe(64 * 1024);
-            auto in = Utils::CreateOverlappedPipe(64 * 1024);
+            auto out = Utils::CreateOverlappedPipe(128 * 1024);
+            auto in = Utils::CreateOverlappedPipe(128 * 1024);
 
             THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), in.rx.get(), out.tx.get(), _flags, &_hPC));
 
