@@ -495,7 +495,12 @@ namespace winrt::TerminalApp::implementation
     // - text - the text to export
     // Return Value:
     // - <none>
-    fire_and_forget TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
+    void TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
+    {
+        _SaveFileHelper(text, L"", L"");
+    }
+
+    fire_and_forget TerminalPage::_SaveFileHelper(const winrt::hstring& text, const winrt::hstring& filepath, const winrt::hstring& filename)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -510,19 +515,39 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            const auto path = co_await SaveFilePicker(*_hostingHwnd, [](auto&& dialog) {
-                THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
-                try
-                {
-                    // Default to the Downloads folder
-                    auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
-                    dialog->SetDefaultFolder(folderShellItem.get());
-                }
-                CATCH_LOG(); // non-fatal
-                THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
-                THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
-                THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
-            });
+            auto path = filepath;
+
+            if (path.empty())
+            {
+                // GH#11356 - we can't use the UWP apis for writing the file,
+                // because they don't work elevated (shocker) So just use the
+                // shell32 file picker manually.
+                std::wstring cleanedFilename{ til::clean_filename(filename.c_str()) };
+                path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(cleanedFilename)](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                    try
+                    {
+                        // Default to the Downloads folder
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+
+                    // Default to using the tab title as the file name
+                    THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
+                });
+            }
+            else
+            {
+                // The file picker isn't going to give us paths with
+                // environment variables, but the user might have set one in
+                // the settings. Expand those here.
+
+                path = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+            }
 
             if (!path.empty())
             {
