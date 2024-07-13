@@ -21,6 +21,12 @@ namespace Microsoft::Console::Utils
         wil::unique_hfile rx;
     };
 
+    struct DuplexPipe
+    {
+        wil::unique_hfile alice;
+        wil::unique_hfile bob;
+    };
+
     // Function Description:
     // - Returns -1, 0 or +1 to indicate the sign of the passed-in value.
     template<typename T>
@@ -32,7 +38,7 @@ namespace Microsoft::Console::Utils
     bool IsValidHandle(const HANDLE handle) noexcept;
     bool HandleWantsOverlappedIo(HANDLE handle) noexcept;
     Pipe CreatePipe(DWORD bufferSize);
-    Pipe CreateOverlappedPipe(DWORD bufferSize);
+    DuplexPipe CreateOverlappedDuplexPipe(DWORD bufferSize);
 
     // Function Description:
     // - Clamps a long in between `min` and `SHRT_MAX`

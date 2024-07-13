@@ -322,13 +322,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            auto out = Utils::CreateOverlappedPipe(128 * 1024);
-            auto in = Utils::CreateOverlappedPipe(128 * 1024);
+            auto duplex = Utils::CreateOverlappedDuplexPipe(128 * 1024);
 
-            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), in.rx.get(), out.tx.get(), _flags, &_hPC));
+            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), duplex.alice.get(), duplex.alice.get(), _flags, &_hPC));
 
-            _inPipe = std::move(in.tx);
-            _outPipe = std::move(out.rx);
+            _inPipe = std::move(duplex.bob);
+            THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), _inPipe.get(), GetCurrentProcess(), _outPipe.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
 
             if (_initialParentHwnd != 0)
             {

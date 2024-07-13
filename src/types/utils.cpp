@@ -631,14 +631,34 @@ bool Utils::IsValidHandle(const HANDLE handle) noexcept
 }
 
 // From ntifs.h, which isn't part of the regular Windows SDK (they're in the driver SDK (WDK)).
-__kernel_entry NTSYSCALLAPI NTSTATUS NTAPI NtQueryInformationFile(
-    _In_ HANDLE FileHandle,
-    _Out_ PIO_STATUS_BLOCK IoStatusBlock,
-    _Out_writes_bytes_(Length) PVOID FileInformation,
-    _In_ ULONG Length,
-    _In_ FILE_INFORMATION_CLASS FileInformationClass);
+extern "C" NTSTATUS NTAPI NtQueryInformationFile(
+    HANDLE FileHandle,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    PVOID FileInformation,
+    ULONG Length,
+    FILE_INFORMATION_CLASS FileInformationClass);
 
 #define FileModeInformation (FILE_INFORMATION_CLASS)16
+
+extern "C" NTSTATUS NTAPI NtCreateNamedPipeFile(
+    PHANDLE FileHandle,
+    ULONG DesiredAccess,
+    POBJECT_ATTRIBUTES ObjectAttributes,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    ULONG ShareAccess,
+    ULONG CreateDisposition,
+    ULONG CreateOptions,
+    ULONG NamedPipeType,
+    ULONG ReadMode,
+    ULONG CompletionMode,
+    ULONG MaximumInstances,
+    ULONG InboundQuota,
+    ULONG OutboundQuota,
+    PLARGE_INTEGER DefaultTimeout);
+
+#define FILE_PIPE_BYTE_STREAM_TYPE 0x00000000
+#define FILE_PIPE_BYTE_STREAM_MODE 0x00000000
+#define FILE_PIPE_QUEUE_OPERATION 0x00000000
 
 typedef struct _FILE_MODE_INFORMATION
 {
@@ -647,15 +667,9 @@ typedef struct _FILE_MODE_INFORMATION
 
 bool Utils::HandleWantsOverlappedIo(HANDLE handle) noexcept
 {
-    static const auto pNtQueryInformationFile = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"ntdll.dll"), NtQueryInformationFile);
-    if (!pNtQueryInformationFile)
-    {
-        return false;
-    }
-
     IO_STATUS_BLOCK statusBlock;
     FILE_MODE_INFORMATION modeInfo;
-    const auto status = pNtQueryInformationFile(handle, &statusBlock, &modeInfo, sizeof(modeInfo), FileModeInformation);
+    const auto status = NtQueryInformationFile(handle, &statusBlock, &modeInfo, sizeof(modeInfo), FileModeInformation);
     return status == 0 && WI_AreAllFlagsClear(modeInfo.Mode, FILE_SYNCHRONOUS_IO_ALERT | FILE_SYNCHRONOUS_IO_NONALERT);
 }
 
@@ -666,15 +680,98 @@ Utils::Pipe Utils::CreatePipe(DWORD bufferSize)
     return { std::move(tx), std::move(rx) };
 }
 
-Utils::Pipe Utils::CreateOverlappedPipe(DWORD bufferSize)
+// Creates an overlapped anonymous pipe.
+// This variant returns a full duplex pipe and so the two sides are simply named Alice and Bob.
+//
+// I know, I know. MSDN infamously says
+// > Asynchronous (overlapped) read and write operations are not supported by anonymous pipes.
+// but that's a lie. The only reason they're not supported is because the Win32
+// API doesn't have a parameter where you could pass FILE_FLAG_OVERLAPPED!
+// So, we'll simply use the underlying NT APIs instead.
+//
+// Most code on the internet suggests creating named pipes with a random name,
+// but usually conveniently forgets to mention that named pipes require strict ACLs.
+// https://stackoverflow.com/q/60645 for instance contains a lot of poor advice.
+// Anonymous pipes also cannot be discovered via NtQueryDirectoryFile inside the NPFS driver,
+// whereas running a tool like Sysinternals' PipeList will return all those semi-named pipes.
+//
+// The code below contains comments to create unidirectional pipes.
+Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
 {
-    const auto rnd = til::gen_random<uint64_t>();
-    const auto name = fmt::format(FMT_COMPILE(LR"(\\.\pipe\{:016x})"), rnd);
-    wil::unique_hfile rx{ CreateNamedPipeW(name.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_WAIT, 1, bufferSize, bufferSize, 0, nullptr) };
-    THROW_LAST_ERROR_IF(!rx);
-    wil::unique_hfile tx{ CreateFileW(name.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr) };
-    THROW_LAST_ERROR_IF(!tx);
-    return { std::move(tx), std::move(rx) };
+    // Cache a handle to the pipe driver.
+    static const auto pipeDirectory = []() {
+        UNICODE_STRING path = RTL_CONSTANT_STRING(L"\\Device\\NamedPipe\\");
+
+        OBJECT_ATTRIBUTES objectAttributes;
+        InitializeObjectAttributes(&objectAttributes, &path, 0, nullptr, nullptr);
+
+        wil::unique_hfile dir;
+        IO_STATUS_BLOCK statusBlock;
+        THROW_IF_NTSTATUS_FAILED(NtOpenFile(dir.addressof(), GENERIC_READ | SYNCHRONIZE, &objectAttributes, &statusBlock, FILE_SHARE_READ | FILE_SHARE_WRITE, 0));
+
+        return dir;
+    }();
+
+    LARGE_INTEGER timeout = { .QuadPart = -10'0000'0000 }; // 1 second
+    UNICODE_STRING emptyPath{};
+    IO_STATUS_BLOCK statusBlock;
+    OBJECT_ATTRIBUTES objectAttributes;
+
+    wil::unique_hfile alice;
+    InitializeObjectAttributes(&objectAttributes, &emptyPath, OBJ_CASE_INSENSITIVE, pipeDirectory.get(), nullptr);
+    THROW_IF_NTSTATUS_FAILED(NtCreateNamedPipeFile(
+        /* FileHandle        */ alice.addressof(),
+        //   Should always include SYNCHRONIZE.
+        //   PIPE_ACCESS_INBOUND  = GENERIC_READ    (commonly combined with FILE_WRITE_ATTRIBUTES to create a read-only pipe)
+        //   PIPE_ACCESS_OUTBOUND = GENERIC_WRITE   (commonly combined with FILE_READ_ATTRIBUTES to create a write-only pipe)
+        //   PIPE_ACCESS_DUPLEX   = GENERIC_READ | GENERIC_WRITE
+        /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE | FILE_WRITE_ATTRIBUTES,
+        /* ObjectAttributes  */ &objectAttributes,
+        /* IoStatusBlock     */ &statusBlock,
+        //   PIPE_ACCESS_INBOUND  = FILE_SHARE_WRITE
+        //   PIPE_ACCESS_OUTBOUND = FILE_SHARE_READ
+        //   PIPE_ACCESS_DUPLEX   = FILE_SHARE_READ | FILE_SHARE_WRITE
+        /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
+        /* CreateDisposition */ FILE_CREATE,
+        //   FILE_FLAG_OVERLAPPED = 0
+        //   otherwise            = FILE_SYNCHRONOUS_IO_NONALERT
+        /* CreateOptions     */ 0,
+        /* NamedPipeType     */ FILE_PIPE_BYTE_STREAM_TYPE,
+        /* ReadMode          */ FILE_PIPE_BYTE_STREAM_MODE,
+        //   PIPE_NOWAIT = FILE_PIPE_COMPLETE_OPERATION
+        //   otherwise   = FILE_PIPE_QUEUE_OPERATION
+        /* CompletionMode    */ FILE_PIPE_QUEUE_OPERATION,
+        /* MaximumInstances  */ 1,
+        /* InboundQuota      */ bufferSize,
+        /* OutboundQuota     */ bufferSize,
+        /* DefaultTimeout    */ &timeout));
+
+    wil::unique_hfile bob;
+    InitializeObjectAttributes(&objectAttributes, &emptyPath, OBJ_CASE_INSENSITIVE, alice.get(), nullptr);
+    THROW_IF_NTSTATUS_FAILED(NtCreateFile(
+        /* FileHandle        */ bob.addressof(),
+        //   Should always include SYNCHRONIZE.
+        //   PIPE_ACCESS_INBOUND  = GENERIC_WRITE   (commonly combined with FILE_READ_ATTRIBUTES to create a write-only pipe)
+        //   PIPE_ACCESS_OUTBOUND = GENERIC_READ    (commonly combined with FILE_WRITE_ATTRIBUTES to create a read-only pipe)
+        //   PIPE_ACCESS_DUPLEX   = GENERIC_READ | GENERIC_WRITE
+        /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,
+        /* ObjectAttributes  */ &objectAttributes,
+        /* IoStatusBlock     */ &statusBlock,
+        /* AllocationSize    */ 0,
+        /* FileAttributes    */ 0,
+        //   PIPE_ACCESS_INBOUND  = FILE_SHARE_READ
+        //   PIPE_ACCESS_OUTBOUND = FILE_SHARE_WRITE
+        //   PIPE_ACCESS_DUPLEX   = FILE_SHARE_READ | FILE_SHARE_WRITE
+        /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
+        /* CreateDisposition */ FILE_OPEN,
+        //   Should always include FILE_NON_DIRECTORY_FILE for correctness reasons.
+        //   FILE_FLAG_OVERLAPPED = 0
+        //   otherwise            = FILE_SYNCHRONOUS_IO_NONALERT
+        /* CreateOptions     */ FILE_NON_DIRECTORY_FILE,
+        /* EaBuffer          */ nullptr,
+        /* EaLength          */ 0));
+
+    return { std::move(alice), std::move(bob) };
 }
 
 // Function Description:
