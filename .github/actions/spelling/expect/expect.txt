@@ -1201,6 +1201,7 @@ nouicompat
 nounihan
 NOYIELD
 NOZORDER
+NPFS
 nrcs
 NSTATUS
 ntapi
