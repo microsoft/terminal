@@ -768,7 +768,7 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
         /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,
         /* ObjectAttributes  */ &objectAttributes,
         /* IoStatusBlock     */ &statusBlock,
-        /* AllocationSize    */ 0,
+        /* AllocationSize    */ nullptr,
         /* FileAttributes    */ 0,
         // ShareAccess:
         // * PIPE_ACCESS_INBOUND  = FILE_SHARE_READ
