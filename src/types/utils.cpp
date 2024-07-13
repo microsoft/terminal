@@ -709,7 +709,18 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
 
         wil::unique_hfile dir;
         IO_STATUS_BLOCK statusBlock;
-        THROW_IF_NTSTATUS_FAILED(NtOpenFile(dir.addressof(), GENERIC_READ | SYNCHRONIZE, &objectAttributes, &statusBlock, FILE_SHARE_READ | FILE_SHARE_WRITE, 0));
+        THROW_IF_NTSTATUS_FAILED(NtCreateFile(
+            /* FileHandle        */ dir.addressof(),
+            /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ,
+            /* ObjectAttributes  */ &objectAttributes,
+            /* IoStatusBlock     */ &statusBlock,
+            /* AllocationSize    */ nullptr,
+            /* FileAttributes    */ 0,
+            /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
+            /* CreateDisposition */ FILE_OPEN,
+            /* CreateOptions     */ 0,
+            /* EaBuffer          */ nullptr,
+            /* EaLength          */ 0));
 
         return dir;
     }();
