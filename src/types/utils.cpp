@@ -702,8 +702,10 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
     static const auto pipeDirectory = []() {
         UNICODE_STRING path = RTL_CONSTANT_STRING(L"\\Device\\NamedPipe\\");
 
-        OBJECT_ATTRIBUTES objectAttributes;
-        InitializeObjectAttributes(&objectAttributes, &path, 0, nullptr, nullptr);
+        OBJECT_ATTRIBUTES objectAttributes{
+            .Length = sizeof(OBJECT_ATTRIBUTES),
+            .ObjectName = &path,
+        };
 
         wil::unique_hfile dir;
         IO_STATUS_BLOCK statusBlock;
@@ -715,30 +717,38 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
     LARGE_INTEGER timeout = { .QuadPart = -10'0000'0000 }; // 1 second
     UNICODE_STRING emptyPath{};
     IO_STATUS_BLOCK statusBlock;
-    OBJECT_ATTRIBUTES objectAttributes;
+    OBJECT_ATTRIBUTES objectAttributes{
+        .Length = sizeof(OBJECT_ATTRIBUTES),
+        .ObjectName = &emptyPath,
+        .Attributes = OBJ_CASE_INSENSITIVE,
+    };
 
     wil::unique_hfile alice;
-    InitializeObjectAttributes(&objectAttributes, &emptyPath, OBJ_CASE_INSENSITIVE, pipeDirectory.get(), nullptr);
+    objectAttributes.RootDirectory = pipeDirectory.get();
     THROW_IF_NTSTATUS_FAILED(NtCreateNamedPipeFile(
         /* FileHandle        */ alice.addressof(),
-        //   Should always include SYNCHRONIZE.
-        //   PIPE_ACCESS_INBOUND  = GENERIC_READ    (commonly combined with FILE_WRITE_ATTRIBUTES to create a read-only pipe)
+        // DesiredAccess:
+        // * Should always include SYNCHRONIZE.
+        // * PIPE_ACCESS_INBOUND  = GENERIC_READ    (commonly combined with FILE_WRITE_ATTRIBUTES to create a read-only pipe)
         //   PIPE_ACCESS_OUTBOUND = GENERIC_WRITE   (commonly combined with FILE_READ_ATTRIBUTES to create a write-only pipe)
         //   PIPE_ACCESS_DUPLEX   = GENERIC_READ | GENERIC_WRITE
         /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE | FILE_WRITE_ATTRIBUTES,
         /* ObjectAttributes  */ &objectAttributes,
         /* IoStatusBlock     */ &statusBlock,
-        //   PIPE_ACCESS_INBOUND  = FILE_SHARE_WRITE
+        // ShareAccess:
+        // * PIPE_ACCESS_INBOUND  = FILE_SHARE_WRITE
         //   PIPE_ACCESS_OUTBOUND = FILE_SHARE_READ
         //   PIPE_ACCESS_DUPLEX   = FILE_SHARE_READ | FILE_SHARE_WRITE
         /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
         /* CreateDisposition */ FILE_CREATE,
-        //   FILE_FLAG_OVERLAPPED = 0
+        // CreateOptions:
+        // * FILE_FLAG_OVERLAPPED = 0
         //   otherwise            = FILE_SYNCHRONOUS_IO_NONALERT
         /* CreateOptions     */ 0,
         /* NamedPipeType     */ FILE_PIPE_BYTE_STREAM_TYPE,
         /* ReadMode          */ FILE_PIPE_BYTE_STREAM_MODE,
-        //   PIPE_NOWAIT = FILE_PIPE_COMPLETE_OPERATION
+        // CompletionMode:
+        // * PIPE_NOWAIT = FILE_PIPE_COMPLETE_OPERATION
         //   otherwise   = FILE_PIPE_QUEUE_OPERATION
         /* CompletionMode    */ FILE_PIPE_QUEUE_OPERATION,
         /* MaximumInstances  */ 1,
@@ -747,11 +757,12 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
         /* DefaultTimeout    */ &timeout));
 
     wil::unique_hfile bob;
-    InitializeObjectAttributes(&objectAttributes, &emptyPath, OBJ_CASE_INSENSITIVE, alice.get(), nullptr);
+    objectAttributes.RootDirectory = alice.get();
     THROW_IF_NTSTATUS_FAILED(NtCreateFile(
         /* FileHandle        */ bob.addressof(),
-        //   Should always include SYNCHRONIZE.
-        //   PIPE_ACCESS_INBOUND  = GENERIC_WRITE   (commonly combined with FILE_READ_ATTRIBUTES to create a write-only pipe)
+        // DesiredAccess:
+        // * Should always include SYNCHRONIZE.
+        // * PIPE_ACCESS_INBOUND  = GENERIC_WRITE   (commonly combined with FILE_READ_ATTRIBUTES to create a write-only pipe)
         //   PIPE_ACCESS_OUTBOUND = GENERIC_READ    (commonly combined with FILE_WRITE_ATTRIBUTES to create a read-only pipe)
         //   PIPE_ACCESS_DUPLEX   = GENERIC_READ | GENERIC_WRITE
         /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,
@@ -759,12 +770,14 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
         /* IoStatusBlock     */ &statusBlock,
         /* AllocationSize    */ 0,
         /* FileAttributes    */ 0,
-        //   PIPE_ACCESS_INBOUND  = FILE_SHARE_READ
+        // ShareAccess:
+        // * PIPE_ACCESS_INBOUND  = FILE_SHARE_READ
         //   PIPE_ACCESS_OUTBOUND = FILE_SHARE_WRITE
         //   PIPE_ACCESS_DUPLEX   = FILE_SHARE_READ | FILE_SHARE_WRITE
         /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
         /* CreateDisposition */ FILE_OPEN,
-        //   Should always include FILE_NON_DIRECTORY_FILE for correctness reasons.
+        // CreateOptions:
+        // * Should always include FILE_NON_DIRECTORY_FILE for correctness reasons.
         //   FILE_FLAG_OVERLAPPED = 0
         //   otherwise            = FILE_SYNCHRONOUS_IO_NONALERT
         /* CreateOptions     */ FILE_NON_DIRECTORY_FILE,
