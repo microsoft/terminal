@@ -33,7 +33,7 @@ namespace Microsoft::Console::Utils
     bool HandleWantsOverlappedIo(HANDLE handle) noexcept;
     Pipe CreatePipe(DWORD bufferSize);
     Pipe CreateOverlappedPipe(DWORD openMode, DWORD bufferSize);
-    HRESULT GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred);
+    HRESULT GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred) noexcept;
 
     // Function Description:
     // - Clamps a long in between `min` and `SHRT_MAX`

@@ -813,8 +813,16 @@ Utils::Pipe Utils::CreateOverlappedPipe(DWORD openMode, DWORD bufferSize)
 // That got removed in Windows 7, because people kept starting a read/write on one thread and called GetOverlappedResult() on another.
 // When the OS sets Internal from STATUS_PENDING to 0 (= done) and then flags the hEvent, that doesn't happen atomically.
 // This results in a race condition if a OVERLAPPED is used across threads.
-HRESULT Utils::GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred)
+HRESULT Utils::GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred) noexcept
 {
+    assert(overlapped != nullptr);
+    assert(overlapped->hEvent != nullptr);
+    assert(bytesTransferred != nullptr);
+
+    __assume(overlapped != nullptr);
+    __assume(overlapped->hEvent != nullptr);
+    __assume(bytesTransferred != nullptr);
+
     if (overlapped->Internal == STATUS_PENDING)
     {
         if (WaitForSingleObjectEx(overlapped->hEvent, INFINITE, FALSE) != WAIT_OBJECT_0)
@@ -826,7 +834,7 @@ HRESULT Utils::GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD
     // Assuming no multi-threading as per the function contract and
     // now that we ensured that hEvent is set (= read/write done),
     // we can safely read whatever want because nothing will set these concurrently.
-    *bytesTransferred = static_cast<DWORD>(overlapped->InternalHigh);
+    *bytesTransferred = gsl::narrow_cast<DWORD>(overlapped->InternalHigh);
     return HRESULT_FROM_NT(overlapped->Internal);
 }
 
