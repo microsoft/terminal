@@ -266,12 +266,6 @@ void VtIo::CreatePseudoWindow()
     return S_OK;
 }
 
-void VtIo::CloseInput()
-{
-    _pVtInputThread = nullptr;
-    SendCloseEvent();
-}
-
 void VtIo::SendCloseEvent()
 {
     LockConsole();
@@ -432,15 +426,22 @@ void VtIo::_flushNow()
     if (_overlappedPending)
     {
         _overlappedPending = false;
-        std::ignore = _overlappedEvent.wait();
+
+        DWORD written;
+        if (FAILED(Utils::GetOverlappedResultSameThread(_overlapped, &written)))
+        {
+            // Not much we can do here. Let's treat this like a ERROR_BROKEN_PIPE.
+            _hOutput.reset();
+            SendCloseEvent();
+        }
     }
 
     _front.clear();
     _front.swap(_back);
 
-    // If it's >64KiB large and twice as large as the previous buffer, free the memory.
+    // If it's >128KiB large and twice as large as the previous buffer, free the memory.
     // This ensures that there's a pathway for shrinking the buffer from large sizes.
-    if (const auto cap = _back.capacity(); cap > 64 * 1024 && cap > _front.capacity() / 2)
+    if (const auto cap = _back.capacity(); cap > 128 * 1024 && cap / 2 > _front.size())
     {
         _back = std::string{};
     }
@@ -466,9 +467,18 @@ void VtIo::_flushNow()
         return;
     }
 
+    const auto write = gsl::narrow_cast<DWORD>(_front.size());
+
+    TraceLoggingWrite(
+        g_hConhostV2EventTraceProvider,
+        "ConPTY WriteFile",
+        TraceLoggingCountedUtf8String(_front.data(), write, "buffer"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
     for (;;)
     {
-        if (WriteFile(_hOutput.get(), _front.data(), gsl::narrow_cast<DWORD>(_front.size()), nullptr, _overlapped))
+        if (WriteFile(_hOutput.get(), _front.data(), write, nullptr, _overlapped))
         {
             return;
         }
@@ -477,6 +487,7 @@ void VtIo::_flushNow()
         {
         case ERROR_BROKEN_PIPE:
             _hOutput.reset();
+            SendCloseEvent();
             return;
         case ERROR_IO_PENDING:
             _overlappedPending = true;

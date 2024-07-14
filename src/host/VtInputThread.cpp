@@ -54,6 +54,11 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 //      InputStateMachineEngine.
 void VtInputThread::_InputThread()
 {
+    const auto cleanup = wil::scope_exit([this]() {
+        _hFile.reset();
+        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIoNoCheck()->SendCloseEvent();
+    });
+
     OVERLAPPED* overlapped = nullptr;
     OVERLAPPED overlappedBuf{};
     wil::unique_event overlappedEvent;
@@ -124,7 +129,7 @@ void VtInputThread::_InputThread()
             if (overlappedPending)
             {
                 overlappedPending = false;
-                if (!GetOverlappedResult(_hFile.get(), overlapped, &read, TRUE))
+                if (FAILED(Utils::GetOverlappedResultSameThread(overlapped, &read)))
                 {
                     break;
                 }
@@ -147,11 +152,16 @@ void VtInputThread::_InputThread()
             break;
         }
 
-        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-        FAILED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(read) }, wstr, u8State));
-    }
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "ConPTY ReadFile",
+            TraceLoggingCountedUtf8String(&buffer[0], read, "buffer"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIoNoCheck()->CloseInput();
+        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
+        FAILED_LOG(til::u8u16({ &buffer[0], gsl::narrow_cast<size_t>(read) }, wstr, u8State));
+    }
 }
 
 // Method Description:

@@ -60,7 +60,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
         void SendCloseEvent();
-        void CloseInput();
         void CreatePseudoWindow();
         Writer GetWriter() noexcept;
 
