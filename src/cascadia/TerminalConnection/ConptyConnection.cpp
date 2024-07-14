@@ -602,7 +602,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _piClient.reset();
         _pipe.reset();
 
-        // The output thread should've already transitioned us to Closed.
+        // The output thread should have already transitioned us to Closed.
         // This exists just in case there was no output thread.
         _transitionToState(ConnectionState::Closed);
     }
