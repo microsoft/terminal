@@ -150,13 +150,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_RETURN();
 
-    static wil::unique_hfile duplicateHandle(const HANDLE in) noexcept
+    static wil::unique_hfile duplicateHandle(const HANDLE in)
     {
         wil::unique_hfile h;
         THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), h.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
         return h;
     }
 
+    // Who decided that?
+#pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
     ConptyConnection::ConptyConnection() :
         _writeOverlappedEvent{ CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS) }
     {
@@ -280,8 +282,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    // Misdiagnosis: out is being tested right in the first line.
+#pragma warning(suppress : 26430) // Symbol 'out' is not tested for nullness on all paths (f.23).
     void ConptyConnection::InitializeFromHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo)
     {
+        THROW_HR_IF(E_UNEXPECTED, !in || !out || !startupInfo);
+
         _sessionId = Utils::CreateGuid();
 
         auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
@@ -646,7 +652,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // won't wait for us, and the known exit points _do_.
         auto strongThis{ get_strong() };
 
-        const auto cleanup = wil::scope_exit([this]() {
+        const auto cleanup = wil::scope_exit([this]() noexcept {
             _LastConPtyClientDisconnected();
         });
 
@@ -741,7 +747,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
             // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-            FAILED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(read) }, wstr, u8State));
+            FAILED_LOG(til::u8u16({ &buffer[0], gsl::narrow_cast<size_t>(read) }, wstr, u8State));
         }
 
         return 0;
