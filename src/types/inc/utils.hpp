@@ -17,14 +17,8 @@ namespace Microsoft::Console::Utils
 {
     struct Pipe
     {
-        wil::unique_hfile tx;
-        wil::unique_hfile rx;
-    };
-
-    struct DuplexPipe
-    {
-        wil::unique_hfile alice;
-        wil::unique_hfile bob;
+        wil::unique_hfile server;
+        wil::unique_hfile client;
     };
 
     // Function Description:
@@ -38,7 +32,8 @@ namespace Microsoft::Console::Utils
     bool IsValidHandle(const HANDLE handle) noexcept;
     bool HandleWantsOverlappedIo(HANDLE handle) noexcept;
     Pipe CreatePipe(DWORD bufferSize);
-    DuplexPipe CreateOverlappedDuplexPipe(DWORD bufferSize);
+    Pipe CreateOverlappedPipe(DWORD openMode, DWORD bufferSize);
+    HRESULT GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred);
 
     // Function Description:
     // - Clamps a long in between `min` and `SHRT_MAX`

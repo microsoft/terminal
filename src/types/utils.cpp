@@ -630,15 +630,23 @@ bool Utils::IsValidHandle(const HANDLE handle) noexcept
     return handle != nullptr && handle != INVALID_HANDLE_VALUE;
 }
 
-// From ntifs.h, which isn't part of the regular Windows SDK (they're in the driver SDK (WDK)).
+#define FileModeInformation (FILE_INFORMATION_CLASS)16
+
+#define FILE_PIPE_BYTE_STREAM_TYPE 0x00000000
+#define FILE_PIPE_BYTE_STREAM_MODE 0x00000000
+#define FILE_PIPE_QUEUE_OPERATION 0x00000000
+
+typedef struct _FILE_MODE_INFORMATION
+{
+    ULONG Mode;
+} FILE_MODE_INFORMATION, *PFILE_MODE_INFORMATION;
+
 extern "C" NTSTATUS NTAPI NtQueryInformationFile(
     HANDLE FileHandle,
     PIO_STATUS_BLOCK IoStatusBlock,
     PVOID FileInformation,
     ULONG Length,
     FILE_INFORMATION_CLASS FileInformationClass);
-
-#define FileModeInformation (FILE_INFORMATION_CLASS)16
 
 extern "C" NTSTATUS NTAPI NtCreateNamedPipeFile(
     PHANDLE FileHandle,
@@ -656,15 +664,6 @@ extern "C" NTSTATUS NTAPI NtCreateNamedPipeFile(
     ULONG OutboundQuota,
     PLARGE_INTEGER DefaultTimeout);
 
-#define FILE_PIPE_BYTE_STREAM_TYPE 0x00000000
-#define FILE_PIPE_BYTE_STREAM_MODE 0x00000000
-#define FILE_PIPE_QUEUE_OPERATION 0x00000000
-
-typedef struct _FILE_MODE_INFORMATION
-{
-    ULONG Mode;
-} FILE_MODE_INFORMATION, *PFILE_MODE_INFORMATION;
-
 bool Utils::HandleWantsOverlappedIo(HANDLE handle) noexcept
 {
     IO_STATUS_BLOCK statusBlock;
@@ -673,15 +672,19 @@ bool Utils::HandleWantsOverlappedIo(HANDLE handle) noexcept
     return status == 0 && WI_AreAllFlagsClear(modeInfo.Mode, FILE_SYNCHRONOUS_IO_ALERT | FILE_SYNCHRONOUS_IO_NONALERT);
 }
 
+// Creates an anonymous pipe. Behaves like PIPE_ACCESS_INBOUND,
+// meaning the .server is for reading and the .client is for writing.
 Utils::Pipe Utils::CreatePipe(DWORD bufferSize)
 {
     wil::unique_hfile rx, tx;
     THROW_IF_WIN32_BOOL_FALSE(::CreatePipe(rx.addressof(), tx.addressof(), nullptr, bufferSize));
-    return { std::move(tx), std::move(rx) };
+    return { std::move(rx), std::move(tx) };
 }
 
-// Creates an overlapped anonymous pipe.
-// This variant returns a full duplex pipe and so the two sides are simply named Alice and Bob.
+// Creates an overlapped anonymous pipe. openMode should be either:
+// * PIPE_ACCESS_INBOUND
+// * PIPE_ACCESS_OUTBOUND
+// * PIPE_ACCESS_DUPLEX
 //
 // I know, I know. MSDN infamously says
 // > Asynchronous (overlapped) read and write operations are not supported by anonymous pipes.
@@ -696,7 +699,7 @@ Utils::Pipe Utils::CreatePipe(DWORD bufferSize)
 // whereas running a tool like Sysinternals' PipeList will return all those semi-named pipes.
 //
 // The code below contains comments to create unidirectional pipes.
-Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
+Utils::Pipe Utils::CreateOverlappedPipe(DWORD openMode, DWORD bufferSize)
 {
     // Cache a handle to the pipe driver.
     static const auto pipeDirectory = []() {
@@ -718,7 +721,7 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
             /* FileAttributes    */ 0,
             /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
             /* CreateDisposition */ FILE_OPEN,
-            /* CreateOptions     */ 0,
+            /* CreateOptions     */ FILE_SYNCHRONOUS_IO_NONALERT,
             /* EaBuffer          */ nullptr,
             /* EaLength          */ 0));
 
@@ -733,69 +736,98 @@ Utils::DuplexPipe Utils::CreateOverlappedDuplexPipe(DWORD bufferSize)
         .ObjectName = &emptyPath,
         .Attributes = OBJ_CASE_INSENSITIVE,
     };
+    DWORD desiredAccess = 0;
+    DWORD shareAccess = 0;
 
-    wil::unique_hfile alice;
+    switch (openMode)
+    {
+    case PIPE_ACCESS_INBOUND:
+        desiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
+        shareAccess = FILE_SHARE_WRITE;
+        break;
+    case PIPE_ACCESS_OUTBOUND:
+        desiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
+        shareAccess = FILE_SHARE_READ;
+        break;
+    default:
+        desiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
+        shareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
+        break;
+    }
+
+    wil::unique_hfile server;
     objectAttributes.RootDirectory = pipeDirectory.get();
     THROW_IF_NTSTATUS_FAILED(NtCreateNamedPipeFile(
-        /* FileHandle        */ alice.addressof(),
-        // DesiredAccess:
-        // * Should always include SYNCHRONIZE.
-        // * PIPE_ACCESS_INBOUND  = GENERIC_READ    (commonly combined with FILE_WRITE_ATTRIBUTES to create a read-only pipe)
-        //   PIPE_ACCESS_OUTBOUND = GENERIC_WRITE   (commonly combined with FILE_READ_ATTRIBUTES to create a write-only pipe)
-        //   PIPE_ACCESS_DUPLEX   = GENERIC_READ | GENERIC_WRITE
-        /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE | FILE_WRITE_ATTRIBUTES,
+        /* FileHandle        */ server.addressof(),
+        /* DesiredAccess     */ desiredAccess,
         /* ObjectAttributes  */ &objectAttributes,
         /* IoStatusBlock     */ &statusBlock,
-        // ShareAccess:
-        // * PIPE_ACCESS_INBOUND  = FILE_SHARE_WRITE
-        //   PIPE_ACCESS_OUTBOUND = FILE_SHARE_READ
-        //   PIPE_ACCESS_DUPLEX   = FILE_SHARE_READ | FILE_SHARE_WRITE
         /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
         /* CreateDisposition */ FILE_CREATE,
-        // CreateOptions:
-        // * FILE_FLAG_OVERLAPPED = 0
-        //   otherwise            = FILE_SYNCHRONOUS_IO_NONALERT
-        /* CreateOptions     */ 0,
+        /* CreateOptions     */ 0, // would be FILE_SYNCHRONOUS_IO_NONALERT for a synchronous pipe
         /* NamedPipeType     */ FILE_PIPE_BYTE_STREAM_TYPE,
         /* ReadMode          */ FILE_PIPE_BYTE_STREAM_MODE,
-        // CompletionMode:
-        // * PIPE_NOWAIT = FILE_PIPE_COMPLETE_OPERATION
-        //   otherwise   = FILE_PIPE_QUEUE_OPERATION
-        /* CompletionMode    */ FILE_PIPE_QUEUE_OPERATION,
+        /* CompletionMode    */ FILE_PIPE_QUEUE_OPERATION, // would be FILE_PIPE_COMPLETE_OPERATION for PIPE_NOWAIT
         /* MaximumInstances  */ 1,
         /* InboundQuota      */ bufferSize,
         /* OutboundQuota     */ bufferSize,
         /* DefaultTimeout    */ &timeout));
 
-    wil::unique_hfile bob;
-    objectAttributes.RootDirectory = alice.get();
+    switch (openMode)
+    {
+    case PIPE_ACCESS_INBOUND:
+        desiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
+        shareAccess = FILE_SHARE_READ;
+        break;
+    case PIPE_ACCESS_OUTBOUND:
+        desiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
+        shareAccess = FILE_SHARE_WRITE;
+        break;
+    default:
+        desiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
+        shareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
+        break;
+    }
+
+    wil::unique_hfile client;
+    objectAttributes.RootDirectory = server.get();
     THROW_IF_NTSTATUS_FAILED(NtCreateFile(
-        /* FileHandle        */ bob.addressof(),
-        // DesiredAccess:
-        // * Should always include SYNCHRONIZE.
-        // * PIPE_ACCESS_INBOUND  = GENERIC_WRITE   (commonly combined with FILE_READ_ATTRIBUTES to create a write-only pipe)
-        //   PIPE_ACCESS_OUTBOUND = GENERIC_READ    (commonly combined with FILE_WRITE_ATTRIBUTES to create a read-only pipe)
-        //   PIPE_ACCESS_DUPLEX   = GENERIC_READ | GENERIC_WRITE
-        /* DesiredAccess     */ SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,
+        /* FileHandle        */ client.addressof(),
+        /* DesiredAccess     */ desiredAccess,
         /* ObjectAttributes  */ &objectAttributes,
         /* IoStatusBlock     */ &statusBlock,
         /* AllocationSize    */ nullptr,
         /* FileAttributes    */ 0,
-        // ShareAccess:
-        // * PIPE_ACCESS_INBOUND  = FILE_SHARE_READ
-        //   PIPE_ACCESS_OUTBOUND = FILE_SHARE_WRITE
-        //   PIPE_ACCESS_DUPLEX   = FILE_SHARE_READ | FILE_SHARE_WRITE
-        /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
+        /* ShareAccess       */ shareAccess,
         /* CreateDisposition */ FILE_OPEN,
-        // CreateOptions:
-        // * Should always include FILE_NON_DIRECTORY_FILE for correctness reasons.
-        //   FILE_FLAG_OVERLAPPED = 0
-        //   otherwise            = FILE_SYNCHRONOUS_IO_NONALERT
-        /* CreateOptions     */ FILE_NON_DIRECTORY_FILE,
+        /* CreateOptions     */ FILE_NON_DIRECTORY_FILE, // would include FILE_SYNCHRONOUS_IO_NONALERT for a synchronous pipe
         /* EaBuffer          */ nullptr,
         /* EaLength          */ 0));
 
-    return { std::move(alice), std::move(bob) };
+    return { std::move(server), std::move(client) };
+}
+
+// GetOverlappedResult() for professionals! Only for single-threaded use.
+//
+// GetOverlappedResult() used to have a neat optimization where it would only call WaitForSingleObject() if the state was STATUS_PENDING.
+// That got removed in Windows 7, because people kept starting a read/write on one thread and called GetOverlappedResult() on another.
+// When the OS sets Internal from STATUS_PENDING to 0 (= done) and then flags the hEvent, that doesn't happen atomically.
+// This results in a race condition if a OVERLAPPED is used across threads.
+HRESULT Utils::GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred)
+{
+    if (overlapped->Internal == STATUS_PENDING)
+    {
+        if (WaitForSingleObjectEx(overlapped->hEvent, INFINITE, FALSE) != WAIT_OBJECT_0)
+        {
+            return HRESULT_FROM_WIN32(GetLastError());
+        }
+    }
+
+    // Assuming no multi-threading as per the function contract and
+    // now that we ensured that hEvent is set (= read/write done),
+    // we can safely read whatever want because nothing will set these concurrently.
+    *bytesTransferred = static_cast<DWORD>(overlapped->InternalHigh);
+    return HRESULT_FROM_NT(overlapped->Internal);
 }
 
 // Function Description:
