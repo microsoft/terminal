@@ -500,7 +500,7 @@ namespace winrt::TerminalApp::implementation
         _SaveFileHelper(text, L"", L"");
     }
 
-    fire_and_forget TerminalPage::_SaveFileHelper(const winrt::hstring& text, const winrt::hstring& filepath, const winrt::hstring& filename)
+    fire_and_forget TerminalPage::_SaveFileHelper(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -522,7 +522,7 @@ namespace winrt::TerminalApp::implementation
                 // GH#11356 - we can't use the UWP apis for writing the file,
                 // because they don't work elevated (shocker) So just use the
                 // shell32 file picker manually.
-                std::wstring cleanedFilename{ til::clean_filename(filename.c_str()) };
+                std::wstring cleanedFilename{ til::clean_filename(std::wstring{ filename }) };
                 path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(cleanedFilename)](auto&& dialog) {
                     THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
                     try

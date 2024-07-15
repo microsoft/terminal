@@ -450,7 +450,7 @@ namespace winrt::TerminalApp::implementation
 
         void _OnInputSuggestionRequested(const IInspectable& sender, const winrt::hstring& suggestion);
         void _OnExportChatHistoryRequested(const IInspectable& sender, const winrt::hstring& text);
-        fire_and_forget _SaveFileHelper(const winrt::hstring& text, const winrt::hstring& filepath, const winrt::hstring& filename);
+        fire_and_forget _SaveFileHelper(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename);
 
         void _Find(const TerminalTab& tab);
 

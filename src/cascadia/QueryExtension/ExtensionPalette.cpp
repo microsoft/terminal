@@ -381,7 +381,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         {
             for (const auto chatMessage : groupedMessage)
             {
-                concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent() + L"\n";
+                concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent();
+                concatenatedMessages += L"\n";
             }
         }
         if (!concatenatedMessages.empty())
