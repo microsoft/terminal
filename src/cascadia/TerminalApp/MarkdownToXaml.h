@@ -1,0 +1,38 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
+#include "CodeBlock.h"
+#include "../../oss/cmark-gfm/src/cmark-gfm.h"
+#include "../../oss/cmark-gfm/src/node.h"
+
+struct MarkdownToXaml
+{
+public:
+    static winrt::Windows::UI::Xaml::Controls::RichTextBlock Convert(const winrt::hstring& markdownText, const winrt::hstring& baseUrl);
+
+private:
+    MarkdownToXaml(const winrt::hstring& baseUrl);
+
+    winrt::Windows::UI::Xaml::Controls::RichTextBlock _root{};
+    winrt::hstring _baseUri{ L"" };
+
+    winrt::Windows::UI::Xaml::Documents::Run _currentRun{ nullptr };
+    winrt::Windows::UI::Xaml::Documents::Span _currentSpan{ nullptr };
+    winrt::Windows::UI::Xaml::Documents::Paragraph _lastParagraph{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::Image _currentImage{ nullptr };
+    int _indent = 0;
+    int _blockQuoteDepth = 0;
+
+    winrt::Windows::UI::Xaml::Documents::Paragraph _CurrentParagraph();
+    winrt::Windows::UI::Xaml::Documents::Run _CurrentRun();
+    winrt::Windows::UI::Xaml::Documents::Span _CurrentSpan();
+    winrt::Windows::UI::Xaml::Documents::Run _NewRun();
+    void _EndRun();
+    void _EndSpan();
+    void _EndParagraph();
+
+    winrt::Windows::UI::Xaml::Controls::TextBlock _makeDefaultTextBlock();
+
+    void _RenderNode(cmark_node* node, cmark_event_type ev_type, int /*options*/);
+};

@@ -189,6 +189,7 @@
     <ClInclude Include="MarkdownPaneContent.h">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="MarkdownToXaml.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -314,6 +315,8 @@
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="MarkdownToXaml.cpp" />
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
