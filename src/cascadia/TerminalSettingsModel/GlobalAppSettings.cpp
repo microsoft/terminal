@@ -46,7 +46,6 @@ void GlobalAppSettings::_FinalizeInheritance()
             }
         }
     }
-
     _actionMap->_FinalizeInheritance();
 }
 

@@ -19,6 +19,7 @@ namespace WWH = ::winrt::Windows::Web::Http;
 namespace WSS = ::winrt::Windows::Storage::Streams;
 namespace WDJ = ::winrt::Windows::Data::Json;
 
+static constexpr std::wstring_view applicationJson{ L"application/json" };
 static constexpr std::wstring_view acceptedModel{ L"gpt-3.5-turbo" };
 static constexpr std::wstring_view openAIEndpoint{ L"https://api.openai.com/v1/chat/completions" };
 
@@ -28,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         _AIKey = key;
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
-        _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
+        _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(applicationJson);
         _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _AIKey });
     }
 
@@ -51,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _context = context;
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> OpenAILLMProvider::GetResponseAsync(const winrt::hstring& userPrompt)
+    winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> OpenAILLMProvider::GetResponseAsync(const winrt::hstring userPrompt)
     {
         // Use a flag for whether the response the user receives is an error message
         // we pass this flag back to the caller so they can handle it appropriately (specifically, ExtensionPalette will send the correct telemetry event)
@@ -59,22 +60,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool isError{ true };
         hstring message{};
 
-        // Make a copy of the prompt because we are switching threads
-        const auto promptCopy{ userPrompt };
-
         // Make sure we are on the background thread for the http request
         co_await winrt::resume_background();
 
         WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ openAIEndpoint } };
-        request.Headers().Accept().TryParseAdd(L"application/json");
+        request.Headers().Accept().TryParseAdd(applicationJson);
 
         WDJ::JsonObject jsonContent;
         WDJ::JsonObject messageObject;
 
-        winrt::hstring engineeredPrompt{ promptCopy };
+        winrt::hstring engineeredPrompt{ userPrompt };
         if (_context && !_context.ActiveCommandline().empty())
         {
-            engineeredPrompt = promptCopy + L". The shell I am running is " + _context.ActiveCommandline();
+            engineeredPrompt = userPrompt + L". The shell I am running is " + _context.ActiveCommandline();
         }
         messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
         messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
@@ -86,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         WWH::HttpStringContent requestContent{
             stringContent,
             WSS::UnicodeEncoding::Utf8,
-            L"application/json"
+            applicationJson
         };
 
         request.Content(requestContent);

@@ -54,125 +54,32 @@ void AIConfig::LayerJson(const Json::Value& json)
 
 winrt::hstring AIConfig::AzureOpenAIEndpoint() noexcept
 {
-    PasswordVault vault;
-    PasswordCredential cred;
-    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
-    try
-    {
-        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIEndpoint);
-    }
-    catch (...)
-    {
-        return L"";
-    }
-    return cred.Password();
+    return _RetrieveCredential(PasswordVaultAIEndpoint);
 }
 
 void AIConfig::AzureOpenAIEndpoint(const winrt::hstring& endpoint) noexcept
 {
-    PasswordVault vault;
-    if (endpoint.empty())
-    {
-        // an empty string indicates that we should clear the key
-        PasswordCredential cred;
-        try
-        {
-            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIEndpoint);
-        }
-        catch (...)
-        {
-            // there was nothing to remove, just return
-            return;
-        }
-        vault.Remove(cred);
-    }
-    else
-    {
-        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIEndpoint, endpoint };
-        vault.Add(newCredential);
-    }
+    _SetCredential(PasswordVaultAIEndpoint, endpoint);
 }
 
 winrt::hstring AIConfig::AzureOpenAIKey() noexcept
 {
-    PasswordVault vault;
-    PasswordCredential cred;
-    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
-    try
-    {
-        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIKey);
-    }
-    catch (...)
-    {
-        return L"";
-    }
-    return cred.Password();
+    return _RetrieveCredential(PasswordVaultAIKey);
 }
 
 void AIConfig::AzureOpenAIKey(const winrt::hstring& key) noexcept
 {
-    PasswordVault vault;
-    if (key.empty())
-    {
-        // the user has entered an empty string, that indicates that we should clear the key
-        PasswordCredential cred;
-        try
-        {
-            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIKey);
-        }
-        catch (...)
-        {
-            // there was nothing to remove, just return
-            return;
-        }
-        vault.Remove(cred);
-    }
-    else
-    {
-        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIKey, key };
-        vault.Add(newCredential);
-    }
+    _SetCredential(PasswordVaultAIKey, key);
 }
 
 winrt::hstring AIConfig::OpenAIKey() noexcept
 {
-    PasswordVault vault;
-    PasswordCredential cred;
-    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
-    try
-    {
-        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultOpenAIKey);
-    }
-    catch (...)
-    {
-        return L"";
-    }
-    return cred.Password();
+    return _RetrieveCredential(PasswordVaultOpenAIKey);
 }
 
 void AIConfig::OpenAIKey(const winrt::hstring& key) noexcept
 {
-    PasswordVault vault;
-    if (key.empty())
-    {
-        // the user has entered an empty string, that indicates that we should clear the key
-        PasswordCredential cred;
-        try
-        {
-            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultOpenAIKey);
-        }
-        catch (...)
-        {
-            // there was nothing to remove, just return
-            return;
-        }
-        vault.Remove(cred);
-    }
-    else
-    {
-        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultOpenAIKey, key };
-        vault.Add(newCredential);
-    }
+    _SetCredential(PasswordVaultOpenAIKey, key);
 }
 
 winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvider()
@@ -202,4 +109,45 @@ winrt::Microsoft::Terminal::Settings::Model::LLMProvider AIConfig::ActiveProvide
 void AIConfig::ActiveProvider(const LLMProvider& provider)
 {
     _ActiveProvider = provider;
+}
+
+winrt::hstring AIConfig::_RetrieveCredential(const std::wstring_view credential)
+{
+    PasswordVault vault;
+    PasswordCredential cred;
+    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
+    try
+    {
+        cred = vault.Retrieve(PasswordVaultResourceName, credential);
+    }
+    catch (...)
+    {
+        return L"";
+    }
+    return cred.Password();
+}
+
+void AIConfig::_SetCredential(const std::wstring_view credential, const winrt::hstring& value)
+{
+    PasswordVault vault;
+    if (value.empty())
+    {
+        // the user has entered an empty string, that indicates that we should clear the value
+        PasswordCredential cred;
+        try
+        {
+            cred = vault.Retrieve(PasswordVaultResourceName, credential);
+        }
+        catch (...)
+        {
+            // there was nothing to remove, just return
+            return;
+        }
+        vault.Remove(cred);
+    }
+    else
+    {
+        PasswordCredential newCredential{ PasswordVaultResourceName, credential, value };
+        vault.Add(newCredential);
+    }
 }
