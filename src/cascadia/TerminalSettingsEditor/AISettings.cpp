@@ -136,4 +136,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel.OpenAIActive(true);
     }
+
+    void AISettings::SetGithubCopilotActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.GithubCopilotActive(true);
+    }
 }

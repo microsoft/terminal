@@ -77,8 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
-            _NotifyChanges(L"AzureOpenAIActive");
-            _NotifyChanges(L"OpenAIActive");
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
         }
     }
 
@@ -92,8 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
-            _NotifyChanges(L"AzureOpenAIActive");
-            _NotifyChanges(L"OpenAIActive");
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
         }
     }
 
@@ -114,9 +112,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"AreGithubCopilotTokensSet");
     }
 
-    bool AISettingsViewModel::GithubCopilotIsActive()
+    bool AISettingsViewModel::GithubCopilotActive()
     {
         return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::GithubCopilot;
+    }
+
+    void AISettingsViewModel::GithubCopilotActive(bool active)
+    {
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::GithubCopilot);
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive", L"GithubCopilotActive");
+        }
     }
 
     void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
