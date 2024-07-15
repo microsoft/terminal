@@ -2,33 +2,18 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "srvinit.h"
 
 #include "dbcs.h"
 #include "handle.h"
 #include "registry.hpp"
 #include "renderFontDefaults.hpp"
-
-#include "ApiRoutines.h"
-
-#include "../types/inc/GlyphWidth.hpp"
-
-#include "../server/DeviceHandle.h"
-#include "../server/Entrypoints.h"
-#include "../server/IoSorter.h"
-
-#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
-#include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
-
-#include "renderData.hpp"
-#include "../renderer/base/renderer.hpp"
-
-#include "../inc/conint.h"
-
-#include "tracing.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/DeviceHandle.h"
+#include "../server/IoSorter.h"
+#include "../types/inc/CodepointWidthDetector.hpp"
 
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"
@@ -64,7 +49,7 @@ try
 
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
-    if (Globals.delegationPair.IsUndecided() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
+    if (Globals.delegationPair.IsUndecided())
     {
         Globals.delegationPair = DelegationConfig::s_GetDelegationPair();
 
@@ -82,7 +67,7 @@ try
     // If we looked up the registered defterm pair, and it was left as the default (missing or {0}),
     // AND velocity is enabled for DxD, then we switch the delegation pair to Terminal and
     // mark that we should check that class for the marker interface later.
-    if (Globals.delegationPair.IsDefault() && Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault())
+    if (Globals.delegationPair.IsDefault())
     {
         Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
         Globals.defaultTerminalMarkerCheckRequired = true;
@@ -428,11 +413,6 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
                                               [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
-    // Create a telemetry instance here - this singleton is responsible for
-    // setting up the g_hConhostV2EventTraceProvider, which is otherwise not
-    // initialized in the defterm handoff at this point.
-    (void)Telemetry::Instance();
-
 #if !TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_Disabled",
@@ -603,11 +583,9 @@ try
     outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
-    // GH#13211 - Make sure we request win32input mode and that the terminal
-    // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
-    // are going to have weird resizing, and aren't going to send full fidelity
-    // input messages.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"),
+    // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
+    // defterm connections to the Terminal are going to have weird resizing.
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --signal {:#x}"),
                                          (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
@@ -867,8 +845,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 [[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
-
     auto& g = ServiceLocator::LocateGlobals();
 
     auto& gci = g.getConsoleInformation();
@@ -891,8 +867,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
         // Set up the renderer to be used to calculate the width of a glyph,
         //      should we be unable to figure out its width another way.
-        auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
-        SetGlyphWidthFallback(pfn);
+        CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
+            return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
+        });
     }
     catch (...)
     {
@@ -1052,7 +1029,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
                 // This will not return. Terminate immediately when disconnected.
                 ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
-            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
+            LOG_HR_MSG(hr, "DeviceIoControl failed");
             ReplyMsg = nullptr;
             continue;
         }

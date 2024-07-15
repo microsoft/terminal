@@ -32,12 +32,11 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _usingLineRenditions(false),
     _stopUsingLineRenditions(false),
     _usingSoftFont(false),
-    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
+    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
     _invalidMap(initialViewport.Dimensions(), false, &_pool),
     _scrollDelta(0, 0),
-    _quickReturn(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
     _resized(false),
@@ -46,11 +45,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _exitResult{ S_OK },
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
-    _inResizeRequest{ false },
     _trace{},
     _bufferLine{},
     _buffer{},
@@ -136,25 +133,56 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT VtEngine::_Flush() noexcept
+void VtEngine::_Flush() noexcept
+{
+    if (_buffer.empty())
+    {
+        return;
+    }
+
+    if (!_corked)
+    {
+        _flushImpl();
+        return;
+    }
+
+    // Defer the flush until someone calls Cork(false).
+    _flushRequested = true;
+}
+
+// _corked is often true and separating _flushImpl() out allows _flush() to be inlined.
+void VtEngine::_flushImpl() noexcept
 {
     if (_hFile)
     {
-        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        const auto fSuccess = WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
+        _startOfFrameBufferIndex = 0;
         if (!fSuccess)
         {
-            _exitResult = HRESULT_FROM_WIN32(GetLastError());
+            LOG_LAST_ERROR();
             _hFile.reset();
             if (_terminalOwner)
             {
                 _terminalOwner->CloseOutput();
             }
-            return _exitResult;
         }
     }
+}
 
-    return S_OK;
+// The name of this method is an analogy to TCP_CORK. It instructs
+// the VT renderer to stop flushing its buffer to the output pipe.
+// Don't forget to uncork it!
+void VtEngine::Cork(bool corked) noexcept
+{
+    _corked = corked;
+
+    // Now do the deferred flush from a previous call to _Flush().
+    if (!corked && _flushRequested)
+    {
+        _flushRequested = false;
+        _flushImpl();
+    }
 }
 
 // Method Description:
@@ -425,7 +453,7 @@ void VtEngine::SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const
 HRESULT VtEngine::RequestCursor() noexcept
 {
     RETURN_IF_FAILED(_RequestCursor());
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
 }
 
@@ -447,34 +475,6 @@ HRESULT VtEngine::RequestCursor() noexcept
 }
 
 // Method Description:
-// - Tell the vt renderer to begin a resize operation. During a resize
-//   operation, the vt renderer should _not_ request to be repainted during a
-//   text buffer circling event. Any callers of this method should make sure to
-//   call EndResize to make sure the renderer returns to normal behavior.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtEngine::BeginResizeRequest()
-{
-    _inResizeRequest = true;
-}
-
-// Method Description:
-// - Tell the vt renderer to end a resize operation.
-//   See BeginResize for more details.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtEngine::EndResizeRequest()
-{
-    _inResizeRequest = false;
-}
-
-// Method Description:
 // - Configure the renderer for the resize quirk. This changes the behavior of
 //   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
 //   This is used by the Windows Terminal, because it is prepared to be
@@ -488,19 +488,6 @@ void VtEngine::EndResizeRequest()
 void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     _resizeQuirk = resizeQuirk;
-}
-
-// Method Description:
-// - Configure the renderer to understand that we're operating in limited-draw
-//   passthrough mode. We do not need to handle full responsibility for replicating
-//   buffer state to the attached terminal.
-// Arguments:
-// - passthrough - True to turn on passthrough mode. False otherwise.
-// Return Value:
-// - true iff we were started with an output mode for passthrough. false otherwise.
-void VtEngine::SetPassthroughMode(const bool passthrough) noexcept
-{
-    _passthrough = passthrough;
 }
 
 void VtEngine::SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept
@@ -541,15 +528,27 @@ void VtEngine::SetTerminalCursorTextPosition(const til::point cursor) noexcept
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::RequestWin32Input() noexcept
 {
-    RETURN_IF_FAILED(_RequestWin32Input());
-    RETURN_IF_FAILED(_RequestFocusEventMode());
-    RETURN_IF_FAILED(_Flush());
+    // On startup we request the modes we require for optimal functioning
+    // (namely win32 input mode and focus event mode).
+    //
+    // It's important that any additional modes set here are also mirrored in
+    // the AdaptDispatch::HardReset method, since that needs to re-enable them
+    // in the connected terminal after passing through an RIS sequence.
+    RETURN_IF_FAILED(_Write("\033[?9001h\033[?1004h"));
+    _Flush();
     return S_OK;
 }
 
 HRESULT VtEngine::SwitchScreenBuffer(const bool useAltBuffer) noexcept
 {
     RETURN_IF_FAILED(_SwitchScreenBuffer(useAltBuffer));
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
+}
+
+HRESULT VtEngine::RequestMouseMode(const bool enable) noexcept
+{
+    const auto status = _WriteFormatted(FMT_COMPILE("\x1b[?1003;1006{}"), enable ? 'h' : 'l');
+    _Flush();
+    return status;
 }

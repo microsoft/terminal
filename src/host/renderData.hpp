@@ -22,7 +22,7 @@ class RenderData final :
 public:
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     til::point GetTextBufferEndPosition() const noexcept override;
-    const TextBuffer& GetTextBuffer() const noexcept override;
+    TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
@@ -36,9 +36,7 @@ public:
     ULONG GetCursorHeight() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
-
-    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
@@ -54,8 +52,9 @@ public:
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    const til::point GetSelectionAnchor() const noexcept;
-    const til::point GetSelectionEnd() const noexcept;
-    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr);
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override;
+    const til::point_span* GetSearchHighlightFocused() const noexcept override;
+    const til::point GetSelectionAnchor() const noexcept override;
+    const til::point GetSelectionEnd() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override { return true; }
 };

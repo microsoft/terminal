@@ -20,6 +20,9 @@ namespace Microsoft::Console::VirtualTerminal
     class VtIo
     {
     public:
+        static void FormatAttributes(std::string& target, const TextAttribute& attributes);
+        static void FormatAttributes(std::wstring& target, const TextAttribute& attributes);
+
         VtIo();
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
@@ -40,16 +43,16 @@ namespace Microsoft::Console::VirtualTerminal
         void CloseInput();
         void CloseOutput();
 
-        void BeginResize();
-        void EndResize();
+        void CorkRenderer(bool corked) const noexcept;
 
 #ifdef UNIT_TESTING
-        void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
+        void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine, const bool resizeQuirk = false);
 #endif
 
         bool IsResizeQuirkEnabled() const;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
+        [[nodiscard]] HRESULT RequestMouseMode(bool enable) const noexcept;
 
         void CreatePseudoWindow();
         void SetWindowVisibility(bool showOrHide) noexcept;
@@ -67,8 +70,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForCursorPosition;
 
         bool _resizeQuirk{ false };
-        bool _win32InputMode{ false };
-        bool _passthroughMode{ false };
         bool _closeEventSent{ false };
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;

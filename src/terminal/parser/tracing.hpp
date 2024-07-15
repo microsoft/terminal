@@ -14,7 +14,9 @@ Abstract:
 
 #pragma once
 
-#include "telemetry.hpp"
+// Including TraceLogging essentials for the binary
+#include <winmeta.h>
+#include <TraceLoggingProvider.h>
 
 namespace Microsoft::Console::VirtualTerminal
 {

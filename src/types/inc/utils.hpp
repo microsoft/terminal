@@ -39,8 +39,10 @@ namespace Microsoft::Console::Utils
                                              static_cast<long>(SHRT_MAX)));
     }
 
-    std::wstring GuidToString(const GUID guid);
+    std::wstring GuidToString(const GUID& guid);
+    std::wstring GuidToPlainString(const GUID& guid);
     GUID GuidFromString(_Null_terminated_ const wchar_t* str);
+    GUID GuidFromPlainString(_Null_terminated_ const wchar_t* str);
     GUID CreateGuid();
 
     std::string ColorToHexString(const til::color color);
@@ -111,5 +113,10 @@ namespace Microsoft::Console::Utils
     // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
     // testing easier.
     std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
+
+    // Same deal, but in TerminalPage::_evaluatePathForCwd
+    std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
+
+    bool IsWindows11() noexcept;
 
 }

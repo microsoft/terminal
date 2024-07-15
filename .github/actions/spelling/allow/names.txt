@@ -6,6 +6,7 @@ bhoj
 Bhojwani
 Bluloco
 carlos
+craigloewen
 dhowett
 Diviness
 dsafa
@@ -54,6 +55,7 @@ mikegr
 mikemaccana
 miloush
 miniksa
+nguyen
 niksa
 nvaccess
 nvda

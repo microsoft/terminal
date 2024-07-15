@@ -94,17 +94,9 @@ class TextBufferTests
 
     TEST_METHOD(TestCopyProperties);
 
-    TEST_METHOD(TestInsertCharacter);
-
-    TEST_METHOD(TestIncrementCursor);
-
-    TEST_METHOD(TestNewlineCursor);
-
     void TestLastNonSpace(const til::CoordType cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
-
-    TEST_METHOD(TestSetWrapOnCurrentRow);
 
     TEST_METHOD(TestIncrementCircularBuffer);
 
@@ -145,9 +137,9 @@ class TextBufferTests
     TEST_METHOD(ResizeTraditionalHighUnicodeRowRemoval);
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
-    TEST_METHOD(TestBurrito);
     TEST_METHOD(TestOverwriteChars);
-    TEST_METHOD(TestRowReplaceText);
+    TEST_METHOD(TestReplace);
+    TEST_METHOD(TestInsert);
 
     TEST_METHOD(TestAppendRTFText);
 
@@ -157,10 +149,12 @@ class TextBufferTests
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
-    TEST_METHOD(GetText);
+    TEST_METHOD(GetPlainText);
 
     TEST_METHOD(HyperlinkTrim);
     TEST_METHOD(NoHyperlinkTrim);
+
+    TEST_METHOD(ReflowPromptRegions);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -188,7 +182,7 @@ void TextBufferTests::TestWrapFlag()
 {
     auto& textBuffer = GetTbi();
 
-    auto& Row = textBuffer._GetFirstRow();
+    auto& Row = textBuffer.GetMutableRowByOffset(0);
 
     // no wrap by default
     VERIFY_IS_FALSE(Row.WasWrapForced());
@@ -207,7 +201,7 @@ void TextBufferTests::TestWrapThroughWriteLine()
     auto& textBuffer = GetTbi();
 
     auto VerifyWrap = [&](bool expected) {
-        auto& Row = textBuffer._GetFirstRow();
+        auto& Row = textBuffer.GetRowByOffset(0);
 
         if (expected)
         {
@@ -278,7 +272,7 @@ void TextBufferTests::TestDoubleBytePadFlag()
 {
     auto& textBuffer = GetTbi();
 
-    auto& Row = textBuffer._GetFirstRow();
+    auto& Row = textBuffer.GetMutableRowByOffset(0);
 
     // no padding by default
     VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
@@ -300,7 +294,7 @@ void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
 {
     auto& textBuffer = GetTbi();
 
-    auto& row = textBuffer._GetFirstRow();
+    auto& row = textBuffer.GetMutableRowByOffset(0);
 
     // copy string into buffer
     for (til::CoordType i = 0; i < cLength; ++i)
@@ -397,129 +391,6 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().GetDelay());
 }
 
-void TextBufferTests::TestInsertCharacter()
-{
-    auto& textBuffer = GetTbi();
-
-    // get starting cursor position
-    const auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // Get current row from the buffer
-    auto& Row = textBuffer.GetRowByOffset(coordCursorBefore.y);
-
-    // create some sample test data
-    const auto wch = L'Z';
-    const std::wstring_view wchTest(&wch, 1);
-    const auto dbcsAttribute = DbcsAttribute::Leading;
-    const auto wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
-    auto TestAttributes = TextAttribute(wAttrTest);
-
-    // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(Row.GlyphAt(coordCursorBefore.x), wchTest);
-    VERIFY_ARE_NOT_EQUAL(Row.DbcsAttrAt(coordCursorBefore.x), dbcsAttribute);
-
-    auto attr = Row.GetAttrByColumn(coordCursorBefore.x);
-
-    VERIFY_ARE_NOT_EQUAL(attr, TestAttributes);
-
-    // now apply the new data to the buffer
-    textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
-
-    // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(Row.GlyphAt(coordCursorBefore.x), wchTest);
-    VERIFY_ARE_EQUAL(Row.DbcsAttrAt(coordCursorBefore.x), dbcsAttribute);
-
-    attr = Row.GetAttrByColumn(coordCursorBefore.x);
-    VERIFY_ARE_EQUAL(attr, TestAttributes);
-
-    // ensure that the cursor moved to a new position (X or Y or both have changed)
-    VERIFY_IS_TRUE((coordCursorBefore.x != textBuffer.GetCursor().GetPosition().x) ||
-                   (coordCursorBefore.y != textBuffer.GetCursor().GetPosition().y));
-    // the proper advancement of the cursor (e.g. which position it goes to) is validated in other tests
-}
-
-void TextBufferTests::TestIncrementCursor()
-{
-    auto& textBuffer = GetTbi();
-
-    // only checking X increments here
-    // Y increments are covered in the NewlineCursor test
-
-    const auto sBufferWidth = textBuffer.GetSize().Width();
-
-    const auto sBufferHeight = textBuffer.GetSize().Height();
-    VERIFY_IS_TRUE(sBufferWidth > 1 && sBufferHeight > 1);
-
-    Log::Comment(L"Test normal case of moving once to the right within a single line");
-    textBuffer.GetCursor().SetXPosition(0);
-    textBuffer.GetCursor().SetYPosition(0);
-
-    auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    textBuffer.IncrementCursor();
-
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 1); // X should advance by 1
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y); // Y shouldn't have moved
-
-    Log::Comment(L"Test line wrap case where cursor is on the right edge of the line");
-    textBuffer.GetCursor().SetXPosition(sBufferWidth - 1);
-    textBuffer.GetCursor().SetYPosition(0);
-
-    coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    textBuffer.IncrementCursor();
-
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // position should be reset to the left edge when passing right edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y - 1, coordCursorBefore.y); // the cursor should be moved one row down from where it used to be
-}
-
-void TextBufferTests::TestNewlineCursor()
-{
-    auto& textBuffer = GetTbi();
-
-    const auto sBufferHeight = textBuffer.GetSize().Height();
-
-    const auto sBufferWidth = textBuffer.GetSize().Width();
-    // width and height are sufficiently large for upcoming math
-    VERIFY_IS_TRUE(sBufferWidth > 4 && sBufferHeight > 4);
-
-    Log::Comment(L"Verify standard row increment from somewhere in the buffer");
-
-    // set cursor X position to non zero, any position in buffer
-    textBuffer.GetCursor().SetXPosition(3);
-
-    // set cursor Y position to not-the-final row in the buffer
-    textBuffer.GetCursor().SetYPosition(3);
-
-    auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // perform operation
-    textBuffer.NewlineCursor();
-
-    // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // move to left edge of buffer
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y + 1); // move down one row
-
-    Log::Comment(L"Verify increment when already on last row of buffer");
-
-    // X position still doesn't matter
-    textBuffer.GetCursor().SetXPosition(3);
-
-    // Y position needs to be on the last row of the buffer
-    textBuffer.GetCursor().SetYPosition(sBufferHeight - 1);
-
-    coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // perform operation
-    textBuffer.NewlineCursor();
-
-    // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // move to left edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y); // cursor Y position should not have moved. stays on same logical final line of buffer
-
-    // This is okay because the backing circular buffer changes, not the logical screen position (final visible line of the buffer)
-}
-
 void TextBufferTests::TestLastNonSpace(const til::CoordType cursorPosY)
 {
     auto& textBuffer = GetTbi();
@@ -565,37 +436,6 @@ void TextBufferTests::TestGetLastNonSpaceCharacter()
     TestLastNonSpace(14);
 }
 
-void TextBufferTests::TestSetWrapOnCurrentRow()
-{
-    auto& textBuffer = GetTbi();
-
-    auto sCurrentRow = textBuffer.GetCursor().GetPosition().y;
-
-    auto& Row = textBuffer.GetRowByOffset(sCurrentRow);
-
-    Log::Comment(L"Testing off to on");
-
-    // turn wrap status off first
-    Row.SetWrapForced(false);
-
-    // trigger wrap
-    textBuffer._SetWrapOnCurrentRow();
-
-    // ensure this row was flipped
-    VERIFY_IS_TRUE(Row.WasWrapForced());
-
-    Log::Comment(L"Testing on stays on");
-
-    // make sure wrap status is on
-    Row.SetWrapForced(true);
-
-    // trigger wrap
-    textBuffer._SetWrapOnCurrentRow();
-
-    // ensure row is still on
-    VERIFY_IS_TRUE(Row.WasWrapForced());
-}
-
 void TextBufferTests::TestIncrementCircularBuffer()
 {
     auto& textBuffer = GetTbi();
@@ -622,7 +462,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
         textBuffer._firstRow = iRowToTestIndex;
 
         // fill first row with some stuff
-        auto& FirstRow = textBuffer._GetFirstRow();
+        auto& FirstRow = textBuffer.GetMutableRowByOffset(0);
         FirstRow.ReplaceCharacters(0, 1, { L"A" });
 
         // ensure it does say that it contains text
@@ -633,7 +473,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // validate that first row has moved
         VERIFY_ARE_EQUAL(textBuffer._firstRow, iNextRowIndex); // first row has incremented
-        VERIFY_ARE_NOT_EQUAL(textBuffer._GetFirstRow(), FirstRow); // the old first row is no longer the first
+        VERIFY_ARE_NOT_EQUAL(textBuffer.GetRowByOffset(0), FirstRow); // the old first row is no longer the first
 
         // ensure old first row has been emptied
         VERIFY_IS_FALSE(FirstRow.ContainsText());
@@ -1554,60 +1394,20 @@ void TextBufferTests::TestBackspaceStringsAPI()
     //      should be the same.
     std::unique_ptr<WriteData> waiter;
 
-    size_t aCb = 2;
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
-
-    size_t seqCb = 6;
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
-    {
-        const auto str = L"\b \b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-
-        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-
-        Log::Comment(NoThrowString().Format(
-            L"Using DoWriteConsole, write \\b \\b as a single string."));
-        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
-
-        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, false, waiter));
-        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-    }
+    size_t aCb = 2;
+    size_t seqCb = 6;
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b \b", &seqCb, si, false, waiter));
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 
     seqCb = 2;
-
-    Log::Comment(NoThrowString().Format(
-        L"Using DoWriteConsole, write \\b \\b as separate strings."));
-
     VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
-
-    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-
-    Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
-    {
-        const auto str = L"a";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L"\b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L" ";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L"\b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-
     VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 }
@@ -1742,7 +1542,7 @@ void TextBufferTests::ResizeTraditional()
     const til::size smallSize = { 5, 5 };
     const TextAttribute defaultAttr(0);
 
-    TextBuffer buffer(smallSize, defaultAttr, 12, false, _renderer);
+    TextBuffer buffer(smallSize, defaultAttr, 12, false, &_renderer);
 
     Log::Comment(L"Fill buffer with some data and do assorted resize operations.");
 
@@ -1795,7 +1595,7 @@ void TextBufferTests::ResizeTraditional()
     auto expectedSpace = UNICODE_SPACE;
     std::wstring_view expectedSpaceView(&expectedSpace, 1);
 
-    VERIFY_SUCCEEDED(buffer.ResizeTraditional(newSize));
+    buffer.ResizeTraditional(newSize);
 
     Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
     {
@@ -1838,7 +1638,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer
     const til::point pos{ 2, 1 };
@@ -1847,7 +1647,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
     const auto bButton = L"\xD83C\xDD71";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, bButton);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, bButton);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1861,7 +1661,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     _buffer->_SetFirstRowIndex(pos.y);
 
     // Perform resize to rotate the rows around
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize));
+    _buffer->ResizeTraditional(bufferSize);
 
     // Retrieve the text at the old and new positions.
     const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
@@ -1879,7 +1679,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer
     const til::point pos{ 2, 1 };
@@ -1888,7 +1688,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // This is the fire emoji: 🔥
     // It's encoded in UTF-16, as needed by the buffer.
     const auto fire = L"\xD83D\xDD25";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, fire);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, fire);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1902,11 +1702,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // Scroll the row with our data by delta.
     _buffer->ScrollRows(pos.y, 1, delta);
 
-    // Retrieve the text at the old and new positions.
-    const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
     const auto shouldBeFireText = *_buffer->GetTextDataAt(newPos);
-
-    VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
     VERIFY_ARE_EQUAL(String(fire), String(shouldBeFireText.data(), gsl::narrow<int>(shouldBeFireText.size())));
 }
 
@@ -1918,7 +1714,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer in the bottom row
     const til::point pos{ 0, bufferSize.height - 1 };
@@ -1927,7 +1723,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     // This is the eggplant emoji: 🍆
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF46";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, emoji);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1937,7 +1733,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     // Perform resize to trim off the row of the buffer that included the emoji
     til::size trimmedBufferSize{ bufferSize.width, bufferSize.height - 1 };
 
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
+    _buffer->ResizeTraditional(trimmedBufferSize);
 }
 
 // This tests that columns removed from the buffer while resizing traditionally will also drop the high unicode
@@ -1948,7 +1744,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Get a position inside the buffer in the last column (-2 as the inserted character is 2 columns wide).
     const til::point pos{ bufferSize.width - 2, 0 };
@@ -1957,7 +1753,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     // This is the peach emoji: 🍑
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF51";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, emoji);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1967,28 +1763,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     // Perform resize to trim off the column of the buffer that included the emoji
     til::size trimmedBufferSize{ bufferSize.width - 1, bufferSize.height };
 
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
-}
-
-void TextBufferTests::TestBurrito()
-{
-    til::size bufferSize{ 80, 9001 };
-    UINT cursorSize = 12;
-    TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
-
-    // This is the burrito emoji: 🌯
-    // It's encoded in UTF-16, as needed by the buffer.
-    const auto burrito = L"\xD83C\xDF2F";
-    OutputCellIterator burriter{ burrito };
-
-    auto afterFIter = _buffer->Write({ L"F" });
-    _buffer->IncrementCursor();
-
-    auto afterBurritoIter = _buffer->Write(burriter);
-    _buffer->IncrementCursor();
-    _buffer->IncrementCursor();
-    VERIFY_IS_FALSE(afterBurritoIter);
+    _buffer->ResizeTraditional(trimmedBufferSize);
 }
 
 void TextBufferTests::TestOverwriteChars()
@@ -1996,8 +1771,8 @@ void TextBufferTests::TestOverwriteChars()
     til::size bufferSize{ 10, 3 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
-    auto& row = buffer.GetRowByOffset(0);
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, &_renderer };
+    auto& row = buffer.GetMutableRowByOffset(0);
 
 // scientist emoji U+1F9D1 U+200D U+1F52C
 #define complex1 L"\U0001F9D1\U0000200D\U0001F52C"
@@ -2013,17 +1788,17 @@ void TextBufferTests::TestOverwriteChars()
     // Test overwriting wide chars with wide chars slightly shifted left/right.
     row.ReplaceCharacters(1, 2, complex1);
     row.ReplaceCharacters(7, 2, complex1);
-    VERIFY_ARE_EQUAL(L" " complex1 L"    " complex1 L" ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " complex1 L"    " complex1, row.GetText());
 
     // Test overwriting wide chars with wide chars.
     row.ReplaceCharacters(1, 2, complex2);
     row.ReplaceCharacters(7, 2, complex2);
-    VERIFY_ARE_EQUAL(L" " complex2 L"    " complex2 L" ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " complex2 L"    " complex2, row.GetText());
 
     // Test overwriting wide chars with narrow chars.
     row.ReplaceCharacters(1, 1, simple);
     row.ReplaceCharacters(8, 1, simple);
-    VERIFY_ARE_EQUAL(L" " simple L"      " simple L" ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " simple L"      " simple, row.GetText());
 
     // Test clearing narrow/wide chars.
     row.ReplaceCharacters(0, 1, simple);
@@ -2047,13 +1822,12 @@ void TextBufferTests::TestOverwriteChars()
 #undef complex1
 }
 
-void TextBufferTests::TestRowReplaceText()
+void TextBufferTests::TestReplace()
 {
     static constexpr til::size bufferSize{ 10, 3 };
     static constexpr UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
-    auto& row = buffer.GetRowByOffset(0);
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, &_renderer };
 
 #define complex L"\U0001F41B"
 
@@ -2117,55 +1891,137 @@ void TextBufferTests::TestRowReplaceText()
             .columnBegin = t.input.columnBegin,
             .columnLimit = t.input.columnLimit,
         };
-        row.ReplaceText(actual);
+        buffer.Replace(0, attr, actual);
         VERIFY_ARE_EQUAL(t.expected.text, actual.text);
         VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
         VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
         VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
-        VERIFY_ARE_EQUAL(t.expectedRow, row.GetText());
+        VERIFY_ARE_EQUAL(t.expectedRow, buffer.GetRowByOffset(0).GetText());
     }
 
 #undef complex
 }
 
+void TextBufferTests::TestInsert()
+{
+    static constexpr til::size bufferSize{ 10, 3 };
+    static constexpr UINT cursorSize = 12;
+    static constexpr TextAttribute attr1{ 0x11111111, 0x00000000 };
+    static constexpr TextAttribute attr2{ 0x22222222, 0x00000000 };
+    static constexpr TextAttribute attr3{ 0x33333333, 0x00000000 };
+    TextBuffer buffer{ bufferSize, attr1, cursorSize, false, &_renderer };
+
+    struct Test
+    {
+        const wchar_t* description;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnBegin = 0;
+            til::CoordType columnLimit = 0;
+            TextAttribute attr;
+        } input;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnEnd = 0;
+            til::CoordType columnBeginDirty = 0;
+            til::CoordType columnEndDirty = 0;
+        } expected;
+        std::wstring_view expectedRow;
+    };
+
+    static constexpr std::array tests{
+        Test{
+            L"Not enough space -> early exit",
+            { L"aaa", 5, 5, attr1 },
+            { L"aaa", 5, 5, 5 },
+            L"          ",
+        },
+        Test{
+            L"Too much to fit",
+            { L"aaaaabbb", 0, 5, attr1 },
+            { L"bbb", 5, 0, 5 },
+            L"aaaaa     ",
+        },
+        Test{
+            L"Wide char intersects limit",
+            { L"bbbb😄", 0, 5, attr2 },
+            { L"😄", 5, 0, 5 },
+            L"bbbb      ",
+        },
+        Test{
+            L"Insert middle",
+            { L"cc", 2, 5, attr3 },
+            { L"", 4, 2, 4 },
+            L"bbccb     ",
+        },
+    };
+
+    for (const auto& t : tests)
+    {
+        Log::Comment(t.description);
+        RowWriteState actual{
+            .text = t.input.text,
+            .columnBegin = t.input.columnBegin,
+            .columnLimit = t.input.columnLimit,
+        };
+        buffer.Insert(0, t.input.attr, actual);
+        VERIFY_ARE_EQUAL(t.expected.text, actual.text);
+        VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
+        VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
+        VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
+        VERIFY_ARE_EQUAL(t.expectedRow, buffer.GetRowByOffset(0).GetText());
+    }
+
+    auto& scratch = buffer.GetScratchpadRow();
+    scratch.ReplaceAttributes(0, 5, attr2);
+    scratch.ReplaceAttributes(2, 4, attr3);
+
+    const auto& expectedAttr = scratch.Attributes();
+    const auto& actualAttr = buffer.GetRowByOffset(0).Attributes();
+    VERIFY_ARE_EQUAL(expectedAttr, actualAttr);
+}
+
 void TextBufferTests::TestAppendRTFText()
 {
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         const auto ascii = L"This is some Ascii \\ {}";
         TextBuffer::_AppendRTFText(contentStream, ascii);
-        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream.str());
+        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Low code units: á é í ó ú ⮁ ⮂" in UTF-16
         const auto lowCodeUnits = L"Low code units: \x00E1 \x00E9 \x00ED \x00F3 \x00FA \x2B81 \x2B82";
         TextBuffer::_AppendRTFText(contentStream, lowCodeUnits);
-        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream.str());
+        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "High code units: ꞵ ꞷ" in UTF-16
         const auto highCodeUnits = L"High code units: \xA7B5 \xA7B7";
         TextBuffer::_AppendRTFText(contentStream, highCodeUnits);
-        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream.str());
+        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Surrogates: 🍦 👾 👀" in UTF-16
         const auto surrogates = L"Surrogates: \xD83C\xDF66 \xD83D\xDC7E \xD83D\xDC40";
         TextBuffer::_AppendRTFText(contentStream, surrogates);
-        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream.str());
+        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream);
     }
 }
 
 void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer)
 {
     const auto bufferSize = buffer.GetSize();
-
+    int rowsWrapped{};
     for (size_t row = 0; row < text.size(); ++row)
     {
         auto line = text[row];
+
         if (!line.empty())
         {
             // TODO GH#780: writing up to (but not past) the end of the line
@@ -2177,7 +2033,12 @@ void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, 
             }
 
             OutputCellIterator iter{ line };
-            buffer.Write(iter, { 0, gsl::narrow<til::CoordType>(row) }, wrap);
+            buffer.Write(iter, { 0, gsl::narrow<til::CoordType>(row + rowsWrapped) }, wrap);
+            //prevent bug that overwrites wrapped rows
+            if (line.size() > static_cast<size_t>(bufferSize.RightExclusive()))
+            {
+                rowsWrapped += static_cast<int>(line.size()) / bufferSize.RightExclusive();
+            }
         }
     }
 }
@@ -2187,7 +2048,7 @@ void TextBufferTests::GetWordBoundaries()
     til::size bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"word other",
@@ -2289,6 +2150,113 @@ void TextBufferTests::GetWordBoundaries()
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
     }
+
+    _buffer->Reset();
+    _buffer->ResizeTraditional({ 10, 6 });
+    const std::vector<std::wstring> secondText = { L"this wordiswrapped",
+                                                   L"notwrapped"
+                                                   L"spaces        wrapped reachEOB" };
+
+    WriteLinesToBuffer(secondText, *_buffer);
+
+    //Buffer looks like:
+    //   0123456789
+    // 0|this wordi| < wrapped
+    // 1|swrapped  | < not wrapped
+    // 2|notwrapped| < not wrapped
+    // 3|spaces    | < wrapped
+    // 4|    wrappe| < wrapped
+    // 5|d reachEOB| < wrapped
+
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(0).WasWrapForced());
+    VERIFY_IS_FALSE(_buffer->GetRowByOffset(1).WasWrapForced());
+    // GH#780 See the comment in WriteLinesToBuffer
+    // VERIFY_IS_FALSE(_buffer->GetRowByOffset(2).WasWrapForced());
+    _buffer->GetMutableRowByOffset(2).SetWrapForced(false); // Ugh
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(3).WasWrapForced());
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(4).WasWrapForced());
+    VERIFY_IS_TRUE(_buffer->GetRowByOffset(5).WasWrapForced());
+
+    // clang-format off
+    testData = {
+        { { 0, 0 }, { { 0, 0 }, { 0, 0 } } },
+        { { 1, 0 }, { { 0, 0 }, { 0, 0 } } },
+        { { 4, 0 }, { { 4, 0 }, { 0, 0 } } },
+        { { 5, 0 }, { { 5, 0 }, { 5, 0 } } },
+        { { 7, 0 }, { { 5, 0 }, { 5, 0 } } },
+
+        { { 4, 1 }, { { 5, 0 }, { 5, 0 } } },
+        { { 7, 1 }, { { 5, 0 }, { 5, 0 } } },
+        { { 9, 1 }, { { 8, 1 }, { 5, 0 } } },
+
+        { { 0, 2 }, { { 0, 2 }, { 0, 2 } } },
+        { { 9, 2 }, { { 0, 2 }, { 0, 2 } } },
+                                  // v accessibility does not consider wrapping
+        { { 0, 3 }, { { 0, 3 }, { 0, 2 } } },
+        { { 7, 3 }, { { 6, 3 }, { 0, 2 } } },
+                                  // v accessibility does not consider wrapping
+        { { 1, 4 }, { { 0, 4 }, { 0, 2 } } },
+        { { 4, 4 }, { { 4, 4 }, { 4, 4 } } },
+        { { 8, 4 }, { { 4, 4 }, { 4, 4 } } },
+
+        { { 0, 5 }, { { 4, 4 }, { 4, 4 } } },
+        { { 1, 5 }, { { 1, 5 }, { 4, 4 } } },
+        { { 9, 5 }, { { 2, 5 }, { 2, 5 } } },
+    };
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"Testing til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
+        const auto result = _buffer->GetWordStart(test.startPos, delimiters, accessibilityMode);
+        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        VERIFY_ARE_EQUAL(expected, result);
+    }
+
+    //GetWordEnd for Wrapping Text
+    // Buffer:
+    //   0123456789
+    // 0|this wordi| < wrapped
+    // 1|swrapped  | < not wrapped
+    // 2|notwrapped| < not wrapped
+    // 3|spaces    | < wrapped
+    // 4|    wrappe| < wrapped
+    // 5|d reachEOB| < wrapped
+    // clang-format off
+    testData = {
+        // tests for first line of text
+        { { 0, 0 }, { { 3, 0 }, { 5, 0 } } },
+        { { 1, 0 }, { { 3, 0 }, { 5, 0 } } },
+        { { 4, 0 }, { { 4, 0 }, { 5, 0 } } },
+        { { 5, 0 }, { { 7, 1 }, { 0, 2 } } },
+        { { 7, 0 }, { { 7, 1 }, { 0, 2 } } },
+
+        { { 4, 1 }, { { 7, 1 }, { 0, 2 } } },
+        { { 7, 1 }, { { 7, 1 }, { 0, 2 } } },
+        { { 9, 1 }, { { 9, 1 }, { 0, 2 } } },
+
+        { { 0, 2 }, { { 9, 2 }, { 4, 4 } } },
+        { { 9, 2 }, { { 9, 2 }, { 4, 4 } } },
+
+        { { 0, 3 }, { { 5, 3 }, { 4, 4 } } },
+        { { 7, 3 }, { { 9, 3 }, { 4, 4 } } },
+
+        { { 1, 4 }, { { 3, 4 }, { 4, 4 } } },
+        { { 4, 4 }, { { 0, 5 }, { 2, 5 } } },
+        { { 8, 4 }, { { 0, 5 }, { 2, 5 } } },
+
+        { { 0, 5 }, { { 0, 5 }, { 2, 5 } } },
+        { { 1, 5 }, { { 1, 5 }, { 2, 5 } } },
+        { { 4, 5 }, { { 9, 5 }, { 0, 6 } } },
+        { { 9, 5 }, { { 9, 5 }, { 0, 6 } } },
+    };
+    // clang-format on
+
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"TestEnd til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
+        auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
+        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        VERIFY_ARE_EQUAL(expected, result);
+    }
 }
 
 void TextBufferTests::MoveByWord()
@@ -2296,7 +2264,7 @@ void TextBufferTests::MoveByWord()
     til::size bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"word other",
@@ -2403,7 +2371,7 @@ void TextBufferTests::GetGlyphBoundaries()
     til::size bufferSize{ 10, 10 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // This is the burrito emoji: 🌯
     // It's encoded in UTF-16, as needed by the buffer.
@@ -2439,7 +2407,7 @@ void TextBufferTests::GetTextRects()
     til::size bufferSize{ 20, 50 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"0123456789",
@@ -2491,9 +2459,9 @@ void TextBufferTests::GetTextRects()
     }
 }
 
-void TextBufferTests::GetText()
+void TextBufferTests::GetPlainText()
 {
-    // GetText() is used by...
+    // GetPlainText() is used by...
     //  - Copying text to the clipboard regularly
     //  - Copying text to the clipboard, with shift held (collapse to one line)
     //  - Extracting text from a UiaTextRange
@@ -2519,7 +2487,7 @@ void TextBufferTests::GetText()
         til::size bufferSize{ 10, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
-        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
         // Setup: Write lines of text to the buffer
         const std::vector<std::wstring> bufferText = { L"12345",
@@ -2529,14 +2497,10 @@ void TextBufferTests::GetText()
         WriteLinesToBuffer(bufferText, *_buffer);
 
         // simulate a selection from origin to {4,4}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 4 } };
 
-        std::wstring result = L"";
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
-        for (auto& text : textData)
-        {
-            result += text;
-        }
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, false };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (includeCRLF)
@@ -2611,13 +2575,11 @@ void TextBufferTests::GetText()
         til::size bufferSize{ 5, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
-        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
         // Setup: Write lines of text to the buffer
         const std::vector<std::wstring> bufferText = { L"1234567",
-                                                       L"",
-                                                       L"  345",
-                                                       L"123    ",
+                                                       L"  345123    ",
                                                        L"" };
         WriteLinesToBuffer(bufferText, *_buffer);
         // buffer should look like this:
@@ -2630,16 +2592,11 @@ void TextBufferTests::GetText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection, false);
-
-        std::wstring result = L"";
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 5 } };
 
         const auto formatWrappedRows = blockSelection;
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects, nullptr, formatWrappedRows).text;
-        for (auto& text : textData)
-        {
-            result += text;
-        }
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, formatWrappedRows };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (formatWrappedRows)
@@ -2697,7 +2654,7 @@ void TextBufferTests::GetText()
                     Log::Comment(L"Standard Copy to Clipboard");
                     expectedText += L"12345";
                     expectedText += L"67\r\n";
-                    expectedText += L"  345\r\n";
+                    expectedText += L"  345";
                     expectedText += L"123  \r\n";
                 }
                 else
@@ -2705,7 +2662,7 @@ void TextBufferTests::GetText()
                     Log::Comment(L"UI Automation");
                     expectedText += L"12345";
                     expectedText += L"67   \r\n";
-                    expectedText += L"  345\r\n";
+                    expectedText += L"  345";
                     expectedText += L"123  ";
                     expectedText += L"     \r\n";
                     expectedText += L"     ";
@@ -2747,7 +2704,7 @@ void TextBufferTests::HyperlinkTrim()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     static constexpr std::wstring_view url{ L"test.url" };
     static constexpr std::wstring_view otherUrl{ L"other.url" };
@@ -2759,14 +2716,14 @@ void TextBufferTests::HyperlinkTrim()
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
-    _buffer->GetRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
+    _buffer->GetMutableRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set a different hyperlink id somewhere else in the buffer
     const til::point otherPos{ 70, 5 };
     const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
     newAttr.SetHyperlinkId(otherId);
-    _buffer->GetRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
+    _buffer->GetMutableRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
     _buffer->AddHyperlinkToMap(otherUrl, otherId);
 
     // Increment the circular buffer
@@ -2793,7 +2750,7 @@ void TextBufferTests::NoHyperlinkTrim()
     const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
 
     static constexpr std::wstring_view url{ L"test.url" };
     static constexpr std::wstring_view customId{ L"CustomId" };
@@ -2803,12 +2760,12 @@ void TextBufferTests::NoHyperlinkTrim()
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
-    _buffer->GetRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
+    _buffer->GetMutableRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set the same hyperlink id somewhere else in the buffer
     const til::point otherPos{ 70, 5 };
-    _buffer->GetRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
+    _buffer->GetMutableRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
 
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
@@ -2818,4 +2775,130 @@ void TextBufferTests::NoHyperlinkTrim()
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
+}
+
+#define FTCS_A L"\x1b]133;A\x1b\\"
+#define FTCS_B L"\x1b]133;B\x1b\\"
+#define FTCS_C L"\x1b]133;C\x1b\\"
+#define FTCS_D L"\x1b]133;D\x1b\\"
+void TextBufferTests::ReflowPromptRegions()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method") // always isolate things that resize the buffer
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-15, -1, 0, 1, 15}")
+    END_TEST_METHOD_PROPERTIES()
+
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto* tbi = &si.GetTextBuffer();
+    auto& sm = si.GetStateMachine();
+    const auto oldSize{ tbi->GetSize() };
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool /*isTerminal*/, const bool afterResize) {
+        const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+        // Just the dx=+1 case doesn't unwrap the line onto one line, but the dx=+15 case does.
+        const bool unwrapped = afterResize && dx > 1;
+        const int unwrapAdjust = unwrapped ? -1 : 0;
+        const auto marks = tb.GetMarkExtents();
+        VERIFY_ARE_EQUAL(3u, marks.size());
+        {
+            Log::Comment(L"Mark 0");
+
+            auto& mark = marks[0];
+            const til::point expectedStart{ 0, 0 };
+            const til::point expectedEnd{ 10, 0 };
+            const til::point expectedOutputStart{ 17, 0 }; // `Foo-Bar` is 7 characters
+            const til::point expectedOutputEnd{ 13, 3 };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            Log::Comment(L"Mark 1");
+
+            auto& mark = marks[1];
+            const til::point expectedStart{ 0, 4 };
+            const til::point expectedEnd{ 10, 4 };
+            // {originalWidth} characters of 'F', maybe wrapped.
+            const til::point originalPos = til::point{ 10, 5 };
+            til::point afterPos = originalPos;
+            // walk that original pos dx times into the actual real place in the buffer.
+            auto bufferViewport = tb.GetSize();
+            bufferViewport.WalkInBounds(afterPos, -dx);
+            const auto expectedOutputStart = !afterResize ?
+                                                 originalPos : // printed exactly a row, so we're exactly below the prompt
+                                                 afterPos;
+            const til::point expectedOutputEnd{ 22, 6 + unwrapAdjust };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+
+            VERIFY_ARE_EQUAL(expectedOutputStart, *mark.commandEnd);
+            VERIFY_ARE_EQUAL(expectedOutputEnd, *mark.outputEnd);
+        }
+        {
+            Log::Comment(L"Mark 2");
+
+            auto& mark = marks[2];
+            const til::point expectedStart{ 0, 7 + unwrapAdjust };
+            const til::point expectedEnd{ 10, 7 + unwrapAdjust };
+            VERIFY_ARE_EQUAL(expectedStart, mark.start);
+            VERIFY_ARE_EQUAL(expectedEnd, mark.end);
+            VERIFY_IS_TRUE(mark.commandEnd.has_value());
+            VERIFY_IS_FALSE(mark.outputEnd.has_value());
+        }
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    auto writePrompt = [](StateMachine& stateMachine, const auto& path) {
+        // A prompt looks like:
+        // `PWSH C:\> `
+        //
+        // which is 10 characters for "C:\"
+        stateMachine.ProcessString(FTCS_D);
+        stateMachine.ProcessString(FTCS_A);
+        stateMachine.ProcessString(L"\x1b]9;9;");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"\x7");
+        stateMachine.ProcessString(L"PWSH ");
+        stateMachine.ProcessString(path);
+        stateMachine.ProcessString(L"> ");
+        stateMachine.ProcessString(FTCS_B);
+    };
+    auto writeCommand = [](StateMachine& stateMachine, const auto& cmd) {
+        stateMachine.ProcessString(cmd);
+        stateMachine.ProcessString(FTCS_C);
+        stateMachine.ProcessString(L"\r\n");
+    };
+
+    // This first prompt didn't reflow at all
+    writePrompt(sm, L"C:\\"); // y=0
+    writeCommand(sm, L"Foo-bar"); // y=0
+    sm.ProcessString(L"This is some text     \r\n"); // y=1
+    sm.ProcessString(L"with varying amounts  \r\n"); // y=2
+    sm.ProcessString(L"of whitespace\r\n"); // y=3
+
+    // This second one, the command does. It stretches across lines
+    writePrompt(sm, L"C:\\"); // y=4
+    writeCommand(sm, std::wstring(oldSize.Width(), L'F')); // y=4,5
+    sm.ProcessString(L"This is more text     \r\n"); // y=6
+
+    writePrompt(sm, L"C:\\"); // y=7
+    writeCommand(sm, L"yikes?"); // y=7
+
+    Log::Comment(L"========== Checking the buffer state (before) ==========");
+    verifyBuffer(*tbi, si.GetViewport().ToExclusive(), false, false);
+
+    // After we resize, make sure to get the new textBuffers
+    til::size newSize{ oldSize.Width() + dx, oldSize.Height() };
+    auto newBuffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, &_renderer);
+    TextBuffer::Reflow(*tbi, *newBuffer);
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*newBuffer, si.GetViewport().ToExclusive(), false, true);
 }

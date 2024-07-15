@@ -139,8 +139,6 @@ typedef struct _FILE_FS_DEVICE_INFORMATION
 
 #pragma region ntifs.h(public DDK)
 
-#define RtlOffsetToPointer(B, O) ((PCHAR)(((PCHAR)(B)) + ((ULONG_PTR)(O))))
-
 __kernel_entry NTSYSCALLAPI
     NTSTATUS
         NTAPI

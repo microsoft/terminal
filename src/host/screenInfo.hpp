@@ -99,8 +99,14 @@ public:
     bool HasAccessibilityEventing() const noexcept;
     void NotifyAccessibilityEventing(const til::CoordType sStartX, const til::CoordType sStartY, const til::CoordType sEndX, const til::CoordType sEndY);
 
+    struct ScrollBarState
+    {
+        til::size maxSize;
+        til::rect viewport;
+        bool isAltBuffer = false;
+    };
     void UpdateScrollBars();
-    void InternalUpdateScrollBars();
+    ScrollBarState FetchScrollBarState();
 
     bool IsMaximizedBoth() const;
     bool IsMaximizedX() const;
@@ -109,6 +115,7 @@ public:
     const Microsoft::Console::Types::Viewport& GetViewport() const noexcept;
     void SetViewport(const Microsoft::Console::Types::Viewport& newViewport, const bool updateBottom);
     Microsoft::Console::Types::Viewport GetVirtualViewport() const noexcept;
+    Microsoft::Console::Types::Viewport GetVtPageArea() const noexcept;
 
     void ProcessResizeWindow(const til::rect* const prcClientNew, const til::rect* const prcClientOld);
     void SetViewportSize(const til::size* const pcoordSize);
@@ -122,8 +129,6 @@ public:
     // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
-
-    OutputCellRect ReadRect(const Microsoft::Console::Types::Viewport location) const;
 
     TextBufferCellIterator GetCellDataAt(const til::point at) const;
     TextBufferCellIterator GetCellLineDataAt(const til::point at) const;
@@ -157,10 +162,9 @@ public:
     InputBuffer* const GetActiveInputBuffer() const override;
 #pragma endregion
 
-    bool CursorIsDoubleWidth() const noexcept;
+    bool CursorIsDoubleWidth() const;
 
     DWORD OutputMode;
-    WORD ResizingWindow; // > 0 if we should ignore WM_SIZE messages
 
     short WheelDelta;
     short HWheelDelta;
@@ -172,9 +176,6 @@ public:
     SCREEN_INFORMATION* Next;
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;
-
-    // non ownership pointer
-    ConversionAreaInfo* ConvScreenInfo;
 
     UINT ScrollScale;
 
@@ -193,7 +194,7 @@ public:
 
     void MakeCursorVisible(const til::point CursorPosition);
 
-    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
+    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
 
     SCREEN_INFORMATION& GetMainBuffer();
@@ -202,8 +203,8 @@ public:
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
-    TextAttribute GetAttributes() const;
-    TextAttribute GetPopupAttributes() const;
+    const TextAttribute& GetAttributes() const noexcept;
+    const TextAttribute& GetPopupAttributes() const noexcept;
 
     void SetAttributes(const TextAttribute& attributes);
     void SetPopupAttributes(const TextAttribute& popupAttributes);
@@ -254,7 +255,8 @@ private:
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
 
-    [[nodiscard]] NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
+    [[nodiscard]] NTSTATUS _CreateAltBuffer(const TextAttribute& initAttributes,
+                                            _Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
 
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;

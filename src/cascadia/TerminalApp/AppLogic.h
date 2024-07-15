@@ -53,9 +53,7 @@ namespace winrt::TerminalApp::implementation
         void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
-
         bool ShouldUsePersistedLayout() const;
-        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
 
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
@@ -74,7 +72,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
-        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
 
     private:
         bool _isElevated{ false };
@@ -91,7 +89,6 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
         std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
-        til::throttled_func_trailing<> _reloadState;
 
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{};
 
@@ -112,6 +109,8 @@ namespace winrt::TerminalApp::implementation
         void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
+
+        void _setupFolderPathEnvVar();
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

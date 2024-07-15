@@ -41,12 +41,12 @@ namespace Microsoft::Console::Utils
     };
 }
 
-#define USES_RESOURCE(x) ([]() {                                  \
-    static const ::Microsoft::Console::Utils::StaticResource res{ \
-        (x), __FILEW__, __LINE__                                  \
-    };                                                            \
-    __declspec(allocate(".util$res$m")) static auto pRes{ &res }; \
-    return pRes->resourceKey;                                     \
+#define USES_RESOURCE(x) ([]() {                                        \
+    static const ::Microsoft::Console::Utils::StaticResource res{       \
+        (x), __FILEW__, __LINE__                                        \
+    };                                                                  \
+    __declspec(allocate(".util$res$m")) static const auto pRes{ &res }; \
+    return pRes->resourceKey;                                           \
 }())
 #define RS_(x) GetLibraryResourceString(USES_RESOURCE(x))
 

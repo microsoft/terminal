@@ -23,7 +23,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using pointer = const til::rect*;
             using reference = const til::rect&;
 
-            _bitmap_const_iterator(const dynamic_bitset<unsigned long long, Allocator>& values, til::rect rc, ptrdiff_t pos) :
+            _bitmap_const_iterator(const dynamic_bitset<size_t, Allocator>& values, til::rect rc, ptrdiff_t pos) :
                 _values(values),
                 _rc(rc),
                 _pos(pos),
@@ -77,7 +77,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
         private:
-            const dynamic_bitset<unsigned long long, Allocator>& _values;
+            const dynamic_bitset<size_t, Allocator>& _values;
             const til::rect _rc;
             size_t _pos;
             size_t _nextPos;
@@ -133,7 +133,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         };
 
-        template<typename Allocator = std::allocator<unsigned long long>>
+        template<typename Allocator = std::allocator<size_t>>
         class bitmap
         {
         public:
@@ -351,20 +351,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             void set(const til::point pt)
             {
-                THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
-                _runs.reset(); // reset cached runs on any non-const method
-
-                _bits.set(_rc.index_of(pt));
+                if (_rc.contains(pt))
+                {
+                    _runs.reset(); // reset cached runs on any non-const method
+                    _bits.set(_rc.index_of(pt));
+                }
             }
 
-            void set(const til::rect& rc)
+            void set(til::rect rc)
             {
-                THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
                 _runs.reset(); // reset cached runs on any non-const method
 
-                for (auto row = rc.top; row < rc.bottom; ++row)
+                rc &= _rc;
+
+                const auto width = rc.width();
+                const auto stride = _rc.width();
+                auto idx = _rc.index_of({ rc.left, rc.top });
+
+                for (auto row = rc.top; row < rc.bottom; ++row, idx += stride)
                 {
-                    _bits.set(_rc.index_of(til::point{ rc.left, row }), rc.width(), true);
+                    _bits.set(idx, width, true);
                 }
             }
 
@@ -460,17 +466,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             std::wstring to_string() const
             {
-                std::wstringstream wss;
-                wss << std::endl
-                    << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
-                wss << L"Runs:" << std::endl;
-
+                auto str = fmt::format(FMT_COMPILE(L"Bitmap of size {} contains the following dirty regions:\nRuns:"), _sz.to_string());
                 for (auto& item : *this)
                 {
-                    wss << L"\t- " << item.to_string() << std::endl;
+                    fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"\n\t- {}"), item.to_string());
                 }
-
-                return wss.str();
+                return str;
             }
 
         private:
@@ -532,7 +533,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             allocator_type _alloc;
             til::size _sz;
             til::rect _rc;
-            dynamic_bitset<unsigned long long, allocator_type> _bits;
+            dynamic_bitset<size_t, allocator_type> _bits;
 
             mutable std::optional<std::vector<til::rect, run_allocator_type>> _runs;
 
@@ -547,7 +548,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     namespace pmr
     {
-        using bitmap = ::til::details::bitmap<std::pmr::polymorphic_allocator<unsigned long long>>;
+        using bitmap = ::til::details::bitmap<std::pmr::polymorphic_allocator<size_t>>;
     }
 }
 

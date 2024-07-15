@@ -22,13 +22,14 @@ namespace Microsoft.Terminal.Core
         Boolean ForceVTInput;
         Boolean TrimBlockSelection;
         Boolean DetectURLs;
-        Boolean VtPassthrough;
 
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
 
         Boolean AutoMarkPrompts;
+        Boolean RainbowSuggestions;
 
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 
 }

@@ -46,7 +46,6 @@ SOURCES = \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
     ..\CursorBlinker.cpp   \
-    ..\popup.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
     ..\VtIo.cpp   \
@@ -68,12 +67,10 @@ SOURCES = \
     ..\outputStream.cpp \
     ..\stream.cpp    \
     ..\dbcs.cpp      \
-    ..\convarea.cpp  \
     ..\screenInfo.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \
-    ..\telemetry.cpp \
     ..\tracing.cpp   \
     ..\registry.cpp  \
     ..\settings.cpp  \
@@ -85,15 +82,7 @@ SOURCES = \
     ..\writeData.cpp \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
-    ..\utf8ToWideCharParser.cpp \
-    ..\conareainfo.cpp \
-    ..\conimeinfo.cpp \
     ..\ConsoleArguments.cpp \
-    ..\CommandNumberPopup.cpp \
-    ..\CommandListPopup.cpp \
-    ..\CopyFromCharPopup.cpp \
-    ..\CopyToCharPopup.cpp \
-    ..\VtApiRoutines.cpp \
 
 
 # -------------------------------------
@@ -144,7 +133,6 @@ TARGETLIBS = \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3d11.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-mm-playsound-l1.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
-    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-edputil-policy-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-draw-l1.lib \
@@ -203,6 +191,7 @@ DELAYLOAD = \
     DXGI.dll; \
     OLEAUT32.dll; \
     PROPSYS.dll; \
+    icu.dll; \
     api-ms-win-core-com-l1.dll; \
     api-ms-win-core-registry-l2.dll; \
     api-ms-win-mm-playsound-l1.dll; \
@@ -211,7 +200,6 @@ DELAYLOAD = \
     api-ms-win-shell-dataobject-l1.dll; \
     api-ms-win-shell-namespace-l1.dll; \
     ext-ms-win-dwmapi-ext-l1.dll; \
-    ext-ms-win-edputil-policy-l1.dll; \
     ext-ms-win-usp10-l1.dll; \
     ext-ms-win-gdi-dc-l1.dll; \
     ext-ms-win-gdi-dc-create-l1.dll; \

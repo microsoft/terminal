@@ -29,7 +29,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _hThread{},
     _u8State{},
     _dwThreadId{ 0 },
-    _exitRequested{ false },
     _pfnSetLookingForDSR{}
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
@@ -43,45 +42,11 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
 
     // we need this callback to be able to flush an unknown input sequence to the app
-    auto flushCallback = std::bind(&StateMachine::FlushToTerminal, _pInputStateMachine.get());
+    auto flushCallback = [capture0 = _pInputStateMachine.get()] { return capture0->FlushToTerminal(); };
     engineRef->SetFlushToInputQueueCallback(flushCallback);
 
     // we need this callback to capture the reply if someone requests a status from the terminal
-    _pfnSetLookingForDSR = std::bind(&InputStateMachineEngine::SetLookingForDSR, engineRef, std::placeholders::_1);
-}
-
-// Method Description:
-// - Processes a string of input characters. The characters should be UTF-8
-//      encoded, and will get converted to wstring to be processed by the
-//      input state machine.
-// Arguments:
-// - u8Str - the UTF-8 string received.
-// Return Value:
-// - S_OK on success, otherwise an appropriate failure.
-[[nodiscard]] HRESULT VtInputThread::_HandleRunInput(const std::string_view u8Str)
-{
-    // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
-    // Only the global unlock attempts to dispatch ctrl events. If you use the
-    //      gci's unlock, when you press C-c, it won't be dispatched until the
-    //      next console API call. For something like `powershell sleep 60`,
-    //      that won't happen for 60s
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    try
-    {
-        std::wstring wstr{};
-        auto hr = til::u8u16(u8Str, wstr, _u8State);
-        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-        if (FAILED(hr))
-        {
-            return S_FALSE;
-        }
-        _pInputStateMachine->ProcessString(wstr);
-    }
-    CATCH_RETURN();
-
-    return S_OK;
+    _pfnSetLookingForDSR = [engineRef](auto&& PH1) { engineRef->SetLookingForDSR(std::forward<decltype(PH1)>(PH1)); };
 }
 
 // Function Description:
@@ -100,35 +65,51 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 // Method Description:
 // - Do a single ReadFile from our pipe, and try and handle it. If handling
 //      failed, throw or log, depending on what the caller wants.
-// Arguments:
-// - throwOnFail: If true, throw an exception if there was an error processing
-//      the input received. Otherwise, log the error.
 // Return Value:
-// - <none>
-void VtInputThread::DoReadInput(const bool throwOnFail)
+// - true if you should continue reading
+bool VtInputThread::DoReadInput()
 {
-    char buffer[256];
+    char buffer[4096];
     DWORD dwRead = 0;
-    auto fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+    const auto ok = ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
-    if (!fSuccess)
+    // The ReadFile() documentations calls out that:
+    // > If the lpNumberOfBytesRead parameter is zero when ReadFile returns TRUE on a pipe, the other
+    // > end of the pipe called the WriteFile function with nNumberOfBytesToWrite set to zero.
+    // But I was unable to replicate any such behavior. I'm not sure it's true anymore.
+    //
+    // However, what the documentations fails to mention is that winsock2 (WSA) handles of the \Device\Afd type are
+    // transparently compatible with ReadFile() and the WSARecv() documentations contains this important information:
+    // > For byte streams, zero bytes having been read [..] indicates graceful closure and that no more bytes will ever be read.
+    // In other words, for pipe HANDLE of unknown type you should consider `lpNumberOfBytesRead == 0` as an exit indicator.
+    //
+    // Here, `dwRead == 0` fixes a deadlock when exiting conhost while being in use by WSL whose hypervisor pipes are WSA.
+    if (!ok || dwRead == 0)
     {
-        _exitRequested = true;
-        return;
+        return false;
     }
 
-    auto hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
-    if (FAILED(hr))
+    // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
+    if (FAILED_LOG(til::u8u16({ buffer, gsl::narrow_cast<size_t>(dwRead) }, _wstr, _u8State)))
     {
-        if (throwOnFail)
-        {
-            _exitRequested = true;
-        }
-        else
-        {
-            LOG_IF_FAILED(hr);
-        }
+        return true;
     }
+
+    try
+    {
+        // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
+        // Only the global unlock attempts to dispatch ctrl events. If you use the
+        //      gci's unlock, when you press C-c, it won't be dispatched until the
+        //      next console API call. For something like `powershell sleep 60`,
+        //      that won't happen for 60s
+        LockConsole();
+        const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        _pInputStateMachine->ProcessString(_wstr);
+    }
+    CATCH_LOG();
+
+    return true;
 }
 
 void VtInputThread::SetLookingForDSR(const bool looking) noexcept
@@ -145,9 +126,8 @@ void VtInputThread::SetLookingForDSR(const bool looking) noexcept
 //      InputStateMachineEngine.
 void VtInputThread::_InputThread()
 {
-    while (!_exitRequested)
+    while (DoReadInput())
     {
-        DoReadInput(true);
     }
     ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
 }

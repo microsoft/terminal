@@ -56,6 +56,8 @@ Author(s):
 #include <winrt/windows.applicationmodel.core.h>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
@@ -68,9 +70,13 @@ Author(s):
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
 
+#include <SafeDispatcherTimer.h>
+
 // Common includes for most tests:
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 
 #include <cppwinrt_utils.h>
+
+#include <til/winrt.h>

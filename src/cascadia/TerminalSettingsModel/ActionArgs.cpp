@@ -6,6 +6,7 @@
 #include "ActionArgs.h"
 
 #include "ActionEventArgs.g.cpp"
+#include "BaseContentArgs.g.cpp"
 #include "NewTerminalArgs.g.cpp"
 #include "CopyTextArgs.g.cpp"
 #include "NewTabArgs.g.cpp"
@@ -32,11 +33,14 @@
 #include "ScrollToMarkArgs.g.cpp"
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
+#include "SaveSnippetArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "SearchForTextArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
 #include "ExportBufferArgs.g.cpp"
@@ -127,6 +131,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             ss << fmt::format(L"--profile \"{}\" ", Profile());
         }
+
+        if (const auto id = SessionId(); id != winrt::guid{})
+        {
+            const auto str = ::Microsoft::Console::Utils::GuidToString(id);
+            ss << fmt::format(L"--sessionId \"{}\" ", str);
+        }
+
         // The caller is always expected to provide the evaluated profile in the
         // NewTerminalArgs, not the index
         //
@@ -196,6 +207,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << RS_(L"CopyTextCommandKey").c_str();
         }
 
+        if (!DismissSelection())
+        {
+            ss << L", dismissSelection: false";
+        }
+
         if (CopyFormatting())
         {
             ss << L", copyFormatting: ";
@@ -231,9 +247,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring NewTabArgs::GenerateName() const
     {
         winrt::hstring newTerminalArgsStr;
-        if (TerminalArgs())
+        if (ContentArgs())
         {
-            newTerminalArgsStr = TerminalArgs().GenerateName();
+            newTerminalArgsStr = ContentArgs().GenerateName();
         }
 
         if (newTerminalArgsStr.empty())
@@ -451,9 +467,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         winrt::hstring newTerminalArgsStr;
-        if (TerminalArgs())
+        if (ContentArgs())
         {
-            newTerminalArgsStr = TerminalArgs().GenerateName();
+            newTerminalArgsStr = ContentArgs().GenerateName();
         }
 
         if (SplitMode() != SplitType::Duplicate && !newTerminalArgsStr.empty())
@@ -700,6 +716,46 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return RS_(L"ToggleCommandPaletteCommandKey");
     }
 
+    winrt::hstring SuggestionsArgs::GenerateName() const
+    {
+        std::wstringstream ss;
+        ss << RS_(L"SuggestionsCommandKey").c_str();
+
+        if (UseCommandline())
+        {
+            ss << L", useCommandline:true";
+        }
+
+        // All of the source values will leave a trailing ", " that we need to chop later:
+        ss << L", source: ";
+        const auto source = Source();
+        if (source == SuggestionsSource::All)
+        {
+            ss << L"all, ";
+        }
+        else if (source == static_cast<SuggestionsSource>(0))
+        {
+            ss << L"none, ";
+        }
+        else
+        {
+            if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+            {
+                ss << L"tasks, ";
+            }
+
+            if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
+            {
+                ss << L"commandHistory, ";
+            }
+        }
+        // Chop off the last ","
+        auto result = ss.str();
+        // use `resize`, to avoid duplicating the entire string. (substr doesn't create a view.)
+        result.resize(result.size() - 2);
+        return winrt::hstring{ result };
+    }
+
     winrt::hstring FindMatchArgs::GenerateName() const
     {
         switch (Direction())
@@ -715,9 +771,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring NewWindowArgs::GenerateName() const
     {
         winrt::hstring newTerminalArgsStr;
-        if (TerminalArgs())
+        if (ContentArgs())
         {
-            newTerminalArgsStr = TerminalArgs().GenerateName();
+            newTerminalArgsStr = ContentArgs().GenerateName();
         }
 
         if (newTerminalArgsStr.empty())
@@ -763,6 +819,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring SearchForTextArgs::GenerateName() const
+    {
+        if (QueryUrl().empty())
+        {
+            // Return the default command name, because we'll just use the
+            // default search engine for this.
+            return RS_(L"SearchWebCommandKey");
+        }
+
+        try
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
+                            Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
+            };
+        }
+        CATCH_LOG();
+
+        // We couldn't parse a URL out of this. Return no string at all, so that
+        // we don't even put this into the command palette.
+        return L"";
     }
 
     winrt::hstring GlobalSummonArgs::GenerateName() const
@@ -867,6 +946,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             Opacity())
             };
         }
+    }
+
+    winrt::hstring SaveSnippetArgs::GenerateName() const
+    {
+        if (Feature_SaveSnippet::IsEnabled())
+        {
+            std::wstringstream ss;
+
+            ss << RS_(L"SaveSnippetNamePrefix").c_str() << L" commandline: " << Commandline().c_str();
+
+            if (!Name().empty())
+            {
+                ss << L", name: " << Name().c_str();
+            }
+
+            if (!KeyChord().empty())
+            {
+                ss << L", keyChord " << KeyChord().c_str();
+            }
+
+            return winrt::hstring{ ss.str() };
+        }
+        return L"";
     }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)

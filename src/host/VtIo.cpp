@@ -9,12 +9,11 @@
 #include "../renderer/vt/Xterm256Engine.hpp"
 
 #include "../renderer/base/renderer.hpp"
+#include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/utils.hpp"
 #include "handle.h" // LockConsole
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
-
-#include "VtApiRoutines.h"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -71,12 +70,32 @@ VtIo::VtIo() :
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
-    _win32InputMode = pArgs->IsWin32InputModeEnabled();
-    _passthroughMode = pArgs->IsPassthroughMode();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
     {
+        // Honestly, no idea where else to put this.
+        if (const auto& textMeasurement = pArgs->GetTextMeasurement(); !textMeasurement.empty())
+        {
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            SettingsTextMeasurementMode settingsMode = SettingsTextMeasurementMode::Graphemes;
+            TextMeasurementMode mode = TextMeasurementMode::Graphemes;
+
+            if (textMeasurement == L"wcswidth")
+            {
+                settingsMode = SettingsTextMeasurementMode::Wcswidth;
+                mode = TextMeasurementMode::Wcswidth;
+            }
+            else if (textMeasurement == L"console")
+            {
+                settingsMode = SettingsTextMeasurementMode::Console;
+                mode = TextMeasurementMode::Console;
+            }
+
+            gci.SetTextMeasurementMode(settingsMode);
+            CodepointWidthDetector::Singleton().Reset(mode);
+        }
+
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
@@ -154,35 +173,13 @@ VtIo::VtIo() :
 
         if (IsValidHandle(_hOutput.get()))
         {
-            auto initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                            gci.GetWindowSize().width,
-                                                            gci.GetWindowSize().height);
+            auto initialViewport = Viewport::FromDimensions({ 0, 0 }, gci.GetWindowSize());
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
             {
                 auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                        initialViewport);
-                if constexpr (Feature_VtPassthroughMode::IsEnabled())
-                {
-                    if (_passthroughMode)
-                    {
-                        auto vtapi = new VtApiRoutines();
-                        vtapi->m_pVtEngine = xterm256Engine.get();
-                        vtapi->m_pUsualRoutines = globals.api;
-
-                        xterm256Engine->SetPassthroughMode(true);
-
-                        if (_pVtInputThread)
-                        {
-                            auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
-                            xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
-                        }
-
-                        globals.api = vtapi;
-                    }
-                }
-
                 _pVtRenderEngine = std::move(xterm256Engine);
                 break;
             }
@@ -191,10 +188,6 @@ VtIo::VtIo() :
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  false);
-                if (_passthroughMode)
-                {
-                    return E_NOTIMPL;
-                }
                 break;
             }
             case VtIoMode::XTERM_ASCII:
@@ -202,11 +195,6 @@ VtIo::VtIo() :
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  true);
-
-                if (_passthroughMode)
-                {
-                    return E_NOTIMPL;
-                }
                 break;
             }
             default:
@@ -256,22 +244,12 @@ bool VtIo::IsUsingVt() const
         {
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
-            g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
 
             // Force the whole window to be put together first.
             // We don't really need the handle, we just want to leverage the setup steps.
             ServiceLocator::LocatePseudoWindow();
         }
         CATCH_RETURN();
-    }
-
-    // GH#4999 - Send a sequence to the connected terminal to request
-    // win32-input-mode from them. This will enable the connected terminal to
-    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
-    // this sequence, it'll just ignore it.
-    if (_win32InputMode)
-    {
-        LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
     }
 
     // MSFT: 15813316
@@ -287,11 +265,16 @@ bool VtIo::IsUsingVt() const
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while (_lookingForCursorPosition)
+        while (_lookingForCursorPosition && _pVtInputThread->DoReadInput())
         {
-            _pVtInputThread->DoReadInput(false);
         }
     }
+
+    // GH#4999 - Send a sequence to the connected terminal to request
+    // win32-input-mode from them. This will enable the connected terminal to
+    // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+    // this sequence, it'll just ignore it.
+    LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
 
     if (_pVtInputThread)
     {
@@ -467,38 +450,12 @@ void VtIo::SendCloseEvent()
     }
 }
 
-// Method Description:
-// - Tell the vt renderer to begin a resize operation. During a resize
-//   operation, the vt renderer should _not_ request to be repainted during a
-//   text buffer circling event. Any callers of this method should make sure to
-//   call EndResize to make sure the renderer returns to normal behavior.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtIo::BeginResize()
+// The name of this method is an analogy to TCP_CORK. It instructs
+// the VT renderer to stop flushing its buffer to the output pipe.
+// Don't forget to uncork it!
+void VtIo::CorkRenderer(bool corked) const noexcept
 {
-    if (_pVtRenderEngine)
-    {
-        _pVtRenderEngine->BeginResizeRequest();
-    }
-}
-
-// Method Description:
-// - Tell the vt renderer to end a resize operation.
-//   See BeginResize for more details.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtIo::EndResize()
-{
-    if (_pVtRenderEngine)
-    {
-        _pVtRenderEngine->EndResizeRequest();
-    }
+    _pVtRenderEngine->Cork(corked);
 }
 
 #ifdef UNIT_TESTING
@@ -510,9 +467,10 @@ void VtIo::EndResize()
 // - vtRenderEngine: a VT renderer that our VtIo should use as the vt engine during these tests
 // Return Value:
 // - <none>
-void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
+void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine, const bool resizeQuirk)
 {
     _initialized = true;
+    _resizeQuirk = resizeQuirk;
     _pVtRenderEngine = std::move(vtRenderEngine);
 }
 #endif
@@ -550,4 +508,76 @@ bool VtIo::IsResizeQuirkEnabled() const
         return _pVtRenderEngine->ManuallyClearScrollback();
     }
     return S_OK;
+}
+
+[[nodiscard]] HRESULT VtIo::RequestMouseMode(bool enable) const noexcept
+{
+    if (_pVtRenderEngine)
+    {
+        return _pVtRenderEngine->RequestMouseMode(enable);
+    }
+    return S_OK;
+}
+
+// Formats the given console attributes to their closest VT equivalent.
+// `out` must refer to at least `formatAttributesMaxLen` characters of valid memory.
+// Returns a pointer past the end.
+static constexpr size_t formatAttributesMaxLen = 16;
+static char* formatAttributes(char* out, const TextAttribute& attributes) noexcept
+{
+    static uint8_t sgr[] = { 30, 31, 32, 33, 34, 35, 36, 37, 90, 91, 92, 93, 94, 95, 96, 97 };
+
+    // Applications expect that SetConsoleTextAttribute() completely replaces whatever attributes are currently set,
+    // including any potential VT-exclusive attributes. Since we don't know what those are, we must always emit a SGR 0.
+    // Copying 4 bytes instead of the correct 3 means we need just 1 DWORD mov. Neat.
+    //
+    // 3 bytes.
+    memcpy(out, "\x1b[0", 4);
+    out += 3;
+
+    // 2 bytes.
+    if (attributes.IsReverseVideo())
+    {
+        memcpy(out, ";7", 2);
+        out += 2;
+    }
+
+    // 3 bytes (";97").
+    if (attributes.GetForeground().IsLegacy())
+    {
+        const uint8_t index = sgr[attributes.GetForeground().GetIndex()];
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
+    }
+
+    // 4 bytes (";107").
+    if (attributes.GetBackground().IsLegacy())
+    {
+        const uint8_t index = sgr[attributes.GetBackground().GetIndex()] + 10;
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
+    }
+
+    // 1 byte.
+    *out++ = 'm';
+    return out;
+}
+
+void VtIo::FormatAttributes(std::string& target, const TextAttribute& attributes)
+{
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
+    target.append(buf, len);
+}
+
+void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attributes)
+{
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
+
+    wchar_t bufW[formatAttributesMaxLen];
+    for (size_t i = 0; i < len; i++)
+    {
+        bufW[i] = buf[i];
+    }
+
+    target.append(bufW, len);
 }

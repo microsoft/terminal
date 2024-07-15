@@ -13,12 +13,21 @@ import "ColorSchemesPageViewModel.idl";
     OBSERVABLE_PROJECTED_SETTING(Type, Name);               \
     Object Name##OverrideSource { get; }
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass Font : Windows.Foundation.IStringable
+    runtimeclass Font
     {
         String Name { get; };
         String LocalizedName { get; };
+    }
+
+    runtimeclass FontKeyValuePair
+    {
+        UInt32 Key { get; };
+        String KeyDisplayString { get; };
+        Single Value;
     }
 
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -34,12 +43,28 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
+        IObservableVector<ColorSchemeViewModel> SchemesList;
+
+        String MissingFontFaces { get; };
+        String ProportionalFontFaces { get; };
+        Boolean HasPowerlineCharacters { get; };
+
+        IObservableVector<FontKeyValuePair> FontAxes { get; };
+        Boolean HasFontAxes { get; };
+        void ClearFontAxes();
+        Object FontAxesOverrideSource { get; };
+
+        IObservableVector<FontKeyValuePair> FontFeatures { get; };
+        Boolean HasFontFeatures { get; };
+        void ClearFontFeatures();
+        Object FontFeaturesOverrideSource { get; };
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, LineHeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableBuiltinGlyphs);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, EnableColorGlyphs);
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, DarkColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, LightColorSchemeName);
@@ -47,7 +72,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, BackgroundImageOpacity);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.IntenseStyle, IntenseTextStyle);
@@ -62,28 +87,24 @@ namespace Microsoft.Terminal.Settings.Editor
         IHostedInWindow WindowRoot;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
-        Boolean UsingMonospaceFont { get; };
+        IObservableVector<Font> FilteredFontList { get; };
         Boolean ShowAllFonts;
-        Boolean ShowProportionalFontWarning;
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
 
         IInspectable CurrentAdjustIndistinguishableColors;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
 
         IInspectable CurrentBackgroundImageStretchMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
 
         IInspectable CurrentFontWeight;
         Boolean IsCustomFontWeight { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
-
-        IInspectable CurrentFontFace { get; };
-        Windows.UI.Xaml.Controls.Slider BIOpacitySlider { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
 
         IInspectable CurrentIntenseTextStyle;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
     }
 }

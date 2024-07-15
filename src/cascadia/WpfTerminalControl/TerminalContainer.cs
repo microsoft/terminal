@@ -113,23 +113,24 @@ namespace Microsoft.Terminal.Wpf
                 {
                     this.connection.TerminalOutput -= this.Connection_TerminalOutput;
                 }
-                this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x001bc\x1b]104\x1b\\")); //reset console/clear screen - https://github.com/microsoft/terminal/pull/15062#issuecomment-1505654110
+
+                this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x001bc\x1b]104\x1b\\")); // reset console/clear screen - https://github.com/microsoft/terminal/pull/15062#issuecomment-1505654110
                 var wasNull = this.connection == null;
                 this.connection = value;
                 if (this.connection != null)
                 {
                     if (wasNull)
                     {
-                         this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25h")); //show cursor
+                        this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25h")); // show cursor
                     }
+
                     this.connection.TerminalOutput += this.Connection_TerminalOutput;
                     this.connection.Start();
                 }
                 else
                 {
-                    this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25l")); //hide cursor
+                    this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25l")); // hide cursor
                 }
-                    
             }
         }
 
@@ -440,35 +441,6 @@ namespace Microsoft.Terminal.Wpf
             }
 
             return IntPtr.Zero;
-        }
-
-        private void LeftClickHandler(int lParam)
-        {
-            var altPressed = NativeMethods.GetKeyState((int)NativeMethods.VirtualKey.VK_MENU) < 0;
-            var x = lParam & 0xffff;
-            var y = lParam >> 16;
-            var cursorPosition = new NativeMethods.TilPoint
-            {
-                X = x,
-                Y = y,
-            };
-
-            NativeMethods.TerminalStartSelection(this.terminal, cursorPosition, altPressed);
-        }
-
-        private void MouseMoveHandler(int wParam, int lParam)
-        {
-            if ((wParam & 0x0001) == 1)
-            {
-                var x = lParam & 0xffff;
-                var y = lParam >> 16;
-                var cursorPosition = new NativeMethods.TilPoint
-                {
-                    X = x,
-                    Y = y,
-                };
-                NativeMethods.TerminalMoveSelection(this.terminal, cursorPosition);
-            }
         }
 
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)

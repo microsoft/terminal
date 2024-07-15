@@ -2,40 +2,115 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+#include "window.hpp"
 
-#include "Clipboard.hpp"
-#include "ConsoleControl.hpp"
+#include "clipboard.hpp"
 #include "find.h"
 #include "menu.hpp"
-#include "window.hpp"
 #include "windowdpiapi.hpp"
-#include "windowime.hpp"
 #include "windowio.hpp"
 #include "windowmetrics.hpp"
-
-#include "../../host/_output.h"
-#include "../../host/output.h"
-#include "../../host/dbcs.h"
 #include "../../host/handle.h"
-#include "../../host/input.h"
-#include "../../host/misc.h"
 #include "../../host/registry.hpp"
 #include "../../host/scrolling.hpp"
-#include "../../host/srvinit.h"
-
-#include "../inc/ServiceLocator.hpp"
-
 #include "../../inc/conint.h"
-
+#include "../inc/ServiceLocator.hpp"
 #include "../interactivity/win32/CustomWindowMessages.h"
-
 #include "../interactivity/win32/windowUiaProvider.hpp"
-
-#include <iomanip>
-#include <sstream>
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Types;
+
+// NOTE: We put this struct into a `static constexpr` (= ".rodata", read-only data segment), which means it
+// cannot have any mutable members right now. If you need any, you have to make it a non-const `static`.
+struct TsfDataProvider : Microsoft::Console::TSF::IDataProvider
+{
+    virtual ~TsfDataProvider() = default;
+
+    STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept override
+    {
+        return E_NOTIMPL;
+    }
+
+    ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept override
+    {
+        return 1;
+    }
+
+    ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept override
+    {
+        return 1;
+    }
+
+    HWND GetHwnd() override
+    {
+        return Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    }
+
+    RECT GetViewport() override
+    {
+        const auto hwnd = GetHwnd();
+
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+
+        // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclientrect
+        // > The left and top members are zero. The right and bottom members contain the width and height of the window.
+        // --> We can turn the client rect into a screen-relative rect by adding the left/top position.
+        ClientToScreen(hwnd, reinterpret_cast<POINT*>(&rc));
+        rc.right += rc.left;
+        rc.bottom += rc.top;
+
+        return rc;
+    }
+
+    RECT GetCursorPosition() override
+    {
+        const auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& screenBuffer = gci.GetActiveOutputBuffer();
+
+        // Map the absolute cursor position to a viewport-relative one.
+        const auto viewport = screenBuffer.GetViewport().ToExclusive();
+        auto coordCursor = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
+        coordCursor.x -= viewport.left;
+        coordCursor.y -= viewport.top;
+
+        coordCursor.x = std::clamp(coordCursor.x, 0, viewport.width() - 1);
+        coordCursor.y = std::clamp(coordCursor.y, 0, viewport.height() - 1);
+
+        // Convert from columns/rows to pixels.
+        const auto coordFont = screenBuffer.GetCurrentFont().GetSize();
+        POINT ptSuggestion{
+            .x = coordCursor.x * coordFont.width,
+            .y = coordCursor.y * coordFont.height,
+        };
+
+        ClientToScreen(GetHwnd(), &ptSuggestion);
+
+        return {
+            .left = ptSuggestion.x,
+            .top = ptSuggestion.y,
+            .right = ptSuggestion.x + coordFont.width,
+            .bottom = ptSuggestion.y + coordFont.height,
+        };
+    }
+
+    void HandleOutput(std::wstring_view text) override
+    {
+        auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.LockConsole();
+        const auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        gci.GetActiveInputBuffer()->WriteString(text);
+    }
+
+    Microsoft::Console::Render::Renderer* GetRenderer() override
+    {
+        auto& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        return g.pRender;
+    }
+};
+
+static constexpr TsfDataProvider s_tsfDataProvider;
 
 // The static and specific window procedures for this class are contained here
 #pragma region Window Procedure
@@ -163,12 +238,6 @@ using namespace Microsoft::Console::Types;
 
     case WM_SIZING:
     {
-        // Signal that the user changed the window size, so we can return the value later for telemetry. By only
-        // sending the data back if the size has changed, helps reduce the amount of telemetry being sent back.
-        // WM_SIZING doesn't fire if they resize the window using Win-UpArrow, so we'll miss that scenario. We could
-        // listen to the WM_SIZE message instead, but they can fire when the window is being restored from being
-        // minimized, and not only when they resize the window.
-        Telemetry::Instance().SetWindowSizeChanged();
         goto CallDefWin;
         break;
     }
@@ -262,8 +331,11 @@ using namespace Microsoft::Console::Types;
 
         HandleFocusEvent(TRUE);
 
-        // ActivateTextServices does nothing if already active so this is OK to be called every focus.
-        ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos, GetTextBoxArea);
+        if (!g.tsf)
+        {
+            g.tsf = TSF::Handle::Create();
+            g.tsf.AssociateFocus(const_cast<TsfDataProvider*>(&s_tsfDataProvider));
+        }
 
         // set the text area to have focus for accessibility consumers
         if (_pUiaProvider)
@@ -322,11 +394,6 @@ using namespace Microsoft::Console::Types;
 
     case WM_CLOSE:
     {
-        // Write the final trace log during the WM_CLOSE message while the console process is still fully alive.
-        // This gives us time to query the process for information.  We shouldn't really miss any useful
-        // telemetry between now and when the process terminates.
-        Telemetry::Instance().WriteFinalTraceLog();
-
         _CloseWindow();
         break;
     }
@@ -471,7 +538,6 @@ using namespace Microsoft::Console::Types;
 
     case WM_CONTEXTMENU:
     {
-        Telemetry::Instance().SetContextMenuUsed();
         if (DefWindowProcW(hWnd, WM_NCHITTEST, 0, lParam) == HTCLIENT)
         {
             auto hHeirMenu = Menu::s_GetHeirMenuHandle();
@@ -681,7 +747,16 @@ using namespace Microsoft::Console::Types;
 
     case CM_UPDATE_SCROLL_BARS:
     {
-        ScreenInfo.InternalUpdateScrollBars();
+        const auto state = ScreenInfo.FetchScrollBarState();
+
+        // EnableScrollbar() and especially SetScrollInfo() are prohibitively expensive functions nowadays.
+        // Unlocking early here improves throughput of good old `type` in cmd.exe by ~10x.
+        UnlockConsole();
+        Unlock = FALSE;
+
+        _resizingWindow++;
+        UpdateScrollBars(state);
+        _resizingWindow--;
         break;
     }
 
@@ -724,9 +799,7 @@ using namespace Microsoft::Console::Types;
     {
         try
         {
-            std::wstringstream wss;
-            wss << std::setfill(L'0') << std::setw(8) << wParam;
-            auto wstr = wss.str();
+            const auto wstr = fmt::format(FMT_COMPILE(L"{:08d}"), wParam);
             LoadKeyboardLayout(wstr.c_str(), KLF_ACTIVATE);
         }
         catch (...)
@@ -735,7 +808,7 @@ using namespace Microsoft::Console::Types;
         }
         break;
     }
-#endif DBG
+#endif // DBG
 
     case EVENT_CONSOLE_CARET:
     case EVENT_CONSOLE_UPDATE_REGION:
@@ -792,7 +865,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     // CONSOLE_IS_ICONIC bit appropriately. doing so in the WM_SIZE handler is incorrect because the WM_SIZE
     // comes after the WM_ERASEBKGND during SetWindowPos() processing, and the WM_ERASEBKGND needs to know if
     // the console window is iconic or not.
-    if (!ScreenInfo.ResizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
+    if (!_resizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
     {
         // calculate the dimensions for the newly proposed window rectangle
         til::rect rcNew;
@@ -860,30 +933,9 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // - <none>
 void Window::_HandleDrop(const WPARAM wParam) const
 {
-    WCHAR szPath[MAX_PATH];
-    BOOL fAddQuotes;
-
-    if (DragQueryFile((HDROP)wParam, 0, szPath, ARRAYSIZE(szPath)) != 0)
-    {
-        // Log a telemetry flag saying the user interacted with the Console
-        // Only log when DragQueryFile succeeds, because if we don't when the console starts up, we're seeing
-        // _HandleDrop get called multiple times (and DragQueryFile fail),
-        // which can incorrectly mark this console session as interactive.
-        Telemetry::Instance().SetUserInteractive();
-
-        fAddQuotes = (wcschr(szPath, L' ') != nullptr);
-        if (fAddQuotes)
-        {
-            Clipboard::Instance().StringPaste(L"\"", 1);
-        }
-
-        Clipboard::Instance().StringPaste(szPath, wcslen(szPath));
-
-        if (fAddQuotes)
-        {
-            Clipboard::Instance().StringPaste(L"\"", 1);
-        }
-    }
+    const auto drop = reinterpret_cast<HDROP>(wParam);
+    Clipboard::Instance().PasteDrop(drop);
+    DragFinish(drop);
 }
 
 [[nodiscard]] LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
@@ -914,11 +966,6 @@ BOOL Window::PostUpdateWindowSize() const
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& ScreenInfo = GetScreenInfo();
-
-    if (ScreenInfo.ConvScreenInfo != nullptr)
-    {
-        return FALSE;
-    }
 
     if (gci.Flags & CONSOLE_SETTING_WINDOW_SIZE)
     {

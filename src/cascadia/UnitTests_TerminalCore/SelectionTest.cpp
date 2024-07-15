@@ -44,9 +44,14 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selection, expected);
         }
 
+        TextBuffer& GetTextBuffer(Terminal& term)
+        {
+            return term.GetBufferAndViewport().buffer;
+        }
+
         TEST_METHOD(SelectUnit)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -59,7 +64,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectArea)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -113,7 +118,7 @@ namespace TerminalCoreUnitTests
             // Test SetSelectionAnchor(til::point) and SetSelectionEnd(til::point)
             // Behavior: clamp coord to viewport.
             auto ValidateSingleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
-                Terminal term;
+                Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
@@ -126,7 +131,7 @@ namespace TerminalCoreUnitTests
             // Behavior: clamp coord to viewport.
             //           Then, do double click selection.
             auto ValidateDoubleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
-                Terminal term;
+                Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
@@ -138,7 +143,7 @@ namespace TerminalCoreUnitTests
             // Behavior: clamp coord to viewport.
             //           Then, do triple click selection.
             auto ValidateTripleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
-                Terminal term;
+                Terminal term{ Terminal::TestDummyMarker{} };
                 DummyRenderer renderer{ &term };
                 term.Create({ 10, 10 }, scrollback, renderer);
 
@@ -171,7 +176,7 @@ namespace TerminalCoreUnitTests
                     - All selection expansion functions will operate as if they were performed at the boundary
             */
 
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 10, 10 }, 0, renderer);
 
@@ -213,7 +218,7 @@ namespace TerminalCoreUnitTests
                     - All selection expansion functions will operate as if they were performed at the boundary
             */
 
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 10, 10 }, 0, renderer);
 
@@ -299,7 +304,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectBoxArea)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -335,7 +340,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectAreaAfterScroll)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             til::CoordType scrollbackLines = 5;
             term.Create({ 100, 100 }, scrollbackLines, renderer);
@@ -385,7 +390,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -394,7 +399,7 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -408,7 +413,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyph_Leading)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -417,7 +422,7 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -431,7 +436,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -440,11 +445,11 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Insert wide glyph at position (7,11)
-            term.GetTextBuffer().GetCursor().SetPosition({ 7, 11 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 7, 11 });
             term.Write(burrito);
 
             // Simulate ALT + click at (x,y) = (5,8)
@@ -486,7 +491,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClick_GeneralCase)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -496,7 +501,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -509,7 +514,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClick_Delimiter)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -530,7 +535,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClick_DelimiterClass)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -540,7 +545,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"C:\\Terminal>";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate click at (x,y) = (15,10)
@@ -558,7 +563,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClickDrag_Right)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -568,7 +573,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -587,7 +592,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(DoubleClickDrag_Left)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -597,7 +602,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (21,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (21,10)
@@ -616,7 +621,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(TripleClick_GeneralCase)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -630,7 +635,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(TripleClickDrag_Horizontal)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -647,7 +652,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(TripleClickDrag_Vertical)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -675,7 +680,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(ShiftClick)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 
@@ -685,7 +690,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
+            GetTextBuffer(term).GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Step 1: Create a selection on "doubleClickMe"
@@ -792,7 +797,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(Pivot)
         {
-            Terminal term;
+            Terminal term{ Terminal::TestDummyMarker{} };
             DummyRenderer renderer{ &term };
             term.Create({ 100, 100 }, 0, renderer);
 

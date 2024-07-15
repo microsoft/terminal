@@ -142,8 +142,37 @@
                     </Style>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
+
+            <Duration x:Key="SearchBoxAnimationDuration">0:0:0.3</Duration>
+            <ExponentialEase x:Key="OpenAnimationEase"
+                             EasingMode="EaseOut"
+                             Exponent="6" />
+            <ExponentialEase x:Key="CloseAnimationEase"
+                             EasingMode="EaseIn"
+                             Exponent="6" />
+            <Storyboard x:Name="OpenAnimation">
+                <DoubleAnimation EasingFunction="{StaticResource OpenAnimationEase}"
+                                 Storyboard.TargetName="Transform"
+                                 Storyboard.TargetProperty="Y"
+                                 From="{x:Bind OpenAnimationStartPoint, Mode=OneWay}"
+                                 To="0"
+                                 Duration="{StaticResource SearchBoxAnimationDuration}" />
+            </Storyboard>
+            <Storyboard x:Name="CloseAnimation">
+                <DoubleAnimation EasingFunction="{StaticResource CloseAnimationEase}"
+                                 Storyboard.TargetName="Transform"
+                                 Storyboard.TargetProperty="Y"
+                                 From="0"
+                                 To="{x:Bind OpenAnimationStartPoint, Mode=OneWay}"
+                                 Duration="{StaticResource SearchBoxAnimationDuration}" />
+            </Storyboard>
+
         </ResourceDictionary>
     </UserControl.Resources>
+
+    <UserControl.Clip>
+        <RectangleGeometry Rect="{x:Bind ContentClipRect, Mode=OneWay}" />
+    </UserControl.Clip>
 
     <StackPanel Margin="8"
                 Padding="4,8"
@@ -152,8 +181,14 @@
                 BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
                 CornerRadius="{ThemeResource OverlayCornerRadius}"
                 Orientation="Horizontal"
+                PointerPressed="SearchBoxPointerPressedHandler"
+                PointerReleased="SearchBoxPointerReleasedHandler"
                 Shadow="{StaticResource SharedShadow}"
                 Translation="0,0,16">
+        <StackPanel.RenderTransform>
+            <TranslateTransform x:Name="Transform" />
+        </StackPanel.RenderTransform>
+
         <TextBox x:Name="TextBox"
                  x:Uid="SearchBox_TextBox"
                  Width="160"
@@ -161,7 +196,15 @@
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center"
                  IsSpellCheckEnabled="False"
-                 KeyDown="TextBoxKeyDown" />
+                 KeyDown="TextBoxKeyDown"
+                 TextChanged="TextBoxTextChanged" />
+
+        <TextBlock x:Name="StatusBox"
+                   x:Uid="SearchBox_StatusBox"
+                   Margin="5"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   FontSize="15" />
 
         <ToggleButton x:Name="GoBackwardButton"
                       x:Uid="SearchBox_SearchBackwards"
@@ -195,8 +238,20 @@
                       Height="32"
                       Margin="4,0"
                       Padding="0"
-                      BackgroundSizing="OuterBorderEdge">
+                      BackgroundSizing="OuterBorderEdge"
+                      Click="CaseSensitivityButtonClicked">
             <PathIcon Data="M8.87305 10H7.60156L6.5625 7.25195H2.40625L1.42871 10H0.150391L3.91016 0.197266H5.09961L8.87305 10ZM6.18652 6.21973L4.64844 2.04297C4.59831 1.90625 4.54818 1.6875 4.49805 1.38672H4.4707C4.42513 1.66471 4.37272 1.88346 4.31348 2.04297L2.78906 6.21973H6.18652ZM15.1826 10H14.0615V8.90625H14.0342C13.5465 9.74479 12.8288 10.1641 11.8809 10.1641C11.1836 10.1641 10.6367 9.97949 10.2402 9.61035C9.84831 9.24121 9.65234 8.7513 9.65234 8.14062C9.65234 6.83268 10.4225 6.07161 11.9629 5.85742L14.0615 5.56348C14.0615 4.37402 13.5807 3.7793 12.6191 3.7793C11.776 3.7793 11.015 4.06641 10.3359 4.64062V3.49219C11.0241 3.05469 11.8171 2.83594 12.7148 2.83594C14.36 2.83594 15.1826 3.70638 15.1826 5.44727V10ZM14.0615 6.45898L12.373 6.69141C11.8535 6.76432 11.4616 6.89421 11.1973 7.08105C10.9329 7.26335 10.8008 7.58919 10.8008 8.05859C10.8008 8.40039 10.9215 8.68066 11.1631 8.89941C11.4092 9.11361 11.735 9.2207 12.1406 9.2207C12.6966 9.2207 13.1546 9.02702 13.5146 8.63965C13.8792 8.24772 14.0615 7.75326 14.0615 7.15625V6.45898Z" />
+        </ToggleButton>
+
+        <ToggleButton x:Name="RegexButton"
+                      x:Uid="SearchBox_RegularExpression"
+                      Width="32"
+                      Height="32"
+                      Margin="4,0"
+                      Padding="0"
+                      BackgroundSizing="OuterBorderEdge"
+                      Click="RegexButtonClicked">
+            <PathIcon Data="M 11.7716,12.7647 V 14.2481 H 11.06066 V 12.8194 C 10.08996,12.8194 9.30156,12.62344 8.69546,12.23151 V 11.04201 C 8.95978,11.27443 9.31981,11.4704 9.77556,11.6299 10.23585,11.78485 10.66423,11.86232 11.06076,11.86232 V 8.36232 C 10.05816,7.87925 9.40876,7.43491 9.11256,7.02932 8.81634,6.61916 8.66822,6.13609 8.66822,5.58012 8.66822,4.91931 8.89381,4.34962 9.34498,3.87112 9.79615,3.38805 10.36808,3.09866 11.06078,3.00296 V 1.77246 H 11.77172 V 2.97556 C 12.66495,3.002904 13.28242,3.13051 13.62422,3.35837 V 4.52047 C 13.15938,4.15589 12.54182,3.95992 11.77172,3.93258 V 7.54198 C 12.71964,7.99315 13.36682,8.43065 13.71312,8.85448 14.06403,9.27375 14.23949,9.75227 14.23949,10.28998 14.23949,10.93712 14.02074,11.48168 13.58324,11.92378 13.1503,12.36128 12.54644,12.64155 11.77174,12.7646 Z M 11.06066,7.1592 V 3.9737 C 10.67785,4.051174 10.37479,4.22207 10.15148,4.4864 9.92817,4.74617 9.81652,5.0629 9.81652,5.4366 9.81652,5.82853 9.90767,6.14982 10.08996,6.40047 10.27225,6.65112 10.59582,6.90405 11.06066,7.15926 Z M 11.7716,8.7178 V 11.8076 C 12.65116,11.61619 13.0909,11.14224 13.0909,10.3857 13.0909,9.75679 12.65112,9.2008 11.7716,8.7177 Z M 8.0089,8.5538 H 6.9835 L 4.714,4.3224 H 4.672984 L 2.560684,8.5538 H 1.555784 L 4.440584,2.8526 H 4.884924 Z " />
         </ToggleButton>
 
         <Button x:Name="CloseButton"
@@ -211,5 +266,23 @@
                       FontSize="12"
                       Glyph="&#xE711;" />
         </Button>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="SearchBoxStates">
+
+                <VisualState x:Name="Opened">
+                    <VisualState.Setters>
+                        <Setter Target="Root.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+
+                <VisualState x:Name="Closed">
+                    <VisualState.Setters>
+                        <Setter Target="Root.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </StackPanel>
 </UserControl>

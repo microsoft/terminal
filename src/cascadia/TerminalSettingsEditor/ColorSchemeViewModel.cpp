@@ -50,6 +50,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _Name;
     }
 
+    // This is used in the ComboBox and ListView.
+    // It's the only way to expose the name of the inner UI item so the ComboBox can do quick search
+    //  and screen readers can read the item out loud.
+    winrt::hstring ColorSchemeViewModel::ToString()
+    {
+        if (IsDefaultScheme())
+        {
+            return hstring{ fmt::format(L"{0} ({1})", Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
+        }
+        return Name();
+    }
+
     bool ColorSchemeViewModel::IsDefaultScheme()
     {
         const auto defaultAppearance = _settings.ProfileDefaults().DefaultAppearance();
@@ -60,6 +72,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemeViewModel::RefreshIsDefault()
     {
         _NotifyChanges(L"IsDefaultScheme");
+    }
+
+    bool ColorSchemeViewModel::IsEditable() const
+    {
+        return _scheme.Origin() == Model::OriginTag::User;
     }
 
     bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)
@@ -111,6 +128,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
             }
+        }
+    }
+
+    void ColorSchemeViewModel::Duplicate_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestDuplicateCurrentScheme();
         }
     }
 
@@ -166,6 +191,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Name(TableColorNames[index]);
         Tag(winrt::box_value<uint8_t>(index));
         Color(color);
+
+        PropertyChanged({ get_weak(), &ColorTableEntry::_PropertyChangedHandler });
     }
 
     ColorTableEntry::ColorTableEntry(std::wstring_view tag, Windows::UI::Color color)
@@ -173,5 +200,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Name(LocalizedNameForEnumName(L"ColorScheme_", tag, L"Text"));
         Tag(winrt::box_value(tag));
         Color(color);
+
+        PropertyChanged({ get_weak(), &ColorTableEntry::_PropertyChangedHandler });
     }
+
+    void ColorTableEntry::_PropertyChangedHandler(const IInspectable& /*sender*/, const PropertyChangedEventArgs& args)
+    {
+        const auto propertyName{ args.PropertyName() };
+        if (propertyName == L"Color" || propertyName == L"Name")
+        {
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"AccessibleName" });
+        }
+    }
+
 }
