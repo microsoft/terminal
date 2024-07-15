@@ -4,13 +4,14 @@
 #pragma once
 #include "SnippetsPaneContent.g.h"
 #include "FilteredTask.g.h"
+#include "BasicPaneEvents.h"
 #include "FilteredCommand.h"
 #include "ActionPaletteItem.h"
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
 {
-    struct SnippetsPaneContent : SnippetsPaneContentT<SnippetsPaneContent>
+    struct SnippetsPaneContent : SnippetsPaneContentT<SnippetsPaneContent>, BasicPaneEvents
     {
         SnippetsPaneContent();
 
@@ -34,16 +35,7 @@ namespace winrt::TerminalApp::implementation
         void SetLastActiveControl(const Microsoft::Terminal::Control::TermControl& control);
         bool HasSnippets() const;
 
-        til::typed_event<> ConnectionStateChanged;
-        til::typed_event<IPaneContent> CloseRequested;
-        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
-        til::typed_event<IPaneContent> TitleChanged;
-        til::typed_event<IPaneContent> TabColorChanged;
-        til::typed_event<IPaneContent> TaskbarProgressChanged;
-        til::typed_event<IPaneContent> ReadOnlyChanged;
-        til::typed_event<IPaneContent> FocusRequested;
-
-        til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
+        // See BasicPaneEvents for most generic event definitions
 
         til::property_changed_event PropertyChanged;
 

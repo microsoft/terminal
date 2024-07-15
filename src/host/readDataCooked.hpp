@@ -168,6 +168,7 @@ private:
     til::point _originInViewport;
     // This value is in the pager coordinate space. (0,0) is the first character of the
     // first line, independent on where the prompt actually appears on the screen.
+    // The coordinate is "end exclusive", so the last character is 1 in front of it.
     til::point _pagerPromptEnd;
     // The scroll position of the pager.
     til::CoordType _pagerContentTop = 0;

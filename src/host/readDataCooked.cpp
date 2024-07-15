@@ -940,11 +940,6 @@ void COOKED_READ_DATA::_redisplay()
         }
 
         pagerPromptEnd = { res.column, gsl::narrow_cast<til::CoordType>(lines.size() - 1) };
-        if (pagerPromptEnd.x >= size.width)
-        {
-            pagerPromptEnd.x = 0;
-            pagerPromptEnd.y++;
-        }
 
         // If the content got a little shorter than it was before, we need to erase the tail end.
         // If the last character on a line got removed, we'll skip this code because `remaining`
@@ -960,12 +955,14 @@ void COOKED_READ_DATA::_redisplay()
                 auto& line = lines.back();
 
                 // CSI K may be expensive, so use spaces if we can.
-                if (remaining <= 8)
+                if (remaining <= 16)
                 {
                     line.text.append(remaining, L' ');
+                    line.columns += remaining;
                 }
                 else
                 {
+                    // CSI K doesn't change the cursor position, so we don't modify .columns.
                     line.text.append(L"\x1b[K");
                 }
             }
@@ -1015,12 +1012,34 @@ void COOKED_READ_DATA::_redisplay()
             // If the cursor is at the end of the buffer we must always show it after the last character.
             // Since VT uses delayed EOL wrapping, we must write at least 1 more character to force the
             // potential delayed line wrap at the end of the prompt, on the last line.
-            // This doubles as the code that erases the last character on the last line when backspacing.
-            // That's also why we append 2 spaces, because the last character may have been a ^E control
-            // character visualizer, which sneakily actually consists of 2 characters.
+            // We append an extra line to get the lineCount for scrolling right.
             if (_bufferCursor == _buffer.size())
             {
-                lines.emplace_back(L"  \r", 0, 0, 0);
+                auto& line = lines.emplace_back();
+
+                // This mirrors the `if (pagerPromptEnd.y <= _pagerPromptEnd.y)` above. We need to repeat this here,
+                // because if we append another line then we also need to repeat the "delete to end" logic.
+                // The best way to see this code kick in is if you have a prompt like this:
+                //   +----------+
+                //   |C:\> foo  | <-- end the line in >=1 spaces
+                //   |bar_      | <-- start the line with a word >2 characters
+                //   +----------+
+                // Then put the cursor at the end (where the "_" is) and press Ctrl+Backspace.
+                auto remaining = (_pagerPromptEnd.y - pagerPromptEnd.y) * size.width + _pagerPromptEnd.x - pagerPromptEnd.x;
+
+                // Here we ensure that we force a EOL wrap no matter what. At a minimum this will result in " \r".
+                remaining = std::max(1, remaining);
+
+                // CSI K may be expensive, so use spaces if we can.
+                if (remaining <= 16)
+                {
+                    line.text.append(remaining, L' ');
+                    line.text.push_back(L'\r');
+                }
+                else
+                {
+                    line.text.append(L" \r\x1b[K");
+                }
             }
         }
 
@@ -1073,19 +1092,44 @@ void COOKED_READ_DATA::_redisplay()
 
     // If we have so much text that it doesn't fit into the viewport (origin == {0,0}),
     // then we can scroll the existing contents of the pager and only write what got newly uncovered.
-    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && _pagerHeight == size.height && pagerHeight == size.height)
+    //
+    // The check for origin == {0,0} is important because it ensures that we "own" the entire viewport and
+    // that scrolling our contents doesn't scroll away the user's output that may still be in the viewport.
+    // (Anything below the origin is assumed to belong to us.)
+    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && _originInViewport == til::point{})
     {
         const auto deltaAbs = abs(delta);
         til::CoordType beg = 0;
         til::CoordType end = pagerHeight;
 
-        // If the top changed by more than the viewport height, scrolling doesn't make sense.
-        if (deltaAbs < size.height)
+        // Let's say the viewport is 10 lines tall. Scenarios:
+        // * We had 2 lines (_pagerContentTop == 0, _pagerHeight == 2),
+        //   and now it's 11 lines (pagerContentTop == 1, pagerHeight == 11).
+        //   --> deltaAbs == 1
+        //   --> Scroll ✔️
+        // * We had 2 lines (_pagerContentTop == 0, _pagerHeight == 2),
+        //   and now it's 12 lines (pagerContentTop == 2, pagerHeight == 12).
+        //   --> deltaAbs == 2
+        //   --> Scroll ❌
+        //
+        // The same applies when going from 11/12 lines back to 2. It appears scrolling
+        // makes sense if the delta is smaller than the current or previous pagerHeight.
+        if (deltaAbs < std::min(_pagerHeight, pagerHeight))
         {
             beg = delta >= 0 ? pagerHeight - deltaAbs : 0;
             end = delta >= 0 ? pagerHeight : deltaAbs;
             const auto cmd = delta >= 0 ? L'S' : L'T';
             fmt::format_to(std::back_inserter(output), FMT_COMPILE(L"\x1b[{}{}"), deltaAbs, cmd);
+        }
+        else
+        {
+            // We may not be scrolling with VT, because we're scrolling by more rows than the pagerHeight.
+            // Since no one is now clearing the scrolled in rows for us anymore, we need to do it ourselves.
+            auto& lastLine = lines.at(pagerHeight - 1 + pagerContentTop);
+            if (lastLine.columns < size.width)
+            {
+                lastLine.text.append(L"\x1b[K");
+            }
         }
 
         // Mark each row that has been uncovered by the scroll as dirty.
@@ -1134,7 +1178,10 @@ void COOKED_READ_DATA::_redisplay()
             const auto& line = lines.at(i + pagerContentTop);
 
             // Skip lines that aren't marked as dirty.
-            if (line.dirtyBegOffset >= line.text.size())
+            // We use dirtyBegColumn instead of dirtyBegOffset to test for dirtiness, because a line that has 1 column
+            // of space for layout and was asked to fit a wide glyph will have no text, but still be "dirty".
+            // This ensures that we get the initial starting position of the _appendCUP below right.
+            if (line.dirtyBegColumn >= size.width)
             {
                 continue;
             }
@@ -1212,6 +1259,7 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
         {
             if (column >= columnLimit)
             {
+                column = columnLimit;
                 goto outerLoopExit;
             }
 
@@ -1243,12 +1291,6 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
     }
 
 outerLoopExit:
-    if (it != end && column < columnLimit)
-    {
-        output.append(columnLimit - column, L' ');
-        column = columnLimit;
-    }
-
     return {
         .offset = static_cast<size_t>(it - beg),
         .column = column,

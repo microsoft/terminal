@@ -985,14 +985,15 @@ uint16_t ROW::size() const noexcept
 til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
 {
     const auto text = GetText();
-    const auto beg = text.begin();
-    const auto end = text.end();
+    const auto beg = text.data();
+    const auto end = beg + text.size();
+#pragma warning(suppress : 26429) // Symbol 'it' is never tested for nullness, it can be marked as not_null (f.23).
     auto it = end;
 
     for (; it != beg; --it)
     {
         // it[-1] is safe as `it` is always greater than `beg` (loop invariant).
-        if (til::at(it, -1) != L' ')
+        if (it[-1] != L' ')
         {
             break;
         }
