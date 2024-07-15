@@ -520,6 +520,11 @@ try
 }
 CATCH_RETURN()
 
+[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& /*imageSlice*/, const til::CoordType /*targetRow*/, const til::CoordType /*viewportLeft*/) noexcept
+{
+    return S_FALSE;
+}
+
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
 try
 {

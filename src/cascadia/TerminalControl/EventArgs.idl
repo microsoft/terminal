@@ -18,6 +18,13 @@ namespace Microsoft.Terminal.Control
         Direct3D11,
     };
 
+    enum TextMeasurement
+    {
+        Graphemes,
+        Wcswidth,
+        Console,
+    };
+
     runtimeclass FontSizeChangedArgs
     {
         Int32 Width { get; };
@@ -118,5 +125,10 @@ namespace Microsoft.Terminal.Control
     runtimeclass StringSentEventArgs
     {
         String Text { get; };
+    }
+
+    runtimeclass SearchMissingCommandEventArgs
+    {
+        String MissingCommand { get; };
     }
 }

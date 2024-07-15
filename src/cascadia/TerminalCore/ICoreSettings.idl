@@ -27,7 +27,9 @@ namespace Microsoft.Terminal.Core
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
 
         Boolean AutoMarkPrompts;
+        Boolean RainbowSuggestions;
 
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 
 }

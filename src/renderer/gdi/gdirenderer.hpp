@@ -56,6 +56,9 @@ namespace Microsoft::Console::Render
                                                    const COLORREF underlineColor,
                                                    const size_t cchLine,
                                                    const til::point coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice,
+                                              const til::CoordType targetRow,
+                                              const til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
@@ -164,6 +167,8 @@ namespace Microsoft::Console::Render
         std::pmr::unsynchronized_pool_resource _pool;
         std::pmr::vector<std::pmr::wstring> _polyStrings;
         std::pmr::vector<std::pmr::basic_string<int>> _polyWidths;
+
+        std::vector<DWORD> _imageMask;
 
         [[nodiscard]] HRESULT _InvalidCombine(const til::rect* const prc) noexcept;
         [[nodiscard]] HRESULT _InvalidOffset(const til::point* const ppt) noexcept;

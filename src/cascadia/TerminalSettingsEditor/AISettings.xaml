@@ -50,13 +50,21 @@
                             <TextBlock x:Uid="AISettings_AzureOpenAIKeyAndEndpointStored"
                                        Grid.Column="0"
                                        VerticalAlignment="Center" />
-                            <Button Grid.Column="1"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Click="ClearAzureOpenAIKeyAndEndpoint_Click"
-                                    Style="{StaticResource DeleteButtonStyle}">
-                                <TextBlock x:Uid="AISettings_ClearAzureOpenAIKeyAndEndpoint" />
-                            </Button>
+                            <StackPanel Grid.Column="1"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Spacing="8">
+                                <Button Click="ClearAzureOpenAIKeyAndEndpoint_Click"
+                                        Style="{StaticResource DeleteButtonStyle}"
+                                        HorizontalAlignment="Center">
+                                    <TextBlock x:Uid="AISettings_ClearAzureOpenAIKeyAndEndpoint" />
+                                </Button>
+                                <Button Click="SetAzureOpenAIActive_Click"
+                                        HorizontalAlignment="Center"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AzureOpenAIActive), Mode=OneWay}">
+                                    <TextBlock x:Uid="AISettings_SetActiveProvider" />
+                                </Button>
+                            </StackPanel>
                         </Grid>
                         <Grid RowSpacing="8"
                               Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AreAzureOpenAIKeyAndEndpointSet), Mode=OneWay}">
@@ -159,13 +167,21 @@
                             <TextBlock x:Uid="AISettings_OpenAIKeyStored"
                                        Grid.Column="0"
                                        VerticalAlignment="Center" />
-                            <Button Grid.Column="1"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Click="ClearOpenAIKey_Click"
-                                    Style="{StaticResource DeleteButtonStyle}">
-                                <TextBlock x:Uid="AISettings_ClearOpenAIKey" />
-                            </Button>
+                            <StackPanel Grid.Column="1"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Spacing="8">
+                                <Button Click="ClearOpenAIKey_Click"
+                                        Style="{StaticResource DeleteButtonStyle}"
+                                        HorizontalAlignment="Center">
+                                    <TextBlock x:Uid="AISettings_ClearOpenAIKey" />
+                                </Button>
+                                <Button Click="SetOpenAIActive_Click"
+                                        HorizontalAlignment="Center"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.OpenAIActive), Mode=OneWay}">
+                                    <TextBlock x:Uid="AISettings_SetActiveProvider" />
+                                </Button>
+                            </StackPanel>
                         </Grid>
                         <Grid RowSpacing="8"
                               Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsOpenAIKeySet), Mode=OneWay}">

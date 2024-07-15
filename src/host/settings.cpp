@@ -777,6 +777,16 @@ bool Settings::GetCopyColor() const noexcept
     return _fCopyColor;
 }
 
+SettingsTextMeasurementMode Settings::GetTextMeasurementMode() const noexcept
+{
+    return _textMeasurement;
+}
+
+void Settings::SetTextMeasurementMode(const SettingsTextMeasurementMode mode) noexcept
+{
+    _textMeasurement = mode;
+}
+
 bool Settings::GetEnableBuiltinGlyphs() const noexcept
 {
     return _fEnableBuiltinGlyphs;

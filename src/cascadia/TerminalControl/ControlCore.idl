@@ -70,6 +70,7 @@ namespace Microsoft.Terminal.Control
     {
         IVector<String> History { get; };
         String CurrentCommandline { get; };
+        IVector<String> QuickFixes { get; };
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState
@@ -155,6 +156,7 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
         CommandHistoryContext CommandHistory();
+        Boolean QuickFixesAvailable { get; };
 
         void AdjustOpacity(Single Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
@@ -166,6 +168,8 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
 
+        void ClearQuickFix();
+
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
@@ -174,6 +178,8 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TaskbarProgressChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RendererEnteredErrorState;
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RefreshQuickFixUI;
 
         // These events are always called from the UI thread (bugs aside)
         event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;

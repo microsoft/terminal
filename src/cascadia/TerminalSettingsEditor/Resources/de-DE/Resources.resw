@@ -342,6 +342,24 @@
     <value>Wenn diese Option aktiviert ist, verwendet das Terminal einen Softwarerasterer (WARP). Diese Einstellung sollte unter fast allen Umständen deaktiviert bleiben.</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
+  <data name="Globals_TextMeasurement.Header" xml:space="preserve">
+    <value>Textmessungsmodus</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+    <value>Dadurch wird geändert, wie eingehender Text in Zellen gruppiert wird. Die Option "Grapheme clusters" ist die moderne und unicode-korrekte Methode, während "wcswidth" ein gängiger Ansatz für UNIX ist und "Windows-Konsole" die für die Arbeit unter Windows verwendete Methode repliziert. Das Ändern dieser Einstellung erfordert einen Neustart von Windows-Terminal und gilt nur für Anwendungen, die innerhalb der Einstellung gestartet werden.</value>
+  </data>
+  <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
+    <value>Graphemcluster</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
+    <value>wcswidth</value>
+    <comment>{Locked="wcswidth"}</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
+    <value>Windows-Konsole</value>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Spalten</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -931,7 +949,7 @@
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
   <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
-    <value>Wenn diese Option aktiviert ist, zeichnet das Terminal benutzerdefinierte Glyphen für Blockelement- und Feldzeichnungszeichen, anstatt die Schriftart zu verwenden. Dieses Feature ist nicht verfügbar, wenn Direct2D als Grafik-API verwendet wird.</value>
+    <value>Wenn diese Option aktiviert ist, zeichnet das Terminal benutzerdefinierte Glyphen für Blockelement- und Rahmenelementzeichen, anstatt die Schriftart zu verwenden.</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
   <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">

@@ -126,4 +126,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel.GithubCopilotAuthToken(L"");
         _ViewModel.GithubCopilotRefreshToken(L"");
     }
+
+    void AISettings::SetAzureOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.AzureOpenAIActive(true);
+    }
+
+    void AISettings::SetOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.OpenAIActive(true);
+    }
 }

@@ -356,7 +356,7 @@ HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimen
     _renderer->TriggerRedrawAll();
 
     // Convert our new dimensions to characters
-    const auto viewInPixels = Viewport::FromDimensions(windowSize);
+    const auto viewInPixels = Viewport::FromDimensions({}, windowSize);
     const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
     // Guard against resizing the window to 0 columns/rows, which the text buffer classes don't really support.
@@ -464,7 +464,7 @@ try
 
     Viewport viewInPixels;
     {
-        const auto viewInCharacters = Viewport::FromDimensions(dimensionsInCharacters);
+        const auto viewInCharacters = Viewport::FromDimensions({}, dimensionsInCharacters);
         const auto lock = publicTerminal->_terminal->LockForReading();
         viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
     }
@@ -491,7 +491,7 @@ try
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
-    const auto viewInPixels = Viewport::FromDimensions({ width, height });
+    const auto viewInPixels = Viewport::FromDimensions({}, { width, height });
     const auto lock = publicTerminal->_terminal->LockForReading();
     const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
 

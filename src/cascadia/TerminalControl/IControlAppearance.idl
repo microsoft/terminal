@@ -19,5 +19,7 @@ namespace Microsoft.Terminal.Control
         Boolean RetroTerminalEffect { get; };
         String PixelShaderPath { get; };
         String PixelShaderImagePath { get; };
+
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 }

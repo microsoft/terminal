@@ -67,6 +67,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"IsOpenAIKeySet");
     }
 
+    bool AISettingsViewModel::AzureOpenAIActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::AzureOpenAI;
+    }
+
+    void AISettingsViewModel::AzureOpenAIActive(bool active)
+    {
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
+            _NotifyChanges(L"AzureOpenAIActive");
+            _NotifyChanges(L"OpenAIActive");
+        }
+    }
+
+    bool AISettingsViewModel::OpenAIActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::OpenAI;
+    }
+
+    void AISettingsViewModel::OpenAIActive(bool active)
+    {
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
+            _NotifyChanges(L"AzureOpenAIActive");
+            _NotifyChanges(L"OpenAIActive");
+        }
+    }
+
     bool AISettingsViewModel::AreGithubCopilotTokensSet()
     {
         return !_Settings.GlobalSettings().AIInfo().GithubCopilotAuthToken().empty() && !_Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken().empty();
@@ -82,16 +112,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _Settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
         _NotifyChanges(L"AreGithubCopilotTokensSet");
-    }
-
-    bool AISettingsViewModel::AzureOpenAIIsActive()
-    {
-        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::AzureOpenAI;
-    }
-
-    bool AISettingsViewModel::OpenAIIsActive()
-    {
-        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::OpenAI;
     }
 
     bool AISettingsViewModel::GithubCopilotIsActive()

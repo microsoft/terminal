@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "ILLMProvider.idl";
+import "ILMProvider.idl";
 
 namespace Microsoft.Terminal.Query.Extension
 {
-    [default_interface] runtimeclass GithubCopilotLLMProvider : ILLMProvider
+    [default_interface] runtimeclass GithubCopilotLLMProvider : ILMProvider
     {
         GithubCopilotLLMProvider(String endpoint, String key);
     }

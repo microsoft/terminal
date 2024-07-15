@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         command->_iconPath = _iconPath;
         command->_IterateOn = _IterateOn;
+        command->_Description = _Description;
 
         command->_originalJson = _originalJson;
         command->_nestedCommand = _nestedCommand;
@@ -219,6 +220,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
 
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
@@ -353,6 +355,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+            if (!_Description.empty())
+            {
+                JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
+            }
             if (!_ID.empty())
             {
                 JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
@@ -580,8 +586,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto parseElement = [&](const auto& element) {
             winrt::hstring completionText;
             winrt::hstring listText;
+            winrt::hstring tooltipText;
             JsonUtils::GetValueForKey(element, "CompletionText", completionText);
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
+            JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
 
             auto args = winrt::make_self<SendInputArgs>(
                 winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
@@ -593,8 +601,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             auto c = winrt::make_self<Command>();
             c->_name = listText;
+            c->_Description = tooltipText;
             c->_ActionAndArgs = actionAndArgs;
-
             // Try to assign a sensible icon based on the result type. These are
             // roughly chosen to align with the icons in
             // https://github.com/PowerShell/PowerShellEditorServices/pull/1738
@@ -665,7 +673,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   the command will be run as a directory change instead.
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
                                                        winrt::hstring currentCommandline,
-                                                       bool directories)
+                                                       bool directories,
+                                                       winrt::hstring iconPath)
     {
         std::wstring cdText = directories ? L"cd " : L"";
         auto result = std::vector<Model::Command>();
@@ -697,9 +706,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
             command->_name = winrt::hstring{ line };
-            command->_iconPath = directories ?
-                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
-                                     L"\ue81c"; // History icon
+            command->_iconPath = iconPath;
             result.push_back(*command);
             foundCommands[line] = true;
         }

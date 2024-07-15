@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "ILLMProvider.idl";
+import "ILMProvider.idl";
 
 namespace Microsoft.Terminal.Query.Extension
 {
@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Query.Extension
 
     [default_interface] runtimeclass ExtensionPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        ExtensionPalette(ILLMProvider llmProvider);
+        ExtensionPalette(ILMProvider lmProvider);
 
         String ControlName { get; };
         String QueryBoxPlaceholderText { get; };

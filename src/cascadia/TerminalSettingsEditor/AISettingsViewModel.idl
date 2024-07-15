@@ -14,9 +14,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean AreAzureOpenAIKeyAndEndpointSet { get; };
         String AzureOpenAIEndpoint;
         String AzureOpenAIKey;
+        Boolean AzureOpenAIActive;
 
         Boolean IsOpenAIKeySet { get; };
         String OpenAIKey;
+        Boolean OpenAIActive;
 
         Boolean AreGithubCopilotTokensSet { get; };
         void GithubCopilotAuthToken(String authToken);

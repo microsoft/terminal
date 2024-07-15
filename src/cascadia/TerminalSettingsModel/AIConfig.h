@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AzureOpenAIKey(const winrt::hstring& key) noexcept;
         winrt::hstring OpenAIKey() noexcept;
         void OpenAIKey(const winrt::hstring& key) noexcept;
+
         winrt::hstring GithubCopilotAuthToken() noexcept;
         void GithubCopilotAuthToken(const winrt::hstring& authToken) noexcept;
         winrt::hstring GithubCopilotRefreshToken() noexcept;
@@ -52,5 +53,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         LLMProvider ActiveProvider();
         void ActiveProvider(const LLMProvider& provider);
         _BASE_INHERITABLE_SETTING(Model::AIConfig, std::optional<LLMProvider>, ActiveProvider);
+
+    private:
+        winrt::hstring _RetrieveCredential(const std::wstring_view credential);
+        void _SetCredential(const std::wstring_view credential, const winrt::hstring& value);
     };
 }

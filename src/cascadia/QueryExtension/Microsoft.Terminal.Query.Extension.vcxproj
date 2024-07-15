@@ -102,7 +102,7 @@
     <Midl Include="ExtensionPaletteTemplateSelectors.idl">
       <SubType>Designer</SubType>
     </Midl>
-    <Midl Include="ILLMProvider.idl">
+    <Midl Include="ILMProvider.idl">
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="AzureLLMProvider.idl">

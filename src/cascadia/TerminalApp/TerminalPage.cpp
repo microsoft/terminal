@@ -4,18 +4,11 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
-#include "TerminalPage.g.cpp"
-#include "RenameWindowRequestedArgs.g.cpp"
-#include "RequestMoveContentArgs.g.cpp"
-#include "RequestReceiveContentArgs.g.cpp"
-#include "LaunchPositionRequest.g.cpp"
 
-#include <filesystem>
-
-#include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
+#include <Utils.h>
 
 #include <winrt/Windows.Web.Http.h>
 #include <winrt/Windows.Web.Http.Headers.h>
@@ -29,8 +22,14 @@
 #include "DebugTapConnection.h"
 #include "SettingsPaneContent.h"
 #include "ScratchpadContent.h"
+#include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
-#include "Utils.h"
+
+#include "TerminalPage.g.cpp"
+#include "RenameWindowRequestedArgs.g.cpp"
+#include "RequestMoveContentArgs.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -470,10 +469,10 @@ namespace winrt::TerminalApp::implementation
     // - command - command to dispatch
     // Return Value:
     // - <none>
-    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command)
     {
         const auto& actionAndArgs = command.ActionAndArgs();
-        _actionDispatch->DoAction(actionAndArgs);
+        _actionDispatch->DoAction(sender, actionAndArgs);
     }
 
     // Method Description:
@@ -654,9 +653,12 @@ namespace winrt::TerminalApp::implementation
             // GH#6586: now that we're done processing all startup commands,
             // focus the active control. This will work as expected for both
             // commandline invocations and for `wt` action invocations.
-            if (const auto control = _GetActiveControl())
+            if (const auto& terminalTab{ _GetFocusedTabImpl() })
             {
-                control.Focus(FocusState::Programmatic);
+                if (const auto& content{ terminalTab->GetActiveContent() })
+                {
+                    content.Focus(FocusState::Programmatic);
+                }
             }
         }
         if (initial)
@@ -1344,6 +1346,20 @@ namespace winrt::TerminalApp::implementation
                                                                                         TerminalSettings settings,
                                                                                         const bool inheritCursor)
     {
+        static const auto textMeasurement = [&]() -> std::wstring_view {
+            switch (_settings.GlobalSettings().TextMeasurement())
+            {
+            case TextMeasurement::Graphemes:
+                return L"graphemes";
+            case TextMeasurement::Wcswidth:
+                return L"wcswidth";
+            case TextMeasurement::Console:
+                return L"console";
+            default:
+                return {};
+            }
+        }();
+
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
@@ -1413,6 +1429,11 @@ namespace winrt::TerminalApp::implementation
             {
                 valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
             }
+        }
+
+        if (!textMeasurement.empty())
+        {
+            valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})
@@ -1817,6 +1838,8 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
+        term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
+
         // Don't even register for the event if the feature is compiled off.
         if constexpr (Feature_ShellCompletions::IsEnabled())
         {
@@ -1833,6 +1856,12 @@ namespace winrt::TerminalApp::implementation
             if (const auto& page{ weak.get() })
             {
                 page->_PopulateContextMenu(weakTerm.get(), sender.try_as<MUX::Controls::CommandBarFlyout>(), true);
+            }
+        });
+        term.QuickFixMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
+            if (const auto& page{ weak.get() })
+            {
+                page->_PopulateQuickFixMenu(weakTerm.get(), sender.try_as<Controls::MenuFlyout>());
             }
         });
     }
@@ -2540,16 +2569,16 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UnZoomIfNeeded();
-        auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
+        auto [original, newGuy] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
         // the control here instead.
         if (_startupState == StartupState::Initialized)
         {
-            if (const auto control = _GetActiveControl())
+            if (const auto& content{ newGuy->GetContent() })
             {
-                control.Focus(FocusState::Programmatic);
+                content.Focus(FocusState::Programmatic);
             }
         }
     }
@@ -3067,6 +3096,30 @@ namespace winrt::TerminalApp::implementation
         ShowWindowChanged.raise(*this, args);
     }
 
+    winrt::fire_and_forget TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    {
+        assert(!Dispatcher().HasThreadAccess());
+
+        if (!Feature_QuickFix::IsEnabled())
+        {
+            co_return;
+        }
+
+        std::vector<hstring> suggestions;
+        suggestions.reserve(1);
+        suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install {}"), args.MissingCommand()));
+
+        co_await wil::resume_foreground(Dispatcher());
+
+        auto term = _GetActiveControl();
+        if (!term)
+        {
+            co_return;
+        }
+        term.UpdateWinGetSuggestions(single_threaded_vector<hstring>(std::move(suggestions)));
+        term.RefreshQuickFixMenu();
+    }
+
     // Method Description:
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
@@ -3320,6 +3373,8 @@ namespace winrt::TerminalApp::implementation
         return resultPane;
     }
 
+    // NOTE: callers of _MakePane should be able to accept nullptr as a return
+    // value gracefully.
     std::shared_ptr<Pane> TerminalPage::_MakePane(const INewContentArgs& contentArgs,
                                                   const winrt::TerminalApp::TabBase& sourceTab,
                                                   TerminalConnection::ITerminalConnection existingConnection)
@@ -3349,6 +3404,36 @@ namespace winrt::TerminalApp::implementation
         else if (paneType == L"settings")
         {
             content = _makeSettingsContent();
+        }
+        else if (paneType == L"snippets")
+        {
+            // Prevent the user from opening a bunch of snippets panes.
+            //
+            // Look at the focused tab, and if it already has one, then just focus it.
+            const bool found = _GetFocusedTab().try_as<TerminalTab>()->GetRootPane()->WalkTree([](const auto& p) -> bool {
+                if (const auto& snippets{ p->GetContent().try_as<SnippetsPaneContent>() })
+                {
+                    snippets->Focus(FocusState::Programmatic);
+                    return true;
+                }
+                return false;
+            });
+            // Bail out if we already found one.
+            if (found)
+            {
+                return nullptr;
+            }
+
+            const auto& tasksContent{ winrt::make_self<SnippetsPaneContent>() };
+            tasksContent->UpdateSettings(_settings);
+            tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+            tasksContent->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+            if (const auto& termControl{ _GetActiveControl() })
+            {
+                tasksContent->SetLastActiveControl(termControl);
+            }
+
+            content = *tasksContent;
         }
 
         assert(content);
@@ -5080,6 +5165,53 @@ namespace winrt::TerminalApp::implementation
         makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
     }
 
+    void TerminalPage::_PopulateQuickFixMenu(const TermControl& control,
+                                             const Controls::MenuFlyout& menu)
+    {
+        if (!control || !menu)
+        {
+            return;
+        }
+
+        // Helper lambda for dispatching a SendInput ActionAndArgs onto the
+        // ShortcutActionDispatch. Used below to wire up each menu entry to the
+        // respective action. Then clear the quick fix menu.
+        auto weak = get_weak();
+        auto makeCallback = [weak](const hstring& suggestion) {
+            return [weak, suggestion](auto&&, auto&&) {
+                if (auto page{ weak.get() })
+                {
+                    const auto actionAndArgs = ActionAndArgs{ ShortcutAction::SendInput, SendInputArgs{ hstring{ L"\u0003" } + suggestion } };
+                    page->_actionDispatch->DoAction(actionAndArgs);
+                    if (auto ctrl = page->_GetActiveControl())
+                    {
+                        ctrl.ClearQuickFix();
+                    }
+                }
+            };
+        };
+
+        // Wire up each item to the action that should be performed. By actually
+        // connecting these to actions, we ensure the implementation is
+        // consistent. This also leaves room for customizing this menu with
+        // actions in the future.
+
+        menu.Items().Clear();
+        const auto quickFixes = control.CommandHistory().QuickFixes();
+        for (const auto& qf : quickFixes)
+        {
+            MenuFlyoutItem item{};
+
+            auto iconElement = UI::IconPathConverter::IconWUX(L"\ue74c");
+            Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+            item.Icon(iconElement);
+
+            item.Text(qf);
+            item.Click(makeCallback(qf));
+            menu.Items().Append(item);
+        }
+    }
+
     // Handler for our WindowProperties's PropertyChanged event. We'll use this
     // to pop the "Identify Window" toast when the user renames our window.
     winrt::fire_and_forget TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/,
@@ -5376,22 +5508,22 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        winrt::Microsoft::Terminal::Query::Extension::ILLMProvider llmProvider{ nullptr };
+        winrt::Microsoft::Terminal::Query::Extension::ILMProvider lmProvider{ nullptr };
         const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
-        // create the correct llm provider
+        // create the correct lm provider
         if (settingsAIInfo.ActiveProvider() == LLMProvider::OpenAI)
         {
-            llmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider(settingsAIInfo.OpenAIKey());
+            lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider(settingsAIInfo.OpenAIKey());
         }
         else if (settingsAIInfo.ActiveProvider() == LLMProvider::AzureOpenAI)
         {
-            llmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(settingsAIInfo.AzureOpenAIEndpoint(), settingsAIInfo.AzureOpenAIKey());
+            lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(settingsAIInfo.AzureOpenAIEndpoint(), settingsAIInfo.AzureOpenAIKey());
         }
         else if (settingsAIInfo.ActiveProvider() == LLMProvider::GithubCopilot)
         {
-            llmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider(settingsAIInfo.GithubCopilotAuthToken(), settingsAIInfo.GithubCopilotRefreshToken());
+            lmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider(settingsAIInfo.GithubCopilotAuthToken(), settingsAIInfo.GithubCopilotRefreshToken());
         }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(llmProvider);
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(lmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {

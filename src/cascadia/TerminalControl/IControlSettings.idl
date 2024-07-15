@@ -62,9 +62,12 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Control.GraphicsAPI GraphicsAPI { get; };
         Boolean DisablePartialInvalidation { get; };
         Boolean SoftwareRendering { get; };
+        Microsoft.Terminal.Control.TextMeasurement TextMeasurement { get; };
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
         Boolean RightClickContextMenu { get; };
         Boolean RepositionCursorWithMouse { get; };
+
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 }

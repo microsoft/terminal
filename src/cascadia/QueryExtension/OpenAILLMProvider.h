@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void SetSystemPrompt(const winrt::hstring& systemPrompt);
         void SetContext(const Extension::IContext context);
 
-        winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
+        winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring userPrompt);
 
     private:
         winrt::hstring _AIKey;

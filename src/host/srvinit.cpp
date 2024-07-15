@@ -2,33 +2,18 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "srvinit.h"
 
 #include "dbcs.h"
 #include "handle.h"
 #include "registry.hpp"
 #include "renderFontDefaults.hpp"
-
-#include "ApiRoutines.h"
-
-#include "../types/inc/GlyphWidth.hpp"
-
-#include "../server/DeviceHandle.h"
-#include "../server/Entrypoints.h"
-#include "../server/IoSorter.h"
-
-#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
-#include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
-
-#include "renderData.hpp"
-#include "../renderer/base/renderer.hpp"
-
-#include "../inc/conint.h"
-
-#include "tracing.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/DeviceHandle.h"
+#include "../server/IoSorter.h"
+#include "../types/inc/CodepointWidthDetector.hpp"
 
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"
@@ -882,8 +867,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
         // Set up the renderer to be used to calculate the width of a glyph,
         //      should we be unable to figure out its width another way.
-        auto pfn = [ObjectPtr = static_cast<Renderer*>(g.pRender)](auto&& PH1) { return ObjectPtr->IsGlyphWideByFont(std::forward<decltype(PH1)>(PH1)); };
-        SetGlyphWidthFallback(pfn);
+        CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
+            return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
+        });
     }
     catch (...)
     {

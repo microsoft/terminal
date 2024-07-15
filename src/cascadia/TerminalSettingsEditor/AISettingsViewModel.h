@@ -22,17 +22,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AzureOpenAIEndpoint(winrt::hstring endpoint);
         winrt::hstring AzureOpenAIKey();
         void AzureOpenAIKey(winrt::hstring key);
+        bool AzureOpenAIActive();
+        void AzureOpenAIActive(bool active);
 
         bool IsOpenAIKeySet();
         winrt::hstring OpenAIKey();
         void OpenAIKey(winrt::hstring key);
+        bool OpenAIActive();
+        void OpenAIActive(bool active);
 
         bool AreGithubCopilotTokensSet();
         void GithubCopilotAuthToken(winrt::hstring authToken);
         void GithubCopilotRefreshToken(winrt::hstring refreshToken);
-
-        bool AzureOpenAIIsActive();
-        bool OpenAIIsActive();
         bool GithubCopilotIsActive();
         void InitiateGithubAuth_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> GithubAuthRequested;
