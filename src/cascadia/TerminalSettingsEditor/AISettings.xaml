@@ -61,7 +61,7 @@
                                 </Button>
                                 <Button Click="SetAzureOpenAIActive_Click"
                                         HorizontalAlignment="Center"
-                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AzureOpenAIIsActive), Mode=OneWay}">
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.AzureOpenAIActive), Mode=OneWay}">
                                     <TextBlock x:Uid="AISettings_SetActiveProvider" />
                                 </Button>
                             </StackPanel>
@@ -178,7 +178,7 @@
                                 </Button>
                                 <Button Click="SetOpenAIActive_Click"
                                         HorizontalAlignment="Center"
-                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.OpenAIIsActive), Mode=OneWay}">
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.OpenAIActive), Mode=OneWay}">
                                     <TextBlock x:Uid="AISettings_SetActiveProvider" />
                                 </Button>
                             </StackPanel>

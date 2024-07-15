@@ -66,27 +66,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"IsOpenAIKeySet");
     }
 
-    bool AISettingsViewModel::AzureOpenAIIsActive()
+    bool AISettingsViewModel::AzureOpenAIActive()
     {
         return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::AzureOpenAI;
     }
 
-    void AISettingsViewModel::SetAzureOpenAIActive()
+    void AISettingsViewModel::AzureOpenAIActive(bool active)
     {
-        _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
-        _NotifyChanges(L"AzureOpenAIIsActive");
-        _NotifyChanges(L"OpenAIIsActive");
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
+            _NotifyChanges(L"AzureOpenAIActive");
+            _NotifyChanges(L"OpenAIActive");
+        }
     }
 
-    bool AISettingsViewModel::OpenAIIsActive()
+    bool AISettingsViewModel::OpenAIActive()
     {
         return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::OpenAI;
     }
 
-    void AISettingsViewModel::SetOpenAIActive()
+    void AISettingsViewModel::OpenAIActive(bool active)
     {
-        _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
-        _NotifyChanges(L"AzureOpenAIIsActive");
-        _NotifyChanges(L"OpenAIIsActive");
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
+            _NotifyChanges(L"AzureOpenAIActive");
+            _NotifyChanges(L"OpenAIActive");
+        }
     }
 }

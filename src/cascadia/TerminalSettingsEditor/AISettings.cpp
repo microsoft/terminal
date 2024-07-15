@@ -123,11 +123,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettings::SetAzureOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.SetAzureOpenAIActive();
+        _ViewModel.AzureOpenAIActive(true);
     }
 
     void AISettings::SetOpenAIActive_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.SetOpenAIActive();
+        _ViewModel.OpenAIActive(true);
     }
 }
