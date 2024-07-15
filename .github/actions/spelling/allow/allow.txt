@@ -27,6 +27,7 @@ gantt
 ghe
 gje
 godbolt
+gpt
 hyperlinking
 hyperlinks
 ILM
