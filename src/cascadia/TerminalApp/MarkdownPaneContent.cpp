@@ -8,12 +8,6 @@
 #include "CodeBlock.h"
 #include "MarkdownToXaml.h"
 
-// #include "../../oss/cmark-gfm/src/cmark-gfm.h"
-// #include "../../oss/cmark-gfm/src/node.h"
-
-// #define MD4C_USE_UTF16
-// #include "..\..\oss\md4c\md4c.h"
-
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -28,22 +22,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-
-    // void parseMarkdown(const winrt::hstring& markdown, MyMarkdownData& data)
-    // {
-    //     auto doc = cmark_parse_document(to_string(markdown).c_str(), markdown.size(), CMARK_OPT_DEFAULT);
-    //     auto iter = cmark_iter_new(doc);
-    //     cmark_event_type ev_type;
-    //     cmark_node* curr;
-
-    //     while ((ev_type = cmark_iter_next(iter)) != CMARK_EVENT_DONE)
-    //     {
-    //         curr = cmark_iter_get_node(iter);
-    //         renderNode(curr, ev_type, data, 0);
-    //     }
-    // }
-
-    ////////////////////////////////////////////////////////////////////////////////
 
     MarkdownPaneContent::MarkdownPaneContent() :
         MarkdownPaneContent(L"") {}
@@ -125,13 +103,30 @@ namespace winrt::TerminalApp::implementation
     void MarkdownPaneContent::_loadMarkdown()
     {
         const auto& value{ FileContents() };
-        // MyMarkdownData data{};
-        // data.page = this;
-        // data.baseUri = _filePath;
-        // data.root.IsTextSelectionEnabled(true);
-        // data.root.TextWrapping(WUX::TextWrapping::WrapWholeWords);
-        // parseMarkdown(value, data);
-        RenderedMarkdown().Children().Append(MarkdownToXaml::Convert(value, _filePath));
+
+        auto rootTextBlock{ MarkdownToXaml::Convert(value, _filePath) };
+
+        // In the future, we'll want to further customize the code blocks in the
+        // text block we got. We can do that with the following:
+        //
+        // for (const auto& b : rootTextBlock.Blocks())
+        // {
+        //     if (const auto& p{ b.try_as<WUX::Documents::Paragraph>() })
+        //     {
+        //         for (const auto& line : p.Inlines())
+        //         {
+        //             if (const auto& otherContent{ line.try_as<WUX::Documents::InlineUIContainer>() })
+        //             {
+        //                 if (const auto& codeBlock{ otherContent.Child().try_as<CodeBlock>() })
+        //                 {
+        //                     codeBlock->PlayButtonVisibility(WUX::Visibility::Visible);
+        //                     codeBlock->RequestRunCommands({ *this, &MarkdownPaneContent::_handleRunCommandRequest });
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+        RenderedMarkdown().Children().Append(rootTextBlock);
     }
 
     void MarkdownPaneContent::_loadTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)

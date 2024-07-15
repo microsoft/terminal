@@ -14,6 +14,7 @@ namespace TerminalApp
         CodeBlock(String initialCommandlines);
 
         String Commandlines { get; set; };
+        Windows.UI.Xaml.Visibility PlayButtonVisibility { get; set; };
 
         event Windows.Foundation.TypedEventHandler<CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
     };

@@ -16,9 +16,10 @@ namespace winrt::TerminalApp::implementation
 
         til::property<winrt::hstring> Commandlines;
 
-        // TODO! this should just be til::property_changed_event but I don't havfe tht commit here
-        til::event<winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler> PropertyChanged;
+        til::property_changed_event PropertyChanged;
         til::typed_event<TerminalApp::CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
+
+        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Visibility, PlayButtonVisibility, PropertyChanged.raise, Windows::UI::Xaml::Visibility::Visible);
 
     private:
         friend struct CodeBlockT<CodeBlock>; // for Xaml to bind events

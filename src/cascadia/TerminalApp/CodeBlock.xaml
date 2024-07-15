@@ -146,7 +146,7 @@
                 VerticalAlignment="Top"
                 Style="{StaticResource PlayButtonTemplate}"
                 Tapped="_playPressed"
-                Visibility="Collapsed" />
+                Visibility="{x:Bind PlayButtonVisibility, Mode=OneWay}" />
         <Border Grid.Column="1"
                 Padding="0"
                 HorizontalAlignment="Stretch"
