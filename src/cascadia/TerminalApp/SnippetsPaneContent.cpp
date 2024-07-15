@@ -106,7 +106,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::WUX::Media::Brush SnippetsPaneContent::BackgroundBrush()
     {
-        static const auto key = winrt::box_value(L"UnfocusedBorderBrush");
+        static const auto key = winrt::box_value(L"SettingsUiTabBrush");
         return ThemeLookup(WUX::Application::Current().Resources(),
                            _settings.GlobalSettings().CurrentTheme().RequestedTheme(),
                            key)
@@ -137,6 +137,11 @@ namespace winrt::TerminalApp::implementation
         {
             _runCommand(taskVM->Command());
         }
+    }
+    void SnippetsPaneContent::_closePaneClick(const Windows::Foundation::IInspectable& /*sender*/,
+                                              const Windows::UI::Xaml::RoutedEventArgs&)
+    {
+        Close();
     }
 
     // Called when one of the items in the list is tapped, or enter/space is

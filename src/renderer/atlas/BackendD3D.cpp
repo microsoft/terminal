@@ -1069,12 +1069,13 @@ void BackendD3D::_uploadBackgroundBitmap(const RenderingPayload& p)
 
     auto src = std::bit_cast<const char*>(p.backgroundBitmap.data());
     const auto srcEnd = std::bit_cast<const char*>(p.backgroundBitmap.data() + p.backgroundBitmap.size());
+    const auto srcWidth = p.s->viewportCellCount.x * sizeof(u32);
     const auto srcStride = p.colorBitmapRowStride * sizeof(u32);
     auto dst = static_cast<char*>(mapped.pData);
 
     while (src < srcEnd)
     {
-        memcpy(dst, src, srcStride);
+        memcpy(dst, src, srcWidth);
         src += srcStride;
         dst += mapped.RowPitch;
     }

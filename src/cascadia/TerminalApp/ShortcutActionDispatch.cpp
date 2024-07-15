@@ -44,6 +44,7 @@ namespace winrt::TerminalApp::implementation
         {
 #define ON_ALL_ACTIONS(id) ACTION_CASE(id);
             ALL_SHORTCUT_ACTIONS
+            INTERNAL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
         default:
             return false;

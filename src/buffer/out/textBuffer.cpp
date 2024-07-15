@@ -445,7 +445,6 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
     while (dist < len)
     {
         cwd.GraphemeNext(state, chars);
-        dist += state.len;
         col += state.width;
 
         // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
@@ -457,6 +456,8 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
             columns = columnLimit;
             return dist;
         }
+
+        dist += state.len;
     }
 
     // But if we simply ran out of text we just need to return the actual number of columns.
