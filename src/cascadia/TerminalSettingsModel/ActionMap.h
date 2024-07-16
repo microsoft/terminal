@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateActionMap(const Model::Command& cmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
-        winrt::Windows::Foundation::IAsyncAction _updateLocalSnippetCache(winrt::hstring currentWorkingDirectory);
+        std::vector<Model::Command> _updateLocalSnippetCache(winrt::hstring currentWorkingDirectory);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
