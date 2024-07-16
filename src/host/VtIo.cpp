@@ -255,19 +255,14 @@ bool VtIo::IsUsingVt() const
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
     //  we're going to emit a VT sequence to ask for the cursor position, then
-    //  read input until we get a response. Terminals who request this behavior
-    //  but don't respond will hang.
+    //  wait 3s until we get a response.
     // If we get a response, the InteractDispatch will call SetCursorPosition,
     //      which will call to our VtIo::SetCursorPosition method.
-    // We need both handles for this initialization to work. If we don't have
-    //      both, we'll skip it. They either aren't going to be reading output
-    //      (so they can't get the DSR) or they can't write the response to us.
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
+        _lookingForCursorPosition = false;
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while (_lookingForCursorPosition && _pVtInputThread->DoReadInput())
-        {
-        }
+        _pVtInputThread->WaitUntilDSR(3000);
     }
 
     // GH#4999 - Send a sequence to the connected terminal to request
