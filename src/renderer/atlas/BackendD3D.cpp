@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "BackendD3D.h"
 
+#include <til/bytes.h>
 #include <til/unicode.h>
 
 #include <custom_shader_ps.h>
@@ -1067,18 +1068,12 @@ void BackendD3D::_uploadBackgroundBitmap(const RenderingPayload& p)
     D3D11_MAPPED_SUBRESOURCE mapped{};
     THROW_IF_FAILED(p.deviceContext->Map(_backgroundBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
 
-    auto src = std::bit_cast<const char*>(p.backgroundBitmap.data());
-    const auto srcEnd = std::bit_cast<const char*>(p.backgroundBitmap.data() + p.backgroundBitmap.size());
-    const auto srcWidth = p.s->viewportCellCount.x * sizeof(u32);
+    const auto src = std::bit_cast<const char*>(p.backgroundBitmap.data());
     const auto srcStride = p.colorBitmapRowStride * sizeof(u32);
-    auto dst = static_cast<char*>(mapped.pData);
+    const auto srcSize = p.backgroundBitmap.size();
+    const auto dst = static_cast<char*>(mapped.pData);
 
-    while (src < srcEnd)
-    {
-        memcpy(dst, src, srcWidth);
-        src += srcStride;
-        dst += mapped.RowPitch;
-    }
+    til::bytes_strided_copy(dst, mapped.RowPitch, mapped.DepthPitch, src, srcStride, srcSize);
 
     p.deviceContext->Unmap(_backgroundBitmap.get(), 0);
     _backgroundBitmapGeneration = p.colorBitmapGenerations[0];

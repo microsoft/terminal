@@ -336,12 +336,20 @@ CATCH_RETURN()
     return S_OK;
 }
 
-void AtlasEngine::_fillColorBitmap(const size_t y, const size_t x1, const size_t x2, const u32 fgColor, const u32 bgColor) noexcept
+void AtlasEngine::_fillColorBitmap(size_t y, size_t x1, size_t x2, const u32 fgColor, const u32 bgColor) noexcept
 {
+    // Never trust the caller. Do bounds checks.
+    // The caller was written by yesterday's me and that person is a complete fool.
+    y = clamp<size_t>(y, 0, _p.s->viewportCellCount.y);
+
+    const auto shift = _p.rows[y]->lineRendition != LineRendition::SingleWidth ? 1 : 0;
+    // Ensure that x1 <= x2 and x2 <= width.
+    x2 = clamp<size_t>(x2 << shift, 0, _p.s->viewportCellCount.x);
+    x1 = clamp<size_t>(x1 << shift, 0, x2);
+
     const auto bitmap = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
-    const auto shift = gsl::narrow_cast<u8>(_p.rows[y]->lineRendition != LineRendition::SingleWidth);
-    auto beg = bitmap + (x1 << shift);
-    auto end = bitmap + (x2 << shift);
+    auto beg = bitmap + x1;
+    auto end = bitmap + x2;
 
     const u32 colors[] = {
         u32ColorPremultiply(bgColor),
