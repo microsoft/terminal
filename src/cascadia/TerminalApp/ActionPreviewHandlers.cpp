@@ -172,6 +172,9 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::SendInput:
             _PreviewSendInput(args.Args().try_as<SendInputArgs>());
             break;
+        default:
+            _EndPreview();
+            return;
         }
 
         // GH#9818 Other ideas for actions that could be preview-able:

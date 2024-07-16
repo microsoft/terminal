@@ -30,9 +30,9 @@
     </Keyword>
   </Keywords>
   <Description>
-      Das Windows-Terminal ist eine moderne, schnelle, effiziente, leistungsstarke und produktive Terminalanwendung für Benutzer von Befehlszeilentools und Shells wie Eingabeaufforderung, PowerShell und WSL. Die wichtigsten Funktionen des Windows-Terminals umfassen mehrere Registerkarten, Bereiche, Unicode- und UTF-8-Zeichenunterstützung, GPU-beschleunigtes Textrendering-Modul sowie benutzerdefinierte Designs, Formatvorlagen und Konfigurationen.
+      Das Windows-Terminal ist eine moderne, schnelle, effiziente, leistungsstarke und produktive Terminal-Anwendung für Benutzer von Befehlszeilentools und Shells wie beispielsweise Eingabeaufforderung, PowerShell und WSL. Die wichtigsten Funktionen des Windows-Terminals umfassen mehrere Registerkarten, Bereiche, Unicode- und UTF-8-Zeichenunterstützung, GPU-beschleunigtes Textrendering-Modul sowie benutzerdefinierte Designs, Formatvorlagen und Konfigurationen.
 
-Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme der Community. Um teilzunehmen, besuchen Sie bitte die Website https://github.com/microsoft/terminal </Description>
+Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme an der Community. Um teilzunehmen, besuchen Sie bitte die Website https://github.com/microsoft/terminal </Description>
   <ShortDescription>
     <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
     

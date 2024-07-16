@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -287,6 +287,15 @@
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Åŉ ǿртíоñαŀ ċοmмäηď, ẁίŧћ ãŗĝūměŉтş, ţô вέ šρªẃйèđ įņ ťђė πεẁ ŧав ŏŗ рªņε !!! !!! !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Ѕäνê ςòmмàπδ ĺіⁿę åѕ ΐирμŧ άстĭŏñ !!! !!! !!! </value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Ǻή òφťΐόπăℓ άѓğŭm℮иţ !!! !!!</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Åň øρτīõŉдŀ àŗġųm℮иť !!! !!!</value>
   </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Μòνê ƒöčµѕ ŧθ ãņøτнёř τåъ !!! !!! !</value>
@@ -791,7 +800,7 @@
     <value>Ϊŋśţāŀŀ πбẁ !!!</value>
   </data>
   <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
-    <value>Ŧђê "newTabMenu" ƒιêŀď čσñţąϊйѕ mōѓé ťђǻñ öŋė ёňτŕý őƒ τýρê "ґёмãīліηģРяöƒïľєś". Φпĺў τђё ƒΐѓšτ όñè ώїłł ьè ĉőлѕìδēяёδ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <value>Ŧђê "newTabMenu" ƒιêŀď čσñţąϊйѕ mōѓé ťђǻñ öŋė ёňτŕý őƒ τýρê "remainingProfiles". Οňŀŷ ŧĥє ƒїѓşť òⁿę ẃîłļ ве čоňşΐđ℮ґёδ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
     <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
   </data>
   <data name="InvalidUseOfContent" xml:space="preserve">
@@ -897,5 +906,39 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Γėşťáгţ ŧħ℮ ãčтĩνέ ρăйё сǿηńëςтιóņ !!! !!! !!! !</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Šņíрρēťş !!</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>₣ΐℓŧєя ѕηīφρеτš... !!! !!</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>İňрūţ τнïš çõmmàηδ !!! !!</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Їńрúτ ťħΐš ċómmãηδ !!! !!</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Йό ŝŋιφρетѕ ƒόµиð їή γούг šэťτιņģѕ. !!! !!! !!! !</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Аðđ ѕоm℮ "Śзήδ ĩпρύŧ" ãćŧϊǿŋś їп ýоϋŕ šéτтīñġѕ ţŏ ћăνė ţнέm ŝђǿŵ ûρ нęŕè. !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Α¢τΐόń ŝâνеð !!! </value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Аčτĩóň ѕáνē ƒªĩłęδ !!! !!</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Сłöšē φǻňë !!!</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ćℓǿŝé ρдŉé !!!</value>
   </data>
 </root>

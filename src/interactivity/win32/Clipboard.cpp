@@ -75,6 +75,7 @@ void Clipboard::Paste()
         // NOTE: Some applications don't add a trailing null character. This includes past conhost versions.
         const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
         StringPaste(str, wcsnlen(str, maxLen));
+        return;
     }
 
     // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).

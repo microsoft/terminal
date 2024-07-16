@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -242,7 +242,7 @@
     <comment>The header for a control allowing users to choose the app's language.</comment>
   </data>
   <data name="Globals_Language.HelpText" xml:space="preserve">
-    <value>Ѕęļéćŧѕ ā ďįŝρℓду łàйģцâğέ ƒǿř ťћз ǻρрľïčдŧíòŉ. Ťħϊş ωіŀľ όνëґŗίďē уǿüř ďèƒăμľţ Ẃïñďбŵś įñτéŗƒαсэ ŀåŋġύдğé. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
+    <value>Ѕęļéćŧѕ ā ďįŝρℓду łàйģцâğέ ƒǿř ťћз ǻρрľïčдŧíòŉ. Ťħϊş ωіŀľ όνëґŗίďē уǿüř ďèƒăμľţ Windows ιⁿтĕřƒàċэ ŀàⁿĝцάģε. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!</value>
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
@@ -520,7 +520,7 @@
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
-    <value>Āũŧοмªτĩčäĺļỳ ŀªūⁿ¢ћ Ťëŗmįŋāℓ ẃнęņ ўоű ŀóġ ìπ τσ Шĩņðоẁѕ. !!! !!! !!! !!! !!! !!</value>
+    <value>Āũŧοмªτĩčäĺļỳ ŀªūⁿ¢ћ Ťëŗmįŋāℓ ẃнęņ ўоű ŀóġ ìπ τσ Windows. !!! !!! !!! !!! !!! !!</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
@@ -648,11 +648,11 @@
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
-    <value>ΛŀţĢř ąĺîàśιⁿģ !!! !</value>
+    <value>AltGr αŀìαŝίлĝ !!! !</value>
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
-    <value>Βу ďёƒдџĺţ, Ŵϊńďŏшš τřεåτš Ċťґℓ+Аłτ åѕ αń àłĩάš ƒŏг ДŀŧĢř. Τħїś śёťтїлğ ŵíℓĺ õνёяřΐďё Ŵìŉďôщѕ' ďэƒâüŀт ьĕђāνïŏř. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <value>Βу ďёƒдџĺţ, Windows ţґεåŧş Сτřŀ+Āłт āŝ ąñ дłίåѕ ƒσŕ ∆ľτĢř. Ŧђΐѕ şзťτïŋĝ ŵϊļł θνęŕŕΐðë Windows' đёƒаџľτ вèђåνįоř. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -672,7 +672,7 @@
     <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer does not use antialiasing techniques.</comment>
   </data>
   <data name="Profile_AntialiasingModeClearType.Content" xml:space="preserve">
-    <value>ĊłėāřŦўрε !!!</value>
+    <value>ClearType !!!</value>
     <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer uses a "ClearType" antialiasing technique. {Locked="ClearType"}</comment>
   </data>
   <data name="Profile_AntialiasingModeGrayscale.Content" xml:space="preserve">
@@ -1145,7 +1145,7 @@
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
-    <value>Íġπόŗэ áρρĺіćâţìǿŋ ŗέqúёśţś ťò çђâηğě ťђê тįтŀé (ΘЅĆ 2). !!! !!! !!! !!! !!! !</value>
+    <value>Íġπόŗэ áρρĺіćâţìǿŋ ŗέqúёśţś ťò çђâηğě ťђê тįтŀé (OSC 2). !!! !!! !!! !!! !!! !</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
   <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1241,7 +1241,7 @@
     <comment>Header for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
   <data name="Profile_BellStyle.HelpText" xml:space="preserve">
-    <value>Ĉøήτѓōℓѕ ẅнǻτ ђдρφéпš шђĕñ тнē ąρрĺιčάτĩоň емìťś а ЬΕ£ ćђãяд¢ţĕř. !!! !!! !!! !!! !!! !!! !</value>
+    <value>Ĉøήτѓōℓѕ ẅнǻτ ђдρφéпš шђĕñ тнē ąρрĺιčάτĩоň емìťś а BEL снªřдćťэŕ. !!! !!! !!! !!! !!! !!! !</value>
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
   <data name="Profile_ReloadEnvVars.Header" xml:space="preserve">
@@ -1544,7 +1544,7 @@
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
   </data>
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Ώр℮п ỳõμѓ settings.json ƒιĺ℮. Áŀţ+Ċĺι¢ќ тθ ôφ℮л уοųѓ δěƒåџĺţş.јśŏл ƒïłе. !!! !!! !!! !!! !!! !!! !!! </value>
+    <value>Ώр℮п ỳõμѓ settings.json ƒιĺ℮. Áŀţ+Ċĺι¢ќ тθ ôφ℮л уοųѓ defaults.json ƒĭĺę. !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
   </data>
   <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
