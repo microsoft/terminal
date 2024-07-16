@@ -305,7 +305,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
         result->_name = _nameFromJson(json);
 
-        auto action{ ShortcutAction::SendInput };
+        const auto action{ ShortcutAction::SendInput };
         IActionArgs args{ nullptr };
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
         std::tie(args, parseWarnings) = SendInputArgs::FromJson(json);

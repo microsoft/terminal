@@ -885,7 +885,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
 
         // iterate over all the commands in all our actions...
-        for (auto&& [name, command] : nameMap)
+        for (auto&& [_, command] : nameMap)
         {
             addCommand(command);
         }
@@ -924,7 +924,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         co_await winrt::resume_background();
 
         // This returns an empty string if we fail to load the file.
-        auto localTasksFileContents = CascadiaSettings::ReadFile(currentWorkingDirectory + L"\\.wt.json");
+        const auto localTasksFileContents = CascadiaSettings::ReadFile(currentWorkingDirectory + L"\\.wt.json");
         if (!localTasksFileContents.empty())
         {
             auto data = winrt::to_string(localTasksFileContents);
@@ -946,7 +946,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 for (const auto& json : actions)
                 {
-                    auto parsed = Command::FromSnippetJson(json);
+                    const auto parsed = Command::FromSnippetJson(json);
                     // Skip over things that aren't snippets
                     if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
                     {
@@ -956,8 +956,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     result.push_back(*parsed);
                 }
             }
-
-            _cwdLocalSnippetsCache.insert_or_assign(currentWorkingDirectory, result);
+            auto cache{ _cwdLocalSnippetsCache.lock() };
+            cache->insert_or_assign(currentWorkingDirectory, result);
         }
 
         // Now at the bottom, we've either found a file successfully parsed it,
@@ -970,22 +970,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring currentCommandline,
         winrt::hstring currentWorkingDirectory)
     {
-        // Check if there are any cached commands in this directory.
-        // If there aren't, then we'll try to look for any commands in this
-        // dir's .wt.json
-        auto cachedCwdCommands = _cwdLocalSnippetsCache.find(currentWorkingDirectory);
-        if (cachedCwdCommands == _cwdLocalSnippetsCache.end())
+        bool hitCache = false;
         {
-            // Here, we haven't cached this path yet
-            co_await _updateLocalSnippetCache(currentWorkingDirectory);
-            cachedCwdCommands = _cwdLocalSnippetsCache.find(currentWorkingDirectory);
-        }
+            auto cache{ _cwdLocalSnippetsCache.lock_shared() };
 
-        auto cachedCommands = cachedCwdCommands != _cwdLocalSnippetsCache.end() ?
+            // Check if there are any cached commands in this directory.
+            // If there aren't, then we'll try to look for any commands in this
+            // dir's .wt.json
+            auto cachedCwdCommands = cache->find(currentWorkingDirectory);
+            hitCache = cachedCwdCommands != cache->end();
+            if (hitCache)
+            {
+                co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCwdCommands->second));
+            }
+        }
+        // Here, we haven't cached this path yet
+        co_await _updateLocalSnippetCache(currentWorkingDirectory);
+
+        auto cache{ _cwdLocalSnippetsCache.lock_shared() };
+        auto cachedCwdCommands = cache->find(currentWorkingDirectory);
+        auto cachedCommands = cachedCwdCommands != cache->end() ?
                                   cachedCwdCommands->second :
                                   std::vector<Model::Command>{};
-
         co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCommands));
+
+        // }
     }
 #pragma endregion
 }

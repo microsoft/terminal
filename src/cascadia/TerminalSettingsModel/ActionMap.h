@@ -136,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // we can give the SUI a view of the key chords and the commands they map to
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyToActionMapCache{ nullptr };
 
-        std::unordered_map<hstring, std::vector<Model::Command>> _cwdLocalSnippetsCache{};
+        til::shared_mutex<std::unordered_map<hstring, std::vector<Model::Command>>> _cwdLocalSnippetsCache{};
 
         friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class SettingsModelUnitTests::DeserializationTests;

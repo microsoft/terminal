@@ -1480,6 +1480,7 @@ namespace winrt::TerminalApp::implementation
         if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
         {
             const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(currentCommandline, currentWorkingDirectory);
+            // ----- we may be on a background thread here -----
             for (const auto& t : tasks)
             {
                 commandsCollection.push_back(t);
