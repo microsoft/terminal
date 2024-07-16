@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
         til::property_changed_event PropertyChanged;
         til::typed_event<TerminalApp::CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
 
-        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Visibility, PlayButtonVisibility, PropertyChanged.raise, Windows::UI::Xaml::Visibility::Visible);
+        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Visibility, PlayButtonVisibility, PropertyChanged.raise, Windows::UI::Xaml::Visibility::Collapsed);
 
     private:
         friend struct CodeBlockT<CodeBlock>; // for Xaml to bind events

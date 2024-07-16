@@ -34,11 +34,19 @@ static std::string_view textFromUrl(const cmark_node* const node)
     return textFromCmarkString(node->as.link.url);
 }
 
-WUX::Controls::RichTextBlock MarkdownToXaml::Convert(const winrt::hstring& markdownText, const winrt::hstring& baseUrl)
+// Function Description:
+// - Entrypoint to convert a string of markdown into a XAML RichTextBlock.
+// Arguments:
+// - markdownText: the markdown content to render
+// - baseUrl: the current URI of the content. This will allow for relative links
+//   to be appropriately resolved.
+// Return Value:
+// - a RichTextBlock with the rendered markdown in it.
+WUX::Controls::RichTextBlock MarkdownToXaml::Convert(std::string_view markdownText, const winrt::hstring& baseUrl)
 {
     MarkdownToXaml data{ baseUrl };
 
-    auto doc = cmark_parse_document(to_string(markdownText).c_str(), markdownText.size(), CMARK_OPT_DEFAULT);
+    auto doc = cmark_parse_document(markdownText.c_str(), markdownText.size(), CMARK_OPT_DEFAULT);
     auto iter = cmark_iter_new(doc);
     cmark_event_type ev_type;
     cmark_node* curr;
@@ -46,7 +54,7 @@ WUX::Controls::RichTextBlock MarkdownToXaml::Convert(const winrt::hstring& markd
     while ((ev_type = cmark_iter_next(iter)) != CMARK_EVENT_DONE)
     {
         curr = cmark_iter_get_node(iter);
-        data._RenderNode(curr, ev_type, 0);
+        data._RenderNode(curr, ev_type);
     }
 
     return data._root;
@@ -144,7 +152,7 @@ WUX::Controls::TextBlock MarkdownToXaml::_makeDefaultTextBlock()
     return b;
 }
 
-void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int /*options*/)
+void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 {
     cmark_node* parent;
     cmark_node* grandparent;
@@ -187,39 +195,14 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
 
     case CMARK_NODE_LIST:
     {
-        // cmark_list_type list_type = node->as.list.list_type;
-        // int start = node->as.list.start;
-
-        // if (entering) {
-        //   cmark_html_render_cr(html);
-        //   if (list_type == CMARK_BULLET_LIST) {
-        //     cmark_strbuf_puts(html, "<ul");
-        //     cmark_html_render_sourcepos(node, html, options);
-        //     cmark_strbuf_puts(html, ">\n");
-        //   } else if (start == 1) {
-        //     cmark_strbuf_puts(html, "<ol");
-        //     cmark_html_render_sourcepos(node, html, options);
-        //     cmark_strbuf_puts(html, ">\n");
-        //   } else {
-        //     snprintf(buffer, BUFFER_SIZE, "<ol start=\"%d\"", start);
-        //     cmark_strbuf_puts(html, buffer);
-        //     cmark_html_render_sourcepos(node, html, options);
-        //     cmark_strbuf_puts(html, ">\n");
-        //   }
-        // } else {
-        //   cmark_strbuf_puts(html,
-        //                     list_type == CMARK_BULLET_LIST ? "</ul>\n" : "</ol>\n");
-        // }
-
-        // cmark_list_type list_type = node->as.list.list_type;
-        // int start = node->as.list.start;
+        // when `node->as.list.list_type == CMARK_BULLET_LIST`, we're an unordered list.
+        // Otherwise, we're an ordered one (and we might not start at 0).
+        //
+        // However, we don't support numbered lists for now.
         if (entering)
         {
             _EndParagraph();
             _indent++;
-            // _lastParagraph = WUX::Documents::Paragraph();
-            // _lastParagraph.TextIndent(24 * indent);
-            // _root.Blocks().Append(_lastParagraph);
         }
         else
         {
@@ -230,9 +213,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
     }
 
     case CMARK_NODE_ITEM:
-
         // A list item, either for a ordered list or an unordered one.
-
         if (entering)
         {
             _EndParagraph();
@@ -259,7 +240,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
         _EndParagraph();
 
         std::string_view code{ (char*)node->as.code.literal.data, (size_t)node->as.code.literal.len - 1 };
-        const auto codeHstring{ winrt::to_hstring(code) };
+        const auto codeHstring{ winrt::hstring{ til::u8u16(code) } };
 
         auto codeBlock = winrt::make<winrt::TerminalApp::implementation::CodeBlock>(codeHstring);
         // codeBlock.RequestRunCommands({ page, &MarkdownPaneContent::_handleRunCommandRequest });
@@ -315,7 +296,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
     }
     case CMARK_NODE_TEXT:
     {
-        const auto text{ winrt::to_hstring(textFromLiteral(node)) };
+        const auto text{ winrt::hstring{ til::u8u16(textFromLiteral(node)) } };
 
         if (_currentImage)
         {
@@ -356,7 +337,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
 
     case CMARK_NODE_CODE:
     {
-        const auto text{ winrt::to_hstring(textFromLiteral(node)) };
+        const auto text{ winrt::hstring{ til::u8u16(textFromLiteral(node)) } };
         const auto& codeRun{ _NewRun() };
 
         codeRun.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
@@ -379,13 +360,13 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
     case CMARK_NODE_STRONG:
         _NewRun().FontWeight(entering ?
                                  winrt::Windows::UI::Text::FontWeights::Bold() :
-            winrt::Windows::UI::Text::FontWeights::Normal());
+                                 winrt::Windows::UI::Text::FontWeights::Normal());
         break;
 
     case CMARK_NODE_EMPH:
         _NewRun().FontStyle(entering ?
-            winrt::Windows::UI::Text::FontStyle::Italic :
-            winrt::Windows::UI::Text::FontStyle::Normal);
+                                winrt::Windows::UI::Text::FontStyle::Italic :
+                                winrt::Windows::UI::Text::FontStyle::Normal);
         break;
 
     case CMARK_NODE_LINK:
@@ -410,7 +391,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
             const auto url{ textFromUrl(node) };
             // std::string_view url{ (char*)node->as.link.url.data, (size_t)node->as.link.url.len };
             // std::string_view text{ (char*)node->as.link.title.data, (size_t)node->as.link.title.len };
-            const auto urlHstring{ winrt::to_hstring(url) };
+            const auto urlHstring{ winrt::hstring{ til::u8u16(url) } };
             // TODO! add tooltip that does the unescaped URL thing that we do for termcontrol
             WUX::Documents::Hyperlink a{};
             winrt::Windows::Foundation::Uri uri{ _baseUri, urlHstring };
@@ -431,7 +412,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type, int
         if (entering)
         {
             std::string_view url{ (char*)node->as.link.url.data, (size_t)node->as.link.url.len };
-            const auto urlHstring{ winrt::to_hstring(url) };
+            const auto urlHstring{ winrt::hstring{ til::u8u16(url) } };
             winrt::Windows::Foundation::Uri uri{ _baseUri, urlHstring };
             WUX::Controls::Image img{};
             WUX::Media::Imaging::BitmapImage bitmapImage;
