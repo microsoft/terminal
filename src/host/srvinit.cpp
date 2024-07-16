@@ -574,7 +574,7 @@ try
 
     // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
     // defterm connections to the Terminal are going to have weird resizing.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"),
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --signal {:#x}"),
                                          (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());

@@ -482,21 +482,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::_LastConPtyClientDisconnected() noexcept
     try
     {
-        DWORD exitCode = 0;
+        DWORD exitCode{ 0 };
         GetExitCodeProcess(_piClient.hProcess, &exitCode);
 
         // Signal the closing or failure of the process.
         // exitCode might be STILL_ACTIVE if a client has called FreeConsole() and
         // thus caused the tab to close, even though the CLI app is still running.
-        const auto success = exitCode == 0 || exitCode == STILL_ACTIVE || exitCode == STATUS_CONTROL_C_EXIT;
-        const auto state = success ? ConnectionState::Closed : ConnectionState::Failed;
-
-        if (!success)
-        {
-            _indicateExitWithStatus(exitCode);
-        }
-
-        _transitionToState(state);
+        _transitionToState(exitCode == 0 || exitCode == STILL_ACTIVE ? ConnectionState::Closed : ConnectionState::Failed);
+        _indicateExitWithStatus(exitCode);
     }
     CATCH_LOG()
 
