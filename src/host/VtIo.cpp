@@ -25,7 +25,6 @@ VtIo::VtIo() :
 {
 }
 
-
 [[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
@@ -130,9 +129,9 @@ VtIo::VtIo() :
         {
             auto initialViewport = Viewport::FromDimensions({ 0, 0 }, gci.GetWindowSize());
 
-                auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                       initialViewport);
-                _pVtRenderEngine = std::move(xterm256Engine);
+            auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
+                                                                   initialViewport);
+            _pVtRenderEngine = std::move(xterm256Engine);
 
             if (_pVtRenderEngine)
             {
