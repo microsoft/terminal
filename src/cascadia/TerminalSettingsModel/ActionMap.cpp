@@ -981,28 +981,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // dir's .wt.json
             cachedCwdCommands = cache->find(currentWorkingDirectory);
             hitCache = cachedCwdCommands != cache->end();
-            // if (hitCache)
-            // {
-            //     co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCwdCommands->second));
-            // }
-        }
+        } // release the lock on the cache
+
         if (!hitCache)
         {
             // Here, we haven't cached this path yet
             co_await _updateLocalSnippetCache(currentWorkingDirectory);
 
+            // now re-lock
             auto cache{ _cwdLocalSnippetsCache.lock_shared() };
             cachedCwdCommands = cache->find(currentWorkingDirectory);
             hitCache = cachedCwdCommands != cache->end();
         }
-        // {
-        // }
         auto cachedCommands = hitCache ?
-                                                              cachedCwdCommands->second :
-                                                              std::vector<Model::Command>{};
-        co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCommands));
+                                  cachedCwdCommands->second :
+                                  std::vector<Model::Command>{};
 
-        // }
+        co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(),
+                                                                                  currentCommandline,
+                                                                                  cachedCommands));
     }
 #pragma endregion
 }
