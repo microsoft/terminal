@@ -363,7 +363,7 @@ namespace winrt::TerminalApp::implementation
                 if (!path.empty())
                 {
                     const auto buffer = control.ReadEntireBuffer();
-                    til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ path.c_str() }, til::u16u8(buffer));
+                    til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ std::wstring_view{ path } }, til::u16u8(buffer));
                 }
             }
         }
