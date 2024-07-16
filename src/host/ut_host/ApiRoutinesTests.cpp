@@ -33,7 +33,6 @@ class ApiRoutinesTests
     {
         m_state = std::make_unique<CommonState>();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -54,7 +53,6 @@ class ApiRoutinesTests
         m_state->CleanupGlobalInputBuffer();
 
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         m_state.reset(nullptr);
 
