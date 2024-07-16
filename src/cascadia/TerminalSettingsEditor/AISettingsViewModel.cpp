@@ -134,11 +134,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettingsViewModel::_OnGithubAuthCompleted()
     {
-        // todo: there is a problem here
-        //       our copy of _Settings hasn't actually been updated with the new settings, only the actual
-        //       _settings over in TerminalPage has the update (we have a copy that doesn't update automatically)
-        //       so we think the tokens are still empty
-        //       we could potentially solve this by checking the vault directly but that feels icky
         _NotifyChanges(L"AreGithubCopilotTokensSet");
     }
 }

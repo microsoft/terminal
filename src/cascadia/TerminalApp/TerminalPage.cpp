@@ -515,6 +515,8 @@ namespace winrt::TerminalApp::implementation
             {
                 _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
                 _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
+
+                co_await wil::resume_foreground(Dispatcher());
                 winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus();
             }
             // todo: we should let the user know somehow if the auth failed...
