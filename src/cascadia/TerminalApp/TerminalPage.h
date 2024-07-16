@@ -232,6 +232,9 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::TerminalTab _settingsTab{ nullptr };
 
+        winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider _githubCopilotLLMProvider{ nullptr };
+        winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::hstring& newAuth);
+
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
@@ -434,7 +437,7 @@ namespace winrt::TerminalApp::implementation
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
         void _InitiateGithubAuth();
-        winrt::fire_and_forget _CompleteGithubAuth(const Windows::Foundation::Uri uri);
+        void _CompleteGithubAuth(const Windows::Foundation::Uri uri);
 
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);

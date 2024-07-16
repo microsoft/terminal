@@ -10,6 +10,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct GithubCopilotLLMProvider : GithubCopilotLLMProviderT<GithubCopilotLLMProvider>
     {
+        GithubCopilotLLMProvider() = default;
         GithubCopilotLLMProvider(const winrt::hstring& endpoint, const winrt::hstring& key);
 
         void ClearMessageHistory();
@@ -17,6 +18,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void SetContext(const Extension::IContext context);
 
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
+
+        winrt::fire_and_forget CompleteAuthWithUrl(const Windows::Foundation::Uri url);
+        TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, winrt::hstring);
 
     private:
         winrt::hstring _authToken;

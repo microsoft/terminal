@@ -10,6 +10,9 @@ namespace Microsoft.Terminal.Query.Extension
         void SetContext(IContext context);
 
         Windows.Foundation.IAsyncOperation<IResponse> GetResponseAsync(String userPrompt);
+
+        void CompleteAuthWithUrl(Windows.Foundation.Uri url);
+        event Windows.Foundation.TypedEventHandler<ILMProvider, String> AuthChanged;
     }
 
     interface IResponse

@@ -33,6 +33,53 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _httpClient.DefaultRequestHeaders().Append(L"Copilot-Integration-Id", L"windows-terminal-chat");
     }
 
+    winrt::fire_and_forget GithubCopilotLLMProvider::CompleteAuthWithUrl(const Windows::Foundation::Uri url)
+    {
+        _httpClient = winrt::Windows::Web::Http::HttpClient{};
+        _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
+
+        WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Windows::Foundation::Uri{ L"https://github.com/login/oauth/access_token" } };
+        request.Headers().Accept().TryParseAdd(L"application/json");
+
+        WDJ::JsonObject jsonContent;
+        jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
+        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"FineKeepYourSecrets"));
+        jsonContent.SetNamedValue(L"code", WDJ::JsonValue::CreateStringValue(url.QueryParsed().GetFirstValueByName(L"code")));
+        const auto stringContent = jsonContent.ToString();
+        WWH::HttpStringContent requestContent{
+            stringContent,
+            WSS::UnicodeEncoding::Utf8,
+            L"application/json"
+        };
+
+        request.Content(requestContent);
+
+        co_await winrt::resume_background();
+
+        try
+        {
+            const auto response = _httpClient.SendRequestAsync(request).get();
+            // Parse out the suggestion from the response
+            const auto string{ response.Content().ReadAsStringAsync().get() };
+
+            const auto jsonResult{ WDJ::JsonObject::Parse(string) };
+            const auto authToken{ jsonResult.GetNamedString(L"access_token") };
+            const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
+            if (!authToken.empty() && !refreshToken.empty())
+            {
+                _authToken = authToken;
+                _refreshToken = refreshToken;
+                _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
+                _httpClient.DefaultRequestHeaders().Append(L"Copilot-Integration-Id", L"windows-terminal-chat");
+            }
+            // raise the new tokens so the app can store them
+            _AuthChangedHandlers(*this, string);
+        }
+        CATCH_LOG();
+
+        co_return;
+    }
+
     void GithubCopilotLLMProvider::ClearMessageHistory()
     {
         _jsonMessages.Clear();
@@ -173,12 +220,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             _authToken = jsonResult.GetNamedString(L"access_token");
             _refreshToken = jsonResult.GetNamedString(L"refresh_token");
             _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
-            // todo: we should send the new tokens back to settings for storage
-            //       or should the refreshing happen in terminal page itself? we need the client secret again
-            //       ...but that require re-initializing the palette
+            _AuthChangedHandlers(*this, string);
         }
-        catch (...)
-        {
-        }
+        CATCH_LOG();
     }
 }

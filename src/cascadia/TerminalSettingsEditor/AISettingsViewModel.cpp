@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AISettingsViewModel::AISettingsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
+        _githubAuthCompleteRevoker = MainPage::GithubAuthCompleted(winrt::auto_revoke, { this, &AISettingsViewModel::_OnGithubAuthCompleted });
     }
 
     bool AISettingsViewModel::AreAzureOpenAIKeyAndEndpointSet()
@@ -128,7 +129,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettingsViewModel::InitiateGithubAuth_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _awaitingGithubAuth = true;
         GithubAuthRequested.raise(nullptr, nullptr);
+    }
+
+    void AISettingsViewModel::_OnGithubAuthCompleted()
+    {
+        // todo: there is a problem here
+        //       our copy of _Settings hasn't actually been updated with the new settings, only the actual
+        //       _settings over in TerminalPage has the update (we have a copy that doesn't update automatically)
+        //       so we think the tokens are still empty
+        //       we could potentially solve this by checking the vault directly but that feels icky
+        _NotifyChanges(L"AreGithubCopilotTokensSet");
     }
 }

@@ -504,6 +504,24 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::fire_and_forget TerminalPage::_OnGithubCopilotLLMProviderAuthChanged(const IInspectable& /*sender*/, const winrt::hstring& newAuth)
+    {
+        try
+        {
+            const auto jsonResult{ WDJ::JsonObject::Parse(newAuth) };
+            const auto authToken{ jsonResult.GetNamedString(L"access_token") };
+            const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
+            if (!authToken.empty() && !refreshToken.empty())
+            {
+                _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
+                _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
+                winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus();
+            }
+            // todo: we should let the user know somehow if the auth failed...
+        }
+        CATCH_LOG();
+    }
+
     // Method Description:
     // - This method is called once on startup, on the first LayoutUpdated event.
     //   We'll use this event to know that we have an ActualWidth and
@@ -4139,84 +4157,11 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, L"open", L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1", nullptr, nullptr, SW_SHOWNORMAL);
     }
 
-    // todo: move this to a member funciton in githubcopilotllmprovider
-    // (could even be on the LMprovider interface? like completeauthwithurl)
-    // 1. copmleteauth 2. setauthentication(string) 3. event that says authchanged(newauth)
-    // construct empty github provider -> completeauthwithurl -> raises authchanged event
-    winrt::fire_and_forget TerminalPage::_CompleteGithubAuth(const Windows::Foundation::Uri uri)
+    void TerminalPage::_CompleteGithubAuth(const Windows::Foundation::Uri uri)
     {
-        winrt::Windows::Web::Http::HttpClient httpClient{};
-        httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
-
-        WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Windows::Foundation::Uri{ L"https://github.com/login/oauth/access_token" } };
-        request.Headers().Accept().TryParseAdd(L"application/json");
-
-        WDJ::JsonObject jsonContent;
-        jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
-        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"notShowingSecretForCommitForObviousReasons"));
-        jsonContent.SetNamedValue(L"code", WDJ::JsonValue::CreateStringValue(uri.QueryParsed().GetFirstValueByName(L"code")));
-        const auto stringContent = jsonContent.ToString();
-        WWH::HttpStringContent requestContent{
-            stringContent,
-            WSS::UnicodeEncoding::Utf8,
-            L"application/json"
-        };
-
-        request.Content(requestContent);
-
-        co_await winrt::resume_background();
-
-        try
-        {
-            const auto response = httpClient.SendRequestAsync(request).get();
-            // Parse out the suggestion from the response
-            const auto string{ response.Content().ReadAsStringAsync().get() };
-
-            // we have to switch back to the main thread here in case the JSON parsing failed (indicating there was an error)
-            // and as a result we show the error dialog
-            co_await winrt::resume_foreground(Dispatcher());
-
-            const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-            const auto authToken{ jsonResult.GetNamedString(L"access_token") };
-            const auto refreshToken{ jsonResult.GetNamedString(L"refresh_token") };
-            if (!authToken.empty() && !refreshToken.empty())
-            {
-                _settings.GlobalSettings().AIInfo().GithubCopilotAuthToken(authToken);
-                _settings.GlobalSettings().AIInfo().GithubCopilotRefreshToken(refreshToken);
-
-                // todo: this _settingsTab check only works if new instance behavior is set to attach to this window,
-                //       fix this to work with any new instance behavior
-                //       FIX THIS IN POST, FINE FOR NOW
-                if (_settingsTab)
-                {
-                    // add a static function to settings editor main page,
-                    // smth like "refreshEndpointAuthStatus"
-                    // then in this function just call SEttingsEditor::MainPAge::Refresh...
-                    // implement that in MainPage by just dispatching a til::event, AISettingsPage listens to that event
-                    // and refreshes the UI there
-                    // see conptyconnection::newconnection
-                    if (auto terminalTab{ _GetTerminalTabImpl(_settingsTab) })
-                    {
-                        // refresh the settings UI now that we have the auth tokens stored
-                        co_await winrt::resume_foreground(Dispatcher());
-                        terminalTab->UpdateSettings(_settings);
-
-                        // also reload the extension palette with the new settings
-                        if (_extensionPalette)
-                        {
-                            _extensionPalette = nullptr;
-                            _loadQueryExtension();
-                        }
-                    }
-                }
-            }
-        }
-        catch (...)
-        {
-            _ShowDialogHelper(L"GithubAuthFailedDialog");
-        }
-
-        co_return;
+        _githubCopilotLLMProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider{};
+        _githubCopilotLLMProvider.CompleteAuthWithUrl(uri);
+        _githubCopilotLLMProvider.AuthChanged({ this, &TerminalPage::_OnGithubCopilotLLMProviderAuthChanged });
     }
 
     // Method Description:
@@ -5521,7 +5466,17 @@ namespace winrt::TerminalApp::implementation
         }
         else if (settingsAIInfo.ActiveProvider() == LLMProvider::GithubCopilot)
         {
-            lmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider(settingsAIInfo.GithubCopilotAuthToken(), settingsAIInfo.GithubCopilotRefreshToken());
+            // we might have initialized a GithubCopilotLLMProvider already to kick off the auth, check for that
+            if (_githubCopilotLLMProvider)
+            {
+                lmProvider = _githubCopilotLLMProvider;
+            }
+            else
+            {
+                // we did not have a pre-initialized provider, initialize one with our stored tokens
+                lmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider(settingsAIInfo.GithubCopilotAuthToken(), settingsAIInfo.GithubCopilotRefreshToken());
+                lmProvider.AuthChanged({ this, &TerminalPage::_OnGithubCopilotLLMProviderAuthChanged });
+            }
         }
         _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(lmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {

@@ -41,7 +41,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::CascadiaSettings _Settings;
-        bool _awaitingGithubAuth{ false };
+
+        winrt::Microsoft::Terminal::Settings::Editor::MainPage::GithubAuthCompleted_revoker _githubAuthCompleteRevoker;
+
+        void _OnGithubAuthCompleted();
     };
 };
 
