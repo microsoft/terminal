@@ -970,6 +970,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring currentCommandline,
         winrt::hstring currentWorkingDirectory)
     {
+        using iter = std::unordered_map<hstring, std::vector<Model::Command>>::const_iterator;
+        iter cachedCwdCommands;
         bool hitCache = false;
         {
             auto cache{ _cwdLocalSnippetsCache.lock_shared() };
@@ -977,21 +979,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Check if there are any cached commands in this directory.
             // If there aren't, then we'll try to look for any commands in this
             // dir's .wt.json
-            auto cachedCwdCommands = cache->find(currentWorkingDirectory);
+            cachedCwdCommands = cache->find(currentWorkingDirectory);
             hitCache = cachedCwdCommands != cache->end();
-            if (hitCache)
-            {
-                co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCwdCommands->second));
-            }
+            // if (hitCache)
+            // {
+            //     co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCwdCommands->second));
+            // }
         }
-        // Here, we haven't cached this path yet
-        co_await _updateLocalSnippetCache(currentWorkingDirectory);
+        if (!hitCache)
+        {
+            // Here, we haven't cached this path yet
+            co_await _updateLocalSnippetCache(currentWorkingDirectory);
 
-        auto cache{ _cwdLocalSnippetsCache.lock_shared() };
-        auto cachedCwdCommands = cache->find(currentWorkingDirectory);
-        auto cachedCommands = cachedCwdCommands != cache->end() ?
-                                  cachedCwdCommands->second :
-                                  std::vector<Model::Command>{};
+            auto cache{ _cwdLocalSnippetsCache.lock_shared() };
+            cachedCwdCommands = cache->find(currentWorkingDirectory);
+            hitCache = cachedCwdCommands != cache->end();
+        }
+        // {
+        // }
+        auto cachedCommands = hitCache ?
+                                                              cachedCwdCommands->second :
+                                                              std::vector<Model::Command>{};
         co_return winrt::single_threaded_vector<Model::Command>(_filterToSnippets(NameMap(), currentCommandline, cachedCommands));
 
         // }
