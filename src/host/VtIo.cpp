@@ -3,17 +3,14 @@
 
 #include "precomp.h"
 #include "VtIo.hpp"
+
+#include "handle.h" // LockConsole
+#include "output.h" // CloseConsoleProcessState
 #include "../interactivity/inc/ServiceLocator.hpp"
-
-#include "../renderer/vt/XtermEngine.hpp"
-#include "../renderer/vt/Xterm256Engine.hpp"
-
 #include "../renderer/base/renderer.hpp"
+#include "../renderer/vt/Xterm256Engine.hpp"
 #include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/utils.hpp"
-#include "handle.h" // LockConsole
-#include "input.h" // ProcessCtrlEvents
-#include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -24,47 +21,10 @@ using namespace Microsoft::Console::Interactivity;
 
 VtIo::VtIo() :
     _initialized(false),
-    _lookingForCursorPosition(false),
-    _IoMode(VtIoMode::INVALID)
+    _lookingForCursorPosition(false)
 {
 }
 
-// Routine Description:
-//  Tries to get the VtIoMode from the given string. If it's not one of the
-//      *_STRING constants in VtIoMode.hpp, then it returns E_INVALIDARG.
-// Arguments:
-//  VtIoMode: A string containing the console's requested VT mode. This can be
-//      any of the strings in VtIoModes.hpp
-//  pIoMode: receives the VtIoMode that the string represents if it's a valid
-//      IO mode string
-// Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
-[[nodiscard]] HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode)
-{
-    ioMode = VtIoMode::INVALID;
-
-    if (VtMode == XTERM_256_STRING)
-    {
-        ioMode = VtIoMode::XTERM_256;
-    }
-    else if (VtMode == XTERM_STRING)
-    {
-        ioMode = VtIoMode::XTERM;
-    }
-    else if (VtMode == XTERM_ASCII_STRING)
-    {
-        ioMode = VtIoMode::XTERM_ASCII;
-    }
-    else if (VtMode == DEFAULT_STRING)
-    {
-        ioMode = VtIoMode::XTERM_256;
-    }
-    else
-    {
-        return E_INVALIDARG;
-    }
-    return S_OK;
-}
 
 [[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
 {
@@ -96,7 +56,7 @@ VtIo::VtIo() :
             CodepointWidthDetector::Singleton().Reset(mode);
         }
 
-        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
+        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
     else
@@ -116,8 +76,6 @@ VtIo::VtIo() :
 //      input events.
 //  OutHandle: a valid file handle. The console
 //      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be
-//      any of the strings in VtIoModes.hpp
 //  SignalHandle: an optional file handle that will be used to send signals into the console.
 //      This represents the ability to send signals to a *nix tty/pty.
 // Return Value:
@@ -125,12 +83,9 @@ VtIo::VtIo() :
 //      indicating failure.
 [[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
                                         const HANDLE OutHandle,
-                                        const std::wstring& VtMode,
                                         _In_opt_ const HANDLE SignalHandle)
 {
     FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
-
-    RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
     _hInput.reset(InHandle);
     _hOutput.reset(OutHandle);
@@ -174,34 +129,11 @@ VtIo::VtIo() :
         if (IsValidHandle(_hOutput.get()))
         {
             auto initialViewport = Viewport::FromDimensions({ 0, 0 }, gci.GetWindowSize());
-            switch (_IoMode)
-            {
-            case VtIoMode::XTERM_256:
-            {
+
                 auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                        initialViewport);
                 _pVtRenderEngine = std::move(xterm256Engine);
-                break;
-            }
-            case VtIoMode::XTERM:
-            {
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 initialViewport,
-                                                                 false);
-                break;
-            }
-            case VtIoMode::XTERM_ASCII:
-            {
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 initialViewport,
-                                                                 true);
-                break;
-            }
-            default:
-            {
-                return E_FAIL;
-            }
-            }
+
             if (_pVtRenderEngine)
             {
                 _pVtRenderEngine->SetTerminalOwner(this);
