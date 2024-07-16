@@ -592,7 +592,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            const auto request = SearchRequest { _searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false, _searchScrollOffset() };
+            const auto request = SearchRequest{ _searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false, _searchScrollOffset() };
             _handleSearchResults(_core.Search(request));
         }
     }
@@ -627,7 +627,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            const auto request = SearchRequest { text, goForward, caseSensitive, regularExpression, false, _searchScrollOffset() };
+            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, false, _searchScrollOffset() };
             _handleSearchResults(_core.Search(request));
         }
     }
@@ -649,7 +649,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // We only want to update the search results based on the new text. Set
             // `resetOnly` to true so we don't accidentally update the current match index.
-            const auto request = SearchRequest { text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset() };
+            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset() };
             const auto result = _core.Search(request);
             _handleSearchResults(result);
         }
@@ -3689,7 +3689,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        const auto request = SearchRequest { text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset() };
+        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset() };
         _handleSearchResults(_core.Search(request));
     }
 
