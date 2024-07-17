@@ -18,7 +18,6 @@
              mc:Ignorable="d">
     <UserControl.Resources>
 
-
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
@@ -28,7 +27,6 @@
                     <Color x:Key="PlayButtonNormalColor">#88222222</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <!--<Color x:Key="BlockBackgroundColor">#161b22</Color>-->
                     <Color x:Key="BlockBackgroundColor">#1e1e1e</Color>
                     <Color x:Key="BlockBorderColor">#30363d</Color>
                     <Color x:Key="PlayButtonHoveredColor">#90ef90</Color>
@@ -59,18 +57,17 @@
                                          Height="20">
                                     <Grid>
                                         <FontIcon x:Name="ButtonBackgroundIcon"
-                                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                                   Foreground="{ThemeResource PlayButtonHoveredColor}"
                                                   Glyph="&#xF5b0;"
                                                   Visibility="Collapsed" />
                                         <FontIcon x:Name="ButtonOutlineIcon"
-                                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                                   Foreground="{ThemeResource PlayButtonNormalColor}"
                                                   Glyph="&#xE768;" />
                                         <muxc:ProgressRing x:Name="StatusProgress"
                                                            IsActive="False" />
                                     </Grid>
-                                    <!--  TODO! FontFamily="{ThemeResource SymbolThemeFontFamily}"  -->
                                 </Viewbox>
 
                                 <VisualStateManager.VisualStateGroups>

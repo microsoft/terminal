@@ -5,7 +5,6 @@
 #include "MarkdownPaneContent.h"
 #include <LibraryResources.h>
 #include "MarkdownPaneContent.g.cpp"
-// #include "CodeBlock.h"
 #include <til/io.h>
 
 using namespace std::chrono_literals;
@@ -37,7 +36,7 @@ namespace winrt::TerminalApp::implementation
 
     INewContentArgs MarkdownPaneContent::GetNewTerminalArgs(BuildStartupKind /*kind*/) const
     {
-        return BaseContentArgs(L"markdown");
+        return BaseContentArgs(L"x-markdown");
     }
 
     void MarkdownPaneContent::_clearOldNotebook()
@@ -50,6 +49,10 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
+
+        // Our title is the path of our MD file
+        TitleChanged.raise(*this, nullptr);
+
         const std::filesystem::path filePath{ std::wstring_view{ _filePath } };
         const auto fileContents{ til::io::read_file_as_utf8_string_if_exists(filePath) };
         const std::string markdownContents = fileContents.value_or("");
@@ -156,12 +159,10 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    void MarkdownPaneContent::_handleRunCommandRequest(const Microsoft::Terminal::UI::Markdown::CodeBlock& sender,
+    void MarkdownPaneContent::_handleRunCommandRequest(const Microsoft::Terminal::UI::Markdown::CodeBlock& /*sender*/,
                                                        const Microsoft::Terminal::UI::Markdown::RequestRunCommandsArgs& request)
     {
         auto text = request.Commandlines();
-        sender;
-        text;
 
         if (const auto& strongControl{ _control.get() })
         {

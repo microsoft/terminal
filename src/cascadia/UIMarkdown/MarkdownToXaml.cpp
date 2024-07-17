@@ -152,33 +152,6 @@ WUX::Controls::TextBlock MarkdownToXaml::_makeDefaultTextBlock()
     return b;
 }
 
-// WUX::Controls::Grid _makeCodeBlock(const winrt::hstring& text)
-// {
-//     WUX::Controls::Grid root{};
-//     root.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-
-//     WUX::Controls::Border border{};
-//     border.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-
-//     root.Children().Append(border);
-
-//     WUX::Controls::ScrollViewer scroll{};
-//     scroll.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-
-//     border.Child(scroll);
-
-//     WUX::Controls::TextBlock textBlock{};
-//     textBlock.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-//     textBlock.IsTextSelectionEnabled(true);
-//     textBlock.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
-//     textBlock.Text(text);
-//     textBlock.Margin(WUX::ThicknessHelper::FromLengths(14, 14, 14, 14));
-
-//     scroll.Content(textBlock);
-
-//     return root;
-// }
-
 void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 {
     cmark_node* parent;
@@ -270,8 +243,6 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         const auto codeHstring{ winrt::hstring{ til::u8u16(code) } };
 
         auto codeBlock = winrt::make<winrt::Microsoft::Terminal::UI::Markdown::implementation::CodeBlock>(codeHstring);
-        // codeBlock.RequestRunCommands({ page, &MarkdownPaneContent::_handleRunCommandRequest });
-        // auto codeBlock = _makeCodeBlock(codeHstring);
         WUX::Documents::InlineUIContainer codeContainer{};
         codeContainer.Child(codeBlock);
         _CurrentParagraph().Inlines().Append(codeContainer);
@@ -292,10 +263,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         break;
 
     case CMARK_NODE_THEMATIC_BREAK:
-        // cmark_html_render_cr(html);
-        // cmark_strbuf_puts(html, "<hr");
-        // cmark_html_render_sourcepos(node, html, options);
-        // cmark_strbuf_puts(html, " />\n");
+        // A <hr>. Not currently supported.
         break;
 
     case CMARK_NODE_PARAGRAPH:
@@ -398,32 +366,37 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         break;
 
     case CMARK_NODE_LINK:
-        // if (entering) {
-        //   cmark_strbuf_puts(html, "<a href=\"");
-        //   if ((options & CMARK_OPT_UNSAFE) ||
-        //         !(scan_dangerous_url(&node->as.link.url, 0))) {
-        //     houdini_escape_href(html, node->as.link.url.data,
-        //                         node->as.link.url.len);
-        //   }
-        //   if (node->as.link.title.len) {
-        //     cmark_strbuf_puts(html, "\" title=\"");
-        //     escape_html(html, node->as.link.title.data, node->as.link.title.len);
-        //   }
-        //   cmark_strbuf_puts(html, "\">");
-        // } else {
-        //   cmark_strbuf_puts(html, "</a>");
-        // }
 
         if (entering)
         {
             const auto url{ textFromUrl(node) };
-            // std::string_view url{ (char*)node->as.link.url.data, (size_t)node->as.link.url.len };
-            // std::string_view text{ (char*)node->as.link.title.data, (size_t)node->as.link.title.len };
             const auto urlHstring{ winrt::hstring{ til::u8u16(url) } };
-            // TODO! add tooltip that does the unescaped URL thing that we do for termcontrol
             WUX::Documents::Hyperlink a{};
-            winrt::Windows::Foundation::Uri uri{ _baseUri, urlHstring };
-            a.NavigateUri(uri);
+
+            // Set the toolip to display the URL
+            try
+            {
+                // This block from TermControl.cpp, where we sanitize the
+                // tooltips for URLs. That has a much more comprehensive
+                // comment.
+
+                const winrt::Windows::Foundation::Uri uri{ _baseUri, urlHstring };
+
+                a.NavigateUri(uri);
+
+                auto tooltipText = urlHstring;
+                const auto unicode = uri.AbsoluteUri();
+                const auto punycode = uri.AbsoluteCanonicalUri();
+                if (punycode != unicode)
+                {
+                    tooltipText = winrt::hstring{ punycode + L"\n" + unicode };
+                }
+                WUX::Controls::ToolTipService::SetToolTip(a, box_value(tooltipText));
+            }
+            catch (...)
+            {
+            }
+
             _CurrentParagraph().Inlines().Append(a);
             _currentSpan = a;
 

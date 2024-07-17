@@ -4,10 +4,11 @@
 #pragma once
 
 #include "MarkdownPaneContent.g.h"
+#include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct MarkdownPaneContent : MarkdownPaneContentT<MarkdownPaneContent>
+    struct MarkdownPaneContent : MarkdownPaneContentT<MarkdownPaneContent>, BasicPaneEvents
     {
     public:
         MarkdownPaneContent();
@@ -31,7 +32,6 @@ namespace winrt::TerminalApp::implementation
         void Close();
         winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
-        // TODO! lots of strings here and in XAML that need RS_-ifying
         winrt::hstring Title() { return _filePath; }
         uint64_t TaskbarState() { return 0; }
         uint64_t TaskbarProgress() { return 0; }
@@ -40,14 +40,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept { return nullptr; }
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush() { return Background(); }
 
-        til::typed_event<> ConnectionStateChanged;
-        til::typed_event<IPaneContent> CloseRequested;
-        til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
-        til::typed_event<IPaneContent> TitleChanged;
-        til::typed_event<IPaneContent> TabColorChanged;
-        til::typed_event<IPaneContent> TaskbarProgressChanged;
-        til::typed_event<IPaneContent> ReadOnlyChanged;
-        til::typed_event<IPaneContent> FocusRequested;
+        // See BasicPaneEvents for most generic event definitions
 
 #pragma endregion
 
@@ -60,7 +53,6 @@ namespace winrt::TerminalApp::implementation
         friend struct MarkdownPaneContentT<MarkdownPaneContent>; // for Xaml to bind events
 
         winrt::hstring _filePath{};
-        // winrt::hstring _fileContents{};
 
         winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
 
