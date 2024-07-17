@@ -25,7 +25,6 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
 
     // General Tests:
     TEST_METHOD(NoOpStartTest);
-    TEST_METHOD(ModeParsingTest);
 
     TEST_METHOD(DtorTestJustEngine);
     TEST_METHOD(DtorTestDeleteVtio);
@@ -49,25 +48,6 @@ void VtIoTests::NoOpStartTest()
 
     Log::Comment(L"Verify we succeed at StartIfNeeded even if we weren't initialized");
     VERIFY_SUCCEEDED(vtio.StartIfNeeded());
-}
-
-void VtIoTests::ModeParsingTest()
-{
-    VtIoMode mode;
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM);
-
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-256color", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
-
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-ascii", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_ASCII);
-
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
-
-    VERIFY_FAILED(VtIo::ParseIoMode(L"garbage", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::INVALID);
 }
 
 Viewport SetUpViewport()
@@ -445,7 +425,7 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     VtIo vtio;
     VERIFY_IS_FALSE(vtio.IsUsingVt());
     VERIFY_ARE_EQUAL(nullptr, vtio._pPtySignalInputThread);
-    VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), L"", signalPipeReadSide.release()));
+    VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), signalPipeReadSide.release()));
     VERIFY_SUCCEEDED(vtio.CreateAndStartSignalThread());
     VERIFY_SUCCEEDED(vtio.CreateIoHandlers());
     VERIFY_IS_TRUE(vtio.IsUsingVt());

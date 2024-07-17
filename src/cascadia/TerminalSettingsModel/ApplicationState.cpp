@@ -11,6 +11,8 @@
 #include "FileUtils.h"
 #include "../../types/inc/utils.hpp"
 
+#include <til/io.h>
+
 static constexpr std::wstring_view stateFileName{ L"state.json" };
 static constexpr std::wstring_view elevatedStateFileName{ L"elevated-state.json" };
 
@@ -334,7 +336,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   generated profiles, the command palette commandlines.
     std::optional<std::string> ApplicationState::_readSharedContents() const
     {
-        return ReadUTF8FileIfExists(_sharedPath);
+        return til::io::read_file_as_utf8_string_if_exists(_sharedPath);
     }
 
     // Method Description:
@@ -347,8 +349,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     std::optional<std::string> ApplicationState::_readLocalContents() const
     {
         return ::Microsoft::Console::Utils::IsRunningElevated() ?
-                   ReadUTF8FileIfExists(_elevatedPath, true) :
-                   ReadUTF8FileIfExists(_sharedPath, false);
+                   til::io::read_file_as_utf8_string_if_exists(_elevatedPath, true) :
+                   til::io::read_file_as_utf8_string_if_exists(_sharedPath, false);
     }
 
     // Method Description:
@@ -357,7 +359,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   `state.json`
     void ApplicationState::_writeSharedContents(const std::string_view content) const
     {
-        WriteUTF8FileAtomic(_sharedPath, content);
+        til::io::write_utf8_string_to_file_atomic(_sharedPath, content);
     }
 
     // Method Description:
@@ -369,7 +371,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (::Microsoft::Console::Utils::IsRunningElevated())
         {
-            // DON'T use WriteUTF8FileAtomic, which will write to a temporary file
+            // DON'T use til::io::write_utf8_string_to_file_atomic, which will write to a temporary file
             // then rename that file to the final filename. That actually lets us
             // overwrite the elevate file's contents even when unelevated, because
             // we're effectively deleting the original file, then renaming a
@@ -378,11 +380,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // We're not worried about someone else doing that though, if they do
             // that with the wrong permissions, then we'll just ignore the file and
             // start over.
-            WriteUTF8File(_elevatedPath, content, true);
+            til::io::write_utf8_string_to_file(_elevatedPath, content, true);
         }
         else
         {
-            WriteUTF8FileAtomic(_sharedPath, content);
+            til::io::write_utf8_string_to_file_atomic(_sharedPath, content);
         }
     }
 

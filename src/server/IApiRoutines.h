@@ -101,7 +101,8 @@ public:
                                                                  const WORD attribute,
                                                                  const size_t lengthToWrite,
                                                                  const til::point startingCoordinate,
-                                                                 size_t& cellsModified) noexcept = 0;
+                                                                 size_t& cellsModified,
+                                                                 const bool enablePowershellShim) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                                   const char character,

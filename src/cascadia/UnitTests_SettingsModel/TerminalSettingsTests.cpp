@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include <til/rand.h>
+#include <pcg_random.hpp>
 
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "../TerminalSettingsModel/TerminalSettings.h"
