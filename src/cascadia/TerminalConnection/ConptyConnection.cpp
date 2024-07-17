@@ -5,7 +5,6 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
-#include <winternl.h>
 
 #include "CTerminalHandoff.h"
 #include "LibraryResources.h"
@@ -173,33 +172,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_RETURN();
 
-    ConptyConnection::ConptyConnection(const HANDLE hSig,
-                                       const HANDLE hIn,
-                                       const HANDLE hOut,
-                                       const HANDLE hRef,
-                                       const HANDLE hServerProcess,
-                                       const HANDLE hClientProcess,
-                                       const TERMINAL_STARTUP_INFO& startupInfo) :
-        _rows{ 25 },
-        _cols{ 80 },
-        _inPipe{ hIn },
-        _outPipe{ hOut }
+    // Who decided that?
+#pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
+    ConptyConnection::ConptyConnection()
     {
-        _sessionId = Utils::CreateGuid();
-
-        THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
-        _piClient.hProcess = hClientProcess;
-
-        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
-        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
-        _startupInfo.iconIndex = startupInfo.iconIndex;
-        _startupInfo.showWindow = startupInfo.wShowWindow;
-
-        try
-        {
-            _commandline = _commandlineFromProcess(hClientProcess);
-        }
-        CATCH_LOG()
     }
 
     // Function Description:
@@ -317,6 +293,53 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _sessionId = Utils::CreateGuid();
         }
+    }
+
+    static wil::unique_hfile duplicateHandle(const HANDLE in)
+    {
+        wil::unique_hfile h;
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), h.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+        return h;
+    }
+
+    // Misdiagnosis: out is being tested right in the first line.
+#pragma warning(suppress : 26430) // Symbol 'out' is not tested for nullness on all paths (f.23).
+    void ConptyConnection::InitializeFromHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo)
+    {
+        THROW_HR_IF(E_UNEXPECTED, !in || !out || !startupInfo);
+
+        _sessionId = Utils::CreateGuid();
+
+        wil::unique_hfile inPipePseudoConsoleSide;
+        wil::unique_hfile outPipePseudoConsoleSide;
+        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &_inPipe, nullptr, 0));
+        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_outPipe, &outPipePseudoConsoleSide, nullptr, 0));
+
+        auto ownedSignal = duplicateHandle(signal);
+        auto ownedReference = duplicateHandle(reference);
+        auto ownedServer = duplicateHandle(server);
+        auto ownedClient = duplicateHandle(client);
+
+        THROW_IF_FAILED(ConptyPackPseudoConsole(ownedServer.get(), ownedReference.get(), ownedSignal.get(), &_hPC));
+        ownedServer.release();
+        ownedReference.release();
+        ownedSignal.release();
+
+        _piClient.hProcess = ownedClient.release();
+
+        _startupInfo.title = winrt::hstring{ startupInfo->pszTitle, SysStringLen(startupInfo->pszTitle) };
+        _startupInfo.iconPath = winrt::hstring{ startupInfo->pszIconPath, SysStringLen(startupInfo->pszIconPath) };
+        _startupInfo.iconIndex = startupInfo->iconIndex;
+        _startupInfo.showWindow = startupInfo->wShowWindow;
+
+        try
+        {
+            _commandline = _commandlineFromProcess(_piClient.hProcess);
+        }
+        CATCH_LOG()
+
+        *in = inPipePseudoConsoleSide.release();
+        *out = outPipePseudoConsoleSide.release();
     }
 
     winrt::hstring ConptyConnection::Commandline() const
@@ -618,12 +641,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // won't wait for us, and the known exit points _do_.
         auto strongThis{ get_strong() };
 
+        const auto cleanup = wil::scope_exit([this]() noexcept {
+            _LastConPtyClientDisconnected();
+        });
+
+        char buffer[128 * 1024];
+        DWORD read = 0;
+
+        til::u8state u8State;
+        std::wstring wstr;
+
         // process the data of the output pipe in a loop
         while (true)
         {
-            DWORD read{};
-
-            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+            const auto readFail{ !ReadFile(_outPipe.get(), &buffer[0], sizeof(buffer), &read, nullptr) };
 
             // When we call CancelSynchronousIo() in Close() this is the branch that's taken and gets us out of here.
             if (_isStateAtOrBeyond(ConnectionState::Closing))
@@ -648,7 +679,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
-            const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
+            const auto result{ til::u8u16(std::string_view{ &buffer[0], read }, wstr, u8State) };
             if (FAILED(result))
             {
                 // EXIT POINT
@@ -657,7 +688,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 return gsl::narrow_cast<DWORD>(result);
             }
 
-            if (_u16Str.empty())
+            if (wstr.empty())
             {
                 return 0;
             }
@@ -679,7 +710,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // Pass the output to our registered event handlers
-            TerminalOutput.raise(_u16Str);
+            TerminalOutput.raise(wstr);
         }
 
         return 0;
@@ -695,11 +726,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         ::ConptyClosePseudoConsoleTimeout(hPC, 0);
     }
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
+    HRESULT ConptyConnection::NewHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) noexcept
     try
     {
-        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client, startupInfo));
-
+        auto conn = winrt::make_self<ConptyConnection>();
+        conn->InitializeFromHandoff(in, out, signal, reference, server, client, startupInfo);
+        _newConnectionHandlers(*std::move(conn));
         return S_OK;
     }
     CATCH_RETURN()
