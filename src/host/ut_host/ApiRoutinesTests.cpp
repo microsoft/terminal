@@ -33,7 +33,6 @@ class ApiRoutinesTests
     {
         m_state = std::make_unique<CommonState>();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -54,7 +53,6 @@ class ApiRoutinesTests
         m_state->CleanupGlobalInputBuffer();
 
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         m_state.reset(nullptr);
 
@@ -607,7 +605,7 @@ class ApiRoutinesTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& si = gci.GetActiveOutputBuffer();
 
-        VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional({ 5, 5 }), L"Make the buffer small so this doesn't take forever.");
+        si.GetTextBuffer().ResizeTraditional({ 5, 5 });
 
         // Tests are run both with and without the DECSTBM margins set. This should not alter
         // the results, since ScrollConsoleScreenBuffer should not be affected by VT margins.

@@ -23,6 +23,18 @@ parameters:
   - name: jobName
     type: string
     default: Bundle
+  - name: variables
+    type: object
+    default: {}
+  - name: publishArtifacts
+    type: boolean
+    default: true
+  - name: afterBuildSteps
+    type: stepList
+    default: []
+  - name: signingIdentity
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -42,8 +54,13 @@ jobs:
       BundleStemName: Microsoft.WindowsTerminal
     ${{ elseif eq(parameters.branding, 'Preview') }}:
       BundleStemName: Microsoft.WindowsTerminalPreview
+    ${{ elseif eq(parameters.branding, 'Canary') }}:
+      BundleStemName: Microsoft.WindowsTerminalCanary
     ${{ else }}:
       BundleStemName: WindowsTerminalDev
+    JobOutputDirectory: '$(System.ArtifactsDirectory)/bundle'
+    JobOutputArtifactName: appxbundle-$(BuildConfiguration)${{ parameters.artifactStem }}
+    ${{ insert }}: ${{ parameters.variables }}
   dependsOn: ${{ parameters.dependsOn }}
   steps:
   - checkout: self
@@ -74,44 +91,47 @@ jobs:
       $Components[0] = ([int]$Components[0] + $VersionEpoch)
       $BundleVersion = $Components -Join "."
       New-Item -Type Directory "$(System.ArtifactsDirectory)/bundle"
-      .\build\scripts\Create-AppxBundle.ps1 -InputPath 'bin/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+      $BundlePath = "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+      .\build\scripts\Create-AppxBundle.ps1 -InputPath 'bin/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
+      Write-Host "##vso[task.setvariable variable=MsixBundlePath]${BundlePath}"
     displayName: Create msixbundle
 
   - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@1
-      displayName: Submit *.msixbundle to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(System.ArtifactsDirectory)\bundle
-        Pattern: $(BundleStemName)*.msixbundle
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolSign",
-                  "Parameters": {
-                      "OpusName": "Microsoft",
-                      "OpusInfo": "http://www.microsoft.com",
-                      "FileDigest": "/fd \"SHA256\"",
-                      "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
-                  },
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              },
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolVerify",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              }
-          ]
+    - template: steps-esrp-signing.yml
+      parameters:
+        displayName: Submit *.msixbundle to ESRP for code signing
+        signingIdentity: ${{ parameters.signingIdentity }}
+        inputs:
+          FolderPath: $(System.ArtifactsDirectory)\bundle
+          Pattern: $(BundleStemName)*.msixbundle
+          UseMinimatch: true
+          signConfigType: inlineSignParams
+          inlineOperation: >-
+            [
+                {
+                    "KeyCode": "Dynamic",
+                    "CertTemplateName": "WINMSAPP1ST",
+                    "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                    "OperationCode": "SigntoolSign",
+                    "Parameters": {
+                        "OpusName": "Microsoft",
+                        "OpusInfo": "http://www.microsoft.com",
+                        "FileDigest": "/fd \"SHA256\"",
+                        "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                    },
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0"
+                },
+                {
+                    "KeyCode": "Dynamic",
+                    "CertTemplateName": "WINMSAPP1ST",
+                    "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                    "OperationCode": "SigntoolVerify",
+                    "Parameters": {},
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0"
+                }
+            ]
 
   - ${{ if eq(parameters.generateSbom, true) }}:
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
@@ -128,6 +148,9 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
-  - publish: '$(System.ArtifactsDirectory)/bundle'
-    artifact: appxbundle-$(BuildConfiguration)${{ parameters.artifactStem }}
-    displayName: Publish msixbundle
+  - ${{ parameters.afterBuildSteps }}
+
+  - ${{ if eq(parameters.publishArtifacts, true) }}:
+    - publish: $(JobOutputDirectory)
+      artifact: $(JobOutputArtifactName)
+      displayName: Publish msixbundle

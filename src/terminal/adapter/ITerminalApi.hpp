@@ -39,9 +39,15 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void ReturnResponse(const std::wstring_view response) = 0;
 
+        struct BufferState
+        {
+            TextBuffer& buffer;
+            til::rect viewport;
+            bool isMainBuffer;
+        };
+
         virtual StateMachine& GetStateMachine() = 0;
-        virtual TextBuffer& GetTextBuffer() = 0;
-        virtual til::rect GetViewport() const = 0;
+        virtual BufferState GetBufferAndViewport() = 0;
         virtual void SetViewportPosition(const til::point position) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
@@ -70,7 +76,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;
         virtual unsigned int GetConsoleOutputCP() const = 0;
 
-        virtual void CopyToClipboard(const std::wstring_view content) = 0;
+        virtual void CopyToClipboard(const wil::zwstring_view content) = 0;
         virtual void SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress) = 0;
         virtual void SetWorkingDirectory(const std::wstring_view uri) = 0;
         virtual void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) = 0;
@@ -81,11 +87,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;
 
-        virtual void MarkPrompt(const ScrollMark& mark) = 0;
-        virtual void MarkCommandStart() = 0;
-        virtual void MarkOutputStart() = 0;
-        virtual void MarkCommandFinish(std::optional<unsigned int> error) = 0;
-
         virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
+
+        virtual void SearchMissingCommand(const std::wstring_view command) = 0;
     };
 }

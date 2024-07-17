@@ -118,13 +118,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Select color scheme...</value>
+    <value>Select color scheme</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>New Tab...</value>
+    <value>New tab</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Split Pane...</value>
+    <value>Split pane</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Open snippets pane</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portable)</value>
@@ -325,7 +329,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Set the tab color...</value>
+    <value>Set the tab color</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
@@ -347,7 +351,7 @@
     <value>Reset tab title</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Rename tab title...</value>
+    <value>Rename tab title</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Resize pane</value>
@@ -441,7 +445,7 @@
     <value>Switch to the last tab</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Search for tab...</value>
+    <value>Search for tab</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Toggle always on top mode</value>
@@ -450,10 +454,10 @@
     <value>Toggle command palette</value>
   </data>
   <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
-    <value>Recent commands...</value>
+    <value>Recent commands</value>
   </data>
   <data name="SuggestionsCommandKey" xml:space="preserve">
-    <value>Open suggestions...</value>
+    <value>Open suggestions</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
@@ -505,7 +509,7 @@
     <value>Break into the debugger</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Open settings...</value>
+    <value>Open settings</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Rename window to "{0}"</value>
@@ -515,7 +519,7 @@
     <value>Reset window name</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Rename window...</value>
+    <value>Rename window</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
     <value>Display Terminal's current working directory</value>
@@ -566,7 +570,7 @@
     <value>Quit the Terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Set background opacity...</value>
+    <value>Set background opacity</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Increase background opacity by {0}%</value>
@@ -700,6 +704,9 @@
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>Restart connection</value>
   </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>Open scratchpad</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>Select next command output</value>
   </data>
@@ -719,5 +726,12 @@
   <data name="SearchWebCommandKey" xml:space="preserve">
     <value>Search the web for selected text</value>
     <comment>This will open a web browser to search for some user-selected text</comment>
+  </data>
+  <data name="OpenAboutCommandKey" xml:space="preserve">
+    <value>Open about dialog</value>
+    <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Save Snippet</value>
   </data>
 </root>

@@ -14,7 +14,9 @@
 #include <windows.h>
 #undef WIN32_NO_STATUS
 
+#ifndef NO_WINTERNL_INBOX_BUILD
 #include <winternl.h>
+#endif
 
 #pragma warning(push)
 #pragma warning(disable:4430) // Must disable 4430 "default int" warning for C++ because ntstatus.h is inflexible SDK definition.

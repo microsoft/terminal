@@ -27,6 +27,8 @@ I would highly recommend that Gulp convert to using PowerShell scripts and that 
 
 Original Source: https://github.com/microsoft/terminal/issues/217#issuecomment-404240443
 
+_Addendum_: cmd.exe is the literal embodiment of [xkcd#1172]([url](https://xkcd.com/1172/)). Every change, no matter how small, will break _someone_. 
+
 ## <a name="screenPerf"></a>Why is typing-to-screen performance better than every other app?
 
 I really do not mind when someone comes by and decides to tell us that we're doing a good job at something. We hear so many complaints every day that a post like this is a breath of fresh air. Thanks for your thanks!
@@ -49,7 +51,7 @@ Will this UI enhancement come to other apps on Windows? Almost certainly not. Th
 
 Will we try to keep it from regressing? Yes! Right now it's sort of a manual process. We identify that something is getting slow and then we go haul out [WPR](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder) and start taking traces. We stare down the hot paths and try to reason out what is going on and then improve them. For instance, in the last cycle or two, we focused on heap allocations as a major area where we could improve our end-to-end performance, changing a ton of our code to use stack-constructed iterator-like facades over the underlying request buffer instead of translating and allocating it into a new heap space for each level of processing. 
 
-As an aside, @bitcrazed wants us to automate performance tests in some conhost specific way, but I haven't quite figured out a controlled environment to do this in yet. The Windows Engineering System runs performance tests each night that give us a coarse grained way of knowing if we messed something up for the whole operating system, and they technically offer a fine grained way for us to insert our own performance tests... but I just haven't got around to that yet. If you have an idea for a way for us to do this in an automated fashion, I'm all ears.
+As an aside, @bitcrazed wants us to automate performance tests in some conhost specific way, but I haven't quite figured out a controlled environment to do this in yet. The Windows Engineering System runs performance tests each night that give us a coarse-grained way of knowing if we messed something up for the whole operating system, and they technically offer a fine-grained way for us to insert our own performance tests... but I just haven't got around to that yet. If you have an idea for a way for us to do this in an automated fashion, I'm all ears.
 
 If there's anything else you'd like to know, let me know. I could go on all day. I deleted like 15 tangents from this reply before posting it.... 
 

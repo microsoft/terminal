@@ -398,7 +398,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         // as well as the Faint/Blink options.
         RGBColorOrFaint = 2, // 2 is also Faint, decreased intensity (ISO 6429).
         Italics = 3,
-        Underline = 4,
+        Underline = 4, // same for extended underline styles `SGR 4:x`.
         BlinkOrXterm256Index = 5, // 5 is also Blink.
         RapidBlink = 6,
         Negative = 7,
@@ -434,6 +434,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundDefault = 49,
         Overline = 53,
         NoOverline = 55,
+        UnderlineColor = 58,
+        UnderlineColorDefault = 59,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,
@@ -498,11 +500,18 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class StatusType : VTInt
     {
-        OS_OperatingStatus = ANSIStandardStatus(5),
-        CPR_CursorPositionReport = ANSIStandardStatus(6),
-        ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
-        MSR_MacroSpaceReport = DECPrivateStatus(62),
-        MEM_MemoryChecksum = DECPrivateStatus(63),
+        OperatingStatus = ANSIStandardStatus(5),
+        CursorPositionReport = ANSIStandardStatus(6),
+        ExtendedCursorPositionReport = DECPrivateStatus(6),
+        PrinterStatus = DECPrivateStatus(15),
+        UserDefinedKeys = DECPrivateStatus(25),
+        KeyboardStatus = DECPrivateStatus(26),
+        LocatorStatus = DECPrivateStatus(55),
+        LocatorIdentity = DECPrivateStatus(56),
+        MacroSpaceReport = DECPrivateStatus(62),
+        MemoryChecksum = DECPrivateStatus(63),
+        DataIntegrity = DECPrivateStatus(75),
+        MultipleSessionStatus = DECPrivateStatus(85),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -522,9 +531,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECPCCM_PageCursorCouplingMode = DECPrivateMode(64),
         DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
+        DECSDM_SixelDisplayMode = DECPrivateMode(80),
         DECECM_EraseColorMode = DECPrivateMode(117),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
@@ -535,7 +546,17 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ALTERNATE_SCROLL = DECPrivateMode(1007),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
+        GCM_GraphemeClusterMode = DECPrivateMode(2027),
         W32IM_Win32InputMode = DECPrivateMode(9001),
+    };
+
+    enum ModeResponses : VTInt
+    {
+        DECRPM_Unsupported = 0,
+        DECRPM_Enabled = 1,
+        DECRPM_Disabled = 2,
+        DECRPM_PermanentlyEnabled = 3,
+        DECRPM_PermanentlyDisabled = 4,
     };
 
     enum CharacterSets : uint64_t
@@ -556,6 +577,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ClearAllColumns = 3
     };
 
+    enum TabSetType : VTInt
+    {
+        SetEvery8Columns = 5
+    };
+
     enum WindowManipulationType : VTInt
     {
         Invalid = 0,
@@ -563,6 +589,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
+        ReportTextSizeInPixels = 14,
+        ReportCharacterCellSize = 16,
         ReportTextSizeInCharacters = 18
     };
 
@@ -588,6 +616,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         WithReturn,
         WithoutReturn,
         DependsOnMode
+    };
+
+    enum class SixelBackground : VTInt
+    {
+        Default = 0,
+        Transparent = 1,
+        Opaque = 2
     };
 
     enum class DrcsEraseControl : VTInt
@@ -624,7 +659,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         FullCell = 2
     };
 
-    enum class DrcsCharsetSize : VTInt
+    enum class CharsetSize : VTInt
     {
         Size94 = 0,
         Size96 = 1

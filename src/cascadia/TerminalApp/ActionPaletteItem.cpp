@@ -18,11 +18,11 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    ActionPaletteItem::ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command) :
+    ActionPaletteItem::ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command, const winrt::hstring keyChordText) :
         _Command(command)
     {
         Name(command.Name());
-        KeyChordText(command.KeyChordText());
+        KeyChordText(keyChordText);
         Icon(command.IconPath());
     }
 }

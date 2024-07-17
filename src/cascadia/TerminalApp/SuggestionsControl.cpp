@@ -8,6 +8,7 @@
 #include <LibraryResources.h>
 
 #include "SuggestionsControl.g.cpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -18,6 +19,8 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+using namespace std::chrono_literals;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -103,9 +106,7 @@ namespace winrt::TerminalApp::implementation
             // stays "attached" to the cursor.
             if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
             {
-                auto m = this->Margin();
-                m.Top = (_anchor.Y - ActualHeight());
-                this->Margin(m);
+                this->_recalculateTopMargin();
             }
         });
 
@@ -268,7 +269,7 @@ namespace winrt::TerminalApp::implementation
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
 
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
 
         // Make sure to not send the preview if we're collapsed. This can
         // sometimes fire after we've been closed, which can trigger us to
@@ -281,9 +282,78 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
-                PreviewAction.raise(*this, actionPaletteItem.Command());
+                const auto& cmd = actionPaletteItem.Command();
+                PreviewAction.raise(*this, cmd);
+
+                const auto description{ cmd.Description() };
+
+                if (const auto& selected{ SelectedItem() })
+                {
+                    selected.SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
+                }
+
+                if (!description.empty())
+                {
+                    _openTooltip(cmd);
+                }
+                else
+                {
+                    // If there's no description, then just close the tooltip.
+                    _descriptionsView().Visibility(Visibility::Collapsed);
+                    _descriptionsBackdrop().Visibility(Visibility::Collapsed);
+                    _recalculateTopMargin();
+                }
             }
         }
+    }
+
+    void SuggestionsControl::_openTooltip(Command cmd)
+    {
+        const auto description{ cmd.Description() };
+        if (description.empty())
+        {
+            return;
+        }
+
+        // Build the contents of the "tooltip" based on the description
+        //
+        // First, the title. This is just the name of the command.
+        _descriptionTitle().Inlines().Clear();
+        Documents::Run titleRun;
+        titleRun.Text(cmd.Name());
+        _descriptionTitle().Inlines().Append(titleRun);
+
+        // Now fill up the "subtitle" part of the "tooltip" with the actual
+        // description itself.
+        const auto& inlines{ _descriptionComment().Inlines() };
+        inlines.Clear();
+
+        // Split the filtered description on '\n`
+        const auto lines = ::Microsoft::Console::Utils::SplitString(description, L'\n');
+        // build a Run + LineBreak, and add them to the text block
+        for (const auto& line : lines)
+        {
+            // Trim off any `\r`'s in the string. Pwsh completions will
+            // frequently have these embedded.
+            std::wstring trimmed{ line };
+            trimmed.erase(std::remove(trimmed.begin(), trimmed.end(), L'\r'), trimmed.end());
+            if (trimmed.empty())
+            {
+                continue;
+            }
+
+            Documents::Run textRun;
+            textRun.Text(trimmed);
+            inlines.Append(textRun);
+            inlines.Append(Documents::LineBreak{});
+        }
+
+        // Now, make ourselves visible.
+        _descriptionsView().Visibility(Visibility::Visible);
+        _descriptionsBackdrop().Visibility(Visibility::Visible);
+        // and update the padding to account for our new contents.
+        _recalculateTopMargin();
+        return;
     }
 
     void SuggestionsControl::_previewKeyDownHandler(const IInspectable& /*sender*/,
@@ -508,7 +578,7 @@ namespace winrt::TerminalApp::implementation
                         automationPeer.RaiseNotificationEvent(
                             Automation::Peers::AutomationNotificationKind::ItemAdded,
                             Automation::Peers::AutomationNotificationProcessing::MostRecent,
-                            paletteItem.Name() + L" " + paletteItem.KeyChordText(),
+                            paletteItem.Name(),
                             L"SuggestionsControlSelectedItemChanged" /* unique name for this notification category */);
                     }
                 }
@@ -584,7 +654,7 @@ namespace winrt::TerminalApp::implementation
             automationPeer.RaiseNotificationEvent(
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
+                fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_NestedCommandAnnouncement") }, ParentCommandName()),
                 L"SuggestionsControlNestingLevelChanged" /* unique name for this notification category */);
         }
     }
@@ -725,10 +795,12 @@ namespace winrt::TerminalApp::implementation
         // here will ensure that we can check this case appropriately.
         _lastFilterTextWasEmpty = _searchBox().Text().empty();
 
+        const auto lastSelectedIndex = _filteredActionsView().SelectedIndex();
+
         _updateFilteredActions();
 
         // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(0);
+        _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
@@ -738,7 +810,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                 currentNeedleHasResults ?
-                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_MatchesAvailable") }, _filteredActions.Size()) } :
                     NoMatchesText(), // what to announce if results were found
                 L"SuggestionsControlResultAnnouncement" /* unique name for this group of notifications */);
         }
@@ -749,17 +821,13 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void SuggestionsControl::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
-    {
-        _actionMap = actionMap;
-    }
-
     void SuggestionsControl::SetCommands(const Collections::IVector<Command>& actions)
     {
         _allCommands.Clear();
         for (const auto& action : actions)
         {
-            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            // key chords aren't relevant in the suggestions control, so make the palette item with just the command and no keys
+            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
             auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
             _allCommands.Append(filteredCommand);
         }
@@ -781,9 +849,6 @@ namespace winrt::TerminalApp::implementation
 
     void SuggestionsControl::_switchToMode()
     {
-        const auto currentlyVisible{ Visibility() == Visibility::Visible };
-
-        auto modeAnnouncementResourceKey{ USES_RESOURCE(L"CommandPaletteModeAnnouncement_ActionMode") };
         ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
@@ -795,23 +860,9 @@ namespace winrt::TerminalApp::implementation
         // guarantees that the correct text is shown for the mode
         // whenever _switchToMode is called.
 
-        SearchBoxPlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-        NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-        ControlName(RS_(L"CommandPaletteControlName"));
-        // modeAnnouncementResourceKey is already set to _ActionMode
-        // We did this above to deduce the type (and make it easier on ourselves later).
-
-        if (currentlyVisible)
-        {
-            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
-            {
-                automationPeer.RaiseNotificationEvent(
-                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                    Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                    GetLibraryResourceString(modeAnnouncementResourceKey),
-                    L"SuggestionsControlModeSwitch" /* unique ID for this notification */);
-            }
-        }
+        SearchBoxPlaceholderText(RS_(L"SuggestionsControl_SearchBox/PlaceholderText"));
+        NoMatchesText(RS_(L"SuggestionsControl_NoMatchesText/Text"));
+        ControlName(RS_(L"SuggestionsControlName"));
 
         // The smooth remove/add animations that happen during
         // UpdateFilteredActions don't work very well when switching between
@@ -930,7 +981,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
         {
             const auto action = nameAndCommand.Value();
-            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action, winrt::hstring{}) };
             auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
             _currentNestedCommands.Append(nestedFilteredCommand);
         }
@@ -1004,7 +1055,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (dataTemplate == _itemTemplateSelector.NestedItemTemplate())
                 {
-                    const auto helpText = winrt::box_value(RS_(L"CommandPalette_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
+                    const auto helpText = winrt::box_value(RS_(L"SuggestionsControl_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
                     listViewItem.SetValue(Automation::AutomationProperties::HelpTextProperty(), helpText);
                 }
 
@@ -1039,14 +1090,69 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_setDirection(TerminalApp::SuggestionsDirection direction)
     {
         _direction = direction;
+
+        // We need to move either the list of suggestions, or the tooltip, to
+        // the top of the stack panel (depending on the layout).
+        Grid controlToMoveToTop = nullptr;
+
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             Controls::Grid::SetRow(_searchBox(), 0);
+            controlToMoveToTop = _backdrop();
         }
         else // BottomUp
         {
             Controls::Grid::SetRow(_searchBox(), 4);
+            controlToMoveToTop = _descriptionsBackdrop();
         }
+
+        assert(controlToMoveToTop);
+        const auto& children{ _listAndDescriptionStack().Children() };
+        uint32_t index;
+        if (children.IndexOf(controlToMoveToTop, index))
+        {
+            children.Move(index, 0);
+        }
+    }
+
+    void SuggestionsControl::_recalculateTopMargin()
+    {
+        auto currentMargin = Margin();
+        // Call Measure() on the descriptions backdrop, so that it gets it's new
+        // DesiredSize for this new description text.
+        //
+        // If you forget this, then we _probably_ weren't laid out since
+        // updating that text, and the ActualHeight will be the _last_
+        // description's height.
+        _descriptionsBackdrop().Measure({
+            static_cast<float>(ActualWidth()),
+            static_cast<float>(ActualHeight()),
+        });
+
+        // Now, position vertically.
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+        {
+            // The control should open right below the cursor, with the list
+            // extending below. This is easy, we can just use the cursor as the
+            // origin (more or less)
+            currentMargin.Top = (_anchor.Y);
+        }
+        else
+        {
+            // Bottom Up.
+
+            // This is wackier, because we need to calculate the offset upwards
+            // from our anchor. So we need to get the size of our elements:
+            const auto backdropHeight = _backdrop().ActualHeight();
+            const auto descriptionDesiredHeight = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
+                                                      _descriptionsBackdrop().DesiredSize().Height :
+                                                      0;
+
+            const auto marginTop = (_anchor.Y - backdropHeight - descriptionDesiredHeight);
+
+            currentMargin.Top = marginTop;
+        }
+        Margin(currentMargin);
     }
 
     void SuggestionsControl::Open(TerminalApp::SuggestionsMode mode,
@@ -1066,9 +1172,8 @@ namespace winrt::TerminalApp::implementation
         _anchor = anchor;
         _space = space;
 
-        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
         // Is there space in the window below the cursor to open the menu downwards?
-        const bool canOpenDownwards = (_anchor.Y + characterHeight + actualSize.height) < space.Height;
+        const bool canOpenDownwards = (_anchor.Y + characterHeight + ActualHeight()) < space.Height;
         _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
                                          TerminalApp::SuggestionsDirection::BottomUp);
         // Set the anchor below by a character height
@@ -1082,28 +1187,27 @@ namespace winrt::TerminalApp::implementation
         const auto proposedX = gsl::narrow_cast<int>(_anchor.X - 40);
         // If the control is too wide to fit in the window, clamp it fit inside
         // the window.
-        const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
+        const auto maxX = gsl::narrow_cast<int>(space.Width - ActualWidth());
         const auto clampedX = std::clamp(proposedX, 0, maxX);
 
-        // Create a thickness for the new margins
-        auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
-        // Now, position vertically.
-        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
-        {
-            // The control should open right below the cursor, with the list
-            // extending below. This is easy, we can just use the cursor as the
-            // origin (more or less)
-            newMargin.Top = (_anchor.Y);
-        }
-        else
-        {
-            // Position at the cursor. The suggestions UI itself will maintain
-            // its own offset such that it's always above its origin
-            newMargin.Top = (_anchor.Y - actualSize.height);
-        }
-        Margin(newMargin);
+        // Create a thickness for the new margins. This will set the left, then
+        // we'll go update the top separately
+        Margin(Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0));
+        _recalculateTopMargin();
 
         _searchBox().Text(filter);
-    }
 
+        // If we're in bottom-up mode, make sure to re-select the _last_ item in
+        // the list, so that it's like we're starting with the most recent one
+        // selected.
+        if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
+        {
+            const auto last = _filteredActionsView().Items().Size() - 1;
+            _filteredActionsView().SelectedIndex(last);
+        }
+        // Move the cursor to the very last position, so it starts immediately
+        // after the text. This is apparently done by starting a 0-wide
+        // selection starting at the end of the string.
+        _searchBox().Select(filter.size(), 0);
+    }
 }

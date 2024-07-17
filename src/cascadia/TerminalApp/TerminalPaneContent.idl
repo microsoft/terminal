@@ -1,0 +1,38 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IPaneContent.idl";
+import "TerminalSettingsCache.idl";
+import "FilteredCommand.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TerminalPaneContent : IPaneContent, ISnappable
+    {
+        Microsoft.Terminal.Control.TermControl GetTermControl();
+
+        void MarkAsDefterm();
+
+        Microsoft.Terminal.Settings.Model.Profile GetProfile();
+
+        event Windows.Foundation.TypedEventHandler<TerminalPaneContent, Object> RestartTerminalRequested;
+    }
+
+    [default_interface] runtimeclass FilteredTask : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Input{ get; };
+        Windows.Foundation.Collections.IObservableVector<FilteredTask> Children { get; };
+        Boolean HasChildren { get; };
+        Int32 Row { get; };
+        Windows.UI.Xaml.Visibility Visibility { get; };
+        TerminalApp.FilteredCommand FilteredCommand{ get; };
+    }
+
+    [default_interface] runtimeclass SnippetsPaneContent : Windows.UI.Xaml.Controls.UserControl, IPaneContent, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        SnippetsPaneContent();
+        void SetLastActiveControl(Microsoft.Terminal.Control.TermControl control);
+        Boolean HasSnippets { get; };
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
+    }
+}

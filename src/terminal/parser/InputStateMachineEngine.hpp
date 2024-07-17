@@ -132,7 +132,9 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
 
-        void SetLookingForDSR(const bool looking) noexcept;
+        void WaitUntilDSR(DWORD timeout) const noexcept;
+
+        bool EncounteredWin32InputModeSequence() const noexcept override;
 
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
@@ -141,7 +143,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrintString(const std::wstring_view string) override;
 
-        bool ActionPassThroughString(const std::wstring_view string) override;
+        bool ActionPassThroughString(const std::wstring_view string, const bool flush) override;
 
         bool ActionEscDispatch(const VTID id) override;
 
@@ -155,9 +157,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionIgnore() noexcept override;
 
-        bool ActionOscDispatch(const wchar_t wch,
-                               const size_t parameter,
-                               const std::wstring_view string) noexcept override;
+        bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) noexcept override;
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
 
@@ -166,7 +166,8 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         std::function<bool()> _pfnFlushToInputQueue;
-        bool _lookingForDSR;
+        std::atomic<bool> _lookingForDSR{ false };
+        bool _encounteredWin32InputModeSequence = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;
         std::optional<til::point> _lastMouseClickPos{};

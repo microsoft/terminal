@@ -18,14 +18,14 @@ RenderTracing::RenderTracing()
 {
 #ifndef UNIT_TESTING
     TraceLoggingRegister(g_hConsoleVtRendererTraceProvider);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 RenderTracing::~RenderTracing()
 {
 #ifndef UNIT_TESTING
     TraceLoggingUnregister(g_hConsoleVtRendererTraceProvider);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 // Function Description:
@@ -79,7 +79,7 @@ void RenderTracing::TraceStringFill(const size_t n, const char c) const
 #else
     UNREFERENCED_PARAMETER(n);
     UNREFERENCED_PARAMETER(c);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 void RenderTracing::TraceString(const std::string_view& instr) const
 {
@@ -96,7 +96,7 @@ void RenderTracing::TraceString(const std::string_view& instr) const
     }
 #else
     UNREFERENCED_PARAMETER(instr);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceInvalidate(const til::rect& invalidRect) const
@@ -114,7 +114,7 @@ void RenderTracing::TraceInvalidate(const til::rect& invalidRect) const
     }
 #else
     UNREFERENCED_PARAMETER(invalidRect);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceInvalidateAll(const til::rect& viewport) const
@@ -132,7 +132,7 @@ void RenderTracing::TraceInvalidateAll(const til::rect& viewport) const
     }
 #else
     UNREFERENCED_PARAMETER(viewport);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceTriggerCircling(const bool newFrame) const
@@ -145,7 +145,7 @@ void RenderTracing::TraceTriggerCircling(const bool newFrame) const
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 #else
     UNREFERENCED_PARAMETER(newFrame);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceInvalidateScroll(const til::point scroll) const
@@ -215,7 +215,7 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
     UNREFERENCED_PARAMETER(scrollDelt);
     UNREFERENCED_PARAMETER(cursorMoved);
     UNREFERENCED_PARAMETER(wrappedRow);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceEndPaint() const
@@ -226,7 +226,7 @@ void RenderTracing::TraceEndPaint() const
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 #else
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceLastText(const til::point lastTextPos) const
@@ -244,7 +244,7 @@ void RenderTracing::TraceLastText(const til::point lastTextPos) const
     }
 #else
     UNREFERENCED_PARAMETER(lastTextPos);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceScrollFrame(const til::point scrollDeltaPos) const
@@ -262,7 +262,7 @@ void RenderTracing::TraceScrollFrame(const til::point scrollDeltaPos) const
     }
 #else
     UNREFERENCED_PARAMETER(scrollDeltaPos);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceMoveCursor(const til::point lastTextPos, const til::point cursor) const
@@ -286,7 +286,7 @@ void RenderTracing::TraceMoveCursor(const til::point lastTextPos, const til::poi
 #else
     UNREFERENCED_PARAMETER(lastTextPos);
     UNREFERENCED_PARAMETER(cursor);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceWrapped() const
@@ -302,7 +302,7 @@ void RenderTracing::TraceWrapped() const
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 #else
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceSetWrapped(const til::CoordType wrappedRow) const
@@ -318,7 +318,7 @@ void RenderTracing::TraceSetWrapped(const til::CoordType wrappedRow) const
     }
 #else
     UNREFERENCED_PARAMETER(wrappedRow);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TraceClearWrapped() const
@@ -334,7 +334,7 @@ void RenderTracing::TraceClearWrapped() const
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 #else
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }
 
 void RenderTracing::TracePaintCursor(const til::point coordCursor) const
@@ -352,5 +352,5 @@ void RenderTracing::TracePaintCursor(const til::point coordCursor) const
     }
 #else
     UNREFERENCED_PARAMETER(coordCursor);
-#endif UNIT_TESTING
+#endif // UNIT_TESTING
 }

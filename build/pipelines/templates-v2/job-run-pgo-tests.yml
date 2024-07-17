@@ -13,16 +13,16 @@ jobs:
     OutputBuildPlatform: ${{ parameters.buildPlatform }}
     Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
   pool:
-    ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-      ${{ if ne(parameters.buildPlatform, 'ARM64') }}:
-        name: SHINE-OSS-Testing-x64
-      ${{ else }}:
-        name: SHINE-OSS-Testing-arm64
-    ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+    ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
       ${{ if ne(parameters.buildPlatform, 'ARM64') }}:
         name: SHINE-INT-Testing-x64
       ${{ else }}:
         name: SHINE-INT-Testing-arm64
+    ${{ else }}:
+      ${{ if ne(parameters.buildPlatform, 'ARM64') }}:
+        name: SHINE-OSS-Testing-x64
+      ${{ else }}:
+        name: SHINE-OSS-Testing-arm64
 
   steps:
   - checkout: self
@@ -56,6 +56,7 @@ jobs:
   - task: PowerShell@2
     displayName: 'Run PGO Tests'
     inputs:
+      pwsh: true
       targetType: filePath
       filePath: build\scripts\Run-Tests.ps1
       arguments: >-
@@ -65,7 +66,6 @@ jobs:
         -LogPath '${{ parameters.testLogPath }}'
         -Root "$(Terminal.BinDir)"
         -AdditionalTaefArguments '/select:(@IsPGO=true)','/p:WTTestContent=$(TerminalTestContentPath)'
-    condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
   - task: CopyFiles@2
     displayName: 'Copy PGO outputs to Artifacts'

@@ -4,13 +4,25 @@
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "ControlInteractivity.idl";
-import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
 import "ControlCore.idl";
 
 namespace Microsoft.Terminal.Control
 {
+    // This matches the definition in M.T.UI.
+    // Having it here prevents us from having to refer to M.T.UI in **all consuming projects**.
+    // WinRT is a trip.
+    [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")]
+    interface IDirectKeyListener {
+        Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
+    }
+
+    enum CursorDisplayState
+    {
+        Default,
+        Shown
+    };
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
                                                    IDirectKeyListener,
@@ -40,9 +52,7 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
-        event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
@@ -59,10 +69,12 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
         event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
         event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
+        event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
 
         Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
         Microsoft.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
+        Windows.UI.Xaml.Controls.MenuFlyout QuickFixMenu { get; };
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -82,6 +94,8 @@ namespace Microsoft.Terminal.Control
         Boolean SwitchSelectionEndpoint();
         Boolean ExpandSelectionToWord();
         void ClearBuffer(ClearBufferType clearType);
+        void RestoreFromPath(String path);
+        void PersistToPath(String path);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
@@ -113,24 +127,30 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
         CommandHistoryContext CommandHistory();
+        void UpdateWinGetSuggestions(Windows.Foundation.Collections.IVector<String> suggestions);
 
-        void AdjustOpacity(Double Opacity, Boolean relative);
+        void AdjustOpacity(Single Opacity, Boolean relative);
+        void PreviewInput(String text);
 
         // You'd think this should just be "Opacity", but UIElement already
         // defines an "Opacity", which we're actually not setting at all. We're
         // not overriding or changing _that_ value. Callers that want the
         // opacity set by the settings should call this instead.
-        Double BackgroundOpacity { get; };
+        Single BackgroundOpacity { get; };
 
-        Boolean DisplayCursorWhileBlurred;
+        CursorDisplayState CursorVisibility;
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
         Windows.Foundation.Point CursorPositionInDips { get; };
+        Double QuickFixButtonWidth { get; };
+        Double QuickFixButtonCollapsedWidth { get; };
 
         void ShowContextMenu();
+        void RefreshQuickFixMenu();
+        void ClearQuickFix();
 
         void Detach();
     }

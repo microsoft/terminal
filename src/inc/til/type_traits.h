@@ -32,6 +32,24 @@ namespace til
         struct is_byte<std::byte> : std::true_type
         {
         };
+
+        template<typename T>
+        struct as_view
+        {
+            using type = T;
+        };
+
+        template<typename T, typename Alloc>
+        struct as_view<std::vector<T, Alloc>>
+        {
+            using type = std::span<const T>;
+        };
+
+        template<typename T, typename Traits, typename Alloc>
+        struct as_view<std::basic_string<T, Traits, Alloc>>
+        {
+            using type = std::basic_string_view<T, Traits>;
+        };
     }
 
     template<typename T>
@@ -45,4 +63,7 @@ namespace til
 
     template<typename T>
     concept TriviallyCopyable = std::is_trivially_copyable_v<T>;
+
+    template<typename T>
+    using as_view_t = typename details::as_view<T>::type;
 }

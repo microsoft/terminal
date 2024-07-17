@@ -51,7 +51,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
 
-        [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
+        [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str, const bool flush) noexcept override;
 
         [[nodiscard]] HRESULT SetWindowVisibility(const bool showOrHide) noexcept override;
 

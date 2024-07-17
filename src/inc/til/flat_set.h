@@ -4,8 +4,9 @@
 #pragma once
 
 #pragma warning(push)
-#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 #pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
+#pragma warning(disable : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
+#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 
 namespace til
 {
@@ -36,7 +37,7 @@ namespace til
     // * small and cheap T
     // * >= 50% successful lookups
     // * <= 50% load factor (LoadFactor >= 2, which is the minimum anyways)
-    template<typename T, size_t LoadFactor = 2, size_t GrowthExponent = 1>
+    template<typename T, typename Traits, size_t LoadFactor = 2, size_t GrowthExponent = 1>
     struct linear_flat_set
     {
         static_assert(LoadFactor >= 2);
@@ -98,27 +99,28 @@ namespace til
                 return nullptr;
             }
 
-            const auto hash = ::std::hash<T>{}(key) >> _shift;
+            const auto hash = Traits::hash(key) >> _shift;
 
             for (auto i = hash;; ++i)
             {
                 auto& slot = _map[i & _mask];
-                if (!slot)
+                if (!Traits::occupied(slot))
                 {
                     return nullptr;
                 }
-                if (slot == key) [[likely]]
+                if (Traits::equals(slot, key)) [[likely]]
                 {
                     return &slot;
                 }
             }
         }
 
+        // NOTE: It also does not initialize the returned slot.
+        // You must do that yourself in way that ensures that Traits::occupied(slot) now returns true.
+        // Use lookup() to check if the item already exists.
         template<typename U>
-        std::pair<T&, bool> insert(U&& key)
+        std::pair<T*, bool> insert(U&& key)
         {
-            // Putting this into the lookup path is a little pessimistic, but it
-            // allows us to default-construct this hashmap with a size of 0.
             if (_load >= _capacity) [[unlikely]]
             {
                 _bumpSize();
@@ -129,20 +131,20 @@ namespace til
             // many times in literature that such a scheme performs the best on average.
             // As such, we perform the divide here to get the topmost bits down.
             // See flat_set_hash_integer.
-            const auto hash = ::std::hash<T>{}(key) >> _shift;
+            const auto hash = Traits::hash(key) >> _shift;
 
             for (auto i = hash;; ++i)
             {
                 auto& slot = _map[i & _mask];
-                if (!slot)
+                if (!Traits::occupied(slot))
                 {
-                    slot = std::forward<U>(key);
                     _load += LoadFactor;
-                    return { slot, true };
+                    Traits::assign(slot, key);
+                    return { &slot, true };
                 }
-                if (slot == key) [[likely]]
+                if (Traits::equals(slot, key)) [[likely]]
                 {
-                    return { slot, false };
+                    return { &slot, false };
                 }
             }
         }
@@ -166,17 +168,17 @@ namespace til
             // This mirrors the insert() function, but without the lookup part.
             for (auto& oldSlot : container())
             {
-                if (!oldSlot)
+                if (!Traits::occupied(oldSlot))
                 {
                     continue;
                 }
 
-                const auto hash = ::std::hash<T>{}(oldSlot) >> newShift;
+                const auto hash = Traits::hash(oldSlot) >> newShift;
 
                 for (auto i = hash;; ++i)
                 {
                     auto& slot = newMap[i & newMask];
-                    if (!slot)
+                    if (!Traits::occupied(slot))
                     {
                         slot = std::move_if_noexcept(oldSlot);
                         break;

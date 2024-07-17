@@ -20,7 +20,6 @@
 #include "../../host/scrolling.hpp"
 #include "../../host/srvinit.h"
 #include "../../host/stream.h"
-#include "../../host/telemetry.hpp"
 #include "../../host/tracing.hpp"
 
 #include "../../renderer/base/renderer.hpp"
@@ -28,9 +27,6 @@
 
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
 #include "../../renderer/atlas/AtlasEngine.h"
-#endif
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-#include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
 #include "../inc/ServiceLocator.hpp"
@@ -71,9 +67,6 @@ Window::~Window()
     // reducing the change for existing race conditions to turn into deadlocks.
 #ifndef NDEBUG
     delete pGdiEngine;
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-    delete pDxEngine;
-#endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
     delete pAtlasEngine;
 #endif
@@ -218,31 +211,17 @@ void Window::_UpdateSystemMetrics() const
     const auto useDx = pSettings->GetUseDx();
     try
     {
-        switch (useDx)
-        {
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-        case UseDx::DxEngine:
-            pDxEngine = new DxEngine();
-            // TODO: MSFT:21255595 make this less gross
-            // Manually set the Dx Engine to Hwnd mode. When we're trying to
-            // determine the initial window size, which happens BEFORE the
-            // window is created, we'll want to make sure the DX engine does
-            // math in the hwnd mode, not the Composition mode.
-            THROW_IF_FAILED(pDxEngine->SetHwnd(nullptr));
-            g.pRender->AddRenderEngine(pDxEngine);
-            break;
-#endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
-        case UseDx::AtlasEngine:
+        if (useDx)
+        {
             pAtlasEngine = new AtlasEngine();
             g.pRender->AddRenderEngine(pAtlasEngine);
-            break;
+        }
+        else
 #endif
-        default:
+        {
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
-            break;
-#pragma warning(suppress : 4065)
         }
     }
     catch (...)
@@ -325,7 +304,7 @@ void Window::_UpdateSystemMetrics() const
         if (hWnd == nullptr)
         {
             const auto gle = GetLastError();
-            RIPMSG1(RIP_WARNING, "CreateWindow failed with gle = 0x%x", gle);
+            LOG_WIN32_MSG(gle, "CreateWindow failed");
             status = NTSTATUS_FROM_WIN32(gle);
         }
 
@@ -333,20 +312,8 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-            if (pDxEngine)
-            {
-                HRESULT hr = S_OK;
-                if (SUCCEEDED(hr = pDxEngine->SetHwnd(hWnd)))
-                {
-                    hr = pDxEngine->Enable();
-                }
-                status = NTSTATUS_FROM_HRESULT(hr);
-            }
-            else
-#endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
-                if (pAtlasEngine)
+            if (pAtlasEngine)
             {
                 const auto hr = pAtlasEngine->SetHwnd(hWnd);
                 status = NTSTATUS_FROM_HRESULT(hr);
@@ -367,8 +334,6 @@ void Window::_UpdateSystemMetrics() const
 
                 if (SUCCEEDED_NTSTATUS(status))
                 {
-                    gci.ConsoleIme.RefreshAreaAttributes();
-
                     // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
                     LOG_IF_FAILED(Icon::Instance().ApplyWindowMessageWorkaround(hWnd));
 
@@ -438,7 +403,7 @@ void Window::_CloseWindow() const
         ShowWindow(hWnd, wShowWindow);
 
         auto& siAttached = GetScreenInfo();
-        siAttached.InternalUpdateScrollBars();
+        siAttached.UpdateScrollBars();
     }
 
     return status;
@@ -487,8 +452,6 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
         Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
     }
-
-    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     ScreenInfo.UpdateScrollBars();
 }
@@ -591,7 +554,7 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
 
     if (WI_IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
     {
-        ScreenInfo.InternalUpdateScrollBars();
+        ScreenInfo.UpdateScrollBars();
 
         SetWindowPos(GetWindowHandle(),
                      nullptr,
@@ -621,7 +584,7 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
     if (!IsInFullscreen() && !IsInMaximized())
     {
         // Figure out how big to make the window, given the desired client area size.
-        siAttached.ResizingWindow++;
+        _resizingWindow++;
 
         // First get the buffer viewport size
         const auto WindowDimensions = siAttached.GetViewport().Dimensions();
@@ -691,7 +654,7 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
             // If the change wasn't substantial, we may still need to update scrollbar positions. Note that PSReadLine
             // scrolls the window via Console.SetWindowPosition, which ultimately calls down to SetConsoleWindowInfo,
             // which ends up in this function.
-            siAttached.InternalUpdateScrollBars();
+            siAttached.UpdateScrollBars();
         }
 
         // MSFT: 12092729
@@ -716,10 +679,8 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
         //   an additional Buffer message with the same size again and do nothing special.
         ScreenBufferSizeChange(siAttached.GetActiveBuffer().GetBufferSize().Dimensions());
 
-        siAttached.ResizingWindow--;
+        _resizingWindow--;
     }
-
-    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     return STATUS_SUCCESS;
 }
@@ -738,8 +699,6 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
     auto& ScreenInfo = GetScreenInfo();
 
     // Log a telemetry event saying the user interacted with the Console
-    Telemetry::Instance().SetUserInteractive();
-
     const auto& viewport = ScreenInfo.GetViewport();
 
     NewOrigin = viewport.Origin();
@@ -818,8 +777,6 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
 void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
 {
     // Log a telemetry event saying the user interacted with the Console
-    Telemetry::Instance().SetUserInteractive();
-
     auto& ScreenInfo = GetScreenInfo();
     const auto sScreenBufferSizeX = ScreenInfo.GetBufferSize().Width();
     const auto& viewport = ScreenInfo.GetViewport();
@@ -879,26 +836,29 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
     LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
 }
 
-BOOL Window::EnableBothScrollBars()
+void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
 {
-    return EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
-}
+    // If this is the main buffer, make sure we enable both of the scroll bars.
+    // The alt buffer likely disabled the scroll bars, this is the only way to re-enable it.
+    if (!state.isAltBuffer)
+    {
+        EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
+    }
 
-int Window::UpdateScrollBar(bool isVertical,
-                            bool isAltBuffer,
-                            UINT pageSize,
-                            int maxSize,
-                            int viewportPosition)
-{
-    SCROLLINFO si;
-    si.cbSize = sizeof(si);
-    si.fMask = isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
-    si.nPage = pageSize;
-    si.nMin = 0;
-    si.nMax = maxSize;
-    si.nPos = viewportPosition;
+    SCROLLINFO si{
+        .cbSize = sizeof(SCROLLINFO),
+        .fMask = static_cast<UINT>(state.isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL),
+    };
 
-    return SetScrollInfo(_hWnd, isVertical ? SB_VERT : SB_HORZ, &si, TRUE);
+    si.nMax = state.maxSize.width;
+    si.nPage = state.viewport.width();
+    si.nPos = state.viewport.left;
+    SetScrollInfo(_hWnd, SB_HORZ, &si, TRUE);
+
+    si.nMax = state.maxSize.height;
+    si.nPage = state.viewport.height();
+    si.nPos = state.viewport.top;
+    SetScrollInfo(_hWnd, SB_VERT, &si, TRUE);
 }
 
 // Routine Description:

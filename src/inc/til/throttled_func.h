@@ -81,7 +81,7 @@ namespace til
         };
     } // namespace details
 
-    template<bool leading, typename... Args>
+    template<bool Debounce, bool Leading, typename... Args>
     class throttled_func
     {
     public:
@@ -118,15 +118,35 @@ namespace til
         throttled_func& operator=(throttled_func&&) = delete;
 
         // Throttles the invocation of the function passed to the constructor.
-        // If this is a trailing_throttled_func:
-        //   If you call this function again before the underlying
-        //   timer has expired, the new arguments will be used.
+        //
+        // If Debounce is true and you call this function again before the
+        // underlying timer has expired, its timeout will be reset.
+        //
+        // If Leading is true and you call this function again before the
+        // underlying timer has expired, the new arguments will be used.
         template<typename... MakeArgs>
         void operator()(MakeArgs&&... args)
         {
-            if (!_storage.emplace(std::forward<MakeArgs>(args)...))
+            const auto hadValue = _storage.emplace(std::forward<MakeArgs>(args)...);
+
+            if constexpr (Debounce)
             {
-                _leading_edge();
+                SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+            }
+            else
+            {
+                if (!hadValue)
+                {
+                    SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+                }
+            }
+
+            if constexpr (Leading)
+            {
+                if (!hadValue)
+                {
+                    _func();
+                }
             }
         }
 
@@ -165,19 +185,9 @@ namespace til
         }
         CATCH_LOG()
 
-        void _leading_edge()
-        {
-            if constexpr (leading)
-            {
-                _func();
-            }
-
-            SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
-        }
-
         void _trailing_edge()
         {
-            if constexpr (leading)
+            if constexpr (Leading)
             {
                 _storage.reset();
             }
@@ -187,7 +197,7 @@ namespace til
             }
         }
 
-        inline wil::unique_threadpool_timer _createTimer()
+        wil::unique_threadpool_timer _createTimer()
         {
             wil::unique_threadpool_timer timer{ CreateThreadpoolTimer(&_timer_callback, this, nullptr) };
             THROW_LAST_ERROR_IF(!timer);
@@ -201,6 +211,10 @@ namespace til
     };
 
     template<typename... Args>
-    using throttled_func_trailing = throttled_func<false, Args...>;
-    using throttled_func_leading = throttled_func<true>;
+    using throttled_func_trailing = throttled_func<false, false, Args...>;
+    using throttled_func_leading = throttled_func<false, true>;
+
+    template<typename... Args>
+    using debounced_func_trailing = throttled_func<true, false, Args...>;
+    using debounced_func_leading = throttled_func<true, true>;
 } // namespace til

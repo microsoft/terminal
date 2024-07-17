@@ -6,8 +6,9 @@
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
 
+#include <til/atomic.h>
+
 #include "../../inc/unicode.hpp"
-#include "ascii.hpp"
 #include "../../interactivity/inc/VtApiRedirection.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -102,9 +103,19 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
-void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
+void InputStateMachineEngine::WaitUntilDSR(DWORD timeout) const noexcept
 {
-    _lookingForDSR = looking;
+    // Technically we should decrement the timeout with each iteration,
+    // but I suspect infinite spurious wake-ups are a theoretical problem.
+    while (_lookingForDSR.load(std::memory_order::relaxed))
+    {
+        til::atomic_wait(_lookingForDSR, true, timeout);
+    }
+}
+
+bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
+{
+    return _encounteredWin32InputModeSequence;
 }
 
 // Method Description:
@@ -271,9 +282,10 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 //      string of characters given.
 // Arguments:
 // - string - string to dispatch.
+// - flush - not applicable to the input state machine.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
+bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string, const bool /*flush*/)
 {
     if (_pDispatch->IsVtInputEnabled())
     {
@@ -402,12 +414,13 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // The F3 case is special - it shares a code with the DeviceStatusResponse.
         // If we're looking for that response, then do that, and break out.
         // Else, fall though to the _GetCursorKeysModifierState handler.
-        if (_lookingForDSR)
+        if (_lookingForDSR.load(std::memory_order::relaxed))
         {
             success = _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
             // Right now we're only looking for on initial cursor
             //      position response. After that, only look for F3.
-            _lookingForDSR = false;
+            _lookingForDSR.store(false, std::memory_order::relaxed);
+            til::atomic_notify_all(_lookingForDSR);
             break;
         }
         [[fallthrough]];
@@ -448,6 +461,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // Ctrl+C, Ctrl+Break are handled correctly.
         const auto key = _GenerateWin32Key(parameters);
         success = _pDispatch->WriteCtrlKey(key);
+        _encounteredWin32InputModeSequence = true;
         break;
     }
     default:
@@ -532,14 +546,11 @@ bool InputStateMachineEngine::ActionIgnore() noexcept
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch. This will be a BEL or ST char.
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dispatch.
-bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
-                                                const size_t /*parameter*/,
-                                                const std::wstring_view /*string*/) noexcept
+bool InputStateMachineEngine::ActionOscDispatch(const size_t /*parameter*/, const std::wstring_view /*string*/) noexcept
 {
     return false;
 }
@@ -794,7 +805,6 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
     // VT Modifiers are 1+(modifier flags)
     const auto vtParam = modifierParam - 1;
     DWORD modifierState = 0;
-    WI_SetFlagIf(modifierState, ENHANCED_KEY, modifierParam > 0);
     WI_SetFlagIf(modifierState, SHIFT_PRESSED, WI_IsFlagSet(vtParam, VT_SHIFT));
     WI_SetFlagIf(modifierState, LEFT_ALT_PRESSED, WI_IsFlagSet(vtParam, VT_ALT));
     WI_SetFlagIf(modifierState, LEFT_CTRL_PRESSED, WI_IsFlagSet(vtParam, VT_CTRL));

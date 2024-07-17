@@ -72,22 +72,22 @@ public:
     void UseDarkTheme(const bool v);
     virtual void UseMica(const bool newValue, const double titlebarOpacity);
 
-    WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
-    WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);
-    WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
-    WINRT_CALLBACK(WindowActivated, winrt::delegate<void(bool)>);
-    WINRT_CALLBACK(NotifyNotificationIconPressed, winrt::delegate<void()>);
-    WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
-    WINRT_CALLBACK(NotifyShowNotificationIconContextMenu, winrt::delegate<void(til::point)>);
-    WINRT_CALLBACK(NotifyNotificationIconMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
-    WINRT_CALLBACK(NotifyReAddNotificationIcon, winrt::delegate<void()>);
-    WINRT_CALLBACK(ShouldExitFullscreen, winrt::delegate<void()>);
-    WINRT_CALLBACK(MaximizeChanged, winrt::delegate<void(bool)>);
-    WINRT_CALLBACK(AutomaticShutdownRequested, winrt::delegate<void(void)>);
+    til::event<winrt::delegate<>> DragRegionClicked;
+    til::event<winrt::delegate<>> WindowCloseButtonClicked;
+    til::event<winrt::delegate<void(til::point, int32_t)>> MouseScrolled;
+    til::event<winrt::delegate<void(bool)>> WindowActivated;
+    til::event<winrt::delegate<void()>> NotifyNotificationIconPressed;
+    til::event<winrt::delegate<void()>> NotifyWindowHidden;
+    til::event<winrt::delegate<void(til::point)>> NotifyShowNotificationIconContextMenu;
+    til::event<winrt::delegate<void(HMENU, UINT)>> NotifyNotificationIconMenuItemSelected;
+    til::event<winrt::delegate<void()>> NotifyReAddNotificationIcon;
+    til::event<winrt::delegate<void()>> ShouldExitFullscreen;
+    til::event<winrt::delegate<void(bool)>> MaximizeChanged;
+    til::event<winrt::delegate<void(void)>> AutomaticShutdownRequested;
 
-    WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
-    WINRT_CALLBACK(WindowVisibilityChanged, winrt::delegate<void(bool)>);
-    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
+    til::event<winrt::delegate<void()>> WindowMoved;
+    til::event<winrt::delegate<void(bool)>> WindowVisibilityChanged;
+    til::event<winrt::delegate<void()>> UpdateSettingsRequested;
 
 protected:
     void ForceResize()
@@ -117,6 +117,7 @@ protected:
     RECT _rcWindowBeforeFullscreen{};
     RECT _rcWorkBeforeFullscreen{};
     UINT _dpiBeforeFullscreen{ 96 };
+    bool _currentSystemThemeIsDark{ true };
 
     void _coldInitialize();
     void _warmInitialize();
@@ -158,6 +159,7 @@ protected:
 
     std::unordered_map<UINT, SystemMenuItemInfo> _systemMenuItems;
     UINT _systemMenuNextItemId;
+    void _resetSystemMenu();
 
 private:
     // This minimum width allows for width the tabs fit

@@ -1,7 +1,7 @@
 steps:
 - template: steps-ensure-nuget-version.yml
 
-- task: NuGetAuthenticate@0
+- task: NuGetAuthenticate@1
 
 - script: |-
     echo ##vso[task.setvariable variable=NUGET_RESTORE_MSBUILD_ARGS]/p:Platform=$(BuildPlatform)

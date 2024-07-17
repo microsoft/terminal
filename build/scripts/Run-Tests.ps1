@@ -16,22 +16,48 @@ Param(
 # Find test DLLs based on the provided root, match pattern, and recursion
 $testDlls = Get-ChildItem -Path $Root -Recurse -Filter $MatchPattern
 
-$args = @()
+$teArgs = @()
 
 # Check if the LogPath parameter is provided and enable WTT logging
 if ($LogPath) {
-    $args += '/enablewttlogging'
-    $args += '/appendwttlogging'
-    $args += "/logFile:$LogPath"
+    $teArgs += '/enablewttlogging'
+    $teArgs += '/appendwttlogging'
+    $teArgs += "/logFile:$LogPath"
     Write-Host "WTT Logging Enabled"
 }
 
-# Invoke the te.exe executable with arguments and test DLLs
-& "$Root\te.exe" $args $testDlls.FullName $AdditionalTaefArguments
+$rootTe = "$Root\te.exe"
 
-# Check the exit code of the te.exe process and exit accordingly
-if ($LASTEXITCODE -ne 0) {
-    Exit $LASTEXITCODE
+# Some of our test fixtures depend on resources.pri in the same folder as the .exe hosting them.
+# Unfortunately, that means that we need to run the te.exe *next to* each test DLL we discover.
+# This code establishes a mapping from te.exe to test DLL (or DLLs)
+$testDllTaefGroups = $testDlls | % {
+	$localTe = Get-Item (Join-Path (Split-Path $_ -Parent) "te.exe") -EA:Ignore
+	If ($null -eq $localTe) {
+		$finalTePath = $rootTe
+	} Else {
+		$finalTePath = $localTe.FullName
+	}
+	[PSCustomObject]@{
+		TePath = $finalTePath;
+		TestDll = $_;
+	}
+}
+
+# Invoke the te.exe executables with arguments and test DLLs
+$anyFailed = $false
+$testDllTaefGroups | Group-Object TePath | % {
+	$te = $_.Group[0].TePath
+	$dlls = $_.Group.TestDll
+	Write-Verbose "Running $te (for $($dlls.Name))"
+	& $te $teArgs $dlls.FullName $AdditionalTaefArguments
+	if ($LASTEXITCODE -ne 0) {
+		$anyFailed = $true
+	}
+}
+
+if ($anyFailed) {
+    Exit 1
 }
 
 Exit 0

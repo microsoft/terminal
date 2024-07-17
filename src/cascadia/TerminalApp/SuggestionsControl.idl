@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import "TabBase.idl";
-import "IDirectKeyListener.idl";
 import "HighlightedTextControl.idl";
 import "FilteredCommand.idl";
 
@@ -21,7 +20,7 @@ namespace TerminalApp
         BottomUp
     };
 
-    [default_interface] runtimeclass SuggestionsControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
+    [default_interface] runtimeclass SuggestionsControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
     {
         SuggestionsControl();
 
@@ -37,7 +36,6 @@ namespace TerminalApp
         SuggestionsMode Mode { get; set; };
 
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
-        void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
         void SelectNextItem(Boolean moveDown);
 
         void Open(SuggestionsMode mode, IVector<Microsoft.Terminal.Settings.Model.Command> commands, String filterText, Windows.Foundation.Point anchor, Windows.Foundation.Size space, Single characterHeight);

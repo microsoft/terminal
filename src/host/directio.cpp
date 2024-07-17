@@ -306,8 +306,8 @@ CATCH_RETURN();
                         // Fill the 1 byte (AsciiChar) portion of the leading and trailing cells with each of the bytes returned.
                         // We have to be bit careful here not to directly write the CHARs, because CHARs are signed whereas wchar_t isn't
                         // and we don't want any sign-extension. We want a 1:1 copy instead, so cast it to an unsigned char first.
-                        in1.Char.UnicodeChar = til::bit_cast<uint8_t>(AsciiDbcs[0]);
-                        in2.Char.UnicodeChar = til::bit_cast<uint8_t>(AsciiDbcs[1]);
+                        in1.Char.UnicodeChar = std::bit_cast<uint8_t>(AsciiDbcs[0]);
+                        in2.Char.UnicodeChar = std::bit_cast<uint8_t>(AsciiDbcs[1]);
                     }
                     else
                     {
@@ -323,7 +323,7 @@ CATCH_RETURN();
                     // 2 byte UTF-16 character into. Give it a go.
                     CHAR asciiChar{};
                     ConvertToOem(codepage, &in1.Char.UnicodeChar, 1, &asciiChar, 1);
-                    in1.Char.UnicodeChar = til::bit_cast<uint8_t>(asciiChar);
+                    in1.Char.UnicodeChar = std::bit_cast<uint8_t>(asciiChar);
                 }
             }
         }
@@ -691,6 +691,9 @@ CATCH_RETURN();
             storageBuffer.Write(it, target);
         }
 
+        // If we've overwritten image content, it needs to be erased.
+        ImageSlice::EraseBlock(storageBuffer.GetTextBuffer(), writeRectangle.ToExclusive());
+
         // Since we've managed to write part of the request, return the clamped part that we actually used.
         writtenRectangle = writeRectangle;
 
@@ -841,7 +844,6 @@ CATCH_RETURN();
                                                  _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                                  _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::CreateConsoleScreenBuffer);
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // If any buffer type except the one we support is set, it's invalid.

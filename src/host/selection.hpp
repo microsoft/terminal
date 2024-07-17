@@ -127,6 +127,7 @@ public:
 
     DWORD GetPublicSelectionFlags() const noexcept;
     til::point GetSelectionAnchor() const noexcept;
+    std::pair<til::point, til::point> GetSelectionAnchors() const noexcept;
     til::inclusive_rect GetSelectionRectangle() const noexcept;
 
     void SetLineSelection(const bool fLineSelectionOn);

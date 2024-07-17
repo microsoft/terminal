@@ -42,7 +42,7 @@ void StoreKeyInfo(_In_ PMSG msg)
     }
     else
     {
-        RIPMSG0(RIP_WARNING, "ConsoleKeyInfo buffer is full");
+        LOG_HR_MSG(E_FAIL, "ConsoleKeyInfo buffer is full");
     }
 }
 

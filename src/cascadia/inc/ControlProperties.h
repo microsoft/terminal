@@ -19,14 +19,16 @@
 //  All of these settings are defined in IControlAppearance.
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
-    X(double, Opacity, 1.0)                                                                                                                     \
+    X(float, Opacity, 1.0f)                                                                                                                     \
+    X(bool, UseAcrylic, false)                                                                                                                  \
     X(winrt::hstring, BackgroundImage)                                                                                                          \
-    X(double, BackgroundImageOpacity, 1.0)                                                                                                      \
+    X(float, BackgroundImageOpacity, 1.0f)                                                                                                      \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill)            \
     X(winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center) \
     X(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center)       \
     X(bool, RetroTerminalEffect, false)                                                                                                         \
-    X(winrt::hstring, PixelShaderPath)
+    X(winrt::hstring, PixelShaderPath)                                                                                                          \
+    X(winrt::hstring, PixelShaderImagePath)
 
 // --------------------------- Core Settings ---------------------------
 //  All of these settings are defined in ICoreSettings.
@@ -46,22 +48,25 @@
     X(bool, ForceVTInput, false)                                                                                  \
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
-    X(bool, VtPassthrough, false)                                                                                 \
     X(bool, AutoMarkPrompts)                                                                                      \
-    X(bool, RepositionCursorWithMouse, false)
+    X(bool, RepositionCursorWithMouse, false)                                                                     \
+    X(bool, RainbowSuggestions)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::hstring, ProfileName)                                                                                                                       \
     X(winrt::hstring, ProfileSource)                                                                                                                     \
-    X(bool, UseAcrylic, false)                                                                                                                           \
+    X(winrt::guid, SessionId)                                                                                                                            \
+    X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
     X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
+    X(bool, EnableBuiltinGlyphs, true)                                                                                                                   \
+    X(bool, EnableColorGlyphs, true)                                                                                                                     \
     X(winrt::hstring, CellWidth)                                                                                                                         \
     X(winrt::hstring, CellHeight)                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
@@ -69,9 +74,11 @@
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
     X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
-    X(bool, ForceFullRepaintRendering, false)                                                                                                            \
+    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI)                                                                                     \
+    X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
-    X(bool, UseAtlasEngine, false)                                                                                                                       \
+    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
+    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
     X(bool, RightClickContextMenu, false)
