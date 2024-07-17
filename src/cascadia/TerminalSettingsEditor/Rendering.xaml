@@ -15,31 +15,39 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName}" />
+            </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer ViewChanging="ViewChanging">
-        <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <TextBlock x:Uid="Globals_RenderingDisclaimer"
-                       Style="{StaticResource DisclaimerStyle}" />
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <local:SettingContainer x:Uid="Globals_GraphicsAPI">
+            <ComboBox AutomationProperties.AccessibilityView="Content"
+                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                      ItemsSource="{x:Bind ViewModel.GraphicsAPIList}"
+                      SelectedItem="{x:Bind ViewModel.CurrentGraphicsAPI, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingContainer>
 
-            <!--  AtlasEngine  -->
-            <local:SettingContainer x:Uid="Profile_UseAtlasEngine">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.UseAtlasEngine, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+        <local:SettingContainer x:Uid="Globals_DisablePartialInvalidation">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.DisablePartialInvalidation, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
 
-            <!--  Force Full Repaint  -->
-            <local:SettingContainer x:Uid="Globals_ForceFullRepaint">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.ForceFullRepaintRendering, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+        <local:SettingContainer x:Uid="Globals_SoftwareRendering">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
 
-            <!--  Software Rendering  -->
-            <local:SettingContainer x:Uid="Globals_SoftwareRendering">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
-        </StackPanel>
-    </ScrollViewer>
+        <local:SettingContainer x:Uid="Globals_TextMeasurement">
+            <ComboBox AutomationProperties.AccessibilityView="Content"
+                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                      ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
+                      SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingContainer>
+    </StackPanel>
 </Page>

@@ -12,10 +12,6 @@
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
 
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-#include "../../renderer/dx/DxRenderer.hpp"
-#endif
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -29,7 +25,6 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
 
     // General Tests:
     TEST_METHOD(NoOpStartTest);
-    TEST_METHOD(ModeParsingTest);
 
     TEST_METHOD(DtorTestJustEngine);
     TEST_METHOD(DtorTestDeleteVtio);
@@ -37,10 +32,6 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestStackAllocMany);
 
     TEST_METHOD(RendererDtorAndThread);
-
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-    TEST_METHOD(RendererDtorAndThreadAndDx);
-#endif
 
     TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
 };
@@ -57,25 +48,6 @@ void VtIoTests::NoOpStartTest()
 
     Log::Comment(L"Verify we succeed at StartIfNeeded even if we weren't initialized");
     VERIFY_SUCCEEDED(vtio.StartIfNeeded());
-}
-
-void VtIoTests::ModeParsingTest()
-{
-    VtIoMode mode;
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM);
-
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-256color", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
-
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-ascii", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_ASCII);
-
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
-
-    VERIFY_FAILED(VtIo::ParseIoMode(L"garbage", mode));
-    VERIFY_ARE_EQUAL(mode, VtIoMode::INVALID);
 }
 
 Viewport SetUpViewport()
@@ -267,7 +239,7 @@ public:
         return {};
     }
 
-    const TextBuffer& GetTextBuffer() const noexcept override
+    TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -330,11 +302,6 @@ public:
         return false;
     }
 
-    const std::vector<RenderOverlay> GetOverlays() const noexcept override
-    {
-        return std::vector<RenderOverlay>{};
-    }
-
     const bool IsGridLineDrawingAllowed() noexcept override
     {
         return false;
@@ -363,6 +330,16 @@ public:
     {
     }
 
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override
+    {
+        return {};
+    }
+
+    const til::point_span* GetSearchHighlightFocused() const noexcept override
+    {
+        return nullptr;
+    }
+
     const til::point GetSelectionAnchor() const noexcept
     {
         return {};
@@ -371,10 +348,6 @@ public:
     const til::point GetSelectionEnd() const noexcept
     {
         return {};
-    }
-
-    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
-    {
     }
 
     const bool IsUiaDataInitialized() const noexcept
@@ -423,37 +396,6 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-void VtIoTests::RendererDtorAndThreadAndDx()
-{
-    Log::Comment(NoThrowString().Format(
-        L"Test deleting a Renderer a bunch of times"));
-
-    for (auto i = 0; i < 16; ++i)
-    {
-        auto data = std::make_unique<MockRenderData>();
-        auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
-        auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
-        VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
-
-        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        pRenderer->AddRenderEngine(dxEngine.get());
-        // Sleep for a hot sec to make sure the thread starts before we enable painting
-        // If you don't, the thread might wait on the paint enabled event AFTER
-        // EnablePainting gets called, and if that happens, then the thread will
-        // never get destructed. This will only ever happen in the vstest test runner,
-        // which is what CI uses.
-        /*Sleep(500);*/
-
-        (void)dxEngine->Enable();
-        pThread->EnablePainting();
-        pRenderer->TriggerTeardown();
-        pRenderer.reset();
-    }
-}
-#endif
-
 void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
 {
     Log::Comment(L"Test using anonymous pipes for the input and adding a signal channel.");
@@ -483,7 +425,7 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     VtIo vtio;
     VERIFY_IS_FALSE(vtio.IsUsingVt());
     VERIFY_ARE_EQUAL(nullptr, vtio._pPtySignalInputThread);
-    VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), L"", signalPipeReadSide.release()));
+    VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), signalPipeReadSide.release()));
     VERIFY_SUCCEEDED(vtio.CreateAndStartSignalThread());
     VERIFY_SUCCEEDED(vtio.CreateIoHandlers());
     VERIFY_IS_TRUE(vtio.IsUsingVt());

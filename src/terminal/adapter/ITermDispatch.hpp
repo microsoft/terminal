@@ -49,6 +49,12 @@ public:
     virtual bool DeleteCharacter(const VTInt count) = 0; // DCH
     virtual bool ScrollUp(const VTInt distance) = 0; // SU
     virtual bool ScrollDown(const VTInt distance) = 0; // SD
+    virtual bool NextPage(const VTInt pageCount) = 0; // NP
+    virtual bool PrecedingPage(const VTInt pageCount) = 0; // PP
+    virtual bool PagePositionAbsolute(const VTInt page) = 0; // PPA
+    virtual bool PagePositionRelative(const VTInt pageCount) = 0; // PPR
+    virtual bool PagePositionBack(const VTInt pageCount) = 0; // PPB
+    virtual bool RequestDisplayedExtent() = 0; // DECRQDE
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
     virtual bool InsertColumn(const VTInt distance) = 0; // DECIC
@@ -63,11 +69,12 @@ public:
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool BackIndex() = 0; // DECBI
     virtual bool ForwardIndex() = 0; // DECFI
-    virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
+    virtual bool SetWindowTitle(std::wstring_view title) = 0; // DECSWT, OscWindowTitle
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
+    virtual bool TabSet(const VTParameter setType) = 0; // DECST8C
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
@@ -113,6 +120,7 @@ public:
     virtual bool LockingShiftRight(const VTInt gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual bool SingleShift(const VTInt gsetNumber) = 0; // SS2, SS3
     virtual bool AcceptC1Controls(const bool enabled) = 0; // DECAC1
+    virtual bool AnnounceCodeStructure(const VTInt ansiLevel) = 0; // ACS
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS
@@ -121,7 +129,7 @@ public:
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
     virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
 
-    virtual bool SetClipboard(std::wstring_view content) = 0; // OSCSetClipboard
+    virtual bool SetClipboard(wil::zwstring_view content) = 0; // OSCSetClipboard
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
@@ -137,6 +145,14 @@ public:
 
     virtual bool DoFinalTermAction(const std::wstring_view string) = 0;
 
+    virtual bool DoVsCodeAction(const std::wstring_view string) = 0;
+
+    virtual bool DoWTAction(const std::wstring_view string) = 0;
+
+    virtual StringHandler DefineSixelImage(const VTInt macroParameter,
+                                           const DispatchTypes::SixelBackground backgroundSelect,
+                                           const VTParameter backgroundColor) = 0; // SIXEL
+
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,
@@ -144,7 +160,10 @@ public:
                                        const DispatchTypes::DrcsFontSet fontSet,
                                        const DispatchTypes::DrcsFontUsage fontUsage,
                                        const VTParameter cellHeight,
-                                       const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
+                                       const DispatchTypes::CharsetSize charsetSize) = 0; // DECDLD
+
+    virtual bool RequestUserPreferenceCharset() = 0; // DECRQUPSS
+    virtual StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) = 0; // DECAUPSS
 
     virtual StringHandler DefineMacro(const VTInt macroId,
                                       const DispatchTypes::MacroDeleteControl deleteControl,

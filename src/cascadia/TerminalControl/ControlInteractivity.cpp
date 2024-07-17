@@ -14,7 +14,6 @@
 #include "InteractivityAutomationPeer.h"
 
 #include "ControlInteractivity.g.cpp"
-#include "TermControl.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -53,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })
             {
-                self->_AttachedHandlers(*self, nullptr);
+                self->Attached.raise(*self, nullptr);
             }
         });
     }
@@ -118,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::Close()
     {
-        _ClosedHandlers(*this, nullptr);
+        Closed.raise(*this, nullptr);
         if (_core)
         {
             _core->Close();
@@ -224,22 +223,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Initiate a paste operation.
     void ControlInteractivity::RequestPasteTextFromClipboard()
     {
-        // attach ControlInteractivity::_sendPastedTextToConnection() as the
-        // clipboardDataHandler. This is called when the clipboard data is
-        // loaded.
-        auto clipboardDataHandler = std::bind(&ControlInteractivity::_sendPastedTextToConnection, this, std::placeholders::_1);
-        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler, _core->BracketedPasteEnabled());
+        auto args = winrt::make<PasteFromClipboardEventArgs>(
+            [core = _core](const winrt::hstring& wstr) {
+                core->PasteText(wstr);
+            },
+            _core->BracketedPasteEnabled());
 
         // send paste event up to TermApp
-        _PasteFromClipboardHandlers(*this, *pasteArgs);
-    }
-
-    // Method Description:
-    // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection.
-    void ControlInteractivity::_sendPastedTextToConnection(std::wstring_view wstr)
-    {
-        _core->PasteText(winrt::hstring{ wstr });
+        PasteFromClipboard.raise(*this, std::move(args));
     }
 
     void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
@@ -313,7 +304,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(
                     til::point{ pixelPosition }.to_winrt_point(),
                     terminalPosition.to_core_point());
-                _ContextMenuRequestedHandlers(*this, contextArgs);
+                ContextMenuRequested.raise(*this, contextArgs);
             }
             else
             {
@@ -524,7 +515,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlInteractivity::_mouseTransparencyHandler(const int32_t mouseDelta) const
     {
         // Transparency is on a scale of [0.0,1.0], so only increment by .01.
-        const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
+        const auto effectiveDelta = mouseDelta < 0 ? -.01f : .01f;
         _core->AdjustOpacity(effectiveDelta);
     }
 
@@ -560,7 +551,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // underneath us. We wouldn't know - we don't want the overhead of
         // another ScrollPositionChanged handler. If the scrollbar should be
         // somewhere other than where it is currently, then start from that row.
-        const auto currentInternalRow = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        const auto currentInternalRow = std::lround(_internalScrollbarPosition);
         const auto currentCoreRow = _core->ScrollOffset();
         const auto currentOffset = currentInternalRow == currentCoreRow ?
                                        _internalScrollbarPosition :
@@ -570,13 +561,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // However, for us, the signs are flipped.
         // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
         // but the "smooth scrolling" mode results in non-int values
-        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
+        const auto rowDelta = mouseDelta / (-1.0f * WHEEL_DELTA);
 
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ::base::saturated_cast<double>(_core->ViewHeight()) : _rowsToScroll };
-        auto newValue = (rowsToScroll * rowDelta) + (currentOffset);
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
+        const auto newValue = rowsToScroll * rowDelta + currentOffset;
 
         // Update the Core's viewport position, and raise a
         // ScrollPositionChanged event to update the scrollbar
@@ -606,32 +597,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newValue: The new top of the viewport
     // Return Value:
     // - <none>
-    void ControlInteractivity::UpdateScrollbar(const double newValue)
+    void ControlInteractivity::UpdateScrollbar(const float newValue)
     {
         // Set this as the new value of our internal scrollbar representation.
         // We're doing this so we can accumulate fractional amounts of a row to
         // scroll each time the mouse scrolls.
-        _internalScrollbarPosition = std::clamp<double>(newValue, 0.0, _core->BufferHeight());
+        _internalScrollbarPosition = std::clamp(newValue, 0.0f, static_cast<float>(_core->BufferHeight()));
 
         // If the new scrollbar position, rounded to an int, is at a different
         // row, then actually update the scroll position in the core, and raise
         // a ScrollPositionChanged to inform the control.
-        auto viewTop = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        const auto viewTop = std::lround(_internalScrollbarPosition);
         if (viewTop != _core->ScrollOffset())
         {
             _core->UserScrollViewport(viewTop);
 
             // _core->ScrollOffset() is now set to newValue
-            _ScrollPositionChangedHandlers(*this,
-                                           winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                                  _core->ViewHeight(),
-                                                                                  _core->BufferHeight()));
+            ScrollPositionChanged.raise(*this,
+                                        winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
+                                                                               _core->ViewHeight(),
+                                                                               _core->BufferHeight()));
         }
     }
 
     void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)
     {
-        _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+        OpenHyperlink.raise(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
     }
 
     bool ControlInteractivity::_canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)

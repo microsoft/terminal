@@ -36,7 +36,6 @@ public:
     bool IsHeadless() const;
     bool ShouldCreateServerHandle() const;
     bool ShouldRunAsComServer() const;
-    bool IsPassthroughMode() const noexcept;
 
     HANDLE GetServerHandle() const;
     HANDLE GetVtInHandle() const;
@@ -48,6 +47,7 @@ public:
     std::wstring GetOriginalCommandLine() const;
     std::wstring GetClientCommandline() const;
     std::wstring GetVtMode() const;
+    const std::wstring& GetTextMeasurement() const;
     bool GetForceV1() const;
     bool GetForceNoHandoff() const;
 
@@ -76,7 +76,6 @@ public:
     static const std::wstring_view FEATURE_ARG;
     static const std::wstring_view FEATURE_PTY_ARG;
     static const std::wstring_view COM_SERVER_ARG;
-    static const std::wstring_view PASSTHROUGH_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -85,7 +84,6 @@ private:
                      const std::wstring clientCommandline,
                      const HANDLE vtInHandle,
                      const HANDLE vtOutHandle,
-                     const std::wstring vtMode,
                      const short width,
                      const short height,
                      const bool forceV1,
@@ -95,13 +93,11 @@ private:
                      const DWORD serverHandle,
                      const DWORD signalHandle,
                      const bool inheritCursor,
-                     const bool runAsComServer,
-                     const bool passthroughMode) :
+                     const bool runAsComServer) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
         _vtOutHandle(vtOutHandle),
-        _vtMode(vtMode),
         _width(width),
         _height(height),
         _forceV1(forceV1),
@@ -112,8 +108,7 @@ private:
         _signalHandle(signalHandle),
         _inheritCursor(inheritCursor),
         _resizeQuirk(false),
-        _runAsComServer{ runAsComServer },
-        _passthroughMode{ passthroughMode }
+        _runAsComServer{ runAsComServer }
     {
     }
 #endif
@@ -126,7 +121,7 @@ private:
 
     HANDLE _vtOutHandle;
 
-    std::wstring _vtMode;
+    std::wstring _textMeasurement;
 
     bool _forceNoHandoff;
     bool _forceV1;
@@ -135,7 +130,6 @@ private:
     short _width;
     short _height;
 
-    bool _passthroughMode{ false };
     bool _runAsComServer;
     bool _createServerHandle;
     DWORD _serverHandle;
@@ -181,7 +175,6 @@ namespace WEX
                                                            L"Use VT Handles: '%ws',\r\n"
                                                            L"VT In Handle: '0x%x',\r\n"
                                                            L"VT Out Handle: '0x%x',\r\n"
-                                                           L"Vt Mode: '%ws',\r\n"
                                                            L"WidthxHeight: '%dx%d',\r\n"
                                                            L"ForceV1: '%ws',\r\n"
                                                            L"Headless: '%ws',\r\n"
@@ -191,12 +184,10 @@ namespace WEX
                                                            L"Signal Handle: '0x%x'\r\n",
                                                            L"Inherit Cursor: '%ws'\r\n",
                                                            L"Run As Com Server: '%ws'\r\n",
-                                                           L"Passthrough Mode: '%ws'\r\n",
                                                            ci.GetClientCommandline().c_str(),
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
                                                            ci.GetVtOutHandle(),
-                                                           ci.GetVtMode().c_str(),
                                                            ci.GetWidth(),
                                                            ci.GetHeight(),
                                                            s_ToBoolString(ci.GetForceV1()),
@@ -206,8 +197,7 @@ namespace WEX
                                                            s_ToBoolString(ci.HasSignalHandle()),
                                                            ci.GetSignalHandle(),
                                                            s_ToBoolString(ci.GetInheritCursor()),
-                                                           s_ToBoolString(ci.ShouldRunAsComServer()),
-                                                           s_ToBoolString(ci.IsPassthroughMode()));
+                                                           s_ToBoolString(ci.ShouldRunAsComServer()));
             }
 
         private:
@@ -227,7 +217,6 @@ namespace WEX
                        expected.HasVtHandles() == actual.HasVtHandles() &&
                        expected.GetVtInHandle() == actual.GetVtInHandle() &&
                        expected.GetVtOutHandle() == actual.GetVtOutHandle() &&
-                       expected.GetVtMode() == actual.GetVtMode() &&
                        expected.GetWidth() == actual.GetWidth() &&
                        expected.GetHeight() == actual.GetHeight() &&
                        expected.GetForceV1() == actual.GetForceV1() &&
@@ -237,8 +226,7 @@ namespace WEX
                        expected.HasSignalHandle() == actual.HasSignalHandle() &&
                        expected.GetSignalHandle() == actual.GetSignalHandle() &&
                        expected.GetInheritCursor() == actual.GetInheritCursor() &&
-                       expected.ShouldRunAsComServer() == actual.ShouldRunAsComServer() &&
-                       expected.IsPassthroughMode() == actual.IsPassthroughMode();
+                       expected.ShouldRunAsComServer() == actual.ShouldRunAsComServer();
             }
 
             static bool AreSame(const ConsoleArguments& expected, const ConsoleArguments& actual)
@@ -255,7 +243,6 @@ namespace WEX
                 return object.GetClientCommandline().empty() &&
                        (object.GetVtInHandle() == 0 || object.GetVtInHandle() == INVALID_HANDLE_VALUE) &&
                        (object.GetVtOutHandle() == 0 || object.GetVtOutHandle() == INVALID_HANDLE_VALUE) &&
-                       object.GetVtMode().empty() &&
                        !object.GetForceV1() &&
                        (object.GetWidth() == 0) &&
                        (object.GetHeight() == 0) &&
@@ -264,8 +251,7 @@ namespace WEX
                        object.GetServerHandle() == 0 &&
                        (object.GetSignalHandle() == 0 || object.GetSignalHandle() == INVALID_HANDLE_VALUE) &&
                        !object.GetInheritCursor() &&
-                       !object.ShouldRunAsComServer() &&
-                       !object.IsPassthroughMode();
+                       !object.ShouldRunAsComServer();
             }
         };
     }

@@ -517,7 +517,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -535,7 +535,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -857,7 +857,7 @@ namespace TerminalAppLocalTests
             // |   1    |   2    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             secondId = tab->_activePane->Id().value();
         });
         Sleep(250);
@@ -875,7 +875,7 @@ namespace TerminalAppLocalTests
             // |   3    |        |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             // Split again to make the 3rd tab
             thirdId = tab->_activePane->Id().value();
@@ -895,7 +895,7 @@ namespace TerminalAppLocalTests
             // |   3    |   4    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             fourthId = tab->_activePane->Id().value();
         });
@@ -1326,7 +1326,7 @@ namespace TerminalAppLocalTests
             const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
 
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
         });
 
         TestOnUIThread([&page]() {
@@ -1344,7 +1344,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(controlSettings);
 
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
 
             // And we should have stored a function to revert the change.
             VERIFY_ARE_EQUAL(1u, page->_restorePreviewFuncs.size());
@@ -1366,7 +1366,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(controlSettings);
 
             Log::Comment(L"Color should be changed");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
 
             // After preview there should be no more restore functions to execute.
             VERIFY_ARE_EQUAL(0u, page->_restorePreviewFuncs.size());
@@ -1394,7 +1394,7 @@ namespace TerminalAppLocalTests
             const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
 
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
         });
 
         TestOnUIThread([&page]() {
@@ -1412,7 +1412,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(controlSettings);
 
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
         });
 
         TestOnUIThread([&page]() {
@@ -1428,7 +1428,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(controlSettings);
 
             Log::Comment(L"Color should be the same as it originally was");
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
         });
         Log::Comment(L"Sleep to let events propagate");
         Sleep(250);
@@ -1450,7 +1450,7 @@ namespace TerminalAppLocalTests
             const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
 
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
         });
 
         TestOnUIThread([&page]() {
@@ -1467,7 +1467,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(controlSettings);
 
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
         });
 
         TestOnUIThread([&page]() {
@@ -1484,7 +1484,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(controlSettings);
 
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, til::color{ controlSettings.DefaultBackground() });
         });
 
         TestOnUIThread([&page]() {
@@ -1503,7 +1503,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(controlSettings);
 
             Log::Comment(L"Color should be changed");
-            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, til::color{ controlSettings.DefaultBackground() });
         });
         Log::Comment(L"Sleep to let events propagate");
         Sleep(250);

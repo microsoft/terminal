@@ -1,0 +1,62 @@
+trigger: none
+pr: none
+schedules:
+  - cron: "30 3 * * 2-6" # Run at 03:30 UTC Tuesday through Saturday (After the work day in Pacific, Mon-Fri)
+    displayName: "Nightly Terminal Build"
+    branches:
+      include:
+        - main
+    always: false # only run if there's code changes!
+
+parameters:
+  - name: publishToAzure
+    displayName: "Deploy to **PUBLIC** Azure Storage"
+    type: boolean
+    default: true
+
+name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
+
+variables:
+  - template: templates-v2/variables-nuget-package-version.yml
+    parameters:
+      branding: Canary
+  - template: templates-v2/variables-onebranch-config.yml
+
+extends:
+  template: templates-v2/pipeline-onebranch-full-release-build.yml
+  parameters:
+    official: true
+    branding: Canary
+    buildTerminal: true
+    pgoBuildMode: Optimize
+    codeSign: true
+    signingIdentity:
+      serviceName: $(SigningServiceName)
+      appId: $(SigningAppId)
+      tenantId: $(SigningTenantId)
+      akvName: $(SigningAKVName)
+      authCertName: $(SigningAuthCertName)
+      signCertName: $(SigningSignCertName)
+    publishSymbolsToPublic: true
+    publishVpackToWindows: false
+    symbolExpiryTime: 15
+    symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
+    symbolPublishingProject: $(SymbolPublishingProject)
+    ${{ if eq(true, parameters.publishToAzure) }}:
+      extraPublishJobs:
+        - template: build/pipelines/templates-v2/job-deploy-to-azure-storage.yml@self
+          parameters:
+            pool: { type: windows }
+            variables:
+              ob_git_checkout: false # This job checks itself out
+              ob_git_skip_checkout_none: true
+              ob_outputDirectory: "$(Build.SourcesDirectory)/_none"
+            dependsOn: [PublishSymbols]
+            storagePublicRootURL: $(AppInstallerRootURL)
+            subscription: $(AzureSubscriptionName)
+            storageAccount: $(AzureStorageAccount)
+            storageContainer: $(AzureStorageContainer)
+            buildConfiguration: Release
+            buildPlatforms: [x64, x86, arm64]
+            environment: production-canary
+

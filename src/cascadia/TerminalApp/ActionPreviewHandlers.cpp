@@ -50,6 +50,7 @@ namespace winrt::TerminalApp::implementation
         {
         case ShortcutAction::SetColorScheme:
         case ShortcutAction::AdjustOpacity:
+        case ShortcutAction::SendInput:
         {
             _RunRestorePreviews();
             break;
@@ -127,7 +128,7 @@ namespace winrt::TerminalApp::implementation
             auto originalOpacity{ control.BackgroundOpacity() };
 
             // Apply the new opacity
-            control.AdjustOpacity(args.Opacity() / 100.0, args.Relative());
+            control.AdjustOpacity(args.Opacity() / 100.0f, args.Relative());
 
             if (backup)
             {
@@ -135,6 +136,24 @@ namespace winrt::TerminalApp::implementation
                     // On dismiss:
                     // Don't adjust relatively, just set outright.
                     control.AdjustOpacity(originalOpacity, false);
+                });
+            }
+        });
+    }
+
+    void TerminalPage::_PreviewSendInput(const Settings::Model::SendInputArgs& args)
+    {
+        const auto backup = _restorePreviewFuncs.empty();
+
+        _ApplyToActiveControls([&](const auto& control) {
+            const auto& str{ args.Input() };
+            control.PreviewInput(str);
+
+            if (backup)
+            {
+                _restorePreviewFuncs.emplace_back([=]() {
+                    // On dismiss:
+                    control.PreviewInput(hstring{});
                 });
             }
         });
@@ -150,6 +169,12 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::AdjustOpacity:
             _PreviewAdjustOpacity(args.Args().try_as<AdjustOpacityArgs>());
             break;
+        case ShortcutAction::SendInput:
+            _PreviewSendInput(args.Args().try_as<SendInputArgs>());
+            break;
+        default:
+            _EndPreview();
+            return;
         }
 
         // GH#9818 Other ideas for actions that could be preview-able:

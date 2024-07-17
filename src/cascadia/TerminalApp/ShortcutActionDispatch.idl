@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
-#define ACTION_EVENT(name) event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> name
+#define ACTION_EVENT(name) event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.ActionEventArgs> name
 
 namespace TerminalApp
 {
@@ -10,10 +10,12 @@ namespace TerminalApp
         ShortcutActionDispatch();
 
         Boolean DoAction(Microsoft.Terminal.Settings.Model.ActionAndArgs actionAndArgs);
+        Boolean DoAction(Object sender, Microsoft.Terminal.Settings.Model.ActionAndArgs actionAndArgs);
 
         // When adding a new action, add them to AllShortcutActions.h!
         #define ON_ALL_ACTIONS(action) ACTION_EVENT(action);
         ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
         #undef ON_ALL_ACTIONS
 
     }

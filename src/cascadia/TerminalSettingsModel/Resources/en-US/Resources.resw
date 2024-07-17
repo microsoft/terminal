@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
-    Microsoft ResX Schema 
-    
+  <!--
+    Microsoft ResX Schema
+
     Version 2.0
-    
-    The primary goals of this format is to allow a simple XML format 
-    that is mostly human readable. The generation and parsing of the 
-    various data types are done through the TypeConverter classes 
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
     associated with the data types.
-    
+
     Example:
-    
+
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-                
-    There are any number of "resheader" rows that contain simple 
+
+    There are any number of "resheader" rows that contain simple
     name/value pairs.
-    
-    Each data row contains a name, and value. The row also contains a 
-    type or mimetype. Type corresponds to a .NET class that support 
-    text/value conversion through the TypeConverter architecture. 
-    Classes that don't support this are serialized and stored with the 
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
     mimetype set.
-    
-    The mimetype is used for serialized objects, and tells the 
-    ResXResourceReader how to depersist the object. This is currently not 
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
     extensible. For a given mimetype the value must be set accordingly:
-    
-    Note - application/x-microsoft.net.object.binary.base64 is the format 
-    that the ResXResourceWriter will generate, however the reader can 
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
     read any of the formats listed below.
-    
+
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-    
+
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array 
+    value   : The object must be serialized into a byte array
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -118,13 +118,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
-    <value>Select color scheme...</value>
+    <value>Select color scheme</value>
   </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
-    <value>New Tab...</value>
+    <value>New tab</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>Split Pane...</value>
+    <value>Split pane</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Open snippets pane</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
     <value>Terminal (Portable)</value>
@@ -325,7 +329,7 @@
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
-    <value>Set the tab color...</value>
+    <value>Set the tab color</value>
   </data>
   <data name="PasteTextCommandKey" xml:space="preserve">
     <value>Paste</value>
@@ -347,7 +351,7 @@
     <value>Reset tab title</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>Rename tab title...</value>
+    <value>Rename tab title</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Resize pane</value>
@@ -441,13 +445,19 @@
     <value>Switch to the last tab</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Search for tab...</value>
+    <value>Search for tab</value>
   </data>
   <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
     <value>Toggle always on top mode</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
+  </data>
+  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
+    <value>Recent commands</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>Open suggestions</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
@@ -499,7 +509,7 @@
     <value>Break into the debugger</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Open settings...</value>
+    <value>Open settings</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Rename window to "{0}"</value>
@@ -509,7 +519,10 @@
     <value>Reset window name</value>
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
-    <value>Rename window...</value>
+    <value>Rename window</value>
+  </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>Display Terminal's current working directory</value>
   </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
     <value>Show/Hide the Terminal window</value>
@@ -557,7 +570,7 @@
     <value>Quit the Terminal</value>
   </data>
   <data name="SetOpacityParentCommandName" xml:space="preserve">
-    <value>Set background opacity...</value>
+    <value>Set background opacity</value>
   </data>
   <data name="IncreaseOpacityCommandKey" xml:space="preserve">
     <value>Increase background opacity by {0}%</value>
@@ -684,8 +697,15 @@
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
     <value>Close all other panes</value>
   </data>
+  <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
+    <value>Toggle broadcast input to all panes</value>
+    <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
+  </data>
   <data name="RestartConnectionKey" xml:space="preserve">
     <value>Restart connection</value>
+  </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>Open scratchpad</value>
   </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>Select next command output</value>
@@ -698,5 +718,23 @@
   </data>
   <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
     <value>Select previous command</value>
+  </data>
+  <data name="SearchForTextCommandKey" xml:space="preserve">
+    <value>Search {0}</value>
+    <comment>{0} will be replaced with a user-specified URL to a web page</comment>
+  </data>
+  <data name="SearchWebCommandKey" xml:space="preserve">
+    <value>Search the web for selected text</value>
+    <comment>This will open a web browser to search for some user-selected text</comment>
+  </data>
+  <data name="OpenAboutCommandKey" xml:space="preserve">
+    <value>Open about dialog</value>
+    <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Save Snippet</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Open quick fix menu</value>
   </data>
 </root>

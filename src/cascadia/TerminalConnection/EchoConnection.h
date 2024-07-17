@@ -18,10 +18,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) const noexcept {};
 
+        winrt::guid SessionId() const noexcept { return {}; }
         ConnectionState State() const noexcept { return ConnectionState::Connected; }
 
-        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
-        TYPED_EVENT(StateChanged, ITerminalConnection, IInspectable);
+        til::event<TerminalOutputHandler> TerminalOutput;
+        til::typed_event<ITerminalConnection, IInspectable> StateChanged;
     };
 }
 

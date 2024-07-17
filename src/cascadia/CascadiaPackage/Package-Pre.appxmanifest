@@ -9,13 +9,14 @@
   xmlns:uap4="http://schemas.microsoft.com/appx/manifest/uap/windows10/4"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   xmlns:uap7="http://schemas.microsoft.com/appx/manifest/uap/windows10/7"
+  xmlns:uap17="http://schemas.microsoft.com/appx/manifest/uap/windows10/17"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
   xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:virtualization="http://schemas.microsoft.com/appx/manifest/virtualization/windows10"
-  IgnorableNamespaces="uap mp rescap uap3 desktop6 virtualization">
+  IgnorableNamespaces="uap mp rescap uap3 uap17 desktop6 virtualization">
 
   <Identity
     Name="Microsoft.WindowsTerminalPreview"
@@ -34,6 +35,7 @@
         <virtualization:ExcludedKey>HKEY_CURRENT_USER\Console\%%Startup</virtualization:ExcludedKey>
       </virtualization:ExcludedKeys>
     </virtualization:RegistryWriteVirtualization>
+    <uap17:UpdateWhileInUse>defer</uap17:UpdateWhileInUse>
   </Properties>
 
   <Dependencies>
@@ -198,8 +200,7 @@
             <com:ComInterface>
                 <com:ProxyStub Id="1833E661-CC81-4DD0-87C6-C2F74BD39EFA" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
                 <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/>
-                <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/> <!-- ITerminalHandoff -->
-                <com:Interface Id="AA6B364F-4A50-4176-9002-0AE755E7B5EF" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/> <!-- ITerminalHandoff2 -->
+                <com:Interface Id="6F23DA90-15C5-4203-9DB0-64E73F1B1B00" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/> <!-- ITerminalHandoff3 -->
                 <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/>
             </com:ComInterface>
         </com:Extension>

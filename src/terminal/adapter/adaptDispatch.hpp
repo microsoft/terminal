@@ -18,6 +18,7 @@ Author(s):
 #include "ITerminalApi.hpp"
 #include "FontBuffer.hpp"
 #include "MacroBuffer.hpp"
+#include "PageManager.hpp"
 #include "terminalOutput.hpp"
 #include "../input/terminalInput.hpp"
 #include "../../types/inc/sgrStack.hpp"
@@ -35,7 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
         using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
     public:
-        AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
+        AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept;
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
@@ -81,6 +82,12 @@ namespace Microsoft::Console::VirtualTerminal
         bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) override; // DECREQTPARM
         bool ScrollUp(const VTInt distance) override; // SU
         bool ScrollDown(const VTInt distance) override; // SD
+        bool NextPage(const VTInt pageCount) override; // NP
+        bool PrecedingPage(const VTInt pageCount) override; // PP
+        bool PagePositionAbsolute(const VTInt page) override; // PPA
+        bool PagePositionRelative(const VTInt pageCount) override; // PPR
+        bool PagePositionBack(const VTInt pageCount) override; // PPB
+        bool RequestDisplayedExtent() override; // DECRQDE
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
         bool InsertColumn(const VTInt distance) override; // DECIC
@@ -100,11 +107,12 @@ namespace Microsoft::Console::VirtualTerminal
         bool ReverseLineFeed() override; // RI
         bool BackIndex() override; // DECBI
         bool ForwardIndex() override; // DECFI
-        bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
+        bool SetWindowTitle(const std::wstring_view title) override; // DECSWT, OSCWindowTitle
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
         bool BackwardsTab(const VTInt numTabs) override; // CBT
         bool TabClear(const DispatchTypes::TabClearType clearType) override; // TBC
+        bool TabSet(const VTParameter setType) noexcept override; // DECST8C
         bool DesignateCodingSystem(const VTID codingSystem) override; // DOCS
         bool Designate94Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
         bool Designate96Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
@@ -112,13 +120,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
         bool SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         bool AcceptC1Controls(const bool enabled) override; // DECAC1
+        bool AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
-        bool SetClipboard(const std::wstring_view content) override; // OSCSetClipboard
+        bool SetClipboard(const wil::zwstring_view content) override; // OSCSetClipboard
 
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCColorTable
@@ -139,6 +148,14 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoFinalTermAction(const std::wstring_view string) override;
 
+        bool DoVsCodeAction(const std::wstring_view string) override;
+
+        bool DoWTAction(const std::wstring_view string) override;
+
+        StringHandler DefineSixelImage(const VTInt macroParameter,
+                                       const DispatchTypes::SixelBackground backgroundSelect,
+                                       const VTParameter backgroundColor) override; // SIXEL
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
@@ -146,7 +163,10 @@ namespace Microsoft::Console::VirtualTerminal
                                    const DispatchTypes::DrcsFontSet fontSet,
                                    const DispatchTypes::DrcsFontUsage fontUsage,
                                    const VTParameter cellHeight,
-                                   const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
+                                   const DispatchTypes::CharsetSize charsetSize) override; // DECDLD
+
+        bool RequestUserPreferenceCharset() override; // DECRQUPSS
+        StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) override; // DECAUPSS
 
         StringHandler DefineMacro(const VTInt macroId,
                                   const DispatchTypes::MacroDeleteControl deleteControl,
@@ -170,8 +190,10 @@ namespace Microsoft::Console::VirtualTerminal
             Column,
             AllowDECCOLM,
             AllowDECSLRM,
+            SixelDisplay,
             EraseColor,
-            RectangularChangeExtent
+            RectangularChangeExtent,
+            PageCursorCoupling
         };
         enum class ScrollDirection
         {
@@ -182,12 +204,11 @@ namespace Microsoft::Console::VirtualTerminal
         {
             VTInt Row = 1;
             VTInt Column = 1;
+            VTInt Page = 1;
             bool IsDelayedEOLWrap = false;
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
-            bool C1ControlsAccepted = false;
-            unsigned int CodePage = 0;
         };
         struct Offset
         {
@@ -205,23 +226,24 @@ namespace Microsoft::Console::VirtualTerminal
             CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
             std::optional<TextColor> foreground;
             std::optional<TextColor> background;
+            std::optional<TextColor> underlineColor;
         };
 
         void _WriteToBuffer(const std::wstring_view string);
-        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept;
+        std::pair<int, int> _GetVerticalMargins(const Page& page, const bool absolute) noexcept;
         std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
-        void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
-        void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
-        void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
+        void _FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
+        void _SelectiveEraseRect(const Page& page, const til::rect& eraseRect);
+        void _ChangeRectAttributes(const Page& page, const til::rect& changeRect, const ChangeOps& changeOps);
         void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
-        til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
+        til::rect _CalculateRectArea(const Page& page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right);
         bool _EraseScrollback();
         bool _EraseAll();
-        TextAttribute _GetEraseAttributes(const TextBuffer& textBuffer) const noexcept;
-        void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
-        void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
+        TextAttribute _GetEraseAttributes(const Page& page) const noexcept;
+        void _ScrollRectVertically(const Page& page, const til::rect& scrollRect, const VTInt delta);
+        void _ScrollRectHorizontally(const Page& page, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);
         void _InsertDeleteLineHelper(const VTInt delta);
         void _InsertDeleteColumnHelper(const VTInt delta);
@@ -234,9 +256,9 @@ namespace Microsoft::Console::VirtualTerminal
                                              const VTInt rightMargin,
                                              const bool homeCursor = false);
 
-        void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
+        bool _DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced);
 
-        void _OperatingStatus() const;
+        void _DeviceStatusReport(const wchar_t* parameters) const;
         void _CursorPositionReport(const bool extendedReport);
         void _MacroSpaceReport() const;
         void _MacroChecksumReport(const VTParameter id) const;
@@ -248,7 +270,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ClearSingleTabStop();
         void _ClearAllTabStops() noexcept;
-        void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const VTInt width);
 
         StringHandler _RestoreColorTable();
@@ -265,17 +286,20 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
-        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
+        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
 
-        std::vector<bool> _tabStopColumns;
+        std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
         ITerminalApi& _api;
-        Renderer& _renderer;
+        Renderer* _renderer;
         RenderSettings& _renderSettings;
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
+        PageManager _pages;
+        friend class SixelParser;
+        std::shared_ptr<SixelParser> _sixelParser;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
@@ -290,16 +314,23 @@ namespace Microsoft::Console::VirtualTerminal
 
         til::inclusive_rect _scrollMargins;
 
-        til::enumset<Mode> _modes;
+        til::enumset<Mode> _modes{ Mode::PageCursorCoupling };
 
         SgrStack _sgrStack;
 
+        void _SetUnderlineStyleHelper(const VTParameter option, TextAttribute& attr) noexcept;
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
+        void _SetRgbColorsHelperFromSubParams(const VTParameter colorItem,
+                                              const VTSubParameters options,
+                                              TextAttribute& attr) noexcept;
         size_t _ApplyGraphicsOption(const VTParameters options,
                                     const size_t optionIndex,
                                     TextAttribute& attr) noexcept;
+        void _ApplyGraphicsOptionWithSubParams(const VTParameter option,
+                                               const VTSubParameters subParams,
+                                               TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptions(const VTParameters options,
                                    TextAttribute& attr) noexcept;
 

@@ -89,10 +89,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // done when we become the king. This will be called both for the first
         // window, and when the current monarch dies.
 
-        _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
-        _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
+        _monarch.WindowCreated({ get_weak(), &WindowManager::_bubbleWindowCreated });
+        _monarch.WindowClosed({ get_weak(), &WindowManager::_bubbleWindowClosed });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
-        _monarch.QuitAllRequested({ get_weak(), &WindowManager::_QuitAllRequestedHandlers });
 
         _monarch.RequestNewWindow({ get_weak(), &WindowManager::_raiseRequestNewWindow });
     }
@@ -109,12 +108,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void WindowManager::_raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                                         const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
-        _FindTargetWindowRequestedHandlers(sender, args);
+        FindTargetWindowRequested.raise(sender, args);
     }
     void WindowManager::_raiseRequestNewWindow(const winrt::Windows::Foundation::IInspectable& sender,
                                                const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args)
     {
-        _RequestNewWindowHandlers(sender, args);
+        RequestNewWindow.raise(sender, args);
     }
 
     Remoting::ProposeCommandlineResult WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args, const bool isolatedMode)
@@ -130,6 +129,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             // We connected to a monarch instance, not us though. This won't hit
             // in isolated mode.
+
+            LOG_IF_FAILED(CoAllowSetForegroundWindow(winrt::get_unknown(_monarch), nullptr));
 
             // Send the commandline over to the monarch process
             if (_proposeToMonarch(args))
@@ -162,7 +163,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             auto findWindowArgs{ winrt::make_self<Remoting::implementation::FindTargetWindowArgs>(args) };
 
             // This is handled by some handler in-proc
-            _FindTargetWindowRequestedHandlers(*this, *findWindowArgs);
+            FindTargetWindowRequested.raise(*this, *findWindowArgs);
 
             // After the event was handled, ResultTargetWindow() will be filled with
             // the parsed result.
@@ -349,11 +350,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // If the name wasn't specified, this will be an empty string.
         p->WindowName(args.WindowName());
 
-        p->ExecuteCommandline(*winrt::make_self<CommandlineArgs>(args.Commandline(), args.CurrentDirectory(), args.ShowWindowCommand()));
+        p->ExecuteCommandline(*winrt::make_self<CommandlineArgs>(args.Commandline(),
+                                                                 args.CurrentDirectory(),
+                                                                 args.ShowWindowCommand(),
+                                                                 args.CurrentEnvironment()));
 
         _monarch.AddPeasant(*p);
-
-        p->GetWindowLayoutRequested({ get_weak(), &WindowManager::_GetWindowLayoutRequestedHandlers });
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "WindowManager_CreateOurPeasant",
@@ -362,6 +364,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         return *p;
+    }
+
+    void WindowManager::_bubbleWindowCreated(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e)
+    {
+        WindowCreated.raise(s, e);
+    }
+    void WindowManager::_bubbleWindowClosed(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e)
+    {
+        WindowClosed.raise(s, e);
     }
 
     void WindowManager::SignalClose(const Remoting::Peasant& peasant)
@@ -409,18 +420,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return 0;
     }
 
-    // Method Description:
-    // - Ask the monarch to quit all windows.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget WindowManager::RequestQuitAll(Remoting::Peasant peasant)
-    {
-        co_await winrt::resume_background();
-        peasant.RequestQuitAll();
-    }
-
     bool WindowManager::DoesQuakeWindowExist()
     {
         return _monarch.DoesQuakeWindowExist();
@@ -429,19 +428,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void WindowManager::UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant)
     {
         winrt::get_self<implementation::Peasant>(peasant)->ActiveTabTitle(title);
-    }
-
-    Windows::Foundation::Collections::IVector<winrt::hstring> WindowManager::GetAllWindowLayouts()
-    {
-        if (_monarch)
-        {
-            try
-            {
-                return _monarch.GetAllWindowLayouts();
-            }
-            CATCH_LOG()
-        }
-        return nullptr;
     }
 
     winrt::fire_and_forget WindowManager::RequestMoveContent(winrt::hstring window,

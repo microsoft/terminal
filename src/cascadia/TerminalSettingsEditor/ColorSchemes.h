@@ -21,10 +21,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddNew_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void ListView_PreviewKeyDown(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 
-        WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
+        til::property_changed_event PropertyChanged;
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, PropertyChanged.raise, nullptr);
 
     private:
         winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;

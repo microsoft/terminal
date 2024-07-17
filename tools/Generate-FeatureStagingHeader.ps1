@@ -11,7 +11,7 @@ Param(
     [ValidateScript({ Test-Path $_ })]
     [string]$Path,
 
-    [ValidateSet("Dev", "Preview", "Release", "WindowsInbox")]
+    [ValidateSet("Dev", "Canary", "Preview", "Release", "WindowsInbox")]
     [string]$Branding = "Dev",
 
     [string]$BranchOverride = $Null,

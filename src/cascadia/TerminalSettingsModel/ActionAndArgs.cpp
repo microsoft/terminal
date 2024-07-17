@@ -52,6 +52,7 @@ static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view SuggestionsKey{ "showSuggestions" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
@@ -72,6 +73,8 @@ static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
 static constexpr std::string_view RenameWindowKey{ "renameWindow" };
 static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
+static constexpr std::string_view DisplayWorkingDirectoryKey{ "debugTerminalCwd" };
+static constexpr std::string_view SearchForTextKey{ "searchWeb" };
 static constexpr std::string_view GlobalSummonKey{ "globalSummon" };
 static constexpr std::string_view QuakeModeKey{ "quakeMode" };
 static constexpr std::string_view FocusPaneKey{ "focusPane" };
@@ -92,6 +95,10 @@ static constexpr std::string_view ColorSelectionKey{ "experimental.colorSelectio
 static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
 static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
+static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
+static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
+static constexpr std::string_view OpenAboutKey{ "openAbout" };
+static constexpr std::string_view QuickFixKey{ "quickFix" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -117,12 +124,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
 #define ON_ALL_ACTIONS(action) KEY_TO_ACTION_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
 
     static const std::map<ShortcutAction, std::string_view, std::less<>> ActionToStringMap{
 #define ON_ALL_ACTIONS(action) ACTION_TO_KEY_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
 
@@ -145,6 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define ON_ALL_ACTIONS_WITH_ARGS(action) ACTION_TO_SERIALIZERS_PAIR(action)
         ALL_SHORTCUT_ACTIONS_WITH_ARGS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS_WITH_ARGS
     };
 
@@ -383,6 +393,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, MustGenerate },
+                { ShortcutAction::SaveSnippet, MustGenerate },
+                { ShortcutAction::Suggestions, MustGenerate },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::SetFocusMode, MustGenerate },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
@@ -402,7 +414,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
                 { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
                 { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
+                { ShortcutAction::DisplayWorkingDirectory, RS_(L"DisplayWorkingDirectoryCommandKey") },
                 { ShortcutAction::GlobalSummon, MustGenerate },
+                { ShortcutAction::SearchForText, MustGenerate },
                 { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
                 { ShortcutAction::FocusPane, MustGenerate },
                 { ShortcutAction::OpenSystemMenu, RS_(L"OpenSystemMenuCommandKey") },
@@ -422,6 +436,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ShowContextMenu, RS_(L"ShowContextMenuCommandKey") },
                 { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
                 { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
+                { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
+                { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
+                { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
+                { ShortcutAction::QuickFix, RS_(L"QuickFixCommandKey") },
             };
         }();
 
@@ -438,6 +456,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return found != GeneratedActionNames.end() ? found->second : L"";
     }
 
+    // Function Description:
+    // - This will generate an ID for this ActionAndArgs, based on the ShortcutAction and the Args
+    // - It will always create the same ID if the ShortcutAction and the Args are the same
+    // - Note: this should only be called for User-created actions
+    // - Example: The "SendInput 'abc'" action will have the generated ID "User.sendInput.<hash of 'abc'>"
+    // Return Value:
+    // - The ID, based on the ShortcutAction and the Args
+    winrt::hstring ActionAndArgs::GenerateID() const
+    {
+        if (_Action != ShortcutAction::Invalid)
+        {
+            auto actionKeyString = ActionToStringMap.find(_Action)->second;
+            auto result = fmt::format(FMT_COMPILE(L"User.{}"), actionKeyString);
+            if (_Args)
+            {
+                // If there are args, we need to append the hash of the args
+                // However, to make it a little more presentable we
+                // 1. truncate the hash to 32 bits
+                // 2. convert it to a hex string
+                // there is a _tiny_ chance of collision because of the truncate but unlikely for
+                // the number of commands a user is expected to have
+                const auto argsHash32 = static_cast<uint32_t>(_Args.Hash() & 0xFFFFFFFF);
+                // {0:X} formats the truncated hash to an uppercase hex string
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE(L".{:X}"), argsHash32);
+            }
+            return winrt::hstring{ result };
+        }
+        return L"";
+    }
+
     winrt::hstring ActionAndArgs::Serialize(const winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs>& args)
     {
         Json::Value json{ Json::objectValue };
@@ -451,7 +499,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto data = winrt::to_string(content);
 
         std::string errs;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
         Json::Value root;
         if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
         {

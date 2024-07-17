@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IAppearanceConfig.idl";
+import "ISettingsModelObject.idl";
 import "FontConfig.idl";
 #include "IInheritable.idl.h"
 
@@ -13,17 +14,6 @@ import "FontConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    // This tag is used to identify the context in which the Profile was created
-    enum OriginTag
-    {
-        None = 0,
-        User,
-        InBox,
-        Generated,
-        Fragment,
-        ProfilesDefaults
-    };
-
     enum CloseOnExitMode
     {
         Never = 0,
@@ -42,7 +32,7 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff
     };
 
-    [default_interface] runtimeclass Profile : Windows.Foundation.IStringable {
+    [default_interface] runtimeclass Profile : Windows.Foundation.IStringable, ISettingsModelObject {
         Profile();
         Profile(Guid guid);
 
@@ -51,7 +41,10 @@ namespace Microsoft.Terminal.Settings.Model
 
         // True if the user explicitly removed this Profile from settings.json.
         Boolean Deleted { get; };
-        OriginTag Origin { get; };
+
+        // Helper for magically using a commandline for an icon for a profile
+        // without an explicit icon.
+        String EvaluatedIcon { get; };
 
         INHERITABLE_PROFILE_SETTING(Guid, Guid);
         INHERITABLE_PROFILE_SETTING(String, Name);
@@ -63,11 +56,9 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(String, TabTitle);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
-        INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
-        INHERITABLE_PROFILE_SETTING(Boolean, VtPassthrough);
 
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
@@ -86,7 +77,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IMap<String COMMA String>, EnvironmentVariables);
 
-        INHERITABLE_PROFILE_SETTING(Boolean, UseAtlasEngine);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
 
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
@@ -94,5 +84,10 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
 
         INHERITABLE_PROFILE_SETTING(Boolean, RightClickContextMenu);
+        INHERITABLE_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
+
+        INHERITABLE_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
+        INHERITABLE_PROFILE_SETTING(Boolean, RainbowSuggestions);
+
     }
 }
