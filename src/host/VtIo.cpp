@@ -192,7 +192,8 @@ bool VtIo::IsUsingVt() const
         _lookingForCursorPosition = false;
 
         // Allow the input thread to momentarily gain the console lock.
-        const auto suspension = g.getConsoleInformation().SuspendLock();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto suspension = gci.SuspendLock();
         _pVtInputThread->WaitUntilDSR(3000);
     }
 
