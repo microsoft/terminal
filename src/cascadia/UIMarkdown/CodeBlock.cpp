@@ -15,7 +15,7 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::UI::Markdown::implementation
 {
     CodeBlock::CodeBlock(const winrt::hstring& initialCommandlines) :
         Commandlines(initialCommandlines)

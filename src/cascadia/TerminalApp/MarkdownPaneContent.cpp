@@ -5,7 +5,7 @@
 #include "MarkdownPaneContent.h"
 #include <LibraryResources.h>
 #include "MarkdownPaneContent.g.cpp"
-#include "CodeBlock.h"
+// #include "CodeBlock.h"
 #include <til/io.h>
 
 using namespace std::chrono_literals;
@@ -156,8 +156,8 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
-    void MarkdownPaneContent::_handleRunCommandRequest(const TerminalApp::CodeBlock& sender,
-                                                       const TerminalApp::RequestRunCommandsArgs& request)
+    void MarkdownPaneContent::_handleRunCommandRequest(const Microsoft::Terminal::UI::Markdown::CodeBlock& sender,
+                                                       const Microsoft::Terminal::UI::Markdown::RequestRunCommandsArgs& request)
     {
         auto text = request.Commandlines();
         sender;

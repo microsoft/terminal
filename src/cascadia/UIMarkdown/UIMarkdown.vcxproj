@@ -7,6 +7,18 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+         Unfortunately for us, we need it to be 4. When the namespace merging
+         depth is 1, Microsoft.Terminal.UI.Markdown becomes "Microsoft",
+         and our WinMD file becomes "Microsoft". Because WinRT is very
+         namespace-driven, this winmd is considered to contain the entire
+         Microsoft namespace. This is, obviously, not great. None of our other
+         projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>4</CppWinRTNamespaceMergeDepth>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -21,6 +33,9 @@
       <DependentUpon>Builder.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="MarkdownToXaml.h" />
+    <ClInclude Include="CodeBlock.h">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="init.cpp" />
@@ -30,11 +45,24 @@
     <ClCompile Include="Builder.cpp">
       <DependentUpon>Builder.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="CodeBlock.cpp">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="MarkdownToXaml.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Builder.idl" />
+    <Midl Include="CodeBlock.idl">
+      <DependentUpon>CodeBlock.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="CodeBlock.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

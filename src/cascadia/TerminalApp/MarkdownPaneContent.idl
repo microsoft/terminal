@@ -3,7 +3,6 @@
 
 import "IPaneContent.idl";
 import "FilteredCommand.idl";
-import "CodeBlock.idl";
 
 namespace TerminalApp
 {

@@ -7,8 +7,9 @@
 #include "RequestRunCommandsArgs.g.h"
 #include "../../../src/cascadia/inc/cppwinrt_utils.h"
 #include <til/hash.h>
+#include <til/winrt.h>
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::UI::Markdown::implementation
 {
     struct CodeBlock : CodeBlockT<CodeBlock>
     {
@@ -17,7 +18,7 @@ namespace winrt::TerminalApp::implementation
         til::property<winrt::hstring> Commandlines;
 
         til::property_changed_event PropertyChanged;
-        til::typed_event<TerminalApp::CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
+        til::typed_event<Microsoft::Terminal::UI::Markdown::CodeBlock, RequestRunCommandsArgs> RequestRunCommands;
 
         WINRT_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Visibility, PlayButtonVisibility, PropertyChanged.raise, Windows::UI::Xaml::Visibility::Collapsed);
 
@@ -36,7 +37,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::UI::Markdown::factory_implementation
 {
     BASIC_FACTORY(CodeBlock);
 }

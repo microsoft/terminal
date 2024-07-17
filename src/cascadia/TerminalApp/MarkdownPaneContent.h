@@ -53,8 +53,8 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::ActionAndArgs> DispatchActionRequested;
 
-        void _handleRunCommandRequest(const TerminalApp::CodeBlock& sender,
-                                      const TerminalApp::RequestRunCommandsArgs& control);
+        void _handleRunCommandRequest(const Microsoft::Terminal::UI::Markdown::CodeBlock& sender,
+                                      const Microsoft::Terminal::UI::Markdown::RequestRunCommandsArgs& control);
 
     private:
         friend struct MarkdownPaneContentT<MarkdownPaneContent>; // for Xaml to bind events

@@ -74,9 +74,6 @@
     <Page Include="SnippetsPaneContent.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="CodeBlock.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="MarkdownPaneContent.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -182,9 +179,6 @@
     </ClInclude>
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="CodeBlock.h">
-      <DependentUpon>CodeBlock.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="MarkdownPaneContent.h">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
@@ -306,10 +300,6 @@
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="CodeBlock.cpp">
-      <DependentUpon>CodeBlock.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile>
     <ClCompile Include="MarkdownPaneContent.cpp">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -387,10 +377,6 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="TerminalSettingsCache.idl" />
-    <Midl Include="CodeBlock.idl">
-      <DependentUpon>CodeBlock.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
     <Midl Include="MarkdownPaneContent.idl">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -445,6 +431,8 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj">
       <Project>{7615F03F-E56D-4DB4-B23D-BD4FB80DB36F}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
   </ItemGroup>
@@ -485,6 +473,12 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.UI.Markdown">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.UI.Markdown\Microsoft.Terminal.UI.Markdown.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
