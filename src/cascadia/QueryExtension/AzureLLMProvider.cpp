@@ -27,6 +27,7 @@ static constexpr std::wstring_view acceptedModels[] = {
     L"gpt-35-turbo-16k"
 };
 static constexpr std::wstring_view acceptedSeverityLevel{ L"safe" };
+static constexpr std::wstring_view expectedDomain{ L"azure.com" };
 
 const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
@@ -69,7 +70,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         hstring message{};
 
         // If the AI endpoint is not an azure open AI endpoint, return an error message
-        if (!std::regex_search(_azureEndpoint.c_str(), azureOpenAIEndpointRegex))
+        Windows::Foundation::Uri parsedUri{ _azureEndpoint };
+        if (!std::regex_search(_azureEndpoint.c_str(), azureOpenAIEndpointRegex) ||
+            parsedUri.Domain() != expectedDomain)
         {
             message = RS_(L"InvalidEndpointMessage");
         }
