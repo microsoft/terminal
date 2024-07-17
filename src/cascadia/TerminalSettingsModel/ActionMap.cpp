@@ -7,6 +7,7 @@
 #include "Command.h"
 #include "AllShortcutActions.h"
 #include <LibraryResources.h>
+#include <til/io.h>
 
 #include "ActionMap.g.cpp"
 
@@ -921,45 +922,43 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     std::vector<Model::Command> ActionMap::_updateLocalSnippetCache(winrt::hstring currentWorkingDirectory)
     {
         // This returns an empty string if we fail to load the file.
-        const auto localTasksFileContents = CascadiaSettings::ReadFile(currentWorkingDirectory + L"\\.wt.json");
-        if (!localTasksFileContents.empty())
+        std::filesystem::path localSnippetsPath{ std::wstring_view{ currentWorkingDirectory + L"\\.wt.json" } };
+        const auto localTasksFileContents = til::io::read_file_as_utf8_string_if_exists(localSnippetsPath);
+        if (!localTasksFileContents.has_value() || localTasksFileContents->empty())
         {
-            auto data = winrt::to_string(localTasksFileContents);
-            Json::Value root;
-            std::string errs;
-            const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
-            if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
-            {
-                // In the real settings parser, we'd throw here:
-                // throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-                //
-                // That seems overly aggressive for something that we don't
-                // really own. Instead, just bail out.
-                return {};
-            }
-
-            auto result = std::vector<Model::Command>();
-            if (auto actions{ root[JsonKey("snippets")] })
-            {
-                for (const auto& json : actions)
-                {
-                    const auto parsed = Command::FromSnippetJson(json);
-                    // Skip over things that aren't snippets
-                    if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
-                    {
-                        continue;
-                    }
-
-                    result.push_back(*parsed);
-                }
-            }
-            return result;
+            return {};
         }
 
-        // Now at the bottom, we've either found a file successfully parsed it,
-        // and updated the _cwdLocalSnippetsCache. Or we failed at some point,
-        // and then it doesn't really matter.
-        return {};
+        const auto& data = *localTasksFileContents;
+        Json::Value root;
+        std::string errs;
+        const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            // In the real settings parser, we'd throw here:
+            // throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+            //
+            // That seems overly aggressive for something that we don't
+            // really own. Instead, just bail out.
+            return {};
+        }
+
+        auto result = std::vector<Model::Command>();
+        if (auto actions{ root[JsonKey("snippets")] })
+        {
+            for (const auto& json : actions)
+            {
+                const auto parsed = Command::FromSnippetJson(json);
+                // Skip over things that aren't snippets
+                if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
+                {
+                    continue;
+                }
+
+                result.push_back(*parsed);
+            }
+        }
+        return result;
     }
 
     winrt::Windows::Foundation::IAsyncOperation<IVector<Model::Command>> ActionMap::FilterToSnippets(

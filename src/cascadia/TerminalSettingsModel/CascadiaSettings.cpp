@@ -1087,29 +1087,6 @@ void CascadiaSettings::_refreshDefaultTerminals()
     _currentDefaultTerminal = std::move(result.second);
 }
 
-void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
-{
-    try
-    {
-        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
-    }
-    CATCH_LOG();
-}
-winrt::hstring CascadiaSettings::ReadFile(winrt::hstring path)
-{
-    try
-    {
-        auto maybeContents = ReadUTF8FileIfExists({ path.c_str() });
-        if (maybeContents.has_value())
-        {
-            return winrt::hstring{ til::u8u16(*maybeContents) };
-        }
-    }
-    CATCH_LOG();
-
-    return L"";
-}
-
 void CascadiaSettings::_validateThemeExists()
 {
     const auto& themes{ _globals->Themes() };
