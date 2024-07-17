@@ -504,7 +504,7 @@ namespace winrt::TerminalApp::implementation
         localtime_s(&local_time, &time);
 
         std::stringstream ss;
-        ss << std::put_time(&local_time, "%m%d%Y-%H%M");
+        ss << std::put_time(&local_time, "%Y%m%d-%H%M");
         std::string time_str = ss.str();
         const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(time_str);
 
