@@ -59,6 +59,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
+
+        [[nodiscard]] HRESULT SuppressResizeRepaint();
+        [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
+        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
         void SendCloseEvent();
         void CreatePseudoWindow();
         Writer GetWriter() noexcept;

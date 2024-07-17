@@ -150,13 +150,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_RETURN();
 
-    static wil::unique_hfile duplicateHandle(const HANDLE in)
-    {
-        wil::unique_hfile h;
-        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), h.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
-        return h;
-    }
-
     // Who decided that?
 #pragma warning(suppress : 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6).
     ConptyConnection::ConptyConnection() :
@@ -280,6 +273,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _sessionId = Utils::CreateGuid();
         }
+    }
+
+    static wil::unique_hfile duplicateHandle(const HANDLE in)
+    {
+        wil::unique_hfile h;
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), h.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+        return h;
     }
 
     // Misdiagnosis: out is being tested right in the first line.
@@ -463,25 +463,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::_LastConPtyClientDisconnected() noexcept
     try
     {
-        DWORD exitCode = 0;
+        DWORD exitCode{ 0 };
         GetExitCodeProcess(_piClient.hProcess, &exitCode);
 
         // Signal the closing or failure of the process.
         // exitCode might be STILL_ACTIVE if a client has called FreeConsole() and
         // thus caused the tab to close, even though the CLI app is still running.
-        const auto success = exitCode == 0 || exitCode == STILL_ACTIVE || exitCode == STATUS_CONTROL_C_EXIT;
-        const auto state = success ? ConnectionState::Closed : ConnectionState::Failed;
-
-        if (!success)
-        {
-            _indicateExitWithStatus(exitCode);
-        }
-
-        _transitionToState(state);
+        _transitionToState(exitCode == 0 || exitCode == STILL_ACTIVE ? ConnectionState::Closed : ConnectionState::Failed);
+        _indicateExitWithStatus(exitCode);
     }
     CATCH_LOG()
 
-    __declspec(noinline) void ConptyConnection::WriteInput(const hstring& data)
+    void ConptyConnection::WriteInput(const hstring& data)
     {
         if (!_isConnected())
         {

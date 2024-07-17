@@ -24,7 +24,6 @@ class SearchTests
     {
         m_state = new CommonState();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalScreenBuffer();
 

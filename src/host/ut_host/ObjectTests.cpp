@@ -23,7 +23,6 @@ class ObjectTests
         m_state = new CommonState();
 
         m_state->InitEvents();
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 

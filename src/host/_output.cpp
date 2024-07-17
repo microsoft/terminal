@@ -388,7 +388,8 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         // buffer. In conpty however, there's no difference between the viewport
         // and the entirety of the buffer. We're going to see if this API call
         // exactly matched the way we expect powershell to call it. If it does,
-        // then let's manually emit a Full Reset (RIS).
+        // then let's manually emit a ^[[3J to the connected terminal, so that
+        // their entire buffer will be cleared as well.
         if (enablePowershellShim)
         {
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -444,7 +445,8 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         // buffer. In conpty however, there's no difference between the viewport
         // and the entirety of the buffer. We're going to see if this API call
         // exactly matched the way we expect powershell to call it. If it does,
-        // then let's manually emit a Full Reset (RIS).
+        // then let's manually emit a ^[[3J to the connected terminal, so that
+        // their entire buffer will be cleared as well.
         if (enablePowershellShim)
         {
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

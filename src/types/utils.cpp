@@ -4,7 +4,6 @@
 #include "precomp.h"
 #include "inc/utils.hpp"
 
-#include <til/rand.h>
 #include <til/string.h>
 #include <wil/token_helpers.h>
 
@@ -701,6 +700,43 @@ Utils::Pipe Utils::CreatePipe(DWORD bufferSize)
 // The code below contains comments to create unidirectional pipes.
 Utils::Pipe Utils::CreateOverlappedPipe(DWORD openMode, DWORD bufferSize)
 {
+    LARGE_INTEGER timeout = { .QuadPart = -10'0000'0000 }; // 1 second
+    UNICODE_STRING emptyPath{};
+    IO_STATUS_BLOCK statusBlock;
+    OBJECT_ATTRIBUTES objectAttributes{
+        .Length = sizeof(OBJECT_ATTRIBUTES),
+        .ObjectName = &emptyPath,
+        .Attributes = OBJ_CASE_INSENSITIVE,
+    };
+    DWORD serverDesiredAccess = 0;
+    DWORD clientDesiredAccess = 0;
+    DWORD serverShareAccess = 0;
+    DWORD clientShareAccess = 0;
+
+    switch (openMode)
+    {
+    case PIPE_ACCESS_INBOUND:
+        serverDesiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
+        clientDesiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
+        serverShareAccess = FILE_SHARE_WRITE;
+        clientShareAccess = FILE_SHARE_READ;
+        break;
+    case PIPE_ACCESS_OUTBOUND:
+        serverDesiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
+        clientDesiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
+        serverShareAccess = FILE_SHARE_READ;
+        clientShareAccess = FILE_SHARE_WRITE;
+        break;
+    case PIPE_ACCESS_DUPLEX:
+        serverDesiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
+        clientDesiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
+        serverShareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
+        clientShareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
+        break;
+    default:
+        THROW_HR(E_UNEXPECTED);
+    }
+
     // Cache a handle to the pipe driver.
     static const auto pipeDirectory = []() {
         UNICODE_STRING path = RTL_CONSTANT_STRING(L"\\Device\\NamedPipe\\");
@@ -728,41 +764,14 @@ Utils::Pipe Utils::CreateOverlappedPipe(DWORD openMode, DWORD bufferSize)
         return dir;
     }();
 
-    LARGE_INTEGER timeout = { .QuadPart = -10'0000'0000 }; // 1 second
-    UNICODE_STRING emptyPath{};
-    IO_STATUS_BLOCK statusBlock;
-    OBJECT_ATTRIBUTES objectAttributes{
-        .Length = sizeof(OBJECT_ATTRIBUTES),
-        .ObjectName = &emptyPath,
-        .Attributes = OBJ_CASE_INSENSITIVE,
-    };
-    DWORD desiredAccess = 0;
-    DWORD shareAccess = 0;
-
-    switch (openMode)
-    {
-    case PIPE_ACCESS_INBOUND:
-        desiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
-        shareAccess = FILE_SHARE_WRITE;
-        break;
-    case PIPE_ACCESS_OUTBOUND:
-        desiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
-        shareAccess = FILE_SHARE_READ;
-        break;
-    default:
-        desiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
-        shareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
-        break;
-    }
-
     wil::unique_hfile server;
     objectAttributes.RootDirectory = pipeDirectory.get();
     THROW_IF_NTSTATUS_FAILED(NtCreateNamedPipeFile(
         /* FileHandle        */ server.addressof(),
-        /* DesiredAccess     */ desiredAccess,
+        /* DesiredAccess     */ serverDesiredAccess,
         /* ObjectAttributes  */ &objectAttributes,
         /* IoStatusBlock     */ &statusBlock,
-        /* ShareAccess       */ FILE_SHARE_READ | FILE_SHARE_WRITE,
+        /* ShareAccess       */ serverShareAccess,
         /* CreateDisposition */ FILE_CREATE,
         /* CreateOptions     */ 0, // would be FILE_SYNCHRONOUS_IO_NONALERT for a synchronous pipe
         /* NamedPipeType     */ FILE_PIPE_BYTE_STREAM_TYPE,
@@ -773,32 +782,16 @@ Utils::Pipe Utils::CreateOverlappedPipe(DWORD openMode, DWORD bufferSize)
         /* OutboundQuota     */ bufferSize,
         /* DefaultTimeout    */ &timeout));
 
-    switch (openMode)
-    {
-    case PIPE_ACCESS_INBOUND:
-        desiredAccess = SYNCHRONIZE | GENERIC_WRITE | FILE_READ_ATTRIBUTES;
-        shareAccess = FILE_SHARE_READ;
-        break;
-    case PIPE_ACCESS_OUTBOUND:
-        desiredAccess = SYNCHRONIZE | GENERIC_READ | FILE_WRITE_ATTRIBUTES;
-        shareAccess = FILE_SHARE_WRITE;
-        break;
-    default:
-        desiredAccess = SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE;
-        shareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
-        break;
-    }
-
     wil::unique_hfile client;
     objectAttributes.RootDirectory = server.get();
     THROW_IF_NTSTATUS_FAILED(NtCreateFile(
         /* FileHandle        */ client.addressof(),
-        /* DesiredAccess     */ desiredAccess,
+        /* DesiredAccess     */ clientDesiredAccess,
         /* ObjectAttributes  */ &objectAttributes,
         /* IoStatusBlock     */ &statusBlock,
         /* AllocationSize    */ nullptr,
         /* FileAttributes    */ 0,
-        /* ShareAccess       */ shareAccess,
+        /* ShareAccess       */ clientShareAccess,
         /* CreateDisposition */ FILE_OPEN,
         /* CreateOptions     */ FILE_NON_DIRECTORY_FILE, // would include FILE_SYNCHRONOUS_IO_NONALERT for a synchronous pipe
         /* EaBuffer          */ nullptr,

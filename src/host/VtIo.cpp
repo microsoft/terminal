@@ -190,7 +190,7 @@ bool VtIo::IsUsingVt() const
     if (_lookingForCursorPosition)
     {
         _lookingForCursorPosition = false;
-        _pVtInputThread->WaitUntilDSR(1000);
+        _pVtInputThread->WaitUntilDSR(3000);
     }
 
     if (_pPtySignalInputThread)

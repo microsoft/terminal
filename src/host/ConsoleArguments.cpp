@@ -7,7 +7,6 @@
 #include <shellapi.h>
 using namespace Microsoft::Console::Utils;
 
-const std::wstring_view ConsoleArguments::VT_MODE_ARG = L"--vtmode";
 const std::wstring_view ConsoleArguments::HEADLESS_ARG = L"--headless";
 const std::wstring_view ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
 const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
@@ -468,13 +467,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         {
             // beginning of command line -- includes file path
             // skipped for historical reasons.
-            s_ConsumeArg(args, i);
-            hr = S_OK;
-        }
-        else if (arg == VT_MODE_ARG)
-        {
-            // The --vtmode flag was hardcoded into telnet.exe to force ConPTY to filter non-ASCII characters.
-            // The filtering was moved into telnet, because no one else ever used this functionality.
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
