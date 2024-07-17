@@ -457,18 +457,7 @@ try
 
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;
-
-    wil::unique_handle inPipeTheirSide;
-    wil::unique_handle inPipeOurSide;
-
-    wil::unique_handle outPipeTheirSide;
-    wil::unique_handle outPipeOurSide;
-
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_OpenedPipes",
@@ -491,7 +480,7 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff3> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
@@ -566,21 +555,21 @@ try
 
     myStartupInfo.wShowWindow = settings.GetShowWindow();
 
-    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
-                                                  outPipeTheirSide.get(),
+    wil::unique_handle inPipeOurSide;
+    wil::unique_handle outPipeOurSide;
+    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeOurSide.addressof(),
+                                                  outPipeOurSide.addressof(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
                                                   clientProcess.get(),
-                                                  myStartupInfo));
+                                                  &myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    inPipeTheirSide.reset();
-    outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
     // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
