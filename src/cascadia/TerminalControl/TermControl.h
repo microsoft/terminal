@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void RawWriteString(const winrt::hstring& text);
 
         void ShowContextMenu();
-        void OpenQuickFixMenu();
+        bool OpenQuickFixMenu();
         void RefreshQuickFixMenu();
         void ClearQuickFix();
 

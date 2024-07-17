@@ -735,6 +735,6 @@
     <value>Save Snippet</value>
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
-    <value>Quick fix</value>
+    <value>Open quick fix menu</value>
   </data>
 </root>

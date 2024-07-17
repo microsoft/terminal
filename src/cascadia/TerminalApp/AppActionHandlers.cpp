@@ -1599,8 +1599,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& control{ _GetActiveControl() })
         {
-            control.OpenQuickFixMenu();
+            const auto handled = control.OpenQuickFixMenu();
+            args.Handled(handled);
         }
-        args.Handled(true);
     }
 }
