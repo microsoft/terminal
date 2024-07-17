@@ -497,7 +497,18 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
     {
-        _SaveFileHelper(text, L"", L"");
+        auto now = std::chrono::system_clock::now();
+        auto time = std::chrono::system_clock::to_time_t(now);
+
+        std::tm local_time;
+        localtime_s(&local_time, &time);
+
+        std::stringstream ss;
+        ss << std::put_time(&local_time, "%m%d%Y-%H%M");
+        std::string time_str = ss.str();
+        const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(time_str);
+
+        _SaveFileHelper(text, L"", defaultFileName);
     }
 
     fire_and_forget TerminalPage::_SaveFileHelper(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename)
