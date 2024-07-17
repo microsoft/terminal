@@ -7,6 +7,7 @@
 #include "MarkdownPaneContent.g.cpp"
 #include "CodeBlock.h"
 #include "MarkdownToXaml.h"
+#include <til/io.h>
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
@@ -46,34 +47,17 @@ namespace winrt::TerminalApp::implementation
     }
     void MarkdownPaneContent::_loadFile()
     {
-        // TODO! use our til::io file readers
-
-        // Read _filePath, then parse as markdown.
-        const wil::unique_handle file{ CreateFileW(_filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
-        if (!file)
+        if (_filePath.empty())
         {
             return;
         }
-
-        char buffer[32 * 1024];
-        DWORD read = 0;
-        for (;;)
-        {
-            if (!ReadFile(file.get(), &buffer[0], sizeof(buffer), &read, nullptr))
-            {
-                break;
-            }
-            if (read < sizeof(buffer))
-            {
-                break;
-            }
-        }
-        // BLINDLY TREATING TEXT AS utf-8 (I THINK)
-        std::string markdownContents{ buffer, read };
+        const std::filesystem::path filePath{ std::wstring_view{ _filePath } };
+        const auto fileContents{ til::io::read_file_as_utf8_string_if_exists(filePath) };
+        const std::string markdownContents = fileContents.value_or("");
 
         Editing(false);
         PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"Editing" });
-        FileContents(winrt::to_hstring(markdownContents));
+        FileContents(til::u8u16(markdownContents));
         PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"FileContents" });
 
         _renderFileContents();
@@ -102,7 +86,7 @@ namespace winrt::TerminalApp::implementation
 
     void MarkdownPaneContent::_loadMarkdown()
     {
-        const auto& value{ FileContents() };
+        const auto value{ til::u16u8(FileContents()) };
 
         auto rootTextBlock{ MarkdownToXaml::Convert(value, _filePath) };
 

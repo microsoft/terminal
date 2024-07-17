@@ -46,7 +46,7 @@ WUX::Controls::RichTextBlock MarkdownToXaml::Convert(std::string_view markdownTe
 {
     MarkdownToXaml data{ baseUrl };
 
-    auto doc = cmark_parse_document(markdownText.c_str(), markdownText.size(), CMARK_OPT_DEFAULT);
+    auto doc = cmark_parse_document(markdownText.data(), markdownText.size(), CMARK_OPT_DEFAULT);
     auto iter = cmark_iter_new(doc);
     cmark_event_type ev_type;
     cmark_node* curr;
