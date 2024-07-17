@@ -34,11 +34,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     AzureLLMProvider::AzureLLMProvider(const winrt::hstring& endpoint, const winrt::hstring& key)
     {
-        _AIEndpoint = endpoint;
-        _AIKey = key;
+        _azureEndpoint = endpoint;
+        _azureKey = key;
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
         _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
-        _httpClient.DefaultRequestHeaders().Append(L"api-key", _AIKey);
+        _httpClient.DefaultRequestHeaders().Append(L"api-key", _azureKey);
     }
 
     void AzureLLMProvider::ClearMessageHistory()
@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         hstring message{};
 
         // If the AI endpoint is not an azure open AI endpoint, return an error message
-        if (!std::regex_search(_AIEndpoint.c_str(), azureOpenAIEndpointRegex))
+        if (!std::regex_search(_azureEndpoint.c_str(), azureOpenAIEndpointRegex))
         {
             message = RS_(L"InvalidEndpointMessage");
         }
@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // Make sure we are on the background thread for the http request
             co_await winrt::resume_background();
 
-            WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _AIEndpoint } };
+            WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _azureEndpoint } };
             request.Headers().Accept().TryParseAdd(L"application/json");
 
             WDJ::JsonObject jsonContent;
@@ -168,6 +168,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             {
                 modelIsAccepted = true;
             }
+            break;
         }
         if (!modelIsAccepted)
         {

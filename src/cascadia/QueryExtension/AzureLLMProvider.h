@@ -18,12 +18,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
 
-        void CompleteAuthWithUrl(const winrt::hstring& /*url*/){};
-        TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, winrt::hstring);
-
     private:
-        winrt::hstring _AIEndpoint;
-        winrt::hstring _AIKey;
+        winrt::hstring _azureEndpoint;
+        winrt::hstring _azureKey;
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
 
         Extension::IContext _context;
