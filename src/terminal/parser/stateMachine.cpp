@@ -5,6 +5,7 @@
 
 #include "stateMachine.hpp"
 
+#include "../../types/inc/utils.hpp"
 #include "ascii.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -16,10 +17,13 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _parameters{},
-    _parameterLimitReached(false),
+    _subParameters{},
+    _subParameterRanges{},
+    _parameterLimitOverflowed(false),
+    _subParameterLimitOverflowed(false),
+    _subParameterCounter(0),
     _oscString{},
-    _cachedSequence{ std::nullopt },
-    _processingIndividually(false)
+    _cachedSequence{ std::nullopt }
 {
     _ActionClear();
 }
@@ -159,7 +163,18 @@ static constexpr bool _isParameterDelimiter(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is "control sequence" beginning indicator.
+// - Determines if a character is a delimiter between a parameter and its sub-parameters in an escape sequence.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isSubParameterDelimiter(const wchar_t wch) noexcept
+{
+    return wch == L':'; // 0x3A
+}
+
+// Routine Description:
+// - Determines if a character is a "control sequence" beginning indicator.
 //   This immediately follows an escape and signifies a varying length control sequence.
 // Arguments:
 // - wch - Character to check.
@@ -183,17 +198,6 @@ static constexpr bool _isCsiPrivateMarker(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is invalid in a control sequence
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isCsiInvalid(const wchar_t wch) noexcept
-{
-    return wch == L':'; // 0x3A
-}
-
-// Routine Description:
 // - Determines if a character is an invalid intermediate.
 // Arguments:
 // - wch - Character to check.
@@ -202,7 +206,7 @@ static constexpr bool _isCsiInvalid(const wchar_t wch) noexcept
 static constexpr bool _isIntermediateInvalid(const wchar_t wch) noexcept
 {
     // 0x30 - 0x3F
-    return _isNumericParamValue(wch) || _isCsiInvalid(wch) || _isParameterDelimiter(wch) || _isCsiPrivateMarker(wch);
+    return _isNumericParamValue(wch) || _isSubParameterDelimiter(wch) || _isParameterDelimiter(wch) || _isCsiPrivateMarker(wch);
 }
 
 // Routine Description:
@@ -213,8 +217,8 @@ static constexpr bool _isIntermediateInvalid(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isParameterInvalid(const wchar_t wch) noexcept
 {
-    // 0x3A, 0x3C - 0x3F
-    return _isCsiInvalid(wch) || _isCsiPrivateMarker(wch);
+    // 0x3C - 0x3F
+    return _isCsiPrivateMarker(wch);
 }
 
 // Routine Description:
@@ -365,18 +369,6 @@ static constexpr bool _isApcIndicator(const wchar_t wch) noexcept
     return wch == L'_'; // 0x5F
 }
 
-// Routine Description:
-// - Determines if a character indicates an action that should be taken in the ground state -
-//     These are C0 characters and the C1 [single-character] CSI.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isActionableFromGround(const wchar_t wch) noexcept
-{
-    return (wch <= AsciiChars::US) || _isC1ControlCharacter(wch) || _isDelete(wch);
-}
-
 #pragma warning(pop)
 
 // Routine Description:
@@ -469,7 +461,7 @@ void StateMachine::_ActionVt52EscDispatch(const wchar_t wch)
 
 // Routine Description:
 // - Triggers the CsiDispatch action to indicate that the listener should handle a control sequence.
-//   These sequences perform various API-type commands that can include many parameters.
+//   These sequences perform various API-type commands that can include many parameters and sub parameters.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:
@@ -478,7 +470,8 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
-        return _engine->ActionCsiDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
+        return _engine->ActionCsiDispatch(_identifier.Finalize(wch),
+                                          { _parameters, _subParameters, _subParameterRanges });
     }));
 }
 
@@ -508,12 +501,14 @@ void StateMachine::_ActionParam(const wchar_t wch)
     _trace.TraceOnAction(L"Param");
 
     // Once we've reached the parameter limit, additional parameters are ignored.
-    if (!_parameterLimitReached)
+    if (!_parameterLimitOverflowed)
     {
         // If we have no parameters and we're about to add one, get the next value ready here.
         if (_parameters.empty())
         {
             _parameters.push_back({});
+            const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
+            _subParameterRanges.push_back({ rangeStart, rangeStart });
         }
 
         // On a delimiter, increase the number of params we've seen.
@@ -526,12 +521,16 @@ void StateMachine::_ActionParam(const wchar_t wch)
             // indicate that further parameter characters should be ignored.
             if (_parameters.size() >= MAX_PARAMETER_COUNT)
             {
-                _parameterLimitReached = true;
+                _parameterLimitOverflowed = true;
             }
             else
             {
                 // Otherwise move to next param.
                 _parameters.push_back({});
+                _subParameterCounter = 0;
+                _subParameterLimitOverflowed = false;
+                const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
+                _subParameterRanges.push_back({ rangeStart, rangeStart });
             }
         }
         else
@@ -541,6 +540,62 @@ void StateMachine::_ActionParam(const wchar_t wch)
             auto currentParameter = _parameters.back().value_or(0);
             _AccumulateTo(wch, currentParameter);
             _parameters.back() = currentParameter;
+        }
+    }
+}
+
+// Routine Description:
+// - Triggers the SubParam action to indicate that the state machine should
+//   store this character as a part of a sub-parameter to a control sequence.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - <none>
+void StateMachine::_ActionSubParam(const wchar_t wch)
+{
+    _trace.TraceOnAction(L"SubParam");
+
+    // Once we've reached the sub parameter limit, sub parameters are ignored.
+    if (!_subParameterLimitOverflowed)
+    {
+        // If we have no parameters and we're about to add a sub parameter, add an empty parameter here.
+        if (_parameters.empty())
+        {
+            _parameters.push_back({});
+            const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
+            _subParameterRanges.push_back({ rangeStart, rangeStart });
+        }
+
+        // On a delimiter, increase the number of sub params we've seen.
+        // "Empty" sub params should still count as a sub param -
+        //      eg "\x1b[0:::m" should be three sub params
+        if (_isSubParameterDelimiter(wch))
+        {
+            // If we receive a delimiter after we've already accumulated the
+            // maximum allowed sub parameters for the parameter, then we need to
+            // set a flag to indicate that further sub parameter characters
+            // should be ignored.
+            if (_subParameterCounter >= MAX_SUBPARAMETER_COUNT)
+            {
+                _subParameterLimitOverflowed = true;
+            }
+            else
+            {
+                // Otherwise move to next sub-param.
+                _subParameters.push_back({});
+                // increment current range's end index.
+                _subParameterRanges.back().second++;
+                // increment counter
+                _subParameterCounter++;
+            }
+        }
+        else
+        {
+            // Accumulate the character given into the last (current) sub-parameter.
+            // If the value hasn't been initialized yet, it'll start as 0.
+            auto currentSubParameter = _subParameters.back().value_or(0);
+            _AccumulateTo(wch, currentSubParameter);
+            _subParameters.back() = currentSubParameter;
         }
     }
 }
@@ -559,7 +614,12 @@ void StateMachine::_ActionClear()
     _identifier.Clear();
 
     _parameters.clear();
-    _parameterLimitReached = false;
+    _parameterLimitOverflowed = false;
+
+    _subParameters.clear();
+    _subParameterRanges.clear();
+    _subParameterCounter = 0;
+    _subParameterLimitOverflowed = false;
 
     _oscString.clear();
     _oscParameter = 0;
@@ -572,7 +632,7 @@ void StateMachine::_ActionClear()
 // Routine Description:
 // - Triggers the Ignore action to indicate that the state machine should eat this character and say nothing.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
 void StateMachine::_ActionIgnore() noexcept
@@ -626,17 +686,17 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 }
 
 // Routine Description:
-// - Triggers the CsiDispatch action to indicate that the listener should handle a control sequence.
+// - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
-void StateMachine::_ActionOscDispatch(const wchar_t wch)
+void StateMachine::_ActionOscDispatch()
 {
     _trace.TraceOnAction(L"OscDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
-        return _engine->ActionOscDispatch(wch, _oscParameter, _oscString);
+        return _engine->ActionOscDispatch(_oscParameter, _oscString);
     }));
 }
 
@@ -760,6 +820,20 @@ void StateMachine::_EnterCsiParam() noexcept
 {
     _state = VTStates::CsiParam;
     _trace.TraceStateChange(L"CsiParam");
+}
+
+// Routine Description:
+// - Moves the state machine into the CsiSubParam state.
+//   This state is entered:
+//   1. When valid sub parameter characters are detected in CsiParam state.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterCsiSubParam() noexcept
+{
+    _state = VTStates::CsiSubParam;
+    _trace.TraceStateChange(L"CsiSubParam");
 }
 
 // Routine Description:
@@ -1133,8 +1207,8 @@ void StateMachine::_EventEscapeIntermediate(const wchar_t wch)
 //   1. Execute C0 control characters
 //   2. Ignore Delete characters
 //   3. Collect Intermediate characters
-//   4. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
-//   5. Store parameter data
+//   4. Store parameter data
+//   5. Store sub parameter data
 //   6. Collect Control Sequence Private markers
 //   7. Dispatch a control sequence with parameters for action
 // Arguments:
@@ -1157,14 +1231,15 @@ void StateMachine::_EventCsiEntry(const wchar_t wch)
         _ActionCollect(wch);
         _EnterCsiIntermediate();
     }
-    else if (_isCsiInvalid(wch))
-    {
-        _EnterCsiIgnore();
-    }
     else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
         _EnterCsiParam();
+    }
+    else if (_isSubParameterDelimiter(wch))
+    {
+        _ActionSubParam(wch);
+        _EnterCsiSubParam();
     }
     else if (_isCsiPrivateMarker(wch))
     {
@@ -1263,7 +1338,8 @@ void StateMachine::_EventCsiIgnore(const wchar_t wch)
 //   3. Collect Intermediate characters
 //   4. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
 //   5. Store parameter data
-//   6. Dispatch a control sequence with parameters for action
+//   6. Store sub parameter data
+//   7. Dispatch a control sequence with parameters for action
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1282,6 +1358,62 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
     else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
+    }
+    else if (_isSubParameterDelimiter(wch))
+    {
+        _ActionSubParam(wch);
+        _EnterCsiSubParam();
+    }
+    else if (_isIntermediate(wch))
+    {
+        _ActionCollect(wch);
+        _EnterCsiIntermediate();
+    }
+    else if (_isParameterInvalid(wch))
+    {
+        _EnterCsiIgnore();
+    }
+    else
+    {
+        _ActionCsiDispatch(wch);
+        _EnterGround();
+        _ExecuteCsiCompleteCallback();
+    }
+}
+
+// Routine Description:
+// - Processes a character event into an Action that occurs while in the CsiSubParam state.
+//   Events in this state will:
+//   1. Execute C0 control characters
+//   2. Ignore Delete characters
+//   3. Store sub parameter data
+//   4. Store parameter data
+//   5. Collect Intermediate characters for parameter.
+//   6. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
+//   7. Dispatch a control sequence with parameters for action
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventCsiSubParam(const wchar_t wch)
+{
+    _trace.TraceOnEvent(L"CsiSubParam");
+    if (_isC0Code(wch))
+    {
+        _ActionExecute(wch);
+    }
+    else if (_isDelete(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (_isNumericParamValue(wch) || _isSubParameterDelimiter(wch))
+    {
+        _ActionSubParam(wch);
+    }
+    else if (_isParameterDelimiter(wch))
+    {
+        _ActionParam(wch);
+        _EnterCsiParam();
     }
     else if (_isIntermediate(wch))
     {
@@ -1303,19 +1435,27 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the OscParam state.
 //   Events in this state will:
-//   1. Collect numeric values into an Osc Param
-//   2. Move to the OscString state on a delimiter
-//   3. Ignore everything else.
+//   1. Trigger the OSC action associated with the param on an OscTerminator
+//   2. If we see a ESC, enter the OscTermination state. We'll wait for one
+//      more character before we dispatch the (empty) string.
+//   3. Collect numeric values into an Osc Param
+//   4. Move to the OscString state on a delimiter
+//   5. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventOscParam(const wchar_t wch) noexcept
+void StateMachine::_EventOscParam(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"OscParam");
     if (_isOscTerminator(wch))
     {
+        _ActionOscDispatch();
         _EnterGround();
+    }
+    else if (_isEscape(wch))
+    {
+        _EnterOscTermination();
     }
     else if (_isNumericParamValue(wch))
     {
@@ -1348,7 +1488,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
     _trace.TraceOnEvent(L"OscString");
     if (_isOscTerminator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else if (_isEscape(wch))
@@ -1380,7 +1520,7 @@ void StateMachine::_EventOscTermination(const wchar_t wch)
     _trace.TraceOnEvent(L"OscTermination");
     if (_isStringTerminatorIndicator(wch))
     {
-        _ActionOscDispatch(wch);
+        _ActionOscDispatch();
         _EnterGround();
     }
     else
@@ -1416,7 +1556,7 @@ void StateMachine::_EventSs3Entry(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiInvalid(wch))
+    else if (_isSubParameterDelimiter(wch))
     {
         // It's safe for us to go into the CSI ignore here, because both SS3 and
         //      CSI sequences ignore characters the same way.
@@ -1461,7 +1601,7 @@ void StateMachine::_EventSs3Param(const wchar_t wch)
     {
         _ActionParam(wch);
     }
-    else if (_isParameterInvalid(wch))
+    else if (_isParameterInvalid(wch) || _isSubParameterDelimiter(wch))
     {
         _EnterCsiIgnore();
     }
@@ -1534,7 +1674,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isCsiInvalid(wch))
+    else if (_isSubParameterDelimiter(wch))
     {
         _EnterDcsIgnore();
     }
@@ -1638,7 +1778,7 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
         _ActionCollect(wch);
         _EnterDcsIntermediate();
     }
-    else if (_isParameterInvalid(wch))
+    else if (_isParameterInvalid(wch) || _isSubParameterDelimiter(wch))
     {
         _EnterDcsIgnore();
     }
@@ -1725,8 +1865,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             ProcessCharacter(_c1To7Bit(wch));
         }
     }
-    // Don't go to escape from the OSC string state - ESC can be used to terminate OSC strings.
-    else if (_isEscape(wch) && _state != VTStates::OscString)
+    // Don't go to escape from the OSC string/param states - ESC can be used to terminate OSC strings.
+    else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::OscParam)
     {
         _ActionInterrupt();
         _EnterEscape();
@@ -1750,6 +1890,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             return _EventCsiIgnore(wch);
         case VTStates::CsiParam:
             return _EventCsiParam(wch);
+        case VTStates::CsiSubParam:
+            return _EventCsiSubParam(wch);
         case VTStates::OscParam:
             return _EventOscParam(wch);
         case VTStates::OscString:
@@ -1832,80 +1974,61 @@ bool StateMachine::FlushToTerminal()
 // - <none>
 void StateMachine::ProcessString(const std::wstring_view string)
 {
-    size_t start = 0;
-    auto current = start;
-
+    size_t i = 0;
     _currentString = string;
     _runOffset = 0;
     _runSize = 0;
 
-    while (current < string.size())
+    if (_state != VTStates::Ground)
     {
-        // The run will be everything from the start INCLUDING the current one
-        // in case we process the current character and it turns into a passthrough
-        // fallback that picks up this _run inside `FlushToTerminal` above.
-        _runOffset = start;
-        _runSize = current - start + 1;
+        // Jump straight to where we need to.
+#pragma warning(suppress : 26438) // Avoid 'goto'(es .76).
+        goto processStringLoopVtStart;
+    }
 
-        if (_processingIndividually)
+    while (i < string.size())
+    {
         {
-            // Note whether we're dealing with the last character in the buffer.
-            _processingLastCharacter = (current + 1 >= string.size());
+            // Pointer arithmetic is perfectly fine for our hot path.
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).)
+            const auto beg = string.data() + i;
+            const auto len = string.size() - i;
+            const auto it = Microsoft::Console::Utils::FindActionableControlCharacter(beg, len);
+
+            _runOffset = i;
+            _runSize = it - beg;
+
+            if (_runSize)
+            {
+                _ActionPrintString(_CurrentRun());
+
+                i += _runSize;
+                _runOffset = i;
+                _runSize = 0;
+            }
+        }
+
+    processStringLoopVtStart:
+        if (i >= string.size())
+        {
+            break;
+        }
+
+        do
+        {
+            _runSize++;
+            _processingLastCharacter = i + 1 >= string.size();
             // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(til::at(string, current));
-            ++current;
-            if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
-            { //   is the start of the next run of characters that might be printable.
-                _processingIndividually = false;
-                start = current;
-            }
-        }
-        else
-        {
-            if (_isActionableFromGround(til::at(string, current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
-            {
-                if (_runSize > 0)
-                {
-                    // Because the run above is composed INCLUDING current, we must
-                    // trim it off here since we just determined it's actionable
-                    // and only pass through everything before it.
-                    _runSize -= 1;
-                    _ActionPrintString(_CurrentRun()); // ... print all the chars leading up to it as part of the run...
-                }
-
-                _processingIndividually = true; // begin processing future characters individually...
-                start = current;
-                continue;
-            }
-            else
-            {
-                ++current; // Otherwise, add this char to the current run to be printed.
-            }
-        }
+            ProcessCharacter(til::at(string, i));
+            ++i;
+        } while (i < string.size() && _state != VTStates::Ground);
     }
 
-    // When we leave the loop, current has been advanced to the length of the string itself
-    // (or one past the array index to the final char) so this `substr` operation doesn't +1
-    // to include the final character (unlike the one inside the top of the loop above.)
-    if (start < string.size())
-    {
-        _runOffset = start;
-        _runSize = std::string::npos;
-    }
-    else
-    {
-        _runSize = 0;
-    }
-
-    const auto run = _CurrentRun();
     // If we're at the end of the string and have remaining un-printed characters,
-    if (!_processingIndividually && !run.empty())
+    if (_state != VTStates::Ground)
     {
-        // print the rest of the characters in the string
-        _ActionPrintString(run);
-    }
-    else if (_processingIndividually)
-    {
+        const auto run = _CurrentRun();
+
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
         // also the start of a CSI, and could be the start of a longer sequence,
@@ -1915,58 +2038,34 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
         // which is _wrong_).
         //
-        // Fortunately, for VT input, each keystroke comes in as an individual
-        // write operation. So, if at the end of processing a string for the
-        // InputEngine, we find that we're not in the Ground state, that implies
-        // that we've processed some input, but not dispatched it yet. This
-        // block at the end of `ProcessString` will then re-process the
-        // undispatched string, but it will ensure that it dispatches on the
-        // last character of the string. For our previous `\x1b[` scenario, that
-        // means we'll make sure to call `_ActionEscDispatch('[')`., which will
-        // properly decode the string as <kbd>alt+[</kbd>.
-
+        // At the same time, input may be broken up arbitrarily, depending on the pipe's
+        // buffer size, our read-buffer size, the sender's write-buffer size, and more.
+        // In fact, with the current WSL, input is broken up in 16 byte chunks (Why? :(),
+        // which breaks up many of our longer sequences, like our Win32InputMode ones.
+        //
+        // As a heuristic, this code specifically checks for a trailing Esc or Alt+key.
+        // If we encountered a win32-input-mode sequence before, we know that our \x1b[?9001h
+        // request to enable them was successful. While a client may still send \x1b{some char}
+        // intentionally, it's far more likely now that we're looking at a broken up sequence.
+        // The most common win32-input-mode is ConPTY itself after all, and we never emit
+        // \x1b{some char} once it's enabled.
         if (_isEngineForInput)
         {
-            // Reset our state, and put all but the last char in again.
-            ResetState();
-            _processingLastCharacter = false;
-            // Chars to flush are [pwchSequenceStart, pwchCurr)
-            auto wchIter = run.cbegin();
-            while (wchIter < run.cend() - 1)
+            const auto win32 = _engine->EncounteredWin32InputModeSequence();
+            if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
             {
-                ProcessCharacter(*wchIter);
-                wchIter++;
+                _EnterGround();
+                if (run.size() == 1)
+                {
+                    _ActionExecute(L'\x1b');
+                }
+                else
+                {
+                    _EnterEscape();
+                    _ActionEscDispatch(run.back());
+                }
+                _EnterGround();
             }
-            // Manually execute the last char [pwchCurr]
-            _processingLastCharacter = true;
-            switch (_state)
-            {
-            case VTStates::Ground:
-                _ActionExecute(*wchIter);
-                break;
-            case VTStates::Escape:
-            case VTStates::EscapeIntermediate:
-                _ActionEscDispatch(*wchIter);
-                break;
-            case VTStates::CsiEntry:
-            case VTStates::CsiIntermediate:
-            case VTStates::CsiIgnore:
-            case VTStates::CsiParam:
-                _ActionCsiDispatch(*wchIter);
-                break;
-            case VTStates::OscParam:
-            case VTStates::OscString:
-            case VTStates::OscTermination:
-                _ActionOscDispatch(*wchIter);
-                break;
-            case VTStates::Ss3Entry:
-            case VTStates::Ss3Param:
-                _ActionSs3Dispatch(*wchIter);
-                break;
-            }
-            // microsoft/terminal#2746: Make sure to return to the ground state
-            // after dispatching the characters
-            _EnterGround();
         }
         else if (_state != VTStates::SosPmApcString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIgnore)
         {

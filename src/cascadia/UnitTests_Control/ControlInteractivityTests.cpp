@@ -88,9 +88,12 @@ namespace ControlUnitTests
         void _standardInit(winrt::com_ptr<Control::implementation::ControlCore> core,
                            winrt::com_ptr<Control::implementation::ControlInteractivity> interactivity)
         {
-            // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
-            // let's just arbitrarily start with a 270x420px (30x20 chars) window
-            core->Initialize(270, 420, 1.0);
+            // "Consolas" ends up with an actual size of 9x19 at 96DPI. So
+            // let's just arbitrarily start with a 270x380px (30x20 chars) window
+            core->Initialize(270, 380, 1.0);
+#ifndef NDEBUG
+            core->_terminal->_suppressLockChecks = true;
+#endif
             VERIFY_IS_TRUE(core->_initializedTerminal);
             VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
             interactivity->Initialize();
@@ -137,14 +140,14 @@ namespace ControlUnitTests
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
 
         // A callback to make sure that we're raising TransparencyChanged events
-        auto expectedOpacity = 0.5;
+        auto expectedOpacity = 0.5f;
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
             // The Settings object's opacity shouldn't be changed
-            VERIFY_ARE_EQUAL(0.5, settings->Opacity());
+            VERIFY_ARE_EQUAL(0.5f, settings->Opacity());
 
-            auto expectedUseAcrylic = expectedOpacity < 1.0 &&
+            auto expectedUseAcrylic = expectedOpacity < 1.0f &&
                                       (useAcrylic);
             VERIFY_ARE_EQUAL(useAcrylic, settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
@@ -159,10 +162,10 @@ namespace ControlUnitTests
         for (auto i = 0; i < 55; i++)
         {
             // each mouse wheel only adjusts opacity by .01
-            expectedOpacity += 0.01;
-            if (expectedOpacity >= 1.0)
+            expectedOpacity += 0.01f;
+            if (expectedOpacity >= 1.0f)
             {
-                expectedOpacity = 1.0;
+                expectedOpacity = 1.0f;
             }
 
             // The mouse location and buttons don't matter here.
@@ -177,10 +180,10 @@ namespace ControlUnitTests
         for (auto i = 0; i < 105; i++)
         {
             // each mouse wheel only adjusts opacity by .01
-            expectedOpacity -= 0.01;
-            if (expectedOpacity <= 0.0)
+            expectedOpacity -= 0.01f;
+            if (expectedOpacity <= 0.0f)
             {
-                expectedOpacity = 0.0;
+                expectedOpacity = 0.0f;
             }
 
             // The mouse location and buttons don't matter here.

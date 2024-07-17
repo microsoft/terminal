@@ -10,7 +10,7 @@ Licensed under the MIT license.
 #include <conattrs.hpp>
 #include "ControlAppearance.h"
 
-using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
 using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
 
 namespace winrt::Microsoft::Terminal::Control::implementation

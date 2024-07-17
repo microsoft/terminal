@@ -152,6 +152,51 @@ namespace Microsoft::Console::VirtualTerminal
         VTInt _value;
     };
 
+    class VTSubParameters
+    {
+    public:
+        constexpr VTSubParameters() noexcept
+        {
+        }
+
+        constexpr VTSubParameters(const std::span<const VTParameter> subParams) noexcept :
+            _subParams{ subParams }
+        {
+        }
+
+        constexpr VTParameter at(const size_t index) const noexcept
+        {
+            // If the index is out of range, we return a sub parameter with no value.
+            return index < _subParams.size() ? til::at(_subParams, index) : defaultParameter;
+        }
+
+        VTSubParameters subspan(const size_t offset, const size_t count) const noexcept
+        {
+            const auto subParamsSpan = _subParams.subspan(offset, count);
+            return { subParamsSpan };
+        }
+
+        bool empty() const noexcept
+        {
+            return _subParams.empty();
+        }
+
+        size_t size() const noexcept
+        {
+            return _subParams.size();
+        }
+
+        constexpr operator std::span<const VTParameter>() const noexcept
+        {
+            return _subParams;
+        }
+
+    private:
+        static constexpr VTParameter defaultParameter{};
+
+        std::span<const VTParameter> _subParams;
+    };
+
     class VTParameters
     {
     public:
@@ -159,49 +204,95 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        constexpr VTParameters(const VTParameter* ptr, const size_t count) noexcept :
-            _values{ ptr, count }
+        constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount) noexcept :
+            _params{ paramsPtr, paramsCount },
+            _subParams{},
+            _subParamRanges{}
+        {
+        }
+
+        constexpr VTParameters(const std::span<const VTParameter> params,
+                               const std::span<const VTParameter> subParams,
+                               const std::span<const std::pair<BYTE, BYTE>> subParamRanges) noexcept :
+            _params{ params },
+            _subParams{ subParams },
+            _subParamRanges{ subParamRanges }
         {
         }
 
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _values.size() ? til::at(_values, index) : defaultParameter;
+            return index < _params.size() ? til::at(_params, index) : defaultParameter;
         }
 
         constexpr bool empty() const noexcept
         {
-            return _values.empty();
+            return _params.empty();
         }
 
         constexpr size_t size() const noexcept
         {
             // We always return a size of at least 1, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            return std::max<size_t>(_values.size(), 1);
+            return std::max<size_t>(_params.size(), 1);
         }
 
         VTParameters subspan(const size_t offset) const noexcept
         {
-            const auto subValues = _values.subspan(std::min(offset, _values.size()));
-            return { subValues.data(), subValues.size() };
+            // We need sub parameters to always be in their original index
+            // because we store their indexes in subParamRanges. So we pass
+            // _subParams as is and create new span for others.
+            const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
+            const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
+            return { newParamsSpan, _subParams, newSubParamRangesSpan };
+        }
+
+        VTSubParameters subParamsFor(const size_t index) const noexcept
+        {
+            if (index < _subParamRanges.size())
+            {
+                const auto& range = til::at(_subParamRanges, index);
+                return _subParams.subspan(range.first, range.second - range.first);
+            }
+            else
+            {
+                return VTSubParameters{};
+            }
+        }
+
+        bool hasSubParams() const noexcept
+        {
+            return !_subParams.empty();
+        }
+
+        bool hasSubParamsFor(const size_t index) const noexcept
+        {
+            if (index < _subParamRanges.size())
+            {
+                const auto& range = til::at(_subParamRanges, index);
+                return range.second > range.first;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         template<typename T>
         bool for_each(const T&& predicate) const
         {
-            auto values = _values;
+            auto params = _params;
 
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            if (values.empty())
+            if (params.empty())
             {
-                values = defaultParameters;
+                params = defaultParameters;
             }
 
             auto success = true;
-            for (const auto& v : values)
+            for (const auto& v : params)
             {
                 success = predicate(v) && success;
             }
@@ -209,10 +300,12 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
     private:
-        static constexpr VTParameter defaultParameter;
+        static constexpr VTParameter defaultParameter{};
         static constexpr std::span defaultParameters{ &defaultParameter, 1 };
 
-        std::span<const VTParameter> _values;
+        std::span<const VTParameter> _params;
+        VTSubParameters _subParams;
+        std::span<const std::pair<BYTE, BYTE>> _subParamRanges;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
@@ -305,7 +398,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         // as well as the Faint/Blink options.
         RGBColorOrFaint = 2, // 2 is also Faint, decreased intensity (ISO 6429).
         Italics = 3,
-        Underline = 4,
+        Underline = 4, // same for extended underline styles `SGR 4:x`.
         BlinkOrXterm256Index = 5, // 5 is also Blink.
         RapidBlink = 6,
         Negative = 7,
@@ -341,6 +434,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundDefault = 49,
         Overline = 53,
         NoOverline = 55,
+        UnderlineColor = 58,
+        UnderlineColorDefault = 59,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,
@@ -405,11 +500,18 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class StatusType : VTInt
     {
-        OS_OperatingStatus = ANSIStandardStatus(5),
-        CPR_CursorPositionReport = ANSIStandardStatus(6),
-        ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
-        MSR_MacroSpaceReport = DECPrivateStatus(62),
-        MEM_MemoryChecksum = DECPrivateStatus(63),
+        OperatingStatus = ANSIStandardStatus(5),
+        CursorPositionReport = ANSIStandardStatus(6),
+        ExtendedCursorPositionReport = DECPrivateStatus(6),
+        PrinterStatus = DECPrivateStatus(15),
+        UserDefinedKeys = DECPrivateStatus(25),
+        KeyboardStatus = DECPrivateStatus(26),
+        LocatorStatus = DECPrivateStatus(55),
+        LocatorIdentity = DECPrivateStatus(56),
+        MacroSpaceReport = DECPrivateStatus(62),
+        MemoryChecksum = DECPrivateStatus(63),
+        DataIntegrity = DECPrivateStatus(75),
+        MultipleSessionStatus = DECPrivateStatus(85),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -429,9 +531,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECPCCM_PageCursorCouplingMode = DECPrivateMode(64),
         DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
+        DECSDM_SixelDisplayMode = DECPrivateMode(80),
         DECECM_EraseColorMode = DECPrivateMode(117),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
@@ -442,7 +546,17 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ALTERNATE_SCROLL = DECPrivateMode(1007),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
+        GCM_GraphemeClusterMode = DECPrivateMode(2027),
         W32IM_Win32InputMode = DECPrivateMode(9001),
+    };
+
+    enum ModeResponses : VTInt
+    {
+        DECRPM_Unsupported = 0,
+        DECRPM_Enabled = 1,
+        DECRPM_Disabled = 2,
+        DECRPM_PermanentlyEnabled = 3,
+        DECRPM_PermanentlyDisabled = 4,
     };
 
     enum CharacterSets : uint64_t
@@ -463,6 +577,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ClearAllColumns = 3
     };
 
+    enum TabSetType : VTInt
+    {
+        SetEvery8Columns = 5
+    };
+
     enum WindowManipulationType : VTInt
     {
         Invalid = 0,
@@ -470,6 +589,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
+        ReportTextSizeInPixels = 14,
+        ReportCharacterCellSize = 16,
         ReportTextSizeInCharacters = 18
     };
 
@@ -495,6 +616,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         WithReturn,
         WithoutReturn,
         DependsOnMode
+    };
+
+    enum class SixelBackground : VTInt
+    {
+        Default = 0,
+        Transparent = 1,
+        Opaque = 2
     };
 
     enum class DrcsEraseControl : VTInt
@@ -531,7 +659,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         FullCell = 2
     };
 
-    enum class DrcsCharsetSize : VTInt
+    enum class CharsetSize : VTInt
     {
         Size94 = 0,
         Size96 = 1
@@ -564,39 +692,4 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
-    enum class MarkCategory : size_t
-    {
-        Prompt = 0,
-        Error = 1,
-        Warning = 2,
-        Success = 3,
-        Info = 4
-    };
-
-    struct ScrollMark
-    {
-        std::optional<til::color> color;
-        til::point start;
-        til::point end; // exclusive
-        std::optional<til::point> commandEnd;
-        std::optional<til::point> outputEnd;
-
-        MarkCategory category{ MarkCategory::Info };
-        // Other things we may want to think about in the future are listed in
-        // GH#11000
-
-        bool HasCommand() const noexcept
-        {
-            return commandEnd.has_value() && *commandEnd != end;
-        }
-        bool HasOutput() const noexcept
-        {
-            return outputEnd.has_value() && *outputEnd != *commandEnd;
-        }
-        std::pair<til::point, til::point> GetExtent() const
-        {
-            til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
-            return std::make_pair(til::point{ start }, realEnd);
-        }
-    };
 }

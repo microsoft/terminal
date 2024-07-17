@@ -30,6 +30,7 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
     ..\cursor.cpp    \
+    ..\ImageSlice.cpp \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \
     ..\OutputCellRect.cpp \
@@ -40,7 +41,8 @@ SOURCES= \
     ..\textBuffer.cpp \
     ..\textBufferCellIterator.cpp \
     ..\textBufferTextIterator.cpp \
-	..\search.cpp \
+    ..\search.cpp \
+    ..\UTextAdapter.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

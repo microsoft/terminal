@@ -20,9 +20,7 @@ Param(
 $helixResultsContainerUri = $Env:HELIX_RESULTS_CONTAINER_URI
 $helixResultsContainerRsas = $Env:HELIX_RESULTS_CONTAINER_RSAS
 
-$rerunPassesRequiredToAvoidFailure = $env:rerunPassesRequiredToAvoidFailure
-
 Add-Type -Language CSharp -ReferencedAssemblies System.Xml,System.Xml.Linq,System.Runtime.Serialization,System.Runtime.Serialization.Json (Get-Content $PSScriptRoot\HelixTestHelpers.cs -Raw)
 
 $testResultParser = [HelixTestHelpers.TestResultParser]::new($TestNamePrefix, $helixResultsContainerUri, $helixResultsContainerRsas)
-$testResultParser.ConvertWttLogToXUnitLog($WttInputPath, $WttSingleRerunInputPath, $WttMultipleRerunInputPath, $XUnitOutputPath, $rerunPassesRequiredToAvoidFailure)
+$testResultParser.ConvertWttLogToXUnitLog($WttInputPath, $WttSingleRerunInputPath, $WttMultipleRerunInputPath, $XUnitOutputPath)

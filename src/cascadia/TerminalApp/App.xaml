@@ -146,6 +146,25 @@
                         </Setter>
                     </Style>
 
+                    <!--
+                        Remove all item animations from the suggestions UI and command
+                        palette. They're entirely too slow to let that UI be usable.
+                    -->
+                    <Style x:Key="NoAnimationsPlease"
+                           TargetType="ListView">
+                        <Setter Property="ItemContainerTransitions">
+                            <Setter.Value>
+                                <TransitionCollection>
+                                    <!--  (deleted transitions are left for reference for what we removed)  -->
+                                    <ContentThemeTransition />
+                                    <!--<AddDeleteThemeTransition/>-->
+                                    <!--<ReorderThemeTransition/>-->
+                                    <!--<EntranceThemeTransition IsStaggeringEnabled="False"/>-->
+                                </TransitionCollection>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!--  Define resources for Dark mode here  -->
@@ -174,6 +193,9 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#0c0c0c" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorDark2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -190,6 +212,9 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#ffffff" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorLight2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
@@ -210,6 +235,9 @@
 
                             <StaticResource x:Key="SettingsUiTabBrush"
                                             ResourceKey="SystemControlBackgroundBaseLowBrush" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemColorHighlightColor}" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

@@ -8,22 +8,73 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-TerminalOutput::TerminalOutput() noexcept
+TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
+    _upssId{ VTID("A") },
+    _upssTranslationTable{ Latin1 },
+    _grTranslationEnabled{ grEnabled }
 {
     // By default we set all of the G-sets to ASCII, so if someone accidentally
-    // triggers a locking shift, they won't end up with Latin1 in the GL table,
+    // triggers a locking shift, they won't end up with UPSS in the GL table,
     // making their system unreadable. If ISO-2022 encoding is selected, though,
-    // we'll reset the G2 and G3 tables to Latin1, so that 8-bit apps will get a
+    // we'll reset the G2 and G3 tables to UPSS, so that 8-bit apps will get a
     // more meaningful character mapping by default. This is triggered by a DOCS
     // sequence, which will call the EnableGrTranslation method below.
+    const auto grTranslationTable = grEnabled ? _upssTranslationTable : Ascii;
+    const auto grId = grEnabled ? VTID("<") : VTID("B");
     _gsetTranslationTables.at(0) = Ascii;
     _gsetTranslationTables.at(1) = Ascii;
-    _gsetTranslationTables.at(2) = Ascii;
-    _gsetTranslationTables.at(3) = Ascii;
+    _gsetTranslationTables.at(2) = grTranslationTable;
+    _gsetTranslationTables.at(3) = grTranslationTable;
     _gsetIds.at(0) = VTID("B");
     _gsetIds.at(1) = VTID("B");
-    _gsetIds.at(2) = VTID("B");
-    _gsetIds.at(3) = VTID("B");
+    _gsetIds.at(2) = grId;
+    _gsetIds.at(3) = grId;
+}
+
+void TerminalOutput::SoftReset() noexcept
+{
+    // For a soft reset we want to reinitialize the character set designations,
+    // but retain the GR translation functionality if it's currently enabled.
+    *this = { _grTranslationEnabled };
+}
+
+void TerminalOutput::RestoreFrom(const TerminalOutput& savedState) noexcept
+{
+    // When restoring from a saved instance, we want to preserve the GR
+    // translation functionality if it's currently enabled.
+    const auto preserveGrTranslation = _grTranslationEnabled;
+    *this = savedState;
+    _grTranslationEnabled = preserveGrTranslation;
+}
+
+bool TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool size96)
+{
+    const auto translationTable = size96 ? _LookupTranslationTable96(charset) : _LookupTranslationTable94(charset);
+    RETURN_BOOL_IF_FALSE(!translationTable.empty());
+    _upssId = charset;
+    _upssTranslationTable = translationTable;
+    // Any G-set mapped to UPSS will need its translation table updated.
+    for (auto gset = 0; gset < 4; gset++)
+    {
+        if (_gsetIds.at(gset) == VTID("<"))
+        {
+            _gsetTranslationTables.at(gset) = _upssTranslationTable;
+        }
+    }
+    // We also reapply the locking shifts in case they need to be updated.
+    LockingShift(_glSetNumber);
+    LockingShiftRight(_grSetNumber);
+    return true;
+}
+
+VTID TerminalOutput::GetUserPreferenceCharsetId() const noexcept
+{
+    return _upssId;
+}
+
+size_t TerminalOutput::GetUserPreferenceCharsetSize() const noexcept
+{
+    return _upssTranslationTable.size() == 96 ? 96 : 94;
 }
 
 bool TerminalOutput::Designate94Charset(size_t gsetNumber, const VTID charset)
@@ -124,14 +175,17 @@ bool TerminalOutput::NeedToTranslate() const noexcept
     return !_glTranslationTable.empty() || !_grTranslationTable.empty() || _ssSetNumber != 0;
 }
 
-void TerminalOutput::EnableGrTranslation(boolean enabled)
+void TerminalOutput::EnableGrTranslation(const bool enabled)
 {
     _grTranslationEnabled = enabled;
-    // The default table for G2 and G3 is Latin1 when GR translation is enabled,
+    // The default table for G2 and G3 is UPSS when GR translation is enabled,
     // and ASCII when disabled. The reason for this is explained in the constructor.
-    const auto defaultTranslationTable = enabled ? std::wstring_view{ Latin1 } : std::wstring_view{ Ascii };
+    const auto defaultTranslationTable = enabled ? _upssTranslationTable : Ascii;
+    const auto defaultId = enabled ? VTID("<") : VTID("B");
     _gsetTranslationTables.at(2) = defaultTranslationTable;
     _gsetTranslationTables.at(3) = defaultTranslationTable;
+    _gsetIds.at(2) = defaultId;
+    _gsetIds.at(3) = defaultId;
     // We need to reapply the locking shifts in case the underlying G-sets have changed.
     LockingShift(_glSetNumber);
     LockingShiftRight(_grSetNumber);
@@ -184,8 +238,8 @@ const std::wstring_view TerminalOutput::_LookupTranslationTable94(const VTID cha
     case VTID("0"): // DEC Special Graphics
     case VTID("2"): // Alternate Character ROM Special Graphics
         return DecSpecialGraphics;
-    case VTID("<"): // DEC Supplemental
-        return DecSupplemental;
+    case VTID("<"): // User-Preference Supplemental
+        return _upssTranslationTable;
     case VTID("A"): // British NRCS
         return BritishNrcs;
     case VTID("4"): // Dutch NRCS
@@ -253,8 +307,9 @@ const std::wstring_view TerminalOutput::_LookupTranslationTable96(const VTID cha
     switch (charset)
     {
     case VTID("A"): // ISO Latin-1 Supplemental
-    case VTID("<"): // (UPSS when assigned to Latin-1)
         return Latin1;
+    case VTID("<"): // User-Preference Supplemental
+        return _upssTranslationTable;
     case VTID("B"): // ISO Latin-2 Supplemental
         return Latin2;
     case VTID("L"): // ISO Latin-Cyrillic Supplemental

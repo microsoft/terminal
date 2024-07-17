@@ -2,9 +2,11 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+
 #include <io.h>
 #include <fcntl.h>
-#include <iostream>
+
+#include "../../types/inc/IInputEvent.hpp"
 
 #define JAPANESE_CP 932u
 
@@ -115,6 +117,7 @@ class DbcsTests
     // This test must come before ones that launch another process as launching another process can tamper with the codepage
     // in ways that this test is not expecting.
     TEST_METHOD(TestMultibyteInputRetrieval);
+    TEST_METHOD(TestMultibyteInputCoalescing);
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
@@ -161,6 +164,8 @@ class DbcsTests
     BEGIN_TEST_METHOD(TestInvalidTrailer)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
+
+    TEST_METHOD(TestNarrowSurrogate);
 };
 
 bool DbcsTests::DbcsTestSetup()
@@ -1906,6 +1911,34 @@ void DbcsTests::TestMultibyteInputRetrieval()
     FlushConsoleInputBuffer(hIn);
 }
 
+// This test ensures that two separate WriteConsoleInputA with trailing/leading DBCS are joined (coalesced) into a single wide character.
+void DbcsTests::TestMultibyteInputCoalescing()
+{
+    SetConsoleCP(932);
+
+    const auto in = GetStdHandle(STD_INPUT_HANDLE);
+    FlushConsoleInputBuffer(in);
+
+    DWORD count;
+    {
+        const auto record = SynthesizeKeyEvent(true, 1, 123, 456, 0x82, 789);
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
+    }
+    {
+        const auto record = SynthesizeKeyEvent(true, 1, 234, 567, 0xA2, 890);
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
+    }
+
+    // Asking for 2 records and asserting we only got 1 ensures
+    // that we receive the exact number of expected records.
+    INPUT_RECORD actual[2];
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(in, &actual[0], 2, &count));
+    VERIFY_ARE_EQUAL(1u, count);
+
+    const auto expected = SynthesizeKeyEvent(true, 1, 123, 456, L'い', 789);
+    VERIFY_ARE_EQUAL(expected, actual[0]);
+}
+
 void DbcsTests::TestDbcsOneByOne()
 {
     const auto hOut = GetStdOutputHandle();
@@ -2151,4 +2184,19 @@ void DbcsTests::TestInvalidTrailer()
     }
 
     DbcsWriteRead::Verify(expected, output);
+}
+
+// The various console APIs that read back from the buffer are generally incompatible with UTF16 and surrogate pairs.
+// ReadConsoleOutputCharacterW in particular has a nLength parameter which is a column count but also the buffer size.
+// This makes it impossible to reliably return arbitrarily long graphemes per-cell in the output buffer.
+// The test ensures that we replace them with U+FFFD which makes the behavior more consistent for the caller.
+void DbcsTests::TestNarrowSurrogate()
+{
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+    wchar_t buf[3];
+    DWORD read;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputCharacterW(out, L"a\U00010000b", 4, {}, &read));
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(out, &buf[0], ARRAYSIZE(buf), {}, &read));
+    VERIFY_ARE_EQUAL(std::wstring_view(L"a\U0000FFFDb"), std::wstring_view(&buf[0], read));
 }

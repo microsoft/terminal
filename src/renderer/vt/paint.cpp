@@ -20,30 +20,30 @@ using namespace Microsoft::Console::Types;
 //      HRESULT error code if painting didn't start successfully.
 [[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
+    // When unit testing, there may be no pipe, but we still need to paint.
     if (!_hFile)
     {
-        return S_FALSE;
+        return S_OK;
     }
 
     // If we're using line renditions, and this is a full screen paint, we can
     // potentially stop using them at the end of this frame.
     _stopUsingLineRenditions = _usingLineRenditions && _AllIsInvalid();
 
-    // If there's nothing to do, quick return
+    // If there's nothing to do, we won't need to paint.
     auto somethingToDo = _invalidMap.any() ||
                          _scrollDelta != til::point{ 0, 0 } ||
                          _cursorMoved ||
                          _titleChanged;
 
-    _quickReturn = !somethingToDo;
-    _trace.TraceStartPaint(_quickReturn,
+    _trace.TraceStartPaint(!somethingToDo,
                            _invalidMap,
                            _lastViewport.ToExclusive(),
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
 
-    return _quickReturn ? S_FALSE : S_OK;
+    return somethingToDo ? S_OK : S_FALSE;
 }
 
 // Routine Description:
@@ -101,15 +101,12 @@ using namespace Microsoft::Console::Types;
     //
     // Instead, we'll leave this frame in _buffer, and just keep appending to
     // it as needed.
-    if (_noFlushOnEnd) [[unlikely]]
+    if (!_noFlushOnEnd)
     {
-        _noFlushOnEnd = false;
-    }
-    else
-    {
-        RETURN_IF_FAILED(_Flush());
+        _Flush();
     }
 
+    _noFlushOnEnd = false;
     return S_OK;
 }
 
@@ -145,9 +142,9 @@ using namespace Microsoft::Console::Types;
         _usingLineRenditions = true;
     }
     // One simple optimization is that we can skip sending the line attributes
-    // when _quickReturn is true. That indicates that we're writing out a single
-    // character, which should preclude there being a rendition switch.
-    if (_usingLineRenditions && !_quickReturn)
+    // when we're writing out a single character, which should preclude there
+    // being a rendition switch.
+    if (_usingLineRenditions && !_invalidMap.one())
     {
         RETURN_IF_FAILED(_MoveCursor({ _lastText.x, targetRow }));
         switch (lineRendition)
@@ -202,13 +199,15 @@ using namespace Microsoft::Console::Types;
 // - Draws up to one line worth of grid lines on top of characters.
 // Arguments:
 // - lines - Enum defining which edges of the rectangle to draw
-// - color - The color to use for drawing the edges.
+// - gridlineColor - The color to use for drawing the gridlines.
+// - underlineColor - The color to use for drawing the underlines.
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
-                                                     const COLORREF /*color*/,
+                                                     const COLORREF /*gridlineColor*/,
+                                                     const COLORREF /*underlineColor*/,
                                                      const size_t /*cchLine*/,
                                                      const til::point /*coordTarget*/) noexcept
 {
@@ -224,6 +223,15 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
     _trace.TracePaintCursor(options.coordCursor);
+
+    // GH#17270: If the wrappedRow field is set, and the target cursor position
+    // is at the start of the next row, it's expected that any subsequent output
+    // would already be written to that location, so the _MoveCursor method may
+    // decide it doesn't need to do anything. In this case, though, we're not
+    // writing anything else, so the cursor will end up in the wrong location at
+    // the end of the frame. Clearing the wrappedRow field fixes that.
+    _wrappedRow = std::nullopt;
+    _trace.TraceClearWrapped();
 
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
@@ -257,11 +265,13 @@ using namespace Microsoft::Console::Types;
 {
     const auto fg = textAttributes.GetForeground();
     const auto bg = textAttributes.GetBackground();
+    const auto ul = textAttributes.GetUnderlineColor();
     auto lastFg = _lastTextAttributes.GetForeground();
     auto lastBg = _lastTextAttributes.GetBackground();
+    auto lastUl = _lastTextAttributes.GetUnderlineColor();
 
-    // If both the FG and BG should be the defaults, emit a SGR reset.
-    if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
+    // If the FG, BG and UL should be the defaults, emit an SGR reset.
+    if (fg.IsDefault() && bg.IsDefault() && ul.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault() && lastUl.IsDefault()))
     {
         // SGR Reset will clear all attributes (except hyperlink ID) - which means
         // we cannot reset _lastTextAttributes by simply doing
@@ -270,9 +280,11 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_SetGraphicsDefault());
         _lastTextAttributes.SetDefaultBackground();
         _lastTextAttributes.SetDefaultForeground();
+        _lastTextAttributes.SetDefaultUnderlineColor();
         _lastTextAttributes.SetDefaultRenditionAttributes();
         lastFg = {};
         lastBg = {};
+        lastUl = {};
     }
 
     if (fg != lastFg)
@@ -315,6 +327,27 @@ using namespace Microsoft::Console::Types;
             RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(bg.GetRGB(), false));
         }
         _lastTextAttributes.SetBackground(bg);
+    }
+
+    if (ul != lastUl)
+    {
+        if (ul.IsDefault())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderlineDefaultColor());
+        }
+        else if (ul.IsIndex16()) // underline can't be 16 color
+        {
+            /* do nothing */
+        }
+        else if (ul.IsIndex256())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderline256Color(ul.GetIndex()));
+        }
+        else if (ul.IsRgb())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderlineRGBColor(ul.GetRGB()));
+        }
+        _lastTextAttributes.SetUnderlineColor(ul);
     }
 
     return S_OK;
@@ -455,7 +488,25 @@ using namespace Microsoft::Console::Types;
         _bufferLine.append(cluster.GetText());
         totalWidth += cluster.GetColumns();
     }
+
+    // If any of the values in the buffer are C0 or C1 controls, we need to
+    // convert them to printable codepoints, otherwise they'll end up being
+    // evaluated as control characters by the receiving terminal. We use the
+    // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
+    // C1 controls, since that's what you would most likely have seen in the
+    // legacy v1 console with raster fonts.
     const auto cchLine = _bufferLine.size();
+    std::for_each_n(_bufferLine.begin(), cchLine, [](auto& ch) {
+        static constexpr std::wstring_view C0Glyphs = L" ☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼";
+        if (ch < C0Glyphs.size())
+        {
+            ch = til::at(C0Glyphs, ch);
+        }
+        else if (ch >= L'\u007F' && ch < L'\u00A0')
+        {
+            ch = (ch == L'\u007F' ? L'⌂' : L'?');
+        }
+    });
 
     const auto spaceIndex = _bufferLine.find_last_not_of(L' ');
     const auto foundNonspace = spaceIndex != decltype(_bufferLine)::npos;

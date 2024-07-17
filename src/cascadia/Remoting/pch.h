@@ -52,3 +52,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hRemotingProvider);
 #include "til.h"
 
 #include <cppwinrt_utils.h>
+#include <til/winrt.h>

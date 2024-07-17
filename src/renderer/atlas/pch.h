@@ -26,6 +26,7 @@
 #include <dxgi1_3.h>
 #include <dxgidebug.h>
 #include <VersionHelpers.h>
+#include <wincodec.h>
 
 #include <gsl/gsl_util>
 #include <gsl/pointers>
@@ -48,6 +49,10 @@
 #pragma warning(disable : 26812) // The enum type '...' is unscoped. Prefer 'enum class' over 'enum' (Enum.3).
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
+
+// {fmt}, a C++20-compatible formatting library
+#include <fmt/format.h>
+#include <fmt/compile.h>
 
 #include <til.h>
 #include <til/bit.h>

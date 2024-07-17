@@ -26,7 +26,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // state structure for maintenance of UTF-8 partials
     struct u8state
     {
-        char partials[4];
+        char partials[4]{};
         uint8_t have{};
         uint8_t want{};
 

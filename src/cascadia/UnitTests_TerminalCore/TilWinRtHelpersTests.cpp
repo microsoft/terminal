@@ -8,7 +8,6 @@
 
 #include "../renderer/inc/DummyRenderer.hpp"
 #include "../renderer/base/Renderer.hpp"
-#include "../renderer/dx/DxRenderer.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "MockTermSettings.h"
@@ -44,6 +43,8 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_METHOD(TestEvent);
 
     TEST_METHOD(TestTypedEvent);
+
+    TEST_METHOD(TestPropertyChanged);
 };
 
 void TilWinRtHelpersTests::TestPropertySimple()
@@ -81,23 +82,23 @@ void TilWinRtHelpersTests::TestTruthiness()
     til::property<winrt::hstring> FullString{ L"Full" };
 
     VERIFY_IS_FALSE(Foo());
-    VERIFY_IS_FALSE(Foo);
+    VERIFY_IS_FALSE((bool)Foo);
 
     VERIFY_IS_FALSE(Bar());
-    VERIFY_IS_FALSE(Bar);
+    VERIFY_IS_FALSE((bool)Bar);
 
-    VERIFY_IS_FALSE(EmptyString);
+    VERIFY_IS_FALSE((bool)EmptyString);
     VERIFY_IS_FALSE(!EmptyString().empty());
 
     Foo(true);
     VERIFY_IS_TRUE(Foo());
-    VERIFY_IS_TRUE(Foo);
+    VERIFY_IS_TRUE((bool)Foo);
 
     Bar(11);
     VERIFY_IS_TRUE(Bar());
-    VERIFY_IS_TRUE(Bar);
+    VERIFY_IS_TRUE((bool)Bar);
 
-    VERIFY_IS_TRUE(FullString);
+    VERIFY_IS_TRUE((bool)FullString);
     VERIFY_IS_TRUE(!FullString().empty());
 }
 
@@ -177,13 +178,13 @@ void TilWinRtHelpersTests::TestComposedConstProperties()
     const struct Helper noTouching;
 
     VERIFY_ARE_EQUAL(0, changeMe.Foo());
-    VERIFY_ARE_EQUAL(3, changeMe.Composed().first);
-    VERIFY_ARE_EQUAL(2, changeMe.Composed().second);
+    VERIFY_ARE_EQUAL(3, changeMe.Composed().first());
+    VERIFY_ARE_EQUAL(2, changeMe.Composed().second());
     VERIFY_ARE_EQUAL(L"", changeMe.MyString());
 
     VERIFY_ARE_EQUAL(0, noTouching.Foo());
-    VERIFY_ARE_EQUAL(3, noTouching.Composed().first);
-    VERIFY_ARE_EQUAL(2, noTouching.Composed().second);
+    VERIFY_ARE_EQUAL(3, noTouching.Composed().first());
+    VERIFY_ARE_EQUAL(2, noTouching.Composed().second());
     VERIFY_ARE_EQUAL(L"", noTouching.MyString());
 
     changeMe.Foo(42);
@@ -243,4 +244,23 @@ void TilWinRtHelpersTests::TestTypedEvent()
     MyEvent.raise(L"sure", 42);
     VERIFY_ARE_EQUAL(true, handledOne);
     VERIFY_ARE_EQUAL(true, handledTwo);
+}
+
+void TilWinRtHelpersTests::TestPropertyChanged()
+{
+    auto handler = [&](const auto& /*sender*/, const auto& args) -> void {
+        VERIFY_ARE_EQUAL(L"BackgroundBrush", args.PropertyName());
+    };
+
+    til::property_changed_event PropertyChanged;
+    PropertyChanged(handler);
+
+    // We can't actually run this test in our usual unit tests. As you may
+    // suspect, because the PropertyChanged event is a _XAML_ event, it expects
+    // to be run on the UI thread. Which, we most definitely don't have here.
+    //
+    // At least, this does compile. We use this everywhere, so the scream test is LOUD.
+
+    // winrt::Windows::Foundation::IInspectable mySender{};
+    // PropertyChanged.raise(mySender, winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
 }

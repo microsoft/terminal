@@ -37,16 +37,11 @@ extern "C" {
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string_view>
+#include <span>
 
 #include <msctf.h> // Cicero header
 #include <tsattrs.h> // ITextStore standard attributes
 
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
-
-#include "../inc/contsf.h"
-
-#include "globals.h"
-
-#include "ConsoleTSF.h"
-#include "TfCtxtComp.h"

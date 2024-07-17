@@ -35,6 +35,11 @@ void CONSOLE_INFORMATION::UnlockConsole() noexcept
     _lock.unlock();
 }
 
+til::recursive_ticket_lock_suspension CONSOLE_INFORMATION::SuspendLock() noexcept
+{
+    return _lock.suspend();
+}
+
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 {
     return _lock.recursion_depth();
@@ -97,14 +102,12 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 
     gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
-    gci.ConsoleIme.RefreshAreaAttributes();
-
     if (SUCCEEDED_NTSTATUS(Status))
     {
         return STATUS_SUCCESS;
     }
 
-    RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
+    LOG_NTSTATUS_MSG(Status, "Console init failed");
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
@@ -128,6 +131,11 @@ bool CONSOLE_INFORMATION::IsInVtIoMode() const
 bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
 {
     return _cookedReadData != nullptr;
+}
+
+bool CONSOLE_INFORMATION::HasPendingPopup() const noexcept
+{
+    return _cookedReadData && _cookedReadData->PresentingPopup();
 }
 
 const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept

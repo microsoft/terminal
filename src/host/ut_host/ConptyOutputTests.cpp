@@ -44,7 +44,6 @@ class ConptyOutputTests
         m_state = std::make_unique<CommonState>();
 
         m_state->InitEvents();
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
 
@@ -54,7 +53,6 @@ class ConptyOutputTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         m_state.release();
@@ -122,6 +120,7 @@ class ConptyOutputTests
     TEST_METHOD(InvalidateUntilOneBeforeEnd);
     TEST_METHOD(SetConsoleTitleWithControlChars);
     TEST_METHOD(IncludeBackgroundColorChangesInFirstFrame);
+    TEST_METHOD(MoveCursorAfterWrapForced);
 
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
@@ -424,6 +423,42 @@ void ConptyOutputTests::IncludeBackgroundColorChangesInFirstFrame()
     expectedOutput.push_back("Run 3     ");
 
     // This is also part of the standard init sequence.
+    expectedOutput.push_back("\x1b[?25h");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::MoveCursorAfterWrapForced()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    // We write a character in the rightmost column to trigger the _wrapForced
+    // flag. Technically this is a bug, but it's how things currently work.
+    sm.ProcessString(L"\x1b[1;999H*");
+
+    expectedOutput.push_back("\x1b[2J"); // standard init sequence for the first frame
+    expectedOutput.push_back("\x1b[m"); // standard init sequence for the first frame
+    expectedOutput.push_back("\x1b[1;80H");
+    expectedOutput.push_back("*");
+    expectedOutput.push_back("\x1b[?25h");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Position the cursor on line 2, and fill line 1 with A's.
+    sm.ProcessString(L"\x1b[2H");
+    sm.ProcessString(L"\033[65;1;1;1;999$x");
+
+    expectedOutput.push_back("\x1b[H");
+    expectedOutput.push_back("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+
+    // The cursor must be explicitly moved to line 2 at the end of the frame.
+    // Although that may technically already be the next output location, we
+    // still need the cursor to be shown in that position when the frame ends.
+    expectedOutput.push_back("\r\n");
     expectedOutput.push_back("\x1b[?25h");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());

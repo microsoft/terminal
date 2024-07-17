@@ -337,6 +337,9 @@ namespace fuzz
         FuzzTraits m_traits{ TRAIT_DEFAULT };
     };
 
+    template<typename _Type1, typename _Type2, typename... _Args>
+    class CFuzzArraySize;
+
     // The CFuzzArray class is designed to allow fuzzing of element
     // arrays, potentially reallocating a fuzzed version of the array
     // that is either larger or smaller than the template buffer.  Whether
@@ -353,8 +356,7 @@ namespace fuzz
     class CFuzzArray : public CFuzzBase
     {
     public:
-        template<typename _Type1, typename _Type2, typename... _Args>
-        friend class CFuzzArraySize;
+        friend class CFuzzArraySize<_Type1, _Type2, _Args...>;
 
         // Creates a CFuzzArray instance that wraps a buffer specified by
         // rg, together with its size (note that this is the number of elements
@@ -643,8 +645,7 @@ namespace fuzz
     class CFuzzArraySize
     {
     public:
-        template<class _Alloc, typename _Type1, typename _Type2, typename... _Args>
-        friend class CFuzzArray;
+        friend class CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...>;
 
         CFuzzArraySize(__inout _Type2& cElems) :
             m_pcElems(&cElems),
@@ -892,7 +893,7 @@ namespace fuzz
             __in ULONG cfte,
             __in _Type pt,
             __in _Args&&... args) :
-            CFuzzType(rgfte, cfte, pt, std::forward<_Args>(args)...)
+            CFuzzType<_Type, _Args...>(rgfte, cfte, pt, std::forward<_Args>(args)...)
         {
         }
 
@@ -933,7 +934,7 @@ namespace fuzz
             __in ULONG cfte,
             __in _Type* psz,
             __in _Args... args) :
-            CFuzzType(rgfte, cfte, psz, std::forward<_Args>(args)...)
+            CFuzzType<_Type, _Args...>(rgfte, cfte, psz, std::forward<_Args>(args)...)
         {
             OnFuzzedValueFromMap();
         }
@@ -1061,7 +1062,7 @@ namespace fuzz
             __in ULONG cfte,
             __in _Type flags,
             __in _Args&&... args) :
-            CFuzzType(rgfte, cfte, flags, std::forward<_Args>(args)...)
+            CFuzzType<_Type, _Args...>(rgfte, cfte, flags, std::forward<_Args>(args)...)
         {
         }
 

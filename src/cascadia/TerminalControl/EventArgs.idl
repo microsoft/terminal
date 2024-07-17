@@ -3,9 +3,6 @@
 
 namespace Microsoft.Terminal.Control
 {
-    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
-    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
-
     [flags]
     enum CopyFormat
     {
@@ -14,12 +11,24 @@ namespace Microsoft.Terminal.Control
         All = 0xffffffff
     };
 
-    runtimeclass CopyToClipboardEventArgs
+    enum GraphicsAPI
     {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-        Windows.Foundation.IReference<CopyFormat> Formats { get; };
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
+
+    enum TextMeasurement
+    {
+        Graphemes,
+        Wcswidth,
+        Console,
+    };
+
+    runtimeclass FontSizeChangedArgs
+    {
+        Int32 Width { get; };
+        Int32 Height { get; };
     }
 
     runtimeclass ContextMenuRequestedEventArgs
@@ -41,6 +50,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass OpenHyperlinkEventArgs
     {
+        OpenHyperlinkEventArgs(String uri);
         String Uri { get; };
     }
 
@@ -67,26 +77,59 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass RendererWarningArgs
     {
-        UInt64 Result { get; };
+        HRESULT Result { get; };
+        String Parameter { get; };
     }
 
     runtimeclass TransparencyChangedEventArgs
     {
-        Double Opacity { get; };
+        Single Opacity { get; };
     }
 
-    runtimeclass FoundResultsArgs
+    enum SearchState
     {
-        Boolean FoundMatch { get; };
-    }
+        Inactive = 0,
+        Active = 1,
+    };
 
     runtimeclass ShowWindowArgs
     {
         Boolean ShowOrHide { get; };
     }
-    
+
     runtimeclass UpdateSelectionMarkersEventArgs
     {
         Boolean ClearMarkers { get; };
+    }
+
+    runtimeclass CompletionsChangedEventArgs
+    {
+        String MenuJson { get; };
+        UInt32 ReplacementLength { get; };
+    }
+
+    runtimeclass KeySentEventArgs
+    {
+        UInt16 VKey { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+        Boolean KeyDown { get; };
+    }
+
+    runtimeclass CharSentEventArgs
+    {
+        Char Character { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+    }
+
+    runtimeclass StringSentEventArgs
+    {
+        String Text { get; };
+    }
+
+    runtimeclass SearchMissingCommandEventArgs
+    {
+        String MissingCommand { get; };
     }
 }
