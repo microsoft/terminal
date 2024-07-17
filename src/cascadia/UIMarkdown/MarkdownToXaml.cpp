@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "CodeBlock.h"
 #include "MarkdownToXaml.h"
 
 namespace winrt
@@ -152,6 +151,33 @@ WUX::Controls::TextBlock MarkdownToXaml::_makeDefaultTextBlock()
     return b;
 }
 
+WUX::Controls::Grid _makeCodeBlock(const winrt::hstring& text)
+{
+    WUX::Controls::Grid root{};
+    root.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+
+    WUX::Controls::Border border{};
+    border.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+
+    root.Children().Append(border);
+
+    WUX::Controls::ScrollViewer scroll{};
+    scroll.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+
+    border.Child(scroll);
+
+    WUX::Controls::TextBlock textBlock{};
+    textBlock.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+    textBlock.IsTextSelectionEnabled(true);
+    textBlock.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
+    textBlock.Text(text);
+    textBlock.Margin(WUX::ThicknessHelper::FromLengths(14, 14, 14, 14));
+
+    scroll.Content(textBlock);
+
+    return root;
+}
+
 void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 {
     cmark_node* parent;
@@ -242,8 +268,9 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         std::string_view code{ (char*)node->as.code.literal.data, (size_t)node->as.code.literal.len - 1 };
         const auto codeHstring{ winrt::hstring{ til::u8u16(code) } };
 
-        auto codeBlock = winrt::make<winrt::TerminalApp::implementation::CodeBlock>(codeHstring);
+        // auto codeBlock = winrt::make<winrt::TerminalApp::implementation::CodeBlock>(codeHstring);
         // codeBlock.RequestRunCommands({ page, &MarkdownPaneContent::_handleRunCommandRequest });
+        auto codeBlock = _makeCodeBlock(codeHstring);
         WUX::Documents::InlineUIContainer codeContainer{};
         codeContainer.Child(codeBlock);
         _CurrentParagraph().Inlines().Append(codeContainer);

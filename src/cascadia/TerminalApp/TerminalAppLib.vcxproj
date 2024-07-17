@@ -189,7 +189,6 @@
     <ClInclude Include="MarkdownPaneContent.h">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="MarkdownToXaml.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -315,7 +314,6 @@
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="MarkdownToXaml.cpp" />
 
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
@@ -418,9 +416,6 @@
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\dep\cmark-gfm\cmark-gfm.vcxproj">
-      <Project>{7CAE5851-50D5-4934-8D5E-30361A8A40F3}</Project>
-    </ProjectReference>
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
     manually include the winmds as References below
@@ -447,6 +442,9 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj">
+      <Project>{7615F03F-E56D-4DB4-B23D-BD4FB80DB36F}</Project>
     </ProjectReference>
 
   </ItemGroup>

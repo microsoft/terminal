@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "CodeBlock.h"
 #include "../../oss/cmark-gfm/src/cmark-gfm.h"
 #include "../../oss/cmark-gfm/src/node.h"
 

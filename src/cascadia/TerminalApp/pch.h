@@ -62,6 +62,8 @@
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.UI.h>
+#include <winrt/Microsoft.Terminal.UI.Markdown.h>
+
 #include <winrt/Windows.Services.Store.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Provider.h>

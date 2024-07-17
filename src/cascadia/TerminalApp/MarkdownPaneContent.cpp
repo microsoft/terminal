@@ -6,7 +6,6 @@
 #include <LibraryResources.h>
 #include "MarkdownPaneContent.g.cpp"
 #include "CodeBlock.h"
-#include "MarkdownToXaml.h"
 #include <til/io.h>
 
 using namespace std::chrono_literals;
@@ -86,9 +85,7 @@ namespace winrt::TerminalApp::implementation
 
     void MarkdownPaneContent::_loadMarkdown()
     {
-        const auto value{ til::u16u8(FileContents()) };
-
-        auto rootTextBlock{ MarkdownToXaml::Convert(value, _filePath) };
+        auto rootTextBlock{ Microsoft::Terminal::UI::Markdown::Builder::Convert(FileContents(), _filePath) };
 
         // In the future, we'll want to further customize the code blocks in the
         // text block we got. We can do that with the following:
