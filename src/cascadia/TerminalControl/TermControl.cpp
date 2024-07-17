@@ -3906,16 +3906,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool TermControl::OpenQuickFixMenu()
     {
-        if (Feature_QuickFix::IsEnabled() && _core.QuickFixesAvailable())
+        if constexpr (Feature_QuickFix::IsEnabled())
         {
-            // Expand the quick fix button if it's collapsed (looks nicer)
-            if (_quickFixButtonCollapsible)
+            if (_core.QuickFixesAvailable())
             {
-                VisualStateManager::GoToState(*this, StateNormal, false);
+                // Expand the quick fix button if it's collapsed (looks nicer)
+                if (_quickFixButtonCollapsible)
+                {
+                    VisualStateManager::GoToState(*this, StateNormal, false);
+                }
+                auto quickFixBtn = QuickFixButton();
+                quickFixBtn.Flyout().ShowAt(quickFixBtn);
+                return true;
             }
-            auto quickFixBtn = QuickFixButton();
-            quickFixBtn.Flyout().ShowAt(quickFixBtn);
-            return true;
         }
         return false;
     }
