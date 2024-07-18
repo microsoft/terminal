@@ -129,7 +129,8 @@ try
     };
     _p.invalidatedRows = _api.invalidatedRows;
     _p.cursorRect = {};
-    _p.scrollOffset = _api.scrollOffset;
+    _p.scrollOffsetX = _p.s->viewportOffset.x;
+    _p.scrollDeltaY = _api.scrollOffset;
 
     // This if condition serves 2 purposes:
     // * By setting top/bottom to the full height we ensure that we call Present() without
@@ -144,7 +145,7 @@ try
         _p.MarkAllAsDirty();
     }
 
-    if (const auto offset = _p.scrollOffset)
+    if (const auto offset = _p.scrollDeltaY)
     {
         if (offset < 0)
         {
@@ -255,6 +256,14 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
+
+    for (const auto r : _p.rows)
+    {
+        if (r->bitmap.revision != 0 && !r->bitmap.active)
+        {
+            r->bitmap = {};
+        }
+    }
 
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
     // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
@@ -520,10 +529,62 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& /*imageSlice*/, const til::CoordType /*targetRow*/, const til::CoordType /*viewportLeft*/) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& imageSlice, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
+try
 {
-    return S_FALSE;
+    const auto y = clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1);
+    const auto row = _p.rows[y];
+    const auto revision = imageSlice.Revision();
+    const auto srcWidth = std::max(0, imageSlice.PixelWidth());
+    const auto srcCellSize = imageSlice.CellSize();
+    auto b = &row->bitmap;
+
+    // Check if we already got that particular ImageSlice cached.
+    for (const auto r : _p.rows)
+    {
+        if (r->bitmap.revision == revision)
+        {
+            // Found it! Now make sure that it's in the right row.
+            // The row may change when the viewport scrolls up/down.
+            if (row != r)
+            {
+                row->bitmap = std::move(r->bitmap);
+                r->bitmap = {};
+            }
+
+            b = &row->bitmap;
+            goto exit;
+        }
+    }
+
+    // We failed to find a cached instance of this ImageSlice. Let's create a new one.
+    {
+        const auto srcHeight = std::max(0, srcCellSize.height);
+        const auto pixels = imageSlice.Pixels();
+
+        // Sanity check.
+        if (pixels.size() != srcWidth * srcHeight)
+        {
+            assert(false);
+            return S_OK;
+        }
+
+        auto buffer = Buffer<u32, 32>{ pixels.size() };
+        memcpy(buffer.data(), pixels.data(), pixels.size_bytes());
+
+        b->revision = revision;
+        b->source = std::move(buffer);
+        b->sourceSize.x = srcWidth;
+        b->sourceSize.y = srcHeight;
+    }
+
+exit:
+    b->targetOffset = (imageSlice.ColumnOffset() - viewportLeft);
+    b->targetWidth = srcWidth / srcCellSize.width;
+    b->active = true;
+    return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
 try
