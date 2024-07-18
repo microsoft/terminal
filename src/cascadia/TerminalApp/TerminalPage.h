@@ -13,6 +13,9 @@
 #include "LaunchPositionRequest.g.h"
 #include "Toast.h"
 
+#include <winrt/Microsoft.WindowsPackageManager.InProcCom.h>
+#include <winrt/Microsoft.Management.Deployment.h>
+
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
 namespace TerminalAppLocalTests
@@ -531,6 +534,11 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         winrt::fire_and_forget _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
+        Windows::Foundation::IAsyncOperation<Microsoft::WindowsPackageManager::InProcCom::CatalogPackage> _FindPackageInCatalogAsync(Microsoft::WindowsPackageManager::InProcCom::PackageCatalog catalog, std::wstring packageId);
+        Windows::Foundation::IAsyncOperation<Microsoft::WindowsPackageManager::InProcCom::CatalogPackage> _FindPackageAsync();
+        Microsoft::WindowsPackageManager::InProcCom::PackageManager _CreatePackageManager() const;
+        Microsoft::WindowsPackageManager::InProcCom::FindPackagesOptions _CreateFindPackagesOptions() const;
+        Microsoft::WindowsPackageManager::InProcCom::PackageMatchFilter _CreatePackageMatchFilter() const;
 
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 

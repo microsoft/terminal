@@ -361,7 +361,7 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalPaneContent.idl" >
+    <Midl Include="TerminalPaneContent.idl">
       <DependentUpon>TaskPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
@@ -414,7 +414,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
-
   </ItemGroup>
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
@@ -465,6 +464,9 @@
       <ResolvedFrom>CppWinRTImplicitlyExpandTargetPlatform</ResolvedFrom>
       <IsSystemReference>True</IsSystemReference>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
