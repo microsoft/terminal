@@ -1893,7 +1893,7 @@ void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
         wil::com_ptr<ID2D1Bitmap> bitmap;
         THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
 
-        D2D1_RECT_F rectF{
+        const D2D1_RECT_F rectF{
             static_cast<f32>(rect.x),
             static_cast<f32>(rect.y),
             static_cast<f32>(rect.x + rect.w),

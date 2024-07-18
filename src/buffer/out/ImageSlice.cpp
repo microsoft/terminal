@@ -145,6 +145,7 @@ void ImageSlice::CopyCells(const ROW& srcRow, const til::CoordType srcColumn, RO
         if (!dstSlice)
         {
             dstSlice = dstRow.SetImageSlice(std::make_unique<ImageSlice>(srcSlice->CellSize()));
+            __assume(dstSlice != nullptr);
         }
         const auto scale = srcRow.GetLineRendition() != LineRendition::SingleWidth ? 1 : 0;
         if (dstSlice->_copyCells(*srcSlice, srcColumn << scale, dstColumnBegin << scale, dstColumnEnd << scale))
