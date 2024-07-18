@@ -409,8 +409,6 @@ namespace Microsoft::Console::Render::Atlas
         u16x2 targetSize{ 0, 0 };
         // Size of the portion of the text buffer that we're drawing on the screen.
         u16x2 viewportCellCount{ 0, 0 };
-        // The position of the viewport inside the text buffer (in cells).
-        u16x2 viewportOffset{ 0, 0 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
