@@ -41,25 +41,9 @@
   <ItemGroup>
     <FxCompile Include="custom_shader_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>%(Filename)</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="custom_shader_vs.hlsl">
       <ShaderType>Vertex</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>%(Filename)</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="dwrite.hlsl">
       <ExcludedFromBuild>true</ExcludedFromBuild>
@@ -69,25 +53,9 @@
     </FxCompile>
     <FxCompile Include="shader_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>%(Filename)</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="shader_vs.hlsl">
       <ShaderType>Vertex</ShaderType>
-      <ShaderModel>4.0</ShaderModel>
-      <AllResourcesBound>true</AllResourcesBound>
-      <VariableName>%(Filename)</VariableName>
-      <ObjectFileOutput />
-      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -100,5 +68,15 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(SolutionDir)\oss\stb;$(OutDir)$(ProjectName);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+      <VariableName>%(Filename)</VariableName>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <EnableDebuggingInformation>true</EnableDebuggingInformation>
+      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Zsb /Fd $(OutDir)$(ProjectName)\ /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
   </ItemDefinitionGroup>
 </Project>
