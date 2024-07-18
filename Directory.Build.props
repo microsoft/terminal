@@ -57,6 +57,4 @@
     <Import Project="$(MSBuildCachePackageRoot)\build\$(MSBuildCachePackageName).props" />
     <Import Project="$(MSBuildCacheSharedCompilationPackageRoot)\build\Microsoft.MSBuildCache.SharedCompilation.props" />
   </ImportGroup>
-
-  <Import Project="custom.props" />
 </Project>
