@@ -278,6 +278,9 @@
     <VcpkgRoot Condition="'$(VcpkgRoot)'=='' or !Exists('$(VcpkgRoot)\vcpkg.exe')">$(SolutionDir)\dep\vcpkg</VcpkgRoot>
 
     <CAExcludePath>$(CAExcludePath);$(VcpkgInstalledDir)</CAExcludePath>
+
+    <!-- For now, don't allow global-per-user installs of vcpkg -->
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
   </PropertyGroup>
 
   <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.props" Condition="'$(MSBuildProjectExtension)'=='.vcxproj'" />
