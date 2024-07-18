@@ -32,7 +32,6 @@
   <ItemGroup>
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
-    <ClInclude Include="..\ICharRow.hpp" />
     <ClInclude Include="..\ImageSlice.hpp" />
     <ClInclude Include="..\LineRendition.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />

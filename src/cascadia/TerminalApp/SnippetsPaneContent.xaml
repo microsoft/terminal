@@ -225,11 +225,24 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock x:Name="_title"
-                   x:Uid="SnippetPaneTitle"
-                   Grid.Row="0"
-                   Margin="4"
-                   FontSize="24" />
+        <Grid Grid.Row="0"
+              Margin="4"
+              HorizontalAlignment="Stretch">
+            <TextBlock x:Name="_title"
+                       x:Uid="SnippetPaneTitle"
+                       HorizontalAlignment="Left"
+                       FontSize="24" />
+            <Button x:Uid="CloseSnippetsPaneButton"
+                    HorizontalAlignment="Right"
+                    Click="_closePaneClick">
+
+                <Button.Content>
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                              FontSize="12"
+                              Glyph="&#xE8BB;" />
+                </Button.Content>
+            </Button>
+        </Grid>
 
         <TextBlock Grid.Row="1"
                    Margin="8,16,8,8"
