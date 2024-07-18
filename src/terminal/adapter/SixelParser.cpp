@@ -784,6 +784,7 @@ void SixelParser::_maybeFlushImageBuffer(const bool endOfSequence)
                     if (!dstSlice)
                     {
                         dstSlice = dstRow.SetImageSlice(std::make_unique<ImageSlice>(_cellSize));
+                        __assume(dstSlice != nullptr);
                     }
                     auto dstIterator = dstSlice->MutablePixels(columnBegin, columnEnd);
                     for (auto pixelRow = 0; pixelRow < _cellSize.height; pixelRow++)
