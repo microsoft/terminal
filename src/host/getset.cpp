@@ -478,6 +478,12 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        if (&newContext.GetActiveBuffer() == &gci.GetActiveOutputBuffer())
+        {
+            return;
+        }
+
         if (auto writer = gci.GetVtWriter())
         {
             const auto viewport = gci.GetActiveOutputBuffer().GetBufferSize();
