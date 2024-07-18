@@ -90,26 +90,26 @@ namespace winrt::TerminalApp::implementation
     {
         auto rootTextBlock{ Microsoft::Terminal::UI::Markdown::Builder::Convert(FileContents(), _filePath) };
 
-        // In the future, we'll want to further customize the code blocks in the
-        // text block we got. We can do that with the following:
-        //
-        // for (const auto& b : rootTextBlock.Blocks())
-        // {
-        //     if (const auto& p{ b.try_as<WUX::Documents::Paragraph>() })
-        //     {
-        //         for (const auto& line : p.Inlines())
-        //         {
-        //             if (const auto& otherContent{ line.try_as<WUX::Documents::InlineUIContainer>() })
-        //             {
-        //                 if (const auto& codeBlock{ otherContent.Child().try_as<CodeBlock>() })
-        //                 {
-        //                     codeBlock->PlayButtonVisibility(WUX::Visibility::Visible);
-        //                     codeBlock->RequestRunCommands({ *this, &MarkdownPaneContent::_handleRunCommandRequest });
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        // By default, the markdown pane doesn't have play buttons next to the
+        // blocks. But to demonstrate how that's possible:
+        for (const auto& b : rootTextBlock.Blocks())
+        {
+            if (const auto& p{ b.try_as<WUX::Documents::Paragraph>() })
+            {
+                for (const auto& line : p.Inlines())
+                {
+                    if (const auto& otherContent{ line.try_as<WUX::Documents::InlineUIContainer>() })
+                    {
+                        if (const auto& codeBlock{ otherContent.Child().try_as<Microsoft::Terminal::UI::Markdown::CodeBlock>() })
+                        {
+                            codeBlock.PlayButtonVisibility(WUX::Visibility::Visible);
+                            codeBlock.RequestRunCommands({ this, &MarkdownPaneContent::_handleRunCommandRequest });
+                        }
+                    }
+                }
+            }
+        }
+
         RenderedMarkdown().Children().Append(rootTextBlock);
     }
 
@@ -172,6 +172,7 @@ namespace winrt::TerminalApp::implementation
             // actiopn dispatch will send this to the active control,
             // thinking that it is the control that requested this event.
             DispatchActionRequested.raise(strongControl, actionAndArgs);
+            strongControl.Focus(winrt::WUX::FocusState::Programmatic);
         }
     }
 
