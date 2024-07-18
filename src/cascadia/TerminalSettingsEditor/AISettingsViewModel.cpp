@@ -76,8 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
-            _NotifyChanges(L"AzureOpenAIActive");
-            _NotifyChanges(L"OpenAIActive");
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive");
         }
     }
 
@@ -91,8 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (active)
         {
             _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
-            _NotifyChanges(L"AzureOpenAIActive");
-            _NotifyChanges(L"OpenAIActive");
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive");
         }
     }
 }
