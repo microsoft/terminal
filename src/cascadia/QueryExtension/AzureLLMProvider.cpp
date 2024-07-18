@@ -27,18 +27,19 @@ static constexpr std::wstring_view acceptedModels[] = {
     L"gpt-35-turbo-16k"
 };
 static constexpr std::wstring_view acceptedSeverityLevel{ L"safe" };
+static constexpr std::wstring_view expectedDomain{ L"azure.com" };
 
 const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    AzureLLMProvider::AzureLLMProvider(const winrt::hstring& endpoint, const winrt::hstring& key)
+    void AzureLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
     {
-        _AIEndpoint = endpoint;
-        _AIKey = key;
+        _azureEndpoint = unbox_value_or<hstring>(authValues.TryLookup(L"endpoint").try_as<IPropertyValue>(), L"");
+        _azureKey = unbox_value_or<hstring>(authValues.TryLookup(L"key").try_as<IPropertyValue>(), L"");
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
         _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
-        _httpClient.DefaultRequestHeaders().Append(L"api-key", _AIKey);
+        _httpClient.DefaultRequestHeaders().Append(L"api-key", _azureKey);
     }
 
     void AzureLLMProvider::ClearMessageHistory()
@@ -68,10 +69,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool isError{ true };
         hstring message{};
 
-        // If the AI endpoint is not an azure open AI endpoint, return an error message
-        if (!std::regex_search(_AIEndpoint.c_str(), azureOpenAIEndpointRegex))
+        if (_azureEndpoint.empty())
         {
-            message = RS_(L"InvalidEndpointMessage");
+            message = RS_(L"CouldNotFindKeyErrorMessage");
+        }
+        else
+        {
+            // If the AI endpoint is not an azure open AI endpoint, return an error message
+            Windows::Foundation::Uri parsedUri{ _azureEndpoint };
+            if (!std::regex_search(_azureEndpoint.c_str(), azureOpenAIEndpointRegex) ||
+                parsedUri.Domain() != expectedDomain)
+            {
+                message = RS_(L"InvalidEndpointMessage");
+            }
         }
 
         // If we don't have a message string, that means the endpoint exists and matches the regex
@@ -84,7 +94,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // Make sure we are on the background thread for the http request
             co_await winrt::resume_background();
 
-            WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _AIEndpoint } };
+            WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _azureEndpoint } };
             request.Headers().Accept().TryParseAdd(L"application/json");
 
             WDJ::JsonObject jsonContent;
@@ -168,6 +178,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             {
                 modelIsAccepted = true;
             }
+            break;
         }
         if (!modelIsAccepted)
         {

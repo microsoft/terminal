@@ -125,14 +125,6 @@ namespace winrt::TerminalApp::implementation
             p.SetActionMap(_settings.ActionMap());
         }
 
-        if (_extensionPalette)
-        {
-            // the extension palette had been loaded with the previous settings
-            // reload it with the new settings
-            _extensionPalette = nullptr;
-            _loadQueryExtension();
-        }
-
         if (needRefreshUI)
         {
             _RefreshUIForSettingsReload();
@@ -5411,13 +5403,29 @@ namespace winrt::TerminalApp::implementation
         // create the correct lm provider
         if (settingsAIInfo.ActiveProvider() == LLMProvider::OpenAI)
         {
-            lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider(settingsAIInfo.OpenAIKey());
+            _lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider();
+            auto setAuthenticationValues = [&]() {
+                Windows::Foundation::Collections::ValueSet authValues{};
+                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
+                _lmProvider.SetAuthentication(authValues);
+            };
+            setAuthenticationValues();
+            _openAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged(winrt::auto_revoke, setAuthenticationValues);
         }
         else if (settingsAIInfo.ActiveProvider() == LLMProvider::AzureOpenAI)
         {
-            lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(settingsAIInfo.AzureOpenAIEndpoint(), settingsAIInfo.AzureOpenAIKey());
+            _lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider();
+            auto setAuthenticationValues = [&]() {
+                Windows::Foundation::Collections::ValueSet authValues{};
+                authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
+                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
+                _lmProvider.SetAuthentication(authValues);
+            };
+            setAuthenticationValues();
+            _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged(winrt::auto_revoke, setAuthenticationValues);
         }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(lmProvider);
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(_lmProvider);
+
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {

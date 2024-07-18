@@ -11,11 +11,18 @@ namespace Microsoft.Terminal.Settings.Model
         OpenAI
     };
 
+    delegate void AzureOpenAISettingChangedHandler();
+    delegate void OpenAISettingChangedHandler();
+
     [default_interface] runtimeclass AIConfig {
         INHERITABLE_SETTING(LLMProvider, ActiveProvider);
 
         String AzureOpenAIEndpoint;
         String AzureOpenAIKey;
+        static event AzureOpenAISettingChangedHandler AzureOpenAISettingChanged;
+
+
         String OpenAIKey;
+        static event OpenAISettingChangedHandler OpenAISettingChanged;
     }
 }

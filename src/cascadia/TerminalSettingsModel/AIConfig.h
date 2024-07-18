@@ -39,8 +39,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AzureOpenAIEndpoint(const winrt::hstring& endpoint) noexcept;
         winrt::hstring AzureOpenAIKey() noexcept;
         void AzureOpenAIKey(const winrt::hstring& key) noexcept;
+        static winrt::event_token AzureOpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::AzureOpenAISettingChangedHandler& handler);
+        static void AzureOpenAISettingChanged(const winrt::event_token& token);
+
+
         winrt::hstring OpenAIKey() noexcept;
         void OpenAIKey(const winrt::hstring& key) noexcept;
+        static winrt::event_token OpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::OpenAISettingChangedHandler& handler);
+        static void OpenAISettingChanged(const winrt::event_token& token);
 
         // we cannot just use INHERITABLE_SETTING here because we try to be smart about what the ActiveProvider is
         // i.e. even if there's no ActiveProvider explicitly set, if there's only the key stored for one of the providers
@@ -53,4 +59,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring _RetrieveCredential(const std::wstring_view credential);
         void _SetCredential(const std::wstring_view credential, const winrt::hstring& value);
     };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(AIConfig);
 }
