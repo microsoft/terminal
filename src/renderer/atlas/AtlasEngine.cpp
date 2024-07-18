@@ -537,33 +537,19 @@ try
     const auto revision = imageSlice.Revision();
     const auto srcWidth = std::max(0, imageSlice.PixelWidth());
     const auto srcCellSize = imageSlice.CellSize();
-    auto b = &row->bitmap;
+    auto& b = row->bitmap;
 
-    // Check if we already got that particular ImageSlice cached.
-    for (const auto r : _p.rows)
-    {
-        if (r->bitmap.revision == revision)
-        {
-            // Found it! Now make sure that it's in the right row.
-            // The row may change when the viewport scrolls up/down.
-            if (row != r)
-            {
-                row->bitmap = std::move(r->bitmap);
-                r->bitmap = {};
-            }
-
-            b = &row->bitmap;
-            goto exit;
-        }
-    }
-
-    // We failed to find a cached instance of this ImageSlice. Let's create a new one.
+    // If this row's ImageSlice has changed we need to update our snapshot.
+    // Theoretically another _p.rows[y]->bitmap may have this particular revision already,
+    // but that can only happen if we're scrolling _and_ the entire viewport was invalidated.
+    if (b.revision != revision)
     {
         const auto srcHeight = std::max(0, srcCellSize.height);
         const auto pixels = imageSlice.Pixels();
+        const auto expectedSize = gsl::narrow_cast<size_t>(srcWidth) * gsl::narrow_cast<size_t>(srcHeight);
 
         // Sanity check.
-        if (pixels.size() != srcWidth * srcHeight)
+        if (pixels.size() != expectedSize)
         {
             assert(false);
             return S_OK;
@@ -572,16 +558,15 @@ try
         auto buffer = Buffer<u32, 32>{ pixels.size() };
         memcpy(buffer.data(), pixels.data(), pixels.size_bytes());
 
-        b->revision = revision;
-        b->source = std::move(buffer);
-        b->sourceSize.x = srcWidth;
-        b->sourceSize.y = srcHeight;
+        b.revision = revision;
+        b.source = std::move(buffer);
+        b.sourceSize.x = srcWidth;
+        b.sourceSize.y = srcHeight;
     }
 
-exit:
-    b->targetOffset = (imageSlice.ColumnOffset() - viewportLeft);
-    b->targetWidth = srcWidth / srcCellSize.width;
-    b->active = true;
+    b.targetOffset = (imageSlice.ColumnOffset() - viewportLeft);
+    b.targetWidth = srcWidth / srcCellSize.width;
+    b.active = true;
     return S_OK;
 }
 CATCH_RETURN()

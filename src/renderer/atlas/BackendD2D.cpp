@@ -756,8 +756,8 @@ void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
 
     // TODO: This could use some caching logic like BackendD3D.
     const D2D1_SIZE_U size{
-        static_cast<UINT32>(b.sourceSize.x),
-        static_cast<UINT32>(b.sourceSize.y),
+        gsl::narrow_cast<UINT32>(b.sourceSize.x),
+        gsl::narrow_cast<UINT32>(b.sourceSize.y),
     };
     const D2D1_BITMAP_PROPERTIES bitmapProperties{
         .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
@@ -774,7 +774,7 @@ void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
     const auto top = y * cellHeight;
     const auto bottom = left + cellHeight;
 
-    D2D1_RECT_F rectF{
+    const D2D1_RECT_F rectF{
         static_cast<f32>(left),
         static_cast<f32>(top),
         static_cast<f32>(right),
