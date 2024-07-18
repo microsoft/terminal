@@ -125,14 +125,6 @@ namespace winrt::TerminalApp::implementation
             p.SetActionMap(_settings.ActionMap());
         }
 
-        if (_extensionPalette)
-        {
-            // the extension palette had been loaded with the previous settings
-            // reload it with the new settings
-            _extensionPalette = nullptr;
-            _loadQueryExtension();
-        }
-
         if (needRefreshUI)
         {
             _RefreshUIForSettingsReload();
@@ -5406,14 +5398,19 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        winrt::Microsoft::Terminal::Query::Extension::ILMProvider lmProvider{ nullptr };
         // since we only support one type of llmProvider for now, just instantiate that one (the AzureLLMProvider)
         // in the future, we would need to query the settings here for which LLMProvider to use
-        if (!_settings.AIEndpoint().empty() && !_settings.AIKey().empty())
-        {
-            lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(_settings.AIEndpoint(), _settings.AIKey());
-        }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(lmProvider);
+        _lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider();
+        auto setAuthenticationValues = [&]() {
+            Windows::Foundation::Collections::ValueSet authValues{};
+            authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(_settings.AIEndpoint()));
+            authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(_settings.AIKey()));
+            _lmProvider.SetAuthentication(authValues);
+        };
+        setAuthenticationValues();
+        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::CascadiaSettings::AzureOpenAISettingChanged(winrt::auto_revoke, setAuthenticationValues);
+
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(_lmProvider);
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {

@@ -8,6 +8,8 @@ import "DefaultTerminal.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    delegate void AzureOpenAISettingChangedHandler();
+
     [default_interface] runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
@@ -57,6 +59,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         String AIEndpoint;
         String AIKey;
+        static event AzureOpenAISettingChangedHandler AzureOpenAISettingChanged;
 
         void ExpandCommands();
     }

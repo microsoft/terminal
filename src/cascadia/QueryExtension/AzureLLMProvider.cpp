@@ -33,10 +33,10 @@ const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    AzureLLMProvider::AzureLLMProvider(const winrt::hstring& endpoint, const winrt::hstring& key)
+    void AzureLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
     {
-        _azureEndpoint = endpoint;
-        _azureKey = key;
+        _azureEndpoint = unbox_value_or<hstring>(authValues.TryLookup(L"endpoint").try_as<IPropertyValue>(), L"");
+        _azureKey = unbox_value_or<hstring>(authValues.TryLookup(L"key").try_as<IPropertyValue>(), L"");
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
         _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
         _httpClient.DefaultRequestHeaders().Append(L"api-key", _azureKey);
@@ -69,12 +69,19 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool isError{ true };
         hstring message{};
 
-        // If the AI endpoint is not an azure open AI endpoint, return an error message
-        Windows::Foundation::Uri parsedUri{ _azureEndpoint };
-        if (!std::regex_search(_azureEndpoint.c_str(), azureOpenAIEndpointRegex) ||
-            parsedUri.Domain() != expectedDomain)
+        if (_azureEndpoint.empty())
         {
-            message = RS_(L"InvalidEndpointMessage");
+            message = RS_(L"CouldNotFindKeyErrorMessage");
+        }
+        else
+        {
+            // If the AI endpoint is not an azure open AI endpoint, return an error message
+            Windows::Foundation::Uri parsedUri{ _azureEndpoint };
+            if (!std::regex_search(_azureEndpoint.c_str(), azureOpenAIEndpointRegex) ||
+                parsedUri.Domain() != expectedDomain)
+            {
+                message = RS_(L"InvalidEndpointMessage");
+            }
         }
 
         // If we don't have a message string, that means the endpoint exists and matches the regex
