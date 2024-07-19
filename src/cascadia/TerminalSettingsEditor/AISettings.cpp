@@ -76,12 +76,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettings::StoreKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // only store anything if both fields are filled
-        if (!EndpointInputBox().Text().empty() && !KeyInputBox().Text().empty())
+        if (!EndpointInputBox().Text().empty() && !KeyInputBox().Password().empty())
         {
             _ViewModel.AIEndpoint(EndpointInputBox().Text());
-            _ViewModel.AIKey(KeyInputBox().Text());
+            _ViewModel.AIKey(KeyInputBox().Password());
             EndpointInputBox().Text(L"");
-            KeyInputBox().Text(L"");
+            KeyInputBox().Password(L"");
 
             TraceLoggingWrite(
                 g_hSettingsEditorProvider,
