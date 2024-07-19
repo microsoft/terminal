@@ -28,6 +28,14 @@ static constexpr std::wstring_view acceptedModels[] = {
 };
 static constexpr std::wstring_view acceptedSeverityLevel{ L"safe" };
 static constexpr std::wstring_view expectedDomain{ L"azure.com" };
+static constexpr std::wstring_view applicationJson{ L"application/json" };
+static constexpr std::wstring_view endpointString{ L"endpoint" };
+static constexpr std::wstring_view keyString{ L"key" };
+static constexpr std::wstring_view roleString{ L"role" };
+static constexpr std::wstring_view contentString{ L"content" };
+static constexpr std::wstring_view messageString{ L"message" };
+static constexpr std::wstring_view errorString{ L"error" };
+static constexpr std::wstring_view severityString{ L"severity" };
 
 const std::wregex azureOpenAIEndpointRegex{ LR"(^https.*openai\.azure\.com)" };
 
@@ -35,10 +43,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     void AzureLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
     {
-        _azureEndpoint = unbox_value_or<hstring>(authValues.TryLookup(L"endpoint").try_as<IPropertyValue>(), L"");
-        _azureKey = unbox_value_or<hstring>(authValues.TryLookup(L"key").try_as<IPropertyValue>(), L"");
+        _azureEndpoint = unbox_value_or<hstring>(authValues.TryLookup(endpointString).try_as<IPropertyValue>(), L"");
+        _azureKey = unbox_value_or<hstring>(authValues.TryLookup(keyString).try_as<IPropertyValue>(), L"");
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
-        _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
+        _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(applicationJson);
         _httpClient.DefaultRequestHeaders().Append(L"api-key", _azureKey);
     }
 
@@ -51,8 +59,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         WDJ::JsonObject systemMessageObject;
         winrt::hstring systemMessageContent{ systemPrompt };
-        systemMessageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"system"));
-        systemMessageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(systemMessageContent));
+        systemMessageObject.Insert(roleString, WDJ::JsonValue::CreateStringValue(L"system"));
+        systemMessageObject.Insert(contentString, WDJ::JsonValue::CreateStringValue(systemMessageContent));
         _jsonMessages.Append(systemMessageObject);
     }
 
@@ -95,7 +103,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             co_await winrt::resume_background();
 
             WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _azureEndpoint } };
-            request.Headers().Accept().TryParseAdd(L"application/json");
+            request.Headers().Accept().TryParseAdd(applicationJson);
 
             WDJ::JsonObject jsonContent;
             WDJ::JsonObject messageObject;
@@ -106,8 +114,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             {
                 engineeredPrompt = promptCopy + L". The shell I am running is " + _context.ActiveCommandline();
             }
-            messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
-            messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
+            messageObject.Insert(roleString, WDJ::JsonValue::CreateStringValue(L"user"));
+            messageObject.Insert(contentString, WDJ::JsonValue::CreateStringValue(engineeredPrompt));
             _jsonMessages.Append(messageObject);
             jsonContent.SetNamedValue(L"messages", _jsonMessages);
             jsonContent.SetNamedValue(L"max_tokens", WDJ::JsonValue::CreateNumberValue(800));
@@ -132,10 +140,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 // Parse out the suggestion from the response
                 const auto string{ response.Content().ReadAsStringAsync().get() };
                 const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-                if (jsonResult.HasKey(L"error"))
+                if (jsonResult.HasKey(errorString))
                 {
-                    const auto errorObject = jsonResult.GetNamedObject(L"error");
-                    message = errorObject.GetNamedString(L"message");
+                    const auto errorObject = jsonResult.GetNamedObject(errorString);
+                    message = errorObject.GetNamedString(messageString);
                 }
                 else
                 {
@@ -143,8 +151,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     {
                         const auto choices = jsonResult.GetNamedArray(L"choices");
                         const auto firstChoice = choices.GetAt(0).GetObject();
-                        const auto messageObject = firstChoice.GetNamedObject(L"message");
-                        message = messageObject.GetNamedString(L"content");
+                        const auto messageObject = firstChoice.GetNamedObject(messageString);
+                        message = messageObject.GetNamedString(contentString);
                         isError = false;
                     }
                     else
@@ -161,8 +169,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         // Also make a new entry in our jsonMessages list, so the AI knows the full conversation so far
         WDJ::JsonObject responseMessageObject;
-        responseMessageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"assistant"));
-        responseMessageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(message));
+        responseMessageObject.Insert(roleString, WDJ::JsonValue::CreateStringValue(L"assistant"));
+        responseMessageObject.Insert(contentString, WDJ::JsonValue::CreateStringValue(message));
         _jsonMessages.Append(responseMessageObject);
 
         co_return winrt::make<AzureResponse>(message, isError);
@@ -207,9 +215,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         for (const auto filterPair : contentFilters)
         {
             const auto filterLevel = filterPair.Value().GetObjectW();
-            if (filterLevel.HasKey(L"severity"))
+            if (filterLevel.HasKey(severityString))
             {
-                if (filterLevel.GetNamedString(L"severity") != acceptedSeverityLevel)
+                if (filterLevel.GetNamedString(severityString) != acceptedSeverityLevel)
                 {
                     return false;
                 }
