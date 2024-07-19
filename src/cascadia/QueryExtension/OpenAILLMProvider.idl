@@ -7,7 +7,7 @@ namespace Microsoft.Terminal.Query.Extension
 {
     [default_interface] runtimeclass OpenAILLMProvider : ILMProvider
     {
-        OpenAILLMProvider(String key);
+        OpenAILLMProvider();
     }
 
     [default_interface] runtimeclass OpenAIResponse : IResponse

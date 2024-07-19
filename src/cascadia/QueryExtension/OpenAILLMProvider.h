@@ -10,7 +10,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
     struct OpenAILLMProvider : OpenAILLMProviderT<OpenAILLMProvider>
     {
-        OpenAILLMProvider(const winrt::hstring& key);
+        OpenAILLMProvider() = default;
 
         void ClearMessageHistory();
         void SetSystemPrompt(const winrt::hstring& systemPrompt);
@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring userPrompt);
 
-        void CompleteAuthWithUrl(const Windows::Foundation::Uri /*url*/){};
+        void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
         TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, winrt::hstring);
 
     private:

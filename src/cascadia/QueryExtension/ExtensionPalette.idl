@@ -23,7 +23,8 @@ namespace Microsoft.Terminal.Query.Extension
 
     [default_interface] runtimeclass ExtensionPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        ExtensionPalette(ILMProvider lmProvider);
+        ExtensionPalette();
+        void SetProvider(ILMProvider lmProvider);
 
         String ControlName { get; };
         String QueryBoxPlaceholderText { get; };

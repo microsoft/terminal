@@ -134,12 +134,11 @@ namespace winrt::TerminalApp::implementation
             p.SetActionMap(_settings.ActionMap());
         }
 
-        if (_extensionPalette)
+        // If the active LLMProvider changed, make sure we reinitialize the provider
+        const auto newProviderType = _settings.GlobalSettings().AIInfo().ActiveProvider();
+        if (_lmProvider && (newProviderType != _currentProvider))
         {
-            // the extension palette had been loaded with the previous settings
-            // reload it with the new settings
-            _extensionPalette = nullptr;
-            _loadQueryExtension();
+            _createAndSetAuthenticationForLMProvider(newProviderType);
         }
 
         if (needRefreshUI)
@@ -519,7 +518,6 @@ namespace winrt::TerminalApp::implementation
                 co_await wil::resume_foreground(Dispatcher());
                 winrt::Microsoft::Terminal::Settings::Editor::MainPage::RefreshGithubAuthStatus();
             }
-            // todo: we should let the user know somehow if the auth failed...
         }
         CATCH_LOG();
     }
@@ -4159,13 +4157,6 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, L"open", L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1", nullptr, nullptr, SW_SHOWNORMAL);
     }
 
-    void TerminalPage::_CompleteGithubAuth(const Windows::Foundation::Uri uri)
-    {
-        _githubCopilotLLMProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider{};
-        _githubCopilotLLMProvider.CompleteAuthWithUrl(uri);
-        _githubCopilotLLMProvider.AuthChanged({ this, &TerminalPage::_OnGithubCopilotLLMProviderAuthChanged });
-    }
-
     // Method Description:
     // - Creates a settings UI tab and focuses it. If there's already a settings UI tab open,
     //   just focus the existing one.
@@ -5455,32 +5446,19 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        winrt::Microsoft::Terminal::Query::Extension::ILMProvider lmProvider{ nullptr };
-        const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
+
         // create the correct lm provider
-        if (settingsAIInfo.ActiveProvider() == LLMProvider::OpenAI)
-        {
-            lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider(settingsAIInfo.OpenAIKey());
-        }
-        else if (settingsAIInfo.ActiveProvider() == LLMProvider::AzureOpenAI)
-        {
-            lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider(settingsAIInfo.AzureOpenAIEndpoint(), settingsAIInfo.AzureOpenAIKey());
-        }
-        else if (settingsAIInfo.ActiveProvider() == LLMProvider::GithubCopilot)
-        {
-            // we might have initialized a GithubCopilotLLMProvider already to kick off the auth, check for that
-            if (_githubCopilotLLMProvider)
-            {
-                lmProvider = _githubCopilotLLMProvider;
-            }
-            else
-            {
-                // we did not have a pre-initialized provider, initialize one with our stored tokens
-                lmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider(settingsAIInfo.GithubCopilotAuthToken(), settingsAIInfo.GithubCopilotRefreshToken());
-                lmProvider.AuthChanged({ this, &TerminalPage::_OnGithubCopilotLLMProviderAuthChanged });
-            }
-        }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette(lmProvider);
+        _createAndSetAuthenticationForLMProvider(_settings.GlobalSettings().AIInfo().ActiveProvider());
+
+        // make sure we listen for auth changes
+        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged(winrt::auto_revoke, [&]() {
+            _createAndSetAuthenticationForLMProvider(LLMProvider::AzureOpenAI);
+        });
+        _openAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged(winrt::auto_revoke, [&]() {
+            _createAndSetAuthenticationForLMProvider(LLMProvider::OpenAI);
+        });
+
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {
@@ -5521,7 +5499,65 @@ namespace winrt::TerminalApp::implementation
                 _extensionPalette.ActiveCommandline(L"");
             }
         });
-
         ExtensionPresenter().Content(_extensionPalette);
+    }
+
+    void TerminalPage::_createAndSetAuthenticationForLMProvider(LLMProvider providerType, Windows::Foundation::Collections::ValueSet authValues)
+    {
+        if (!_lmProvider || (_currentProvider != providerType))
+        {
+            // we don't have a provider or our current provider is the wrong one, create a new provider
+            switch (providerType)
+            {
+            case LLMProvider::AzureOpenAI:
+                _currentProvider = LLMProvider::AzureOpenAI;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::AzureLLMProvider();
+                break;
+            case LLMProvider::OpenAI:
+                _currentProvider = LLMProvider::OpenAI;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::OpenAILLMProvider();
+                break;
+            case LLMProvider::GithubCopilot:
+                _currentProvider = LLMProvider::GithubCopilot;
+                _lmProvider = winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider();
+                _lmProvider.AuthChanged({ this, &TerminalPage::_OnGithubCopilotLLMProviderAuthChanged });
+                break;
+            default:
+                break;
+            }
+        }
+
+        // we now have a provider of the correct type, update that
+        if (authValues)
+        {
+            _lmProvider.SetAuthentication(authValues);
+        }
+        else
+        {
+            Windows::Foundation::Collections::ValueSet authentication{};
+            const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
+            switch (providerType)
+            {
+            case LLMProvider::AzureOpenAI:
+                authentication.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
+                authentication.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
+                break;
+            case LLMProvider::OpenAI:
+                authentication.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
+                break;
+            case LLMProvider::GithubCopilot:
+                authentication.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotAuthToken()));
+                authentication.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotRefreshToken()));
+                break;
+            default:
+                break;
+            }
+            _lmProvider.SetAuthentication(authentication);
+        }
+
+        if (_extensionPalette)
+        {
+            _extensionPalette.SetProvider(_lmProvider);
+        }
     }
 }

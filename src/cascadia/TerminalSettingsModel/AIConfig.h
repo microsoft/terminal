@@ -39,8 +39,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AzureOpenAIEndpoint(const winrt::hstring& endpoint) noexcept;
         winrt::hstring AzureOpenAIKey() noexcept;
         void AzureOpenAIKey(const winrt::hstring& key) noexcept;
+        static winrt::event_token AzureOpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::AzureOpenAISettingChangedHandler& handler);
+        static void AzureOpenAISettingChanged(const winrt::event_token& token);
+
+
         winrt::hstring OpenAIKey() noexcept;
         void OpenAIKey(const winrt::hstring& key) noexcept;
+        static winrt::event_token OpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::OpenAISettingChangedHandler& handler);
+        static void OpenAISettingChanged(const winrt::event_token& token);
 
         winrt::hstring GithubCopilotAuthToken() noexcept;
         void GithubCopilotAuthToken(const winrt::hstring& authToken) noexcept;
@@ -58,4 +64,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring _RetrieveCredential(const std::wstring_view credential);
         void _SetCredential(const std::wstring_view credential, const winrt::hstring& value);
     };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(AIConfig);
 }

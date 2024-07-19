@@ -11,7 +11,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     struct GithubCopilotLLMProvider : GithubCopilotLLMProviderT<GithubCopilotLLMProvider>
     {
         GithubCopilotLLMProvider() = default;
-        GithubCopilotLLMProvider(const winrt::hstring& endpoint, const winrt::hstring& key);
 
         void ClearMessageHistory();
         void SetSystemPrompt(const winrt::hstring& systemPrompt);
@@ -19,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::Windows::Foundation::IAsyncOperation<Extension::IResponse> GetResponseAsync(const winrt::hstring& userPrompt);
 
-        winrt::fire_and_forget CompleteAuthWithUrl(const Windows::Foundation::Uri url);
+        void SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues);
         TYPED_EVENT(AuthChanged, winrt::Microsoft::Terminal::Query::Extension::ILMProvider, winrt::hstring);
 
     private:
@@ -32,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::Windows::Data::Json::JsonArray _jsonMessages;
 
         void _refreshAuthTokens();
+        winrt::fire_and_forget _completeAuthWithUrl(const Windows::Foundation::Uri url);
     };
 
     struct GithubCopilotResponse : GithubCopilotResponseT<GithubCopilotResponse>

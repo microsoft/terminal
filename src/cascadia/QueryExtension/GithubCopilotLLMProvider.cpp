@@ -23,27 +23,36 @@ static constexpr std::wstring_view acceptedModel{ L"gpt-3.5-turbo" };
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    GithubCopilotLLMProvider::GithubCopilotLLMProvider(const winrt::hstring& authToken, const winrt::hstring& refreshToken)
+    void GithubCopilotLLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
     {
-        _authToken = authToken;
-        _refreshToken = refreshToken;
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
         _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
-        _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
         _httpClient.DefaultRequestHeaders().Append(L"Copilot-Integration-Id", L"windows-terminal-chat");
+
+        const auto url = unbox_value_or<hstring>(authValues.TryLookup(L"url").try_as<IPropertyValue>(), L"");
+        _authToken = unbox_value_or<hstring>(authValues.TryLookup(L"access_token").try_as<IPropertyValue>(), L"");
+        _refreshToken = unbox_value_or<hstring>(authValues.TryLookup(L"refresh_token").try_as<IPropertyValue>(), L"");
+
+        if (!url.empty())
+        {
+            // we got a URL, fire off the URL auth flow
+            _completeAuthWithUrl(Windows::Foundation::Uri(url));
+        }
+        else if (!_authToken.empty() && !_refreshToken.empty())
+        {
+            // we got tokens, use them
+            _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
+        }
     }
 
-    winrt::fire_and_forget GithubCopilotLLMProvider::CompleteAuthWithUrl(const Windows::Foundation::Uri url)
+    winrt::fire_and_forget GithubCopilotLLMProvider::_completeAuthWithUrl(const Windows::Foundation::Uri url)
     {
-        _httpClient = winrt::Windows::Web::Http::HttpClient{};
-        _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(L"application/json");
-
         WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Windows::Foundation::Uri{ L"https://github.com/login/oauth/access_token" } };
         request.Headers().Accept().TryParseAdd(L"application/json");
 
         WDJ::JsonObject jsonContent;
         jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
-        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"FineKeepYourSecrets"));
+        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"1466bffe6ece5d76ce5ad380510d83a385c1e633"));
         jsonContent.SetNamedValue(L"code", WDJ::JsonValue::CreateStringValue(url.QueryParsed().GetFirstValueByName(L"code")));
         const auto stringContent = jsonContent.ToString();
         WWH::HttpStringContent requestContent{
@@ -70,7 +79,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 _authToken = authToken;
                 _refreshToken = refreshToken;
                 _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _authToken });
-                _httpClient.DefaultRequestHeaders().Append(L"Copilot-Integration-Id", L"windows-terminal-chat");
             }
             // raise the new tokens so the app can store them
             _AuthChangedHandlers(*this, string);
@@ -200,7 +208,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
         jsonContent.SetNamedValue(L"grant_type", WDJ::JsonValue::CreateStringValue(L"refresh_token"));
-        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"FineKeepYourSecrets"));
+        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"1466bffe6ece5d76ce5ad380510d83a385c1e633"));
         jsonContent.SetNamedValue(L"refresh_token", WDJ::JsonValue::CreateStringValue(_refreshToken));
         const auto stringContent = jsonContent.ToString();
         WWH::HttpStringContent requestContent{

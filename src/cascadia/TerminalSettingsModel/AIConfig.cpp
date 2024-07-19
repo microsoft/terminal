@@ -54,6 +54,11 @@ void AIConfig::LayerJson(const Json::Value& json)
 #undef AI_SETTINGS_LAYER_JSON
 }
 
+static winrt::event<winrt::Microsoft::Terminal::Settings::Model::AzureOpenAISettingChangedHandler> _azureOpenAISettingChangedHandlers;
+
+winrt::event_token AIConfig::AzureOpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::AzureOpenAISettingChangedHandler& handler) { return _azureOpenAISettingChangedHandlers.add(handler); };
+void AIConfig::AzureOpenAISettingChanged(const winrt::event_token& token) { _azureOpenAISettingChangedHandlers.remove(token); };
+
 winrt::hstring AIConfig::AzureOpenAIEndpoint() noexcept
 {
     return _RetrieveCredential(PasswordVaultAIEndpoint);
@@ -62,6 +67,7 @@ winrt::hstring AIConfig::AzureOpenAIEndpoint() noexcept
 void AIConfig::AzureOpenAIEndpoint(const winrt::hstring& endpoint) noexcept
 {
     _SetCredential(PasswordVaultAIEndpoint, endpoint);
+    _azureOpenAISettingChangedHandlers();
 }
 
 winrt::hstring AIConfig::AzureOpenAIKey() noexcept
@@ -72,7 +78,13 @@ winrt::hstring AIConfig::AzureOpenAIKey() noexcept
 void AIConfig::AzureOpenAIKey(const winrt::hstring& key) noexcept
 {
     _SetCredential(PasswordVaultAIKey, key);
+    _azureOpenAISettingChangedHandlers();
 }
+
+static winrt::event<winrt::Microsoft::Terminal::Settings::Model::OpenAISettingChangedHandler> _openAISettingChangedHandlers;
+
+winrt::event_token AIConfig::OpenAISettingChanged(const winrt::Microsoft::Terminal::Settings::Model::OpenAISettingChangedHandler& handler) { return _openAISettingChangedHandlers.add(handler); };
+void AIConfig::OpenAISettingChanged(const winrt::event_token& token) { _openAISettingChangedHandlers.remove(token); };
 
 winrt::hstring AIConfig::OpenAIKey() noexcept
 {
@@ -82,6 +94,7 @@ winrt::hstring AIConfig::OpenAIKey() noexcept
 void AIConfig::OpenAIKey(const winrt::hstring& key) noexcept
 {
     _SetCredential(PasswordVaultOpenAIKey, key);
+    _openAISettingChangedHandlers();
 }
 
 winrt::hstring AIConfig::GithubCopilotAuthToken() noexcept

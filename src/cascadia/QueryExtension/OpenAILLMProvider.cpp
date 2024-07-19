@@ -25,9 +25,9 @@ static constexpr std::wstring_view openAIEndpoint{ L"https://api.openai.com/v1/c
 
 namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 {
-    OpenAILLMProvider::OpenAILLMProvider(const winrt::hstring& key)
+    void OpenAILLMProvider::SetAuthentication(const Windows::Foundation::Collections::ValueSet& authValues)
     {
-        _AIKey = key;
+        _AIKey = unbox_value_or<hstring>(authValues.TryLookup(L"key").try_as<IPropertyValue>(), L"");
         _httpClient = winrt::Windows::Web::Http::HttpClient{};
         _httpClient.DefaultRequestHeaders().Accept().TryParseAdd(applicationJson);
         _httpClient.DefaultRequestHeaders().Authorization(WWH::Headers::HttpCredentialsHeaderValue{ L"Bearer", _AIKey });
