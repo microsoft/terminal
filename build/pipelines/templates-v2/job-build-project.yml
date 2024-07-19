@@ -161,6 +161,8 @@ jobs:
 
   - template: .\steps-restore-nuget.yml
 
+  - template: .\steps-install-vcpkg.yml
+
   - pwsh: |-
       .\build\scripts\Set-LatestVCToolsVersion.ps1
     displayName: Work around DD-1541167 (VCToolsVersion)
