@@ -20,6 +20,7 @@
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include <til/io.h>
+#include <time.h>
 
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -498,17 +499,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
     {
-        auto now = std::chrono::system_clock::now();
-        auto time = std::chrono::system_clock::to_time_t(now);
+        time_t nowTime;
+        time(&nowTime);
 
-        std::tm local_time;
-        localtime_s(&local_time, &time);
+        tm nowTm;
+        localtime_s(&nowTm, &nowTime);
 
-        std::stringstream ss;
-        ss << std::put_time(&local_time, "%Y%m%d-%H%M");
-        std::string time_str = ss.str();
-        const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(time_str);
+        wchar_t buf[64];
+        wcsftime(&buf[0], ARRAYSIZE(buf), L"%F %T", &nowTm);
 
+        const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(buf);
         _SaveFileHelper(text, L"", defaultFileName);
     }
 
