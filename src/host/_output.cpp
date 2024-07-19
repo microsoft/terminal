@@ -5,18 +5,15 @@
 
 #include "_output.h"
 
-#include "dbcs.h"
+#include "directio.h"
 #include "handle.h"
 #include "misc.h"
+#include "_stream.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../types/inc/Viewport.hpp"
 #include "../types/inc/convert.hpp"
-
-#include <algorithm>
-#include <iterator>
-
-#pragma hdrstop
+#include "../types/inc/GlyphWidth.hpp"
+#include "../types/inc/Viewport.hpp"
 
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
@@ -53,6 +50,93 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     }
 }
 
+enum class FillConsoleMode
+{
+    WriteAttribute,
+    FillAttribute,
+    WriteCharacter,
+    FillCharacter,
+};
+
+struct FillConsoleResult
+{
+    size_t lengthRead = 0;
+    til::CoordType cellsModified = 0;
+};
+
+static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillConsoleMode mode, const void* data, const size_t lengthToWrite, const til::point startingCoordinate)
+{
+    if (lengthToWrite == 0)
+    {
+        return {};
+    }
+
+    LockConsole();
+    const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    auto& screenBuffer = screenInfo.GetActiveBuffer();
+    const auto bufferSize = screenBuffer.GetBufferSize();
+    FillConsoleResult result;
+
+    if (!bufferSize.IsInBounds(startingCoordinate))
+    {
+        return {};
+    }
+
+    {
+        // Technically we could always pass `data` as `uint16_t*`, because `wchar_t` is guaranteed to be 16 bits large.
+        // However, OutputCellIterator is terrifyingly unsafe code and so we don't do that.
+        //
+        // Constructing an OutputCellIterator with a `wchar_t` takes the `wchar_t` by reference, so that it can reference
+        // it in a `wstring_view` forever. That's of course really bad because passing a `const uint16_t&` to a
+        // `const wchar_t&` argument implicitly converts the types. To do so, the implicit conversion allocates a
+        // `wchar_t` value on the stack. The lifetime of that copy DOES NOT get extended beyond the constructor call.
+        // The result is that OutputCellIterator would read random data from the stack.
+        //
+        // Don't ever assume the lifetime of implicitly convertible types given by reference.
+        // Ironically that's a bug that cannot happen with C pointers. To no ones surprise, C keeps on winning.
+        auto attrs = static_cast<const uint16_t*>(data);
+        auto chars = static_cast<const wchar_t*>(data);
+
+        OutputCellIterator it;
+
+        switch (mode)
+        {
+        case FillConsoleMode::WriteAttribute:
+            it = OutputCellIterator({ attrs, lengthToWrite });
+            break;
+        case FillConsoleMode::WriteCharacter:
+            it = OutputCellIterator({ chars, lengthToWrite });
+            break;
+        case FillConsoleMode::FillAttribute:
+            it = OutputCellIterator(TextAttribute(*attrs), lengthToWrite);
+            break;
+        case FillConsoleMode::FillCharacter:
+            it = OutputCellIterator(*chars, lengthToWrite);
+            break;
+        default:
+            __assume(false);
+        }
+
+        const auto done = screenBuffer.Write(it, startingCoordinate, false);
+        result.lengthRead = done.GetInputDistance(it);
+        result.cellsModified = done.GetCellDistance(it);
+
+        // If we've overwritten image content, it needs to be erased.
+        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), startingCoordinate, result.cellsModified);
+    }
+
+    if (screenBuffer.HasAccessibilityEventing())
+    {
+        // Notify accessibility
+        auto endingCoordinate = startingCoordinate;
+        bufferSize.WalkInBounds(endingCoordinate, result.cellsModified);
+        screenBuffer.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
+    }
+
+    return result;
+}
+
 // Routine Description:
 // - writes text attributes to the screen
 // Arguments:
@@ -75,22 +159,15 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    auto& screenInfo = OutContext.GetActiveBuffer();
-    const auto bufferSize = screenInfo.GetBufferSize();
-    if (!bufferSize.IsInBounds(target))
+    try
     {
-        return E_INVALIDARG;
+        LockConsole();
+        const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        used = FillConsoleImpl(OutContext, FillConsoleMode::WriteAttribute, attrs.data(), attrs.size(), target).cellsModified;
+        return S_OK;
     }
-
-    const OutputCellIterator it(attrs);
-    const auto done = screenInfo.Write(it, target);
-
-    used = done.GetCellDistance(it);
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -115,23 +192,12 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    auto& screenInfo = OutContext.GetActiveBuffer();
-    const auto bufferSize = screenInfo.GetBufferSize();
-    if (!bufferSize.IsInBounds(target))
-    {
-        return E_INVALIDARG;
-    }
-
     try
     {
-        OutputCellIterator it(chars);
-        const auto finished = screenInfo.Write(it, target);
-        used = finished.GetInputDistance(it);
-        // If we've overwritten image content, it needs to be erased.
-        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), target, used);
+        LockConsole();
+        const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        used = FillConsoleImpl(OutContext, FillConsoleMode::WriteCharacter, chars.data(), chars.size(), target).lengthRead;
     }
     CATCH_RETURN();
 
@@ -192,46 +258,20 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                   const WORD attribute,
                                                                   const size_t lengthToWrite,
                                                                   const til::point startingCoordinate,
-                                                                  size_t& cellsModified) noexcept
+                                                                  size_t& cellsModified,
+                                                                  const bool enablePowershellShim) noexcept
 {
-    // Set modified cells to 0 from the beginning.
-    cellsModified = 0;
-
-    if (lengthToWrite == 0)
-    {
-        return S_OK;
-    }
-
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    auto& screenBuffer = OutContext.GetActiveBuffer();
-    const auto bufferSize = screenBuffer.GetBufferSize();
-    if (!bufferSize.IsInBounds(startingCoordinate))
-    {
-        return S_OK;
-    }
+    UNREFERENCED_PARAMETER(enablePowershellShim);
 
     try
     {
-        TextAttribute useThisAttr(attribute);
-        const OutputCellIterator it(useThisAttr, lengthToWrite);
-        const auto done = screenBuffer.Write(it, startingCoordinate);
-        const auto cellsModifiedCoord = done.GetCellDistance(it);
+        LockConsole();
+        const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        cellsModified = cellsModifiedCoord;
-
-        if (screenBuffer.HasAccessibilityEventing())
-        {
-            // Notify accessibility
-            auto endingCoordinate = startingCoordinate;
-            bufferSize.WalkInBounds(endingCoordinate, cellsModifiedCoord);
-            screenBuffer.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
-        }
+        cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillAttribute, &attribute, lengthToWrite, startingCoordinate).cellsModified;
+        return S_OK;
     }
     CATCH_RETURN();
-
-    return S_OK;
 }
 
 // Routine Description:
@@ -254,47 +294,12 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                    size_t& cellsModified,
                                                                    const bool enablePowershellShim) noexcept
 {
-    // Set modified cells to 0 from the beginning.
-    cellsModified = 0;
-
-    if (lengthToWrite == 0)
-    {
-        return S_OK;
-    }
-
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    // TODO: does this even need to be here or will it exit quickly?
-    auto& screenInfo = OutContext.GetActiveBuffer();
-    const auto bufferSize = screenInfo.GetBufferSize();
-    if (!bufferSize.IsInBounds(startingCoordinate))
-    {
-        return S_OK;
-    }
-
-    auto hr = S_OK;
     try
     {
-        const OutputCellIterator it(character, lengthToWrite);
+        LockConsole();
+        const auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        // when writing to the buffer, specifically unset wrap if we get to the last column.
-        // a fill operation should UNSET wrap in that scenario. See GH #1126 for more details.
-        const auto done = screenInfo.Write(it, startingCoordinate, false);
-        const auto cellsModifiedCoord = done.GetInputDistance(it);
-
-        cellsModified = cellsModifiedCoord;
-
-        // If we've overwritten image content, it needs to be erased.
-        ImageSlice::EraseCells(screenInfo.GetTextBuffer(), startingCoordinate, cellsModified);
-
-        // Notify accessibility
-        if (screenInfo.HasAccessibilityEventing())
-        {
-            auto endingCoordinate = startingCoordinate;
-            bufferSize.WalkInBounds(endingCoordinate, cellsModifiedCoord);
-            screenInfo.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
-        }
+        cellsModified = FillConsoleImpl(OutContext, FillConsoleMode::FillCharacter, &character, lengthToWrite, startingCoordinate).lengthRead;
 
         // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
         // the vintage console, `Clear-Host` is supposed to clear the entire
@@ -303,27 +308,29 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         // exactly matched the way we expect powershell to call it. If it does,
         // then let's manually emit a ^[[3J to the connected terminal, so that
         // their entire buffer will be cleared as well.
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (enablePowershellShim && gci.IsInVtIoMode())
+        if (enablePowershellShim)
         {
-            const auto currentBufferDimensions{ screenInfo.GetBufferSize().Dimensions() };
-
-            const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
-            const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
-            const auto wroteSpaces = character == UNICODE_SPACE;
-
-            if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            if (gci.IsInVtIoMode())
             {
-                // It's important that we flush the renderer at this point so we don't
-                // have any pending output rendered after the scrollback is cleared.
-                ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
-                hr = gci.GetVtIo()->ManuallyClearScrollback();
+                const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
+                const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
+                const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
+                const auto wroteSpaces = character == UNICODE_SPACE;
+
+                if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+                {
+                    // It's important that we flush the renderer at this point so we don't
+                    // have any pending output rendered after the scrollback is cleared.
+                    ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
+                    return gci.GetVtIo()->ManuallyClearScrollback();
+                }
             }
         }
+
+        return S_OK;
     }
     CATCH_RETURN();
-
-    return hr;
 }
 
 // Routine Description:

@@ -941,4 +941,10 @@
   <data name="ActionSaveFailedToast.Title" xml:space="preserve">
     <value>Action save failed</value>
   </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Close pane</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close pane</value>
+  </data>
 </root>

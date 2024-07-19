@@ -3,17 +3,14 @@
 
 #include "precomp.h"
 #include "VtIo.hpp"
+
+#include "handle.h" // LockConsole
+#include "output.h" // CloseConsoleProcessState
 #include "../interactivity/inc/ServiceLocator.hpp"
-
-#include "../renderer/vt/XtermEngine.hpp"
-#include "../renderer/vt/Xterm256Engine.hpp"
-
 #include "../renderer/base/renderer.hpp"
+#include "../renderer/vt/Xterm256Engine.hpp"
 #include "../types/inc/CodepointWidthDetector.hpp"
 #include "../types/inc/utils.hpp"
-#include "handle.h" // LockConsole
-#include "input.h" // ProcessCtrlEvents
-#include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -24,46 +21,8 @@ using namespace Microsoft::Console::Interactivity;
 
 VtIo::VtIo() :
     _initialized(false),
-    _lookingForCursorPosition(false),
-    _IoMode(VtIoMode::INVALID)
+    _lookingForCursorPosition(false)
 {
-}
-
-// Routine Description:
-//  Tries to get the VtIoMode from the given string. If it's not one of the
-//      *_STRING constants in VtIoMode.hpp, then it returns E_INVALIDARG.
-// Arguments:
-//  VtIoMode: A string containing the console's requested VT mode. This can be
-//      any of the strings in VtIoModes.hpp
-//  pIoMode: receives the VtIoMode that the string represents if it's a valid
-//      IO mode string
-// Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
-[[nodiscard]] HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode)
-{
-    ioMode = VtIoMode::INVALID;
-
-    if (VtMode == XTERM_256_STRING)
-    {
-        ioMode = VtIoMode::XTERM_256;
-    }
-    else if (VtMode == XTERM_STRING)
-    {
-        ioMode = VtIoMode::XTERM;
-    }
-    else if (VtMode == XTERM_ASCII_STRING)
-    {
-        ioMode = VtIoMode::XTERM_ASCII;
-    }
-    else if (VtMode == DEFAULT_STRING)
-    {
-        ioMode = VtIoMode::XTERM_256;
-    }
-    else
-    {
-        return E_INVALIDARG;
-    }
-    return S_OK;
 }
 
 [[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
@@ -96,7 +55,7 @@ VtIo::VtIo() :
             CodepointWidthDetector::Singleton().Reset(mode);
         }
 
-        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
+        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
     else
@@ -116,8 +75,6 @@ VtIo::VtIo() :
 //      input events.
 //  OutHandle: a valid file handle. The console
 //      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be
-//      any of the strings in VtIoModes.hpp
 //  SignalHandle: an optional file handle that will be used to send signals into the console.
 //      This represents the ability to send signals to a *nix tty/pty.
 // Return Value:
@@ -125,12 +82,9 @@ VtIo::VtIo() :
 //      indicating failure.
 [[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
                                         const HANDLE OutHandle,
-                                        const std::wstring& VtMode,
                                         _In_opt_ const HANDLE SignalHandle)
 {
     FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
-
-    RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
     _hInput.reset(InHandle);
     _hOutput.reset(OutHandle);
@@ -174,34 +128,11 @@ VtIo::VtIo() :
         if (IsValidHandle(_hOutput.get()))
         {
             auto initialViewport = Viewport::FromDimensions({ 0, 0 }, gci.GetWindowSize());
-            switch (_IoMode)
-            {
-            case VtIoMode::XTERM_256:
-            {
-                auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                       initialViewport);
-                _pVtRenderEngine = std::move(xterm256Engine);
-                break;
-            }
-            case VtIoMode::XTERM:
-            {
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 initialViewport,
-                                                                 false);
-                break;
-            }
-            case VtIoMode::XTERM_ASCII:
-            {
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 initialViewport,
-                                                                 true);
-                break;
-            }
-            default:
-            {
-                return E_FAIL;
-            }
-            }
+
+            auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
+                                                                   initialViewport);
+            _pVtRenderEngine = std::move(xterm256Engine);
+
             if (_pVtRenderEngine)
             {
                 _pVtRenderEngine->SetTerminalOwner(this);
@@ -252,22 +183,25 @@ bool VtIo::IsUsingVt() const
         CATCH_RETURN();
     }
 
+    if (_pVtInputThread)
+    {
+        LOG_IF_FAILED(_pVtInputThread->Start());
+    }
+
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
     //  we're going to emit a VT sequence to ask for the cursor position, then
-    //  read input until we get a response. Terminals who request this behavior
-    //  but don't respond will hang.
+    //  wait 3s until we get a response.
     // If we get a response, the InteractDispatch will call SetCursorPosition,
     //      which will call to our VtIo::SetCursorPosition method.
-    // We need both handles for this initialization to work. If we don't have
-    //      both, we'll skip it. They either aren't going to be reading output
-    //      (so they can't get the DSR) or they can't write the response to us.
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
+        _lookingForCursorPosition = false;
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while (_lookingForCursorPosition && _pVtInputThread->DoReadInput())
-        {
-        }
+
+        // Allow the input thread to momentarily gain the console lock.
+        const auto suspension = g.getConsoleInformation().SuspendLock();
+        _pVtInputThread->WaitUntilDSR(3000);
     }
 
     // GH#4999 - Send a sequence to the connected terminal to request
@@ -275,11 +209,6 @@ bool VtIo::IsUsingVt() const
     // send us full INPUT_RECORDs as input. If the terminal doesn't understand
     // this sequence, it'll just ignore it.
     LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
-
-    if (_pVtInputThread)
-    {
-        LOG_IF_FAILED(_pVtInputThread->Start());
-    }
 
     if (_pPtySignalInputThread)
     {
@@ -517,4 +446,67 @@ bool VtIo::IsResizeQuirkEnabled() const
         return _pVtRenderEngine->RequestMouseMode(enable);
     }
     return S_OK;
+}
+
+// Formats the given console attributes to their closest VT equivalent.
+// `out` must refer to at least `formatAttributesMaxLen` characters of valid memory.
+// Returns a pointer past the end.
+static constexpr size_t formatAttributesMaxLen = 16;
+static char* formatAttributes(char* out, const TextAttribute& attributes) noexcept
+{
+    static uint8_t sgr[] = { 30, 31, 32, 33, 34, 35, 36, 37, 90, 91, 92, 93, 94, 95, 96, 97 };
+
+    // Applications expect that SetConsoleTextAttribute() completely replaces whatever attributes are currently set,
+    // including any potential VT-exclusive attributes. Since we don't know what those are, we must always emit a SGR 0.
+    // Copying 4 bytes instead of the correct 3 means we need just 1 DWORD mov. Neat.
+    //
+    // 3 bytes.
+    memcpy(out, "\x1b[0", 4);
+    out += 3;
+
+    // 2 bytes.
+    if (attributes.IsReverseVideo())
+    {
+        memcpy(out, ";7", 2);
+        out += 2;
+    }
+
+    // 3 bytes (";97").
+    if (attributes.GetForeground().IsLegacy())
+    {
+        const uint8_t index = sgr[attributes.GetForeground().GetIndex()];
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
+    }
+
+    // 4 bytes (";107").
+    if (attributes.GetBackground().IsLegacy())
+    {
+        const uint8_t index = sgr[attributes.GetBackground().GetIndex()] + 10;
+        out = fmt::format_to(out, FMT_COMPILE(";{}"), index);
+    }
+
+    // 1 byte.
+    *out++ = 'm';
+    return out;
+}
+
+void VtIo::FormatAttributes(std::string& target, const TextAttribute& attributes)
+{
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
+    target.append(buf, len);
+}
+
+void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attributes)
+{
+    char buf[formatAttributesMaxLen];
+    const size_t len = formatAttributes(&buf[0], attributes) - &buf[0];
+
+    wchar_t bufW[formatAttributesMaxLen];
+    for (size_t i = 0; i < len; i++)
+    {
+        bufW[i] = buf[i];
+    }
+
+    target.append(bufW, len);
 }
