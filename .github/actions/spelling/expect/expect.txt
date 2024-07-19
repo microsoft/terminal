@@ -52,6 +52,7 @@ appium
 appletname
 applicationmodel
 APPLMODAL
+Applocal
 appmodel
 APPWINDOW
 APPXMANIFESTVERSION
