@@ -438,11 +438,20 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-    void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleOpenSettings(const IInspectable& sender,
                                            const ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<OpenSettingsArgs>())
         {
+            if (realArgs.Target() == SettingsTarget::SendInput)
+            {
+                if (const auto termControl{ _senderOrActiveControl(sender) })
+                {
+                    termControl.SendInput(CascadiaSettings::SettingsPath());
+                    args.Handled(true);
+                    return;
+                }
+            }
             _LaunchSettings(realArgs.Target());
             args.Handled(true);
         }
