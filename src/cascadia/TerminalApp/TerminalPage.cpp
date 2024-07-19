@@ -9,6 +9,7 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
+#include <random>
 
 #include <winrt/Windows.Web.Http.h>
 #include <winrt/Windows.Web.Http.Headers.h>
@@ -4153,8 +4154,41 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_InitiateGithubAuth()
     {
-        // todo: we probably want a "state" parameter for protection against forgery attacks
-        ShellExecute(nullptr, L"open", L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1", nullptr, nullptr, SW_SHOWNORMAL);
+#if defined(WT_BRANDING_DEV)
+        const auto callbackUri = L"ms-terminal-dev://github-auth";
+#elif defined(WT_BRANDING_CANARY)
+        const auto callbackUri = L"ms-terminal-can://github-auth";
+#endif
+
+        const auto randomStateString = _generateRandomString();
+        const auto executeUrl = fmt::format(FMT_COMPILE(L"https://github.com/login/oauth/authorize?client_id=Iv1.b0870d058e4473a1&redirect_uri={}&state={}"), callbackUri, randomStateString);
+        ShellExecute(nullptr, L"open", executeUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        Application::Current().as<TerminalApp::App>().Logic().RandomStateString(randomStateString);
+    }
+
+    std::wstring TerminalPage::_generateRandomString()
+    {
+        // Define the character set to use (wide characters)
+        const std::wstring charset = L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const size_t charsetSize = charset.size();
+
+        // Initialize random number generators
+        std::random_device rd;
+        std::mt19937 generator(rd());
+        std::uniform_int_distribution<> lengthDistribution(8, 12);
+        std::uniform_int_distribution<> charDistribution(0, gsl::narrow<int>(charsetSize) - 1);
+
+        // Generate a random length between 8 and 12
+        size_t length = gsl::narrow<size_t>(lengthDistribution(generator));
+
+        // Generate a random wstring of the determined length
+        std::wstring randomWString;
+        for (size_t i = 0; i < length; ++i)
+        {
+            randomWString += charset[charDistribution(generator)];
+        }
+
+        return randomWString;
     }
 
     // Method Description:

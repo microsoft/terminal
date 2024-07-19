@@ -35,8 +35,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         if (!url.empty())
         {
-            // we got a URL, fire off the URL auth flow
-            _completeAuthWithUrl(Windows::Foundation::Uri(url));
+            const Windows::Foundation::Uri parsedUrl{ url };
+            const auto randomStateString = unbox_value_or<hstring>(authValues.TryLookup(L"state").try_as<IPropertyValue>(), L"");
+            // only handle this if the state strings match
+            if (randomStateString == parsedUrl.QueryParsed().GetFirstValueByName(L"state"))
+            {
+                // we got a valid URL, fire off the URL auth flow
+                _completeAuthWithUrl(parsedUrl);
+            }
         }
         else if (!_authToken.empty() && !_refreshToken.empty())
         {
@@ -52,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         WDJ::JsonObject jsonContent;
         jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
-        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"1466bffe6ece5d76ce5ad380510d83a385c1e633"));
+        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"FineKeepYourSecrets"));
         jsonContent.SetNamedValue(L"code", WDJ::JsonValue::CreateStringValue(url.QueryParsed().GetFirstValueByName(L"code")));
         const auto stringContent = jsonContent.ToString();
         WWH::HttpStringContent requestContent{
@@ -208,7 +214,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         jsonContent.SetNamedValue(L"client_id", WDJ::JsonValue::CreateStringValue(L"Iv1.b0870d058e4473a1"));
         jsonContent.SetNamedValue(L"grant_type", WDJ::JsonValue::CreateStringValue(L"refresh_token"));
-        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"1466bffe6ece5d76ce5ad380510d83a385c1e633"));
+        jsonContent.SetNamedValue(L"client_secret", WDJ::JsonValue::CreateStringValue(L"FineKeepYourSecrets"));
         jsonContent.SetNamedValue(L"refresh_token", WDJ::JsonValue::CreateStringValue(_refreshToken));
         const auto stringContent = jsonContent.ToString();
         WWH::HttpStringContent requestContent{

@@ -570,6 +570,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::hstring& newAuth);
         winrt::Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
         winrt::Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged_revoker _openAISettingChangedRevoker;
+        std::wstring _generateRandomString();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

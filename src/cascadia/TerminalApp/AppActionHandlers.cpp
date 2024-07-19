@@ -1623,10 +1623,15 @@ namespace winrt::TerminalApp::implementation
                 // we only accept "github-auth" host names for now
                 if (uri.Host() == L"github-auth")
                 {
-                    ValueSet authentication{};
-                    authentication.Insert(L"url", Windows::Foundation::PropertyValue::CreateString(uriString));
-                    _createAndSetAuthenticationForLMProvider(LLMProvider::GithubCopilot, authentication);
-                    args.Handled(true);
+                    // we should have a randomStateString stored, if we don't then don't handle this
+                    if (const auto randomStateString = Application::Current().as<TerminalApp::App>().Logic().RandomStateString(); !randomStateString.empty())
+                    {
+                        ValueSet authentication{};
+                        authentication.Insert(L"url", Windows::Foundation::PropertyValue::CreateString(uriString));
+                        authentication.Insert(L"state", Windows::Foundation::PropertyValue::CreateString(randomStateString));
+                        _createAndSetAuthenticationForLMProvider(LLMProvider::GithubCopilot, authentication);
+                        args.Handled(true);
+                    }
                 }
             }
         }
