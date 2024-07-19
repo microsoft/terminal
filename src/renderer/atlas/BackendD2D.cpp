@@ -282,11 +282,6 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
         _flushBuiltinGlyphs();
 
-        if (row->bitmap.revision != 0)
-        {
-            _drawBitmap(p, row, y);
-        }
-
         if (!row->gridLineRanges.empty())
         {
             _drawGridlineRow(p, row, y);
@@ -295,6 +290,11 @@ void BackendD2D::_drawText(RenderingPayload& p)
         if (row->lineRendition != LineRendition::SingleWidth)
         {
             _drawTextResetLineRendition(row);
+        }
+
+        if (row->bitmap.revision != 0)
+        {
+            _drawBitmap(p, row, y);
         }
 
         if (p.invalidatedRows.contains(y))

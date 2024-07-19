@@ -1196,14 +1196,14 @@ void BackendD3D::_drawText(RenderingPayload& p)
             }
         }
 
-        if (row->bitmap.revision != 0)
-        {
-            _drawBitmap(p, row, y);
-        }
-
         if (!row->gridLineRanges.empty())
         {
             _drawGridlines(p, y);
+        }
+
+        if (row->bitmap.revision != 0)
+        {
+            _drawBitmap(p, row, y);
         }
 
         if (p.invalidatedRows.contains(y))
