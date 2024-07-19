@@ -8,7 +8,6 @@ namespace Microsoft.Terminal.Query.Extension
     [default_interface] runtimeclass GithubCopilotLLMProvider : ILMProvider
     {
         GithubCopilotLLMProvider();
-        GithubCopilotLLMProvider(String endpoint, String key);
     }
 
     [default_interface] runtimeclass GithubCopilotResponse : IResponse

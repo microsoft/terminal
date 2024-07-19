@@ -107,10 +107,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AISettings::StoreOpenAIKey_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        if (!OpenAIKeyInputBox().Text().empty())
+        if (!OpenAIKeyInputBox().Password().empty())
         {
-            _ViewModel.OpenAIKey(OpenAIKeyInputBox().Text());
-            OpenAIKeyInputBox().Text(L"");
+            _ViewModel.OpenAIKey(OpenAIKeyInputBox().Password());
+            OpenAIKeyInputBox().Password(L"");
 
             TraceLoggingWrite(
                 g_hSettingsEditorProvider,

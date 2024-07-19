@@ -232,9 +232,6 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::TerminalTab _settingsTab{ nullptr };
 
-        winrt::Microsoft::Terminal::Query::Extension::GithubCopilotLLMProvider _githubCopilotLLMProvider{ nullptr };
-        winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::hstring& newAuth);
-
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
@@ -436,9 +433,6 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
-        void _InitiateGithubAuth();
-        void _CompleteGithubAuth(const Windows::Foundation::Uri uri);
-
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
@@ -565,8 +559,17 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
 
         void _loadQueryExtension();
+        void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType, Windows::Foundation::Collections::ValueSet authValues = nullptr);
 
         void _activePaneChanged(winrt::TerminalApp::TerminalTab tab, Windows::Foundation::IInspectable args);
+
+        // Terminal Chat related members and functions
+        winrt::Microsoft::Terminal::Query::Extension::ILMProvider _lmProvider{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider;
+        void _InitiateGithubAuth();
+        winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::hstring& newAuth);
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged_revoker _openAISettingChangedRevoker;
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

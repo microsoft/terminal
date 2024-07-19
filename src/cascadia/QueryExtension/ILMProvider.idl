@@ -5,13 +5,15 @@ namespace Microsoft.Terminal.Query.Extension
 {
     interface ILMProvider
     {
+        // chat related functions
         void ClearMessageHistory();
         void SetSystemPrompt(String systemPrompt);
         void SetContext(IContext context);
 
         Windows.Foundation.IAsyncOperation<IResponse> GetResponseAsync(String userPrompt);
 
-        void CompleteAuthWithUrl(Windows.Foundation.Uri url);
+        // auth related functions
+        void SetAuthentication(Windows.Foundation.Collections.ValueSet authValues);
         event Windows.Foundation.TypedEventHandler<ILMProvider, String> AuthChanged;
     }
 

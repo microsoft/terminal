@@ -1623,7 +1623,9 @@ namespace winrt::TerminalApp::implementation
                 // we only accept "github-auth" host names for now
                 if (uri.Host() == L"github-auth")
                 {
-                    _CompleteGithubAuth(uri);
+                    ValueSet authentication{};
+                    authentication.Insert(L"url", Windows::Foundation::PropertyValue::CreateString(uriString));
+                    _createAndSetAuthenticationForLMProvider(LLMProvider::GithubCopilot, authentication);
                     args.Handled(true);
                 }
             }
