@@ -25,6 +25,7 @@ gantt
 ghe
 gje
 godbolt
+gpt
 hyperlinking
 hyperlinks
 kje
@@ -55,6 +56,7 @@ pwn
 pwshw
 qof
 qps
+Quarternary
 quickfix
 rclt
 reimplementation
