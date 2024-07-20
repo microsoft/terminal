@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "../inc/VtIoModes.hpp"
 #include "../renderer/vt/vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
@@ -20,6 +19,9 @@ namespace Microsoft::Console::VirtualTerminal
     class VtIo
     {
     public:
+        static void FormatAttributes(std::string& target, const TextAttribute& attributes);
+        static void FormatAttributes(std::wstring& target, const TextAttribute& attributes);
+
         VtIo();
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
@@ -31,7 +33,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT StartIfNeeded();
 
-        [[nodiscard]] static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
@@ -60,7 +61,6 @@ namespace Microsoft::Console::VirtualTerminal
         wil::unique_hfile _hOutput;
         // After CreateAndStartSignalThread is called, this will be invalid.
         wil::unique_hfile _hSignal;
-        VtIoMode _IoMode;
 
         bool _initialized;
 
@@ -73,7 +73,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
-        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
+        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, _In_opt_ const HANDLE SignalHandle);
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;

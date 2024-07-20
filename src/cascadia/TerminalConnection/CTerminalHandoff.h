@@ -28,19 +28,13 @@ Author(s):
 #define __CLSID_CTerminalHandoff "051F34EE-C1FD-4B19-AF75-9BA54648434C"
 #endif
 
-using NewHandoffFunction = HRESULT (*)(HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, TERMINAL_STARTUP_INFO);
+using NewHandoffFunction = HRESULT (*)(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo);
 
 struct __declspec(uuid(__CLSID_CTerminalHandoff))
-    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff2>
+    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff3>
 {
 #pragma region ITerminalHandoff
-    STDMETHODIMP EstablishPtyHandoff(HANDLE in,
-                                     HANDLE out,
-                                     HANDLE signal,
-                                     HANDLE ref,
-                                     HANDLE server,
-                                     HANDLE client,
-                                     TERMINAL_STARTUP_INFO startupInfo) override;
+    STDMETHODIMP EstablishPtyHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) override;
 
 #pragma endregion
 

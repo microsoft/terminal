@@ -6,8 +6,9 @@
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
 
+#include <til/atomic.h>
+
 #include "../../inc/unicode.hpp"
-#include "ascii.hpp"
 #include "../../interactivity/inc/VtApiRedirection.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -102,14 +103,19 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
+void InputStateMachineEngine::WaitUntilDSR(DWORD timeout) const noexcept
+{
+    // atomic_wait() returns false when the timeout expires.
+    // Technically we should decrement the timeout with each iteration,
+    // but I suspect infinite spurious wake-ups are a theoretical problem.
+    while (_lookingForDSR.load(std::memory_order::relaxed) && til::atomic_wait(_lookingForDSR, true, timeout))
+    {
+    }
+}
+
 bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
 {
     return _encounteredWin32InputModeSequence;
-}
-
-void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
-{
-    _lookingForDSR = looking;
 }
 
 // Method Description:
@@ -408,12 +414,13 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // The F3 case is special - it shares a code with the DeviceStatusResponse.
         // If we're looking for that response, then do that, and break out.
         // Else, fall though to the _GetCursorKeysModifierState handler.
-        if (_lookingForDSR)
+        if (_lookingForDSR.load(std::memory_order::relaxed))
         {
             success = _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
             // Right now we're only looking for on initial cursor
             //      position response. After that, only look for F3.
-            _lookingForDSR = false;
+            _lookingForDSR.store(false, std::memory_order::relaxed);
+            til::atomic_notify_all(_lookingForDSR);
             break;
         }
         [[fallthrough]];

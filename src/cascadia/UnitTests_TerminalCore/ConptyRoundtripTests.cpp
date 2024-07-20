@@ -64,7 +64,6 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         m_state = std::make_unique<CommonState>();
 
         m_state->InitEvents();
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
@@ -76,7 +75,6 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     {
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalRenderer();
-        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         m_state.release();

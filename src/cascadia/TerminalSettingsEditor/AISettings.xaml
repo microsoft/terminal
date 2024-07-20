@@ -141,11 +141,11 @@
                             <TextBlock x:Uid="AISettings_KeyTextBox"
                                        Grid.Row="3"
                                        VerticalAlignment="Center" />
-                            <TextBox x:Name="AzureOpenAIKeyInputBox"
-                                     Grid.Row="4"
-                                     HorizontalAlignment="Stretch"
-                                     VerticalAlignment="Center" />
-                            <Button Grid.Row="5"
+                            <PasswordBox x:Name="AzureOpenAIKeyInputBox"
+                                         Grid.Row="4"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Center" />
+                                <Button Grid.Row="5"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
                                     Click="StoreAzureOpenAIKeyAndEndpoint_Click"

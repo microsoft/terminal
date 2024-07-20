@@ -101,6 +101,7 @@ static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput
 static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
 static constexpr std::string_view OpenAboutKey{ "openAbout" };
 static constexpr std::string_view HandleUriKey{ "handleUri" };
+static constexpr std::string_view QuickFixKey{ "quickFix" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -126,12 +127,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
 #define ON_ALL_ACTIONS(action) KEY_TO_ACTION_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
 
     static const std::map<ShortcutAction, std::string_view, std::less<>> ActionToStringMap{
 #define ON_ALL_ACTIONS(action) ACTION_TO_KEY_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
 
@@ -154,6 +157,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define ON_ALL_ACTIONS_WITH_ARGS(action) ACTION_TO_SERIALIZERS_PAIR(action)
         ALL_SHORTCUT_ACTIONS_WITH_ARGS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS_WITH_ARGS
     };
 
@@ -439,6 +443,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
                 { ShortcutAction::OpenScratchpad, RS_(L"OpenScratchpadKey") },
                 { ShortcutAction::OpenAbout, RS_(L"OpenAboutCommandKey") },
+                { ShortcutAction::QuickFix, RS_(L"QuickFixCommandKey") },
             };
         }();
 
