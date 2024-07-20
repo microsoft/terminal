@@ -37,7 +37,7 @@ static constexpr winrt::guid AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c,
 
 static inline std::wstring _colorize(const unsigned int colorCode, const std::wstring_view text)
 {
-    return fmt::format(L"\x1b[{0}m{1}\x1b[m", colorCode, text);
+    return fmt::format(FMT_COMPILE(L"\x1b[{0}m{1}\x1b[m"), colorCode, text);
 }
 
 // Takes N resource names, loads the first one as a format string, and then
@@ -47,15 +47,18 @@ static inline std::wstring _colorize(const unsigned int colorCode, const std::ws
 template<typename... Args>
 static inline std::wstring _formatResWithColoredUserInputOptions(const std::wstring_view resourceKey, Args&&... args)
 {
-    return fmt::format(std::wstring_view{ GetLibraryResourceString(resourceKey) }, (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)))...);
+    const auto format = GetLibraryResourceString(resourceKey);
+    return fmt::format(fmt::runtime(std::wstring_view{ format }), (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)))...);
 }
 
 static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
 {
-    return fmt::format(std::wstring_view{ RS_(L"AzureIthTenant") },
-                       _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)),
-                       _colorize(USER_INFO_COLOR, tenant.DisplayName.value_or(std::wstring{ RS_(L"AzureUnknownTenantName") })),
-                       tenant.DefaultDomain.value_or(tenant.ID)); // use the domain name if possible, ID if not.
+    return RS_fmt(
+        L"AzureIthTenant",
+        _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)),
+        _colorize(USER_INFO_COLOR, tenant.DisplayName.value_or(std::wstring{ RS_(L"AzureUnknownTenantName") })),
+        tenant.DefaultDomain.value_or(tenant.ID) // use the domain name if possible, ID if not.
+    );
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
@@ -244,7 +247,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else // We only transition to Connected when we've established the websocket.
         {
-            auto uri{ fmt::format(L"{}terminals/{}/size?cols={}&rows={}&version=2019-01-01", _cloudShellUri, _terminalID, columns, rows) };
+            auto uri{ fmt::format(FMT_COMPILE(L"{}terminals/{}/size?cols={}&rows={}&version=2019-01-01"), _cloudShellUri, _terminalID, columns, rows) };
 
             WWH::HttpStringContent content{
                 L"",
@@ -851,7 +854,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the response to the device code flow initiation
     WDJ::JsonObject AzureConnection::_GetDeviceCode()
     {
-        auto uri{ fmt::format(L"{}common/oauth2/devicecode", _loginUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}common/oauth2/devicecode"), _loginUri) };
         WWH::HttpFormUrlEncodedContent content{
             std::unordered_map<winrt::hstring, winrt::hstring>{
                 { winrt::hstring{ L"client_id" }, winrt::hstring{ AzureClientID } },
@@ -872,7 +875,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - else, throw an exception
     WDJ::JsonObject AzureConnection::_WaitForUser(const winrt::hstring& deviceCode, int pollInterval, int expiresIn)
     {
-        auto uri{ fmt::format(L"{}common/oauth2/token", _loginUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}common/oauth2/token"), _loginUri) };
         WWH::HttpFormUrlEncodedContent content{
             std::unordered_map<winrt::hstring, winrt::hstring>{
                 { winrt::hstring{ L"grant_type" }, winrt::hstring{ L"device_code" } },
@@ -923,7 +926,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the response which contains a list of the user's Azure tenants
     void AzureConnection::_PopulateTenantList()
     {
-        auto uri{ fmt::format(L"{}tenants?api-version=2020-01-01", _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}tenants?api-version=2020-01-01"), _resourceUri) };
 
         // Send the request and return the response as a json value
         auto tenantResponse{ _SendRequestReturningJson(uri, nullptr) };
@@ -939,7 +942,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the response with the new tokens
     void AzureConnection::_RefreshTokens()
     {
-        auto uri{ fmt::format(L"{}{}/oauth2/token", _loginUri, _currentTenant->ID) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}{}/oauth2/token"), _loginUri, _currentTenant->ID) };
         WWH::HttpFormUrlEncodedContent content{
             std::unordered_map<winrt::hstring, winrt::hstring>{
                 { winrt::hstring{ L"grant_type" }, winrt::hstring{ L"refresh_token" } },
@@ -962,7 +965,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the user's cloud shell settings
     WDJ::JsonObject AzureConnection::_GetCloudShellUserSettings()
     {
-        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2023-02-01-preview", _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2023-02-01-preview"), _resourceUri) };
         return _SendRequestReturningJson(uri, nullptr);
     }
 
@@ -972,7 +975,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the uri for the cloud shell
     winrt::hstring AzureConnection::_GetCloudShell()
     {
-        auto uri{ fmt::format(L"{}providers/Microsoft.Portal/consoles/default?api-version=2023-02-01-preview", _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/consoles/default?api-version=2023-02-01-preview"), _resourceUri) };
 
         WWH::HttpStringContent content{
             LR"-({"properties": {"osType": "linux"}})-",
@@ -992,7 +995,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the uri for the terminal
     winrt::hstring AzureConnection::_GetTerminal(const winrt::hstring& shellType)
     {
-        auto uri{ fmt::format(L"{}terminals?cols={}&rows={}&version=2019-01-01&shell={}", _cloudShellUri, _initialCols, _initialRows, shellType) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}terminals?cols={}&rows={}&version=2019-01-01&shell={}"), _cloudShellUri, _initialCols, _initialRows, shellType) };
 
         WWH::HttpStringContent content{
             L"{}",

@@ -1199,13 +1199,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
         case HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND):
         case HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND):
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, parameter) };
+            message = RS_fmt(L"PixelShaderNotFound", parameter);
             break;
         case D2DERR_SHADER_COMPILE_FAILED:
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }, parameter) };
+            message = RS_fmt(L"PixelShaderCompileFailed", parameter);
             break;
         case DWRITE_E_NOFONT:
-            message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"RendererErrorFontNotFound") }, parameter) };
+            message = RS_fmt(L"RendererErrorFontNotFound", parameter);
             break;
         case ATLAS_ENGINE_ERROR_MAC_TYPE:
             message = RS_(L"RendererErrorMacType");
@@ -1215,9 +1215,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             wchar_t buf[512];
             const auto len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), &buf[0], ARRAYSIZE(buf), nullptr);
             const std::wstring_view msg{ &buf[0], len };
-            std::wstring resourceString = RS_(L"RendererErrorOther").c_str();
             //conditional message construction
-            std::wstring partialMessage = fmt::format(std::wstring_view{ resourceString }, hr, msg);
+            auto partialMessage = RS_fmt(L"RendererErrorOther", hr, msg);
             if (!parameter.empty())
             {
                 fmt::format_to(std::back_inserter(partialMessage), LR"( "{0}")", parameter);
@@ -3769,7 +3768,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 automationPeer.RaiseNotificationEvent(
                     AutomationNotificationKind::ItemAdded,
                     AutomationNotificationProcessing::All,
-                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PreviewTextAnnouncement") }, text) },
+                    RS_fmt(L"PreviewTextAnnouncement", text),
                     L"PreviewTextAnnouncement" /* unique name for this group of notifications */);
             }
         }

@@ -93,8 +93,8 @@
 #pragma warning(pop)
 
 // {fmt}, a C++20-compatible formatting library
-#include <fmt/format.h>
 #include <fmt/compile.h>
+#include <fmt/xchar.h>
 
 #define USE_INTERVAL_TREE_NAMESPACE
 #include <IntervalTree.h>

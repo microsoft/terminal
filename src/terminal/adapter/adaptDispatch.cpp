@@ -4247,7 +4247,7 @@ bool AdaptDispatch::RequestUserPreferenceCharset()
 {
     const auto size = _termOutput.GetUserPreferenceCharsetSize();
     const auto id = _termOutput.GetUserPreferenceCharsetId();
-    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P{}!u{}\033\\"), (size == 96 ? 1 : 0), id.ToString()));
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P{}!u{}\033\\"), (size == 96 ? 1 : 0), id));
     return true;
 }
 
@@ -4810,10 +4810,10 @@ void AdaptDispatch::_ReportCursorInformation()
         leftSetNumber,
         rightSetNumber,
         charsetSizes,
-        charset0.ToString(),
-        charset1.ToString(),
-        charset2.ToString(),
-        charset3.ToString());
+        charset0,
+        charset1,
+        charset2,
+        charset3);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 
