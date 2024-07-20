@@ -84,12 +84,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AISettings::StoreAzureOpenAIKeyAndEndpoint_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // only store anything if both fields are filled
-        if (!AzureOpenAIEndpointInputBox().Text().empty() && !AzureOpenAIKeyInputBox().Text().empty())
+        if (!AzureOpenAIEndpointInputBox().Text().empty() && !AzureOpenAIKeyInputBox().Password().empty())
         {
             _ViewModel.AzureOpenAIEndpoint(AzureOpenAIEndpointInputBox().Text());
-            _ViewModel.AzureOpenAIKey(AzureOpenAIKeyInputBox().Text());
+            _ViewModel.AzureOpenAIKey(AzureOpenAIKeyInputBox().Password());
             AzureOpenAIEndpointInputBox().Text(L"");
-            AzureOpenAIKeyInputBox().Text(L"");
+            AzureOpenAIKeyInputBox().Password(L"");
 
             TraceLoggingWrite(
                 g_hSettingsEditorProvider,

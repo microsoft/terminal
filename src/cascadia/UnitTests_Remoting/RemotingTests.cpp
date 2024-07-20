@@ -2586,7 +2586,6 @@ namespace RemotingUnitTests
             try
             {
                 const auto result = m1->ProposeCommandline(args);
-                VERIFY_IS_FALSE(true, L"This should have thrown");
             }
             catch (const winrt::hresult_error& e)
             {
@@ -2596,9 +2595,10 @@ namespace RemotingUnitTests
 
                 // This is the same check in WindowManager::_proposeToMonarch.
                 VERIFY_IS_TRUE(e.code() == RPC_SERVER_UNAVAILABLE_HR || e.code() == RPC_CALL_FAILED_HR);
+                return;
             }
-            // just don't catch other types of exceptions. They'll take out
-            // TAEF, which will count as a failure.
+
+            VERIFY_FAIL(L"This should have thrown");
         }
     }
 

@@ -340,6 +340,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         });
+        if constexpr (Feature_QuickFix::IsEnabled())
+        {
+            QuickFixMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
+                {
+                    // Expand the quick fix button if it's collapsed (looks nicer)
+                    if (control->_quickFixButtonCollapsible)
+                    {
+                        VisualStateManager::GoToState(*control, StateCollapsed, false);
+                    }
+                }
+            });
+        }
     }
 
     void TermControl::_QuickFixButton_PointerEntered(const IInspectable& /*sender*/, const PointerRoutedEventArgs& /*e*/)
@@ -3555,8 +3568,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (Feature_QuickFix::IsEnabled())
         {
-            auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
-            quickFixBtn.Height(args.Height() / dpiScale);
+            QuickFixButton().Height(args.Height() / dpiScale);
             QuickFixIcon().FontSize(static_cast<double>(args.Width() / dpiScale));
             RefreshQuickFixMenu();
         }
@@ -3892,6 +3904,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return std::max(CharacterDimensions().Width * 2.0 / 3.0, GetPadding().Left);
     }
 
+    bool TermControl::OpenQuickFixMenu()
+    {
+        if constexpr (Feature_QuickFix::IsEnabled())
+        {
+            if (_core.QuickFixesAvailable())
+            {
+                // Expand the quick fix button if it's collapsed (looks nicer)
+                if (_quickFixButtonCollapsible)
+                {
+                    VisualStateManager::GoToState(*this, StateNormal, false);
+                }
+                auto quickFixBtn = QuickFixButton();
+                quickFixBtn.Flyout().ShowAt(quickFixBtn);
+                return true;
+            }
+        }
+        return false;
+    }
+
     void TermControl::RefreshQuickFixMenu()
     {
         if (!Feature_QuickFix::IsEnabled())
@@ -3899,7 +3930,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto quickFixBtn = FindName(L"QuickFixButton").as<Controls::Button>();
+        auto quickFixBtn = QuickFixButton();
         if (!_core.QuickFixesAvailable())
         {
             quickFixBtn.Visibility(Visibility::Collapsed);
@@ -3920,7 +3951,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto viewportBufferPosition = rd->GetViewport();
         const auto cursorBufferPosition = rd->GetCursorPosition();
         rd->UnlockConsole();
-        if (cursorBufferPosition.y < viewportBufferPosition.Top() || cursorBufferPosition.y > viewportBufferPosition.BottomExclusive())
+        if (cursorBufferPosition.y < viewportBufferPosition.Top() || cursorBufferPosition.y > viewportBufferPosition.BottomInclusive())
         {
             quickFixBtn.Visibility(Visibility::Collapsed);
             return;

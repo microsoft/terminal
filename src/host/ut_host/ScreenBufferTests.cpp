@@ -55,7 +55,6 @@ class ScreenBufferTests
     {
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalRenderer();
-        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;

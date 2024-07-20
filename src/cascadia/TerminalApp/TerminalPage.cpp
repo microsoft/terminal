@@ -1773,6 +1773,7 @@ namespace winrt::TerminalApp::implementation
         // there's an actual keychord for them.
 #define ON_ALL_ACTIONS(action) HOOKUP_ACTION(action);
         ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
     }
 
@@ -1848,12 +1849,15 @@ namespace winrt::TerminalApp::implementation
                 page->_PopulateContextMenu(weakTerm.get(), sender.try_as<MUX::Controls::CommandBarFlyout>(), true);
             }
         });
-        term.QuickFixMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
-            if (const auto& page{ weak.get() })
-            {
-                page->_PopulateQuickFixMenu(weakTerm.get(), sender.try_as<Controls::MenuFlyout>());
-            }
-        });
+        if constexpr (Feature_QuickFix::IsEnabled())
+        {
+            term.QuickFixMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
+                if (const auto& page{ weak.get() })
+                {
+                    page->_PopulateQuickFixMenu(weakTerm.get(), sender.try_as<Controls::MenuFlyout>());
+                }
+            });
+        }
     }
 
     // Method Description:
@@ -3400,18 +3404,22 @@ namespace winrt::TerminalApp::implementation
             // Prevent the user from opening a bunch of snippets panes.
             //
             // Look at the focused tab, and if it already has one, then just focus it.
-            const bool found = _GetFocusedTab().try_as<TerminalTab>()->GetRootPane()->WalkTree([](const auto& p) -> bool {
-                if (const auto& snippets{ p->GetContent().try_as<SnippetsPaneContent>() })
-                {
-                    snippets->Focus(FocusState::Programmatic);
-                    return true;
-                }
-                return false;
-            });
-            // Bail out if we already found one.
-            if (found)
+            if (const auto& focusedTab{ _GetFocusedTab() })
             {
-                return nullptr;
+                const auto rootPane{ focusedTab.try_as<TerminalTab>()->GetRootPane() };
+                const bool found = rootPane == nullptr ? false : rootPane->WalkTree([](const auto& p) -> bool {
+                    if (const auto& snippets{ p->GetContent().try_as<SnippetsPaneContent>() })
+                    {
+                        snippets->Focus(FocusState::Programmatic);
+                        return true;
+                    }
+                    return false;
+                });
+                // Bail out if we already found one.
+                if (found)
+                {
+                    return nullptr;
+                }
             }
 
             const auto& tasksContent{ winrt::make_self<SnippetsPaneContent>() };
@@ -4776,7 +4784,10 @@ namespace winrt::TerminalApp::implementation
         {
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
-            TitlebarBrush(themeBrush);
+            // If the tab content returned nullptr for the terminalBrush, we
+            // _don't_ want to use it as the tab row background. We want to just
+            // use the default tab row background.
+            TitlebarBrush(themeBrush ? themeBrush : backgroundSolidBrush);
         }
         else
         {

@@ -540,7 +540,7 @@ void AppCommandlineArgs::_buildFocusPaneParser()
 
 void AppCommandlineArgs::_buildSaveSnippetParser()
 {
-    _saveCommand = _app.add_subcommand("x-save-snippet", RS_A(L"SaveSnippetDesc"));
+    _saveCommand = _app.add_subcommand("x-save", RS_A(L"SaveSnippetDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
         subcommand->add_option("--name,-n", _saveInputName, RS_A(L"SaveSnippetArgDesc"));
