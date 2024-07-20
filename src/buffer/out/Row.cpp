@@ -162,7 +162,7 @@ til::CoordType CharToColumnMapper::GetTrailingColumnAt(const wchar_t* str) noexc
 ROW::ROW(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, const TextAttribute& fillAttribute) :
     _charsBuffer{ charsBuffer },
     _chars{ charsBuffer, rowWidth },
-    _charOffsets{ charOffsetsBuffer, ::base::strict_cast<size_t>(rowWidth) + 1u },
+    _charOffsets{ charOffsetsBuffer, gsl::narrow_cast<size_t>(rowWidth) + 1u },
     _attr{ rowWidth, fillAttribute },
     _columnCount{ rowWidth }
 {
@@ -1088,7 +1088,7 @@ DbcsAttribute ROW::DbcsAttrAt(til::CoordType column) const noexcept
         attr = DbcsAttribute::Trailing;
     }
     // Safety: col+1 is [1, _columnCount].
-    else if (_uncheckedIsTrailer(::base::strict_cast<size_t>(col) + 1u))
+    else if (_uncheckedIsTrailer(gsl::narrow_cast<size_t>(col) + 1u))
     {
         attr = DbcsAttribute::Leading;
     }

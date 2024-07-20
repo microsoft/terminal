@@ -18,7 +18,15 @@ using namespace Microsoft::Console::Render;
 // - S_OK or math failure
 [[nodiscard]] HRESULT GdiEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
-    _invalidCharacters = til::rect{ _psInvalidData.rcPaint }.scale_down(_GetFontSize());
+    const auto size = _GetFontSize();
+    const auto rect = _psInvalidData.rcPaint;
+
+    _invalidCharacters = {
+        rect.left / size.width,
+        rect.top / size.height,
+        rect.right != 0 ? (rect.right - 1) / size.width + 1 : 0,
+        rect.bottom != 0 ? (rect.bottom - 1) / size.height + 1 : 0,
+    };
 
     area = { &_invalidCharacters, 1 };
 

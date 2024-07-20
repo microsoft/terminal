@@ -67,83 +67,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 
-    namespace details
-    {
-        class _rectangle_const_iterator
-        {
-        public:
-            constexpr _rectangle_const_iterator(point topLeft, point bottomRight) :
-                _topLeft{ topLeft },
-                _bottomRight{ bottomRight },
-                _current{ topLeft }
-            {
-            }
-
-            constexpr _rectangle_const_iterator(point topLeft, point bottomRight, point start) :
-                _topLeft{ topLeft },
-                _bottomRight{ bottomRight },
-                _current{ start }
-            {
-            }
-
-            _rectangle_const_iterator& operator++()
-            {
-                const auto nextX = details::extract(::base::CheckAdd(_current.x, 1));
-
-                if (nextX >= _bottomRight.x)
-                {
-                    const auto nextY = details::extract(::base::CheckAdd(_current.y, 1));
-                    // Note for the standard Left-to-Right, Top-to-Bottom walk,
-                    // the end position is one cell below the bottom left.
-                    // (or more accurately, on the exclusive bottom line in the inclusive left column.)
-                    _current = { _topLeft.x, nextY };
-                }
-                else
-                {
-                    _current = { nextX, _current.y };
-                }
-
-                return (*this);
-            }
-
-            constexpr bool operator==(const _rectangle_const_iterator& rhs) const noexcept
-            {
-                // `__builtin_memcmp` isn't an official standard, but it's the
-                // only way at the time of writing to get a constexpr `memcmp`.
-                return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
-            }
-
-            constexpr bool operator!=(const _rectangle_const_iterator& rhs) const noexcept
-            {
-                return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
-            }
-
-            constexpr bool operator<(const _rectangle_const_iterator& other) const
-            {
-                return _current < other._current;
-            }
-
-            constexpr bool operator>(const _rectangle_const_iterator& other) const
-            {
-                return _current > other._current;
-            }
-
-            constexpr point operator*() const
-            {
-                return _current;
-            }
-
-        protected:
-            point _current;
-            const point _topLeft;
-            const point _bottomRight;
-        };
-    }
-
     struct rect
     {
-        using const_iterator = details::_rectangle_const_iterator;
-
         CoordType left = 0;
         CoordType top = 0;
         CoordType right = 0;
@@ -160,7 +85,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // a math type is required. If you _don't_ provide one, you're going to
         // get a compile-time error about "cannot convert from initializer-list to til::point"
         template<typename TilMath, typename T>
-        constexpr rect(TilMath, T left, T top, T right, T bottom) :
+        constexpr rect(TilMath, T left, T top, T right, T bottom) noexcept :
             left{ TilMath::template cast<CoordType>(left) },
             top{ TilMath::template cast<CoordType>(top) },
             right{ TilMath::template cast<CoordType>(right) },
@@ -184,7 +109,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Creates a rect at the given top-left corner point X,Y that extends
         // down (+Y direction) and right (+X direction) for the given size.
-        constexpr rect(point topLeft, size size) :
+        constexpr rect(point topLeft, size size) noexcept :
             rect{ topLeft, topLeft + size }
         {
         }
@@ -201,39 +126,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
-        constexpr rect to_origin(const rect& other) const
+        constexpr rect to_origin(const rect& other) const noexcept
         {
             return to_origin(other.origin());
         }
 
-        constexpr rect to_origin(const point& origin) const
+        constexpr rect to_origin(const point& origin) const noexcept
         {
-            const auto l = details::extract(::base::CheckSub(left, origin.x));
-            const auto t = details::extract(::base::CheckSub(top, origin.y));
-            const auto r = details::extract(::base::CheckSub(right, origin.x));
-            const auto b = details::extract(::base::CheckSub(bottom, origin.y));
+            const auto l = left - origin.x;
+            const auto t = top - origin.y;
+            const auto r = right - origin.x;
+            const auto b = bottom - origin.y;
             return { l, t, r, b };
         }
 
         explicit constexpr operator bool() const noexcept
         {
             return left >= 0 && top >= 0 && right > left && bottom > top;
-        }
-
-        constexpr const_iterator begin() const
-        {
-            return const_iterator({ left, top }, { right, bottom });
-        }
-
-        constexpr const_iterator end() const
-        {
-            // For the standard walk: Left-To-Right then Top-To-Bottom
-            // the end box is one cell below the left most column.
-            // |----|  5x2 square. Remember bottom & right are exclusive
-            // |    |  while top & left are inclusive.
-            // X-----  X is the end position.
-
-            return const_iterator({ left, top }, { right, bottom }, { left, bottom });
         }
 
 #pragma region RECTANGLE OPERATORS
@@ -442,10 +351,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // ADD will translate (offset) the rect by the point.
         constexpr rect operator+(const point point) const
         {
-            const auto l = details::extract(::base::CheckAdd(left, point.x));
-            const auto t = details::extract(::base::CheckAdd(top, point.y));
-            const auto r = details::extract(::base::CheckAdd(right, point.x));
-            const auto b = details::extract(::base::CheckAdd(bottom, point.y));
+            const auto l = left + point.x;
+            const auto t = top + point.y;
+            const auto r = right + point.x;
+            const auto b = bottom + point.y;
             return { l, t, r, b };
         }
 
@@ -458,10 +367,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // SUB will translate (offset) the rect by the point.
         constexpr rect operator-(const point point) const
         {
-            const auto l = details::extract(::base::CheckSub(left, point.x));
-            const auto t = details::extract(::base::CheckSub(top, point.y));
-            const auto r = details::extract(::base::CheckSub(right, point.x));
-            const auto b = details::extract(::base::CheckSub(bottom, point.y));
+            const auto l = left - point.x;
+            const auto t = top - point.y;
+            const auto r = right - point.x;
+            const auto b = bottom - point.y;
             return { l, t, r, b };
         }
 
@@ -469,48 +378,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             *this = *this - point;
             return *this;
-        }
-
-#pragma endregion
-
-#pragma region RECTANGLE VS SIZE
-
-        // scale_up will scale the entire rect up by the size factor
-        constexpr rect scale_up(const size size) const
-        {
-            return rect{
-                details::extract(::base::CheckMul(left, size.width)),
-                details::extract(::base::CheckMul(top, size.height)),
-                details::extract(::base::CheckMul(right, size.width)),
-                details::extract(::base::CheckMul(bottom, size.height)),
-            };
-        }
-
-        // scale_down will scale the entire rect down by the size factor.
-        // The top/left corner is rounded down (floor) and
-        // the bottom/right corner is rounded up (ceil).
-        constexpr rect scale_down(const size size) const
-        {
-            // The integer ceil division `((a - 1) / b) + 1` only works for numbers >0.
-            // Support for negative numbers wasn't deemed useful at this point.
-            if ((left < 0) | (top < 0) | (right < 0) | (bottom < 0) | (size.width <= 0) | (size.height <= 0))
-            {
-                throw std::invalid_argument{ "invalid til::rect::scale_down" };
-            }
-
-            // Imagine a terminal of 120x30 "cells" with each cell being
-            // 5x10 pixels large. The terminal is therefore 600x300 pixels.
-            // Given a rectangle in pixel coordinates, what's the rectangle in cell coordinates?
-            // Clearly this requires us to floor() top/left and ceil() bottom/right to cover all pixels.
-            // And thus:
-            //   {17, 24, 31, 38}.scale_down({5, 10}) == {3, 2, 7, 4}
-            //   {3, 2, 7, 4}.scale_up({5, 10}) == {15, 20, 35, 40}
-            return rect{
-                left / size.width,
-                top / size.height,
-                right != 0 ? (right - 1) / size.width + 1 : 0,
-                bottom != 0 ? (bottom - 1) / size.height + 1 : 0,
-            };
         }
 
 #pragma endregion
@@ -539,26 +406,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(bottom);
         }
 
-        constexpr CoordType width() const
+        constexpr CoordType width() const noexcept
         {
-            return details::extract(::base::CheckSub(right, left));
+            return right - left;
         }
 
         template<typename T>
         constexpr T narrow_width() const
         {
-            return details::extract<CoordType, T>(::base::CheckSub(right, left));
+            return gsl::narrow<T>(width());
         }
 
-        constexpr CoordType height() const
+        constexpr CoordType height() const noexcept
         {
-            return details::extract(::base::CheckSub(bottom, top));
+            return bottom - top;
         }
 
         template<typename T>
         constexpr T narrow_height() const
         {
-            return details::extract<CoordType, T>(::base::CheckSub(bottom, top));
+            return gsl::narrow<T>(width());
         }
 
         constexpr point origin() const noexcept
@@ -584,40 +451,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool contains(const rect& rc) const noexcept
         {
             return rc.left >= left && rc.top >= top && rc.right <= right && rc.bottom <= bottom;
-        }
-
-        template<typename T = CoordType>
-        constexpr T index_of(point pt) const
-        {
-            THROW_HR_IF(E_INVALIDARG, !contains(pt));
-
-            // Take Y away from the top to find how many rows down
-            auto check = ::base::CheckSub(pt.y, top);
-
-            // Multiply by the width because we've passed that many
-            // widths-worth of indices.
-            check *= width();
-
-            // Then add in the last few indices in the x position this row
-            // and subtract left to find the offset from left edge.
-            check = check + pt.x - left;
-
-            return details::extract<CoordType, T>(check);
-        }
-
-        point point_at(size_t index) const
-        {
-            const auto width = details::extract<CoordType, size_t>(::base::CheckSub(right, left));
-            const auto area = details::extract<CoordType, size_t>(::base::CheckSub(bottom, top) * width);
-
-            THROW_HR_IF(E_INVALIDARG, index >= area);
-
-            // Not checking math on these because we're presuming
-            // that the point can't be in bounds of a rect where
-            // this would overflow on addition after the division.
-            const auto quot = gsl::narrow_cast<CoordType>(index / width);
-            const auto rem = gsl::narrow_cast<CoordType>(index % width);
-            return point{ left + rem, top + quot };
         }
 
 #ifdef _WINCONTYPES_

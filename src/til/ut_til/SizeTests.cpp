@@ -280,33 +280,6 @@ class SizeTests
         }
     }
 
-    TEST_METHOD(ScaleByFloat)
-    {
-        Log::Comment(L"0.) Scale that should be in bounds.");
-        {
-            const til::size sz{ 5, 10 };
-            const auto scale = 1.783f;
-
-            const til::size expected{ static_cast<til::CoordType>(ceil(5 * scale)), static_cast<til::CoordType>(ceil(10 * scale)) };
-
-            const auto actual = sz.scale(til::math::ceiling, scale);
-
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"1.) Scale results in value that is too large.");
-        {
-            const til::size sz{ 5, 10 };
-            constexpr auto scale = 1e12f;
-
-            auto fn = [&]() {
-                std::ignore = sz.scale(til::math::ceiling, scale);
-            };
-
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
-        }
-    }
-
     TEST_METHOD(Division)
     {
         Log::Comment(L"0.) Division of two things that should be in bounds.");

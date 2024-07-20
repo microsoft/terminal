@@ -429,7 +429,7 @@ namespace winrt::TerminalApp::implementation
 
         auto control = GetActiveTerminalControl();
         const auto currentOffset = control.ScrollOffset();
-        control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
+        control.ScrollViewport(currentOffset + delta);
     }
 
     // Method Description:

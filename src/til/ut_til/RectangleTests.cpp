@@ -533,63 +533,6 @@ class RectangleTests
         VERIFY_ARE_EQUAL(expected, start);
     }
 
-    TEST_METHOD(ScaleUpSize)
-    {
-        const til::rect start{ 10, 20, 30, 40 };
-
-        Log::Comment(L"Multiply by size to scale from cells to pixels");
-        {
-            const til::size scale{ 3, 7 };
-            const til::rect expected{ 10 * 3, 20 * 7, 30 * 3, 40 * 7 };
-            const auto actual = start.scale_up(scale);
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Multiply by size with width way too big.");
-        {
-            const til::size scale{ std::numeric_limits<til::CoordType>().max(), static_cast<til::CoordType>(7) };
-
-            auto fn = [&]() {
-                const auto actual = start.scale_up(scale);
-            };
-
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
-        }
-
-        Log::Comment(L"Multiply by size with height way too big.");
-        {
-            const til::size scale{ static_cast<til::CoordType>(3), std::numeric_limits<til::CoordType>().max() };
-
-            auto fn = [&]() {
-                const auto actual = start.scale_up(scale);
-            };
-
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
-        }
-    }
-
-    TEST_METHOD(ScaleDownSize)
-    {
-        const til::rect start{ 10, 20, 29, 40 };
-
-        Log::Comment(L"Division by size to scale from pixels to cells");
-        {
-            const til::size scale{ 3, 7 };
-
-            // Division is special. The top and left round down.
-            // The bottom and right round up. This is to ensure that the cells
-            // the smaller rectangle represents fully cover all the pixels
-            // of the larger rectangle.
-            // L: 10 / 3 = 3.333 --> round down --> 3
-            // T: 20 / 7 = 2.857 --> round down --> 2
-            // R: 29 / 3 = 9.667 --> round up ----> 10
-            // B: 40 / 7 = 5.714 --> round up ----> 6
-            const til::rect expected{ 3, 2, 10, 6 };
-            const auto actual = start.scale_down(scale);
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-    }
-
     TEST_METHOD(Top)
     {
         const til::rect rc{ 5, 10, 15, 20 };
@@ -751,61 +694,6 @@ class RectangleTests
         VERIFY_IS_TRUE(rc.contains(fitsInside), L"We fully contain a smaller rectangle.");
         VERIFY_IS_FALSE(rc.contains(spillsOut), L"We do not fully contain rectangle larger than us.");
         VERIFY_IS_FALSE(rc.contains(sticksOut), L"We do not contain a rectangle that is smaller, but sticks out our edge.");
-    }
-
-    TEST_METHOD(IndexOfPoint)
-    {
-        const til::rect rc{ 5, 10, 15, 20 };
-
-        Log::Comment(L"Normal in bounds.");
-        {
-            const til::point pt{ 7, 17 };
-            const auto expected = 72;
-            VERIFY_ARE_EQUAL(expected, rc.index_of(pt));
-        }
-
-        Log::Comment(L"Out of bounds.");
-        {
-            auto fn = [&]() {
-                const til::point pt{ 1, 1 };
-                rc.index_of(pt);
-            };
-
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-        }
-
-        Log::Comment(L"Overflow.");
-        {
-            auto fn = [&]() {
-                constexpr const auto min = static_cast<til::CoordType>(0);
-                constexpr const auto max = std::numeric_limits<til::CoordType>().max();
-                const til::rect bigRc{ min, min, max, max };
-                const til::point pt{ max - 1, max - 1 };
-                bigRc.index_of(pt);
-            };
-
-            VERIFY_THROWS(fn(), gsl::narrowing_error);
-        }
-    }
-
-    TEST_METHOD(PointAtIndex)
-    {
-        const til::rect rc{ 5, 10, 15, 20 };
-
-        Log::Comment(L"Normal in bounds.");
-        {
-            const til::point expected{ 7, 17 };
-            VERIFY_ARE_EQUAL(expected, rc.point_at(72));
-        }
-
-        Log::Comment(L"Out of bounds too high.");
-        {
-            auto fn = [&]() {
-                rc.point_at(1000);
-            };
-
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-        }
     }
 
     TEST_METHOD(CastToSmallRect)

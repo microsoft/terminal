@@ -9,20 +9,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     inline constexpr CoordType CoordTypeMin = INT32_MIN;
     inline constexpr CoordType CoordTypeMax = INT32_MAX;
 
-    namespace details
-    {
-        template<typename T, typename U = T>
-        constexpr U extract(const ::base::CheckedNumeric<T>& num)
-        {
-            U val;
-            if (!num.AssignIfValid(&val))
-            {
-                throw gsl::narrowing_error{};
-            }
-            return val;
-        }
-    }
-
     struct point
     {
         CoordType x = 0;
@@ -81,76 +67,60 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return y > other.y || (y == other.y && x >= other.x);
         }
 
-        constexpr point operator+(const point other) const
+        constexpr point operator+(const point other) const noexcept
         {
             auto copy = *this;
             copy += other;
             return copy;
         }
 
-        constexpr point& operator+=(const point other)
+        constexpr point& operator+=(const point other) noexcept
         {
-            x = details::extract(::base::CheckAdd(x, other.x));
-            y = details::extract(::base::CheckAdd(y, other.y));
+            x += other.x;
+            y += other.y;
             return *this;
         }
 
-        constexpr point operator-(const point other) const
+        constexpr point operator-(const point other) const noexcept
         {
             auto copy = *this;
             copy -= other;
             return copy;
         }
 
-        constexpr point& operator-=(const point other)
+        constexpr point& operator-=(const point other) noexcept
         {
-            x = details::extract(::base::CheckSub(x, other.x));
-            y = details::extract(::base::CheckSub(y, other.y));
+            x -= other.x;
+            y -= other.y;
             return *this;
         }
 
-        constexpr point operator*(const point other) const
+        constexpr point operator*(const point other) const noexcept
         {
             auto copy = *this;
             copy *= other;
             return copy;
         }
 
-        constexpr point& operator*=(const point other)
+        constexpr point& operator*=(const point other) noexcept
         {
-            x = details::extract(::base::CheckMul(x, other.x));
-            y = details::extract(::base::CheckMul(y, other.y));
+            x *= other.x;
+            y *= other.y;
             return *this;
         }
 
-        constexpr point operator/(const point other) const
+        constexpr point operator/(const point other) const noexcept
         {
             auto copy = *this;
             copy /= other;
             return copy;
         }
 
-        constexpr point& operator/=(const point other)
+        constexpr point& operator/=(const point other) noexcept
         {
-            x = details::extract(::base::CheckDiv(x, other.x));
-            y = details::extract(::base::CheckDiv(y, other.y));
+            x /= other.x;
+            y /= other.y;
             return *this;
-        }
-
-        constexpr point operator*(const til::CoordType scale) const
-        {
-            return point{
-                details::extract(::base::CheckMul(x, scale)),
-                details::extract(::base::CheckMul(y, scale)),
-            };
-        }
-
-        constexpr point operator/(const til::CoordType scale) const
-        {
-            return point{
-                details::extract(::base::CheckDiv(x, scale)),
-                details::extract(::base::CheckDiv(y, scale)),
-            };
         }
 
         template<typename T>

@@ -885,7 +885,14 @@ CATCH_RETURN();
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
-    const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
+    const auto size = _GetFontSize();
+    const til::rect scaledUp{
+        rect.left * size.width,
+        rect.top * size.height,
+        rect.right * size.width,
+        rect.bottom * size.height
+    };
+    const auto pixelRect = scaledUp.to_win32_rect();
 
     RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
 

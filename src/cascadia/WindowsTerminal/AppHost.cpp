@@ -1406,14 +1406,12 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
     if (args.WindowPosition() && _window)
     {
         // The WindowPosition is in DIPs. We need to convert it to pixels.
-        const til::point dragPositionInDips{ til::math::rounding, args.WindowPosition().Value() };
+        const auto dragPositionInDips = args.WindowPosition().Value();
         const auto scale = _window->GetCurrentDpiScale();
 
-        til::point dragPositionInPixels{
-            til::math::rounding,
-            dragPositionInDips.x * scale,
-            dragPositionInDips.y * scale,
-        };
+        auto dragPositionInPixels = dragPositionInDips;
+        dragPositionInPixels.X *= scale;
+        dragPositionInPixels.Y *= scale;
 
         // Fortunately, the window position is already in pixels.
         til::rect windowBoundsInPixels{ _window->GetWindowRect() };
@@ -1445,17 +1443,20 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         }
 
         // Adjust for the non-client bounds
-        dragPositionInPixels.x -= nonClientFrame.left;
-        dragPositionInPixels.y -= nonClientFrame.top;
+        dragPositionInPixels.X -= nonClientFrame.left;
+        dragPositionInPixels.Y -= nonClientFrame.top;
         windowSize = windowSize - nonClientFrame.size();
 
         // Convert to DIPs for the size, so that dragging across a DPI boundary
         // retains the correct dimensions.
-        const auto sizeInDips = windowSize.scale(til::math::rounding, 1.0f / scale);
-        til::rect inDips{ dragPositionInPixels, sizeInDips };
-
         // Use the drag event as the new position, and the size of the actual window.
-        windowBoundsReference = inDips.to_winrt_rect();
+        const auto inverseScale = 1.0f / scale;
+        windowBoundsReference = winrt::Windows::Foundation::Rect{
+            dragPositionInPixels.X * inverseScale,
+            dragPositionInPixels.Y * inverseScale,
+            windowSize.width * inverseScale,
+            windowSize.height * inverseScale,
+        };
     }
 
     _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), windowBoundsReference);

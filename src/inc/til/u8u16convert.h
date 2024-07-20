@@ -66,9 +66,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.clear();
             RETURN_HR_IF(S_OK, in.empty());
 
-            int lengthRequired{};
+            if (in.length() > size_t(INT_MAX))
+            {
+                return E_ABORT;
+            }
+
             // The worst ratio of UTF-8 code units to UTF-16 code units is 1 to 1 if UTF-8 consists of ASCII only.
-            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthRequired));
+            const auto lengthRequired = gsl::narrow_cast<int>(in.length());
             out.resize(in.length()); // avoid to call MultiByteToWideChar twice only to get the required size
             const int lengthOut = MultiByteToWideChar(CP_UTF8, 0ul, in.data(), lengthRequired, out.data(), lengthRequired);
             out.resize(gsl::narrow_cast<size_t>(lengthOut));
@@ -100,9 +104,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.clear();
             RETURN_HR_IF(S_OK, in.empty());
 
-            int capa16{};
+            if (in.length() > size_t(INT_MAX))
+            {
+                return E_ABORT;
+            }
+
             // The worst ratio of UTF-8 code units to UTF-16 code units is 1 to 1 if UTF-8 consists of ASCII only.
-            RETURN_HR_IF(E_ABORT, !base::CheckAdd(in.length(), state.have).AssignIfValid(&capa16));
+            auto capa16 = gsl::narrow_cast<int>(in.length());
 
             out.resize(gsl::narrow_cast<size_t>(capa16));
             auto len8{ gsl::narrow_cast<int>(in.length()) };
@@ -190,12 +198,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.clear();
             RETURN_HR_IF(S_OK, in.empty());
 
-            int lengthIn{};
-            int lengthRequired{};
+            if (in.length() > size_t(INT_MAX / 3))
+            {
+                return E_ABORT;
+            }
+
             // Code Point U+0000..U+FFFF: 1 UTF-16 code unit --> 1..3 UTF-8 code units.
             // Code Points >U+FFFF: 2 UTF-16 code units --> 4 UTF-8 code units.
             // Thus, the worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
-            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthIn) || !base::CheckMul(lengthIn, 3).AssignIfValid(&lengthRequired));
+            const auto lengthIn = gsl::narrow_cast<int>(in.length());
+            const auto lengthRequired = lengthIn * 3;
+
             out.resize(gsl::narrow_cast<size_t>(lengthRequired)); // avoid to call WideCharToMultiByte twice only to get the required size
             const int lengthOut = WideCharToMultiByte(CP_UTF8, 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr);
             out.resize(gsl::narrow_cast<size_t>(lengthOut));
@@ -227,10 +240,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.clear();
             RETURN_HR_IF(S_OK, in.empty());
 
-            int len16{};
-            int capa8{};
+            if (in.length() > size_t(INT_MAX / 3 - 1))
+            {
+                return E_ABORT;
+            }
+
+            auto len16 = gsl::narrow_cast<int>(in.length());
             // The worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
-            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&len16) || !base::CheckAdd(len16, gsl::narrow_cast<int>(state.partials[0]) != 0).AssignIfValid(&capa8) || !base::CheckMul(capa8, 3).AssignIfValid(&capa8));
+            auto capa8 = len16 * 3 + 1;
 
             out.resize(gsl::narrow_cast<size_t>(capa8));
             int len8{};

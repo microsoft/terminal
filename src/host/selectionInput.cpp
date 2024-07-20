@@ -383,20 +383,12 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // shift + pgup/pgdn extends selection up or down one full screen
         case VK_NEXT:
         {
-            coordSelPoint.y = base::CheckAdd(coordSelPoint.y, sWindowHeight).ValueOrDefault(bufferSize.BottomInclusive());
-            if (coordSelPoint.y > bufferSize.BottomInclusive())
-            {
-                coordSelPoint.y = bufferSize.BottomInclusive();
-            }
+            coordSelPoint.y = std::min(coordSelPoint.y + sWindowHeight, bufferSize.BottomInclusive());
             break;
         }
         case VK_PRIOR:
         {
-            coordSelPoint.y = base::CheckSub(coordSelPoint.y, sWindowHeight).ValueOrDefault(bufferSize.Top());
-            if (coordSelPoint.y < bufferSize.Top())
-            {
-                coordSelPoint.y = bufferSize.Top();
-            }
+            coordSelPoint.y = std::max(coordSelPoint.y - sWindowHeight, bufferSize.Top());
             break;
         }
             // shift + home/end extends selection to beginning or end of line

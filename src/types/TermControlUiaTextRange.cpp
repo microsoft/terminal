@@ -78,12 +78,12 @@ void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) c
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     const auto includeOffsets = [](long clientPos, double termControlPos, double padding, double scaleFactor) {
-        auto result = base::ClampedNumeric<double>(padding);
+        auto result = padding;
         // only the padding is in DIPs now
         result *= scaleFactor;
         result += clientPos;
         result += termControlPos;
-        return result;
+        return gsl::narrow_cast<til::CoordType>(lrint(result));
     };
 
     // update based on TermControl location (important for Panes)
@@ -112,12 +112,12 @@ void TermControlUiaTextRange::_TranslatePointFromScreen(til::point* screenPoint)
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     const auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
-        auto result = base::ClampedNumeric<double>(padding);
+        auto result = padding;
         // only the padding is in DIPs now
         result /= scaleFactor;
         result -= screenPos;
         result -= termControlPos;
-        return result;
+        return gsl::narrow_cast<til::CoordType>(lrint(result));
     };
 
     // update based on TermControl location (important for Panes)

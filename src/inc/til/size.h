@@ -42,60 +42,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return width > 0 && height > 0;
         }
 
-        constexpr size operator+(const size other) const
+        constexpr size operator+(const size other) const noexcept
         {
             return size{
-                details::extract(::base::CheckAdd(width, other.width)),
-                details::extract(::base::CheckAdd(height, other.height)),
+                width + other.width,
+                height + other.height,
             };
         }
 
-        constexpr size operator-(const size other) const
+        constexpr size operator-(const size other) const noexcept
         {
             return size{
-                details::extract(::base::CheckSub(width, other.width)),
-                details::extract(::base::CheckSub(height, other.height)),
+                width - other.width,
+                height - other.height,
             };
         }
 
-        constexpr size operator*(const size other) const
+        constexpr size operator*(const size other) const noexcept
         {
             return size{
-                details::extract(::base::CheckMul(width, other.width)),
-                details::extract(::base::CheckMul(height, other.height)),
+                width * other.width,
+                height * other.height,
             };
         }
 
-        constexpr size operator/(const size other) const
+        constexpr size operator/(const size other) const noexcept
         {
             return size{
-                details::extract(::base::CheckDiv(width, other.width)),
-                details::extract(::base::CheckDiv(height, other.height)),
-            };
-        }
-
-        template<typename TilMath, typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-        [[nodiscard]] constexpr size scale(TilMath math, const T scale) const
-        {
-            return {
-                math,
-                width * scale,
-                height * scale,
-            };
-        }
-
-        [[nodiscard]] constexpr size divide_ceil(const size other) const
-        {
-            // The integer ceil division `((a - 1) / b) + 1` only works for numbers >0.
-            // Support for negative numbers wasn't deemed useful at this point.
-            if ((width < 0) | (height < 0) | (other.width <= 0) | (other.height <= 0))
-            {
-                throw std::invalid_argument{ "invalid til::size::divide_ceil" };
-            }
-
-            return {
-                width != 0 ? (width - 1) / other.width + 1 : 0,
-                height != 0 ? (height - 1) / other.height + 1 : 0,
+                width / other.width,
+                height / other.height,
             };
         }
 

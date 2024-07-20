@@ -1795,7 +1795,7 @@ til::rect IslandWindow::_getQuakeModeSize(HMONITOR hmon)
     // smaller on either side to account for that, so they don't hang onto
     // adjacent monitors.
     const til::point origin{
-        ::base::ClampSub(nearestMonitorInfo.rcWork.left, (ncSize.width / 2)) + 1,
+        nearestMonitorInfo.rcWork.left - ncSize.width / 2 + 1,
         (nearestMonitorInfo.rcWork.top)
     };
     const til::size dimensions{

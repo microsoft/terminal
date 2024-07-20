@@ -65,7 +65,13 @@ HRESULT GdiEngine::InvalidateSelection(const std::vector<til::rect>& rectangles)
 // - S_OK, GDI related failure, or safemath failure.
 HRESULT GdiEngine::Invalidate(const til::rect* const psrRegion) noexcept
 {
-    const auto rcRegion = psrRegion->scale_up(_GetFontSize());
+    const auto size = _GetFontSize();
+    const til::rect rcRegion{
+        psrRegion->left * size.width,
+        psrRegion->top * size.height,
+        psrRegion->right * size.width,
+        psrRegion->bottom * size.height
+    };
     RETURN_HR(_InvalidateRect(&rcRegion));
 }
 

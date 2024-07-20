@@ -123,7 +123,7 @@ til::point Terminal::SelectionStartForRendering() const
         // flip the marker, so we skip this step.
         bufferSize.DecrementInBounds(pos);
     }
-    pos.y = base::ClampSub(pos.y, _VisibleStartIndex());
+    pos.y = pos.y - _VisibleStartIndex();
     return til::point{ pos };
 }
 
@@ -142,7 +142,7 @@ til::point Terminal::SelectionEndForRendering() const
         // flip the marker, so we skip this step.
         bufferSize.IncrementInBounds(pos);
     }
-    pos.y = base::ClampSub(pos.y, _VisibleStartIndex());
+    pos.y = pos.y - _VisibleStartIndex();
     return til::point{ pos };
 }
 

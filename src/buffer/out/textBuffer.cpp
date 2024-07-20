@@ -98,7 +98,7 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
     // 65535*65535 cells would result in a allocSize of 8GiB.
     // --> Use uint64_t so that we can safely do our calculations even on x86.
     // We allocate 1 additional row, which will be used for GetScratchpadRow().
-    const auto rowCount = ::base::strict_cast<uint64_t>(h) + 1;
+    const auto rowCount = gsl::narrow_cast<uint64_t>(h) + 1;
     const auto allocSize = gsl::narrow<size_t>(rowCount * rowStride);
 
     // NOTE: Modifications to this block of code might have to be mirrored over to ResizeTraditional().

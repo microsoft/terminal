@@ -387,7 +387,7 @@ try
     const auto proposedBottom = newView.BottomExclusive();
     if (proposedBottom > bufferSize.height)
     {
-        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.height));
+        proposedTop = proposedTop - proposedBottom + bufferSize.height;
     }
 
     // Keep the cursor in the mutable viewport
@@ -405,7 +405,7 @@ try
 
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
-    _scrollOffset = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
+    _scrollOffset = originalOffsetWasZero ? 0 : _mutableViewport.Top() - newVisibleTop;
 
     _mainBuffer->TriggerRedrawAll();
     _NotifyScrollEvent();
