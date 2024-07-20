@@ -115,6 +115,5 @@
   </ItemDefinitionGroup>
 
   <!-- For C++ projects, bring in the vcpkg targets at the end -->
-  <!-- We check NuGetRestoreTargets to determine if we are in a NuGet restore step; if we are, skip vcpkg -->
-  <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.targets" Condition="'$(MSBuildProjectExtension)'=='.vcxproj' and '$(NuGetRestoreTargets)'==''" />
+  <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.targets" Condition="'$(MSBuildProjectExtension)'=='.vcxproj'" />
 </Project>

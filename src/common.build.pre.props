@@ -283,6 +283,5 @@
     <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
   </PropertyGroup>
 
-  <!-- We check NuGetRestoreTargets to determine if we are in a NuGet restore step; if we are, skip vcpkg -->
-  <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.props" Condition="'$(MSBuildProjectExtension)'=='.vcxproj' and '$(NuGetRestoreTargets)'==''" />
+  <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.props" Condition="'$(MSBuildProjectExtension)'=='.vcxproj'" />
 </Project>
