@@ -129,7 +129,7 @@ try
     };
     _p.invalidatedRows = _api.invalidatedRows;
     _p.cursorRect = {};
-    _p.scrollOffsetX = _p.s->viewportOffset.x;
+    _p.scrollOffsetX = _api.viewportOffset.x;
     _p.scrollDeltaY = _api.scrollOffset;
 
     // This if condition serves 2 purposes:
