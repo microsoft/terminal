@@ -55,7 +55,6 @@ class ScreenBufferTests
     {
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalRenderer();
-        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
@@ -79,7 +78,7 @@ class ScreenBufferTests
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
         // Make sure the viewport always starts off at the default size.
         auto defaultSize = til::size{ CommonState::s_csWindowWidth, CommonState::s_csWindowHeight };
-        currentBuffer.SetViewport(Viewport::FromDimensions(defaultSize), true);
+        currentBuffer.SetViewport(Viewport::FromDimensions({}, defaultSize), true);
         VERIFY_ARE_EQUAL(til::point(0, 0), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
         // Make sure the virtual bottom is correctly positioned.
         currentBuffer.UpdateBottom();

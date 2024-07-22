@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    "fmt",
+    "ms-gsl"
+  ],
+  "features": {
+    "terminal": {
+      "description": "Components required for Windows Terminal; separated out to make the Windows conhost build work",
+      "dependencies": [
+        "jsoncpp",
+        "cli11"
+      ]
+    }
+  },
+  "overrides": [
+    {
+      "name": "fmt",
+      "version": "7.1.3"
+    },
+    {
+      "name": "ms-gsl",
+      "version": "3.1.0"
+    },
+    {
+      "name": "jsoncpp",
+      "version": "1.9.5"
+    },
+    {
+      "name": "cli11",
+      "version": "2.4.2"
+    }
+  ],
+  "builtin-baseline": "2fd62b5d878104f4092af80533923bfe2bba2ee0"
+}

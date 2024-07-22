@@ -109,7 +109,7 @@ class ViewportTests
         dimensions.width = rect.right - rect.left + 1;
         dimensions.height = rect.bottom - rect.top + 1;
 
-        const auto v = Viewport::FromDimensions(origin, dimensions.width, dimensions.height);
+        const auto v = Viewport::FromDimensions(origin, dimensions);
 
         VERIFY_ARE_EQUAL(rect.left, v.Left());
         VERIFY_ARE_EQUAL(rect.right, v.RightInclusive());
@@ -169,7 +169,7 @@ class ViewportTests
         dimensions.width = rect.right - rect.left + 1;
         dimensions.height = rect.bottom - rect.top + 1;
 
-        const auto v = Viewport::FromDimensions(dimensions);
+        const auto v = Viewport::FromDimensions({}, dimensions);
 
         VERIFY_ARE_EQUAL(rect.left, v.Left());
         VERIFY_ARE_EQUAL(rect.right, v.RightInclusive());
@@ -181,28 +181,6 @@ class ViewportTests
         VERIFY_ARE_EQUAL(dimensions.width, v.Width());
         VERIFY_ARE_EQUAL(origin, v.Origin());
         VERIFY_ARE_EQUAL(dimensions, v.Dimensions());
-    }
-
-    TEST_METHOD(CreateFromCoord)
-    {
-        til::point origin;
-        origin.x = 12;
-        origin.y = 24;
-
-        const auto v = Viewport::FromCoord(origin);
-
-        VERIFY_ARE_EQUAL(origin.x, v.Left());
-        VERIFY_ARE_EQUAL(origin.x, v.RightInclusive());
-        VERIFY_ARE_EQUAL(origin.x + 1, v.RightExclusive());
-        VERIFY_ARE_EQUAL(origin.y, v.Top());
-        VERIFY_ARE_EQUAL(origin.y, v.BottomInclusive());
-        VERIFY_ARE_EQUAL(origin.y + 1, v.BottomExclusive());
-        VERIFY_ARE_EQUAL(1, v.Height());
-        VERIFY_ARE_EQUAL(1, v.Width());
-        VERIFY_ARE_EQUAL(origin, v.Origin());
-        // clang-format off
-        VERIFY_ARE_EQUAL(til::size(1, 1), v.Dimensions());
-        // clang-format on
     }
 
     TEST_METHOD(IsInBoundsCoord)
@@ -447,12 +425,7 @@ class ViewportTests
         testView = Viewport::FromInclusive(testRect);
 
         Log::Comment(L"We expect it to be pulled back so each coordinate is in bounds, but the rectangle is still invalid (since left will be > right).");
-        til::inclusive_rect expected;
-        expected.top = rect.bottom;
-        expected.bottom = rect.top;
-        expected.left = rect.right;
-        expected.right = rect.left;
-        const auto expectedView = Viewport::FromInclusive(expected);
+        const auto expectedView = Viewport::Empty();
 
         actual = view.Clamp(testView);
         VERIFY_ARE_EQUAL(expectedView, actual, L"Every dimension should be pulled just inside the clamping rectangle.");
@@ -503,51 +476,6 @@ class ViewportTests
         VERIFY_ARE_EQUAL(screen.y, edges.bottom);
     }
 
-    TEST_METHOD(IncrementInBoundsCircular)
-    {
-        auto success = false;
-
-        til::inclusive_rect edges;
-        edges.left = 10;
-        edges.right = 19;
-        edges.top = 20;
-        edges.bottom = 29;
-
-        const auto v = Viewport::FromInclusive(edges);
-        til::point original;
-        til::point screen;
-
-        // #1 coord inside region
-        original.x = screen.x = 15;
-        original.y = screen.y = 25;
-
-        success = v.IncrementInBoundsCircular(screen);
-
-        VERIFY_IS_TRUE(success);
-        VERIFY_ARE_EQUAL(screen.x, original.x + 1);
-        VERIFY_ARE_EQUAL(screen.y, original.y);
-
-        // #2 coord right edge, not bottom
-        original.x = screen.x = edges.right;
-        original.y = screen.y = 25;
-
-        success = v.IncrementInBoundsCircular(screen);
-
-        VERIFY_IS_TRUE(success);
-        VERIFY_ARE_EQUAL(screen.x, edges.left);
-        VERIFY_ARE_EQUAL(screen.y, original.y + 1);
-
-        // #3 coord right edge, bottom
-        original.x = screen.x = edges.right;
-        original.y = screen.y = edges.bottom;
-
-        success = v.IncrementInBoundsCircular(screen);
-
-        VERIFY_IS_FALSE(success);
-        VERIFY_ARE_EQUAL(screen.x, edges.left);
-        VERIFY_ARE_EQUAL(screen.y, edges.top);
-    }
-
     TEST_METHOD(DecrementInBounds)
     {
         auto success = false;
@@ -593,52 +521,7 @@ class ViewportTests
         VERIFY_ARE_EQUAL(screen.y, edges.top);
     }
 
-    TEST_METHOD(DecrementInBoundsCircular)
-    {
-        auto success = false;
-
-        til::inclusive_rect edges;
-        edges.left = 10;
-        edges.right = 19;
-        edges.top = 20;
-        edges.bottom = 29;
-
-        const auto v = Viewport::FromInclusive(edges);
-        til::point original;
-        til::point screen;
-
-        // #1 coord inside region
-        original.x = screen.x = 15;
-        original.y = screen.y = 25;
-
-        success = v.DecrementInBoundsCircular(screen);
-
-        VERIFY_IS_TRUE(success);
-        VERIFY_ARE_EQUAL(screen.x, original.x - 1);
-        VERIFY_ARE_EQUAL(screen.y, original.y);
-
-        // #2 coord left edge, not top
-        original.x = screen.x = edges.left;
-        original.y = screen.y = 25;
-
-        success = v.DecrementInBoundsCircular(screen);
-
-        VERIFY_IS_TRUE(success);
-        VERIFY_ARE_EQUAL(screen.x, edges.right);
-        VERIFY_ARE_EQUAL(screen.y, original.y - 1);
-
-        // #3 coord left edge, top
-        original.x = screen.x = edges.left;
-        original.y = screen.y = edges.top;
-
-        success = v.DecrementInBoundsCircular(screen);
-
-        VERIFY_IS_FALSE(success);
-        VERIFY_ARE_EQUAL(screen.x, edges.right);
-        VERIFY_ARE_EQUAL(screen.y, edges.bottom);
-    }
-
-    til::CoordType RandomCoord()
+    static til::CoordType RandomCoord()
     {
         til::CoordType s;
 
@@ -673,29 +556,16 @@ class ViewportTests
 
             auto sAddAmount = RandomCoord() % (sRowWidth * sRowWidth);
 
-            til::point coordFinal;
-            coordFinal.x = (coordPos.x + sAddAmount) % sRowWidth;
-            coordFinal.y = coordPos.y + ((coordPos.x + sAddAmount) / sRowWidth);
-
-            Log::Comment(String().Format(L"Add To Position: (%d, %d)  Amount to add: %d", coordPos.y, coordPos.x, sAddAmount));
-
-            // Movement result is expected to be true, unless there's an error.
-            auto fExpectedResult = true;
-
-            // if we've calculated past the final row, then the function will reset to the original position and the output will be false.
-            if (coordFinal.y >= sRowWidth)
-            {
-                coordFinal = coordPos;
-                fExpectedResult = false;
-            }
-
-            const bool fActualResult = v.MoveInBounds(sAddAmount, coordPos);
+            const til::point coord{
+                (coordPos.x + sAddAmount) % sRowWidth,
+                coordPos.y + ((coordPos.x + sAddAmount) / sRowWidth),
+            };
+            const auto coordClamped = std::clamp(coord, v.Origin(), v.BottomRightInclusive());
+            const auto fExpectedResult = coord == coordClamped;
+            const bool fActualResult = v.WalkInBounds(coordPos, sAddAmount);
 
             VERIFY_ARE_EQUAL(fExpectedResult, fActualResult);
-            VERIFY_ARE_EQUAL(coordPos.x, coordFinal.x);
-            VERIFY_ARE_EQUAL(coordPos.y, coordFinal.y);
-
-            Log::Comment(String().Format(L"Actual: (%d, %d) Expected: (%d, %d)", coordPos.y, coordPos.x, coordFinal.y, coordFinal.x));
+            VERIFY_ARE_EQUAL(coordPos, coordClamped);
         }
     }
 

@@ -17,6 +17,7 @@ namespace Microsoft.Terminal.Settings.Model
         // When adding a new action, add them to AllShortcutActions.h!
         #define ON_ALL_ACTIONS(action) action,
         ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
         #undef ON_ALL_ACTIONS
     };
 
@@ -48,7 +49,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
 
         static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
-        static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories);
+        static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories, String iconPath);
 
     }
 }

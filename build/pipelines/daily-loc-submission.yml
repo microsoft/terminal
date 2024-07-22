@@ -13,6 +13,14 @@ parameters:
   - name: targetBranch
     type: string
     default: "automated/loc-update"
+  - name: submitToTouchdown
+    displayName: Send New Strings to Touchdown
+    type: boolean
+    default: true
+  - name: checkInLocOutputs
+    displayName: Submit Pull Request
+    type: boolean
+    default: true
 
 pool:
   vmImage: windows-2019
@@ -21,10 +29,6 @@ resources:
   repositories:
   - repository: self
     type: git
-    ref: main
-  - repository: internal
-    type: git
-    name: Terminal.Internal
     ref: main
 
 steps:
@@ -35,14 +39,6 @@ steps:
   fetchDepth: 1 # Don't need a deep checkout for loc files!
   fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
   persistCredentials: true
-  path: s # Adding a second repo made Azure DevOps change where we're checked out.
-
-- checkout: internal
-  clean: true
-  submodules: false
-  fetchDepth: 1
-  persistCredentials: true
-  path: s/Terminal.Internal
 
 - pwsh: |-
     Install-Module PSGitHub -Scope CurrentUser -Force
@@ -59,50 +55,55 @@ steps:
     authType: SubjectNameIssuer
     resourceFilePath: |
      **\en-US\*.resw
-     Terminal.Internal\PDPs\Stable\PDPs\en-us\PDP.xml
-     Terminal.Internal\PDPs\Preview\PDPs\en-us\PDP.xml
+     build\StoreSubmission\Stable\PDPs\en-us\PDP.xml
+     build\StoreSubmission\Preview\PDPs\en-us\PDP.xml
     outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
-    localizationTarget: true
+    localizationTarget: ${{ parameters.submitToTouchdown }}
 
 - pwsh: |-
-    Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
-    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
+    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw','PDP.xml' | ? FullName -Like '*en-US\*\*.*'
     $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+
     & tar.exe -c -f LocOutputMunged.tar -C LocOutput .
     & tar.exe -x -v -f LocOutputMunged.tar
-    rm LocOutputMunged.tar
     rm -r -fo LocOutput
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
     & ./build/scripts/Generate-PseudoLocalizations.ps1
   displayName: Move Loc files to the right places
 
-- pwsh: |-
-    git add **/*.resw
-    git status
-    git diff --quiet --cached --exit-code
-    If ($LASTEXITCODE -Ne 0) {
-      $Now = Get-Date
-      git commit -m "Localization Updates - $Now"
-      git push origin HEAD:refs/heads/${{parameters.targetBranch}} -f
-      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]1"
-    } Else {
-      Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]0"
-    }
-  displayName: git commit and push
+- publish: LocOutputMunged.tar
+  artifact: loc-outputs
+  displayName: Publish Loc Outputs for inspection
 
-- pwsh: |-
-    Import-Module PSGitHub
-    $BaseBranch = "$(Build.SourceBranch)" -Replace "^refs/heads/",""
-    Write-Host "Preparing PR against $BaseBranch"
-    $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
-    $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
-    $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
-    $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}" -BaseBranch $BaseBranch
-    If ($null -Eq $existingPr) {
-      $Now = Get-Date
-      New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base $BaseBranch -Title "Localization Updates - $BaseBranch - $Now" -Verbose
-    }
-  displayName: Publish pull request
-  condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())
+- ${{ if eq(parameters.checkInLocOutputs, true) }}:
+  - pwsh: |-
+      git add **/*.resw
+      git add build/StoreSubmission/**/*.xml
+      git status
+      git diff --quiet --cached --exit-code
+      If ($LASTEXITCODE -Ne 0) {
+        $Now = Get-Date
+        git commit -m "Localization Updates - $Now"
+        git push origin HEAD:refs/heads/${{parameters.targetBranch}} -f
+        Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]1"
+      } Else {
+        Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]0"
+      }
+    displayName: git commit and push
+
+  - pwsh: |-
+      Import-Module PSGitHub
+      $BaseBranch = "$(Build.SourceBranch)" -Replace "^refs/heads/",""
+      Write-Host "Preparing PR against $BaseBranch"
+      $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
+      $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
+      $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
+      $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}" -BaseBranch $BaseBranch
+      If ($null -Eq $existingPr) {
+        $Now = Get-Date
+        New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base $BaseBranch -Title "Localization Updates - $BaseBranch - $Now" -Verbose
+      }
+    displayName: Publish pull request
+    condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())

@@ -47,6 +47,7 @@ public:
     std::wstring GetOriginalCommandLine() const;
     std::wstring GetClientCommandline() const;
     std::wstring GetVtMode() const;
+    const std::wstring& GetTextMeasurement() const;
     bool GetForceV1() const;
     bool GetForceNoHandoff() const;
 
@@ -83,7 +84,6 @@ private:
                      const std::wstring clientCommandline,
                      const HANDLE vtInHandle,
                      const HANDLE vtOutHandle,
-                     const std::wstring vtMode,
                      const short width,
                      const short height,
                      const bool forceV1,
@@ -98,7 +98,6 @@ private:
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
         _vtOutHandle(vtOutHandle),
-        _vtMode(vtMode),
         _width(width),
         _height(height),
         _forceV1(forceV1),
@@ -122,7 +121,7 @@ private:
 
     HANDLE _vtOutHandle;
 
-    std::wstring _vtMode;
+    std::wstring _textMeasurement;
 
     bool _forceNoHandoff;
     bool _forceV1;
@@ -176,7 +175,6 @@ namespace WEX
                                                            L"Use VT Handles: '%ws',\r\n"
                                                            L"VT In Handle: '0x%x',\r\n"
                                                            L"VT Out Handle: '0x%x',\r\n"
-                                                           L"Vt Mode: '%ws',\r\n"
                                                            L"WidthxHeight: '%dx%d',\r\n"
                                                            L"ForceV1: '%ws',\r\n"
                                                            L"Headless: '%ws',\r\n"
@@ -190,7 +188,6 @@ namespace WEX
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
                                                            ci.GetVtOutHandle(),
-                                                           ci.GetVtMode().c_str(),
                                                            ci.GetWidth(),
                                                            ci.GetHeight(),
                                                            s_ToBoolString(ci.GetForceV1()),
@@ -220,7 +217,6 @@ namespace WEX
                        expected.HasVtHandles() == actual.HasVtHandles() &&
                        expected.GetVtInHandle() == actual.GetVtInHandle() &&
                        expected.GetVtOutHandle() == actual.GetVtOutHandle() &&
-                       expected.GetVtMode() == actual.GetVtMode() &&
                        expected.GetWidth() == actual.GetWidth() &&
                        expected.GetHeight() == actual.GetHeight() &&
                        expected.GetForceV1() == actual.GetForceV1() &&
@@ -247,7 +243,6 @@ namespace WEX
                 return object.GetClientCommandline().empty() &&
                        (object.GetVtInHandle() == 0 || object.GetVtInHandle() == INVALID_HANDLE_VALUE) &&
                        (object.GetVtOutHandle() == 0 || object.GetVtOutHandle() == INVALID_HANDLE_VALUE) &&
-                       object.GetVtMode().empty() &&
                        !object.GetForceV1() &&
                        (object.GetWidth() == 0) &&
                        (object.GetHeight() == 0) &&

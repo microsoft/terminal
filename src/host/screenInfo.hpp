@@ -115,6 +115,7 @@ public:
     const Microsoft::Console::Types::Viewport& GetViewport() const noexcept;
     void SetViewport(const Microsoft::Console::Types::Viewport& newViewport, const bool updateBottom);
     Microsoft::Console::Types::Viewport GetVirtualViewport() const noexcept;
+    Microsoft::Console::Types::Viewport GetVtPageArea() const noexcept;
 
     void ProcessResizeWindow(const til::rect* const prcClientNew, const til::rect* const prcClientOld);
     void SetViewportSize(const til::size* const pcoordSize);

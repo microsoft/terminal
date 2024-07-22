@@ -70,6 +70,8 @@ public:
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
+    void SearchMissingCommand(std::wstring_view missingCommand) override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };
