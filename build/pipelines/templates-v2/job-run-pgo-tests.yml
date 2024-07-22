@@ -35,7 +35,7 @@ jobs:
   - task: DownloadPipelineArtifact@2
     displayName: Download artifacts
     inputs:
-      artifactName: build-${{ parameters.buildPlatform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
+      artifactName: $[stageDependencies.Build_${{parameters.buildPlatform}}.Build.outputs['${{parameters.buildConfiguration}}_${{parameters.buildPlatform}}.SetArtifactName.ArtifactName']]
       downloadPath: $(Terminal.BinDir)
 
   # The tests expect Terminal to be an unpackaged distribution named terminal-0.0.1.0 (after the dev build version scheme)

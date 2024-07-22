@@ -39,7 +39,7 @@ jobs:
   - task: DownloadPipelineArtifact@2
     displayName: Download artifacts
     inputs:
-      artifactName: build-${{ parameters.platform }}-$(BuildConfiguration)${{ parameters.inputArtifactStem }}
+      artifactName: $[stageDependencies.Build_${{parameters.platform}}.Build.outputs['${{parameters.configuration}}_${{parameters.platform}}.SetArtifactName.ArtifactName']]
       downloadPath: $(Terminal.BinDir)
 
   - task: PowerShell@2

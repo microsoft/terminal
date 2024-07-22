@@ -14,7 +14,7 @@ steps:
       displayName: Download artifacts for ${{ platform }} ${{ configuration }}
       inputs:
         # Make sure to download the entire artifact, because it includes the SPDX SBOM
-        artifactName: build-${{ platform }}-${{ configuration }}${{ parameters.artifactStem }}
+        artifactName: $[stageDependencies.Build_${{platform}}.Build.outputs['${{configuration}}_${{platform}}.SetArtifactName.ArtifactName']]
         # Downloading to the source directory should ensure that the later SBOM generator can see the earlier SBOMs.
         ${{ if eq(platform, 'x86') }}:
           downloadPath: '$(Build.SourcesDirectory)/bin/Win32/${{ configuration }}'

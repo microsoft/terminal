@@ -40,7 +40,7 @@ jobs:
     - task: DownloadPipelineArtifact@2
       displayName: Download PGO Databases for ${{ platform }}
       inputs:
-        artifactName: build-${{ platform }}-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
+        artifactName: $[stageDependencies.Build_${{parameters.platform}}.Build.outputs['${{parameters.buildConfiguration}}_${{parameters.platform}}.SetArtifactName.ArtifactName']]
         itemPattern: '**/*.pgd'
         downloadPath: '$(Build.SourcesDirectory)/pgd/${{ platform }}/${{ parameters.buildConfiguration }}'
     - task: DownloadPipelineArtifact@2

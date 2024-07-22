@@ -57,6 +57,10 @@ stages:
             name: SHINE-OSS-L
           strategy:
             matrix:
+              Release_Any CPU:
+                FooBar: z
+              Debug_x86:
+                FooBar: y
               Release_x64:
                 FooBar: x
           variables:
