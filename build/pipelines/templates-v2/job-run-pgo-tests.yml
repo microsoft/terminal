@@ -82,3 +82,5 @@ jobs:
   - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/pgc'
     artifact: $(JobOutputArtifactName)
     condition: always()
+
+  - template: steps-set-artifact-name.yml

@@ -75,3 +75,5 @@ jobs:
   - publish: $(Build.ArtifactStagingDirectory)\out-pgd
     artifact: $(JobOutputArtifactName)
     displayName: "Publish merged PGDs"
+
+  - template: steps-set-artifact-name.yml

@@ -1,0 +1,6 @@
+steps:
+  - pwsh: |-
+      echo "##vso[task.setVariable variable=ArtifactName;isOutput=true]$(JobOutputArtifactName)"
+    name: SetArtifactName
+    displayName: Set Artifact Name
+    condition: always()

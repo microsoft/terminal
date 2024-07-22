@@ -338,3 +338,5 @@ jobs:
     - publish: $(Terminal.BinDir)
       artifact: $(JobOutputArtifactName)
       displayName: Publish All Outputs
+
+  - template: steps-set-artifact-name.yml

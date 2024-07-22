@@ -154,3 +154,5 @@ jobs:
     - publish: $(JobOutputDirectory)
       artifact: $(JobOutputArtifactName)
       displayName: Publish msixbundle
+
+  - template: steps-set-artifact-name.yml

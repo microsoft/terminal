@@ -146,3 +146,5 @@ jobs:
     - publish: $(JobOutputDirectory)
       artifact: $(JobOutputArtifactName)
       displayName: Publish nupkg
+
+  - template: steps-set-artifact-name.yml
