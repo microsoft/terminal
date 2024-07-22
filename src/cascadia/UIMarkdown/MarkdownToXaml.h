@@ -2,8 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "../../oss/cmark-gfm/src/cmark-gfm.h"
-#include "../../oss/cmark-gfm/src/node.h"
+#include <cmark.h>
 
 struct MarkdownToXaml
 {

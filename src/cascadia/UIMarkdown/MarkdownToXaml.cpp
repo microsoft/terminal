@@ -5,6 +5,8 @@
 #include "CodeBlock.h"
 #include "MarkdownToXaml.h"
 
+#include <cmark.h>
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -25,13 +27,13 @@ static std::string_view textFromCmarkString(const T& s)
 {
     return std::string_view{ (char*)s.data, (size_t)s.len };
 }
-static std::string_view textFromLiteral(const cmark_node* const node)
+static std::string_view textFromLiteral(cmark_node* node)
 {
-    return textFromCmarkString(node->as.literal);
+    return cmark_node_get_literal(node);
 }
-static std::string_view textFromUrl(const cmark_node* const node)
+static std::string_view textFromUrl(cmark_node* node)
 {
-    return textFromCmarkString(node->as.link.url);
+    return cmark_node_get_url(node);
 }
 
 // Function Description:
@@ -160,7 +162,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 
     bool entering = (ev_type == CMARK_EVENT_ENTER);
 
-    switch (node->type)
+    switch (cmark_node_get_type(node))
     {
     case CMARK_NODE_DOCUMENT:
         break;
@@ -230,7 +232,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         // CMARK_NODE_TEXT
         if (entering)
         {
-            const auto level = node->as.heading.level;
+            const auto level = cmark_node_get_heading_level(node);
             _CurrentParagraph().FontSize(std::max(16u, 36u - ((level - 1) * 6u)));
         }
         break;
@@ -238,8 +240,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
     case CMARK_NODE_CODE_BLOCK:
     {
         _EndParagraph();
-
-        std::string_view code{ (char*)node->as.code.literal.data, (size_t)node->as.code.literal.len - 1 };
+        std::string_view code{ cmark_node_get_literal(node) };
         const auto codeHstring{ winrt::hstring{ til::u8u16(code) } };
 
         auto codeBlock = winrt::make<winrt::Microsoft::Terminal::UI::Markdown::implementation::CodeBlock>(codeHstring);
@@ -270,9 +271,10 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
     {
         parent = cmark_node_parent(node);
         grandparent = cmark_node_parent(parent);
-        if (grandparent != NULL && grandparent->type == CMARK_NODE_LIST)
+
+        if (grandparent != NULL && cmark_node_get_type(grandparent))
         {
-            tight = grandparent->as.list.tight;
+            tight = cmark_node_get_list_tight(grandparent);
         }
         else
         {
@@ -412,7 +414,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
     case CMARK_NODE_IMAGE:
         if (entering)
         {
-            std::string_view url{ (char*)node->as.link.url.data, (size_t)node->as.link.url.len };
+            const auto url{ textFromUrl(node) };
             const auto urlHstring{ winrt::hstring{ til::u8u16(url) } };
             winrt::Windows::Foundation::Uri uri{ _baseUri, urlHstring };
             WUX::Controls::Image img{};
@@ -431,13 +433,16 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         }
         break;
 
-    case CMARK_NODE_FOOTNOTE_DEFINITION:
-        // Not suppoorted currently
-        break;
+        // These elements are in cmark-gfm, which we'd love to move to in the
+        // future, but isn't yet available in vcpkg.
 
-    case CMARK_NODE_FOOTNOTE_REFERENCE:
-        // Not suppoorted currently
-        break;
+        // case CMARK_NODE_FOOTNOTE_DEFINITION:
+        //     // Not suppoorted currently
+        //     break;
+        //
+        // case CMARK_NODE_FOOTNOTE_REFERENCE:
+        //     // Not suppoorted currently
+        //     break;
 
     default:
         assert(false);

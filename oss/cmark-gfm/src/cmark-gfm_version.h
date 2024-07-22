@@ -1,7 +1,0 @@
-#ifndef CMARK_GFM_VERSION_H
-#define CMARK_GFM_VERSION_H
-
-#define CMARK_GFM_VERSION 0
-#define CMARK_GFM_VERSION_STRING ""
-
-#endif
