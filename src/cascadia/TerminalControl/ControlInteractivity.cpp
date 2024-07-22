@@ -301,12 +301,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_core->Settings().RightClickContextMenu())
             {
-                // Let the core know we're about to open a menu here. It has
-                // some separate conditional logic based on _where_ the user
-                // wanted to open the menu.
-                _core->AnchorContextMenu(terminalPosition);
-
-                auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
+                auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(
+                    til::point{ pixelPosition }.to_winrt_point(),
+                    terminalPosition.to_core_point());
                 ContextMenuRequested.raise(*this, contextArgs);
             }
             else

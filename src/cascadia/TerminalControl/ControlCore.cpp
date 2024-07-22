@@ -2816,14 +2816,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::AnchorContextMenu(const til::point viewportRelativeCharacterPosition)
-    {
-        // viewportRelativeCharacterPosition is relative to the current
-        // viewport, so adjust for that:
-        const auto lock = _terminal->LockForReading();
-        _contextMenuBufferPosition = _terminal->GetViewport().Origin() + viewportRelativeCharacterPosition;
-    }
-
     void ControlCore::_contextMenuSelectMark(
         const til::point& pos,
         bool (*filter)(const ::MarkExtents&),
@@ -2859,17 +2851,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::ContextMenuSelectCommand()
+    void ControlCore::ContextMenuSelectCommand(Core::Point viewportRelativeCharacterPosition)
     {
+        const auto contextMenuBufferPosition = _terminal->GetViewport().Origin() + til::point{ viewportRelativeCharacterPosition };
         _contextMenuSelectMark(
-            _contextMenuBufferPosition,
+            contextMenuBufferPosition,
             [](const ::MarkExtents& m) -> bool { return !m.HasCommand(); },
             [](const ::MarkExtents& m) { return til::point_span{ m.end, *m.commandEnd }; });
     }
-    void ControlCore::ContextMenuSelectOutput()
+    void ControlCore::ContextMenuSelectOutput(Core::Point viewportRelativeCharacterPosition)
     {
+        const auto contextMenuBufferPosition = _terminal->GetViewport().Origin() + til::point{ viewportRelativeCharacterPosition };
         _contextMenuSelectMark(
-            _contextMenuBufferPosition,
+            contextMenuBufferPosition,
             [](const ::MarkExtents& m) -> bool { return !m.HasOutput(); },
             [](const ::MarkExtents& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
     }
@@ -2909,24 +2903,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
-    // Method Description:
-    // * Don't show this if the click was on the _current_ selection
-    // * Don't show this if the click wasn't on a mark with at least a command
-    // * Otherwise yea, show it.
-    bool ControlCore::ShouldShowSelectCommand()
+    MenuAction ControlCore::GetApplicableMenuActionsAtPosition(Core::Point viewportRelativeCharacterPosition)
     {
-        // Relies on the anchor set in AnchorContextMenu
-        return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const ::MarkExtents& m) -> bool { return !m.HasCommand(); });
-    }
+        const auto contextMenuBufferPosition = _terminal->GetViewport().Origin() + til::point{ viewportRelativeCharacterPosition };
+        MenuAction r{};
 
-    // Method Description:
-    // * Same as ShouldShowSelectCommand, but with the mark needing output
-    bool ControlCore::ShouldShowSelectOutput()
-    {
-        // Relies on the anchor set in AnchorContextMenu
-        return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const ::MarkExtents& m) -> bool { return !m.HasOutput(); });
+        const auto clickedOnCommand = _clickedOnMark(contextMenuBufferPosition,
+                                                     [](const ::MarkExtents& m) -> bool { return !m.HasCommand(); });
+        const auto clickedOnOutput = _clickedOnMark(contextMenuBufferPosition,
+                                                    [](const ::MarkExtents& m) -> bool { return !m.HasOutput(); });
+
+        WI_UpdateFlag(r, MenuAction::SelectCommand, clickedOnCommand);
+        WI_UpdateFlag(r, MenuAction::SelectOutput, clickedOnOutput);
+        return r;
     }
 
     void ControlCore::PreviewInput(std::wstring_view input)
