@@ -47,46 +47,22 @@ parameters:
       - arm64
 
 stages:
-  - ${{ if eq(parameters.auditMode, true) }}:
-    - stage: Audit_x64
-      displayName: Audit Mode
-      dependsOn: []
-      jobs:
-        - template: ./templates-v2/job-build-project.yml
-          parameters:
-            pool:
-              ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
-                name: SHINE-INT-L
-              ${{ else }}:
-                name: SHINE-OSS-L
-            buildPlatforms: [x64]
-            buildConfigurations: [AuditMode]
-            buildEverything: true
-            keepAllExpensiveBuildOutputs: false
-
-  - stage: CodeHealth
-    displayName: Code Health
-    dependsOn: []
-    jobs:
-      - template: ./templates-v2/job-check-code-format.yml
-
   - ${{ each platform in parameters.buildPlatforms }}:
     - stage: Build_${{ platform }}
       displayName: Build ${{ platform }}
       dependsOn: []
       jobs:
-        - template: ./templates-v2/job-build-project.yml
-          parameters:
-            pool:
-              ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
-                name: SHINE-INT-L
-              ${{ else }}:
-                name: SHINE-OSS-L
-            buildPlatforms:
-              - ${{ platform }}
-            buildConfigurations: [Release]
-            buildEverything: true
-            keepAllExpensiveBuildOutputs: false
+        - job: Build
+          pool:
+            name: SHINE-OSS-L
+          strategy:
+            matrix:
+              Release_x64:
+                FooBar: x
+          variables:
+            JobOutputArtifactName: foo-1
+          steps:
+            - template: ./templates-v2/steps-set-artifact-name.yml
 
     - ${{ if eq(parameters.runTests, true) }}:
       - stage: Test_${{ platform }}
@@ -95,8 +71,11 @@ stages:
           - Build_${{ platform }}
         condition: succeeded()
         jobs:
-          - template: ./templates-v2/job-test-project.yml
-            parameters:
-              platform: ${{ platform }}
-              # The tests might be run more than once; log one artifact per attempt.
-              outputArtifactStem: -$(System.JobAttempt)
+          - job: Foo
+            pool:
+              name: SHINE-OSS-L
+            variables:
+              deps: $[convertToJson(stageDependencies)]
+            steps:
+              - pwsh: |-
+                  Write-Host "$(deps)"
