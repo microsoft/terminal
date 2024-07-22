@@ -734,4 +734,7 @@
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>儲存程式碼片段</value>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>開啟快速修正功能表</value>
+  </data>
 </root>
