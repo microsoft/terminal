@@ -22,6 +22,8 @@ jobs:
     pool: ${{ parameters.pool }}
   dependsOn: ${{ parameters.dependsOn }}
   displayName: Merge PGO Counts for ${{ parameters.buildConfiguration }}
+  variables:
+    JobOutputArtifactName: pgd-merged-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
 
   steps:
   # The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.
@@ -71,5 +73,5 @@ jobs:
         targetFolder: '$(Build.ArtifactStagingDirectory)\out-pgd\${{ platform }}'
 
   - publish: $(Build.ArtifactStagingDirectory)\out-pgd
-    artifact: pgd-merged-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
+    artifact: $(JobOutputArtifactName)
     displayName: "Publish merged PGDs"

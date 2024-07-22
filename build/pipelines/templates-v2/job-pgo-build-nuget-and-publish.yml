@@ -26,6 +26,7 @@ jobs:
     pgoToolsPath: $(Build.SourcesDirectory)\build\PGO
     nuspecPath: $(pgoToolsPath)\NuSpecs
     nuspecFilename: PGO.nuspec
+    JobOutputArtifactName: pgo-nupkg-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
 
   steps:
   - checkout: self
@@ -65,7 +66,7 @@ jobs:
       msbuildArguments: '/t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath) /p:PGOOutputPath=$(Build.ArtifactStagingDirectory)'
 
   - publish: $(Build.ArtifactStagingDirectory)
-    artifact: pgo-nupkg-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
+    artifact: $(JobOutputArtifactName)
     displayName: "Publish Pipeline Artifact"
 
   - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
