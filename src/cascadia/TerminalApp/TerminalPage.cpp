@@ -26,11 +26,11 @@
 #include "LaunchPositionRequest.g.cpp"
 
 using namespace winrt;
+using namespace winrt::Microsoft::Management::Deployment;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::WindowsPackageManager::InProcCom;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
@@ -3002,44 +3002,41 @@ namespace winrt::TerminalApp::implementation
         ShowWindowChanged.raise(*this, args);
     }
 
-    PackageManager TerminalPage::_CreatePackageManager() const
+    static PackageManager _CreatePackageManager()
     {
         static const CLSID CLSID_PackageManager = { 0xC53A4F16, 0x787E, 0x42A4, 0xB3, 0x04, 0x29, 0xEF, 0xFB, 0x4B, 0xF5, 0x97 }; //C53A4F16-787E-42A4-B304-29EFFB4BF597
         return winrt::create_instance<PackageManager>(CLSID_PackageManager, CLSCTX_ALL);
     }
 
-    FindPackagesOptions TerminalPage::_CreateFindPackagesOptions() const
+    static FindPackagesOptions _CreateFindPackagesOptions()
     {
         static const CLSID CLSID_FindPackagesOptions = { 0x572DED96, 0x9C60, 0x4526, { 0x8F, 0x92, 0xEE, 0x7D, 0x91, 0xD3, 0x8C, 0x1A } }; //572DED96-9C60-4526-8F92-EE7D91D38C1A
         return winrt::create_instance<FindPackagesOptions>(CLSID_FindPackagesOptions, CLSCTX_ALL);
     }
 
-    PackageMatchFilter TerminalPage::_CreatePackageMatchFilter() const
+    static PackageMatchFilter _CreatePackageMatchFilter()
     {
         static const CLSID CLSID_PackageMatchFilter = { 0xD02C9DAF, 0x99DC, 0x429C, { 0xB5, 0x03, 0x4E, 0x50, 0x4E, 0x4A, 0xB0, 0x00 } }; //D02C9DAF-99DC-429C-B503-4E504E4AB000
         return winrt::create_instance<PackageMatchFilter>(CLSID_PackageMatchFilter, CLSCTX_ALL);
     }
 
-    Windows::Foundation::IAsyncOperation<CatalogPackage> TerminalPage::_FindPackageInCatalogAsync(PackageCatalog catalog, std::wstring packageId)
+    Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackagesInCatalogAsync(PackageCatalog catalog, PackageMatchField field, PackageFieldMatchOption matchOption, hstring query)
     {
         FindPackagesOptions findPackagesOptions = _CreateFindPackagesOptions();
         PackageMatchFilter filter = _CreatePackageMatchFilter();
-        filter.Field(PackageMatchField::Id);
-        filter.Option(PackageFieldMatchOption::Equals);
-        filter.Value(packageId);
+        filter.Field(field);
+        filter.Option(matchOption);
+        filter.Value(query);
         findPackagesOptions.Filters().Append(filter);
         FindPackagesResult findPackagesResult{ co_await catalog.FindPackagesAsync(findPackagesOptions) };
 
-        IVectorView<MatchResult> matches = findPackagesResult.Matches();
-        if (matches.Size() == 0)
-        {
-            co_return nullptr;
-        }
-        co_return matches.GetAt(0).CatalogPackage();
+        co_return findPackagesResult.Matches();
     }
 
-    Windows::Foundation::IAsyncOperation<CatalogPackage> TerminalPage::_FindPackageAsync()
+    Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackageAsync(hstring query)
     {
+        co_await winrt::resume_background();
+
         PackageManager packageManager = _CreatePackageManager();
         PackageCatalogReference catalogRef{
             packageManager.GetPredefinedPackageCatalog(PredefinedPackageCatalog::OpenWindowsCatalog)
@@ -3050,10 +3047,22 @@ namespace winrt::TerminalApp::implementation
             co_return nullptr;
         }
         PackageCatalog catalog = connectResult.PackageCatalog();
-        co_return FindPackageInCatalogAsync(catalog, m_installAppId).get();
+
+        auto pkgList = co_await _FindPackagesInCatalogAsync(catalog, PackageMatchField::Command, PackageFieldMatchOption::StartsWithCaseInsensitive, query);
+        if (pkgList.Size() > 0)
+        {
+            co_return pkgList;
+        }
+        pkgList = co_await _FindPackagesInCatalogAsync(catalog, PackageMatchField::Name, PackageFieldMatchOption::ContainsCaseInsensitive, query);
+        if (pkgList.Size() > 0)
+        {
+            co_return pkgList;
+        }
+        pkgList = co_await _FindPackagesInCatalogAsync(catalog, PackageMatchField::Moniker, PackageFieldMatchOption::ContainsCaseInsensitive, query);
+        co_return pkgList;
     }
 
-    winrt::fire_and_forget TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
+    Windows::Foundation::IAsyncAction TerminalPage::_SearchMissingCommandHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::SearchMissingCommandEventArgs args)
     {
         assert(!Dispatcher().HasThreadAccess());
 
@@ -3062,9 +3071,24 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
+        auto pkgList = co_await _FindPackageAsync(args.MissingCommand());
+        for (int retries = 0; !pkgList && retries < 3; ++retries)
+        {
+            pkgList = co_await _FindPackageAsync(args.MissingCommand());
+        }
+
+        // no packages were found, nothing to suggest
+        if (pkgList.Size() == 0)
+        {
+            co_return;
+        }
+
         std::vector<hstring> suggestions;
-        suggestions.reserve(1);
-        suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install {}"), args.MissingCommand()));
+        suggestions.reserve(pkgList.Size());
+        for (auto pkg : pkgList)
+        {
+            suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {}"), pkg.CatalogPackage().Id()));
+        }
 
         co_await wil::resume_foreground(Dispatcher());
 

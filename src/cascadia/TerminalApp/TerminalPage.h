@@ -13,7 +13,6 @@
 #include "LaunchPositionRequest.g.h"
 #include "Toast.h"
 
-#include <winrt/Microsoft.WindowsPackageManager.InProcCom.h>
 #include <winrt/Microsoft.Management.Deployment.h>
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -89,6 +88,36 @@ namespace winrt::TerminalApp::implementation
 
         til::property<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> Position;
     };
+
+    //struct WindowsPackageManagerDefaultFactory
+    //{
+    //public:
+    //    WindowsPackageManagerDefaultFactory() = default;
+    //
+    //private:
+    //    template <typename T> T CreateInstance(guid clsid, guid iid)
+    //    {
+    //        auto pUnknown = 0;
+    //        try
+    //        {
+    //            LPVOID* result;
+    //            auto hr = CoCreateInstance(clsid, null, CLSCTX::CLSCTX_LOCAL_SERVER, iid, &result);
+    //            check_hresult(hr);
+    //            pUnknown = get_unknown(result);
+    //
+    //        }
+    //        finally
+    //        {
+    //            if (pUnknown != 0)
+    //            {
+    //                ReleaseCapture(pUnknown);
+    //            }
+    //        }
+    //        //T instance;
+    //        //check_hresult(::CoCreateInstance(clsid, nullptr, CLSCTX_INPROC_SERVER, iid, instance.put_void()));
+    //        //return instance;
+    //    }
+    //};
 
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
@@ -533,12 +562,9 @@ namespace winrt::TerminalApp::implementation
         void _OpenSuggestions(const Microsoft::Terminal::Control::TermControl& sender, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode, winrt::hstring filterText);
 
         void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
-        winrt::fire_and_forget _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
-        Windows::Foundation::IAsyncOperation<Microsoft::WindowsPackageManager::InProcCom::CatalogPackage> _FindPackageInCatalogAsync(Microsoft::WindowsPackageManager::InProcCom::PackageCatalog catalog, std::wstring packageId);
-        Windows::Foundation::IAsyncOperation<Microsoft::WindowsPackageManager::InProcCom::CatalogPackage> _FindPackageAsync();
-        Microsoft::WindowsPackageManager::InProcCom::PackageManager _CreatePackageManager() const;
-        Microsoft::WindowsPackageManager::InProcCom::FindPackagesOptions _CreateFindPackagesOptions() const;
-        Microsoft::WindowsPackageManager::InProcCom::PackageMatchFilter _CreatePackageMatchFilter() const;
+        Windows::Foundation::IAsyncAction _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
+        Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackagesInCatalogAsync(winrt::Microsoft::Management::Deployment::PackageCatalog catalog, winrt::Microsoft::Management::Deployment::PackageMatchField field, winrt::Microsoft::Management::Deployment::PackageFieldMatchOption matchOption, hstring query);
+        Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackageAsync(hstring query);
 
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
