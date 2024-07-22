@@ -221,12 +221,16 @@ namespace winrt::TerminalApp::implementation
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
         winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
         winrt::Microsoft::Terminal::Query::Extension::ILMProvider _lmProvider{ nullptr };
+
+        winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider;
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
+        void _setAzureOpenAIAuth();
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged_revoker _openAISettingChangedRevoker;
+        void _setOpenAIAuth();
+
         winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette _extensionPalette{ nullptr };
         winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _extensionPaletteLoadedRevoker;
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
-
-        winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
-        void _setAzureOpenAIAuth();
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
@@ -563,6 +567,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
 
         void _loadQueryExtension();
+        void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType);
 
         void _activePaneChanged(winrt::TerminalApp::TerminalTab tab, Windows::Foundation::IInspectable args);
 

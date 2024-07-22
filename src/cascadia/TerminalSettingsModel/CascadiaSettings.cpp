@@ -21,12 +21,7 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::Security::Credentials;
 using namespace Microsoft::Console;
-
-static constexpr std::wstring_view PasswordVaultResourceName = L"TerminalAI";
-static constexpr std::wstring_view PasswordVaultAIKey = L"TerminalAIKey";
-static constexpr std::wstring_view PasswordVaultAIEndpoint = L"TerminalAIEndpoint";
 
 // Creating a child of a profile requires us to copy certain
 // required attributes. This method handles those attributes.
@@ -1059,95 +1054,6 @@ Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noex
 void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& terminal)
 {
     _currentDefaultTerminal = terminal;
-}
-
-static winrt::event<Model::AzureOpenAISettingChangedHandler> _azureOpenAISettingChangedHandlers;
-
-winrt::event_token CascadiaSettings::AzureOpenAISettingChanged(const Model::AzureOpenAISettingChangedHandler& handler) { return _azureOpenAISettingChangedHandlers.add(handler); };
-void CascadiaSettings::AzureOpenAISettingChanged(const winrt::event_token& token) { _azureOpenAISettingChangedHandlers.remove(token); };
-
-winrt::hstring CascadiaSettings::AIEndpoint() noexcept
-{
-    PasswordVault vault;
-    PasswordCredential cred;
-    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
-    try
-    {
-        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIEndpoint);
-    }
-    catch (...)
-    {
-        return L"";
-    }
-    return cred.Password();
-}
-
-void CascadiaSettings::AIEndpoint(const winrt::hstring& endpoint) noexcept
-{
-    PasswordVault vault;
-    if (endpoint.empty())
-    {
-        // an empty string indicates that we should clear the key
-        PasswordCredential cred;
-        try
-        {
-            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIEndpoint);
-        }
-        catch (...)
-        {
-            // there was nothing to remove, just return
-            return;
-        }
-        vault.Remove(cred);
-    }
-    else
-    {
-        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIEndpoint, endpoint };
-        vault.Add(newCredential);
-    }
-    _azureOpenAISettingChangedHandlers();
-}
-
-winrt::hstring CascadiaSettings::AIKey() noexcept
-{
-    PasswordVault vault;
-    PasswordCredential cred;
-    // Retrieve throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
-    try
-    {
-        cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIKey);
-    }
-    catch (...)
-    {
-        return L"";
-    }
-    return cred.Password();
-}
-
-void CascadiaSettings::AIKey(const winrt::hstring& key) noexcept
-{
-    PasswordVault vault;
-    if (key.empty())
-    {
-        // the user has entered an empty string, that indicates that we should clear the key
-        PasswordCredential cred;
-        try
-        {
-            cred = vault.Retrieve(PasswordVaultResourceName, PasswordVaultAIKey);
-        }
-        catch (...)
-        {
-            // there was nothing to remove, just return
-            return;
-        }
-        vault.Remove(cred);
-    }
-    else
-    {
-        PasswordCredential newCredential{ PasswordVaultResourceName, PasswordVaultAIKey, key };
-        vault.Add(newCredential);
-    }
-    _azureOpenAISettingChangedHandlers();
 }
 
 // This function is implicitly called by DefaultTerminals/CurrentDefaultTerminal().

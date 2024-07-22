@@ -11,8 +11,13 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         AISettingsViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
-        Boolean AreAIKeyAndEndpointSet { get; };
-        String AIEndpoint;
-        String AIKey;
+        Boolean AreAzureOpenAIKeyAndEndpointSet { get; };
+        String AzureOpenAIEndpoint;
+        String AzureOpenAIKey;
+        Boolean AzureOpenAIActive;
+
+        Boolean IsOpenAIKeySet { get; };
+        String OpenAIKey;
+        Boolean OpenAIActive;
     }
 }

@@ -23,30 +23,74 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
-    bool AISettingsViewModel::AreAIKeyAndEndpointSet()
+    bool AISettingsViewModel::AreAzureOpenAIKeyAndEndpointSet()
     {
-        return !_Settings.AIKey().empty() && !_Settings.AIEndpoint().empty();
+        return !_Settings.GlobalSettings().AIInfo().AzureOpenAIKey().empty() && !_Settings.GlobalSettings().AIInfo().AzureOpenAIEndpoint().empty();
     }
 
-    winrt::hstring AISettingsViewModel::AIEndpoint()
+    winrt::hstring AISettingsViewModel::AzureOpenAIEndpoint()
     {
-        return _Settings.AIEndpoint();
+        return _Settings.GlobalSettings().AIInfo().AzureOpenAIEndpoint();
     }
 
-    void AISettingsViewModel::AIEndpoint(winrt::hstring endpoint)
+    void AISettingsViewModel::AzureOpenAIEndpoint(winrt::hstring endpoint)
     {
-        _Settings.AIEndpoint(endpoint);
-        _NotifyChanges(L"AreAIKeyAndEndpointSet");
+        _Settings.GlobalSettings().AIInfo().AzureOpenAIEndpoint(endpoint);
+        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
     }
 
-    winrt::hstring AISettingsViewModel::AIKey()
+    winrt::hstring AISettingsViewModel::AzureOpenAIKey()
     {
-        return _Settings.AIKey();
+        return _Settings.GlobalSettings().AIInfo().AzureOpenAIKey();
     }
 
-    void AISettingsViewModel::AIKey(winrt::hstring key)
+    void AISettingsViewModel::AzureOpenAIKey(winrt::hstring key)
     {
-        _Settings.AIKey(key);
-        _NotifyChanges(L"AreAIKeyAndEndpointSet");
+        _Settings.GlobalSettings().AIInfo().AzureOpenAIKey(key);
+        _NotifyChanges(L"AreAzureOpenAIKeyAndEndpointSet");
+    }
+
+    bool AISettingsViewModel::IsOpenAIKeySet()
+    {
+        return !_Settings.GlobalSettings().AIInfo().OpenAIKey().empty();
+    }
+
+    winrt::hstring AISettingsViewModel::OpenAIKey()
+    {
+        return _Settings.GlobalSettings().AIInfo().OpenAIKey();
+    }
+
+    void AISettingsViewModel::OpenAIKey(winrt::hstring key)
+    {
+        _Settings.GlobalSettings().AIInfo().OpenAIKey(key);
+        _NotifyChanges(L"IsOpenAIKeySet");
+    }
+
+    bool AISettingsViewModel::AzureOpenAIActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::AzureOpenAI;
+    }
+
+    void AISettingsViewModel::AzureOpenAIActive(bool active)
+    {
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::AzureOpenAI);
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive");
+        }
+    }
+
+    bool AISettingsViewModel::OpenAIActive()
+    {
+        return _Settings.GlobalSettings().AIInfo().ActiveProvider() == Model::LLMProvider::OpenAI;
+    }
+
+    void AISettingsViewModel::OpenAIActive(bool active)
+    {
+        if (active)
+        {
+            _Settings.GlobalSettings().AIInfo().ActiveProvider(Model::LLMProvider::OpenAI);
+            _NotifyChanges(L"AzureOpenAIActive", L"OpenAIActive");
+        }
     }
 }
