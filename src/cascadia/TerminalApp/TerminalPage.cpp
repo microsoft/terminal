@@ -5573,32 +5573,28 @@ namespace winrt::TerminalApp::implementation
         }
 
         // we now have a provider of the correct type, update that
-        if (authValues)
+        if (!authValues)
         {
-            _lmProvider.SetAuthentication(authValues);
-        }
-        else
-        {
-            Windows::Foundation::Collections::ValueSet authentication{};
+            authValues = Windows::Foundation::Collections::ValueSet{};
             const auto settingsAIInfo = _settings.GlobalSettings().AIInfo();
             switch (providerType)
             {
             case LLMProvider::AzureOpenAI:
-                authentication.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
-                authentication.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
+                authValues.Insert(L"endpoint", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIEndpoint()));
+                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.AzureOpenAIKey()));
                 break;
             case LLMProvider::OpenAI:
-                authentication.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
+                authValues.Insert(L"key", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.OpenAIKey()));
                 break;
             case LLMProvider::GithubCopilot:
-                authentication.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotAuthToken()));
-                authentication.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotRefreshToken()));
+                authValues.Insert(L"access_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotAuthToken()));
+                authValues.Insert(L"refresh_token", Windows::Foundation::PropertyValue::CreateString(settingsAIInfo.GithubCopilotRefreshToken()));
                 break;
             default:
                 break;
             }
-            _lmProvider.SetAuthentication(authentication);
         }
+        _lmProvider.SetAuthentication(authValues);
 
         if (_extensionPalette)
         {
