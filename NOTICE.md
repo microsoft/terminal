@@ -346,8 +346,8 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 ```
 
-## cmark-gfm
-**Source**: [https://github.com/github/cmark-gfm](https://github.com/github/cmark-gfm)
+## cmark
+**Source**: [https://github.com/commonmark/cmark](https://github.com/commonmark/cmark)
 
 ### License
 Copyright (c) 2014, John MacFarlane
@@ -520,7 +520,6 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 
 # Microsoft Open Source
 
