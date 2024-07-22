@@ -734,4 +734,7 @@
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>Salva frammento</value>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Apri menu di correzione rapida</value>
+  </data>
 </root>

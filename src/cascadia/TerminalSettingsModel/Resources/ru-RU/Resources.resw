@@ -734,4 +734,7 @@
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>Сохранить фрагмент</value>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Открыть меню быстрого исправления</value>
+  </data>
 </root>
