@@ -169,4 +169,12 @@
     <value>Learn more</value>
     <comment>The text of the hyperlink that directs the user to the link for them to learn more about Terminal AI.</comment>
   </data>
+  <data name="UserString" xml:space="preserve">
+    <value>User</value>
+    <comment>A string to represent the section that the user typed, presented when the user exports the chat history to a file</comment>
+  </data>
+  <data name="AssistantString" xml:space="preserve">
+    <value>Assistant</value>
+    <comment>A string to represent the section that the chat assistant typed, presented when the user exports the chat history to a file</comment>
+  </data>
 </root>

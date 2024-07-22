@@ -379,6 +379,8 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         std::wstring concatenatedMessages{};
         for (const auto groupedMessage : _messages)
         {
+            groupedMessage.IsQuery() ? concatenatedMessages += RS_(L"UserString") : concatenatedMessages += RS_(L"AssistantString");
+            concatenatedMessages += L":\n";
             for (const auto chatMessage : groupedMessage)
             {
                 concatenatedMessages += chatMessage.as<ChatMessage>()->MessageContent();
