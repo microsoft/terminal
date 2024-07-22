@@ -5422,12 +5422,8 @@ namespace winrt::TerminalApp::implementation
         _createAndSetAuthenticationForLMProvider(_settings.GlobalSettings().AIInfo().ActiveProvider());
 
         // make sure we listen for auth changes
-        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged(winrt::auto_revoke, [&]() {
-            _createAndSetAuthenticationForLMProvider(LLMProvider::AzureOpenAI);
-        });
-        _openAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged(winrt::auto_revoke, [&]() {
-            _createAndSetAuthenticationForLMProvider(LLMProvider::OpenAI);
-        });
+        _azureOpenAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setAzureOpenAIAuth });
+        _openAISettingChangedRevoker = Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged(winrt::auto_revoke, { this, &TerminalPage::_setOpenAIAuth });
 
         _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
             if (_extensionPalette.Visibility() == Visibility::Collapsed)
@@ -5513,5 +5509,15 @@ namespace winrt::TerminalApp::implementation
         {
             _extensionPalette.SetProvider(_lmProvider);
         }
+    }
+
+    void TerminalPage::_setAzureOpenAIAuth()
+    {
+        _createAndSetAuthenticationForLMProvider(LLMProvider::AzureOpenAI);
+    }
+
+    void TerminalPage::_setOpenAIAuth()
+    {
+        _createAndSetAuthenticationForLMProvider(LLMProvider::OpenAI);
     }
 }
