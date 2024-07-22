@@ -555,11 +555,13 @@ try
             return S_OK;
         }
 
-        auto buffer = Buffer<u32, 32>{ pixels.size() };
-        memcpy(buffer.data(), pixels.data(), pixels.size_bytes());
+        if (b.source.size() != pixels.size())
+        {
+            b.source = Buffer<u32, 32>{ pixels.size() };
+        }
 
+        memcpy(b.source.data(), pixels.data(), pixels.size_bytes());
         b.revision = revision;
-        b.source = std::move(buffer);
         b.sourceSize.x = srcWidth;
         b.sourceSize.y = srcHeight;
     }
