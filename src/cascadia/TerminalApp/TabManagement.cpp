@@ -311,7 +311,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto control{ tab.GetActiveTerminalControl() })
         {
-            _SaveFileHelper(control.ReadEntireBuffer(), filepath, tab.Title());
+            // An arbitrary GUID to associate with all instances of the save file dialog
+            // for exporting terminal buffers, so they all re-open in the same path as they were
+            // open before:
+            static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
+
+            _SaveStringToFileOrPromptUser(control.ReadEntireBuffer(), filepath, tab.Title(), clientGuidExportFile);
         }
     }
 

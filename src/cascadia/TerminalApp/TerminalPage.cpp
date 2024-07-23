@@ -509,10 +509,16 @@ namespace winrt::TerminalApp::implementation
         wcsftime(&buf[0], ARRAYSIZE(buf), L"%F %T", &nowTm);
 
         const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(buf);
-        _SaveFileHelper(text, L"", defaultFileName);
+
+        // An arbitrary GUID to associate with all instances of the save file dialog
+        // for exporting terminal chat histories, so they all re-open in the same path as they were
+        // open before:
+        static constexpr winrt::guid terminalChatSaveFileDialogGuid{ 0xc3e449f6, 0x1b5, 0x44e0, { 0x9e, 0x6d, 0x63, 0xca, 0x15, 0x43, 0x4b, 0xdc } };
+
+        _SaveStringToFileOrPromptUser(text, L"", defaultFileName, terminalChatSaveFileDialogGuid);
     }
 
-    fire_and_forget TerminalPage::_SaveFileHelper(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename)
+    fire_and_forget TerminalPage::_SaveStringToFileOrPromptUser(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename, const winrt::guid dialogGuid)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -520,10 +526,6 @@ namespace winrt::TerminalApp::implementation
             { L"Text Files (*.txt)", L"*.txt" },
             { L"All Files (*.*)", L"*.*" }
         };
-        // An arbitrary GUID to associate with all instances of this
-        // dialog, so they all re-open in the same path as they were
-        // open before:
-        static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
 
         try
         {
@@ -535,8 +537,8 @@ namespace winrt::TerminalApp::implementation
                 // because they don't work elevated (shocker) So just use the
                 // shell32 file picker manually.
                 std::wstring cleanedFilename{ til::clean_filename(std::wstring{ filename }) };
-                path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(cleanedFilename)](auto&& dialog) {
-                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(cleanedFilename), saveDialogGuid = std::move(dialogGuid)](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(saveDialogGuid));
                     try
                     {
                         // Default to the Downloads folder
