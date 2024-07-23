@@ -5,9 +5,10 @@
 
 #include "ConptyConnection.g.h"
 #include "BaseTerminalConnection.h"
-
 #include "ITerminalHandoff.h"
+
 #include <til/env.h>
+#include <til/ticket_lock.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -79,6 +80,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_process_information _piClient;
         wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
 
+        til::ticket_lock _writeLock;
         wil::unique_event _writeOverlappedEvent;
         OVERLAPPED _writeOverlapped{};
         std::string _writeBuffer;

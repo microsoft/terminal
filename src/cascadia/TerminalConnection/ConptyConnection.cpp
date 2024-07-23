@@ -156,6 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _writeOverlappedEvent{ CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS) }
     {
         THROW_LAST_ERROR_IF(!_writeOverlappedEvent);
+        _writeOverlapped.hEvent = _writeOverlappedEvent.get();
     }
 
     // Function Description:
@@ -481,14 +482,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
+        // Ensure a linear and predictable write order, even across multiple threads.
+        // A ticket lock is the perfect fit for this as it acts as first-come-first-serve.
+        std::lock_guard guard{ _writeLock };
+
         if (_writePending)
         {
             _writePending = false;
 
             DWORD read;
-            if (FAILED_LOG(Utils::GetOverlappedResultSameThread(&_writeOverlapped, &read)))
+            if (!GetOverlappedResult(_pipe.get(), &_writeOverlapped, &read, TRUE))
             {
                 // Not much we can do when the wait fails. This will kill the connection.
+                LOG_LAST_ERROR();
                 _hPC.reset();
                 return;
             }
@@ -581,6 +587,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Loop around `CancelIoEx()` just in case the signal to shut down was missed.
             for (;;)
             {
+                // The output thread may be stuck waiting for the OVERLAPPED to be signaled.
+                CancelIoEx(_pipe.get(), nullptr);
+
                 // Waiting for the output thread to exit ensures that all pending TerminalOutput.raise()
                 // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
                 // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
@@ -589,11 +598,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     break;
                 }
-
-                LOG_LAST_ERROR();
-
-                // The output thread may be stuck waiting for the OVERLAPPED to be signaled.
-                CancelIoEx(_pipe.get(), nullptr);
             }
         }
 
