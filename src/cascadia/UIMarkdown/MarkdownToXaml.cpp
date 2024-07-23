@@ -317,12 +317,12 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 
     case CMARK_NODE_SOFTBREAK:
         // I'm fairly confident this is what happens when you've just got
-        // two lines only seperated by a single \r\n in a MD doc. E.g. when
+        // two lines only separated by a single \r\n in a MD doc. E.g. when
         // you want a paragraph to wrap at 80 columns in code, but wrap in
         // the rendered document.
         //
         // In the HTML implementation, what happens here depends on the options:
-        // * CMARK_OPT_HARDBREAKS: add a full linebreak
+        // * CMARK_OPT_HARDBREAKS: add a full line break
         // * CMARK_OPT_NOBREAKS: Just add a space
         // * otherwise, just add a '\n'
         //
