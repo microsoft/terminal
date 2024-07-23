@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, Model::SendInputArgs{ text } };
 
             // By using the last active control as the sender here, the
-            // actiopn dispatch will send this to the active control,
+            // action dispatch will send this to the active control,
             // thinking that it is the control that requested this event.
             DispatchActionRequested.raise(strongControl, actionAndArgs);
             strongControl.Focus(winrt::WUX::FocusState::Programmatic);

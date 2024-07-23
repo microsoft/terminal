@@ -23,15 +23,15 @@ static const std::wstring bullets[]{
 };
 
 template<typename T>
-static std::string_view textFromCmarkString(const T& s)
+static std::string_view textFromCmarkString(const T& s) noexcept
 {
     return std::string_view{ (char*)s.data, (size_t)s.len };
 }
-static std::string_view textFromLiteral(cmark_node* node)
+static std::string_view textFromLiteral(cmark_node* node) noexcept
 {
     return cmark_node_get_literal(node);
 }
-static std::string_view textFromUrl(cmark_node* node)
+static std::string_view textFromUrl(cmark_node* node) noexcept
 {
     return cmark_node_get_url(node);
 }
@@ -375,7 +375,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
             const auto urlHstring{ winrt::hstring{ til::u8u16(url) } };
             WUX::Documents::Hyperlink a{};
 
-            // Set the toolip to display the URL
+            // Set the tooltip to display the URL
             try
             {
                 // This block from TermControl.cpp, where we sanitize the
@@ -437,11 +437,11 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         // future, but isn't yet available in vcpkg.
 
         // case CMARK_NODE_FOOTNOTE_DEFINITION:
-        //     // Not suppoorted currently
+        //     // Not supported currently
         //     break;
         //
         // case CMARK_NODE_FOOTNOTE_REFERENCE:
-        //     // Not suppoorted currently
+        //     // Not supported currently
         //     break;
 
     default:
