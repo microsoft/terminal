@@ -948,14 +948,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             for (const auto& json : actions)
             {
-                const auto parsed = Command::FromSnippetJson(json);
-                // Skip over things that aren't snippets
-                if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
-                {
-                    continue;
-                }
-
-                result.push_back(*parsed);
+                result.push_back(*Command::FromSnippetJson(json));
             }
         }
         return result;

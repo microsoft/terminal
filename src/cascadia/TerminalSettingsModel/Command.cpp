@@ -309,7 +309,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         IActionArgs args{ nullptr };
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
         std::tie(args, parseWarnings) = SendInputArgs::FromJson(json);
-        result->_ActionAndArgs = *winrt::make_self<implementation::ActionAndArgs>(action, args);
+        result->_ActionAndArgs = winrt::make<implementation::ActionAndArgs>(action, args);
 
         return result;
     }
