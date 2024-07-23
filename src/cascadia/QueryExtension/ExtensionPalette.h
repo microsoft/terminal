@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         TYPED_EVENT(ActiveControlInfoRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(AIKeyAndEndpointRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, Windows::Foundation::IInspectable);
         TYPED_EVENT(InputSuggestionRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
+        TYPED_EVENT(ExportChatHistoryRequested, winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette, winrt::hstring);
 
     private:
         friend struct ExtensionPaletteT<ExtensionPalette>; // for Xaml to bind events
@@ -52,6 +53,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         bool _verifyModelIsValidHelper(const Windows::Data::Json::JsonObject jsonResponse);
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void _exportMessagesToFile(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _listItemClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
         void _rootPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _backdropPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);

@@ -346,7 +346,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
 
-        winrt::fire_and_forget _ExportTab(const TerminalTab& tab, winrt::hstring filepath);
+        void _ExportTab(const TerminalTab& tab, winrt::hstring filepath);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
         void _CloseTabAtIndex(uint32_t index);
@@ -449,6 +449,8 @@ namespace winrt::TerminalApp::implementation
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
         void _OnInputSuggestionRequested(const IInspectable& sender, const winrt::hstring& suggestion);
+        void _OnExportChatHistoryRequested(const IInspectable& sender, const winrt::hstring& text);
+        fire_and_forget _SaveStringToFileOrPromptUser(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename, const winrt::guid dialogGuid);
 
         void _Find(const TerminalTab& tab);
 

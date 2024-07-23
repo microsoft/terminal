@@ -9,6 +9,7 @@
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 #include <Utils.h>
+#include <shlobj.h>
 
 #include "../../types/inc/utils.hpp"
 #include "App.h"
@@ -18,6 +19,8 @@
 #include "ScratchpadContent.h"
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
+#include <til/io.h>
+#include <time.h>
 
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -485,6 +488,94 @@ namespace winrt::TerminalApp::implementation
         {
             activeControl.SendInput(suggestion);
         }
+    }
+
+    // Method Description:
+    // - This method is called when the user clicks the "export message history" button
+    //   in the query palette
+    // Arguments:
+    // - text - the text to export
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnExportChatHistoryRequested(const IInspectable& /*sender*/, const winrt::hstring& text)
+    {
+        time_t nowTime;
+        time(&nowTime);
+
+        tm nowTm;
+        localtime_s(&nowTm, &nowTime);
+
+        wchar_t buf[64];
+        wcsftime(&buf[0], ARRAYSIZE(buf), L"%F %T", &nowTm);
+
+        const auto defaultFileName = RS_(L"TerminalChatHistoryDefaultFileName") + winrt::to_hstring(buf);
+
+        // An arbitrary GUID to associate with all instances of the save file dialog
+        // for exporting terminal chat histories, so they all re-open in the same path as they were
+        // open before:
+        static constexpr winrt::guid terminalChatSaveFileDialogGuid{ 0xc3e449f6, 0x1b5, 0x44e0, { 0x9e, 0x6d, 0x63, 0xca, 0x15, 0x43, 0x4b, 0xdc } };
+
+        _SaveStringToFileOrPromptUser(text, L"", defaultFileName, terminalChatSaveFileDialogGuid);
+    }
+
+    // Method Description:
+    // - Saves the given text to the file path provided, or prompts the user for the location to save it
+    // Arguments:
+    // - text - the text to save
+    // - filepath - the location to save the text
+    // - filename - the name of the file to save the text to
+    // - dialogGuid - the guid to associate with these specific saves (determines where the save dialog opens to by default)
+    fire_and_forget TerminalPage::_SaveStringToFileOrPromptUser(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename, const winrt::guid dialogGuid)
+    {
+        // This will be used to set up the file picker "filter", to select .txt
+        // files by default.
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Text Files (*.txt)", L"*.txt" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+
+        try
+        {
+            auto path = filepath;
+
+            if (path.empty())
+            {
+                // GH#11356 - we can't use the UWP apis for writing the file,
+                // because they don't work elevated (shocker) So just use the
+                // shell32 file picker manually.
+                std::wstring cleanedFilename{ til::clean_filename(std::wstring{ filename }) };
+                path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(cleanedFilename), saveDialogGuid = std::move(dialogGuid)](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(saveDialogGuid));
+                    try
+                    {
+                        // Default to the Downloads folder
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+
+                    // Default to using the tab title as the file name
+                    THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
+                });
+            }
+            else
+            {
+                // The file picker isn't going to give us paths with
+                // environment variables, but the user might have set one in
+                // the settings. Expand those here.
+
+                path = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+            }
+
+            if (!path.empty())
+            {
+                til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ std::wstring_view{ path } }, til::u16u8(text));
+            }
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -5417,6 +5508,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ExportChatHistoryRequested({ this, &TerminalPage::_OnExportChatHistoryRequested });
         _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
             if (const auto activeControl = _GetActiveControl())
             {
