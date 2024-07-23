@@ -518,6 +518,13 @@ namespace winrt::TerminalApp::implementation
         _SaveStringToFileOrPromptUser(text, L"", defaultFileName, terminalChatSaveFileDialogGuid);
     }
 
+    // Method Description:
+    // - Saves the given text to the file path provided, or prompts the user for the location to save it
+    // Arguments:
+    // - text - the text to save
+    // - filepath - the location to save the text
+    // - filename - the name of the file to save the text to
+    // - dialogGuid - the guid to associate with these specific saves (determines where the save dialog opens to by default)
     fire_and_forget TerminalPage::_SaveStringToFileOrPromptUser(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename, const winrt::guid dialogGuid)
     {
         // This will be used to set up the file picker "filter", to select .txt
