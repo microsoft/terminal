@@ -26,6 +26,9 @@ public:
     ImageSlice(const ImageSlice& rhs) = default;
     ImageSlice(const til::size cellSize) noexcept;
 
+    void BumpRevision() noexcept;
+    uint64_t Revision() const noexcept;
+
     til::size CellSize() const noexcept;
     til::CoordType ColumnOffset() const noexcept;
     til::CoordType PixelWidth() const noexcept;
@@ -45,6 +48,7 @@ private:
     bool _copyCells(const ImageSlice& srcSlice, const til::CoordType srcColumn, const til::CoordType dstColumnBegin, const til::CoordType dstColumnEnd);
     bool _eraseCells(const til::CoordType columnBegin, const til::CoordType columnEnd);
 
+    uint64_t _revision = 0;
     til::size _cellSize;
     std::vector<RGBQUAD> _pixelBuffer;
     til::CoordType _columnBegin = 0;
