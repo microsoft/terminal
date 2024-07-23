@@ -164,7 +164,7 @@ DoScroll:
 void CursorBlinker::SetCaretTimer() const noexcept
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.IsConPTY())
+    if (gci.IsInVtIoMode())
     {
         return;
     }

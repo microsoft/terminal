@@ -1969,7 +1969,7 @@ bool SCREEN_INFORMATION::_IsAltBuffer() const
 bool SCREEN_INFORMATION::_IsInPtyMode() const
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return _IsAltBuffer() || gci.IsConPTY();
+    return _IsAltBuffer() || gci.IsInVtIoMode();
 }
 
 // Routine Description:

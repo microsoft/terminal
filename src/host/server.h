@@ -106,7 +106,7 @@ public:
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIoNoCheck() noexcept;
     Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriter() noexcept;
     Microsoft::Console::VirtualTerminal::VtIo::Writer GetVtWriterForBuffer(const SCREEN_INFORMATION* context) noexcept;
-    bool IsConPTY() const noexcept;
+    bool IsInVtIoMode() const noexcept;
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;

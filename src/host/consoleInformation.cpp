@@ -133,7 +133,7 @@ VtIo::Writer CONSOLE_INFORMATION::GetVtWriterForBuffer(const SCREEN_INFORMATION*
     return _vtIo.IsUsingVt() && (pCurrentScreenBuffer == context || pCurrentScreenBuffer == context->GetAltBuffer()) ? _vtIo.GetWriter() : VtIo::Writer{};
 }
 
-bool CONSOLE_INFORMATION::IsConPTY() const noexcept
+bool CONSOLE_INFORMATION::IsInVtIoMode() const noexcept
 {
     return _vtIo.IsUsingVt();
 }

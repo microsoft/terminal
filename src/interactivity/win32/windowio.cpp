@@ -936,7 +936,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // successfully created with the owner configured when the window is
         // first created. See GH#13066 for details.
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        if (gci.IsConPTY())
+        if (gci.IsInVtIoMode())
         {
             gci.GetVtIoNoCheck()->CreatePseudoWindow();
         }

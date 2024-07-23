@@ -36,7 +36,7 @@ void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // ConPTY should not respond to requests. That's the job of the terminal.
-    if (gci.IsConPTY())
+    if (gci.IsInVtIoMode())
     {
         return;
     }
@@ -211,7 +211,7 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto hwnd = gci.IsConPTY() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
     // conhost HWND, it's going to need to get processed by the window message

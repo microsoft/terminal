@@ -460,7 +460,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     // mode, then the cursor will remain off until they print text. This can
     // lead to alignment problems in the terminal, because we won't move the
     // terminal's cursor in this _exact_ scenario.
-    screenInfo.GetTextBuffer().GetCursor().SetIsOn(gci.IsConPTY());
+    screenInfo.GetTextBuffer().GetCursor().SetIsOn(gci.IsInVtIoMode());
 
     // set font
     screenInfo.RefreshFontWithRenderer();
