@@ -867,7 +867,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 // Look for any sendInput commands nested underneath us
                 std::vector<Model::Command> empty{};
-                auto innerResults = winrt::single_threaded_vector<Model::Command>(std::move(_filterToSnippets(command.NestedCommands(), currentCommandline, empty)));
+                auto innerResults = winrt::single_threaded_vector<Model::Command>(_filterToSnippets(command.NestedCommands(), currentCommandline, empty));
 
                 if (innerResults.Size() > 0)
                 {
