@@ -65,7 +65,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.240122.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 
     <!-- WinGet Out-of-proc -->
-    <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Microsoft.WindowsPackageManager.ComInterop.Additional.targets" Condition="'$(TerminalWinGetOutOfProc)' == 'true'" />
+    <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Microsoft.WindowsPackageManager.ComInterop.Additional.targets" Condition="'$(TerminalWinGetInterop)' == 'true'" />
   </ImportGroup>
 
   <Target Name="Terminal_EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
