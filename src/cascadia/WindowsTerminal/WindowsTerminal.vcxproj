@@ -169,6 +169,41 @@
     </ItemGroup>
 
   </Target>
+
+  <PropertyGroup>
+    <PrepareForRunDependsOn Condition="'$(BuildingInsideVisualStudio)'=='true'">_WTPrepareUnpackagedLayoutForRun;$(PrepareForRunDependsOn)</PrepareForRunDependsOn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <WTFullXamlAssets Include="$(OutDir)\_xaml\resources.pri" />
+    <WTFullXamlAssets Include="$(OutDir)\_xaml\Microsoft.UI.Xaml.dll" />
+  </ItemGroup>
+  <Target Name="_GetFullFatXamlAssets" Inputs="@(AppxPackageRegistration)" Outputs="@(WTFullXamlAssets)">
+    <ItemGroup>
+      <CurrentXamlPackage Include="@(AppxPackageRegistration)"
+        Condition="'%(AppxPackageRegistration.Architecture)'=='$(Platform)' AND
+        $([System.String]::new('%(AppxPackageRegistration.Filename)').StartsWith('Microsoft.UI.Xaml'))" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutDir)\_xaml" />
+    <Exec Command="tar.exe -x -C &quot;$(OutDir)\_xaml&quot; -f &quot;@(CurrentXamlPackage)&quot;" />
+  </Target>
+  <Target Name="_WTCalculateUnpackagedRunFiles" DependsOnTargets="CopyFilesToOutputDirectory;_GetFullFatXamlAssets">
+    <CallTarget Targets="GetPackagingOutputs">
+      <Output TaskParameter="TargetOutputs" ItemName="WTPackagingOutputsFromDependencyProjects" />
+    </CallTarget>
+    <ItemGroup>
+      <DependencyPriFiles Include="@(WTPackagingOutputsFromDependencyProjects->Distinct())" Condition="'%(WTPackagingOutputsFromDependencyProjects.Extension)'=='.pri' and '%(WTPackagingOutputsFromDependencyProjects.Filename)'!='Microsoft.UI.Xaml'"/>
+      <DependencyPriFiles Include="@(WTFullXamlAssets)" Condition="'%(WTFullXamlAssets.Extension)'=='.pri'" />
+      <DependencyExecutables Include="@(WTFullXamlAssets)" Condition="'%(WTFullXamlAssets.Extension)'=='.dll'" />
+      <DependencyExecutables Include="$(OutDir)\..\OpenConsole.exe" />
+    </ItemGroup>
+  </Target>
+  <Target Name="_WTPrepareUnpackagedLayoutForRun" Inputs="@(DependencyPriFiles);@(DependencyExecutables)" Outputs="$(OutDir)\stamp" DependsOnTargets="_WTCalculateUnpackagedRunFiles">
+    <Copy SourceFiles="@(DependencyExecutables)" DestinationFolder="$(OutDir)" UseHardlinksIfPossible="true" SkipUnchangedFiles="true" />
+    <Exec Command="pwsh.exe -c &quot;$(OpenConsoleDir)\build\scripts\Merge-PriFiles.ps1&quot; -Path &quot;@(DependencyPriFiles, '&quot;, &quot;')&quot; -OutputPath &quot;$(OutDir)resources.pri&quot;" />
+    <Touch Files="$(OutDir)\stamp" AlwaysCreate="true" />
+  </Target>
+
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
