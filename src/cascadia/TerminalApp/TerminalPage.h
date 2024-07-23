@@ -13,7 +13,7 @@
 #include "LaunchPositionRequest.g.h"
 #include "Toast.h"
 
-#include <winrt/Microsoft.Management.Deployment.h>
+#include "WindowsPackageManagerFactory.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
@@ -88,36 +88,6 @@ namespace winrt::TerminalApp::implementation
 
         til::property<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> Position;
     };
-
-    //struct WindowsPackageManagerDefaultFactory
-    //{
-    //public:
-    //    WindowsPackageManagerDefaultFactory() = default;
-    //
-    //private:
-    //    template <typename T> T CreateInstance(guid clsid, guid iid)
-    //    {
-    //        auto pUnknown = 0;
-    //        try
-    //        {
-    //            LPVOID* result;
-    //            auto hr = CoCreateInstance(clsid, null, CLSCTX::CLSCTX_LOCAL_SERVER, iid, &result);
-    //            check_hresult(hr);
-    //            pUnknown = get_unknown(result);
-    //
-    //        }
-    //        finally
-    //        {
-    //            if (pUnknown != 0)
-    //            {
-    //                ReleaseCapture(pUnknown);
-    //            }
-    //        }
-    //        //T instance;
-    //        //check_hresult(::CoCreateInstance(clsid, nullptr, CLSCTX_INPROC_SERVER, iid, instance.put_void()));
-    //        //return instance;
-    //    }
-    //};
 
     struct TerminalPage : TerminalPageT<TerminalPage>
     {

@@ -178,6 +178,7 @@
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="WindowsPackageManagerFactory.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
