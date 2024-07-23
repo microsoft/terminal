@@ -116,6 +116,7 @@ IUri
 IVirtual
 KEYSELECT
 LCID
+LINEBREAK
 llabs
 llu
 localtime
