@@ -185,7 +185,7 @@
         $([System.String]::new('%(AppxPackageRegistration.Filename)').StartsWith('Microsoft.UI.Xaml'))" />
     </ItemGroup>
     <MakeDir Directories="$(OutDir)\_xaml" />
-    <Exec Command="tar.exe -x -C &quot;$(OutDir)\_xaml&quot; -f @(CurrentXamlPackage)" />
+    <Exec Command="tar.exe -x -C &quot;$(OutDir)\_xaml&quot; -f &quot;@(CurrentXamlPackage)&quot;" />
   </Target>
   <Target Name="_WTCalculateUnpackagedRunFiles" DependsOnTargets="CopyFilesToOutputDirectory;_GetFullFatXamlAssets">
     <CallTarget Targets="GetPackagingOutputs">
