@@ -785,7 +785,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
 
             // Paint any image content on top of the text.
-            const auto& imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
+            const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
             if (imageSlice) [[unlikely]]
             {
                 LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, view.Left()));

@@ -177,6 +177,9 @@ namespace Microsoft::Console::Render::Atlas
             u16r invalidatedCursorArea = invalidatedAreaNone;
             range<u16> invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
+
+            // The position of the viewport inside the text buffer (in cells).
+            u16x2 viewportOffset{ 0, 0 };
         } _api;
     };
 }
