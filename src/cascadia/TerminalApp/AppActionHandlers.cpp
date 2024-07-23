@@ -1511,7 +1511,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-
         co_await wil::resume_foreground(Dispatcher());
 
         // Open the palette with all these commands in it.
