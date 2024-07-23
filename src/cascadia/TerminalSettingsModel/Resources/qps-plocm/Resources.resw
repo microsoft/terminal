@@ -734,4 +734,7 @@
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>Ŝâνê Ŝⁿïррęт !!! </value>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Ωρзπ qυί¢к ƒϊ× мėŋύ !!! !!!</value>
+  </data>
 </root>

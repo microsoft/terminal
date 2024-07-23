@@ -1438,7 +1438,6 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
             {
                 _doHandleSuggestions(realArgs);
-
                 args.Handled(true);
             }
         }
@@ -1475,6 +1474,18 @@ namespace winrt::TerminalApp::implementation
         // Aggregate all the commands from the different sources that
         // the user selected.
 
+        if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
+            context != nullptr &&
+            context.QuickFixes() != nullptr)
+        {
+            // \ue74c --> OEM icon
+            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });
+            for (const auto& t : recentCommands)
+            {
+                commandsCollection.push_back(t);
+            }
+        }
+
         // Tasks are all the sendInput commands the user has saved in
         // their settings file. Ask the ActionMap for those.
         if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
@@ -1500,17 +1511,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (WI_IsFlagSet(source, SuggestionsSource::QuickFixes) &&
-            context != nullptr &&
-            context.QuickFixes() != nullptr)
-        {
-            // \ue74c --> OEM icon
-            const auto recentCommands = Command::HistoryToCommands(context.QuickFixes(), hstring{ L"" }, false, hstring{ L"\ue74c" });
-            for (const auto& t : recentCommands)
-            {
-                commandsCollection.push_back(t);
-            }
-        }
 
         co_await wil::resume_foreground(Dispatcher());
 
@@ -1603,5 +1603,15 @@ namespace winrt::TerminalApp::implementation
     {
         _ShowAboutDialog();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleQuickFix(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.OpenQuickFixMenu();
+            args.Handled(handled);
+        }
     }
 }

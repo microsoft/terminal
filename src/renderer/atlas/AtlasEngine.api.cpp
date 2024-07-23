@@ -98,7 +98,7 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept
 {
-    const auto viewportOrigin = til::point{ _api.s->viewportOffset.x, _api.s->viewportOffset.y };
+    const auto viewportOrigin = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
     const auto viewport = til::rect{ 0, 0, _api.s->viewportCellCount.x, _api.s->viewportCellCount.y };
     const auto cellCountX = static_cast<til::CoordType>(_api.s->viewportCellCount.x);
     for (const auto& hi : highlights)
@@ -221,10 +221,7 @@ try
     {
         _api.s.write()->viewportCellCount = viewportCellCount;
     }
-    if (_api.s->viewportOffset != viewportOffset)
-    {
-        _api.s.write()->viewportOffset = viewportOffset;
-    }
+    _api.viewportOffset = viewportOffset;
 
     return S_OK;
 }

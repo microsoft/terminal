@@ -425,12 +425,7 @@ class ViewportTests
         testView = Viewport::FromInclusive(testRect);
 
         Log::Comment(L"We expect it to be pulled back so each coordinate is in bounds, but the rectangle is still invalid (since left will be > right).");
-        til::inclusive_rect expected;
-        expected.top = rect.bottom;
-        expected.bottom = rect.top;
-        expected.left = rect.right;
-        expected.right = rect.left;
-        const auto expectedView = Viewport::FromInclusive(expected);
+        const auto expectedView = Viewport::Empty();
 
         actual = view.Clamp(testView);
         VERIFY_ARE_EQUAL(expectedView, actual, L"Every dimension should be pulled just inside the clamping rectangle.");
