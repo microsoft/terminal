@@ -183,6 +183,11 @@ bool VtIo::IsUsingVt() const
         CATCH_RETURN();
     }
 
+    if (_pVtInputThread)
+    {
+        LOG_IF_FAILED(_pVtInputThread->Start());
+    }
+
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
     //  we're going to emit a VT sequence to ask for the cursor position, then
@@ -193,6 +198,9 @@ bool VtIo::IsUsingVt() const
     {
         _lookingForCursorPosition = false;
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
+
+        // Allow the input thread to momentarily gain the console lock.
+        const auto suspension = g.getConsoleInformation().SuspendLock();
         _pVtInputThread->WaitUntilDSR(3000);
     }
 
@@ -201,11 +209,6 @@ bool VtIo::IsUsingVt() const
     // send us full INPUT_RECORDs as input. If the terminal doesn't understand
     // this sequence, it'll just ignore it.
     LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
-
-    if (_pVtInputThread)
-    {
-        LOG_IF_FAILED(_pVtInputThread->Start());
-    }
 
     if (_pPtySignalInputThread)
     {

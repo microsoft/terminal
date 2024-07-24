@@ -447,6 +447,8 @@
         { "command": "restoreLastClosed", "id": "Terminal.RestoreLastClosed" },
         { "command": "openAbout", "id": "Terminal.OpenAboutDialog" },
         { "command": "experimental.openTasks", "id": "Terminal.OpenTasks" },
+        { "command": "quickFix", "id": "Terminal.QuickFix" },
+        { "command": { "action": "showSuggestions", "source": "all"}, "id": "Terminal.Suggestions" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -639,6 +641,7 @@
         { "keys":"ctrl+shift+p", "id": "Terminal.ToggleCommandPalette" },
         { "keys":"win+sc(41)", "id": "Terminal.QuakeMode" },
         { "keys": "alt+space", "id": "Terminal.OpenSystemMenu" },
+        { "keys": "ctrl+shift+period", "id": "Terminal.Suggestions" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

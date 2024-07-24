@@ -111,7 +111,8 @@
     ON_ALL_ACTIONS(RestartConnection)       \
     ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenScratchpad)          \
-    ON_ALL_ACTIONS(OpenAbout)
+    ON_ALL_ACTIONS(OpenAbout)               \
+    ON_ALL_ACTIONS(QuickFix)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \

@@ -734,4 +734,7 @@
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>Codeschnipsel speichern</value>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Menü zur schnellen Problembehebung öffnen</value>
+  </data>
 </root>

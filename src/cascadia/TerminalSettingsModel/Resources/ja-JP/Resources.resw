@@ -734,4 +734,7 @@
   <data name="SaveSnippetNamePrefix" xml:space="preserve">
     <value>スニペットの保存</value>
   </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>クイック修正メニューを開く</value>
+  </data>
 </root>
