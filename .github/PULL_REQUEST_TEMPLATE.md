@@ -10,5 +10,5 @@
 - [ ] Closes #xxx
 - [ ] Tests added/passed
 - [ ] Documentation updated
-- [ ] If checked, please file a pull request on [our docs repo](https://github.com/MicrosoftDocs/terminal) and link it here: #xxx
+ - [ ] If checked, please file a pull request on [our docs repo](https://github.com/MicrosoftDocs/terminal) and link it here: #xxx
 - [ ] Schema updated (if necessary)
