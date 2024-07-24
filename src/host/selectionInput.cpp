@@ -955,7 +955,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             if (pcoordInputEnd != nullptr)
             {
                 // - 1 so the coordinate is on top of the last position of the text, not one past it.
-                gci.GetActiveOutputBuffer().GetBufferSize().MoveInBounds(-1, boundaries.end);
+                gci.GetActiveOutputBuffer().GetBufferSize().WalkInBounds(boundaries.end, -1);
                 *pcoordInputEnd = boundaries.end;
             }
             return true;

@@ -150,6 +150,12 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoVsCodeAction(const std::wstring_view string) override;
 
+        bool DoWTAction(const std::wstring_view string) override;
+
+        StringHandler DefineSixelImage(const VTInt macroParameter,
+                                       const DispatchTypes::SixelBackground backgroundSelect,
+                                       const VTParameter backgroundColor) override; // SIXEL
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
@@ -184,6 +190,7 @@ namespace Microsoft::Console::VirtualTerminal
             Column,
             AllowDECCOLM,
             AllowDECSLRM,
+            SixelDisplay,
             EraseColor,
             RectangularChangeExtent,
             PageCursorCoupling
@@ -291,6 +298,8 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
         PageManager _pages;
+        friend class SixelParser;
+        std::shared_ptr<SixelParser> _sixelParser;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;

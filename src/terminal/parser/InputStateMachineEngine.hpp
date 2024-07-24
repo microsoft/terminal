@@ -132,8 +132,9 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
 
+        void WaitUntilDSR(DWORD timeout) const noexcept;
+
         bool EncounteredWin32InputModeSequence() const noexcept override;
-        void SetLookingForDSR(const bool looking) noexcept;
 
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
@@ -165,7 +166,7 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         std::function<bool()> _pfnFlushToInputQueue;
-        bool _lookingForDSR;
+        std::atomic<bool> _lookingForDSR{ false };
         bool _encounteredWin32InputModeSequence = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;

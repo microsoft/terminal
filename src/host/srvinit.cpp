@@ -2,33 +2,18 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "srvinit.h"
 
 #include "dbcs.h"
 #include "handle.h"
 #include "registry.hpp"
 #include "renderFontDefaults.hpp"
-
-#include "ApiRoutines.h"
-
-#include "../types/inc/GlyphWidth.hpp"
-
-#include "../server/DeviceHandle.h"
-#include "../server/Entrypoints.h"
-#include "../server/IoSorter.h"
-
-#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
-#include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
-
-#include "renderData.hpp"
-#include "../renderer/base/renderer.hpp"
-
-#include "../inc/conint.h"
-
-#include "tracing.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/DeviceHandle.h"
+#include "../server/IoSorter.h"
+#include "../types/inc/CodepointWidthDetector.hpp"
 
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"
@@ -472,18 +457,7 @@ try
 
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;
-
-    wil::unique_handle inPipeTheirSide;
-    wil::unique_handle inPipeOurSide;
-
-    wil::unique_handle outPipeTheirSide;
-    wil::unique_handle outPipeOurSide;
-
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_OpenedPipes",
@@ -506,7 +480,7 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff3> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
@@ -581,21 +555,21 @@ try
 
     myStartupInfo.wShowWindow = settings.GetShowWindow();
 
-    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
-                                                  outPipeTheirSide.get(),
+    wil::unique_handle inPipeOurSide;
+    wil::unique_handle outPipeOurSide;
+    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeOurSide.addressof(),
+                                                  outPipeOurSide.addressof(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
                                                   clientProcess.get(),
-                                                  myStartupInfo));
+                                                  &myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    inPipeTheirSide.reset();
-    outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
     // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
@@ -882,8 +856,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
         // Set up the renderer to be used to calculate the width of a glyph,
         //      should we be unable to figure out its width another way.
-        auto pfn = [ObjectPtr = static_cast<Renderer*>(g.pRender)](auto&& PH1) { return ObjectPtr->IsGlyphWideByFont(std::forward<decltype(PH1)>(PH1)); };
-        SetGlyphWidthFallback(pfn);
+        CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
+            return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
+        });
     }
     catch (...)
     {

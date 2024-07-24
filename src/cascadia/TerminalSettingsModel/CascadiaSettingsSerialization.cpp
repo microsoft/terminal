@@ -8,6 +8,8 @@
 #include <fmt/chrono.h>
 #include <shlobj.h>
 #include <til/latch.h>
+#include <til/io.h>
+
 #include "resource.h"
 
 #include "AzureCloudShellGenerator.h"
@@ -235,7 +237,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
             {
                 try
                 {
-                    const auto content = ReadUTF8File(fragmentExt.path());
+                    const auto content = til::io::read_file_as_utf8_string(fragmentExt.path());
                     _parseFragment(source, content, fragmentSettings);
                 }
                 CATCH_LOG();
@@ -932,7 +934,7 @@ Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
     FILETIME lastWriteTime{};
-    auto settingsString = ReadUTF8FileIfExists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
+    auto settingsString = til::io::read_file_as_utf8_string_if_exists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
     auto firstTimeSetup = settingsString.empty();
 
     // If it's the firstTimeSetup and a preview build, then try to
@@ -945,7 +947,7 @@ try
         {
             try
             {
-                settingsString = ReadUTF8FileIfExists(_releaseSettingsPath()).value_or(std::string{});
+                settingsString = til::io::read_file_as_utf8_string_if_exists(_releaseSettingsPath()).value_or(std::string{});
                 releaseSettingExists = settingsString.empty() ? false : true;
             }
             catch (...)
@@ -1312,7 +1314,7 @@ void CascadiaSettings::WriteSettingsToDisk()
 
     FILETIME lastWriteTime{};
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    WriteUTF8FileAtomic(settingsPath, styledString, &lastWriteTime);
+    til::io::write_utf8_string_to_file_atomic(settingsPath, styledString, &lastWriteTime);
 
     _hash = _calculateHash(styledString, lastWriteTime);
 

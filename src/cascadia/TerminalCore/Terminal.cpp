@@ -700,34 +700,44 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    // GH#1527: When the user has auto mark prompts enabled, we're going to try
-    // and heuristically detect if this was the line the prompt was on.
-    // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
-    //   as prompts. That's omitted for now.)
-    // * AND we're not in the alt buffer
-    //
-    // Then treat this line like it's a prompt mark.
-    if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
+    if (vkey == VK_RETURN && !_inAltBuffer())
     {
-        // We need to be a little tricky here, to try and support folks that are
-        // auto-marking prompts, but don't necessarily have the rest of shell
-        // integration enabled.
-        //
-        // We'll set the current attributes to Output, so that the output after
-        // here is marked as the command output. But we also need to make sure
-        // that a mark was started.
-        // We can't just check if the current row has a mark - there could be a
-        // multiline prompt.
-        //
-        // (TextBuffer::_createPromptMarkIfNeeded does that work for us)
-
-        const bool createdMark = _activeBuffer().StartOutput();
-        if (createdMark)
+        // Treat VK_RETURN as a new prompt,
+        // so we should clear the quick fix UI if it's visible.
+        if (_pfnClearQuickFix)
         {
-            _activeBuffer().ManuallyMarkRowAsPrompt(_activeBuffer().GetCursor().GetPosition().y);
+            _pfnClearQuickFix();
+        }
 
-            // This changed the scrollbar marks - raise a notification to update them
-            _NotifyScrollEvent();
+        // GH#1527: When the user has auto mark prompts enabled, we're going to try
+        // and heuristically detect if this was the line the prompt was on.
+        // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
+        //   as prompts. That's omitted for now.)
+        // * AND we're not in the alt buffer
+        //
+        // Then treat this line like it's a prompt mark.
+        if (_autoMarkPrompts)
+        {
+            // We need to be a little tricky here, to try and support folks that are
+            // auto-marking prompts, but don't necessarily have the rest of shell
+            // integration enabled.
+            //
+            // We'll set the current attributes to Output, so that the output after
+            // here is marked as the command output. But we also need to make sure
+            // that a mark was started.
+            // We can't just check if the current row has a mark - there could be a
+            // multiline prompt.
+            //
+            // (TextBuffer::_createPromptMarkIfNeeded does that work for us)
+
+            const bool createdMark = _activeBuffer().StartOutput();
+            if (createdMark)
+            {
+                _activeBuffer().ManuallyMarkRowAsPrompt(_activeBuffer().GetCursor().GetPosition().y);
+
+                // This changed the scrollbar marks - raise a notification to update them
+                _NotifyScrollEvent();
+            }
         }
     }
 
@@ -962,7 +972,7 @@ Viewport Terminal::_GetMutableViewport() const noexcept
     // GH#3493: if we're in the alt buffer, then it's possible that the mutable
     // viewport's size hasn't been updated yet. In that case, use the
     // temporarily stashed _altBufferSize instead.
-    return _inAltBuffer() ? Viewport::FromDimensions(_altBufferSize) :
+    return _inAltBuffer() ? Viewport::FromDimensions({}, _altBufferSize) :
                             _mutableViewport;
 }
 
@@ -1226,6 +1236,16 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
 void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
 {
     _pfnCompletionsChanged.swap(pfn);
+}
+
+void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view)> pfn) noexcept
+{
+    _pfnSearchMissingCommand.swap(pfn);
+}
+
+void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept
+{
+    _pfnClearQuickFix.swap(pfn);
 }
 
 // Method Description:
@@ -1577,12 +1597,13 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 }
 
 // Method Description:
-// - Returns the position of the cursor relative to the active viewport
+// - Returns the position of the cursor relative to the visible viewport
 til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 {
     const auto absoluteCursorPosition{ GetCursorPosition() };
-    const auto viewport{ _GetMutableViewport() };
-    return absoluteCursorPosition - viewport.Origin();
+    const auto mutableViewport{ _GetMutableViewport() };
+    const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
+    return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };
 }
 
 void Terminal::PreviewText(std::wstring_view input)

@@ -280,6 +280,15 @@
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>Comando facoltativo, con argomenti, da generare nel nuovo pannello o scheda</value>
   </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Salva riga di comando come azione di input</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Un argomento facoltativo</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Un argomento facoltativo</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Sposta lo stato attivo su un'altra scheda</value>
   </data>
@@ -889,5 +898,39 @@
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
     <value>Riavvia la connessione al riquadro attivo</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Frammenti</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Filtra frammenti...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Immettere questo comando</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Immettere questo comando</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Non sono stati trovati frammenti nelle impostazioni.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Aggiungi alcune azioni "Invia input" nelle impostazioni per visualizzarle qui.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Azione salvata</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Salvataggio dell'azione non riuscito</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Chiudi il riquadro</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Chiudi il riquadro</value>
   </data>
 </root>

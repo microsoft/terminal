@@ -129,7 +129,8 @@ try
     };
     _p.invalidatedRows = _api.invalidatedRows;
     _p.cursorRect = {};
-    _p.scrollOffset = _api.scrollOffset;
+    _p.scrollOffsetX = _api.viewportOffset.x;
+    _p.scrollDeltaY = _api.scrollOffset;
 
     // This if condition serves 2 purposes:
     // * By setting top/bottom to the full height we ensure that we call Present() without
@@ -144,7 +145,11 @@ try
         _p.MarkAllAsDirty();
     }
 
-    if (const auto offset = _p.scrollOffset)
+#if ATLAS_DEBUG_CONTINUOUS_REDRAW
+    _p.MarkAllAsDirty();
+#endif
+
+    if (const auto offset = _p.scrollDeltaY)
     {
         if (offset < 0)
         {
@@ -243,10 +248,6 @@ try
         }
     }
 
-#if ATLAS_DEBUG_CONTINUOUS_REDRAW
-    _p.MarkAllAsDirty();
-#endif
-
     return S_OK;
 }
 CATCH_RETURN()
@@ -255,6 +256,14 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
+
+    for (const auto r : _p.rows)
+    {
+        if (r->bitmap.revision != 0 && !r->bitmap.active)
+        {
+            r->bitmap = {};
+        }
+    }
 
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
     // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
@@ -293,8 +302,8 @@ CATCH_RETURN()
 
         // get the buffer origin relative to the viewport, and use it to calculate
         // the dirty region to be relative to the buffer origin
-        const til::CoordType offsetX = _p.s->viewportOffset.x;
-        const til::CoordType offsetY = _p.s->viewportOffset.y;
+        const til::CoordType offsetX = _api.viewportOffset.x;
+        const til::CoordType offsetY = _api.viewportOffset.y;
         const til::point bufferOrigin{ -offsetX, -offsetY };
         const auto dr = _api.dirtyRect.to_origin(bufferOrigin);
 
@@ -325,7 +334,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1));
     _p.rows[y]->lineRendition = lineRendition;
     _api.lineRendition = lineRendition;
     return S_OK;
@@ -392,7 +401,7 @@ try
     const til::CoordType y = row;
     const til::CoordType x1 = begX;
     const til::CoordType x2 = endX;
-    const auto offset = til::point{ _p.s->viewportOffset.x, _p.s->viewportOffset.y };
+    const auto offset = til::point{ _api.viewportOffset.x, _api.viewportOffset.y };
     auto it = highlights.begin();
     const auto itEnd = highlights.end();
     auto hiStart = it->start - offset;
@@ -459,7 +468,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y - 1));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
@@ -467,7 +476,7 @@ try
     }
 
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_p.s->viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_api.viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
     auto columnEnd = x;
 
     // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
@@ -509,13 +518,57 @@ CATCH_RETURN()
 try
 {
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto x = std::max(0, coordTarget.x - (_p.s->viewportOffset.x >> shift));
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
+    const auto x = std::max(0, coordTarget.x - (_api.viewportOffset.x >> shift));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y - 1));
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
     const auto glColor = gsl::narrow_cast<u32>(gridlineColor) | 0xff000000;
     const auto ulColor = gsl::narrow_cast<u32>(underlineColor) | 0xff000000;
     _p.rows[y]->gridLineRanges.emplace_back(lines, glColor, ulColor, from, to);
+    return S_OK;
+}
+CATCH_RETURN()
+
+[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& imageSlice, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
+try
+{
+    const auto y = clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1);
+    const auto row = _p.rows[y];
+    const auto revision = imageSlice.Revision();
+    const auto srcWidth = std::max(0, imageSlice.PixelWidth());
+    const auto srcCellSize = imageSlice.CellSize();
+    auto& b = row->bitmap;
+
+    // If this row's ImageSlice has changed we need to update our snapshot.
+    // Theoretically another _p.rows[y]->bitmap may have this particular revision already,
+    // but that can only happen if we're scrolling _and_ the entire viewport was invalidated.
+    if (b.revision != revision)
+    {
+        const auto srcHeight = std::max(0, srcCellSize.height);
+        const auto pixels = imageSlice.Pixels();
+        const auto expectedSize = gsl::narrow_cast<size_t>(srcWidth) * gsl::narrow_cast<size_t>(srcHeight);
+
+        // Sanity check.
+        if (pixels.size() != expectedSize)
+        {
+            assert(false);
+            return S_OK;
+        }
+
+        if (b.source.size() != pixels.size())
+        {
+            b.source = Buffer<u32, 32>{ pixels.size() };
+        }
+
+        memcpy(b.source.data(), pixels.data(), pixels.size_bytes());
+        b.revision = revision;
+        b.sourceSize.x = srcWidth;
+        b.sourceSize.y = srcHeight;
+    }
+
+    b.targetOffset = (imageSlice.ColumnOffset() - viewportLeft);
+    b.targetWidth = srcWidth / srcCellSize.width;
+    b.active = true;
     return S_OK;
 }
 CATCH_RETURN()
@@ -528,7 +581,7 @@ try
     // As such we got to call _flushBufferLine() here just to be sure.
     _flushBufferLine();
 
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y - 1));
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
 
@@ -571,7 +624,7 @@ try
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
         const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
-        auto left = options.coordCursor.x - (_p.s->viewportOffset.x >> shift);
+        auto left = options.coordCursor.x - (_api.viewportOffset.x >> shift);
         auto right = left + cursorWidth;
 
         left <<= shift;

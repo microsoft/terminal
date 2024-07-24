@@ -93,6 +93,7 @@ private:
     CLI::App* _swapPaneCommand;
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
+    CLI::App* _saveCommand;
 
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
@@ -123,6 +124,8 @@ private:
     bool _focusPrevTab{ false };
 
     int _focusPaneTarget{ -1 };
+    std::string _saveInputName;
+    std::string _keyChordOption;
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     const Commandline* _currentCommandline{ nullptr };
@@ -141,6 +144,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
+    void _buildSaveSnippetParser();
     void _buildNewTabParser();
     void _buildSplitPaneParser();
     void _buildFocusTabParser();

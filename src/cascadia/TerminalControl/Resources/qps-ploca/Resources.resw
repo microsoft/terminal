@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -195,11 +195,11 @@
     <comment>Whenever we encounter an invalid URI or URL we show this string as a warning.</comment>
   </data>
   <data name="NoticeFontNotFound" xml:space="preserve">
-    <value>Ůŉäвľė ťö ƒΐńđ τħé şèℓ℮ĉťēδ ƒòñŧ "{0}".
+    <value>Ůŉäвľė ťö ƒΐńđ τħé şèℓ℮ĉťēδ ƒòñŧ "{0}". !!! !!! !!! !!!
 
-"{1}" ђàś ъëęñ šеŀесťĕđ ιñśтёąδ.
+"{1}" ђàś ъëęñ šеŀесťĕđ ιñśтёąδ. !!! !!! !!! 
 
-Ρℓēάŝę ėїţħěř ĭлşţäļł ťнз mîşśĭηģ ƒóⁿт òґ ¢ћōóşę άηŏťнєѓ ôŋє. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+Ρℓēάŝę ėїţħěř ĭлşţäļł ťнз mîşśĭηģ ƒóⁿт òґ ¢ћōóşę άηŏťнєѓ ôŋє. !!! !!! !!! !!! !!! !!!</value>
     <comment>0 and 1 are names of fonts provided by the user and system respectively.</comment>
   </data>
   <data name="PixelShaderNotFound" xml:space="preserve">
@@ -301,6 +301,12 @@
     <value>Ŝ℮ĺèčť οùτφųţ !!! </value>
     <comment>The tooltip for a button for selecting all of a command's output</comment>
   </data>
+  <data name="QuickFixButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Qùїсκ ƒĭж !!!</value>
+  </data>
+  <data name="QuickFixButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Qűіċĸ ƒïж !!!</value>
+  </data>
   <data name="SessionRestoreMessage" xml:space="preserve">
     <value>Яєŝťòяёď !!</value>
     <comment>"Restored" as in "This content was restored"</comment>
@@ -316,6 +322,13 @@
   <data name="SearchRegexInvalid" xml:space="preserve">
     <value>іŉναłīď !!</value>
     <comment>This brief message is displayed when a regular expression is invalid.</comment>
+  </data>
+  <data name="QuickFixAvailable" xml:space="preserve">
+    <value>Qúĭċκ ƒίх ãνаïℓαъℓĕ !!! !!!</value>
+    <comment>"Quick fix" is referencing the same feature as "QuickFixButton.ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="QuickFixMenu.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Qũĩĉк ƒí× !!!</value>
   </data>
   <data name="PreviewTextAnnouncement" xml:space="preserve">
     <value>Şůğğĕşŧеδ íήρύť: {0} !!! !!!</value>
