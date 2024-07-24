@@ -1,5 +1,5 @@
 name: "Bug report 🐛"
-description: Report errors or unexpected behavior
+description: Report errors or unexpected behavior.
 labels: [Issue-Bug, Needs-Triage]
 body:
 - type: markdown
@@ -48,7 +48,7 @@ body:
 - type: textarea
   attributes:
     label: Expected Behavior
-    description: If you want to include screenshots, paste them into the markdown editor below.
+description: If you want to include screenshots, you can just paste them into the markdown editor below.
     placeholder: What were you expecting?
   validations:
     required: false
