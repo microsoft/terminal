@@ -918,7 +918,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
         // If the line rendition has changed, the row can no longer be wrapped.
         row.SetWrapForced(false);
         // And all image content on the row is removed.
-        row.GetMutableImageSlice().reset();
+        row.SetImageSlice(nullptr);
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {

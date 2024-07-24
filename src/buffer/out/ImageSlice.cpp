@@ -7,9 +7,25 @@
 #include "Row.hpp"
 #include "textBuffer.hpp"
 
+static std::atomic<uint64_t> s_revision{ 0 };
+
 ImageSlice::ImageSlice(const til::size cellSize) noexcept :
     _cellSize{ cellSize }
 {
+}
+
+void ImageSlice::BumpRevision() noexcept
+{
+    // Avoid setting the revision to 0. This allows the renderer to use 0 as a sentinel value.
+    do
+    {
+        _revision = s_revision.fetch_add(1, std::memory_order_relaxed);
+    } while (_revision == 0);
+}
+
+uint64_t ImageSlice::Revision() const noexcept
+{
+    return _revision;
 }
 
 til::size ImageSlice::CellSize() const noexcept
@@ -108,9 +124,8 @@ void ImageSlice::CopyBlock(const TextBuffer& srcBuffer, const til::rect srcRect,
 
 void ImageSlice::CopyRow(const ROW& srcRow, ROW& dstRow)
 {
-    const auto& srcSlice = srcRow.GetImageSlice();
-    auto& dstSlice = dstRow.GetMutableImageSlice();
-    dstSlice = srcSlice ? std::make_unique<ImageSlice>(*srcSlice) : nullptr;
+    const auto srcSlice = srcRow.GetImageSlice();
+    dstRow.SetImageSlice(srcSlice ? std::make_unique<ImageSlice>(*srcSlice) : nullptr);
 }
 
 void ImageSlice::CopyCells(const ROW& srcRow, const til::CoordType srcColumn, ROW& dstRow, const til::CoordType dstColumnBegin, const til::CoordType dstColumnEnd)
@@ -119,24 +134,25 @@ void ImageSlice::CopyCells(const ROW& srcRow, const til::CoordType srcColumn, RO
     // a blank image into the destination, which is the same thing as an erase.
     // Also if the line renditions are different, there's no meaningful way to
     // copy the image content, so we also just treat that as an erase.
-    const auto& srcSlice = srcRow.GetImageSlice();
+    const auto srcSlice = srcRow.GetImageSlice();
     if (!srcSlice || srcRow.GetLineRendition() != dstRow.GetLineRendition()) [[likely]]
     {
         ImageSlice::EraseCells(dstRow, dstColumnBegin, dstColumnEnd);
     }
     else
     {
-        auto& dstSlice = dstRow.GetMutableImageSlice();
+        auto dstSlice = dstRow.GetMutableImageSlice();
         if (!dstSlice)
         {
-            dstSlice = std::make_unique<ImageSlice>(srcSlice->CellSize());
+            dstSlice = dstRow.SetImageSlice(std::make_unique<ImageSlice>(srcSlice->CellSize()));
+            __assume(dstSlice != nullptr);
         }
         const auto scale = srcRow.GetLineRendition() != LineRendition::SingleWidth ? 1 : 0;
         if (dstSlice->_copyCells(*srcSlice, srcColumn << scale, dstColumnBegin << scale, dstColumnEnd << scale))
         {
             // If _copyCells returns true, that means the destination was
             // completely erased, so we can delete this slice.
-            dstSlice = nullptr;
+            dstRow.SetImageSlice(nullptr);
         }
     }
 }
@@ -203,7 +219,7 @@ void ImageSlice::EraseCells(TextBuffer& buffer, const til::point at, const size_
 
 void ImageSlice::EraseCells(ROW& row, const til::CoordType columnBegin, const til::CoordType columnEnd)
 {
-    auto& imageSlice = row.GetMutableImageSlice();
+    const auto imageSlice = row.GetMutableImageSlice();
     if (imageSlice) [[unlikely]]
     {
         const auto scale = row.GetLineRendition() != LineRendition::SingleWidth ? 1 : 0;
@@ -211,7 +227,7 @@ void ImageSlice::EraseCells(ROW& row, const til::CoordType columnBegin, const ti
         {
             // If _eraseCells returns true, that means the image was
             // completely erased, so we can delete this slice.
-            imageSlice = nullptr;
+            row.SetImageSlice(nullptr);
         }
     }
 }
