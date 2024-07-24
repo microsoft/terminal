@@ -80,12 +80,6 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);user32.lib;shell32.lib</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->

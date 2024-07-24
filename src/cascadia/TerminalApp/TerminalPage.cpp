@@ -3347,7 +3347,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (paneType == L"x-markdown")
         {
-            if (Feature_ScratchpadPane::IsEnabled())
+            if (Feature_MarkdownPane::IsEnabled())
             {
                 const auto& markdownContent{ winrt::make_self<MarkdownPaneContent>(L"") };
                 markdownContent->UpdateSettings(_settings);

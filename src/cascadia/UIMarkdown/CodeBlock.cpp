@@ -20,7 +20,6 @@ namespace winrt::Microsoft::Terminal::UI::Markdown::implementation
     CodeBlock::CodeBlock(const winrt::hstring& initialCommandlines) :
         Commandlines(initialCommandlines)
     {
-        InitializeComponent();
     }
     void CodeBlock::_playPressed(const Windows::Foundation::IInspectable&,
                                  const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)

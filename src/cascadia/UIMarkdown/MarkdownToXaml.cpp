@@ -16,11 +16,17 @@ namespace winrt
 using namespace winrt;
 
 // Bullet points used for unordered lists.
-static const std::wstring bullets[]{
+static constexpr std::wstring_view bullets[]{
     L"• ",
     L"◦ ",
     L"▪ " // After this level, we'll keep using this one.
 };
+static constexpr int WidthOfBulletPoint{ 9 };
+static constexpr int IndentWidth{ 3 * WidthOfBulletPoint };
+static constexpr int H1FontSize{ 36 };
+static constexpr int HeaderMinFontSize{ 16 };
+
+static constexpr std::wstring_view CodeFontFamily{ L"Cascadia Mono, Consolas" };
 
 template<typename T>
 static std::string_view textFromCmarkString(const T& s) noexcept
@@ -36,6 +42,9 @@ static std::string_view textFromUrl(cmark_node* node) noexcept
     return cmark_node_get_url(node);
 }
 
+typedef wil::unique_any<cmark_node*, decltype(&cmark_node_free), cmark_node_free> unique_node;
+typedef wil::unique_any<cmark_iter*, decltype(&cmark_iter_free), cmark_iter_free> unique_iter;
+
 // Function Description:
 // - Entrypoint to convert a string of markdown into a XAML RichTextBlock.
 // Arguments:
@@ -48,15 +57,13 @@ WUX::Controls::RichTextBlock MarkdownToXaml::Convert(std::string_view markdownTe
 {
     MarkdownToXaml data{ baseUrl };
 
-    auto doc = cmark_parse_document(markdownText.data(), markdownText.size(), CMARK_OPT_DEFAULT);
-    auto iter = cmark_iter_new(doc);
+    unique_node doc{ cmark_parse_document(markdownText.data(), markdownText.size(), CMARK_OPT_DEFAULT) };
+    unique_iter iter{ cmark_iter_new(doc.get()) };
     cmark_event_type ev_type;
-    cmark_node* curr;
 
-    while ((ev_type = cmark_iter_next(iter)) != CMARK_EVENT_DONE)
+    while ((ev_type = cmark_iter_next(iter.get())) != CMARK_EVENT_DONE)
     {
-        curr = cmark_iter_get_node(iter);
-        data._RenderNode(curr, ev_type);
+        data._RenderNode(cmark_iter_get_node(iter.get()), ev_type);
     }
 
     return data._root;
@@ -74,14 +81,19 @@ WUX::Documents::Paragraph MarkdownToXaml::_CurrentParagraph()
     if (_lastParagraph == nullptr)
     {
         _EndRun(); // sanity check
-        _lastParagraph = WUX::Documents::Paragraph();
+        _lastParagraph = WUX::Documents::Paragraph{};
         if (_indent > 0)
         {
+            // If we're in a list, we will start this paragraph with a bullet
+            // point. That bullet point will be added as part of the actual text
+            // of the paragraph, but we want the real text of the paragraph all
+            // aligned. So we will _de-indent_ the first line, to give us space
+            // for the bullet.
             if (_indent - _blockQuoteDepth > 0)
             {
-                _lastParagraph.TextIndent(-12);
+                _lastParagraph.TextIndent(-WidthOfBulletPoint);
             }
-            _lastParagraph.Margin(WUX::ThicknessHelper::FromLengths(18 * _indent, 0, 0, 0));
+            _lastParagraph.Margin(WUX::ThicknessHelper::FromLengths(IndentWidth * _indent, 0, 0, 0));
         }
         _root.Blocks().Append(_lastParagraph);
     }
@@ -91,7 +103,7 @@ WUX::Documents::Run MarkdownToXaml::_CurrentRun()
 {
     if (_currentRun == nullptr)
     {
-        _currentRun = WUX::Documents::Run();
+        _currentRun = WUX::Documents::Run{};
         _CurrentSpan().Inlines().Append(_currentRun);
     }
     return _currentRun;
@@ -100,7 +112,7 @@ WUX::Documents::Span MarkdownToXaml::_CurrentSpan()
 {
     if (_currentSpan == nullptr)
     {
-        _currentSpan = WUX::Documents::Span();
+        _currentSpan = WUX::Documents::Span{};
         _CurrentParagraph().Inlines().Append(_currentSpan);
     }
     return _currentSpan;
@@ -109,22 +121,18 @@ WUX::Documents::Run MarkdownToXaml::_NewRun()
 {
     if (_currentRun == nullptr)
     {
-        _currentRun = WUX::Documents::Run();
+        _currentRun = WUX::Documents::Run{};
         _CurrentSpan().Inlines().Append(_currentRun);
     }
     else
     {
         auto old{ _currentRun };
 
-        auto old_FontFamily = old.FontFamily();
-        auto old_FontWeight = old.FontWeight();
-        auto old_FontStyle = old.FontStyle();
-
         WUX::Documents::Run newRun{};
 
-        newRun.FontFamily(old_FontFamily);
-        newRun.FontWeight(old_FontWeight);
-        newRun.FontStyle(old_FontStyle);
+        newRun.FontFamily(old.FontFamily());
+        newRun.FontWeight(old.FontWeight());
+        newRun.FontStyle(old.FontStyle());
 
         _currentRun = newRun;
         _CurrentSpan().Inlines().Append(_currentRun);
@@ -156,10 +164,6 @@ WUX::Controls::TextBlock MarkdownToXaml::_makeDefaultTextBlock()
 
 void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 {
-    cmark_node* parent;
-    cmark_node* grandparent;
-    bool tight;
-
     bool entering = (ev_type == CMARK_EVENT_ENTER);
 
     switch (cmark_node_get_type(node))
@@ -220,7 +224,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         {
             _EndParagraph();
             _CurrentParagraph();
-            _NewRun().Text(winrt::hstring{ bullets[std::clamp(_indent - _blockQuoteDepth - 1, 0, 2)] });
+            _NewRun().Text(bullets[std::clamp(_indent - _blockQuoteDepth - 1, 0, 2)]);
         }
         break;
 
@@ -233,15 +237,15 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
         if (entering)
         {
             const auto level = cmark_node_get_heading_level(node);
-            _CurrentParagraph().FontSize(std::max(16u, 36u - ((level - 1) * 6u)));
+            _CurrentParagraph().FontSize(std::max(HeaderMinFontSize, H1FontSize - level * 6));
         }
         break;
 
     case CMARK_NODE_CODE_BLOCK:
     {
         _EndParagraph();
-        std::string_view code{ cmark_node_get_literal(node) };
-        const auto codeHstring{ winrt::hstring{ til::u8u16(code) } };
+
+        const auto codeHstring{ winrt::to_hstring(cmark_node_get_literal(node)) };
 
         auto codeBlock = winrt::make<winrt::Microsoft::Terminal::UI::Markdown::implementation::CodeBlock>(codeHstring);
         WUX::Documents::InlineUIContainer codeContainer{};
@@ -269,8 +273,9 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 
     case CMARK_NODE_PARAGRAPH:
     {
-        parent = cmark_node_parent(node);
-        grandparent = cmark_node_parent(parent);
+        bool tight;
+        cmark_node* parent = cmark_node_parent(node);
+        cmark_node* grandparent = cmark_node_parent(parent);
 
         if (grandparent != NULL && cmark_node_get_type(grandparent))
         {
@@ -335,10 +340,10 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 
     case CMARK_NODE_CODE:
     {
-        const auto text{ winrt::hstring{ til::u8u16(textFromLiteral(node)) } };
+        const auto text{ winrt::to_hstring(textFromLiteral(node)) };
         const auto& codeRun{ _NewRun() };
 
-        codeRun.FontFamily(WUX::Media::FontFamily{ L"Cascadia Code" });
+        codeRun.FontFamily(WUX::Media::FontFamily{ CodeFontFamily });
         // A Span can't have a border or a background, so we can't give
         // it the whole treatment that a <code> span gets in HTML.
         codeRun.Text(text);
@@ -371,14 +376,13 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
 
         if (entering)
         {
-            const auto url{ textFromUrl(node) };
-            const auto urlHstring{ winrt::hstring{ til::u8u16(url) } };
+            const auto urlHstring{ to_hstring(textFromUrl(node)) };
             WUX::Documents::Hyperlink a{};
 
             // Set the tooltip to display the URL
             try
             {
-                // This block from TermControl.cpp, where we sanitize the
+                // This block is from TermControl.cpp, where we sanitize the
                 // tooltips for URLs. That has a much more comprehensive
                 // comment.
 
@@ -414,17 +418,27 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
     case CMARK_NODE_IMAGE:
         if (entering)
         {
-            const auto url{ textFromUrl(node) };
-            const auto urlHstring{ winrt::hstring{ til::u8u16(url) } };
-            winrt::Windows::Foundation::Uri uri{ _baseUri, urlHstring };
-            WUX::Controls::Image img{};
-            WUX::Media::Imaging::BitmapImage bitmapImage;
-            bitmapImage.UriSource(uri);
-            img.Source(bitmapImage);
-            WUX::Documents::InlineUIContainer imageBlock{};
-            imageBlock.Child(img);
-            _CurrentParagraph().Inlines().Append(imageBlock);
-            _currentImage = img;
+            const auto urlHstring{ to_hstring(textFromUrl(node)) };
+
+            try
+            {
+                winrt::Windows::Foundation::Uri uri{ _baseUri, urlHstring };
+
+                WUX::Media::Imaging::BitmapImage bitmapImage;
+                bitmapImage.UriSource(uri);
+
+                WUX::Controls::Image img{};
+                img.Source(bitmapImage);
+
+                WUX::Documents::InlineUIContainer imageBlock{};
+                imageBlock.Child(img);
+
+                _CurrentParagraph().Inlines().Append(imageBlock);
+                _currentImage = img;
+            }
+            catch (...)
+            {
+            }
         }
         else
         {
