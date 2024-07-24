@@ -93,8 +93,7 @@ public:
                                                          const WORD attribute,
                                                          const size_t lengthToWrite,
                                                          const til::point startingCoordinate,
-                                                         size_t& cellsModified,
-                                                         const bool enablePowershellShim = false) noexcept override;
+                                                         size_t& cellsModified) noexcept override;
 
     [[nodiscard]] HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                           const char character,

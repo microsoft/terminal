@@ -135,7 +135,6 @@ public:
     const Microsoft::Console::Types::Viewport GetSize() const noexcept;
 
     void ScrollRows(const til::CoordType firstRow, const til::CoordType size, const til::CoordType delta);
-    void CopyRow(const til::CoordType srcRow, const til::CoordType dstRow, TextBuffer& dstBuffer) const;
 
     til::CoordType TotalRowCount() const noexcept;
 

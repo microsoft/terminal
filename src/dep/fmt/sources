@@ -1,0 +1,20 @@
+!include ..\..\project.inc
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConOSSFmt
+TARGETTYPE              = LIBRARY
+
+# -------------------------------------
+# Windows Console
+# - OSS Dependency: {fmt}
+# -------------------------------------
+
+PRECOMPILED_CXX         = 0
+
+SOURCES = \
+    ..\..\..\oss\fmt\src\format.cc \
+    ..\..\..\oss\fmt\src\os.cc \
+

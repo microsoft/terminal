@@ -16,7 +16,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(GraphicsAPI, winrt::Microsoft::Terminal::Control::GraphicsAPI, _settings.GlobalSettings().GraphicsAPI);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), DisablePartialInvalidation);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), SoftwareRendering);
-        GETSET_BINDABLE_ENUM_SETTING(TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, _settings.GlobalSettings().TextMeasurement);
 
     private:
         Model::CascadiaSettings _settings{ nullptr };

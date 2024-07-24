@@ -29,6 +29,7 @@ class SelectionTests
     {
         m_state = new CommonState();
 
+        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
         m_pSelection = &Selection::Instance();
@@ -40,6 +41,7 @@ class SelectionTests
         m_pSelection = nullptr;
 
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalFont();
 
         delete m_state;
 
@@ -353,6 +355,7 @@ class SelectionInputTests
     {
         m_state = new CommonState();
 
+        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
@@ -370,6 +373,7 @@ class SelectionInputTests
         CommandHistory::s_Free(nullptr);
         m_pHistory = nullptr;
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;

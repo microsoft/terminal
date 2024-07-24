@@ -13,7 +13,6 @@
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/til/string.h"
-#include <til/io.h>
 
 #include <LibraryResources.h>
 
@@ -424,7 +423,7 @@ namespace winrt::TerminalApp::implementation
                 if (!path.empty())
                 {
                     const auto buffer = control.ReadEntireBuffer();
-                    til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ std::wstring_view{ path } }, til::u16u8(buffer));
+                    CascadiaSettings::ExportFile(path, buffer);
                 }
             }
         }

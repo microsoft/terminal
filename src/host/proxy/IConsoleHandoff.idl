@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "unknwn.idl";
+import "oaidl.idl";
+import "ocidl.idl";
 
 typedef struct _CONSOLE_PORTABLE_ATTACH_MSG
 {

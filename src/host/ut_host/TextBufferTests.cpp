@@ -37,6 +37,7 @@ class TextBufferTests
     {
         m_state = new CommonState();
 
+        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
         return true;
@@ -45,6 +46,7 @@ class TextBufferTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalFont();
 
         delete m_state;
 
@@ -2827,7 +2829,13 @@ void TextBufferTests::ReflowPromptRegions()
             til::point afterPos = originalPos;
             // walk that original pos dx times into the actual real place in the buffer.
             auto bufferViewport = tb.GetSize();
-            bufferViewport.WalkInBounds(afterPos, -dx);
+            const auto walkDir = Viewport::WalkDir{ dx < 0 ? Viewport::XWalk::LeftToRight : Viewport::XWalk::RightToLeft,
+                                                    dx < 0 ? Viewport::YWalk::TopToBottom : Viewport::YWalk::BottomToTop };
+            for (auto i = 0; i < std::abs(dx); i++)
+            {
+                bufferViewport.WalkInBounds(afterPos,
+                                            walkDir);
+            }
             const auto expectedOutputStart = !afterResize ?
                                                  originalPos : // printed exactly a row, so we're exactly below the prompt
                                                  afterPos;

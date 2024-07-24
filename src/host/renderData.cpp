@@ -134,7 +134,7 @@ bool RenderData::IsCursorVisible() const noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible();
+    return cursor.IsVisible() && !cursor.IsPopupShown();
 }
 
 // Method Description:

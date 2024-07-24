@@ -243,11 +243,6 @@ Json::Value GlobalAppSettings::ToJson()
     {
         _GraphicsAPI.reset();
     }
-    if (_TextMeasurement == Control::TextMeasurement::Graphemes)
-    {
-        _TextMeasurement.reset();
-    }
-
     if (_DisablePartialInvalidation == false)
     {
         _DisablePartialInvalidation.reset();

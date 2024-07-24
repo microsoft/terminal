@@ -29,6 +29,7 @@ class UtilsTests
     {
         m_state = new CommonState();
 
+        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
         const auto seed = (UINT)time(nullptr);
@@ -41,6 +42,7 @@ class UtilsTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalFont();
 
         delete m_state;
 

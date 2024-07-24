@@ -5,8 +5,10 @@
 #include "Row.hpp"
 
 #include <isa_availability.h>
+#include <til/unicode.h>
 
-#include "../../types/inc/CodepointWidthDetector.hpp"
+#include "textBuffer.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 
 // It would be nice to add checked array access in the future, but it's a little annoying to do so without impacting
 // performance (including Debug performance). Other languages are a little bit more ergonomic there than C++.
@@ -225,7 +227,6 @@ void ROW::Reset(const TextAttribute& attr) noexcept
     // Constructing and then moving objects into place isn't free.
     // Modifying the existing object is _much_ faster.
     *_attr.runs().unsafe_shrink_to_size(1) = til::rle_pair{ attr, _columnCount };
-    _imageSlice = nullptr;
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
@@ -567,7 +568,6 @@ void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordTyp
 void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars)
 try
 {
-    assert(width >= 1 && width <= 2);
     WriteHelper h{ *this, columnBegin, _columnCount, chars };
     if (!h.IsValid())
     {
@@ -666,91 +666,56 @@ catch (...)
 
 [[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
 {
-    auto& cwd = CodepointWidthDetector::Singleton();
+    const auto end = chars.end();
 
-    // Check if the new text joins with the existing contents of the row to form a single grapheme cluster.
-    if (it == chars.begin())
+    while (it != end)
     {
-        auto colPrev = colBeg;
-        while (colPrev > 0 && row._uncheckedIsTrailer(--colPrev))
+        unsigned int width = 1;
+        auto ptr = &*it;
+        const auto wch = *ptr;
+        size_t advance = 1;
+
+        ++it;
+
+        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
+        // It also allows us to skip the surrogate pair decoding at the same time.
+        if (wch >= 0x80)
         {
+            if (til::is_surrogate(wch))
+            {
+                if (it != end && til::is_leading_surrogate(wch) && til::is_trailing_surrogate(*it))
+                {
+                    advance = 2;
+                    ++it;
+                }
+                else
+                {
+                    ptr = &UNICODE_REPLACEMENT;
+                }
+            }
+
+            width = IsGlyphFullWidth({ ptr, advance }) + 1u;
         }
 
-        const auto chPrev = row._uncheckedCharOffset(colPrev);
-        const std::wstring_view charsPrev{ row._chars.data() + chPrev, ch - chPrev };
-
-        GraphemeState state;
-        cwd.GraphemeNext(state, charsPrev);
-        cwd.GraphemeNext(state, chars);
-
-        if (state.len > 0)
+        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
+        if (colEndNew > colLimit)
         {
-            colBegDirty = colPrev;
-            colEnd = colPrev;
-
-            const auto width = std::max(1, state.width);
-            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
-            if (colEndNew > colLimit)
-            {
-                colEndDirty = colLimit;
-                charsConsumed = ch - chBeg;
-                return;
-            }
-
-            // Fill our char-offset buffer with 1 entry containing the mapping from the
-            // current column (colEnd) to the start of the glyph in the string (ch)...
-            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev);
-            // ...followed by 0-N entries containing an indication that the
-            // columns are just a wide-glyph extension of the preceding one.
-            while (colEnd < colEndNew)
-            {
-                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev | CharOffsetsTrailer);
-            }
-
-            ch += state.len;
-            it += state.len;
+            colEndDirty = colLimit;
+            charsConsumed = ch - chBeg;
+            return;
         }
-    }
-    else
-    {
-        // The non-ASCII character we have encountered may be a combining mark, like "a^" which is then displayed as "â".
-        // In order to recognize both characters as a single grapheme, we need to back up by 1 ASCII character
-        // and let MeasureNext() find the next proper grapheme boundary.
-        --colEnd;
-        --ch;
-        --it;
-    }
 
-    if (const auto end = chars.end(); it != end)
-    {
-        GraphemeState state{ .beg = &*it };
-
-        do
+        // Fill our char-offset buffer with 1 entry containing the mapping from the
+        // current column (colEnd) to the start of the glyph in the string (ch)...
+        til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
+        // ...followed by 0-N entries containing an indication that the
+        // columns are just a wide-glyph extension of the preceding one.
+        while (colEnd < colEndNew)
         {
-            cwd.GraphemeNext(state, chars);
+            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
+        }
 
-            const auto width = std::max(1, state.width);
-            const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
-            if (colEndNew > colLimit)
-            {
-                colEndDirty = colLimit;
-                charsConsumed = ch - chBeg;
-                return;
-            }
-
-            // Fill our char-offset buffer with 1 entry containing the mapping from the
-            // current column (colEnd) to the start of the glyph in the string (ch)...
-            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
-            // ...followed by 0-N entries containing an indication that the
-            // columns are just a wide-glyph extension of the preceding one.
-            while (colEnd < colEndNew)
-            {
-                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
-            }
-
-            ch += state.len;
-            it += state.len;
-        } while (it != end);
+        ch += advance;
     }
 
     colEndDirty = colEnd;
@@ -965,28 +930,6 @@ std::vector<uint16_t> ROW::GetHyperlinks() const
     return ids;
 }
 
-ImageSlice* ROW::SetImageSlice(ImageSlice::Pointer imageSlice) noexcept
-{
-    _imageSlice = std::move(imageSlice);
-    return GetMutableImageSlice();
-}
-
-const ImageSlice* ROW::GetImageSlice() const noexcept
-{
-    return _imageSlice.get();
-}
-
-ImageSlice* ROW::GetMutableImageSlice() noexcept
-{
-    const auto ptr = _imageSlice.get();
-    if (!ptr)
-    {
-        return nullptr;
-    }
-    ptr->BumpRevision();
-    return ptr;
-}
-
 uint16_t ROW::size() const noexcept
 {
     return _columnCount;
@@ -997,15 +940,14 @@ uint16_t ROW::size() const noexcept
 til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
 {
     const auto text = GetText();
-    const auto beg = text.data();
-    const auto end = beg + text.size();
-#pragma warning(suppress : 26429) // Symbol 'it' is never tested for nullness, it can be marked as not_null (f.23).
+    const auto beg = text.begin();
+    const auto end = text.end();
     auto it = end;
 
     for (; it != beg; --it)
     {
         // it[-1] is safe as `it` is always greater than `beg` (loop invariant).
-        if (it[-1] != L' ')
+        if (til::at(it, -1) != L' ')
         {
             break;
         }
@@ -1116,7 +1058,7 @@ std::wstring_view ROW::GetText() const noexcept
 
 std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
 {
-    const auto columns = GetReadableColumnCount();
+    const til::CoordType columns = _columnCount;
     const auto colBeg = clamp(columnBegin, 0, columns);
     const auto colEnd = clamp(columnEnd, colBeg, columns);
     const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));

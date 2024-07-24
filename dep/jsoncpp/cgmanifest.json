@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
+    {
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/open-source-parsers/jsoncpp",
+          "commitHash": "5defb4ed1a4293b8e2bf641e16b156fb9de498cc"
+        }
+      }
+    }
+  ],
+  "Version": 1
+}

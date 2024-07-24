@@ -52,11 +52,6 @@ void Page::SetAttributes(const TextAttribute& attr, ITerminalApi* api) const
     }
 }
 
-til::size Page::Size() const noexcept
-{
-    return { Width(), Height() };
-}
-
 til::CoordType Page::Top() const noexcept
 {
     // If we ever support vertical window panning, the page top won't
@@ -180,11 +175,11 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
         auto& saveBuffer = _getBuffer(_visiblePageNumber, pageSize);
         for (auto i = 0; i < pageSize.height; i++)
         {
-            visibleBuffer.CopyRow(visibleTop + i, i, saveBuffer);
+            saveBuffer.GetMutableRowByOffset(i).CopyFrom(visibleBuffer.GetRowByOffset(visibleTop + i));
         }
         for (auto i = 0; i < pageSize.height; i++)
         {
-            newBuffer.CopyRow(i, visibleTop + i, visibleBuffer);
+            visibleBuffer.GetMutableRowByOffset(visibleTop + i).CopyFrom(newBuffer.GetRowByOffset(i));
         }
         _visiblePageNumber = newPageNumber;
         redrawRequired = true;

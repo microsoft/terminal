@@ -47,7 +47,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         break;                                                         \
     }
                 ALL_SHORTCUT_ACTIONS_WITH_ARGS
-                INTERNAL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS
             default:
                 break;
@@ -193,7 +192,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // now add any ShortcutActions that we might have missed
 #define ON_ALL_ACTIONS(action) RegisterShortcutAction(ShortcutAction::action, availableActions, visitedActionIDs);
             ALL_SHORTCUT_ACTIONS
-            // Don't include internal actions here
 #undef ON_ALL_ACTIONS
 
             _AvailableActionsCache = single_threaded_map(std::move(availableActions));
@@ -882,22 +880,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return results;
-    }
-
-    void ActionMap::AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys)
-    {
-        auto newAction = winrt::make<ActionAndArgs>();
-        newAction.Action(ShortcutAction::SendInput);
-        auto sendInputArgs = winrt::make<SendInputArgs>(input);
-        newAction.Args(sendInputArgs);
-        auto cmd{ make_self<Command>() };
-        if (!name.empty())
-        {
-            cmd->Name(name);
-        }
-        cmd->ActionAndArgs(newAction);
-        cmd->GenerateID();
-        AddAction(*cmd, keys);
     }
 
     IVector<Model::Command> ActionMap::FilterToSendInput(

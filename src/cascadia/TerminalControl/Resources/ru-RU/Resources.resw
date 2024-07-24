@@ -301,12 +301,6 @@
     <value>Выбрать вывод</value>
     <comment>The tooltip for a button for selecting all of a command's output</comment>
   </data>
-  <data name="QuickFixButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Быстрое исправление</value>
-  </data>
-  <data name="QuickFixButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Быстрое исправление</value>
-  </data>
   <data name="SessionRestoreMessage" xml:space="preserve">
     <value>Восстановлено</value>
     <comment>"Restored" as in "This content was restored"</comment>
@@ -322,13 +316,6 @@
   <data name="SearchRegexInvalid" xml:space="preserve">
     <value>недопустимый</value>
     <comment>This brief message is displayed when a regular expression is invalid.</comment>
-  </data>
-  <data name="QuickFixAvailable" xml:space="preserve">
-    <value>Доступно быстрое исправление</value>
-    <comment>"Quick fix" is referencing the same feature as "QuickFixButton.ToolTipService.ToolTip".</comment>
-  </data>
-  <data name="QuickFixMenu.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Быстрое исправление</value>
   </data>
   <data name="PreviewTextAnnouncement" xml:space="preserve">
     <value>Предлагаемые входные данные: {0}</value>
