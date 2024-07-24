@@ -140,7 +140,6 @@ bufferout
 buffersize
 buflen
 buildtransitive
-burriter
 BValue
 bytebuffer
 cac
@@ -203,7 +202,6 @@ cmw
 CNL
 cnn
 Codeflow
-codenav
 codepages
 codepath
 coinit
@@ -293,7 +291,6 @@ CREATESTRUCT
 CREATESTRUCTW
 createvpack
 crisman
-CRLFs
 crloew
 CRTLIBS
 csbi
@@ -613,7 +610,6 @@ FINDDOWN
 FINDREGEX
 FINDSTRINGEXACT
 FINDUP
-FIter
 FIXEDFILEINFO
 Flg
 flyouts
@@ -767,7 +763,6 @@ hinst
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
-hittest
 HIWORD
 HKCU
 hkey
@@ -1471,7 +1466,6 @@ READMODE
 rectread
 redef
 redefinable
-Redir
 redist
 REDSCROLL
 REFCLSID
@@ -1974,7 +1968,6 @@ wchars
 WCIA
 WCIW
 WCSHELPER
-wcsicmp
 wcsrev
 wddm
 wddmcon
